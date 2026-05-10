@@ -217,10 +217,48 @@ test_that("Robust: fast_robust_regression_cpp on mtcars", {
 	y <- mtcars$mpg
 	X_fit <- model.matrix(mpg ~ wt + hp + qsec, data = mtcars)
 	
-	res_cpp <- fast_robust_regression_cpp(X_fit, y, method = "MM")
+	res_cpp <- EDI:::fast_robust_regression_cpp(X_fit, y, method = "MM")
 	res_r <- MASS::rlm(mpg ~ wt + hp + qsec, data = mtcars, method = "MM")
+	summ_r <- summary(res_r)
 	
 	# Robust regression is an iterative process and can have multiple local minima
 	# or different convergence paths. Using a looser tolerance.
 	expect_equal(as.numeric(res_cpp$coefficients), as.numeric(stats::coef(res_r)), tolerance = 1e-1)
+	expect_equal(as.numeric(sqrt(res_cpp$ssq_b_j)), as.numeric(summ_r$coefficients[2, "Std. Error"]), tolerance = 1e-1)
+})
+
+test_that("Count: fast_zinb_cpp on glmmTMB::Salamanders", {
+	skip_if_not_installed("glmmTMB")
+	data("Salamanders", package = "glmmTMB")
+
+	X_cond <- model.matrix(~ mined + spp, data = glmmTMB::Salamanders)
+	X_zi <- model.matrix(~ mined, data = glmmTMB::Salamanders)
+	y <- glmmTMB::Salamanders$count
+
+	res_cpp <- EDI:::fast_zinb_cpp(X_cond, y, X_zi)
+	res_r <- glmmTMB::glmmTMB(count ~ mined + spp, ziformula = ~ mined, family = glmmTMB::nbinom2, data = glmmTMB::Salamanders)
+
+	expect_equal(as.numeric(res_cpp$coefficients$cond), as.numeric(glmmTMB::fixef(res_r)$cond), tolerance = 5e-3)
+	expect_equal(as.numeric(res_cpp$coefficients$zi), as.numeric(glmmTMB::fixef(res_r)$zi), tolerance = 5e-3)
+	expect_equal(as.numeric(res_cpp$params[length(res_cpp$params)]), as.numeric(log(glmmTMB::sigma(res_r))), tolerance = 5e-3)
+	expect_true(all(is.finite(diag(res_cpp$vcov))))
+})
+
+test_that("Count: fast_zero_augmented_poisson_cpp on glmmTMB::Salamanders", {
+	skip_if_not_installed("glmmTMB")
+	data("Salamanders", package = "glmmTMB")
+
+	X_cond <- model.matrix(~ mined + spp, data = glmmTMB::Salamanders)
+	X_zi <- model.matrix(~ mined, data = glmmTMB::Salamanders)
+	y <- glmmTMB::Salamanders$count
+
+	res_cpp <- EDI:::fast_zero_augmented_poisson_cpp(X_cond, y, X_zi, is_hurdle = TRUE)
+	res_r <- glmmTMB::glmmTMB(count ~ mined + spp, ziformula = ~ mined, family = glmmTMB::truncated_poisson, data = glmmTMB::Salamanders)
+	vcov_r <- stats::vcov(res_r)
+
+	expect_equal(as.numeric(res_cpp$coefficients$cond), as.numeric(glmmTMB::fixef(res_r)$cond), tolerance = 5e-3)
+	expect_equal(as.numeric(res_cpp$coefficients$zi), as.numeric(glmmTMB::fixef(res_r)$zi), tolerance = 5e-3)
+	expect_equal(as.numeric(diag(res_cpp$vcov)[seq_along(res_cpp$coefficients$cond)]), as.numeric(diag(vcov_r$cond)), tolerance = 5e-3)
+	zi_idx <- length(res_cpp$coefficients$cond) + seq_along(res_cpp$coefficients$zi)
+	expect_equal(as.numeric(diag(res_cpp$vcov)[zi_idx]), as.numeric(diag(vcov_r$zi)), tolerance = 5e-3)
 })

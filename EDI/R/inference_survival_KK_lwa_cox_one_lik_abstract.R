@@ -24,7 +24,7 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
 			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")){
+				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
@@ -73,10 +73,74 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 		best_X_colnames = NULL,
 		optimization_alg = "lbfgs",
 
+		get_standard_error = function(){
+			private$shared_combined_likelihood()
+			as.numeric(private$cached_values$s_beta_hat_T)
+		},
+
+		get_degrees_of_freedom = function() Inf,
+
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
 			}
+		},
+
+		supports_likelihood_tests = function(){
+			isTRUE(private$use_rcpp)
+		},
+
+		get_likelihood_test_spec = function(){
+			private$shared_combined_likelihood(estimate_only = FALSE)
+			ctx = private$cached_values$likelihood_test_context
+			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+			X_fit = ctx$X
+			y = as.numeric(ctx$y)
+			dead = as.numeric(ctx$dead)
+			group_id = as.integer(ctx$group_id)
+			j_treat = 1L
+			list(
+				X = X_fit,
+				y = y,
+				j = j_treat,
+				full_fit = private$cached_mod,
+				fit_null = function(delta, start = NULL){
+					start_beta = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit))
+					fast_coxph_regression_cpp(
+						X = X_fit,
+						y = y,
+						dead = dead,
+						cluster = group_id,
+						start_beta = start_beta,
+						estimate_only = FALSE,
+						optimization_alg = private$optimization_alg,
+						fixed_idx = j_treat,
+						fixed_values = delta
+				)
+			},
+				extract_start = function(fit){
+					as.numeric(fit$coefficients %||% fit$b)
+				},
+				score = function(fit){
+					beta = as.numeric(fit$coefficients %||% fit$b)
+					get_coxph_score_cpp(X_fit, y, dead, beta)
+				},
+				observed_information = function(fit){
+					beta = as.numeric(fit$coefficients %||% fit$b)
+					-get_coxph_hessian_cpp(X_fit, y, dead, beta)
+				},
+				fisher_information = function(fit){
+					beta = as.numeric(fit$coefficients %||% fit$b)
+					-get_coxph_hessian_cpp(X_fit, y, dead, beta)
+				},
+				information = function(fit){
+					beta = as.numeric(fit$coefficients %||% fit$b)
+					-get_coxph_hessian_cpp(X_fit, y, dead, beta)
+				},
+				neg_loglik = function(fit){
+					as.numeric(fit$neg_ll %||% fit$neg_loglik)
+				}
+			)
 		},
 
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
@@ -187,12 +251,20 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 					is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef
 				}
 			)
-			res = attempt$fit
-			if (!is.null(res)){
-				private$best_X_colnames = setdiff(colnames(attempt$X_fit), "w")
-				private$cached_values$beta_hat_T = as.numeric(res$coefficients[1])
-				if (!estimate_only) {
-					se = sqrt(res$vcov[1L, 1L])
+				res = attempt$fit
+				if (!is.null(res)){
+					private$best_X_colnames = setdiff(colnames(attempt$X), "w")
+					private$cached_mod = res
+					private$cached_values$likelihood_test_context = list(
+						X = attempt$X,
+						y = private$y,
+						dead = private$dead,
+						group_id = cluster_ids,
+						j_treat = 1L
+					)
+					private$cached_values$beta_hat_T = as.numeric(res$coefficients[1])
+					if (!estimate_only) {
+						se = sqrt(res$vcov[1L, 1L])
 					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
 				}
 				return(invisible(NULL))

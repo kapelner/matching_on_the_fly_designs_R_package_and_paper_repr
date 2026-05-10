@@ -25,6 +25,10 @@ fast_logistic_regression_weighted_cpp(
 
 \item{weights}{A numeric vector of weights for each observation.}
 
+\item{start_beta}{Optional starting values for coefficients.}
+
+\item{smart_start}{Logical. If TRUE, use an initial OLS-based guess.}
+
 \item{maxit}{Maximum number of iterations for the IRLS algorithm. Defaults to 100.}
 
 \item{tol}{Convergence tolerance. Defaults to 1e-8.}

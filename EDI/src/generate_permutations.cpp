@@ -89,7 +89,7 @@ double compute_atkinson_weight_internal(const VectorXd& w_prev, const MatrixXd& 
 } // namespace
 
 // [[Rcpp::export]]
-List generate_permutations_kk_cpp(const IntegerVector& m_vec, int nsim, double prob_T) {
+List generate_permutations_matching_cpp(const IntegerVector& m_vec, int nsim, double prob_T) {
   int n = m_vec.size();
   IntegerMatrix w_mat(n, nsim);
   int* w_ptr = w_mat.begin();

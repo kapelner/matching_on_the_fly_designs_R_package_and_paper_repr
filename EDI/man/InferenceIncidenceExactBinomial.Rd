@@ -11,7 +11,7 @@ Exact Binomial Incidence Inference for Matched-Pair Designs
 \details{
 Performs exact matched-pair binomial inference for binary outcomes using only
 discordant matched pairs. This class is available for
-\code{FixedDesignBinaryMatch} and KK matching-on-the-fly designs. For KK
+\code{DesignFixedBinaryMatch} and KK matching-on-the-fly designs. For KK
 designs, only the matched-pair data are used and the reservoir is ignored.
 }
 \examples{

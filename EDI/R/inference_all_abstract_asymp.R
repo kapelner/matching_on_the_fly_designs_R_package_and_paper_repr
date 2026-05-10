@@ -17,13 +17,7 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
-			switch(
-				private$testing_type,
-				wald = private$compute_wald_confidence_interval(alpha),
-				score = private$invert_test_pval_confidence_interval(alpha),
-				lik_ratio = private$invert_lik_ratio_ci_newton(alpha),
-				stop("Unsupported testing_type: ", private$testing_type)
-			)
+			private$compute_wald_confidence_interval_impl(alpha)
 		},
 
 		#' @description
@@ -36,22 +30,16 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
-			switch(
-				private$testing_type,
-				wald = private$compute_wald_two_sided_pval_impl(delta),
-				score = private$compute_score_two_sided_pval_impl(delta),
-				lik_ratio = private$compute_lik_ratio_two_sided_pval_impl(delta),
-				stop("Unsupported testing_type: ", private$testing_type)
-			)
+			private$compute_wald_two_sided_pval_impl(delta)
 		},
 
 		#' @description
 		#' Sets the asymptotic testing method used by p-values and CIs.
 		#'
-		#' @param testing_type One of \code{"wald"}, \code{"score"}, or \code{"lik_ratio"}.
+		#' @param testing_type One of \code{"wald"}, \code{"score"}, \code{"gradient"}, or \code{"lik_ratio"}.
 		#'
 		#' @return The inference object, invisibly.
-		set_testing_type = function(testing_type = c("wald", "score", "lik_ratio")){
+		set_testing_type = function(testing_type = c("wald", "score", "gradient", "lik_ratio")){
 			testing_type = private$normalize_testing_type(testing_type)
 			supported = private$get_supported_testing_types_impl()
 			if (!testing_type %in% supported) {
@@ -83,6 +71,7 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			}
 			private$information_preference = information_preference
 			private$information_source_used = NULL
+			private$clear_likelihood_test_eval_cache()
 			invisible(self)
 		},
 
@@ -124,24 +113,20 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 		},
 
 		#' @description
+		#' Computes the Wald confidence interval regardless of configured testing type.
+		#' @param alpha Significance level. Default 0.05.
+		compute_wald_confidence_interval = function(alpha = 0.05){
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
+			private$compute_wald_confidence_interval_impl(alpha)
+		},
+
+		#' @description
 		#' Computes the score two-sided p-value regardless of configured testing type.
 		#' @param delta Null treatment effect.
 		compute_score_two_sided_pval = function(delta = 0){
 			private$compute_score_two_sided_pval_impl(delta)
-		},
-
-		#' @description
-		#' Computes the likelihood-ratio two-sided p-value regardless of configured testing type.
-		#' @param delta Null treatment effect.
-		compute_lik_ratio_two_sided_pval = function(delta = 0){
-			private$compute_lik_ratio_two_sided_pval_impl(delta)
-		},
-
-		#' @description
-		#' Computes the likelihood-ratio two-sided p-value regardless of configured testing type.
-		#' @param delta Null treatment effect.
-		compute_likelihood_ratio_two_sided_pval = function(delta = 0){
-			private$compute_lik_ratio_two_sided_pval_impl(delta)
 		},
 
 		#' @description
@@ -193,7 +178,7 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 		get_degrees_of_freedom = function() NA_real_,
 
 		get_supported_testing_types_impl = function(){
-			if (isTRUE(private$supports_likelihood_tests())) c("wald", "score", "lik_ratio") else "wald"
+			if (isTRUE(private$supports_likelihood_tests())) c("wald", "score", "gradient", "lik_ratio") else "wald"
 		},
 
 		get_supported_information_preferences_impl = function(){
@@ -238,11 +223,12 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 				testing_type,
 				wald = "wald",
 				score = "score",
+				gradient = "gradient",
 				lr = "lik_ratio",
 				lrt = "lik_ratio",
 				lik_ratio = "lik_ratio",
 				likelihood_ratio = "lik_ratio",
-				stop("testing_type must be one of: wald, score, lik_ratio", call. = FALSE)
+				stop("testing_type must be one of: wald, score, gradient, lik_ratio", call. = FALSE)
 			)
 		},
 
@@ -259,127 +245,7 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			)
 		},
 
-		get_information_matrix = function(spec = NULL, fit = NULL){
-			if (is.null(spec)) {
-				spec = private$get_likelihood_test_spec()
-			}
-			if (is.null(spec)) return(NULL)
-			if (is.null(fit)) {
-				fit = spec$full_fit %||% private$cached_mod
-			}
-			if (is.null(fit)) return(NULL)
-
-			extract_fisher = function(){
-				tryCatch({
-					if (!is.null(spec$fisher_information)) {
-						spec$fisher_information(fit)
-					} else if (!is.null(fit$fisher_information)) {
-						fit$fisher_information
-					} else if (identical(fit$information_type %||% "", "fisher") && !is.null(fit$information)) {
-						fit$information
-					} else {
-						NULL
-					}
-				}, error = function(e) NULL)
-			}
-
-			extract_observed = function(){
-				tryCatch({
-					if (!is.null(spec$observed_information)) {
-						spec$observed_information(fit)
-					} else if (!is.null(fit$observed_information)) {
-						fit$observed_information
-					} else if (identical(fit$information_type %||% "", "observed") && !is.null(fit$information)) {
-						fit$information
-					} else {
-						NULL
-					}
-				}, error = function(e) NULL)
-			}
-
-			extract_legacy = function(){
-				tryCatch({
-					if (!is.null(spec$information)) {
-						spec$information(fit)
-					} else {
-						fit$information
-					}
-				}, error = function(e) NULL)
-			}
-
-			preference = private$information_preference
-			if (identical(preference, "auto")) {
-				preference = private$get_default_information_source()
-			}
-			if (identical(preference, "fisher")) {
-				information = extract_fisher()
-				if (is.null(information)) {
-					stop(class(self)[1], " does not expose Fisher information for information-backed inference.", call. = FALSE)
-				}
-				private$information_source_used = "fisher"
-				return(information)
-			}
-
-			if (identical(preference, "observed")) {
-				information = extract_observed()
-				if (is.null(information)) {
-					stop(class(self)[1], " does not expose observed information for information-backed inference.", call. = FALSE)
-				}
-				private$information_source_used = "observed"
-				return(information)
-			}
-
-			information = extract_fisher()
-			if (!is.null(information)) {
-				private$information_source_used = "fisher"
-				return(information)
-			}
-			information = extract_observed()
-			if (!is.null(information)) {
-				private$information_source_used = "observed"
-				return(information)
-			}
-			information = extract_legacy()
-			if (!is.null(information)) {
-				private$information_source_used = "legacy"
-			}
-			information
-		},
-
-		compute_variance_from_information_matrix = function(information, j){
-			information = as.matrix(information)
-			if (!is.matrix(information) || nrow(information) != ncol(information) || length(j) != 1L ||
-				!is.finite(j) || j < 1L || j > nrow(information)) {
-				return(NA_real_)
-			}
-			if (nrow(information) == 1L) {
-				val = as.numeric(information[1L, 1L])
-				return(if (is.finite(val) && val > 0) 1 / val else NA_real_)
-			}
-			vcov = tryCatch(solve(information), error = function(e) NULL)
-			if (is.null(vcov) || any(!is.finite(vcov))) {
-				vcov = tryCatch(qr.solve(information, diag(nrow(information))), error = function(e) NULL)
-			}
-			if (is.null(vcov) || any(!is.finite(vcov))) return(NA_real_)
-			vcov = (vcov + t(vcov)) / 2
-			as.numeric(vcov[j, j])
-		},
-
-		compute_standard_error_from_information_matrix = function(spec = NULL, fit = NULL, j = NULL){
-			if (is.null(spec)) {
-				spec = private$get_likelihood_test_spec()
-			}
-			if (is.null(spec)) return(NA_real_)
-			if (is.null(j)) {
-				j = as.integer(spec$j)
-			}
-			information = tryCatch(private$get_information_matrix(spec = spec, fit = fit), error = function(e) NULL)
-			if (is.null(information)) return(NA_real_)
-			variance = private$compute_variance_from_information_matrix(information, j)
-			if (is.finite(variance) && variance >= 0) sqrt(variance) else NA_real_
-		},
-
-		compute_wald_confidence_interval = function(alpha){
+		compute_wald_confidence_interval_impl = function(alpha){
 			est = self$compute_estimate()
 			se = private$get_standard_error()
 			df = private$get_degrees_of_freedom()
@@ -407,141 +273,6 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			} else {
 				2 * stats::pnorm(-abs(t_stat))
 			}
-		},
-
-		compute_score_two_sided_pval_impl = function(delta){
-			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "score")
-		},
-
-		compute_lik_ratio_two_sided_pval_impl = function(delta){
-			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "lik_ratio")
-		},
-
-		get_likelihood_test_spec = function(){
-			NULL
-		},
-
-		make_warm_fit_null_wrapper = function(spec, cache_key){
-			last_start = NULL
-			last_delta = NULL
-			fit_null_formals = tryCatch(names(formals(spec$fit_null)), error = function(e) character())
-			accepts_start = "start" %in% fit_null_formals
-			function(delta){
-				warm_enabled = isTRUE(private$null_fit_warm_start_enabled)
-				cache_state = if (warm_enabled) private$get_likelihood_null_warm_state(cache_key) else NULL
-				start = if (warm_enabled) last_start else NULL
-				if (warm_enabled && is.null(start) && !is.null(cache_state)) start = cache_state$start
-				fit = tryCatch(
-					if (accepts_start) spec$fit_null(delta, start = start) else spec$fit_null(delta),
-					error = function(e) NULL
-				)
-				extract_start = spec$extract_start %||% function(fit_obj) NULL
-				last_start <<- if (warm_enabled && accepts_start) tryCatch(extract_start(fit), error = function(e) NULL) else NULL
-				last_delta <<- delta
-				if (warm_enabled && accepts_start) {
-					private$set_likelihood_null_warm_state(cache_key, delta = delta, start = last_start)
-				}
-				fit
-			}
-		},
-
-		compute_likelihood_test_two_sided_pval = function(delta, testing_type){
-			spec = private$get_likelihood_test_spec()
-			if (is.null(spec)) {
-				stop(class(self)[1], " does not expose a likelihood-test specification.", call. = FALSE)
-			}
-
-			j = as.integer(spec$j)
-			if (length(j) != 1L || !is.finite(j) || j < 1L) return(NA_real_)
-
-			fit_null = private$make_warm_fit_null_wrapper(spec, cache_key = paste0("likelihood_test:", testing_type))
-			null_fit = tryCatch(fit_null(delta), error = function(e) NULL)
-			if (is.null(null_fit) || is.null(null_fit$b) && is.null(null_fit$params)) {
-				return(NA_real_)
-			}
-
-			if (testing_type == "score") {
-				score = tryCatch(spec$score(null_fit), error = function(e) NULL)
-				information = tryCatch(private$get_information_matrix(spec = spec, fit = null_fit), error = function(e) NULL)
-				if (is.null(score) || is.null(information)) return(NA_real_)
-				res = score_test_from_score_information_cpp(as.numeric(score), as.matrix(information), j)
-				return(as.numeric(res$p_value %||% res))
-			}
-
-			if (testing_type == "lik_ratio") {
-				full_negloglik = tryCatch(spec$neg_loglik(spec$full_fit), error = function(e) NA_real_)
-				null_negloglik = tryCatch(spec$neg_loglik(null_fit), error = function(e) NA_real_)
-				if (!is.finite(full_negloglik) || !is.finite(null_negloglik)) return(NA_real_)
-				res = likelihood_ratio_test_from_negloglik_cpp(full_negloglik, null_negloglik, df = 1L)
-				return(as.numeric(res$p_value %||% res))
-			}
-
-			stop("Unsupported testing_type: ", testing_type, call. = FALSE)
-		},
-
-		invert_test_pval_confidence_interval = function(alpha){
-			est = self$compute_estimate()
-			if (!is.finite(est)) return(c(NA_real_, NA_real_))
-
-			se = private$get_standard_error()
-			step = if (is.finite(se) && se > 0) se else max(abs(est), 1)
-			step = max(step, 1e-4)
-			wald_ci = private$compute_wald_confidence_interval(alpha)
-			lower_seed = if (length(wald_ci) >= 1L && is.finite(wald_ci[[1L]])) wald_ci[[1L]] else NA_real_
-			upper_seed = if (length(wald_ci) >= 2L && is.finite(wald_ci[[2L]])) wald_ci[[2L]] else NA_real_
-
-			pval_fn = function(delta) self$compute_asymp_two_sided_pval(delta)
-
-			ci_vals = pval_invert_ci_cpp(
-				pval_fn    = pval_fn,
-				est        = est,
-				alpha      = alpha,
-				step       = step,
-				lower_seed = lower_seed,
-				upper_seed = upper_seed
-			)
-
-			ci = c(ci_vals[1L], ci_vals[2L])
-			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
-			ci
-		},
-
-		invert_lik_ratio_ci_newton = function(alpha){
-			spec = private$get_likelihood_test_spec()
-			if (is.null(spec)) return(private$invert_test_pval_confidence_interval(alpha))
-
-			est = self$compute_estimate()
-			if (!is.finite(est)) return(c(NA_real_, NA_real_))
-
-			full_negloglik = tryCatch(spec$neg_loglik(spec$full_fit), error = function(e) NA_real_)
-			if (!is.finite(full_negloglik)) return(private$invert_test_pval_confidence_interval(alpha))
-
-			se = private$get_standard_error()
-			step = if (is.finite(se) && se > 0) se else max(abs(est), 1)
-			step = max(step, 1e-4)
-			wald_ci = private$compute_wald_confidence_interval(alpha)
-			lower_seed = if (length(wald_ci) >= 1L && is.finite(wald_ci[[1L]])) wald_ci[[1L]] else est - step
-			upper_seed = if (length(wald_ci) >= 2L && is.finite(wald_ci[[2L]])) wald_ci[[2L]] else est + step
-
-			j = as.integer(spec$j)
-			fit_null_fn = private$make_warm_fit_null_wrapper(spec, cache_key = "lik_ratio_ci")
-
-			ci_vals = lrt_ci_nr_cpp(
-				fit_null_fn    = fit_null_fn,
-				neg_loglik_fn  = spec$neg_loglik,
-				score_fn       = spec$score,
-				est            = est,
-				full_negloglik = full_negloglik,
-				alpha          = alpha,
-				step           = step,
-				lower_seed     = lower_seed,
-				upper_seed     = upper_seed,
-				j              = j
-			)
-
-			ci = c(ci_vals[1L], ci_vals[2L])
-			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
-			ci
 		},
 
 		supports_reusable_bootstrap_worker = function(){

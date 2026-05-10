@@ -5,7 +5,7 @@
 #' @keywords internal
 InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 	lock_objects = FALSE,
-	inherit = InferenceAsymp,
+	inherit = InferenceAsympLik,
 	public = list(
 
 		#' @description
@@ -22,15 +22,15 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#' @param harden Whether to apply robustness measures.
 		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_default = TRUE){
 			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")) {
-					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14) or FixedDesignBinaryMatch.")
+				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")) {
+					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14) or DesignFixedBinaryMatch.")
 				}
 			}
 			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_default = smart_default)
 				if (private$has_match_structure){
 					# For fixed binary matching, we need to ensure pairs are computed first
-					if (inherits(des_obj, "FixedDesignBinaryMatch")){
-						des_obj$.__enclos_env__$private$ensure_bms_computed()
+					if (inherits(des_obj, "DesignFixedBinaryMatch")){
+						des_obj$.__enclos_env__$private$ensure_matching_structure_computed()
 					}
 					private$m = des_obj$.__enclos_env__$private$m
 					private$compute_basic_match_data()
@@ -89,12 +89,12 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 
 					# Let Design initialise and own the bootstrap pair structure
 					des_priv = private$des_obj_priv_int
-					.init_kk_bootstrap_structure(des_priv)
-					n_reservoir = des_priv$kk_boot_n_reservoir
-					m            = nrow(des_priv$kk_boot_pair_rows)
+					des_priv$init_matching_bootstrap_structure()
+					n_reservoir = des_priv$boot_n_reservoir
+					m            = nrow(des_priv$boot_pair_rows)
 
 					# For the C++ fast-path we still need i_reservoir / m_vec in Inference scope
-					i_reservoir  = des_priv$kk_boot_i_reservoir
+					i_reservoir  = des_priv$boot_i_reservoir
 					m_vec = private$m
 					if (is.null(m_vec)) m_vec = rep(0L, n)
 					m_vec = as.integer(m_vec)
@@ -281,6 +281,9 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 	private = list(
 
 		m = NULL,
+		supports_likelihood_tests = function(){
+			FALSE
+		},
 
 		use_reusable_kk_bootstrap_worker = function(){
 			TRUE
@@ -327,7 +330,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 			worker_priv$w = worker_state$base_w[i_b]
 			worker_priv$X = worker_state$base_X[i_b, , drop = FALSE]
 			worker_priv$cached_values = list(
-				KKstats = compute_bootstrap_kk_stats_cpp(
+				KKstats = compute_bootstrap_matching_stats_cpp(
 					X = worker_state$base_X,
 					y = worker_state$base_y,
 					w = worker_state$base_w,

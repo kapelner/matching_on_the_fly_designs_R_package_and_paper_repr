@@ -267,7 +267,7 @@ List compute_zhang_match_data_cpp(const NumericMatrix& X,
 }
 
 // [[Rcpp::export]]
-List compute_kk_wy_stats_cpp(const IntegerVector& w,
+List compute_matching_wy_stats_cpp(const IntegerVector& w,
                               const NumericVector& y,
                               const IntegerVector& m_vec) {
   const int n = w.size();

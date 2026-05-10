@@ -197,8 +197,10 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		m_mat = permutations$m_mat
 		nsim_local = ncol(w_mat)
 		if (is.null(m_mat)) {
+			n_subjects = nrow(w_mat)
 			m_vec = as.integer(private$des_obj_priv_int$m)
-			m_mat = matrix(rep(m_vec, nsim_local), nrow = length(m_vec), ncol = nsim_local)
+			if (length(m_vec) != n_subjects) m_vec = rep(0L, n_subjects)
+			m_mat = matrix(rep(m_vec, nsim_local), nrow = n_subjects, ncol = nsim_local)
 		}
 		
 		# The Bai statistic is the treatment estimate itself (beta_hat_T)
@@ -208,7 +210,7 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 			as.numeric(y),
 			as.numeric(delta),
 			halves_idx,
-			as.logical(private$convex_flag),
+			isTRUE(private$convex_flag),
 			private$n_cpp_threads(ncol(w_mat))
 		)
 		return(res)

@@ -342,7 +342,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			if (!is.finite(T_obs)) return(NA_real_)
 
 			T_rand = replicate(private$nsim_rand, {
-				signs = sample(c(-1L, 1L), m, replace = TRUE)
+				signs = 2L * sample_int_replace_cpp(2L, m) - 3L
 				private$qr_intercept_pairs(
 					signs * yd_adj,
 					sweep(Xd, 1L, signs, `*`),

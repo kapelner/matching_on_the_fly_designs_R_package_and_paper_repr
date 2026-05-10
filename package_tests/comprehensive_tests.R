@@ -1,9 +1,11 @@
 #libreoffice --calc /home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/package_tests/calc_external_links/comprehensive_tests_results_nc_1_links.fods
 rm(list = ls())
 set.seed(1)
-devtools::load_all("EDI")
 
 pacman::p_load(doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table, profvis)
+suppressPackageStartupMessages(library(EDI))
+source("EDI/tests/testthat/helper-likelihood-method-smoke.R")
+
 max_n_dataset = 148 #needs to be divisible by 4 for some blocking designs
 source("package_tests/_dataset_load.R")
 # options(error = recover)
@@ -34,6 +36,7 @@ if (!is.na(DESIGN_TYPE_FILTER) && !(DESIGN_TYPE_FILTER %in% ALL_DESIGN_TYPES)) {
 }
 set_num_cores(NUM_CORES)
 toggle_asserts(FALSE)
+run_likelihood_method_smoke_suite()
 
 prob_censoring = 0.15
 r = 351
@@ -261,6 +264,19 @@ log_progress = function(msg){
 	flush.console()
 }
 
+inference_banner = function(inf_name, mf = NULL){
+	if (is.null(mf)) {
+		mf = if (exists("model_formula", envir = .GlobalEnv)) get("model_formula", envir = .GlobalEnv) else NULL
+	}
+	pending_banner <<- sprintf("\n\n  == Inference: %s design_type = %s dataset = %s response_type = %s beta_T = [%s] num_cores = [%d] rep = [%d/%d]%s\n", 
+	  inf_name, 
+	  if (exists("design_type", envir = .GlobalEnv)) get("design_type", envir = .GlobalEnv) else "unknown",
+	  if (exists("dataset_name", envir = .GlobalEnv)) get("dataset_name", envir = .GlobalEnv) else "unknown",
+	  if (exists("response_type", envir = .GlobalEnv)) get("response_type", envir = .GlobalEnv) else "unknown",
+	  format(beta_T), NUM_CORES, rep_curr, Nrep,
+	  if (!is.null(mf)) paste0(" formula = [", deparse(mf), "]") else "")
+}
+
 record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, inference_class, function_run, result, status, duration_time_sec, error_message = NA_character_){
 	result_vec = if (is.null(result)) {
 		NA_character_
@@ -325,16 +341,16 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 
 run_inference_checks_both_paths = function(class_gen, class_name, des_obj, response_type, design_type, dataset_name, n_rows, n_cols, model_formula = NULL, ...){
 	# Univariate path
-	inference_banner(paste0(class_name, " (Univ)"))
+	inference_banner(paste0(class_name, " (Univ)"), mf = ~ 1)
 	run_inference_checks(class_gen$new(des_obj, model_formula = ~ 1, ...), response_type, design_type, dataset_name, n_rows, n_cols)
 	
 	# Multivariate path
-	inference_banner(paste0(class_name, " (Multi)"))
+	inference_banner(paste0(class_name, " (Multi)"), mf = ~ .)
 	run_inference_checks(class_gen$new(des_obj, model_formula = ~ ., ...), response_type, design_type, dataset_name, n_rows, n_cols)
 }
 
-run_inference_checks = function(seq_des_inf, response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols){
-	skip_slow = FALSE
+run_inference_checks = function(seq_des_inf, response_type, design_type, dataset_name, dataset_n_rows, dataset_n_cols, exhaustive_sweep = FALSE){
+	skip_slow = exhaustive_sweep
 	B_debug = min(51L, as.integer(r))
 	r_debug = min(51L, as.integer(r))
 	is_any_inference_class = function(classes){
@@ -460,10 +476,16 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 			identical(label, "compute_asymp_two_sided_pval")
 	}
 
-	is_explicitly_nonestimable = function(obj){
-		if (is.null(obj) || !is.function(obj$is_nonestimable)) return(FALSE)
-		isTRUE(tryCatch(obj$is_nonestimable(), error = function(e) FALSE))
-	}
+is_explicitly_nonestimable = function(obj){
+	if (is.null(obj) || !is.function(obj$is_nonestimable)) return(FALSE)
+	isTRUE(tryCatch(obj$is_nonestimable(), error = function(e) FALSE))
+}
+
+supports_direct_testing_type = function(testing_type){
+	if (is.null(seq_des_inf) || !is.function(seq_des_inf$get_supported_testing_types)) return(FALSE)
+	supported = tryCatch(seq_des_inf$get_supported_testing_types(), error = function(e) character())
+	testing_type %in% supported
+}
 
 	should_record_nonestimable_as_missing = function(obj, label, result = NULL){
 		if (!is_explicitly_nonestimable(obj)) return(FALSE)
@@ -627,8 +649,33 @@ safe_call = function(label, expr){
 			} else {
 				stop(e$message)
 			}
-		})
+	})
+}
+
+call_direct_asymp = function(method_name, testing_type, ...){
+	if (!method_name %in% names(seq_des_inf)) return(invisible(NULL))
+	if (!supports_direct_testing_type(testing_type)) {
+		message("          Skipping ", method_name, " (not implemented for testing_type = ", testing_type, ")")
+		return(invisible(NULL))
 	}
+	method_fn = seq_des_inf[[method_name]]
+	if (!is.function(method_fn)) return(invisible(NULL))
+	result = tryCatch(
+		do.call(method_fn, list(...)),
+		error = function(e){
+			msg = if (length(e$message) == 0L) "" else e$message
+			if (grepl("Must be implemented by concrete class or shared helper.", msg, fixed = TRUE) ||
+			    grepl("not implemented", msg, ignore.case = TRUE) ||
+			    grepl("must implement", msg, ignore.case = TRUE)) {
+				message("          Skipping ", method_name, " (not implemented)")
+				return(structure(list(skipped = TRUE), class = "edi_skip_direct"))
+			}
+			stop(e)
+		}
+	)
+if (inherits(result, "edi_skip_direct")) return(invisible(NULL))
+	safe_call(method_name, result)
+}
 
 	if (is(seq_des_inf, "InferenceOrdinalJonckheereTerpstraTest")){
 		safe_call("compute_exact_two_sided_pval_for_treatment_effect", seq_des_inf$compute_exact_two_sided_pval_for_treatment_effect())
@@ -650,9 +697,17 @@ safe_call = function(label, expr){
 		if ("compute_asymp_two_sided_pval" %in% names(seq_des_inf)) {
 			safe_call("compute_asymp_two_sided_pval", seq_des_inf$compute_asymp_two_sided_pval())
 		}
+		call_direct_asymp("compute_wald_two_sided_pval", "wald")
+		call_direct_asymp("compute_score_two_sided_pval", "score")
+		call_direct_asymp("compute_lik_ratio_two_sided_pval", "lik_ratio")
+		call_direct_asymp("compute_gradient_two_sided_pval", "gradient")
 	}
 	if (!skip_ci){
 		safe_call("compute_asymp_confidence_interval", seq_des_inf$compute_asymp_confidence_interval(0.05))
+		call_direct_asymp("compute_wald_confidence_interval", "wald", 0.05)
+		call_direct_asymp("compute_score_confidence_interval", "score", 0.05)
+		call_direct_asymp("compute_lik_ratio_confidence_interval", "lik_ratio", 0.05)
+		call_direct_asymp("compute_gradient_confidence_interval", "gradient", 0.05)
 	}
 	safe_call_debug = function(label, expr) {
 		if (is_row_completed(rep_curr, beta_T, dataset_name, response_type, design_type, class(seq_des_inf)[1], label)) {
@@ -748,13 +803,63 @@ safe_call = function(label, expr){
 	}
 }
 
-run_tests_for_response = function(response_type, design_type, dataset_name, model_formula = NULL){
-	inference_banner = function(inf_name){
-		pending_banner <<- sprintf("\n\n  == Inference: %s design_type = %s dataset = %s response_type = %s beta_T = [%s] num_cores = [%d] rep = [%d/%d]%s\n", 
-		  inf_name, design_type, dataset_name, response_type, format(beta_T), NUM_CORES, rep_curr, Nrep,
-		  if (!is.null(model_formula)) paste0(" formula = [", deparse(model_formula), "]") else "")
+instantiate_inference_generator = function(class_gen, des_obj, model_formula = NULL){
+	init_formals = tryCatch(names(formals(class_gen$public_methods$initialize)), error = function(e) character())
+	candidate_arg_sets = list(
+		list(des_obj = des_obj, model_formula = model_formula, verbose = FALSE),
+		list(des_obj = des_obj, model_formula = model_formula),
+		list(des_obj = des_obj, verbose = FALSE),
+		list(des_obj = des_obj)
+	)
+	for (args in candidate_arg_sets){
+		args = args[names(args) %in% init_formals]
+		obj = tryCatch(do.call(class_gen$new, args), error = function(e) NULL)
+		if (!is.null(obj)) return(obj)
 	}
+	NULL
+}
 
+run_exhaustive_remaining_inference_classes = function(des_obj, response_type, design_type, dataset_name, n_rows, n_cols, model_formula = NULL){
+	ns = asNamespace("EDI")
+	nms = ls(ns, all.names = TRUE)
+	gen_names = nms[vapply(nms, function(nm) inherits(get(nm, envir = ns), "R6ClassGenerator"), logical(1))]
+	gen_names = gen_names[grepl("^Inference", gen_names)]
+	gen_names = gen_names[!grepl("Abstract|Suite|Custom|RandCI$", gen_names)]
+	gen_names = setdiff(gen_names, c(
+		"Inference",
+		"InferenceAsymp",
+		"InferenceBoot",
+		"InferenceRand",
+		"InferenceExact",
+		"InferenceKKPassThrough",
+		"InferenceKKPassThroughCompound",
+		"InferenceMLEorKMforGLMs",
+		"InferenceMLEorKMSummaryTable",
+		"InferenceCustomAsymp",
+		"InferenceCustomBoot",
+		"InferenceCustomRand",
+		"InferenceRandCI",
+		"InferenceQuantileRandCI"
+	))
+	for (class_name in sort(unique(gen_names))){
+		class_gen = get(class_name, envir = ns)
+		inf_obj = instantiate_inference_generator(class_gen, des_obj, model_formula = model_formula)
+		if (is.null(inf_obj)) next
+		class_label = class(inf_obj)[1L]
+		if (!startsWith(class_label, "Inference")) next
+		inference_banner(class_label)
+		tryCatch({
+			run_inference_checks(inf_obj, response_type, design_type, dataset_name, n_rows, n_cols, exhaustive_sweep = TRUE)
+		}, error = function(e){
+			msg = if (length(e$message) == 0L) "" else e$message
+			message("  Skipping ", class_label, " (exhaustive sweep): ", msg)
+			return(invisible(NULL))
+		})
+	}
+	invisible(NULL)
+}
+
+run_tests_for_response = function(response_type, design_type, dataset_name, model_formula = NULL){
 	apply_treatment_effect_and_noise = function(y_t, w_t, response_type){
 		eps = rnorm(1, 0, SD_NOISE)
 		bt = ifelse(w_t == 1, beta_T, 0)
@@ -862,17 +967,17 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 		RandomBlockSize = DesignSeqOneByOneRandomBlockSize$new( strata_cols = strata_cols_to_use, response_type = response_type, n = n, model_formula = design_formula),
 		SPBR =         DesignSeqOneByOneSPBR$new(        strata_cols = strata_cols_to_use, block_size = 4, response_type = response_type, n = n, model_formula = design_formula),
 		PocockSimon =  DesignSeqOneByOnePocockSimon$new( strata_cols = strata_cols_to_use, response_type = response_type, n = n, model_formula = design_formula),
-		FixedBernoulli = FixedDesignBernoulli$new( response_type = response_type, n = n, model_formula = design_formula),
-		FixediBCRD =     FixedDesigniBCRD$new(     response_type = response_type, n = n, model_formula = design_formula),
-		FixedBlocking =  FixedDesignBlocking$new(  strata_cols = strata_cols_to_use, response_type = response_type, n = n, model_formula = design_formula),
-		FixedCluster =   FixedDesignCluster$new(   cluster_col = cluster_design_setup$cluster_col, response_type = response_type, n = n, model_formula = design_formula),
-		FixedBlockedCluster = FixedDesignBlockedCluster$new( strata_cols = names(X_design)[2:min(2, ncol(X_design))], cluster_col = cluster_design_setup$cluster_col, response_type = response_type, n = n, model_formula = design_formula),
-		FixedBinaryMatch = FixedDesignBinaryMatch$new( response_type = response_type, n = n, model_formula = design_formula),
-		FixedGreedy =    FixedDesignGreedy$new(    response_type = response_type, n = n, model_formula = design_formula),
-		FixedRerandomization = FixedDesignRerandomization$new( response_type = response_type, n = n, model_formula = design_formula),
-		FixedMatchingGreedy = FixedDesignMatchingGreedyPairSwitching$new( response_type = response_type, n = n, model_formula = design_formula),
-		FixedDOptimal =  FixedDesignDOptimal$new(  response_type = response_type, n = n, model_formula = design_formula),
-		FixedAOptimal =  FixedDesignAOptimal$new(  response_type = response_type, n = n, model_formula = design_formula),
+		FixedBernoulli = DesignFixedBernoulli$new( response_type = response_type, n = n, model_formula = design_formula),
+		FixediBCRD =     DesignFixediBCRD$new(     response_type = response_type, n = n, model_formula = design_formula),
+		FixedBlocking =  DesignFixedBlocking$new(  strata_cols = strata_cols_to_use, response_type = response_type, n = n, model_formula = design_formula),
+		FixedCluster =   DesignFixedCluster$new(   cluster_col = cluster_design_setup$cluster_col, response_type = response_type, n = n, model_formula = design_formula),
+		FixedBlockedCluster = DesignFixedBlockedCluster$new( strata_cols = names(X_design)[2:min(2, ncol(X_design))], cluster_col = cluster_design_setup$cluster_col, response_type = response_type, n = n, model_formula = design_formula),
+		FixedBinaryMatch = DesignFixedBinaryMatch$new( response_type = response_type, n = n, model_formula = design_formula),
+		FixedGreedy =    DesignFixedGreedy$new(    response_type = response_type, n = n, model_formula = design_formula),
+		FixedRerandomization = DesignFixedRerandomization$new( response_type = response_type, n = n, model_formula = design_formula),
+		FixedMatchingGreedy = DesignFixedMatchingGreedyPairSwitching$new( response_type = response_type, n = n, model_formula = design_formula),
+		FixedDOptimal =  DesignFixedDOptimal$new(  response_type = response_type, n = n, model_formula = design_formula),
+		FixedAOptimal =  DesignFixedAOptimal$new(  response_type = response_type, n = n, model_formula = design_formula),
 		stop("Unsupported design_type: ", design_type)
 	), error = function(e){ message("    Skipping design (creation error): ", e$message); NULL })
 	if (is.null(des_obj)) return(invisible(NULL))
@@ -888,7 +993,7 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 		}, error = function(e){ message("    Skipping design (seq error): ", e$message); FALSE })
 		if (!seq_ok) return(invisible(NULL))
 	} else {
-		# It is a FixedDesign but not a DesignSeqOneByOne
+		# It is a DesignFixed but not a DesignSeqOneByOne
 		des_obj$add_all_subjects_to_experiment(X_design_for_design)
 		randomize_ok = tryCatch({ des_obj$assign_w_to_all_subjects(); TRUE }, error = function(e){ message("    Skipping design: ", e$message); FALSE })
 		if (!randomize_ok) return(invisible(NULL))
@@ -1176,6 +1281,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 		inference_banner("InferenceOrdinalRidit")
 		run_inference_checks(InferenceOrdinalRidit$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 	}
+
+	run_exhaustive_remaining_inference_classes(des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
 }
 
 

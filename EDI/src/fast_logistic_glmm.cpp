@@ -392,14 +392,20 @@ List fast_logistic_glmm_cpp(
 	}
 
 	// Remove soft-barrier penalty from neg_ll so it reflects the true neg log-likelihood
-	const double pen = log_sigma_penalty(par[total - 1]);
-	const double true_neg_ll = neg_ll - pen;
-	Eigen::VectorXd score(total);
-	obj(par, score);
-	score[total - 1] -= log_sigma_penalty_grad(par[total - 1]);
-	score = -score;
-	Eigen::MatrixXd information = obj.hessian(par);
-	information(total - 1, total - 1) -= log_sigma_penalty_hessian(par[total - 1]);
+	double true_neg_ll = neg_ll;
+	Eigen::VectorXd score = Eigen::VectorXd::Constant(total, NA_REAL);
+	Eigen::MatrixXd information = Eigen::MatrixXd::Constant(total, total, NA_REAL);
+	try {
+		const double pen = log_sigma_penalty(par[total - 1]);
+		true_neg_ll = neg_ll - pen;
+		obj(par, score);
+		score[total - 1] -= log_sigma_penalty_grad(par[total - 1]);
+		score = -score;
+		information = obj.hessian(par);
+		information(total - 1, total - 1) -= log_sigma_penalty_hessian(par[total - 1]);
+	} catch (...) {
+		converged = false;
+	}
 
 	double ssq_b_T = NA_REAL;
 	Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(total, total, NA_REAL);

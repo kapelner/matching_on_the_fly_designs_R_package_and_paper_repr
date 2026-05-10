@@ -42,6 +42,7 @@ InferenceIncidModifiedPoisson = R6::R6Class("InferenceIncidModifiedPoisson",
 
 	private = list(
 		best_X_colnames = NULL,
+		cached_mod = NULL,
 
 		build_design_matrix = function(){
 			X_cov = private$X
@@ -82,6 +83,56 @@ InferenceIncidModifiedPoisson = R6::R6Class("InferenceIncidModifiedPoisson",
 			TRUE
 		},
 
+		supports_likelihood_tests = function(){
+			TRUE
+		},
+
+		get_likelihood_test_spec = function(){
+			private$shared(estimate_only = FALSE)
+			ctx = private$cached_values$likelihood_test_context
+			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+			X_fit = ctx$X
+			y = as.numeric(private$y)
+			j_treat = as.integer(ctx$j_treat)
+			list(
+				X = X_fit,
+				y = y,
+				j = j_treat,
+				full_fit = private$cached_mod,
+				fit_null = function(delta, start = NULL){
+					start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit))
+					fast_poisson_regression_with_var_cpp(
+						X = X_fit,
+						y = y,
+						j = j_treat,
+						start_beta = start_beta,
+						fixed_idx = j_treat,
+						fixed_values = delta,
+						smart_start = TRUE
+					)
+				},
+				extract_start = function(fit){
+					as.numeric(fit$b)
+				},
+				score = function(fit){
+					as.numeric(fit$score %||% get_poisson_regression_score_cpp(X_fit, y, as.numeric(fit$b)))
+				},
+				observed_information = function(fit){
+					-get_poisson_regression_hessian_cpp(X_fit, as.numeric(fit$b))
+				},
+				fisher_information = function(fit){
+					-get_poisson_regression_hessian_cpp(X_fit, as.numeric(fit$b))
+				},
+				information = function(fit){
+					-get_poisson_regression_hessian_cpp(X_fit, as.numeric(fit$b))
+				},
+				neg_loglik = function(fit){
+					eta = as.numeric(X_fit %*% as.numeric(fit$b))
+					-sum(y * eta - exp(eta) - lgamma(y + 1))
+				}
+			)
+		},
+
 		generate_mod = function(estimate_only = FALSE){
 			# Use the common GLM fitting pattern
 			attempt = private$fit_with_hardened_qr_column_dropping(
@@ -90,7 +141,7 @@ InferenceIncidModifiedPoisson = R6::R6Class("InferenceIncidModifiedPoisson",
 					j_treat = which(keep == 2L)
 					if (estimate_only) {
 						res = fast_poisson_regression_cpp(X = X_fit, y = private$y)
-						list(b = res$b, ssq_b_j = NA_real_, j_treat = j_treat)
+						list(b = res$b, ssq_b_j = NA_real_, j_treat = j_treat, mod = res)
 					} else {
 						res = fast_poisson_regression_with_var_cpp(X = X_fit, y = private$y, j = j_treat)
 						res$j_treat = j_treat
@@ -105,10 +156,15 @@ InferenceIncidModifiedPoisson = R6::R6Class("InferenceIncidModifiedPoisson",
 				}
 			)
 
-			if (!is.null(attempt$fit)){
-				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
+				if (!is.null(attempt$fit)){
+					private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
+					private$cached_mod = attempt$fit$mod %||% attempt$fit
+					private$cached_values$likelihood_test_context = list(X = attempt$X, j_treat = which(attempt$keep == 2L))
+					if (!is.null(attempt$fit$b)) {
+						private$set_fit_warm_start(attempt$fit$b, "beta")
+					}
+				}
+				attempt$fit
 			}
-			attempt$fit
-		}
 	)
 	)

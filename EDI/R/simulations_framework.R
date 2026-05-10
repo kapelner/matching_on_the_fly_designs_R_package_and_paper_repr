@@ -24,11 +24,9 @@
 #   )
 #   sim$run()
 #   sim$summarize()
-
 #' Generate Synthetic Simulation Covariates and Continuous Response
 #'
-#' @description
-#' A helper function to generate synthetic covariates and a latent continuous response
+#' @description A helper function to generate synthetic covariates and a latent continuous response
 #' identical to the logic used within \code{SimulationFramework}.  Covariates may be
 #' supplied directly via \code{X_mat} or drawn randomly via \code{cov_draw_method};
 #' exactly one of the two must be non-\code{NULL}.
@@ -67,7 +65,6 @@ generate_covariate_dataset = function(n, p,
                                       cov_draw_method      = stats::rnorm,
                                       cov_draw_method_args = list(mean = 0, sd = 1)) {
   cond_exp_func_model = match.arg(cond_exp_func_model)
-
   user_supplied_X   = !is.null(X_mat)
   user_supplied_cov = !is.null(cov_draw_method)
   if (user_supplied_X && user_supplied_cov) {
@@ -76,7 +73,6 @@ generate_covariate_dataset = function(n, p,
   if (!user_supplied_X && !user_supplied_cov) {
     stop("generate_covariate_dataset: one of 'X_mat' or 'cov_draw_method' must be non-NULL.")
   }
-
   if (user_supplied_X) {
     if (!is.matrix(X_mat)) X_mat = as.matrix(X_mat)
   } else {
@@ -104,14 +100,11 @@ generate_covariate_dataset = function(n, p,
        5 *  X_mat[, 5L]
     )
   }
-
   list(X = X, y_cont = y_cont)
 }
-
 #' Transform continuous latent signal to the response type scale
 #'
-#' @description
-#' A helper function to transform a latent continuous signal to the scale
+#' @description A helper function to transform a latent continuous signal to the scale
 #' appropriate for a given \code{response_type}, identical to the logic used
 #' within \code{SimulationFramework}.
 #'
@@ -157,10 +150,8 @@ transform_cont_y_based_on_response_type = function(
     stop("Unknown response_type: ", response_type)
   )
 }
-
 # Internal helper for null-coalescing
 `%||%` = function(a, b) if (!is.null(a)) a else b
-
 # Walk an R6 class generator's inheritance chain to find the first class
 # that defines initialize(), and return that function.
 get_r6_init_fn = function(r6gen) {
@@ -172,11 +163,9 @@ get_r6_init_fn = function(r6gen) {
   }
   NULL
 }
-
 #' Simulation Framework for Experimental Designs and Inference Methods
 #'
-#' @description
-#' An R6 class for benchmarking experimental designs and inference methods by
+#' @description An R6 class for benchmarking experimental designs and inference methods by
 #' Monte Carlo simulation. Each replication generates synthetic covariates and
 #' responses, runs every requested \code{(design, inference)} pair, and records
 #' point estimates, confidence intervals, and p-values. Aggregated metrics are
@@ -241,10 +230,8 @@ get_r6_init_fn = function(r6gen) {
 #' @export
 SimulationFramework = R6::R6Class("SimulationFramework",
   lock_objects = FALSE,
-
   # ── public ─────────────────────────────────────────────────────────────────
   public = list(
-
     #' @description
     #' Create a new \code{SimulationFramework}.
     #'
@@ -256,7 +243,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #' @param design_classes_and_params \code{NULL} (default) or a list
     #'   describing design classes and optional constructor parameters.
     #'   Unnamed R6 class generators use default parameters, for example
-    #'   \code{list(DesignSeqOneByOneKK21, FixedDesignBernoulli)}.  Named
+    #'   \code{list(DesignSeqOneByOneKK21, DesignFixedBernoulli)}.  Named
     #'   entries use the entry name as the design class and the value as the
     #'   parameter list, for example
     #'   \code{list(DesignSeqOneByOneUrn = list(alpha = 2, beta = 2))}.
@@ -273,7 +260,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   \preformatted{design_classes_and_params = list(
     #'   DesignSeqOneByOneKK21 = list(lambda = 0.5, t_0_pct = 0.1),
     #'   DesignSeqOneByOneUrn  = list(alpha  = 2,   beta    = 2),
-    #'   FixedDesignBernoulli  # default params
+    #'   DesignFixedBernoulli  # default params
     #' )}
     #'   Commonly useful design constructor parameters:
     #'   \describe{
@@ -285,8 +272,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'     \item{\code{alpha}, \code{beta}}{Shape parameters for
     #'       \code{DesignSeqOneByOneUrn}.}
     #'     \item{\code{preferred_num_bins_for_continuous_covariate}}{Bin count for
-    #'       \code{FixedDesignBlocking} and \code{FixedDesignBlockedCluster}.}
-    #'     \item{\code{B_target}}{Target number of blocks for \code{FixedDesignBlocking}.}
+    #'       \code{DesignFixedBlocking} and \code{DesignFixedBlockedCluster}.}
+    #'     \item{\code{B_target}}{Target number of blocks for \code{DesignFixedBlocking}.}
     #'   }
     #'
     #' @param inference_classes_and_params \code{NULL} (default) or a list
@@ -503,12 +490,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                    "count", "survival", "ordinal")
       if (any(!response_type %in% valid_rt))
         stop("response_type must be one of: ", paste(valid_rt, collapse = ", "))
-
       n_values = unique(as.integer(n))
       p_values = unique(as.integer(p))
       betaT_values = unique(as.numeric(betaT))
       cond_exp_func_model_values = unique(as.character(cond_exp_func_model))
-
       if (length(n_values) == 0L || any(!is.finite(n_values)) || any(n_values <= 1L))
         stop("n must contain finite integers greater than 1")
       if (length(p_values) == 0L || any(!is.finite(p_values)) || any(p_values < 1L))
@@ -542,7 +527,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
 	        stop("count_clamp must be finite and > 0")
 	      if (!is.finite(survival_clamp) || survival_clamp <= 0)
 	        stop("survival_clamp must be finite and > 0")
-
       valid_inf_types = c("asymp_ci", "asymp_pval", "exact_ci", "exact_pval",
                           "boot_ci",  "boot_pval",  "rand_ci",  "rand_pval")
       inf_type_spec = private$.parse_inference_types_and_params(
@@ -550,7 +534,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         valid_inf_types
       )
       inf_types = names(inf_type_spec)
-
       private$response_type_values = unique(as.character(response_type))
       private$n_values         = n_values
       private$p_values         = p_values
@@ -605,31 +588,25 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$current_betaT    = private$param_grid$betaT[[1L]]
       private$current_cond_exp_func_model = private$param_grid$cond_exp_func_model[[1L]]
       private$current_response_type = private$param_grid$response_type[[1L]]
-
       design_spec = private$.parse_design_classes_and_params(
         design_classes_and_params,
         parent.frame()
       )
       private$design_classes = design_spec$classes
       private$design_params  = design_spec$params
-
       inference_spec = private$.parse_inference_classes_and_params(
         inference_classes_and_params,
         parent.frame()
       )
       private$inference_classes = inference_spec$classes
       private$inference_constructor_params = inference_spec$params
-
       n_des = length(private$design_classes)
       n_inf = length(private$inference_classes)
-
       private$design_labels    = private$.compute_design_labels()
       private$inference_labels = private$.compute_inference_labels()
-
       private$raw_results = list()
       private$has_run     = FALSE
     },
-
     # ── run() ─────────────────────────────────────────────────────────────────
     #' @description
     #' Execute the simulation replications.
@@ -646,7 +623,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         }
         set.seed(private$seed)
       }
-
       # Disable assertions for the duration of the simulation for speed
       if (private$turn_off_asserts_for_speed){
         toggle_asserts(FALSE)
@@ -677,7 +653,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         }
         assign("num_cores_override", prev_override, envir = ns$edi_env)
       }, add = TRUE)
-
       # Handle cleanup/setup
       if (!isTRUE(private$continue_from_last_result_row)) {
         if (file.exists(private$results_filename)) unlink(private$results_filename)
@@ -685,28 +660,23 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       
       private$simulation_start_time = as.numeric(Sys.time())
-
       n_des = length(private$design_classes)
       n_inf = length(private$inference_classes)
       n_met = length(private$inf_types)
       n_cells = nrow(private$param_grid)
-
       # Ensure staging file is ready if we are using bz2 and continuing
       if (isTRUE(private$continue_from_last_result_row)) {
         private$.ensure_staging_file_exists()
       }
-
       existing_results = private$.load_existing_results()
       n_existing = nrow(existing_results)
       
       if (isTRUE(private$verbose) && n_existing > 0L) {
         private$.message_stderr(sprintf("%d existing results loaded\n", n_existing))
       }
-
       # Pre-allocate results list for data.table batches (one per chunk or serial replication)
       private$raw_results = vector("list", 1L + private$Nrep * n_cells)
       private$results_idx = 0L
-
       # Use C++ ResultKeyStore for O(1) key lookups without R string interning overhead
       init_result_key_store_cpp(n_existing + 1000L) # Reserve extra space for new results
       if (n_existing > 0L) {
@@ -724,7 +694,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         ds_v = existing_results$design
         if_v = existing_results$inference
         it_v = existing_results$inference_type
-
         # Chunking allows showing progress and avoids one massive allocation.
         chunk_size_indexing = 200000L
         indices = seq(1L, n_existing, by = chunk_size_indexing)
@@ -744,12 +713,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           cat("\n", file = stderr())
         }
       }
-
       private$all_intermediate_data = vector("list", private$Nrep * n_cells)
       private$valid_combos          = list()
       private$seen_combo_keys      = character(0L)
       private$exact_warned_classes = character(0L)
-
       if (isTRUE(private$verbose)) {
         message(sprintf(
           "simulations: CEF_mod=%s  n=%s  p=%s  Nrep=%d  betaT=%s designs=%d inferences=%d num_cores=%d",
@@ -763,7 +730,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           num_cores
         ))
       }
-
       log_interval = max(1L, private$Nrep %/% 10L)
       shared_X_draws = list()
       if (!isTRUE(private$random_X_draws)) {
@@ -795,7 +761,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           cat("\n", file = stderr())
         }
       }
-
       # Pre-calculate planned combos and cache cell metadata
       had_seed_plan = exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
       if (had_seed_plan) old_seed_plan = get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
@@ -812,14 +777,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         dt_i = private$param_grid$cond_exp_func_model[[cell_idx]]
         bt_i = private$param_grid$betaT[[cell_idx]]
         rt_i = private$param_grid$response_type[[cell_idx]]
-
         # Show more granular progress during plan pre-calculation
         if (isTRUE(private$verbose)) {
           label = sprintf("pre-calculating plan (cell %d/%d: n=%d, p=%d, %s, %s)",
                           cell_idx, n_cells, n_i, p_i, dt_i, rt_i)
           private$.draw_labeled_progress_bar(label, (cell_idx - 1) / n_cells)
         }
-
         cache_key = paste(rt_i, n_i, p_i, dt_i, sep = "|")
         if (is.null(validity_cache[[cache_key]])) {
            private$current_n = n_i; private$current_p = p_i; private$current_betaT = bt_i; private$current_cond_exp_func_model = dt_i; private$current_response_type = rt_i
@@ -892,7 +855,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       if (isTRUE(private$verbose)) {
         private$.print_plan_summary(planned_combos_list)
         private$use_progress_bar = TRUE
-
         # Precisely set initial progress bar state based on first missing task
         first_active_cell = which(vapply(cell_reps_to_run, length, 0L) > 0L)[1L]
         if (!is.na(first_active_cell)) {
@@ -907,7 +869,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           private$tasks_per_rep = if (length(cell_tasks_count) > 0L) cell_tasks_count[[length(cell_tasks_count)]] else 0L
           private$current_task_in_rep_idx = private$tasks_per_rep
         }
-
         # If we are going to run and use the progress bar, ensure we clean up the 
         # multi-line block at the end of the run().
         on.exit({
@@ -916,17 +877,14 @@ SimulationFramework = R6::R6Class("SimulationFramework",
               private$progress_bar_drawn = NULL
            }
         }, add = TRUE)
-
         private$.draw_progress()
       }
-
       # Early exit if everything is already done
       if (private$progress_count >= private$progress_total) {
         if (isTRUE(private$verbose)) message("Simulation already complete.")
         private$.finish_run()
         return(invisible(self))
       }
-
       for (cell_idx in seq_len(n_cells)) {
         private$current_cell_idx = cell_idx
         private$current_n = private$param_grid$n[[cell_idx]]
@@ -939,12 +897,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         reps_to_run = cell_reps_to_run[[cell_idx]]
         run_required_v = rep(FALSE, private$Nrep)
         run_required_v[reps_to_run] = TRUE
-
         # Pre-format key prefix for this cell to avoid redundant formatting in workers
         cell_key_prefix = paste(private$current_response_type, private$current_cond_exp_func_model,
                                 private$current_n, private$current_p,
                                 private$current_betaT, sep = "|")
-
         cell_state = list(
           n = private$current_n, p = private$current_p, betaT = private$current_betaT,
           cond_exp_func_model = private$current_cond_exp_func_model, norm_sq_beta_vec = private$norm_sq_beta_vec,
@@ -962,15 +918,15 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           inference_type_params = private$inference_type_params,
           cell_key_prefix = cell_key_prefix
         )
-
         num_cores_to_use = 1L
         private$current_task_label = "Des/Inf"
         if (num_cores > 1L) {
-          has_java_designs = any(vapply(private$design_classes, function(cls) cls$classname %in% c("FixedDesignBinaryMatch", "FixedDesignGreedy", "FixedDesignMatchingGreedyPairSwitching", "FixedDesignRerandomization"), logical(1L)))
+          has_java_designs = any(vapply(private$design_classes, function(cls) cls$classname %in% c("DesignFixedBinaryMatch", "DesignFixedGreedy", "DesignFixedMatchingGreedyPairSwitching", "DesignFixedRerandomization"), logical(1L)))
           if (has_java_designs) {
             if (isTRUE(private$verbose)) private$.message_stderr("Warning: Multithreading disabled for Java-based designs; forking is unstable. Serial execution used for this cell.\n")
           } else {
             num_cores_to_use = num_cores
+            private$current_task_label = "Chunk Reps"
             chunk_size = num_cores_to_use
             rep_chunks = split(seq_len(private$Nrep), (seq_len(private$Nrep) - 1) %/% chunk_size)
             for (chunk in rep_chunks) {
@@ -984,14 +940,15 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                   private$.draw_progress()
                   next
                }
-
                private$current_rep_idx = chunk[[1L]]
                private$tasks_per_rep = length(active_reps)
                private$current_task_in_rep_idx = 0L
                private$last_progress_draw_time = 0
                private$.draw_progress()
+               
+               # Workers do NOT draw progress bars to avoid terminal corruption.
                RUN_REP_DETACHED = private$.run_single_replication_in_worker; environment(RUN_REP_DETACHED) = asNamespace("EDI")
-               RUN_REP = function(rep_i) RUN_REP_DETACHED(rep_i, cell_state, is_forked = TRUE)
+               RUN_REP = function(rep_i) RUN_REP_DETACHED(rep_i, cell_state, progress_cb = NULL, is_forked = TRUE)
                jobs = lapply(active_reps, function(rep_i) {
                  parallel::mcparallel(
                    RUN_REP(rep_i),
@@ -1081,7 +1038,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           }
         }
       }
-
       private$.finish_run()
       invisible(self)
     },
@@ -1097,7 +1053,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       if (!private$keep_all_intermediate_data) return(NULL)
       private$all_intermediate_data
     },
-
     # ── clear_all_intermediate_data_and_gc() ─────────────────────────────────
     #' @description
     #' Release all stored intermediate data and invoke the garbage collector.
@@ -1111,7 +1066,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       gc()
       invisible(self)
     },
-
     # ── get_results() ─────────────────────────────────────────────────────────
     #' @description
     #' Get the raw results of the simulation.
@@ -1131,7 +1085,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       # Prune pre-allocated list to only include what was actually recorded
       data.table::rbindlist(private$raw_results[seq_len(private$results_idx)], use.names = TRUE, fill = TRUE)
     },
-
     # ── summarize() ───────────────────────────────────────────────────────────
     #' @description
     #' Aggregate and summarize simulation results.
@@ -1140,7 +1093,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   power) grouped by design, inference class, and inference type.
     summarize = function() {
       if (!private$has_run) stop("Call $run() first.")
-
       # ── Reference grid of all valid (design, inference, inference_type) combos ────────
       if (length(private$valid_combos) == 0L) {
         message("No results."); return(invisible(NULL))
@@ -1150,7 +1102,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       # Collapse over betaT: remove it from the unique keys
       if ("betaT" %in% names(ref_grid)) ref_grid[, betaT := NULL]
       ref_grid = unique(ref_grid)
-
       # ── Per-class params strings ───────────────────────────────────────────────
       inf_names = private$inference_labels
       design_params_map = stats::setNames(
@@ -1161,11 +1112,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         lapply(seq_along(private$inference_classes), function(ii)
           private$.params_to_str(private$inference_constructor_params[[ii]])),
         inf_names)
-
       ref_grid[, design_params    := unlist(design_params_map[design])]
       ref_grid[, inference_params := unlist(inf_params_map[inference])]
       ref_grid[, inference_type_params := vapply(inference_type, private$.params_for_inference_type_to_str, "")]
-
       # ── Aggregate raw results ─────────────────────────────────────────────────
       dt         = self$get_results()
       alpha      = private$alpha
@@ -1174,7 +1123,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       
       # Grouping columns - EXCLUDE betaT to allow averaging across effect sizes
       by_cols = c("response_type", "cond_exp_func_model", "n", "p", "design", "inference", "inference_type")
-
       if (nrow(dt) > 0L) {
         # Optimization: Avoid .SD subsetting within groups. Use vectorized logic.
         agg = dt[, {
@@ -1194,7 +1142,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             is_zero = (abs(betaT) < 1e-12) # Use tolerance for safety
             pv_fin_zero = pv_fin & is_zero
             pv_fin_nonzero = pv_fin & !is_zero
-
             m_row$power = if (any(pv_fin_nonzero)) mean(pval[pv_fin_nonzero] < alpha) else NA_real_
             m_row$n_pow = sum(pv_fin_nonzero)
             
@@ -1211,7 +1158,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                                      inference_type = character(), power = numeric(), MSE = numeric(),
                                      n_est = integer(), n_pow = integer())
       }
-
       # ── Right-join: every valid combo appears, NA for those with no data ──────
       data.table::setkeyv(agg, by_cols)
       data.table::setkeyv(ref_grid, by_cols)
@@ -1227,7 +1173,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       
       result[order(cond_exp_func_model, n, p, design, inference, inference_type)]
     },
-
     # ── print() ───────────────────────────────────────────────────────────────
     #' @description
     #' Print a summary of the \code{SimulationFramework} configuration and status.
@@ -1267,7 +1212,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       invisible(self)
     }
   ),
-
   # ── private ────────────────────────────────────────────────────────────────
   private = list(
     .finish_run = function() {
@@ -1354,9 +1298,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     use_progress_bar         = FALSE,
     progress_log_interval    = 0L,
     progress_bar_drawn       = NULL,
-
     # ── Design spec parsing ───────────────────────────────────────────────────
-
     .parse_design_classes_and_params = function(spec, eval_env) {
       if (is.null(spec)) {
         classes = private$.default_design_classes()
@@ -1364,47 +1306,37 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       if (!is.list(spec))
         stop("design_classes_and_params must be NULL or a list")
-
       nm = names(spec)
       if (is.null(nm)) nm = rep("", length(spec))
-
       classes = vector("list", length(spec))
       params  = vector("list", length(spec))
-
       for (i in seq_along(spec)) {
         entry_name = nm[[i]]
         entry      = spec[[i]]
-
         if (inherits(entry, "R6ClassGenerator")) {
           classes[[i]] = entry
           params[[i]]  = list()
           next
         }
-
         if (!nzchar(entry_name)) {
           stop(
             "design_classes_and_params[[", i, "]] must be an R6 class generator ",
             "or a named parameter list whose name is the design class"
           )
         }
-
         cls = private$.resolve_design_class(entry_name, eval_env)
         if (!inherits(cls, "R6ClassGenerator"))
           stop("design class '", entry_name, "' is not an R6 class generator")
-
         if (is.null(entry)) {
           entry = list()
         } else if (!is.list(entry)) {
           stop("design_classes_and_params[['", entry_name, "']] must be a list of parameters")
         }
-
         classes[[i]] = cls
         params[[i]]  = entry
       }
-
       list(classes = classes, params = params)
     },
-
     .resolve_design_class = function(class_name, eval_env) {
       if (exists(class_name, envir = eval_env, inherits = TRUE))
         return(get(class_name, envir = eval_env, inherits = TRUE))
@@ -1413,9 +1345,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         return(get(class_name, envir = ns, inherits = FALSE))
       stop("could not find design class '", class_name, "'")
     },
-
     # ── Inference spec parsing ────────────────────────────────────────────────
-
     .parse_inference_classes_and_params = function(spec, eval_env) {
       if (is.null(spec)) {
         classes = private$.default_inference_classes()
@@ -1423,48 +1353,38 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       if (!is.list(spec))
         stop("inference_classes_and_params must be NULL or a list")
-
       nm = names(spec)
       if (is.null(nm)) nm = rep("", length(spec))
-
       classes = vector("list", length(spec))
       params  = vector("list", length(spec))
-
       for (i in seq_along(spec)) {
         entry_name = nm[[i]]
         entry      = spec[[i]]
-
         if (inherits(entry, "R6ClassGenerator")) {
           classes[[i]] = entry
           params[[i]]  = list()
           next
         }
-
         if (!nzchar(entry_name)) {
           stop(
             "inference_classes_and_params[[", i, "]] must be an R6 class generator ",
             "or a named parameter list whose name is the inference class"
           )
         }
-
         cls = private$.resolve_inference_class(entry_name, eval_env)
         if (!inherits(cls, "R6ClassGenerator"))
           stop("inference class '", entry_name, "' is not an R6 class generator")
-
         if (is.null(entry)) {
           entry = list()
         } else if (!is.list(entry)) {
           stop("inference_classes_and_params[['", entry_name, "']] must be a list of parameters")
         }
-
         private$.validate_r6_init_args(cls, entry, "inference_classes_and_params")
         classes[[i]] = cls
         params[[i]]  = entry
       }
-
       list(classes = classes, params = params)
     },
-
     .resolve_inference_class = function(class_name, eval_env) {
       if (exists(class_name, envir = eval_env, inherits = TRUE))
         return(get(class_name, envir = eval_env, inherits = TRUE))
@@ -1473,7 +1393,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         return(get(class_name, envir = ns, inherits = FALSE))
       stop("could not find inference class '", class_name, "'")
     },
-
     .validate_r6_init_args = function(r6gen, args, arg_name) {
       if (length(args) == 0L) return(invisible(TRUE))
       if (is.null(names(args)) || any(!nzchar(names(args)))) {
@@ -1497,9 +1416,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       invisible(TRUE)
     },
-
     # ── Inference type parsing and invocation args ────────────────────────────
-
     .parse_inference_types_and_params = function(spec, valid_inf_types) {
       if (is.null(spec)) {
         return(stats::setNames(lapply(valid_inf_types, function(...) list()),
@@ -1526,15 +1443,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       spec
     },
-
     .has_inf_type = function(inf_type) {
       inf_type %in% private$inf_types
     },
-
     .any_inf_type = function(inf_types) {
       any(inf_types %in% private$inf_types)
     },
-
     .inf_type_method_name = function(inf_type) {
       switch(inf_type,
         asymp_ci   = "compute_asymp_confidence_interval",
@@ -1548,7 +1462,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         stop("Unknown inference type: ", inf_type)
       )
     },
-
     .args_for_inf_type = function(inf_obj, inf_type, defaults = list()) {
       user_args = private$inference_type_params[[inf_type]]
       if (is.null(user_args)) user_args = list()
@@ -1556,7 +1469,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$.validate_method_args(inf_obj, method_name, user_args, inf_type)
       modifyList(defaults, user_args)
     },
-
     .validate_method_args = function(inf_obj, method_name, args, inf_type) {
       if (length(args) == 0L) return(invisible(TRUE))
       fn = tryCatch(inf_obj[[method_name]], error = function(e) NULL)
@@ -1573,14 +1485,11 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       invisible(TRUE)
     },
-
     .params_for_inference_type_to_str = function(inference_type) {
       ps = private$.params_to_str(private$inference_type_params[[inference_type]])
       if (nchar(ps) > 0L) paste0(inference_type, "(", ps, ")") else ""
     },
-
     # ── R6 formals helpers ────────────────────────────────────────────────────
-
     # Filter an arg list to only those accepted by r6gen's initialize().
     # If initialize accepts '...' or cannot be found, all args pass through.
     .filter_by_formals = function(r6gen, args) {
@@ -1591,11 +1500,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       if ("..." %in% fn_formals) return(args)
       args[names(args) %in% fn_formals]
     },
-
     .has_private_method_on_object = function(obj, method_name) {
       exists(method_name, envir = obj$.__enclos_env__$private, inherits = FALSE)
     },
-
     # Serialize a named params list to "k=v, ..." string.
     .params_to_str = function(p) {
       if (is.null(p) || length(p) == 0L) return("")
@@ -1603,7 +1510,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                   names(p), p, SIMPLIFY = TRUE)
       paste(kv, collapse = ", ")
     },
-
     .build_param_grid = function(n_values, p_values, betaT_values, cond_exp_func_model_values, response_type_values) {
       grid = data.table::as.data.table(expand.grid(
         response_type = response_type_values,
@@ -1619,11 +1525,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         stop("No valid simulation cells remain after filtering cond_exp_func_model / p combinations")
       grid
     },
-
     .format_values = function(x) {
       if (length(x) == 1L) as.character(x) else paste0("c(", paste(x, collapse = ", "), ")")
     },
-
     .load_existing_results = function() {
       empty_dt = data.table::data.table(
         response_type = character(),
@@ -1643,7 +1547,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       )
       if (!isTRUE(private$continue_from_last_result_row) || !file.exists(private$results_filename))
         return(private$.load_existing_results_from_staging_or_empty(empty_dt))
-
       if (isTRUE(private$verbose)) private$.draw_labeled_progress_bar("loading previous results", 0)
       dt = private$.read_results_file(show_progress = FALSE)
       if (isTRUE(private$verbose)) {
@@ -1653,7 +1556,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       if (!"response_type" %in% names(dt))
         dt[, response_type := private$response_type_values[[1L]]]
       dt = dt[response_type %in% private$response_type_values]
-
       for (nm in names(empty_dt)) {
         if (!nm %in% names(dt))
           dt[, (nm) := empty_dt[[nm]]]
@@ -1674,7 +1576,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       dt[, true_estimand := as.numeric(true_estimand)]
       dt[, names(empty_dt), with = FALSE]
     },
-
     .load_existing_results_from_staging_or_empty = function(empty_dt) {
       if (private$.results_file_format(private$results_filename) != "csv.bz2")
         return(empty_dt)
@@ -1683,13 +1584,11 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         return(empty_dt)
       data.table::fread(staging_filename, showProgress = FALSE)
     },
-
     .results_file_format = function(filename) {
       if (grepl("\\.csv\\.bz2$", filename, ignore.case = TRUE)) return("csv.bz2")
       if (grepl("\\.csv$", filename, ignore.case = TRUE)) return("csv")
       NA_character_
     },
-
     .results_staging_filename = function() {
       path = private$.results_output_path()
       file.path(
@@ -1707,7 +1606,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         file.path(getwd(), private$results_filename)
       }
     },
-
     .copy_binary_stream = function(from, to, chunk_size = 1024L * 1024L) {
       repeat {
         bytes = readBin(from, what = "raw", n = chunk_size)
@@ -1716,7 +1614,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       invisible(NULL)
     },
-
     .read_results_file = function(show_progress = FALSE) {
       format = private$.results_file_format(private$results_filename)
       if (identical(format, "csv")) {
@@ -1725,12 +1622,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       if (!identical(format, "csv.bz2")) {
         stop("Unsupported results file format: ", private$results_filename)
       }
-
       staging_filename = private$.results_staging_filename()
       if (file.exists(staging_filename)) {
         return(data.table::fread(staging_filename, showProgress = show_progress))
       }
-
       extracted_file = tempfile("simulation_framework_results_", fileext = ".csv")
       input_con = bzfile(private$.results_output_path(), open = "rb")
       output_con = file(extracted_file, open = "wb")
@@ -1742,7 +1637,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       close(input_con)
       data.table::fread(extracted_file, showProgress = show_progress)
     },
-
     .result_key_for_values = function(response_type, cond_exp_func_model, n, p, betaT, rep, design, inference, inference_type) {
       paste(
         response_type,
@@ -1757,7 +1651,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         sep = "|"
       )
     },
-
     .result_key = function(rep, design, inference, inference_type) {
       private$.result_key_for_values(
         private$current_response_type,
@@ -1771,7 +1664,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         inference_type
       )
     },
-
     .result_key_from_row = function(row) {
       if (!is.list(row)) {
         stop(".result_key_from_row expected a list, but got: ", typeof(row))
@@ -1788,7 +1680,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         row[["inference_type"]]
       )
     },
-
     .result_metadata_dt = function(rep, design, inference, inference_type) {
       data.table::data.table(
         response_type = private$current_response_type,
@@ -1802,11 +1693,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         inference_type = inference_type
       )
     },
-
     .log_skip = function(rep, design, inference, inference_type) {
       invisible(NULL)
     },
-
     .valid_inference_types = function(inf_obj) {
       valid_inference_types = character(0L)
       if (is(inf_obj, "InferenceAsymp")) {
@@ -1842,7 +1731,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       valid_inference_types
     },
-
     .build_valid_combos_for_current_cell = function(rep_data) {
       X = rep_data$X
       y_linear_model = rep_data$y_linear_model
@@ -1888,7 +1776,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       combos
     },
-
     .run_single_replication_in_worker = function(rep_i, state, progress_cb = NULL, is_forked = FALSE) {
       # This runs in a worker process. It must be self-contained.
       # 1. Cap threads and nested parallelism to avoid N*M oversubscription.
@@ -1900,7 +1787,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       
       # Pre-format key prefix for this replication
       rep_key_prefix = paste(state$cell_key_prefix, rep_i, sep = "|")
-
       # 1. Generate data
       data = generate_covariate_dataset(
         n                    = state$n,
@@ -1937,17 +1823,14 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         },
         NA_real_
       )
-
       results = list()
       result_keys = character()
       skipped_count = 0L
-
       # 2. Design and Inference loop
       for (di in seq_along(state$design_classes)) {
         design_gen   = state$design_classes[[di]]
         design_name  = state$design_labels[[di]]
         design_extra = if (!is.null(state$design_params)) state$design_params[[di]] else list()
-
         # Auto-inject covariate-dependent params (mirrors .build_design)
         init_fn_w = get_r6_init_fn(design_gen)
         if (!is.null(init_fn_w)) {
@@ -1955,14 +1838,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           x_names_w    = names(X)
         if ("strata_cols" %in% fn_formals_w &&
             !"strata_cols" %in% names(design_extra) &&
-            !identical(design_gen$classname, "FixedDesignBlocking"))
+            !identical(design_gen$classname, "DesignFixedBlocking"))
           design_extra$strata_cols = x_names_w[1L]
           if ("cluster_col" %in% fn_formals_w && !"cluster_col" %in% names(design_extra))
             design_extra$cluster_col = x_names_w[min(2L, length(x_names_w))]
           if ("factors"     %in% fn_formals_w && !"factors"     %in% names(design_extra))
             design_extra$factors = list(treatment = 2L)
         }
-
         # Build design (extracted from .build_design)
         des_obj = tryCatch({
           d = do.call(design_gen$new, c(list(response_type = state$response_type, n = state$n), design_extra))
@@ -2003,18 +1885,15 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         }, error = function(e) NULL)
         
         if (is.null(des_obj)) next
-
         for (ii in seq_along(state$inference_classes)) {
           inf_gen  = state$inference_classes[[ii]]
           inf_name = state$inference_labels[[ii]]
           inf_ctor_extra = state$inference_constructor_params[[ii]]
-
           inf_obj = tryCatch({
             do.call(inf_gen$new, c(list(des_obj), inf_ctor_extra))
           }, error = function(e) NULL)
           
           if (is.null(inf_obj)) next
-
           is_mean_diff = is(inf_obj, "InferenceAllSimpleMeanDiff") ||
                          is(inf_obj, "InferenceIncidenceWald") ||
                          is(inf_obj, "InferenceIncidCMH") ||
@@ -2026,7 +1905,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                          is(inf_obj, "InferenceIncidKKGCompRiskDiff") ||
                          is(inf_obj, "InferencePropGCompMeanDiff")
           te = if (is_mean_diff) true_mean_diff_ate else state$betaT
-
           # .valid_inference_types logic (extracted)
           valid_inference_types = character(0)
           if (is(inf_obj, "InferenceAsymp")) 
@@ -2040,7 +1918,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             if (is(inf_obj, "InferenceRandCI") && state$response_type %in% c("continuous", "proportion", "count"))
               valid_inference_types = c(valid_inference_types, intersect(state$inf_types, "rand_ci"))
           }
-
           # Result key and pending check
           pending_inference_types = valid_inference_types[!check_in_result_key_store_cpp(
             rep(state$response_type, length(valid_inference_types)),
@@ -2062,19 +1939,16 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             }
             next
           }
-
           est = tryCatch({
             v = inf_obj$compute_estimate()
             if (is.null(v) || length(v) == 0L) NA_real_ else as.numeric(v)[1L]
           }, error = function(e) NA_real_)
-
           # Helper to merge user-supplied params with defaults
           get_args = function(type, defaults = list()) {
             user_args = state$inference_type_params[[type]]
             if (is.null(user_args)) user_args = list()
             modifyList(defaults, user_args)
           }
-
           # helper for recording in worker
           local_record = function(type, ci, pval) {
             ci2 = if (length(ci) >= 2L) as.numeric(ci[1:2]) else c(NA_real_, NA_real_)
@@ -2099,13 +1973,11 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             )
             if (!is.null(progress_cb)) progress_cb()
           }
-
           # Advance progress for already-present results (cached)
           if (!is.null(progress_cb) && length(valid_inference_types) > length(pending_inference_types)) {
              already_done = length(valid_inference_types) - length(pending_inference_types)
              for (k in seq_len(already_done)) progress_cb()
           }
-
           # Inference execution logic
           if (is(inf_obj, "InferenceAsymp") && any(c("asymp_ci", "asymp_pval") %in% pending_inference_types)) {
             if ("asymp_pval" %in% pending_inference_types) {
@@ -2168,7 +2040,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         skipped_count = skipped_count
       )
     },
-
     .advance_progress = function() {
       private$current_task_in_rep_idx = private$current_task_in_rep_idx + 1L
       if (!isTRUE(private$verbose)) return(invisible(NULL))
@@ -2178,7 +2049,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       invisible(NULL)
     },
-
     .print_plan_summary = function(planned_combos_list) {
       n_cells = length(planned_combos_list)
       cat("Simulation Plan Summary:\n", file = stderr())
@@ -2193,7 +2063,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         inference_names = unique(vapply(combos, `[[`, "", "inference"))
         inference_names = gsub("Inference", "", inference_names)
         inference_names = gsub("^(Contin|Count|Incid|Prop|Survival|Ordinal|All)", "", inference_names)
-
         if (is.null(rt_summaries[[rt]])) {
           rt_summaries[[rt]] = list(
             designs = design_names,
@@ -2206,7 +2075,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           rt_summaries[[rt]]$n_tasks = rt_summaries[[rt]]$n_tasks + length(combos)
         }
       }
-
       response_types = names(rt_summaries)
       if (length(response_types) == 1L) {
         s = rt_summaries[[response_types[[1L]]]]
@@ -2222,7 +2090,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       cat("\n", file = stderr())
     },
-
     .draw_progress = function() {
       if (!isTRUE(private$verbose)) return(invisible(NULL))
       if (isTRUE(private$use_progress_bar)) {
@@ -2233,7 +2100,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         message(sprintf("Completed %d / %d runs", private$progress_count, private$progress_total))
       }
     },
-
     .draw_labeled_progress_bar = function(label, prop) {
       width = getOption("width", 80L)
       if (is.null(width) || width < 80L) width = 80L
@@ -2257,7 +2123,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       cat(substr(msg, 1, width), file = stderr())
       if (exists("flush.console")) utils::flush.console()
     },
-
     .message_stderr = function(msg) {
       if (isTRUE(private$progress_bar_drawn)) {
         # Move up 4 lines and clear them to end of screen
@@ -2267,22 +2132,17 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       cat(msg, file = stderr())
       if (exists("flush.console")) utils::flush.console()
     },
-
     .draw_simulation_progress_bars = function() {
       now = as.numeric(Sys.time())
       # Throttle: only redraw if 100ms have passed OR we are at 100%
       is_done = private$current_cell_idx == private$total_cells &&
                 private$current_rep_idx == private$Nrep &&
                 private$current_task_in_rep_idx == private$tasks_per_rep
-
       if (!is_done && (now - private$last_progress_draw_time) < 0.1) return(invisible(NULL))
       private$last_progress_draw_time = now
-
       # Force a narrow width to prevent wrapping which breaks ANSI sequences.
       width = 60L
-
       task_total_display = max(private$tasks_per_rep, private$current_task_in_rep_idx)
-
       # Proportions (clamped to [0,1])
       task_in_progress_prop = max(0, min(1, if (task_total_display > 0) private$current_task_in_rep_idx / task_total_display else 0))
       rep_in_progress_prop  = max(0, min(1, if (private$Nrep > 0) (max(0, private$current_rep_idx - 1) + task_in_progress_prop) / private$Nrep else 0))
@@ -2315,23 +2175,19 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       } else {
         eta_str = "Status: Estimating..."
       }
-
       make_bar_line = function(label, prop, b_width, digits = 0, label_width = 25) {
         padded_label = sprintf("%-*s", label_width, substr(label, 1, label_width))
         label_len = nchar(padded_label)
         bar_available = b_width - label_len - 2L
         if (bar_available < 10L) return(padded_label)
-
         fill = floor(prop * bar_available)
         fill = max(0, min(bar_available, fill))
-
         if (digits == 0) {
           pct_str = sprintf(" %d%% ", floor(prop * 100))
         } else {
           pct_str = sprintf(" %.1f%% ", prop * 100)
         }
         n_pct = nchar(pct_str)
-
         full_bar = paste0(strrep("=", fill), strrep(" ", bar_available - fill))
         if (bar_available >= n_pct) {
            start_pos = (bar_available - n_pct) %/% 2 + 1
@@ -2339,11 +2195,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         }
         sprintf("%s[%s]", padded_label, full_bar)
       }
-
       line1 = make_bar_line(sprintf("DGP %d/%d Overall", private$current_cell_idx, private$total_cells), cell_in_progress_prop, width, digits = 1)
       line2 = make_bar_line(sprintf("Rep %d/%d", private$current_rep_idx, private$Nrep), rep_in_progress_prop, width)
       line3 = make_bar_line(sprintf("%s %d/%d", private$current_task_label, private$current_task_in_rep_idx, task_total_display), task_in_progress_prop, width)
-
       # Use \r and \033[2K on EACH line for maximum robustness.
       output_block = paste0(
         "\r\033[2K", eta_str, "\n",
@@ -2351,7 +2205,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         "\r\033[2K", line2, "\n",
         "\r\033[2K", line3, "\n"
       )
-
       if (is.null(private$progress_bar_drawn)) {
          cat(output_block, sep = "", file = stderr())
          private$progress_bar_drawn = TRUE
@@ -2359,7 +2212,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
          # Move up 4 lines, and print the block which clears each line as it goes.
          cat("\033[4A", output_block, sep = "", file = stderr())
       }
-
       if (exists("flush.console")) utils::flush.console()
     },
     .append_result_row_to_file = function(row) {
@@ -2372,7 +2224,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       if (!identical(format, "csv.bz2")) {
         stop("Unsupported results file format: ", private$results_filename)
       }
-
       staging_filename = private$.results_staging_filename()
       staging_exists = file.exists(staging_filename)
       data.table::fwrite(row, staging_filename, append = staging_exists, col.names = !staging_exists)
@@ -2382,20 +2233,17 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       if (!file.exists(staging_filename)) {
         stop("Cannot update compressed results because staging CSV is missing: ", staging_filename)
       }
-
       results_path = private$.results_output_path()
       results_dir = dirname(results_path)
       if (!dir.exists(results_dir)) {
         dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
       }
-
       compressed_tmpfile = tempfile(
         pattern = paste0(sub("\\.csv\\.bz2$", "", basename(private$results_filename), ignore.case = TRUE), "_"),
         tmpdir = results_dir,
         fileext = ".csv.bz2"
       )
       on.exit(if (file.exists(compressed_tmpfile)) unlink(compressed_tmpfile), add = TRUE)
-
       input_con = file(staging_filename, open = "rb")
       output_con = bzfile(compressed_tmpfile, open = "wb")
       on.exit(try(close(input_con), silent = TRUE), add = TRUE)
@@ -2403,7 +2251,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$.copy_binary_stream(input_con, output_con)
       close(output_con)
       close(input_con)
-
       if (file.exists(results_path))
         unlink(results_path)
       if (!file.rename(compressed_tmpfile, results_path)) {
@@ -2411,7 +2258,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       invisible(NULL)
     },
-
     .cleanup_results_staging_file = function() {
       if (private$.results_file_format(private$results_filename) != "csv.bz2")
         return(invisible(NULL))
@@ -2420,7 +2266,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         unlink(staging_filename)
       invisible(NULL)
     },
-
     .ensure_staging_file_exists = function() {
       if (private$.results_file_format(private$results_filename) != "csv.bz2")
         return(invisible(NULL))
@@ -2441,7 +2286,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$.copy_binary_stream(input_con, output_con)
       invisible(NULL)
     },
-
     # Build unique per-instance design labels: "ClassName (params)" with
     # " [k]" suffix when two instances would otherwise share the same label.
     .compute_design_labels = function() {
@@ -2458,7 +2302,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       labels
     },
-
     .compute_inference_labels = function() {
       labels = vapply(seq_along(private$inference_classes), function(ii) {
         cls = private$inference_classes[[ii]]$classname
@@ -2471,9 +2314,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       labels
     },
-
     # ── Data generation ───────────────────────────────────────────────────────
-
     .generate_data = function() {
       data = generate_covariate_dataset(
         n                    = private$current_n,
@@ -2488,7 +2329,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       data$y_cont = NULL # SimulationFramework doesn't need the raw cont y anymore
       data
     },
-
     .generate_data_from_X = function(X_mat) {
       data = generate_covariate_dataset(
         n                    = private$current_n,
@@ -2503,15 +2343,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       data$y_cont = NULL # SimulationFramework doesn't need the raw cont y anymore
       data
     },
-
     compute_true_mean_diff_ate = function(y_linear_model) {
       eta_c = y_linear_model
       eta_t = y_linear_model + private$current_betaT
-
       clamp = function(x, lo, hi) {
         pmin(hi, pmax(lo, x))
       }
-
       switch(private$current_response_type,
         continuous = private$current_betaT,
         incidence = {
@@ -2540,7 +2377,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         private$current_betaT
       )
     },
-
     compute_true_ordinal_mean_diff = function(eta_c, eta_t) {
       expected_ordinal = function(eta) {
         K = private$n_ordinal_levels
@@ -2548,7 +2384,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           rounded_eta = sign(eta) * floor(abs(eta) + 0.5)
           return(pmin(K, pmax(1, rounded_eta)))
         }
-
         sigma = private$sd_noise
         probs = matrix(0, nrow = length(eta), ncol = K)
         probs[, 1L] = stats::pnorm((1.5 - eta) / sigma)
@@ -2564,14 +2399,11 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         }
         as.numeric(probs %*% seq_len(K))
       }
-
       mean(expected_ordinal(eta_t) - expected_ordinal(eta_c))
     },
-
     # Instantiate design and run the full experiment (assign + observe all n).
     .build_design = function(design_gen, X, y_linear_model, design_extra, skip_assignment = FALSE) {
       n       = private$current_n
-
       # Auto-inject required args that depend on the covariate matrix when the
       # user has not already supplied them via design_classes_and_params.
       init_fn = get_r6_init_fn(design_gen)
@@ -2580,19 +2412,17 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         x_names    = names(X)
         if ("strata_cols" %in% fn_formals &&
             !"strata_cols" %in% names(design_extra) &&
-            !identical(design_gen$classname, "FixedDesignBlocking"))
+            !identical(design_gen$classname, "DesignFixedBlocking"))
           design_extra$strata_cols = x_names[1L]
         if ("cluster_col" %in% fn_formals && !"cluster_col" %in% names(design_extra))
           design_extra$cluster_col = x_names[min(2L, length(x_names))]
         if ("factors"     %in% fn_formals && !"factors"     %in% names(design_extra))
           design_extra$factors = list(treatment = 2L)
       }
-
       des_obj = do.call(design_gen$new, c(
         list(response_type = private$current_response_type, n = n),
         design_extra
       ))
-
       if (skip_assignment) {
         # Bypass heavy assignment logic during validation phase.
         # Populate the minimum state needed for inference constructors that
@@ -2607,15 +2437,14 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         priv$y_original = priv$y
         priv$dead = rep(1L, n)  # 1 = uncensored; 0 would trigger "uncensored responses" asserts
         priv$t = n
-
         # Some fixed designs derive their blocking structure lazily from the
         # covariates. Build that structure here so validation-time assertions
         # (e.g. CMH / Extended Robins) see the same metadata as a fully
         # realized design.
-        if (inherits(des_obj, "FixedDesignBinaryMatch") &&
-            private$.has_private_method_on_object(des_obj, "ensure_bms_computed")) {
-          priv$ensure_bms_computed()
-        } else if (inherits(des_obj, "FixedDesignOptimalBlocks") &&
+        if (inherits(des_obj, "DesignFixedBinaryMatch") &&
+            private$.has_private_method_on_object(des_obj, "ensure_matching_structure_computed")) {
+          priv$ensure_matching_structure_computed()
+        } else if (inherits(des_obj, "DesignFixedOptimalBlocks") &&
                    private$.has_private_method_on_object(des_obj, "get_or_compute_block_ids")) {
           priv$m = as.integer(priv$get_or_compute_block_ids())
         } else if (!is.null(priv$strata_cols) &&
@@ -2626,10 +2455,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             priv$m = match(strata_keys, unique(strata_keys))
           }
         }
-
         return(des_obj)
       }
-
       if (inherits(des_obj, "DesignSeqOneByOne")) {
         # Sequential: assignment depends on prior responses so w is obtained
         # one subject at a time.  Call Rcpp with length-1 vectors per subject.
@@ -2669,19 +2496,16 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       des_obj
     },
-
     # Append multiple rows to raw_results and write to disk in one go.
     .record_batch = function(rows, skipped_count = 0L, keys = NULL) {
       is_dt = data.table::is.data.table(rows)
       n_rows = if (is_dt) nrow(rows) else length(rows)
       if (n_rows == 0L && skipped_count == 0L) return(invisible(NULL))
-
       if (n_rows > 0L) {
         # 1. Update memory store
         # Optimization: Store data.tables directly in raw_results list
         private$results_idx = private$results_idx + 1L
         private$raw_results[[private$results_idx]] = rows
-
         # 2. Update seen keys
         if (is_dt) {
           add_to_result_key_store_cpp(
@@ -2702,39 +2526,34 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             vapply(rows, `[[`, "", "inference_type")
           )
         }
-
         # 3. Batch write to disk
         private$.append_result_row_to_file(rows)
       }
-
       # 4. Advance progress count
       # ONLY add n_rows (the new ones). 
       # DO NOT add skipped_count because those tasks were already accounted for
       # in the initial progress_count calculation (the "scanning" phase).
       private$progress_count = private$progress_count + n_rows
       private$.draw_progress()
-
       invisible(NULL)
     },
     # ── Defaults ──────────────────────────────────────────────────────────────
-
     .default_design_classes = function() {
       list(
         # ── Fixed ──────────────────────────────────────────────────────────────
-        FixedDesignBernoulli,
-        FixedDesigniBCRD,
-        FixedDesignBinaryMatch,
-        FixedDesignBlocking,                # strata_cols auto-injected if absent
-        FixedDesignGreedy,
-        FixedDesignMatchingGreedyPairSwitching,
-        FixedDesignRerandomization,
-        FixedDesignOptimalBlocks,
-        FixedDesignCluster,                 # cluster_col auto-injected if absent
-        FixedDesignBlockedCluster,          # strata_cols + cluster_col auto-injected if absent
-        FixedDesignDOptimal,
-        FixedDesignAOptimal,
-        FixedDesignFactorial,               # factors auto-injected if absent
-
+        DesignFixedBernoulli,
+        DesignFixediBCRD,
+        DesignFixedBinaryMatch,
+        DesignFixedBlocking,                # strata_cols auto-injected if absent
+        DesignFixedGreedy,
+        DesignFixedMatchingGreedyPairSwitching,
+        DesignFixedRerandomization,
+        DesignFixedOptimalBlocks,
+        DesignFixedCluster,                 # cluster_col auto-injected if absent
+        DesignFixedBlockedCluster,          # strata_cols + cluster_col auto-injected if absent
+        DesignFixedDOptimal,
+        DesignFixedAOptimal,
+        DesignFixedFactorial,               # factors auto-injected if absent
         # ── Sequential one-by-one ──────────────────────────────────────────────
         DesignSeqOneByOneBernoulli,
         DesignSeqOneByOneiBCRD,
@@ -2749,11 +2568,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         DesignSeqOneByOneKK14
       )
     },
-
     .default_inference_classes = function() {
       rt   = private$response_type_values[[1L]]
       univ = if (!(rt == "survival" && private$prob_censoring > 0)) list(InferenceAllSimpleMeanDiff) else list()
-
       type_specific = switch(rt,
         continuous = list(
           InferenceAllSimpleWilcox,
@@ -2811,7 +2628,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         ),
         stop("Unknown response_type: ", rt)
       )
-
       c(univ, type_specific)
     }
   )

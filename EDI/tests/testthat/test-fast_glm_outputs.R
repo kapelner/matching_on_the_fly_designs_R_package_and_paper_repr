@@ -52,7 +52,7 @@ test_that("fast_weibull_regression matches survreg", {
 	expect_equal(fast_mod$log_sigma, log(canon_mod$scale), tolerance = 0.1)
 
 	# Check standard errors
-	expect_equal(as.numeric(fast_mod$std_errs), as.numeric(summary(canon_mod)$table[, "Std. Error"]), tolerance = 0.1)
+	expect_equal(as.numeric(sqrt(diag(fast_mod$vcov))), as.numeric(summary(canon_mod)$table[, "Std. Error"]), tolerance = 0.1)
 })
 
 test_that("fast_beta_regression_mle matches betareg", {

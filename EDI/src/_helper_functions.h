@@ -237,7 +237,8 @@ inline Eigen::MatrixXd expand_free_covariance(int n_params,
 }
 
 inline Eigen::MatrixXd symmetric_pseudo_inverse(const Eigen::MatrixXd& M, double tol = 1e-10) {
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es((M + M.transpose()) / 2.0);
+    Eigen::MatrixXd Msym = (M + M.transpose()) / 2.0;
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(Msym);
     if (es.info() != Eigen::Success) {
         return Eigen::MatrixXd::Constant(M.rows(), M.cols(), NA_REAL);
     }
@@ -704,6 +705,44 @@ inline Rcpp::List score_test_from_score_information(const Eigen::VectorXd& score
         Rcpp::Named("p_value") = p_value,
         Rcpp::Named("score") = score_t,
         Rcpp::Named("information_effective") = info_eff
+    );
+}
+
+inline Rcpp::List gradient_test_from_restricted_score(const Eigen::VectorXd& score,
+                                                      double unrestricted_estimate,
+                                                      double null_value,
+                                                      int tested_idx) {
+    const int idx = tested_idx - 1;
+    if (idx < 0 || idx >= score.size()) {
+        Rcpp::stop("tested_idx must be a one-based index within the parameter vector");
+    }
+
+    double statistic = NA_REAL;
+    double p_value = NA_REAL;
+    const double score_t = score[idx];
+    const double estimate_gap = unrestricted_estimate - null_value;
+
+    if (R_finite(score_t) && R_finite(estimate_gap)) {
+        statistic = score_t * estimate_gap;
+        if (statistic < 0.0) {
+            const double scale = std::max(1.0, std::abs(score_t * estimate_gap));
+            if (statistic >= -1e-10 * scale) {
+                statistic = 0.0;
+            } else {
+                statistic = NA_REAL;
+            }
+        }
+        if (R_finite(statistic)) {
+            p_value = R::pchisq(statistic, 1.0, false, false);
+        }
+    }
+
+    return Rcpp::List::create(
+        Rcpp::Named("statistic") = statistic,
+        Rcpp::Named("df") = 1,
+        Rcpp::Named("p_value") = p_value,
+        Rcpp::Named("score") = score_t,
+        Rcpp::Named("estimate_gap") = estimate_gap
     );
 }
 

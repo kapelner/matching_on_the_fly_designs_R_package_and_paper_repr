@@ -254,6 +254,8 @@ Eigen::MatrixXd get_logistic_regression_weighted_hessian_cpp(const Eigen::Matrix
 //' @description High-performance logistic regression fitting using IRLS.
 //' @param X A numeric matrix of predictors.
 //' @param y A binary numeric vector of responses.
+//' @param start_beta Optional starting values for coefficients.
+//' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -289,6 +291,8 @@ List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorX
 //' @param X A numeric matrix of predictors.
 //' @param y A binary numeric vector of responses.
 //' @param weights A numeric vector of weights.
+//' @param start_beta Optional starting values for coefficients.
+//' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -320,6 +324,8 @@ List fast_logistic_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen
 //' @param X A numeric matrix of predictors.
 //' @param y A binary numeric vector of responses.
 //' @param j The 1-based index of the parameter for which to return specific variance.
+//' @param start_beta Optional starting values for coefficients.
+//' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
 //' @param optimization_alg Optimization algorithm.

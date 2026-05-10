@@ -102,7 +102,7 @@ add_gain_column <- function(df, group_col) {
 }
 
 make_fixed_design <- function(response_type, X_cov, w, y, dead = NULL) {
-	des <- FixedDesign$new(n = length(y), response_type = response_type, verbose = FALSE)
+	des <- DesignFixed$new(n = length(y), response_type = response_type, verbose = FALSE)
 	des$add_all_subjects_to_experiment(as.data.frame(X_cov))
 	des$overwrite_all_subject_assignments(w)
 	if (is.null(dead)) des$add_all_subject_responses(y) else des$add_all_subject_responses(y, dead)
@@ -196,6 +196,7 @@ bench_ci_type <- function(testing_type) {
 }
 
 score_ci_report <- bench_ci_type("score")
+gradient_ci_report <- bench_ci_type("gradient")
 lik_ratio_ci_report <- bench_ci_type("lik_ratio")
 
 X_cov_rand <- X_cov[1:n, , drop = FALSE]
@@ -236,6 +237,7 @@ bootstrap_report <- add_gain_column(do.call(rbind, boot_rows), "model")
 
 utils::write.csv(init_report, file.path(out_dir, "initialization_report.csv"), row.names = FALSE)
 utils::write.csv(score_ci_report, file.path(out_dir, "ci_inversion_score_report.csv"), row.names = FALSE)
+utils::write.csv(gradient_ci_report, file.path(out_dir, "ci_inversion_gradient_report.csv"), row.names = FALSE)
 utils::write.csv(lik_ratio_ci_report, file.path(out_dir, "ci_inversion_lik_ratio_report.csv"), row.names = FALSE)
 utils::write.csv(randomization_report, file.path(out_dir, "randomization_ci_reuse_report.csv"), row.names = FALSE)
 utils::write.csv(bootstrap_report, file.path(out_dir, "bootstrap_reuse_report.csv"), row.names = FALSE)
@@ -252,6 +254,7 @@ summary_lines <- c(
 	"Generated files:",
 	"- initialization_report.csv",
 	"- ci_inversion_score_report.csv",
+	"- ci_inversion_gradient_report.csv",
 	"- ci_inversion_lik_ratio_report.csv",
 	"- randomization_ci_reuse_report.csv",
 	"- bootstrap_reuse_report.csv"

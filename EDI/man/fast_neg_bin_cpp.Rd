@@ -23,6 +23,10 @@ fast_neg_bin_cpp(
 
 \item{y}{A numeric vector of the response variable, representing count data.}
 
+\item{start_params}{Optional starting values for coefficients and dispersion.}
+
+\item{smart_start}{Logical. If TRUE, use an initial OLS-based guess.}
+
 \item{maxit}{Maximum number of iterations.}
 
 \item{eps_f}{Convergence tolerance for function value.}

@@ -5,7 +5,7 @@ test_that("KK hurdle-Poisson IVWC uses the Rcpp matched-pair GLMM path", {
 	n = 40
 	X = data.frame(x = rnorm(n))
 
-	des = FixedDesignBinaryMatch$new(response_type = "count", n = n, verbose = FALSE)
+	des = DesignFixedBinaryMatch$new(response_type = "count", n = n, verbose = FALSE)
 	des$add_all_subjects_to_experiment(X)
 	des$assign_w_to_all_subjects()
 

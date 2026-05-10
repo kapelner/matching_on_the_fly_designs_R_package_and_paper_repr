@@ -190,6 +190,8 @@ Eigen::MatrixXd get_negbin_regression_hessian_cpp(const Eigen::MatrixXd& X,
 //' @description Negative binomial regression fitting with full variance-covariance matrix.
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (non-negative integers).
+//' @param start_params Optional starting values for coefficients and dispersion.
+//' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 //' @param maxit Maximum number of iterations.
 //' @param eps_f Convergence tolerance for function value.
 //' @param eps_g Convergence tolerance for gradient.
@@ -234,6 +236,8 @@ List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
 //' @description High-performance negative binomial regression fitting.
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses.
+//' @param start_params Optional starting values for coefficients and dispersion.
+//' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 //' @param maxit Maximum number of iterations.
 //' @param eps_f Convergence tolerance for function value.
 //' @param eps_g Convergence tolerance for gradient.

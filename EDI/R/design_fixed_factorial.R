@@ -5,12 +5,12 @@
 #' all factor combinations.
 #'
 #' @examples
-#' des = FixedDesignFactorial$new(n = 12, response_type = 'continuous', factors = list(f1 = 2, f2 = 2))
+#' des = DesignFixedFactorial$new(n = 12, response_type = 'continuous', factors = list(f1 = 2, f2 = 2))
 #' des$add_all_subjects_to_experiment(data.frame(x=1:12))
 #' des$assign_w_to_all_subjects()
 #' @export
-FixedDesignFactorial = R6::R6Class("FixedDesignFactorial",
-	inherit = FixedDesign,
+DesignFixedFactorial = R6::R6Class("DesignFixedFactorial",
+	inherit = DesignFixed,
 	public = list(
 		#' @description
 		#' Initialize a factorial fixed experimental design
@@ -24,7 +24,7 @@ FixedDesignFactorial = R6::R6Class("FixedDesignFactorial",
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'
-		#' @return 			A new `FixedDesignFactorial` object
+		#' @return 			A new `DesignFixedFactorial` object
 		initialize = function(
 				factors,
 				response_type,

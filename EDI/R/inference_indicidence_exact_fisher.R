@@ -98,13 +98,13 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 
 		design_supports_exact_fisher = function(){
 				is(private$des_obj, "DesignSeqOneByOneiBCRD") ||
-					is(private$des_obj, "FixedDesigniBCRD") ||
+					is(private$des_obj, "DesignFixediBCRD") ||
 					private$is_supported_blocking_design(private$des_obj) ||
 					private$has_match_structure
 		},
 
 		is_supported_blocking_design = function(des_obj){
-			is(des_obj, "FixedDesignBlocking") ||
+			is(des_obj, "DesignFixedBlocking") ||
 				is(des_obj, "DesignSeqOneByOneSPBR") ||
 				is(des_obj, "DesignSeqOneByOneRandomBlockSize")
 		},

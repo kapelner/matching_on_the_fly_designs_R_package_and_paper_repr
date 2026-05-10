@@ -269,32 +269,6 @@ Design = R6::R6Class("Design",
 		},
 
 		#' @description
-		#' Checks whether this design is a blocking design.
-		assert_blocking_design = function(){
-			if (should_run_asserts()) {
-				if (!private$design_is_supported_blocking(self)){
-					stop("This design requires a blocking design.")
-				}
-			}
-		},
-
-		#' @description
-		#' Checks whether all blocks have the same number of subjects.
-		#'
-		#' @return `TRUE` invisibly if the block sizes are equal.
-		assert_equal_block_sizes = function(){
-			self$assert_blocking_design()
-			block_ids = self$get_block_ids()
-			block_sizes = as.integer(table(block_ids))
-			if (should_run_asserts()) {
-				if (length(block_sizes) > 1L && any(block_sizes != block_sizes[1L])) {
-					stop("All blocks must have the same number of subjects.")
-				}
-			}
-			invisible(TRUE)
-		},
-
-		#' @description
 		#' Checks if the experiment has a fixed sample size.
 		assert_fixed_sample = function(){
 			if (should_run_asserts()) {
@@ -359,131 +333,6 @@ Design = R6::R6Class("Design",
 		#' @return 			A binary vector of subject assignments.
 		get_w = function(){
 			private$w
-		},
-
-		#' @description Set the strata (block identifiers) for this design.
-		#'
-		#' Can only be called when \code{private$m} is still \code{NULL} (i.e. before strata
-		#' have been derived or assigned).  The design must support blocking; call
-		#' \code{assert_blocking_design()} to verify this first.
-		#'
-		#' @param m A non-negative-integer vector of block IDs, one entry per subject already
-		#'   recorded.  Values must be coercible to integer, finite, and \eqn{\ge 0}.
-		#'   Zero is reserved as a reservoir flag used by sequential KK designs.
-		#'
-		#' @return Invisibly returns \code{self} for method chaining.
-		set_m = function(m){
-			if (should_run_asserts()) {
-				if (!private$design_is_supported_blocking(self)){
-					stop("set_m() can only be used with a blocking design (e.g. FixedDesignBlocking, DesignSeqOneByOneKK14, etc.).")
-				}
-				if (!is.null(private$m)){
-					stop("set_m() can only be called when the strata have not yet been set (private$m is not NULL).")
-				}
-				assertIntegerish(m, lower = 0, any.missing = FALSE, min.len = 1)
-			}
-			private$m = as.integer(m)
-			invisible(self)
-		},
-
-		#' @description If the design is a block design, get block identifiers (otherwise halts)
-		#'
-		#' @return 			An integer vector of block identifiers.
-		get_block_ids = function(){
-			if (!is.null(private$m) && length(private$m) == length(private$y)) {
-				return(private$m)
-			}
-			block_ids = private$m
-			strata_cols = private$strata_cols
-			Xraw = private$Xraw
-			if (is.null(block_ids) && is(self, "FixedDesignOptimalBlocks")) {
-				block_ids = private$get_or_compute_block_ids()
-			}
-			if (is.null(block_ids) &&
-					(is(self, "FixedDesignBlocking") || (!is.null(strata_cols) && length(strata_cols) > 0L)) &&
-					nrow(Xraw) == length(private$y)) {
-				strata_keys = private$get_strata_keys()
-				if (length(strata_keys) == length(private$y)) {
-					block_ids = match(strata_keys, unique(strata_keys))
-				}
-			}
-			if (should_run_asserts()) {
-				if (is.null(block_ids)) {
-					stop("Block identifiers are undefined for this design.")
-				}
-			}
-			block_ids = as.integer(block_ids)
-			if (should_run_asserts()) {
-				if (length(block_ids) != length(private$y)) {
-					stop("Block identifiers are improperly sized for this design.")
-				}
-			}
-			# Cache it back to private$m for next time if it wasn't already there
-			private$m = block_ids
-			block_ids
-		},
-
-		#' @description
-		#' Summarize the covariates within blocks.
-		#'
-		#' @param block_ids A vector of block identifiers to summarize. If NULL, defaults to all blocks.
-		#'
-		#' @return A list of data.tables, one for each block.
-		summarize_blocks = function(block_ids = NULL) {
-			if (should_run_asserts()) {
-				self$assert_blocking_design()
-			}
-			all_block_ids = self$get_block_ids()
-			if (is.null(block_ids)) {
-				block_ids = sort(unique(all_block_ids))
-			}
-			
-			Xraw = self$get_X_raw()
-			res = list()
-			
-			for (bid in block_ids) {
-				idx = which(all_block_ids == bid)
-				if (length(idx) == 0) {
-					warning(paste("Block ID", bid, "not found in the design."))
-					next
-				}
-				X_block = Xraw[idx, ]
-				
-				# Summary for each column
-				col_summaries = list()
-				for (col_name in names(X_block)) {
-					col_data = X_block[[col_name]]
-					if (is.numeric(col_data)) {
-						col_summaries[[col_name]] = data.table::data.table(
-							variable = col_name,
-							level = NA_character_,
-							mean_or_pct = mean(col_data, na.rm = TRUE),
-							sd = stats::sd(col_data, na.rm = TRUE)
-						)
-					} else {
-						# Categorical (factor or character)
-						counts = table(col_data, useNA = "no")
-						pcts = prop.table(counts) * 100
-						if (length(pcts) == 0) {
-							col_summaries[[col_name]] = data.table::data.table(
-								variable = col_name,
-								level = "N/A",
-								mean_or_pct = NA_real_,
-								sd = NA_real_
-							)
-						} else {
-							col_summaries[[col_name]] = data.table::data.table(
-								variable = col_name,
-								level = names(pcts),
-								mean_or_pct = as.numeric(pcts),
-								sd = NA_real_
-							)
-						}
-					}
-				}
-				res[[as.character(bid)]] = data.table::rbindlist(col_summaries)
-			}
-			res
 		},
 
 		#' @description Get n, the sample size
@@ -622,22 +471,11 @@ Design = R6::R6Class("Design",
 		y = numeric(),
 		y_original = numeric(),
 		dead = numeric(),
-		m = NULL,
-		kk_xm_structural     = NULL,
-		kk_xm_m_vec          = NULL,
-		kk_lin_xm_structural = NULL,
-		kk_lin_xm_m_vec      = NULL,
-		kk_cluster_id        = NULL,
-		kk_cluster_id_m_vec  = NULL,
 		permutations_cache   = list(),
 		lin_centered_covariates = NULL,
-		kk_boot_pair_rows    = NULL,
-		kk_boot_i_reservoir  = NULL,
-		kk_boot_n_reservoir  = NULL,
 		draw_bootstrap_indices = function(bootstrap_type = NULL){
-			list(i_b = sample.int(private$n, private$n, replace = TRUE), m_vec_b = NULL)
+			list(i_b = sample_int_replace_cpp(private$n, private$n), m_vec_b = NULL)
 		},
-		strata_cols = NULL,
 		prob_T = NULL,
 		response_type = NULL,
 		response_type_original = NULL,
@@ -648,27 +486,15 @@ Design = R6::R6Class("Design",
 		missingness_method = "impute",
 		model_formula = NULL,
 		verbose = NULL,
-		design_is_supported_blocking = function(des_obj){
-			inherits(des_obj, "DesignSeqOneByOneKK14") ||
-				is(des_obj, "FixedDesigniBCRD") ||
-				inherits(des_obj, "FixedDesignBinaryMatch") ||
-				is(des_obj, "FixedDesignBlocking") ||
-				is(des_obj, "FixedDesignOptimalBlocks") ||
-				is(des_obj, "DesignSeqOneByOneSPBR") ||
-				is(des_obj, "DesignSeqOneByOneRandomBlockSize")
-		},
 		y_i_t_i = list(),	 #at what point during the experiment are the subjects recorded?
 		uses_covariates = FALSE, #does this design use the covariates to make assignments? The default is FALSE
 		resample_assignment = function(){
 			n = private$n
-			i_b = sample(n, n, replace = TRUE)
+			i_b = sample_int_replace_cpp(n, n)
 			private$w    = private$w[i_b]
 			private$y    = private$y[i_b]
 			private$y_original = private$y_original[i_b]
 			private$dead = private$dead[i_b]
-			if (!is.null(private$m)){
-				private$m = private$m[i_b]
-			}
 			invisible(self)
 		},
 

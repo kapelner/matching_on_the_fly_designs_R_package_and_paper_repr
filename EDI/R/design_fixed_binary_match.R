@@ -6,12 +6,12 @@
 #' Uses the \pkg{GreedyExperimentalDesign} package for distance computation and random allocation.
 #'
 #' @examples
-#' des = FixedDesignBinaryMatch$new(n = 10, response_type = 'continuous')
+#' des = DesignFixedBinaryMatch$new(n = 10, response_type = 'continuous')
 #' des$add_all_subjects_to_experiment(data.frame(x1 = rnorm(10)))
 #' des$assign_w_to_all_subjects()
 #' @export
-FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
-	inherit = FixedDesign,
+DesignFixedBinaryMatch = R6::R6Class("DesignFixedBinaryMatch",
+	inherit = DesignFixed,
 	public = list(
 		#' @description
 		#' Initialize a binary match fixed experimental design
@@ -25,7 +25,7 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'
-		#' @return 			A new `FixedDesignBinaryMatch` object
+		#' @return 			A new `DesignFixedBinaryMatch` object
 		#'
 		initialize = function(
 				response_type,
@@ -41,9 +41,10 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 				if (prob_T != 0.5){
 					stop("Binary match designs only support even treatment allocation (prob_T = 0.5)")
 				}
-				assert_greedy_experimental_design_installed("FixedDesignBinaryMatch")
+				assert_greedy_experimental_design_installed("DesignFixedBinaryMatch")
 			}
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+			private$matching_capable = TRUE
 			private$mahal_match = mahal_match
 			private$uses_covariates = TRUE
 		},
@@ -60,7 +61,7 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 				assertCount(r, positive = TRUE)
 				self$assert_all_subjects_arrived()
 			}
-			private$ensure_bms_computed()
+			private$ensure_matching_structure_computed()
 			n = self$get_n()
 			if (is.null(private$m)){
 				# No covariates: fall back to BCRD
@@ -81,15 +82,6 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 	private = list(
 		mahal_match = NULL,
 		bms = NULL,
-
-		draw_bootstrap_indices = function(bootstrap_type = NULL){
-			private$ensure_bms_computed()
-			if (is.null(private$m)){
-				n = self$get_n()
-				return(list(i_b = sample.int(n, n, replace = TRUE), m_vec_b = NULL))
-			}
-			.draw_kk_bootstrap_indices(private)
-		},
 
 		validate_allocation_matrix = function(w_mat, n, r){
 			if (is.vector(w_mat)) {
@@ -122,7 +114,7 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 			w_mat[, seq_len(r), drop = FALSE]
 		},
 
-		ensure_bms_computed = function(){
+		ensure_matching_structure_computed = function(){
 			n = self$get_n()
 			if (is.null(private$bms) && !is.null(private$X) && ncol(private$X) > 0){
 				X = private$X[1:n, , drop = FALSE]
@@ -136,7 +128,9 @@ FixedDesignBinaryMatch = R6::R6Class("FixedDesignBinaryMatch",
 					m_vec[pairs[i, 2]] = i
 				}
 				private$m = m_vec
+				private$reset_matching_caches()
 			}
+			invisible(NULL)
 		}
 	)
 )

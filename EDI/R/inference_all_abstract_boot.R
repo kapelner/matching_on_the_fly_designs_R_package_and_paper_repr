@@ -492,7 +492,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			if (should_run_asserts()) {
 				assertChoice(bootstrap_type, c("within_blocks", "resample_blocks"))
 			}
-			valid_blocking_classes = c("FixedDesignBlocking", "FixedDesignOptimalBlocks", "DesignSeqOneByOneSPBR", "FixedDesignBlockedCluster")
+			valid_blocking_classes = c("DesignFixedBlocking", "DesignFixedOptimalBlocks", "DesignSeqOneByOneSPBR", "DesignFixedBlockedCluster")
 			if (should_run_asserts()) {
 				if (!any(vapply(valid_blocking_classes, function(cls) is(private$des_obj, cls), logical(1)))){
 					stop("bootstrap_type can only be set for blocking designs: ", paste(valid_blocking_classes, collapse = ", "))
@@ -685,9 +685,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			sub_des_priv$n = length(indices)
 			sub_des_priv$fixed_sample = TRUE
 			# Reset bootstrap structure cache — indices changed, pair structure no longer valid
-			sub_des_priv$kk_boot_pair_rows   = NULL
-			sub_des_priv$kk_boot_i_reservoir = NULL
-			sub_des_priv$kk_boot_n_reservoir  = NULL
+			sub_des_priv$boot_pair_rows   = NULL
+			sub_des_priv$boot_i_reservoir = NULL
+			sub_des_priv$boot_n_reservoir = NULL
 			# Reset model-specific design caches that hold n-row matrices — must be recomputed
 			# on the subset (e.g. Lin centered covariates, which are cached as an n-row Xc).
 			sub_des_priv$lin_centered_covariates = NULL

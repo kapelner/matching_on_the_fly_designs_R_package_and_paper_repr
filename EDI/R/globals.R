@@ -1,6 +1,5 @@
 # Internal environment for the EDI package to store global state
 edi_env = new.env(parent = emptyenv())
-
 # Closure to encapsulate the internal assertion override flag (used by SimulationFramework)
 .assert_manager = (function() {
   internal_run_asserts = TRUE
@@ -14,11 +13,9 @@ edi_env = new.env(parent = emptyenv())
     }
   )
 })()
-
 #' Toggle the execution of assertions throughout the package
 #' 
-#' @description
-#' This function enables or disables the internal input validation checks (assertions)
+#' @description This function enables or disables the internal input validation checks (assertions)
 #' by setting the \code{options(edi.run_asserts = ...)} value.
 #' Disabling assertions can provide a significant performance boost in heavy
 #' simulations (often 10x-20x speedup), but it removes the safety rails that
@@ -37,10 +34,8 @@ toggle_asserts = function(on = TRUE) {
   options(edi.run_asserts = isTRUE(on))
   invisible(isTRUE(on))
 }
-
 # private method
 should_run_asserts = .assert_manager$should_run
-
 #' Set the number of cores for parallelization
 #' 
 #' This function initializes a persistent parallel cluster (either a fork cluster
@@ -80,11 +75,9 @@ set_num_cores = function(num_cores, force_mirai = FALSE) {
   
   # Clear any existing clusters first
   unset_num_cores()
-
   # Set package/native thread budgets before workers are created so forked
   # children inherit the intended global thread settings.
   set_package_threads(num_cores)
-
   if (as.integer(num_cores) <= 1L) {
     return(invisible(NULL))
   }
@@ -150,8 +143,6 @@ set_num_cores = function(num_cores, force_mirai = FALSE) {
   
   invisible(NULL)
 }
-
-
 #' Unset the number of cores and stop parallel clusters
 #' 
 #' This function stops any global fork or mirai clusters stored in the package
@@ -183,8 +174,6 @@ unset_num_cores = function() {
   
   invisible(NULL)
 }
-
-
 #' Get the default parallel dispatch policy
 #'
 #' Returns EDI's built-in blocklist-first dispatch policy. This is the policy
@@ -209,9 +198,7 @@ get_parallel_dispatch_policy = function() {
     )
   )
 }
-
 edi_env$parallel_dispatch_policy_config = get_parallel_dispatch_policy()
-
 #' Get the default bootstrap dispatch policy
 #'
 #' Returns EDI's built-in policy for choosing a default bootstrap type. Each
@@ -254,7 +241,7 @@ get_bootstrap_dispatch_policy = function() {
       "^InferenceContinRobustRegr$" = "percentile"
     ),
     design_class_overrides = list(
-      FixedDesignBlockedCluster = c(
+      DesignFixedBlockedCluster = c(
         "^InferenceContinRobustRegr$" = "percentile",
         "^InferenceContinLin$" = "percentile",
         "^InferenceContinOLS$" = "percentile",
@@ -264,9 +251,7 @@ get_bootstrap_dispatch_policy = function() {
     )
   )
 }
-
 edi_env$bootstrap_dispatch_policy_config = get_bootstrap_dispatch_policy()
-
 #' Get the default optimization dispatch policy
 #'
 #' Returns EDI's built-in policy for choosing a default optimization algorithm.
@@ -294,9 +279,7 @@ get_optimization_dispatch_policy = function() {
     )
   )
 }
-
 edi_env$optimization_dispatch_policy_config = get_optimization_dispatch_policy()
-
 #' Update the parallel dispatch policy
 #'
 #' EDI uses an empirical, blocklist-first dispatch policy to decide when an
@@ -332,22 +315,18 @@ edi_env$optimization_dispatch_policy_config = get_optimization_dispatch_policy()
 #' @export
 set_parallel_dispatch_policy = function(policy = NULL, reset = FALSE) {
   checkmate::assertFlag(reset)
-
   if (isTRUE(reset)) {
     edi_env$parallel_dispatch_policy_config = get_parallel_dispatch_policy()
     edi_env$parallel_dispatch_policy_override = NULL
     return(invisible(edi_env$parallel_dispatch_policy_config))
   }
-
   if (is.null(policy)) {
     return(invisible(edi_env$parallel_dispatch_policy_config))
   }
-
   if (is.function(policy)) {
     edi_env$parallel_dispatch_policy_override = policy
     return(invisible(NULL))
   }
-
   checkmate::assertList(policy, names = "named")
   current_config = edi_env$parallel_dispatch_policy_config
   for (nm in names(policy)) {
@@ -363,7 +342,6 @@ set_parallel_dispatch_policy = function(policy = NULL, reset = FALSE) {
   edi_env$parallel_dispatch_policy_override = NULL
   invisible(NULL)
 }
-
 #' Update the optimization dispatch policy
 #'
 #' @examples
@@ -386,18 +364,14 @@ set_optimization_dispatch_policy = function(policy = NULL, reset = FALSE) {
   edi_env$optimization_dispatch_policy_config = utils::modifyList(edi_env$optimization_dispatch_policy_config, policy)
   invisible(NULL)
 }
-
-
 # Internal helper to get the global fork cluster
 get_global_fork_cluster = function() {
   edi_env$global_fork_cluster
 }
-
 # Internal helper to get the global mirai core count
 get_global_mirai_cores = function() {
   edi_env$global_mirai_num_cores
 }
-
 # Internal helper to get the current core count budget
 get_num_cores = function() {
   if (!is.null(edi_env$num_cores_override)) return(edi_env$num_cores_override)
@@ -407,7 +381,6 @@ get_num_cores = function() {
   if (!is.null(mirai_cores)) return(mirai_cores)
   1L
 }
-
 # Internal helper for empirical parallel dispatch policy.
 # This is intentionally conservative and only forces serial execution for
 # inference families that have shown repeat multicore regressions in the package
@@ -417,17 +390,14 @@ edi_parallel_dispatch_policy = function(inference_class, response_type, operatio
   if (is.function(edi_env$parallel_dispatch_policy_override)) {
     return(edi_env$parallel_dispatch_policy_override(inference_class, response_type, operation))
   }
-
   inference_class = as.character(inference_class[[1]])
   response_type = as.character(response_type[[1]])
   operation = as.character(operation[[1]])
-
   config = edi_env$parallel_dispatch_policy_config
   matches_any = function(value, patterns) {
     if (is.null(patterns) || length(patterns) == 0L) return(FALSE)
     any(vapply(patterns, function(pattern) grepl(pattern, value, perl = TRUE), logical(1)))
   }
-
   reason = NULL
   if (identical(operation, "bootstrap")) {
     op_cfg = config$bootstrap
@@ -442,7 +412,6 @@ edi_parallel_dispatch_policy = function(inference_class, response_type, operatio
       reason = "randomization confidence intervals are forced serial by benchmark policy"
     }
   }
-
   list(
     force_serial = !is.null(reason),
     reason = reason,
@@ -451,7 +420,6 @@ edi_parallel_dispatch_policy = function(inference_class, response_type, operatio
     operation = operation
   )
 }
-
 edi_bootstrap_dispatch_policy = function(inference_class, object = NULL) {
   config = edi_env$bootstrap_dispatch_policy_config
   inference_class = as.character(inference_class[[1]])
@@ -485,7 +453,6 @@ edi_bootstrap_dispatch_policy = function(inference_class, object = NULL) {
   }
   tolower(default_type)
 }
-
 edi_optimization_dispatch_policy = function(inference_class) {
   config = edi_env$optimization_dispatch_policy_config
   inference_class = as.character(inference_class[[1]])
@@ -503,13 +470,10 @@ edi_optimization_dispatch_policy = function(inference_class) {
   }
   tolower(default_alg)
 }
-
-
 # Internal helper
 set_package_threads = function(num_cores) {
   # Ensure it's an integer
   num_cores = as.integer(num_cores)
-
   # R packages with global thread setters
 	  if (check_package_installed("data.table")) {
 	    data.table::setDTthreads(num_cores)
@@ -517,7 +481,6 @@ set_package_threads = function(num_cores) {
 	  if (check_package_installed("fixest")) {
 	    suppressWarnings(try(fixest::setFixest_nthreads(num_cores), silent = TRUE))
 	  }
-
   # Environment variables for OpenMP and BLAS/LAPACK
   # This helps prevent thread explosion in child processes
   # that call multi-threaded native libraries.
@@ -540,7 +503,6 @@ set_package_threads = function(num_cores) {
   
   # Direct C++ control for OpenMP and Eigen (more robust than env vars after startup)
   try(set_omp_num_threads_cpp(num_cores), silent = TRUE)
-
   # BLAS and OpenMP control via RhpcBLASctl (now a required dependency)
   try({
     RhpcBLASctl::blas_set_num_threads(num_cores)

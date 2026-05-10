@@ -10,7 +10,7 @@
 #' @export
 DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 	lock_objects = FALSE,
-	inherit = Design,
+	inherit = DesignMatching,
 	public = list(
 		#' @description
 		#' Initialize a sequential one-by-one design.

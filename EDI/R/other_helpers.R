@@ -484,19 +484,19 @@ NULL
 
 	# --- Fast path 1: design-level structural cache ---
 	if (!is.null(des_priv) &&
-	    !is.null(des_priv$kk_xm_structural) &&
-	    identical(m_vec, des_priv$kk_xm_m_vec) &&
-	    ncol(X) == ncol(des_priv$kk_xm_structural$X_reservoir)){
-		wy = compute_kk_wy_stats_cpp(as.integer(w), as.numeric(y), as.integer(m_vec))
-		return(c(des_priv$kk_xm_structural, wy))
+	    !is.null(des_priv$xm_structural) &&
+	    identical(m_vec, des_priv$xm_m_vec) &&
+	    ncol(X) == ncol(des_priv$xm_structural$X_reservoir)){
+		wy = compute_matching_wy_stats_cpp(as.integer(w), as.numeric(y), as.integer(m_vec))
+		return(c(des_priv$xm_structural, wy))
 	}
 
 	# --- Fast path 2: inference-level structural cache (bootstrap case) ---
-	if (!is.null(private_env$kk_xm_structural) &&
-	    identical(m_vec, private_env$kk_xm_m_vec) &&
-	    ncol(X) == ncol(private_env$kk_xm_structural$X_reservoir)){
-		wy = compute_kk_wy_stats_cpp(as.integer(w), as.numeric(y), as.integer(m_vec))
-		return(c(private_env$kk_xm_structural, wy))
+	if (!is.null(private_env$xm_structural) &&
+	    identical(m_vec, private_env$xm_m_vec) &&
+	    ncol(X) == ncol(private_env$xm_structural$X_reservoir)){
+		wy = compute_matching_wy_stats_cpp(as.integer(w), as.numeric(y), as.integer(m_vec))
+		return(c(private_env$xm_structural, wy))
 	}
 
 	# --- Full computation ---
@@ -510,15 +510,15 @@ NULL
 		if (is.null(des_m)) des_m = rep(NA_integer_, n)
 		des_m[is.na(des_m)] = 0L
 		if (identical(m_vec, des_m)){
-			des_priv$kk_xm_structural = structural
-			des_priv$kk_xm_m_vec      = m_vec
+			des_priv$xm_structural = structural
+			des_priv$xm_m_vec      = m_vec
 		} else {
-			private_env$kk_xm_structural = structural
-			private_env$kk_xm_m_vec      = m_vec
+			private_env$xm_structural = structural
+			private_env$xm_m_vec      = m_vec
 		}
 	} else {
-		private_env$kk_xm_structural = structural
-		private_env$kk_xm_m_vec      = m_vec
+		private_env$xm_structural = structural
+		private_env$xm_m_vec      = m_vec
 	}
 	full
 }
@@ -528,7 +528,7 @@ NULL
 		m_vec = rep(NA_integer_, n)
 	}
 	m_vec[is.na(m_vec)] = 0
-	compute_kk_lin_match_data_cpp(X, y, w, m_vec)
+	compute_matching_lin_match_data_cpp(X, y, w, m_vec)
 }
 
 # Cached variant for the lin (means + diffs) C++ path. Same hierarchy as above.
@@ -537,21 +537,21 @@ NULL
 	m_vec[is.na(m_vec)] = 0L
 
 	if (!is.null(des_priv) &&
-	    !is.null(des_priv$kk_lin_xm_structural) &&
-	    identical(m_vec, des_priv$kk_lin_xm_m_vec) &&
-	    ncol(X) == ncol(des_priv$kk_lin_xm_structural$X_reservoir)){
-		wy = compute_kk_lin_wy_stats_cpp(as.integer(w), as.numeric(y), as.integer(m_vec))
-		return(c(des_priv$kk_lin_xm_structural, wy))
+	    !is.null(des_priv$lin_xm_structural) &&
+	    identical(m_vec, des_priv$lin_xm_m_vec) &&
+	    ncol(X) == ncol(des_priv$lin_xm_structural$X_reservoir)){
+		wy = compute_matching_lin_wy_stats_cpp(as.integer(w), as.numeric(y), as.integer(m_vec))
+		return(c(des_priv$lin_xm_structural, wy))
 	}
 
-	if (!is.null(private_env$kk_lin_xm_structural) &&
-	    identical(m_vec, private_env$kk_lin_xm_m_vec) &&
-	    ncol(X) == ncol(private_env$kk_lin_xm_structural$X_reservoir)){
-		wy = compute_kk_lin_wy_stats_cpp(as.integer(w), as.numeric(y), as.integer(m_vec))
-		return(c(private_env$kk_lin_xm_structural, wy))
+	if (!is.null(private_env$lin_xm_structural) &&
+	    identical(m_vec, private_env$lin_xm_m_vec) &&
+	    ncol(X) == ncol(private_env$lin_xm_structural$X_reservoir)){
+		wy = compute_matching_lin_wy_stats_cpp(as.integer(w), as.numeric(y), as.integer(m_vec))
+		return(c(private_env$lin_xm_structural, wy))
 	}
 
-	full = compute_kk_lin_match_data_cpp(as.matrix(X), as.numeric(y), as.integer(w), as.integer(m_vec))
+	full = compute_matching_lin_match_data_cpp(as.matrix(X), as.numeric(y), as.integer(w), as.integer(m_vec))
 	structural = full[c("m", "X_matched_diffs_full", "X_matched_means_full", "X_reservoir")]
 
 	if (!is.null(des_priv)){
@@ -559,15 +559,15 @@ NULL
 		if (is.null(des_m)) des_m = rep(NA_integer_, n)
 		des_m[is.na(des_m)] = 0L
 		if (identical(m_vec, des_m)){
-			des_priv$kk_lin_xm_structural = structural
-			des_priv$kk_lin_xm_m_vec      = m_vec
+			des_priv$lin_xm_structural = structural
+			des_priv$lin_xm_m_vec      = m_vec
 		} else {
-			private_env$kk_lin_xm_structural = structural
-			private_env$kk_lin_xm_m_vec      = m_vec
+			private_env$lin_xm_structural = structural
+			private_env$lin_xm_m_vec      = m_vec
 		}
 	} else {
-		private_env$kk_lin_xm_structural = structural
-		private_env$kk_lin_xm_m_vec      = m_vec
+		private_env$lin_xm_structural = structural
+		private_env$lin_xm_m_vec      = m_vec
 	}
 	full
 }
@@ -575,13 +575,13 @@ NULL
 # Computes and caches the structural bootstrap components (i_reservoir, pair_rows, n_reservoir)
 # for designs with a match vector (KK14, FixedBinaryMatch). Idempotent: no-op if already cached.
 .init_kk_bootstrap_structure = function(des_priv){
-	if (!is.null(des_priv$kk_boot_pair_rows)) return(invisible(NULL))
+	if (!is.null(des_priv$boot_pair_rows)) return(invisible(NULL))
 	m_vec = des_priv$m
 	n = des_priv$n
 	if (is.null(m_vec)){
-		des_priv$kk_boot_i_reservoir  = seq_len(n)
-		des_priv$kk_boot_n_reservoir  = n
-		des_priv$kk_boot_pair_rows    = matrix(integer(0), nrow = 0L, ncol = 2L)
+		des_priv$boot_i_reservoir  = seq_len(n)
+		des_priv$boot_n_reservoir  = n
+		des_priv$boot_pair_rows    = matrix(integer(0), nrow = 0L, ncol = 2L)
 		return(invisible(NULL))
 	}
 	m_vec_int = as.integer(m_vec)
@@ -595,9 +595,9 @@ NULL
 	} else {
 		matrix(integer(0), nrow = 0L, ncol = 2L)
 	}
-	des_priv$kk_boot_i_reservoir = i_reservoir
-	des_priv$kk_boot_n_reservoir = length(i_reservoir)
-	des_priv$kk_boot_pair_rows   = pair_rows
+	des_priv$boot_i_reservoir = i_reservoir
+	des_priv$boot_n_reservoir = length(i_reservoir)
+	des_priv$boot_pair_rows   = pair_rows
 	invisible(NULL)
 }
 
@@ -605,10 +605,10 @@ NULL
 # Returns list(i_b, m_vec_b) compatible with bootstrap_subset_inference.
 .draw_kk_bootstrap_indices = function(des_priv){
 	.init_kk_bootstrap_structure(des_priv)
-	draw_kk_bootstrap_sample_cpp(
-		i_reservoir  = des_priv$kk_boot_i_reservoir,
-		pair_rows    = des_priv$kk_boot_pair_rows,
-		n_reservoir  = des_priv$kk_boot_n_reservoir
+	draw_matching_bootstrap_sample_cpp(
+		i_reservoir  = des_priv$boot_i_reservoir,
+		pair_rows    = des_priv$boot_pair_rows,
+		n_reservoir  = des_priv$boot_n_reservoir
 	)
 }
 
@@ -1129,7 +1129,8 @@ NULL
 	}
 
 	if (is.null(starts)){
-		start = .extract_survreg_start(y[rows_used], dead[rows_used], X[rows_used, , drop = FALSE])
+		X_no_int = X[rows_used, -1L, drop = FALSE]
+		start = .extract_survreg_start(y[rows_used], dead[rows_used], X_no_int)
 		start_par_base = c(unname(start$beta), start$log_sigma)
 		starts = list(
 			c(start_par_base, log(0.10)),
@@ -1160,7 +1161,7 @@ NULL
 		}
 	}
 
-	# Fallback to R optim if C++ failed to converge
+	# Fallback to R optim (BFGS) if C++ failed to converge
 	if (is.null(best)) {
 		for (start_par in starts){
 			fit = tryCatch(
@@ -1179,44 +1180,91 @@ NULL
 			}
 		}
 	}
+	# Final fallback to Nelder-Mead (derivative-free, more robust)
+	if (is.null(best)) {
+		for (start_par in starts){
+			fit = tryCatch(
+				stats::optim(
+					par = start_par,
+					fn = neg_loglik,
+					method = "Nelder-Mead",
+					hessian = FALSE,
+					control = list(maxit = 10000, reltol = 1e-8)
+				),
+				error = function(e) NULL
+			)
+			if (is.null(fit) || !is.finite(fit$value)) next
+			if (is.null(best) || fit$value < best$value){
+				best = fit
+			}
+		}
+	}
 	if (is.null(best)) return(NULL)
 
 	beta_hat = best$par[seq_len(num_beta)]
 	names(beta_hat) = colnames(X)
 	
 	if (isTRUE(estimate_only)){
-		return(list(
-			beta = as.numeric(beta_hat["w"]),
-			ssq = NA_real_,
-			theta = exp(best$par[num_beta + 2L]),
-			log_sigma = best$par[num_beta + 1L],
-			best_par = best$par
-		))
+			return(list(
+				beta = as.numeric(beta_hat["w"]),
+				ssq = NA_real_,
+				theta = exp(best$par[num_beta + 2L]),
+				log_sigma = best$par[num_beta + 1L],
+				best_par = best$par,
+				best_fit = best
+			))
 	}
 
-	hess = best$hessian
-	vcov_full = tryCatch(solve(hess), error = function(e) NULL)
+	vcov_full = NULL
+	if (!is.null(best$vcov)) {
+		vcov_cpp = tryCatch(as.matrix(best$vcov), error = function(e) NULL)
+		if (!is.null(vcov_cpp) && nrow(vcov_cpp) == num_beta + 2L && all(is.finite(diag(vcov_cpp)))) {
+			vcov_full = vcov_cpp
+		}
+	}
+	if (is.null(vcov_full)) {
+		hess = best$hessian
+		vcov_full = tryCatch(solve(hess), error = function(e) NULL)
+	}
+	if (is.null(vcov_full) || any(!is.finite(diag(vcov_full)))) {
+		X_no_int = X[, -1L, drop = FALSE]
+		hess_cpp = tryCatch(
+			get_clayton_weibull_aft_hessian_cpp(
+				X_no_int, y, dead,
+				if (has_pairs) pair_idx - 1L else matrix(0L, 0, 2),
+				if (has_singletons) singleton_rows - 1L else integer(0),
+				best$par
+			),
+			error = function(e) NULL
+		)
+		if (!is.null(hess_cpp)) {
+			vcov_full = tryCatch(solve(-hess_cpp), error = function(e) NULL)
+			if (!is.null(vcov_full) && any(!is.finite(diag(vcov_full)))) vcov_full = NULL
+		}
+	}
 	if (is.null(vcov_full) || any(!is.finite(diag(vcov_full)))){
-		return(list(
-			beta = as.numeric(beta_hat["w"]),
-			ssq = NA_real_,
-			theta = exp(best$par[num_beta + 2L]),
-			log_sigma = best$par[num_beta + 1L],
-			best_par = best$par
-		))
+			return(list(
+				beta = as.numeric(beta_hat["w"]),
+				ssq = NA_real_,
+				theta = exp(best$par[num_beta + 2L]),
+				log_sigma = best$par[num_beta + 1L],
+				best_par = best$par,
+				best_fit = best
+			))
 	}
 
 	rownames(vcov_full) = colnames(vcov_full) = c(colnames(X), "log_sigma", "log_theta")
 	ssq = as.numeric(vcov_full["w", "w"])
 	if (!is.finite(beta_hat["w"]) || !is.finite(ssq) || ssq <= 0) {
 		# If w is not finite or ssq is not valid, we still return the best_par for potential reuse
-		return(list(
-			beta = as.numeric(beta_hat["w"]),
-			ssq = NA_real_,
-			theta = exp(best$par[num_beta + 2L]),
-			log_sigma = best$par[num_beta + 1L],
-			best_par = best$par
-		))
+			return(list(
+				beta = as.numeric(beta_hat["w"]),
+				ssq = NA_real_,
+				theta = exp(best$par[num_beta + 2L]),
+				log_sigma = best$par[num_beta + 1L],
+				best_par = best$par,
+				best_fit = best
+			))
 	}
 
 	list(
@@ -1224,7 +1272,8 @@ NULL
 		ssq = ssq,
 		theta = exp(best$par[num_beta + 2L]),
 		log_sigma = best$par[num_beta + 1L],
-		best_par = best$par
+		best_par = best$par,
+		best_fit = best
 	)
 }
 

@@ -5,13 +5,13 @@
 #' This design randomizes clusters within specified blocks using the \pkg{randomizr} package.
 #'
 #' @examples
-#' des = FixedDesignBlockedCluster$new(n = 20, response_type = 'continuous', strata_cols = 'x2', cluster_col = 'cl')
+#' des = DesignFixedBlockedCluster$new(n = 20, response_type = 'continuous', strata_cols = 'x2', cluster_col = 'cl')
 #' X = data.frame(x1 = rnorm(20), x2 = factor(rep(1:2, each = 10)), cl = factor(rep(1:10, each = 2)))
 #' des$add_all_subjects_to_experiment(X)
 #' des$assign_w_to_all_subjects()
 #' @export
-FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
-	inherit = FixedDesign,
+DesignFixedBlockedCluster = R6::R6Class("DesignFixedBlockedCluster",
+	inherit = DesignFixed,
 	public = list(
 		#' @description
 		#' Initialize a blocked and cluster randomized fixed experimental design
@@ -29,7 +29,7 @@ FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'
-		#' @return 			A new `FixedDesignBlockedCluster` object
+		#' @return 			A new `DesignFixedBlockedCluster` object
 		#'
 		initialize = function(
 				strata_cols,
@@ -53,6 +53,7 @@ FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
 				assertCount(preferred_num_bins_for_continuous_covariate, positive = TRUE)
 			}
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+			private$blocking_capable = TRUE
 			private$strata_cols = strata_cols
 			private$cluster_col = cluster_col
 			private$preferred_num_bins_for_continuous_covariate = preferred_num_bins_for_continuous_covariate
@@ -99,15 +100,13 @@ FixedDesignBlockedCluster = R6::R6Class("FixedDesignBlockedCluster",
 				unique_strata = unique(strata_keys)
 				i_b = unlist(lapply(unique_strata, function(stratum) {
 					stratum_idx = which(strata_keys == stratum)
-					stratum_clusters = unique(cluster_ids[stratum_idx])
-					sampled_clusters = sample(stratum_clusters, length(stratum_clusters), replace = TRUE)
-					unlist(lapply(sampled_clusters, function(cl) which(cluster_ids == cl)), use.names = FALSE)
+					stratum_group_id = match(cluster_ids[stratum_idx], unique(cluster_ids[stratum_idx]))
+					stratum_idx[resample_group_rows_cpp(as.integer(stratum_group_id), length(unique(stratum_group_id)))]
 				}), use.names = FALSE)
 			} else {
 				# Resample blocks (strata) themselves
-				unique_strata = unique(strata_keys)
-				sampled_strata = sample(unique_strata, length(unique_strata), replace = TRUE)
-				i_b = unlist(lapply(sampled_strata, function(stratum) which(strata_keys == stratum)), use.names = FALSE)
+				strata_group_id = match(strata_keys, unique(strata_keys))
+				i_b = resample_group_rows_cpp(as.integer(strata_group_id), length(unique(strata_group_id)))
 			}
 			list(i_b = as.integer(i_b), m_vec_b = NULL)
 		}

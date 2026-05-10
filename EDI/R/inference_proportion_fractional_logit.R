@@ -42,6 +42,10 @@ InferencePropFractionalLogit = R6::R6Class("InferencePropFractionalLogit",
 	private = list(
 		best_X_colnames = NULL,
 
+		supports_likelihood_tests = function(){
+			FALSE
+		},
+
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)

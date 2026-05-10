@@ -145,6 +145,9 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 		use_rcpp = TRUE,
 		glmm_response_type  = function() "ordinal",
 		glmm_family         = function() glmmTMB::cumulative(link = "logit"),
+		supports_likelihood_tests = function(){
+			isTRUE(private$use_rcpp)
+		},
 
 		shared = function(estimate_only = FALSE){
 			if (private$use_rcpp) {
@@ -158,6 +161,8 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 			private$clear_nonestimable_state()
+			private$cached_mod = NULL
+			private$cached_values$likelihood_test_context = NULL
 
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
@@ -227,6 +232,18 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 				return(invisible(NULL))
 			}
 
+			private$cached_mod = fit
+			full_params = as.numeric(c(fit$alpha, fit$b, fit$log_sigma))
+			private$set_fit_warm_start(full_params, "params")
+			private$cached_values$likelihood_test_context = list(
+				X = X_fit,
+				y = y,
+				group_id = as.integer(group_id),
+				K = K,
+				j_treat = length(fit$alpha) + 1L,
+				n_gh = 20L,
+				start = full_params
+			)
 			private$cached_values$beta_hat_T = beta_hat_T
 			private$cached_values$df   = Inf
 
@@ -234,6 +251,66 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 
 			ssq = fit$ssq_b_T
 			private$cached_values$s_beta_hat_T = if (!is.null(ssq) && is.finite(ssq) && ssq > 0) sqrt(ssq) else NA_real_
+		},
+
+		get_likelihood_test_spec = function(){
+			if (!isTRUE(private$use_rcpp)) return(NULL)
+			private$shared(estimate_only = FALSE)
+			ctx = private$cached_values$likelihood_test_context
+			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+			X_fit = ctx$X
+			y = as.integer(ctx$y)
+			group_id = as.integer(ctx$group_id)
+			K = as.integer(ctx$K)
+			j_treat = as.integer(ctx$j_treat)
+			n_gh = as.integer(ctx$n_gh %||% 20L)
+			list(
+				X = X_fit,
+				y = y,
+				group_id = group_id,
+				j = j_treat,
+				full_fit = private$cached_mod,
+				fit_null = function(delta, start = NULL){
+					fit = fast_ordinal_glmm_cpp(
+						X = X_fit,
+						y = y,
+						group_id = group_id,
+						K = K,
+						j_T = 0L,
+						estimate_only = FALSE,
+						n_gh = n_gh,
+						max_abs_log_sigma = 8.0,
+						maxit = 300L,
+						eps_g = 1e-3,
+						start = start %||% private$get_fit_warm_start_for_length("params", length(ctx$start)) %||% ctx$start,
+						optimization_alg = private$optimization_alg,
+						fixed_idx = j_treat,
+						fixed_values = delta
+					)
+					if (!is.null(fit)) {
+						fit$params = tryCatch(as.numeric(c(fit$alpha, fit$b, fit$log_sigma)), error = function(e) NULL)
+					}
+					fit
+				},
+				extract_start = function(fit){
+					as.numeric(c(fit$alpha, fit$b, fit$log_sigma))
+				},
+				score = function(fit){
+					as.numeric(get_ordinal_glmm_score_cpp(X_fit, y, group_id, as.numeric(c(fit$alpha, fit$b, fit$log_sigma)), K, n_gh = n_gh))
+				},
+				observed_information = function(fit){
+					as.matrix(get_ordinal_glmm_hessian_cpp(X_fit, y, group_id, as.numeric(c(fit$alpha, fit$b, fit$log_sigma)), K, n_gh = n_gh))
+				},
+				fisher_information = function(fit){
+					as.matrix(get_ordinal_glmm_hessian_cpp(X_fit, y, group_id, as.numeric(c(fit$alpha, fit$b, fit$log_sigma)), K, n_gh = n_gh))
+				},
+				information = function(fit){
+					as.matrix(get_ordinal_glmm_hessian_cpp(X_fit, y, group_id, as.numeric(c(fit$alpha, fit$b, fit$log_sigma)), K, n_gh = n_gh))
+				},
+				neg_loglik = function(fit){
+					as.numeric(fit$neg_loglik %||% fit$neg_ll)
+				}
+			)
 		}
 	)
 )

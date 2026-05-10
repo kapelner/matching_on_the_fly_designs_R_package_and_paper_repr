@@ -3,7 +3,7 @@
 #' @keywords internal
 InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 	lock_objects = FALSE,
-	inherit = InferenceAsymp,
+	inherit = InferenceAsympLik,
 	public = list(
 		#' @description
 		#' Initialize the inference object.
@@ -18,14 +18,12 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 				assertResponseType(des_obj$get_response_type(), private$glmm_response_type())
 				assertFormula(model_formula, null.ok = TRUE)
 			}
-			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")){
-					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or FixedDesignBinaryMatch.")
-				}
+			if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
+				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or DesignFixedBinaryMatch.")
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
-			if (inherits(des_obj, "FixedDesignBinaryMatch")){
-				des_obj$.__enclos_env__$private$ensure_bms_computed()
+			if (inherits(des_obj, "DesignFixedBinaryMatch")){
+				des_obj$.__enclos_env__$private$ensure_matching_structure_computed()
 			}
 			private$m = des_obj$.__enclos_env__$private$m
 			if (identical(private$glmm_response_type(), "proportion")) {

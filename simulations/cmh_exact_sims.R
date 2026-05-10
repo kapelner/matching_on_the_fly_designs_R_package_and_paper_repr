@@ -17,16 +17,16 @@ sim = SimulationFramework$new(
         alpha                         = 0.05,
         cond_exp_func_model           = c("linear"), #, "nonlinear" #nonlinear not as interesting for now
         design_classes_and_params     = list(
-                                          FixedDesigniBCRD,
-                                          FixedDesignBinaryMatch,
-                                          FixedDesignOptimalBlocks = list(B = 4),
-                                          FixedDesignOptimalBlocks = list(B = 8),
-                                          FixedDesignOptimalBlocks = list(B = 16),
-                                          FixedDesignOptimalBlocks = list(B = 32),
-                                          FixedDesignBlocking =      list(B_target = 4,  exact_num_blocks = TRUE),
-                                          FixedDesignBlocking =      list(B_target = 8,  exact_num_blocks = TRUE),
-                                          FixedDesignBlocking =      list(B_target = 16, exact_num_blocks = TRUE),
-                                          FixedDesignBlocking =      list(B_target = 32, exact_num_blocks = TRUE)
+                                          DesignFixediBCRD,
+                                          DesignFixedBinaryMatch,
+                                          DesignFixedOptimalBlocks = list(B = 4),
+                                          DesignFixedOptimalBlocks = list(B = 8),
+                                          DesignFixedOptimalBlocks = list(B = 16),
+                                          DesignFixedOptimalBlocks = list(B = 32),
+                                          DesignFixedBlocking =      list(B_target = 4,  exact_num_blocks = TRUE),
+                                          DesignFixedBlocking =      list(B_target = 8,  exact_num_blocks = TRUE),
+                                          DesignFixedBlocking =      list(B_target = 16, exact_num_blocks = TRUE),
+                                          DesignFixedBlocking =      list(B_target = 32, exact_num_blocks = TRUE)
                                         ),
         inference_classes_and_params  = list(
                                           InferenceIncidenceWald,

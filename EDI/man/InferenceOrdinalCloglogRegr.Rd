@@ -12,21 +12,8 @@ Cumulative Cloglog Inference for Ordinal Responses
 Cumulative cloglog model inference for ordinal responses using the treatment
 indicator and, optionally, all recorded covariates as predictors.
 }
-\examples{
-\dontrun{
-\donttest{
-seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'ordinal')
-for (i in 1:10) {
-  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
-}
-seq_des$add_all_subject_responses(sample(1:4, 10, replace = TRUE))
-inf = InferenceOrdinalCloglogRegr$new(seq_des)
-inf$compute_estimate()
-}
-}
-}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMforGLMs]{EDI::InferenceMLEorKMforGLMs}} -> \code{InferenceOrdinalCloglogRegr}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceMLEorKMforGLMs]{EDI::InferenceMLEorKMforGLMs}} -> \code{InferenceOrdinalCloglogRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -60,21 +47,26 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_confidence_interval'><code>EDI::InferenceAsymp$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_two_sided_pval'><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_lik_ratio_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_lik_ratio_two_sided_pval'><code>EDI::InferenceAsymp$compute_lik_ratio_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_likelihood_ratio_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_likelihood_ratio_two_sided_pval'><code>EDI::InferenceAsymp$compute_likelihood_ratio_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_score_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_score_two_sided_pval'><code>EDI::InferenceAsymp$compute_score_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_confidence_interval'><code>EDI::InferenceAsymp$compute_wald_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_two_sided_pval'><code>EDI::InferenceAsymp$compute_wald_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_information_preference"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_information_preference'><code>EDI::InferenceAsymp$get_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_information_source_used"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_information_source_used'><code>EDI::InferenceAsymp$get_information_source_used()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_supported_information_preferences"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_supported_information_preferences'><code>EDI::InferenceAsymp$get_supported_information_preferences()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_supported_testing_types"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_supported_testing_types'><code>EDI::InferenceAsymp$get_supported_testing_types()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_testing_type"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_testing_type'><code>EDI::InferenceAsymp$get_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="set_information_preference"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-set_information_preference'><code>EDI::InferenceAsymp$set_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-set_testing_type'><code>EDI::InferenceAsymp$set_testing_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_asymp_confidence_interval'><code>EDI::InferenceAsympLik$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_asymp_two_sided_pval'><code>EDI::InferenceAsympLik$compute_asymp_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_gradient_confidence_interval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_gradient_confidence_interval'><code>EDI::InferenceAsympLik$compute_gradient_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_gradient_two_sided_pval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_gradient_two_sided_pval'><code>EDI::InferenceAsympLik$compute_gradient_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_lik_ratio_confidence_interval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_confidence_interval'><code>EDI::InferenceAsympLik$compute_lik_ratio_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_lik_ratio_two_sided_pval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_two_sided_pval'><code>EDI::InferenceAsympLik$compute_lik_ratio_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_likelihood_ratio_two_sided_pval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_likelihood_ratio_two_sided_pval'><code>EDI::InferenceAsympLik$compute_likelihood_ratio_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_score_confidence_interval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_score_confidence_interval'><code>EDI::InferenceAsympLik$compute_score_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_score_two_sided_pval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_score_two_sided_pval'><code>EDI::InferenceAsympLik$compute_score_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_supported_testing_types"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_supported_testing_types'><code>EDI::InferenceAsympLik$get_supported_testing_types()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceMLEorKMforGLMs" data-id="compute_estimate"><a href='../../EDI/html/InferenceMLEorKMforGLMs.html#method-InferenceMLEorKMforGLMs-compute_estimate'><code>EDI::InferenceMLEorKMforGLMs$compute_estimate()</code></a></span></li>
 </ul>
 </details>
@@ -83,7 +75,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceOrdinalCloglogRegr-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalCloglogRegr-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a cumulative-cloglog inference object.
+Initialize a cumulative cloglog inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalCloglogRegr$new(
   des_obj,

@@ -284,7 +284,7 @@ NumericVector compute_wilcox_hl_distr_parallel_cpp(
 }
 
 // [[Rcpp::export]]
-NumericVector compute_wilcox_kk_ivwc_bootstrap_parallel_cpp(
+NumericVector compute_wilcox_matching_ivwc_bootstrap_parallel_cpp(
     const IntegerVector& w,
     const NumericVector& y,
     const IntegerVector& m_vec,

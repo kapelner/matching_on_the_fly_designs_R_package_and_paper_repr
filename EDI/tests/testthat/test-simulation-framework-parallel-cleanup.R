@@ -9,7 +9,7 @@ test_that("SimulationFramework restores parallelism settings", {
 	
 	sim <- SimulationFramework$new(
 		response_type = "continuous",
-		design_classes_and_params = list(FixedDesignBernoulli),
+		design_classes_and_params = list(DesignFixedBernoulli),
 		inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
 		n = 10,
 		Nrep = 2,
@@ -37,7 +37,7 @@ test_that("SimulationFramework restores num_cores_override", {
 	
 	sim <- SimulationFramework$new(
 		response_type = "continuous",
-		design_classes_and_params = list(FixedDesignBernoulli),
+		design_classes_and_params = list(DesignFixedBernoulli),
 		inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
 		n = 10,
 		Nrep = 1,

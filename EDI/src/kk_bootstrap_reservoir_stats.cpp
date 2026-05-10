@@ -36,7 +36,7 @@ double mean_or_na(const NumericVector& x) {
 } // namespace
 
 // [[Rcpp::export]]
-List compute_kk_reservoir_stats_cpp(
+List compute_matching_reservoir_stats_cpp(
 	const NumericVector& y_matched_diffs,
 	const NumericVector& y_reservoir,
 	const NumericVector& w_reservoir

@@ -151,7 +151,7 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 
 				# For matched pairs, sample which pairs to include (with replacement)
 				if (m > 0) {
-					pairs_to_include = sample(1:m, m, replace = TRUE)
+					pairs_to_include = sample_int_replace_cpp(m, m)
 					i_matched_b = integer(0)
 					m_vec_b_matched = integer(0)
 					for (new_pair_id in 1:m) {
@@ -173,7 +173,7 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 				m_mat[, b] = c(rep(0L, n_reservoir), m_vec_b_matched)
 			}
 
-			res = compute_kk_compound_bootstrap_parallel_cpp(
+			res = compute_matching_compound_bootstrap_parallel_cpp(
 				w_mat,
 				m_mat,
 				y_mat,
@@ -195,7 +195,7 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 				m_mat[is.na(m_mat)] = 0L
 			}
 
-			res = compute_kk_compound_distr_parallel_cpp(
+			res = compute_matching_compound_distr_parallel_cpp(
 				w_mat,
 				m_mat,
 				as.numeric(y),

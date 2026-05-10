@@ -15,7 +15,7 @@ using namespace Rcpp;
 // Scaling by 1/sqrt2 equalises all residual variances to sigma^2.
 //
 // [[Rcpp::export]]
-List build_kk_combined_ols_design_cpp(
+List build_matching_combined_ols_design_cpp(
 	const Eigen::VectorXd& yd,
 	const Eigen::MatrixXd& Xd,
 	const Eigen::VectorXd& y_r,

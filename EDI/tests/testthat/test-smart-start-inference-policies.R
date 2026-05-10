@@ -1,5 +1,5 @@
 make_completed_fixed_design <- function(response_type, x, w, y, dead = NULL) {
-	des <- FixedDesign$new(n = length(y), response_type = response_type, verbose = FALSE)
+	des <- DesignFixed$new(n = length(y), response_type = response_type, verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = x))
 	des$overwrite_all_subject_assignments(w)
 	if (is.null(dead)) {
@@ -21,6 +21,12 @@ test_that("smart_default TRUE and FALSE agree across core optimization families"
 	inf_logit_s <- InferenceIncidLogRegr$new(des_logit, verbose = FALSE, smart_default = TRUE)
 	inf_logit_l <- InferenceIncidLogRegr$new(des_logit, verbose = FALSE, smart_default = FALSE)
 	expect_equal(inf_logit_s$compute_estimate(), inf_logit_l$compute_estimate(), tolerance = 1e-5)
+
+	y_probit <- rbinom(n, 1, pnorm(-0.3 + 0.8 * w + 0.5 * x))
+	des_probit <- make_completed_fixed_design("incidence", x, w, y_probit)
+	inf_probit_inc_s <- InferenceIncidProbitRegr$new(des_probit, verbose = FALSE, smart_default = TRUE)
+	inf_probit_inc_l <- InferenceIncidProbitRegr$new(des_probit, verbose = FALSE, smart_default = FALSE)
+	expect_equal(inf_probit_inc_s$compute_estimate(), inf_probit_inc_l$compute_estimate(), tolerance = 1e-4)
 
 	y_pois <- rpois(n, lambda = exp(0.2 + 0.3 * w - 0.2 * x))
 	des_pois <- make_completed_fixed_design("count", x, w, y_pois)

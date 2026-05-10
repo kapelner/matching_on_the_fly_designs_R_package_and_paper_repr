@@ -8,19 +8,19 @@ test_that("GreedyExperimentalDesign-backed fixed designs randomize as expected",
 	)
 
 	designs = list(
-		FixedDesignBinaryMatch$new(
+		DesignFixedBinaryMatch$new(
 			response_type = "continuous",
 			n = 8,
 			verbose = FALSE
 		),
-		FixedDesignRerandomization$new(
+		DesignFixedRerandomization$new(
 			response_type = "continuous",
 			n = 8,
 			obj_val_cutoff = 100,
 			objective = "abs_sum_diff",
 			verbose = FALSE
 		),
-		FixedDesignMatchingGreedyPairSwitching$new(
+		DesignFixedMatchingGreedyPairSwitching$new(
 			response_type = "continuous",
 			n = 8,
 			objective = "abs_sum_diff",
@@ -53,19 +53,19 @@ test_that("GreedyExperimentalDesign-backed fixed designs honor multicore randomi
 	)
 
 	designs = list(
-		FixedDesignBinaryMatch$new(
+		DesignFixedBinaryMatch$new(
 			response_type = "continuous",
 			n = 8,
 			verbose = FALSE
 		),
-		FixedDesignRerandomization$new(
+		DesignFixedRerandomization$new(
 			response_type = "continuous",
 			n = 8,
 			obj_val_cutoff = 100,
 			objective = "abs_sum_diff",
 			verbose = FALSE
 		),
-		FixedDesignMatchingGreedyPairSwitching$new(
+		DesignFixedMatchingGreedyPairSwitching$new(
 			response_type = "continuous",
 			n = 8,
 			objective = "abs_sum_diff",

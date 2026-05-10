@@ -1,14 +1,14 @@
 #' Internal base for user-defined fixed-design extensions
 #'
-#' \code{DesignCustomFixed} is intentionally not exported. Subclasses implement
+#' \code{DesignFixedCustom} is intentionally not exported. Subclasses implement
 #' \code{draw_assignments(r = 1)} and return an \code{n x r} 0/1 assignment
 #' matrix. EDI handles subject storage, responses, and validation through
-#' \code{FixedDesign}.
+#' \code{DesignFixed}.
 #'
 #' @keywords internal
-DesignCustomFixed = R6::R6Class("DesignCustomFixed",
+DesignFixedCustom = R6::R6Class("DesignFixedCustom",
 	lock_objects = FALSE,
-	inherit = FixedDesign,
+	inherit = DesignFixed,
 	public = list(
 		#' @description
 		#' Draw assignments from the custom design.

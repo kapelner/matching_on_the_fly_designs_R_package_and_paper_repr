@@ -248,6 +248,7 @@ List fast_poisson_glmm_cpp(
 	const Eigen::VectorXd& y,
 	const Eigen::VectorXi& group_id,
 	int j_T,
+	Nullable<NumericVector> start_par = R_NilValue,
 	bool estimate_only = false,
 	int n_gh = 20,
 	int maxit = 300,
@@ -273,6 +274,12 @@ List fast_poisson_glmm_cpp(
 		par.head(p) = cod.solve(log_y_safe);
 	}
 	par[total - 1] = -3.0;
+	if (start_par.isNotNull()) {
+		NumericVector sp(start_par);
+		if (sp.size() == total) {
+			for (int i = 0; i < total; ++i) par[i] = sp[i];
+		}
+	}
 
 	PoissonGLMMObjective obj(dat);
 	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
@@ -318,4 +325,38 @@ List fast_poisson_glmm_cpp(
 		Named("converged")  = converged,
 		Named("neg_loglik") = true_neg_ll
 	);
+}
+
+// ── R-exported: score (gradient of log_lik) at arbitrary par ─────────────────
+// [[Rcpp::export]]
+Eigen::VectorXd get_poisson_glmm_score_cpp(
+	const Eigen::MatrixXd& X,
+	const Eigen::VectorXd& y,
+	const Eigen::VectorXi& group_id,
+	const Eigen::VectorXd& par,
+	int n_gh = 20
+) {
+	std::vector<int> gid_v(group_id.size());
+	for (int i = 0; i < group_id.size(); ++i) gid_v[i] = group_id[i];
+	PoissonGLMMData dat(X, y, gid_v, n_gh);
+	PoissonGLMMObjective obj(dat);
+	Eigen::VectorXd grad;
+	obj(par, grad);
+	return -grad;
+}
+
+// ── R-exported: observed information (Hessian of neg_ll) at par ─────────────
+// [[Rcpp::export]]
+Eigen::MatrixXd get_poisson_glmm_hessian_cpp(
+	const Eigen::MatrixXd& X,
+	const Eigen::VectorXd& y,
+	const Eigen::VectorXi& group_id,
+	const Eigen::VectorXd& par,
+	int n_gh = 20
+) {
+	std::vector<int> gid_v(group_id.size());
+	for (int i = 0; i < group_id.size(); ++i) gid_v[i] = group_id[i];
+	PoissonGLMMData dat(X, y, gid_v, n_gh);
+	PoissonGLMMObjective obj(dat);
+	return -obj.hessian(par);
 }

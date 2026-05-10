@@ -19,7 +19,7 @@ InferenceAbstractKKMarginalIncid = R6::R6Class("InferenceAbstractKKMarginalIncid
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
 			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")){
+				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
@@ -55,24 +55,24 @@ InferenceAbstractKKMarginalIncid = R6::R6Class("InferenceAbstractKKMarginalIncid
 			des_m_int[is.na(des_m_int)] = 0L
 
 			# Check design-level cache (only when m_vec matches design's m_vec)
-			if (!is.null(des_priv$kk_cluster_id) && identical(m_vec_int, des_m_int)){
-				return(des_priv$kk_cluster_id)
+			if (!is.null(des_priv$cluster_id) && identical(m_vec_int, des_m_int)){
+				return(des_priv$cluster_id)
 			}
 			# Check inference-level cache (for bootstrap resamples)
-			if (!is.null(private$cached_values$kk_cluster_id) &&
-				identical(m_vec_int, private$cached_values$kk_cluster_id_m_vec)){
-				return(private$cached_values$kk_cluster_id)
+			if (!is.null(private$cached_values$cluster_id) &&
+				identical(m_vec_int, private$cached_values$cluster_id_m_vec)){
+				return(private$cached_values$cluster_id)
 			}
 
-			cluster_id = compute_kk_cluster_ids_cpp(m_vec_int)
+			cluster_id = des_priv$compute_matching_cluster_ids(m_vec_int)
 
 			# Store at design level if this is the original m_vec
 			if (identical(m_vec_int, des_m_int)){
-				des_priv$kk_cluster_id = cluster_id
-				des_priv$kk_cluster_id_m_vec = m_vec_int
+				des_priv$cluster_id = cluster_id
+				des_priv$cluster_id_m_vec = m_vec_int
 			} else {
-				private$cached_values$kk_cluster_id = cluster_id
-				private$cached_values$kk_cluster_id_m_vec = m_vec_int
+				private$cached_values$cluster_id = cluster_id
+				private$cached_values$cluster_id_m_vec = m_vec_int
 			}
 			cluster_id
 		}

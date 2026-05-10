@@ -13,7 +13,7 @@ test_that("univariate logit reusable bootstrap worker matches generic bootstrap 
 	n = 52
 	X = data.frame(x1 = rnorm(n), x2 = rnorm(n))
 
-	des = FixedDesignBernoulli$new(n = n, response_type = "incidence", verbose = FALSE)
+	des = DesignFixedBernoulli$new(n = n, response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(X)
 	des$assign_w_to_all_subjects()
 	w = des$get_w()
@@ -50,7 +50,7 @@ test_that("multivariate logit reusable bootstrap worker matches generic bootstra
 	X = as.data.frame(matrix(rnorm(n * p), nrow = n, ncol = p))
 	colnames(X) = paste0("x", seq_len(p))
 
-	des = FixedDesignBernoulli$new(n = n, response_type = "incidence", verbose = FALSE)
+	des = DesignFixedBernoulli$new(n = n, response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(X)
 	des$assign_w_to_all_subjects()
 	w = des$get_w()

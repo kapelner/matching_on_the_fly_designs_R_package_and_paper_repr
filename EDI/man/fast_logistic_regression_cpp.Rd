@@ -22,6 +22,10 @@ fast_logistic_regression_cpp(
 
 \item{y}{A numeric vector of the response variable, expected to be binary (0 or 1).}
 
+\item{start_beta}{Optional starting values for coefficients.}
+
+\item{smart_start}{Logical. If TRUE, use an initial OLS-based guess.}
+
 \item{maxit}{Maximum number of iterations for the algorithm. Defaults to 100.}
 
 \item{tol}{Convergence tolerance. Defaults to 1e-8.}
@@ -45,9 +49,6 @@ A list containing the following components:
 High-performance logistic regression fitting using IRLS.
 }
 \examples{
-X = matrix(rnorm(100), 10, 10)
-y = rbinom(10, 1, 0.5)
-fast_logistic_regression_cpp(X, y)
 X = matrix(rnorm(100), 10, 10)
 y = rbinom(10, 1, 0.5)
 fast_logistic_regression_cpp(X, y)

@@ -5,11 +5,11 @@
 #'
 #' @examples
 #' \dontrun{
-#' des = FixedDesignGreedy$new(n = 10, response_type = 'continuous')
+#' des = DesignFixedGreedy$new(n = 10, response_type = 'continuous')
 #' }
 #' @export
-FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
-	inherit = FixedDesign,
+DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
+	inherit = DesignFixed,
 	public = list(
 		#' @description
 		#' Initialize a greedy search fixed experimental design
@@ -23,7 +23,7 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'
-		#' @return 			A new `FixedDesignGreedy` object
+		#' @return 			A new `DesignFixedGreedy` object
 		#'
 		initialize = function(
 				response_type,
@@ -41,7 +41,7 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 					stop("Greedy designs currently only support even treatment allocation (prob_T = 0.5)")
 				}
 			}
-			assert_greedy_experimental_design_installed("FixedDesignGreedy")
+			assert_greedy_experimental_design_installed("DesignFixedGreedy")
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 			private$objective = objective
 			private$uses_covariates = TRUE
@@ -58,14 +58,14 @@ FixedDesignGreedy = R6::R6Class("FixedDesignGreedy",
 			if (should_run_asserts()) {
 				assertCount(r, positive = TRUE)
 			}
-			assert_greedy_experimental_design_installed("FixedDesignGreedy")
+			assert_greedy_experimental_design_installed("DesignFixedGreedy")
 			if (should_run_asserts()) {
 				self$assert_all_subjects_arrived()
 			}
 			n = self$get_n()
 			if (should_run_asserts()) {
 				if (n %% 2 != 0){
-					stop("FixedDesignGreedy requires an even number of subjects.")
+					stop("DesignFixedGreedy requires an even number of subjects.")
 				}
 			}
 			if (is.null(private$X) || ncol(private$X) == 0){

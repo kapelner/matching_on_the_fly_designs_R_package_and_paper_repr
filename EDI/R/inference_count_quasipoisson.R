@@ -16,7 +16,7 @@
 #' @export
 InferenceCountQuasiPoisson = R6::R6Class("InferenceCountQuasiPoisson",
 	lock_objects = FALSE,
-	inherit = InferenceMLEorKMforGLMs,
+	inherit = InferenceCountCompositeLikelihood,
 	public = list(
 				
 		#' @description
@@ -43,6 +43,12 @@ InferenceCountQuasiPoisson = R6::R6Class("InferenceCountQuasiPoisson",
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
+		},
+
+		#' @description Indicates whether likelihood-based tests are supported.
+		#' @return Always TRUE because companion Poisson tests are available.
+		supports_likelihood_tests = function(){
+			TRUE
 		}
 	),
 
@@ -112,9 +118,71 @@ InferenceCountQuasiPoisson = R6::R6Class("InferenceCountQuasiPoisson",
 			)
 
 			if (!is.null(attempt$fit)){
+				private$cached_values$likelihood_test_context = list(
+					X = attempt$X,
+					j_treat = which(attempt$keep == 2L)
+				)
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
+			} else {
+				private$cached_values$likelihood_test_context = NULL
 			}
 			attempt$fit
+		},
+
+		get_likelihood_test_spec = function(){
+			private$shared(estimate_only = FALSE)
+			ctx = private$cached_values$likelihood_test_context
+			if (is.null(ctx)) return(NULL)
+			X_fit = ctx$X
+			y = as.numeric(private$y)
+			j_treat = as.integer(ctx$j_treat)
+			companion_fit = tryCatch(
+				fast_poisson_regression_with_var_cpp(
+					X = X_fit,
+					y = y,
+					j = j_treat,
+					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+					smart_start = private$smart_default
+				),
+				error = function(e) NULL
+			)
+			if (is.null(companion_fit) || is.null(companion_fit$b) || length(companion_fit$b) < 2L || !is.finite(companion_fit$b[2])) return(NULL)
+			list(
+				X = X_fit,
+				y = y,
+				j = j_treat,
+				full_fit = companion_fit,
+				fit_null = function(delta, start = NULL){
+					fast_poisson_regression_with_var_cpp(
+						X = X_fit,
+						y = y,
+						j = j_treat,
+						start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						fixed_idx = j_treat,
+						fixed_values = delta,
+						smart_start = private$smart_default
+					)
+				},
+				extract_start = function(fit){
+					as.numeric(fit$b)
+				},
+				score = function(fit){
+					get_poisson_regression_score_cpp(X_fit, y, as.numeric(fit$b))
+				},
+				observed_information = function(fit){
+					-get_poisson_regression_hessian_cpp(X_fit, as.numeric(fit$b))
+				},
+				fisher_information = function(fit){
+					-get_poisson_regression_hessian_cpp(X_fit, as.numeric(fit$b))
+				},
+				information = function(fit){
+					-get_poisson_regression_hessian_cpp(X_fit, as.numeric(fit$b))
+				},
+				neg_loglik = function(fit){
+					eta = as.numeric(X_fit %*% as.numeric(fit$b))
+					-sum(y * eta - exp(eta) - lgamma(y + 1))
+				}
+			)
 		}
 	)
 )

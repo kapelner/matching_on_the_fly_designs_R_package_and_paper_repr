@@ -80,10 +80,10 @@ double compute_lambda_squ_cpp(const NumericVector& d_i,
 
 	double sum = 0.0;
 	for (int i = 0; i < n_halves; ++i) {
-	int id1 = halves(i, 0) - 1;
-	int id2 = halves(i, 1) - 1;
-	if (id1 >= 0 && id2 >= 0 && id1 < d_i.size() && id2 < d_i.size()) {
-		sum += d_i[id1] * d_i[id2];
+	int id1 = halves(i, 0);
+	int id2 = halves(i, 1);
+	if (id1 > 0 && id2 > 0 && id1 <= d_i.size() && id2 <= d_i.size()) {
+		sum += d_i[id1 - 1] * d_i[id2 - 1];
 	}
 	}
 

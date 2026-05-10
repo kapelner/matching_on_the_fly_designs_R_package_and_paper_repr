@@ -33,7 +33,7 @@ test_that("Inference works for incidence", {
 })
 
 test_that("Simple incidence proportion difference uses pooled-variance t inference", {
-	des <- FixedDesign$new(n = 10, response_type = "incidence", verbose = FALSE)
+	des <- DesignFixed$new(n = 10, response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = 1:10))
 	des$overwrite_all_subject_assignments(c(1, 1, 1, 1, 1, 0, 0, 0, 0, 0))
 	des$add_all_subject_responses(c(1, 1, 0, 1, 0, 0, 1, 0, 0, 0))
@@ -77,7 +77,7 @@ test_that("Simple incidence proportion difference uses pooled-variance t inferen
 })
 
 test_that("CMH inference is gated to blocked incidence designs", {
-	des <- FixedDesignBlocking$new(
+	des <- DesignFixedBlocking$new(
 		strata_cols = "stratum",
 		n = 8,
 		response_type = "incidence",
@@ -121,7 +121,7 @@ test_that("CMH inference is gated to blocked incidence designs", {
 })
 
 test_that("CMH inference requires even treatment allocation", {
-	des <- FixedDesignBlocking$new(
+	des <- DesignFixedBlocking$new(
 		strata_cols = "stratum",
 		n = 8,
 		response_type = "incidence",
@@ -139,7 +139,7 @@ test_that("CMH inference requires even treatment allocation", {
 })
 
 test_that("CMH inference requires equal block sizes", {
-	des <- FixedDesignBlocking$new(
+	des <- DesignFixedBlocking$new(
 		strata_cols = "stratum",
 		n = 8,
 		response_type = "incidence",
@@ -174,7 +174,7 @@ test_that("CMH and Extended Robins standard errors match a fixed blocked simulat
 
 	ys <- replicate(5, rbinom(8, 1, 0.5), simplify = FALSE)
 	se_pairs <- t(vapply(ys, function(y) {
-		des <- FixedDesignBlocking$new(
+		des <- DesignFixedBlocking$new(
 			strata_cols = "stratum",
 			n = 8,
 			response_type = "incidence",
@@ -196,7 +196,7 @@ test_that("CMH and Extended Robins standard errors match a fixed blocked simulat
 })
 
 test_that("CMH and Extended Robins confidence intervals use normal critical values", {
-	des <- FixedDesignBlocking$new(
+	des <- DesignFixedBlocking$new(
 		strata_cols = "stratum",
 		n = 8,
 		response_type = "incidence",
@@ -218,7 +218,7 @@ test_that("CMH and Extended Robins confidence intervals use normal critical valu
 })
 
 test_that("Extended Robins standard error matches the blockwise formula", {
-	des <- FixedDesignBlocking$new(
+	des <- DesignFixedBlocking$new(
 		strata_cols = "stratum",
 		n = 8,
 		response_type = "incidence",
@@ -259,7 +259,7 @@ test_that("Extended Robins standard error matches the blockwise formula", {
 })
 
 test_that("G-computation risk-ratio intervals error when log-scale bounds overflow", {
-	des <- FixedDesigniBCRD$new(n = 4, response_type = "incidence", verbose = FALSE)
+	des <- DesignFixediBCRD$new(n = 4, response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = 1:4))
 	des$overwrite_all_subject_assignments(c(1, 0, 1, 0))
 	des$add_all_subject_responses(c(1, 0, 1, 0))
@@ -403,6 +403,7 @@ test_that("Inference works for ordinal partial proportional odds", {
 	expect_true(is.numeric(est_ppod))
 	pval_ppod <- inf_ppod$compute_asymp_two_sided_pval()
 	expect_true(is.numeric(pval_ppod))
+	expect_false(inherits(inf_ppod, "InferenceOrdinalPartialProportionalOddsAbstract"))
 })
 
 test_that("Inference works for incidence KK Newcombe IVWC", {

@@ -7,12 +7,12 @@
 #' at initialization, the default is \code{floor(sqrt(n))}, truncated below at 1.
 #'
 #' @examples
-#' des = FixedDesignOptimalBlocks$new(n = 9, response_type = 'continuous')
+#' des = DesignFixedOptimalBlocks$new(n = 9, response_type = 'continuous')
 #' des$add_all_subjects_to_experiment(data.frame(x = rnorm(9)))
 #' des$assign_w_to_all_subjects()
 #' @export
-FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
-	inherit = FixedDesign,
+DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
+	inherit = DesignFixed,
 	public = list(
 			#' @description
 			#' Initialize a fixed optimal-blocks design.
@@ -44,7 +44,7 @@ FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 			#' @param verbose Whether to print progress messages.
 			#' @param missingness_method How to handle missing values in covariates.
 			#' @param model_formula A formula object.
-			#' @return A new \code{FixedDesignOptimalBlocks} object.
+			#' @return A new \code{DesignFixedOptimalBlocks} object.
 			initialize = function(
 				B = NULL,
 				method = "K-way",
@@ -66,17 +66,17 @@ FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 							stop("dist must be a function or one of 'euclidean', 'sum_abs_diff', or 'mahal'.")
 						if (is.character(dist))
 							assertChoice(dist, c("euclidean", "sum_abs_diff", "mahal"))
-						assert_optimal_blocks_libraries_installed("FixedDesignOptimalBlocks with method='ompr'")
+						assert_optimal_blocks_libraries_installed("DesignFixedOptimalBlocks with method='ompr'")
 					} else if (method == "greedy") {
-						assert_blocktools_installed("FixedDesignOptimalBlocks with method='greedy'")
+						assert_blocktools_installed("DesignFixedOptimalBlocks with method='greedy'")
 					} else {
-						assert_anticlust_installed("FixedDesignOptimalBlocks with method='K-way'")
+						assert_anticlust_installed("DesignFixedOptimalBlocks with method='K-way'")
 					}
 				}
 				if (is.null(B)) {
 					if (is.null(n)) {
 						if (should_run_asserts()) {
-							stop("FixedDesignOptimalBlocks requires B when n is not supplied.")
+							stop("DesignFixedOptimalBlocks requires B when n is not supplied.")
 						}
 					}
 					B = max(1L, floor(sqrt(as.integer(n))))
@@ -85,6 +85,7 @@ FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 					assertCount(B, positive = TRUE)
 				}
 				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+				private$blocking_capable = TRUE
 				private$B      = as.integer(B)
 				private$method = method
 				private$dist_spec = dist
@@ -122,9 +123,8 @@ FixedDesignOptimalBlocks = R6::R6Class("FixedDesignOptimalBlocks",
 			if (is.null(bootstrap_type) || bootstrap_type == "within_blocks") {
 				list(i_b = stratified_bootstrap_indices_cpp(block_ids), m_vec_b = NULL)
 			} else {
-				unique_blocks = unique(block_ids)
-				sampled_blocks = sample(unique_blocks, length(unique_blocks), replace = TRUE)
-				i_b = unlist(lapply(sampled_blocks, function(b) which(block_ids == b)), use.names = FALSE)
+				group_id = match(block_ids, unique(block_ids))
+				i_b = resample_group_rows_cpp(as.integer(group_id), length(unique(group_id)))
 				list(i_b = as.integer(i_b), m_vec_b = NULL)
 			}
 		},

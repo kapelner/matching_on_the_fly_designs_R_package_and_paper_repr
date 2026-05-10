@@ -82,10 +82,12 @@ test_that("fast_robust_regression_cpp is equivalent to MASS::rlm", {
 	
 	X_fit <- cbind(`(Intercept)` = 1, X)
 	
-	res_cpp <- fast_robust_regression_cpp(X_fit, y, method = "MM")
+	res_cpp <- EDI:::fast_robust_regression_cpp(X_fit, y, method = "MM")
 	res_r <- MASS::rlm(y ~ X, method = "MM")
+	summ_r <- summary(res_r)
 	
 	expect_equal(as.numeric(res_cpp$coefficients), as.numeric(stats::coef(res_r)), tolerance = 1e-2)
+	expect_equal(as.numeric(sqrt(res_cpp$ssq_b_j)), as.numeric(summ_r$coefficients[2, "Std. Error"]), tolerance = 2e-2)
 })
 
 test_that("fast_beta_regression_with_var_cpp is equivalent to betareg::betareg", {
@@ -229,7 +231,7 @@ test_that("fast_ordinal_probit_regression_with_var_cpp is equivalent to ordinal:
 	y <- cut(y_cont, breaks = c(-Inf, -0.5, 0.7, Inf), labels = FALSE)
 	y <- as.numeric(y)
 	
-	res_cpp <- fast_ordinal_probit_regression_with_var_cpp(X, y)
+	res_cpp <- EDI:::fast_ordinal_probit_regression_with_var_cpp(X, y)
 	res_r <- ordinal::clm(factor(y) ~ X, link = "probit")
 	
 	expect_equal(as.numeric(res_cpp$alpha), as.numeric(res_r$alpha), tolerance = 1e-5)
@@ -253,7 +255,7 @@ test_that("fast_ordinal_cloglog_regression_with_var_cpp is equivalent to ordinal
 	probs[,3] <- 1 - F2
 	y <- apply(probs, 1, function(p) sample(1:3, 1, prob = p))
 	
-	res_cpp <- fast_ordinal_cloglog_regression_with_var_cpp(X, y)
+	res_cpp <- EDI:::fast_ordinal_cloglog_regression_with_var_cpp(X, y)
 	res_r <- ordinal::clm(factor(y) ~ X, link = "cloglog")
 	
 	expect_equal(as.numeric(res_cpp$alpha), as.numeric(res_r$alpha), tolerance = 1e-4)
@@ -276,7 +278,7 @@ test_that("fast_ordinal_cauchit_regression_with_var_cpp is equivalent to ordinal
 	y <- cut(y_cont, breaks = c(-Inf, -1.0, 1.5, Inf), labels = FALSE)
 	y <- as.numeric(y)
 	
-	res_cpp <- fast_ordinal_cauchit_regression_with_var_cpp(X, y)
+	res_cpp <- EDI:::fast_ordinal_cauchit_regression_with_var_cpp(X, y)
 	res_r <- ordinal::clm(factor(y) ~ X, link = "cauchit")
 	
 	expect_equal(as.numeric(res_cpp$alpha), as.numeric(res_r$alpha), tolerance = 1e-3)
@@ -292,7 +294,7 @@ test_that("fast_adjacent_category_logit_with_var_cpp is equivalent to VGAM::vglm
 	X <- matrix(rnorm(n * p), n, p)
 	y <- sample(1:3, n, replace = TRUE)
 	
-	res_cpp <- fast_adjacent_category_logit_with_var_cpp(X, y)
+	res_cpp <- EDI:::fast_adjacent_category_logit_with_var_cpp(X, y)
 	res_r <- VGAM::vglm(y ~ X, family = VGAM::acat(parallel = TRUE))
 	
 	if (abs(as.numeric(res_cpp$b[1]) - as.numeric(stats::coef(res_r)[3])) > 
@@ -312,7 +314,7 @@ test_that("fast_continuation_ratio_regression_with_var_cpp is equivalent to VGAM
 	X <- matrix(rnorm(n * p), n, p)
 	y <- sample(1:3, n, replace = TRUE)
 	
-	res_cpp <- fast_continuation_ratio_regression_with_var_cpp(X, y)
+	res_cpp <- EDI:::fast_continuation_ratio_regression_with_var_cpp(X, y)
 	res_r <- VGAM::vglm(y ~ X, family = VGAM::cratio(parallel = TRUE))
 	
 	if (abs(as.numeric(res_cpp$b[1]) - as.numeric(stats::coef(res_r)[3])) > 
@@ -332,13 +334,15 @@ test_that("fast_zinb_cpp is equivalent to glmmTMB", {
 	mu <- exp(1 + X %*% c(0.5, -0.3))
 	p_zi <- plogis(-1 + X[,1])
 	y <- ifelse(runif(n) < p_zi, 0, rnbinom(n, size = 2, mu = mu))
+	dat <- data.frame(y = y, x1 = X[, 1], x2 = X[, 2])
 	
-	res_cpp <- fast_zinb_cpp(cbind(1, X), y, cbind(1, X))
-	res_r <- glmmTMB::glmmTMB(y ~ X, ziformula = ~ X, family = glmmTMB::nbinom2)
+	res_cpp <- EDI:::fast_zinb_cpp(cbind(1, X), y, cbind(1, X))
+	res_r <- glmmTMB::glmmTMB(y ~ x1 + x2, ziformula = ~ x1 + x2, family = glmmTMB::nbinom2, data = dat)
 	
 	expect_equal(as.numeric(res_cpp$coefficients$cond), as.numeric(glmmTMB::fixef(res_r)$cond), tolerance = 1e-4)
 	expect_equal(as.numeric(res_cpp$coefficients$zi), as.numeric(glmmTMB::fixef(res_r)$zi), tolerance = 1e-4)
 	expect_equal(as.numeric(res_cpp$params[length(res_cpp$params)]), as.numeric(log(glmmTMB::sigma(res_r))), tolerance = 1e-3)
+	expect_true(all(is.finite(diag(res_cpp$vcov))))
 })
 
 test_that("fast_zero_augmented_poisson_cpp is equivalent to glmmTMB", {
@@ -349,11 +353,16 @@ test_that("fast_zero_augmented_poisson_cpp is equivalent to glmmTMB", {
 	mu <- exp(1 + X %*% c(0.5, -0.3))
 	p_zi <- plogis(-1 + X[,1])
 	y <- ifelse(runif(n) < p_zi, 0, rpois(n, mu))
-	res_cpp <- fast_zero_augmented_poisson_cpp(cbind(1, X), y, cbind(1, X), is_hurdle = TRUE)
-	res_r <- glmmTMB::glmmTMB(y ~ X, ziformula = ~ X, family = glmmTMB::truncated_poisson)
+	dat <- data.frame(y = y, x1 = X[, 1], x2 = X[, 2])
+	res_cpp <- EDI:::fast_zero_augmented_poisson_cpp(cbind(1, X), y, cbind(1, X), is_hurdle = TRUE)
+	res_r <- glmmTMB::glmmTMB(y ~ x1 + x2, ziformula = ~ x1 + x2, family = glmmTMB::truncated_poisson, data = dat)
+	vcov_r <- stats::vcov(res_r)
 	
 	expect_equal(as.numeric(res_cpp$coefficients$cond), as.numeric(glmmTMB::fixef(res_r)$cond), tolerance = 1e-4)
 	expect_equal(as.numeric(res_cpp$coefficients$zi), as.numeric(glmmTMB::fixef(res_r)$zi), tolerance = 1e-4)
+	expect_equal(as.numeric(diag(res_cpp$vcov)[seq_along(res_cpp$coefficients$cond)]), as.numeric(diag(vcov_r$cond)), tolerance = 1e-3)
+	zi_idx <- length(res_cpp$coefficients$cond) + seq_along(res_cpp$coefficients$zi)
+	expect_equal(as.numeric(diag(res_cpp$vcov)[zi_idx]), as.numeric(diag(vcov_r$zi)), tolerance = 1e-3)
 })
 
 test_that("fast_stereotype_logit_with_var_cpp runs without error", {

@@ -125,10 +125,16 @@ InferenceIncidKKGLMM = R6::R6Class("InferenceIncidKKGLMM",
 			X_fit = as.matrix(X_fit)
 			j_T = 1L  # 0-based index of treatment column
 
+			y_vals = as.numeric(private$y)
+			finite_y = y_vals[is.finite(y_vals)]
+			if (length(finite_y) == 0L || any(finite_y < 0) || any(finite_y > 1)) {
+				return(super$shared(estimate_only = estimate_only))
+			}
+
 			fit = tryCatch(
 				fast_logistic_glmm_cpp(
 					X        = X_fit,
-					y        = as.numeric(private$y),
+					y        = y_vals,
 					group_id = as.integer(group_id),
 					j_T      = j_T,
 					estimate_only    = estimate_only,

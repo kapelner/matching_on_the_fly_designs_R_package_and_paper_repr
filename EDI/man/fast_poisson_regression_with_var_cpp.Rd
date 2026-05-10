@@ -25,6 +25,10 @@ fast_poisson_regression_with_var_cpp(
 
 \item{j}{The index of the coefficient to compute the variance for. Defaults to 2.}
 
+\item{start_beta}{Optional starting values for coefficients.}
+
+\item{smart_start}{Logical. If TRUE, use an initial OLS-based guess.}
+
 \item{maxit}{Maximum number of iterations for the IRLS algorithm. Defaults to 100.}
 
 \item{tol}{Convergence tolerance. Defaults to 1e-8.}
@@ -51,9 +55,6 @@ A list containing the following components:
 Poisson regression with variance-covariance matrix and score calculation.
 }
 \examples{
-X = matrix(rnorm(100), 10, 10)
-y = rpois(10, 2)
-fast_poisson_regression_with_var_cpp(X, y)
 X = matrix(rnorm(100), 10, 10)
 y = rpois(10, 2)
 fast_poisson_regression_with_var_cpp(X, y)

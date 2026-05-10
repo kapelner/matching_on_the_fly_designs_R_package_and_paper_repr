@@ -21,6 +21,10 @@ score_test_from_score_information_cpp <- function(score, information, tested_idx
     .Call(`_EDI_score_test_from_score_information_cpp`, score, information, tested_idx)
 }
 
+gradient_test_from_restricted_score_cpp <- function(score, unrestricted_estimate, null_value, tested_idx) {
+    .Call(`_EDI_gradient_test_from_restricted_score_cpp`, score, unrestricted_estimate, null_value, tested_idx)
+}
+
 mean_cpp <- function(x) {
     .Call(`_EDI_mean_cpp`, x)
 }
@@ -117,12 +121,12 @@ bootstrap_m_indices_cpp <- function(m_vec, i_reservoir, n_reservoir, m, B) {
     .Call(`_EDI_bootstrap_m_indices_cpp`, m_vec, i_reservoir, n_reservoir, m, B)
 }
 
-draw_kk_bootstrap_sample_cpp <- function(i_reservoir, pair_rows, n_reservoir) {
-    .Call(`_EDI_draw_kk_bootstrap_sample_cpp`, i_reservoir, pair_rows, n_reservoir)
+draw_matching_bootstrap_sample_cpp <- function(i_reservoir, pair_rows, n_reservoir) {
+    .Call(`_EDI_draw_matching_bootstrap_sample_cpp`, i_reservoir, pair_rows, n_reservoir)
 }
 
-compute_bootstrap_kk_stats_cpp <- function(X, y, w, i_b, n_reservoir) {
-    .Call(`_EDI_compute_bootstrap_kk_stats_cpp`, X, y, w, i_b, n_reservoir)
+compute_bootstrap_matching_stats_cpp <- function(X, y, w, i_b, n_reservoir) {
+    .Call(`_EDI_compute_bootstrap_matching_stats_cpp`, X, y, w, i_b, n_reservoir)
 }
 
 match_stats_from_indices_cpp <- function(X, y, w, original_m_vec, i_b, m) {
@@ -133,12 +137,12 @@ collect_discordant_pairs_cpp <- function(y_m, w_m, X_m, strata_m) {
     .Call(`_EDI_collect_discordant_pairs_cpp`, y_m, w_m, X_m, strata_m)
 }
 
-build_kk_combined_clogit_design_cpp <- function(y_m, w_m, X_m, strata_m, y_r, w_r, X_r) {
-    .Call(`_EDI_build_kk_combined_clogit_design_cpp`, y_m, w_m, X_m, strata_m, y_r, w_r, X_r)
+build_matching_combined_clogit_design_cpp <- function(y_m, w_m, X_m, strata_m, y_r, w_r, X_r) {
+    .Call(`_EDI_build_matching_combined_clogit_design_cpp`, y_m, w_m, X_m, strata_m, y_r, w_r, X_r)
 }
 
-build_kk_combined_ols_design_cpp <- function(yd, Xd, y_r, w_r, X_r) {
-    .Call(`_EDI_build_kk_combined_ols_design_cpp`, yd, Xd, y_r, w_r, X_r)
+build_matching_combined_ols_design_cpp <- function(yd, Xd, y_r, w_r, X_r) {
+    .Call(`_EDI_build_matching_combined_ols_design_cpp`, yd, Xd, y_r, w_r, X_r)
 }
 
 compute_cmh_block_se_cpp <- function(y, m_vec, n_total) {
@@ -234,10 +238,6 @@ get_beta_regression_hessian_cpp <- function(X, y, params) {
 #' @param fixed_values Optional values for fixed parameters.
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, phi, and convergence status.
-#' @examples
-#' X = matrix(rnorm(500), 100, 5)
-#' y = runif(100)
-#' fast_beta_regression_cpp(X, y)
 #' @export
 #' @keywords internal
 #' @examples
@@ -485,6 +485,10 @@ fast_hurdle_negbin_with_var_cpp <- function(X, y, j = 2L, maxit = 1000L, tol = 1
     .Call(`_EDI_fast_hurdle_negbin_with_var_cpp`, X, y, j, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
+fast_truncated_negbin_count_cpp <- function(X, y, start_params = NULL, estimate_only = FALSE, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
+    .Call(`_EDI_fast_truncated_negbin_count_cpp`, X, y, start_params, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg)
+}
+
 get_hurdle_poisson_glmm_score_cpp <- function(X, y, group_id, params, n_gh = 7L) {
     .Call(`_EDI_get_hurdle_poisson_glmm_score_cpp`, X, y, group_id, params, n_gh)
 }
@@ -516,8 +520,8 @@ exact_jonckheere_terpstra_pval_cpp <- function(y, w) {
 #' @param is_fixed_matching Logical flag for fixed matching designs.
 #' @param num_cores Number of OpenMP threads.
 #' @return Numeric vector of KK Wilcoxon statistics.
-compute_kk_wilcox_distr_parallel_cpp <- function(w_mat, m_mat, y, delta, transform_code, zero_one_logit_clamp, is_fixed_matching, num_cores) {
-    .Call(`_EDI_compute_kk_wilcox_distr_parallel_cpp`, w_mat, m_mat, y, delta, transform_code, zero_one_logit_clamp, is_fixed_matching, num_cores)
+compute_matching_wilcox_distr_parallel_cpp <- function(w_mat, m_mat, y, delta, transform_code, zero_one_logit_clamp, is_fixed_matching, num_cores) {
+    .Call(`_EDI_compute_matching_wilcox_distr_parallel_cpp`, w_mat, m_mat, y, delta, transform_code, zero_one_logit_clamp, is_fixed_matching, num_cores)
 }
 
 #' @title Compute Log-Binomial Regression Score
@@ -698,16 +702,14 @@ get_logistic_regression_weighted_hessian_cpp <- function(X, weights, beta) {
 #' @description High-performance logistic regression fitting using IRLS.
 #' @param X A numeric matrix of predictors.
 #' @param y A binary numeric vector of responses.
+#' @param start_beta Optional starting values for coefficients.
+#' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
 #' @param fixed_idx Optional indices of fixed parameters.
 #' @param fixed_values Optional values for fixed parameters.
 #' @param optimization_alg Optimization algorithm (e.g., "irls").
 #' @return A list containing coefficients and weights.
-#' @examples
-#' X = matrix(rnorm(100), 10, 10)
-#' y = rbinom(10, 1, 0.5)
-#' fast_logistic_regression_cpp(X, y)
 #' @export
 #' @keywords internal
 #' @examples
@@ -723,6 +725,8 @@ fast_logistic_regression_cpp <- function(X, y, start_beta = NULL, smart_start = 
 #' @param X A numeric matrix of predictors.
 #' @param y A binary numeric vector of responses.
 #' @param weights A numeric vector of weights.
+#' @param start_beta Optional starting values for coefficients.
+#' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
 #' @param fixed_idx Optional indices of fixed parameters.
@@ -740,14 +744,12 @@ fast_logistic_regression_weighted_cpp <- function(X, y, weights, start_beta = NU
 #' @param X A numeric matrix of predictors.
 #' @param y A binary numeric vector of responses.
 #' @param j The 1-based index of the parameter for which to return specific variance.
+#' @param start_beta Optional starting values for coefficients.
+#' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 #' @param fixed_idx Optional indices of fixed parameters.
 #' @param fixed_values Optional values for fixed parameters.
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, vcov, score, and likelihood statistics.
-#' @examples
-#' X = matrix(rnorm(100), 10, 10)
-#' y = rbinom(10, 1, 0.5)
-#' fast_logistic_regression_with_var_cpp(X, y)
 #' @export
 #' @keywords internal
 #' @examples
@@ -794,6 +796,8 @@ get_negbin_regression_hessian_cpp <- function(X, y, params) {
 #' @description Negative binomial regression fitting with full variance-covariance matrix.
 #' @param X A numeric matrix of predictors.
 #' @param y A numeric vector of responses (non-negative integers).
+#' @param start_params Optional starting values for coefficients and dispersion.
+#' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 #' @param maxit Maximum number of iterations.
 #' @param eps_f Convergence tolerance for function value.
 #' @param eps_g Convergence tolerance for gradient.
@@ -815,6 +819,8 @@ fast_neg_bin_with_var_cpp <- function(X, y, start_params = NULL, smart_start = F
 #' @description High-performance negative binomial regression fitting.
 #' @param X A numeric matrix of predictors.
 #' @param y A numeric vector of responses.
+#' @param start_params Optional starting values for coefficients and dispersion.
+#' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 #' @param maxit Maximum number of iterations.
 #' @param eps_f Convergence tolerance for function value.
 #' @param eps_g Convergence tolerance for gradient.
@@ -907,8 +913,8 @@ get_ordinal_glmm_hessian_cpp <- function(X, y, group_id, params, K, n_gh = 20L, 
     .Call(`_EDI_get_ordinal_glmm_hessian_cpp`, X, y, group_id, params, K, n_gh, max_abs_log_sigma)
 }
 
-fast_ordinal_glmm_cpp <- function(X, y, group_id, K, j_T, estimate_only = FALSE, n_gh = 20L, max_abs_log_sigma = 8.0, maxit = 300L, eps_g = 1e-6, start = NULL, optimization_alg = "lbfgs") {
-    .Call(`_EDI_fast_ordinal_glmm_cpp`, X, y, group_id, K, j_T, estimate_only, n_gh, max_abs_log_sigma, maxit, eps_g, start, optimization_alg)
+fast_ordinal_glmm_cpp <- function(X, y, group_id, K, j_T, estimate_only = FALSE, n_gh = 20L, max_abs_log_sigma = 8.0, maxit = 300L, eps_g = 1e-6, start = NULL, optimization_alg = "lbfgs", fixed_idx = NULL, fixed_values = NULL) {
+    .Call(`_EDI_fast_ordinal_glmm_cpp`, X, y, group_id, K, j_T, estimate_only, n_gh, max_abs_log_sigma, maxit, eps_g, start, optimization_alg, fixed_idx, fixed_values)
 }
 
 get_ordinal_probit_regression_score_cpp <- function(X, y, params, fixed_idx = NULL, fixed_values = NULL) {
@@ -1021,8 +1027,16 @@ expand_adjacent_category_data_cpp <- function(y, w, strata, K) {
     .Call(`_EDI_expand_adjacent_category_data_cpp`, y, w, strata, K)
 }
 
-fast_poisson_glmm_cpp <- function(X, y, group_id, j_T, estimate_only = FALSE, n_gh = 20L, maxit = 300L, eps_g = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
-    .Call(`_EDI_fast_poisson_glmm_cpp`, X, y, group_id, j_T, estimate_only, n_gh, maxit, eps_g, fixed_idx, fixed_values, optimization_alg)
+fast_poisson_glmm_cpp <- function(X, y, group_id, j_T, start_par = NULL, estimate_only = FALSE, n_gh = 20L, maxit = 300L, eps_g = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
+    .Call(`_EDI_fast_poisson_glmm_cpp`, X, y, group_id, j_T, start_par, estimate_only, n_gh, maxit, eps_g, fixed_idx, fixed_values, optimization_alg)
+}
+
+get_poisson_glmm_score_cpp <- function(X, y, group_id, par, n_gh = 20L) {
+    .Call(`_EDI_get_poisson_glmm_score_cpp`, X, y, group_id, par, n_gh)
+}
+
+get_poisson_glmm_hessian_cpp <- function(X, y, group_id, par, n_gh = 20L) {
+    .Call(`_EDI_get_poisson_glmm_hessian_cpp`, X, y, group_id, par, n_gh)
 }
 
 #' @title Compute Poisson Regression Score
@@ -1077,16 +1091,14 @@ get_poisson_regression_weighted_hessian_cpp <- function(X, weights, beta) {
 #' @description High-performance Poisson regression fitting using IRLS or L-BFGS.
 #' @param X A numeric matrix of predictors.
 #' @param y A numeric vector of responses (counts).
+#' @param start_beta Optional starting values for coefficients.
+#' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
 #' @param fixed_idx Optional indices of fixed parameters.
 #' @param fixed_values Optional values for fixed parameters.
 #' @param optimization_alg Optimization algorithm ("lbfgs" or "irls").
 #' @return A list containing coefficients, fitted values, and information matrix.
-#' @examples
-#' X = matrix(rnorm(100), 10, 10)
-#' y = rpois(10, 2)
-#' fast_poisson_regression_cpp(X, y)
 #' @export
 #' @keywords internal
 #' @examples
@@ -1102,6 +1114,8 @@ fast_poisson_regression_cpp <- function(X, y, start_beta = NULL, smart_start = T
 #' @param X A numeric matrix of predictors.
 #' @param y A numeric vector of responses (counts).
 #' @param weights A numeric vector of weights.
+#' @param start_beta Optional starting values for coefficients.
+#' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
 #' @param fixed_idx Optional indices of fixed parameters.
@@ -1119,16 +1133,14 @@ fast_poisson_regression_weighted_cpp <- function(X, y, weights, start_beta = NUL
 #' @param X A numeric matrix of predictors.
 #' @param y A numeric vector of responses (counts).
 #' @param j 1-based index of the parameter for which to return specific variance.
+#' @param start_beta Optional starting values for coefficients.
+#' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
 #' @param fixed_idx Optional indices of fixed parameters.
 #' @param fixed_values Optional values for fixed parameters.
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, vcov, score, and likelihood statistics.
-#' @examples
-#' X = matrix(rnorm(100), 10, 10)
-#' y = rpois(10, 2)
-#' fast_poisson_regression_with_var_cpp(X, y)
 #' @export
 #' @keywords internal
 #' @examples
@@ -1144,6 +1156,8 @@ fast_poisson_regression_with_var_cpp <- function(X, y, j = 2L, start_beta = NULL
 #' @param X A numeric matrix of predictors.
 #' @param y A numeric vector of responses (counts).
 #' @param j 1-based index of the parameter for which to return specific variance.
+#' @param start_beta Optional starting values for coefficients.
+#' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
 #' @param fixed_idx Optional indices of fixed parameters.
@@ -1183,6 +1197,10 @@ fast_robust_regression_cpp <- function(X, y, start_beta = NULL, method = "MM", j
 
 sample_int_replace_cpp <- function(n, size) {
     .Call(`_EDI_sample_int_replace_cpp`, n, size)
+}
+
+resample_group_rows_cpp <- function(group_id, sample_size) {
+    .Call(`_EDI_resample_group_rows_cpp`, group_id, sample_size)
 }
 
 scale_columns_cpp <- function(X) {
@@ -1291,12 +1309,12 @@ get_dep_cens_transform_hessian_cpp <- function(X, y, dead, params) {
     .Call(`_EDI_get_dep_cens_transform_hessian_cpp`, X, y, dead, params)
 }
 
-fast_clayton_weibull_aft_optim_cpp <- function(X, y, dead, pair_idx, singleton_rows, start_params, maxit = 2000L, reltol = 1e-9, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
-    .Call(`_EDI_fast_clayton_weibull_aft_optim_cpp`, X, y, dead, pair_idx, singleton_rows, start_params, maxit, reltol, fixed_idx, fixed_values, optimization_alg)
+fast_clayton_weibull_aft_optim_cpp <- function(X, y, dead, pair_idx, singleton_rows, start_params, estimate_only = FALSE, maxit = 2000L, reltol = 1e-9, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
+    .Call(`_EDI_fast_clayton_weibull_aft_optim_cpp`, X, y, dead, pair_idx, singleton_rows, start_params, estimate_only, maxit, reltol, fixed_idx, fixed_values, optimization_alg)
 }
 
-fast_dep_cens_transform_optim_cpp <- function(X, y, dead, start_params, maxit = 2000L, reltol = 1e-9, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
-    .Call(`_EDI_fast_dep_cens_transform_optim_cpp`, X, y, dead, start_params, maxit, reltol, fixed_idx, fixed_values, optimization_alg)
+fast_dep_cens_transform_optim_cpp <- function(X, y, dead, start_params, estimate_only = FALSE, maxit = 2000L, reltol = 1e-9, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
+    .Call(`_EDI_fast_dep_cens_transform_optim_cpp`, X, y, dead, start_params, estimate_only, maxit, reltol, fixed_idx, fixed_values, optimization_alg)
 }
 
 #' Calculates the median or restricted mean survival time for a single group.
@@ -1406,11 +1424,6 @@ get_weibull_regression_hessian_cpp <- function(X, y, dead, params) {
 #' @param fixed_values Optional values for fixed parameters.
 #' @param optimization_alg Optimization algorithm.
 #' @return A list containing coefficients, log_sigma, vcov, and convergence status.
-#' @examples
-#' X = matrix(rnorm(500), 100, 5)
-#' y = runif(100)
-#' dead = rbinom(100, 1, 0.5)
-#' fast_weibull_regression_cpp(y, dead, X)
 #' @export
 #' @keywords internal
 #' @examples
@@ -1447,8 +1460,8 @@ compute_wilcox_hl_distr_parallel_cpp <- function(w_mat, y, delta, transform_code
     .Call(`_EDI_compute_wilcox_hl_distr_parallel_cpp`, w_mat, y, delta, transform_code, zero_one_logit_clamp, num_cores)
 }
 
-compute_wilcox_kk_ivwc_bootstrap_parallel_cpp <- function(w, y, m_vec, indices_mat, m_mat, num_cores) {
-    .Call(`_EDI_compute_wilcox_kk_ivwc_bootstrap_parallel_cpp`, w, y, m_vec, indices_mat, m_mat, num_cores)
+compute_wilcox_matching_ivwc_bootstrap_parallel_cpp <- function(w, y, m_vec, indices_mat, m_mat, num_cores) {
+    .Call(`_EDI_compute_wilcox_matching_ivwc_bootstrap_parallel_cpp`, w, y, m_vec, indices_mat, m_mat, num_cores)
 }
 
 compute_wilcox_distr_parallel_cpp <- function(w_mat, y, delta, num_cores) {
@@ -1515,8 +1528,8 @@ gcomp_ordinal_proportional_odds_post_fit_cpp <- function(X_fit, coef_hat, alpha_
     .Call(`_EDI_gcomp_ordinal_proportional_odds_post_fit_cpp`, X_fit, coef_hat, alpha_hat, j_treat)
 }
 
-generate_permutations_kk_cpp <- function(m_vec, nsim, prob_T) {
-    .Call(`_EDI_generate_permutations_kk_cpp`, m_vec, nsim, prob_T)
+generate_permutations_matching_cpp <- function(m_vec, nsim, prob_T) {
+    .Call(`_EDI_generate_permutations_matching_cpp`, m_vec, nsim, prob_T)
 }
 
 generate_permutations_bernoulli_cpp <- function(n, nsim, prob_T) {
@@ -1619,36 +1632,36 @@ kk21_stepwise_ordinal_weights_cpp <- function(X, y, w) {
     .Call(`_EDI_kk21_stepwise_ordinal_weights_cpp`, X, y, w)
 }
 
-kk_bootstrap_loop_cpp <- function(X, y, w, original_m_vec, indices, m, duplicate_inference_fn, compute_estimate_fn, num_cores = 1L) {
-    .Call(`_EDI_kk_bootstrap_loop_cpp`, X, y, w, original_m_vec, indices, m, duplicate_inference_fn, compute_estimate_fn, num_cores)
+matching_bootstrap_loop_cpp <- function(X, y, w, original_m_vec, indices, m, duplicate_inference_fn, compute_estimate_fn, num_cores = 1L) {
+    .Call(`_EDI_matching_bootstrap_loop_cpp`, X, y, w, original_m_vec, indices, m, duplicate_inference_fn, compute_estimate_fn, num_cores)
 }
 
-compute_kk_reservoir_stats_cpp <- function(y_matched_diffs, y_reservoir, w_reservoir) {
-    .Call(`_EDI_compute_kk_reservoir_stats_cpp`, y_matched_diffs, y_reservoir, w_reservoir)
+compute_matching_reservoir_stats_cpp <- function(y_matched_diffs, y_reservoir, w_reservoir) {
+    .Call(`_EDI_compute_matching_reservoir_stats_cpp`, y_matched_diffs, y_reservoir, w_reservoir)
 }
 
-compute_kk_grouping_cpp <- function(m_vec) {
-    .Call(`_EDI_compute_kk_grouping_cpp`, m_vec)
+compute_matching_grouping_cpp <- function(m_vec) {
+    .Call(`_EDI_compute_matching_grouping_cpp`, m_vec)
 }
 
-compute_kk_cluster_ids_cpp <- function(m_vec) {
-    .Call(`_EDI_compute_kk_cluster_ids_cpp`, m_vec)
+compute_cluster_ids_cpp <- function(m_vec) {
+    .Call(`_EDI_compute_cluster_ids_cpp`, m_vec)
 }
 
-compute_kk_compound_distr_parallel_cpp <- function(y, w_mat, m_mat, num_cores) {
-    .Call(`_EDI_compute_kk_compound_distr_parallel_cpp`, y, w_mat, m_mat, num_cores)
+compute_matching_compound_distr_parallel_cpp <- function(y, w_mat, m_mat, num_cores) {
+    .Call(`_EDI_compute_matching_compound_distr_parallel_cpp`, y, w_mat, m_mat, num_cores)
 }
 
-compute_kk_compound_bootstrap_parallel_cpp <- function(w_mat, m_mat, y_mat, num_cores) {
-    .Call(`_EDI_compute_kk_compound_bootstrap_parallel_cpp`, w_mat, m_mat, y_mat, num_cores)
+compute_matching_compound_bootstrap_parallel_cpp <- function(w_mat, m_mat, y_mat, num_cores) {
+    .Call(`_EDI_compute_matching_compound_bootstrap_parallel_cpp`, w_mat, m_mat, y_mat, num_cores)
 }
 
-compute_kk_lin_match_data_cpp <- function(X, y, w, m_vec) {
-    .Call(`_EDI_compute_kk_lin_match_data_cpp`, X, y, w, m_vec)
+compute_matching_lin_match_data_cpp <- function(X, y, w, m_vec) {
+    .Call(`_EDI_compute_matching_lin_match_data_cpp`, X, y, w, m_vec)
 }
 
-compute_kk_lin_wy_stats_cpp <- function(w, y, m_vec) {
-    .Call(`_EDI_compute_kk_lin_wy_stats_cpp`, w, y, m_vec)
+compute_matching_lin_wy_stats_cpp <- function(w, y, m_vec) {
+    .Call(`_EDI_compute_matching_lin_wy_stats_cpp`, w, y, m_vec)
 }
 
 neg_loglik_nb_cpp <- function(theta, beta, X, y) {
@@ -2038,7 +2051,7 @@ compute_zhang_match_data_cpp <- function(X, y, w, m_vec) {
     .Call(`_EDI_compute_zhang_match_data_cpp`, X, y, w, m_vec)
 }
 
-compute_kk_wy_stats_cpp <- function(w, y, m_vec) {
-    .Call(`_EDI_compute_kk_wy_stats_cpp`, w, y, m_vec)
+compute_matching_wy_stats_cpp <- function(w, y, m_vec) {
+    .Call(`_EDI_compute_matching_wy_stats_cpp`, w, y, m_vec)
 }
 

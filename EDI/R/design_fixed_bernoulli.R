@@ -3,12 +3,12 @@
 #' An R6 Class encapsulating the data and functionality for a fixed Bernoulli experimental design.
 #'
 #' @examples
-#' des = FixedDesignBernoulli$new(n = 10, response_type = 'continuous')
+#' des = DesignFixedBernoulli$new(n = 10, response_type = 'continuous')
 #' des$add_all_subjects_to_experiment(data.frame(x1 = rnorm(10)))
 #' des$assign_w_to_all_subjects()
 #' @export
-FixedDesignBernoulli = R6::R6Class("FixedDesignBernoulli",
-	inherit = FixedDesign,
+DesignFixedBernoulli = R6::R6Class("DesignFixedBernoulli",
+	inherit = DesignFixed,
 	public = list(
 		#' @description
 		#' Initialize a fixed Bernoulli experimental design
@@ -22,7 +22,7 @@ FixedDesignBernoulli = R6::R6Class("FixedDesignBernoulli",
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'
-		#' @return  A new `FixedDesignBernoulli` object
+		#' @return  A new `DesignFixedBernoulli` object
 		initialize = function(
 						response_type,
 						prob_T = 0.5,

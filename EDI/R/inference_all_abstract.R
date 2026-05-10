@@ -51,7 +51,7 @@ Inference = R6::R6Class("Inference",
 			private$w = private$des_obj_priv_int$w
 			private$dead = private$des_obj_priv_int$dead
 			private$is_KK = inherits(des_obj, "DesignSeqOneByOneKK14")
-			private$has_match_structure = private$is_KK || inherits(des_obj, "FixedDesignBinaryMatch")
+			private$has_match_structure = private$is_KK || inherits(des_obj, "DesignFixedBinaryMatch")
 			private$n = des_obj$get_n()
 			private$prob_T = des_obj$get_prob_T()
 			private$supports_design_resampling = isTRUE(des_obj$supports_resampling())
@@ -83,6 +83,7 @@ Inference = R6::R6Class("Inference",
 			private$verbose = verbose
 			private$cached_values$rand_distr_cache = list()
 			private$cached_values$m_cache = list()
+			private$cached_values$likelihood_test_eval_cache = list()
 			if (private$verbose){
 				cat(paste0(
 					"Initialized inference methods for a ",
@@ -159,6 +160,7 @@ Inference = R6::R6Class("Inference",
 			i$.__enclos_env__$private$cached_values = list()
 			i$.__enclos_env__$private$cached_values$m_cache = private$cached_values$m_cache
 			i$.__enclos_env__$private$cached_values$t0s_rand = private$cached_values$t0s_rand
+			i$.__enclos_env__$private$cached_values$likelihood_test_eval_cache = list()
 
 			if (private$has_private_method("custom_randomization_statistic_function") &&
 				!is.null(i$.__enclos_env__$private$custom_randomization_statistic_function)){
@@ -431,6 +433,44 @@ Inference = R6::R6Class("Inference",
 			invisible(NULL)
 		},
 
+		clear_likelihood_test_eval_cache = function(){
+			private$cached_values$likelihood_test_eval_cache = list()
+			invisible(NULL)
+		},
+
+		get_likelihood_test_eval_cache = function(){
+			cache = private$cached_values$likelihood_test_eval_cache
+			if (is.null(cache)) {
+				cache = list()
+				private$cached_values$likelihood_test_eval_cache = cache
+			}
+			cache
+		},
+
+		normalize_likelihood_test_delta = function(delta){
+			delta = as.numeric(delta)[1L]
+			if (!is.finite(delta)) return(delta)
+			if (identical(delta, 0) || abs(delta) < .Machine$double.eps) return(0)
+			delta
+		},
+
+		likelihood_test_delta_key = function(testing_type, delta){
+			delta = private$normalize_likelihood_test_delta(delta)
+			paste0(as.character(testing_type)[1L], "::", sprintf("%.17g", delta))
+		},
+
+		get_likelihood_test_eval_entry = function(testing_type, delta){
+			cache = private$get_likelihood_test_eval_cache()
+			cache[[private$likelihood_test_delta_key(testing_type, delta)]]
+		},
+
+		set_likelihood_test_eval_entry = function(testing_type, delta, entry){
+			cache = private$get_likelihood_test_eval_cache()
+			cache[[private$likelihood_test_delta_key(testing_type, delta)]] = entry
+			private$cached_values$likelihood_test_eval_cache = cache
+			invisible(entry)
+		},
+
 		get_likelihood_null_warm_state = function(key){
 			if (!isTRUE(private$null_fit_warm_start_enabled)) return(NULL)
 			cache = private$likelihood_null_warm_cache
@@ -626,7 +666,7 @@ Inference = R6::R6Class("Inference",
 			assert_design_supports_resampling = function(method_family){
 				if (isTRUE(private$supports_design_resampling)) return(invisible(NULL))
 				if (should_run_asserts()) {
-					stop(method_family, " is not available for plain FixedDesign objects. Use asymptotic inference or a concrete design subclass.")
+					stop(method_family, " is not available for plain DesignFixed objects. Use asymptotic inference or a concrete design subclass.")
 				}
 			},
 
@@ -659,7 +699,7 @@ Inference = R6::R6Class("Inference",
 			
 			if (isTRUE(private$harden)){
 				# Drop covariate columns that are linearly dependent on earlier columns.
-				# This handles e.g. FixedDesignBlockedCluster where cluster dummies are
+				# This handles e.g. DesignFixedBlockedCluster where cluster dummies are
 				# collinear with the treatment column (all cluster members share the same w).
 				# pivoted QR naturally prefers columns at the front (intercept, treatment).
 				res = drop_linearly_dependent_cols(X_full)

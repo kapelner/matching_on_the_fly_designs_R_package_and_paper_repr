@@ -4,6 +4,11 @@
 \alias{InferenceIncidExtendedRobins}
 \title{Extended Robins Blocked Incidence Inference}
 \description{
+Extended Robins Blocked Incidence Inference
+
+Extended Robins Blocked Incidence Inference
+}
+\details{
 Unadjusted blocked-design incidence inference using the simple mean-difference
 point estimate with a block-stratified standard error.
 }
@@ -21,11 +26,12 @@ inf$compute_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAllSimpleMeanDiff]{EDI::InferenceAllSimpleMeanDiff}} -> \code{\link[EDI:InferenceIncidCMH]{EDI::InferenceIncidCMH}} -> \code{InferenceIncidExtendedRobins}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAllSimpleMeanDiff]{EDI::InferenceAllSimpleMeanDiff}} -> \code{InferenceIncidExtendedRobins}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceIncidExtendedRobins-new}{\code{InferenceIncidExtendedRobins$new()}}
 \item \href{#method-InferenceIncidExtendedRobins-clone}{\code{InferenceIncidExtendedRobins$clone()}}
 }
 }
@@ -55,9 +61,8 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_confidence_interval'><code>EDI::InferenceAsymp$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_asymp_two_sided_pval'><code>EDI::InferenceAsymp$compute_asymp_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_lik_ratio_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_lik_ratio_two_sided_pval'><code>EDI::InferenceAsymp$compute_lik_ratio_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_likelihood_ratio_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_likelihood_ratio_two_sided_pval'><code>EDI::InferenceAsymp$compute_likelihood_ratio_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_score_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_score_two_sided_pval'><code>EDI::InferenceAsymp$compute_score_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_confidence_interval'><code>EDI::InferenceAsymp$compute_wald_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_two_sided_pval'><code>EDI::InferenceAsymp$compute_wald_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_information_preference"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_information_preference'><code>EDI::InferenceAsymp$get_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_information_source_used"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_information_source_used'><code>EDI::InferenceAsymp$get_information_source_used()</code></a></span></li>
@@ -70,10 +75,40 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-set_testing_type'><code>EDI::InferenceAsymp$set_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAllSimpleMeanDiff" data-id="compute_estimate"><a href='../../EDI/html/InferenceAllSimpleMeanDiff.html#method-InferenceAllSimpleMeanDiff-compute_estimate'><code>EDI::InferenceAllSimpleMeanDiff$compute_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAllSimpleMeanDiff" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceAllSimpleMeanDiff.html#method-InferenceAllSimpleMeanDiff-compute_rand_confidence_interval'><code>EDI::InferenceAllSimpleMeanDiff$compute_rand_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceIncidCMH" data-id="initialize"><a href='../../EDI/html/InferenceIncidCMH.html#method-InferenceIncidCMH-initialize'><code>EDI::InferenceIncidCMH$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceIncidExtendedRobins-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidExtendedRobins-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize Extended Robins blocked-design incidence inference.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExtendedRobins$new(
+  des_obj,
+  model_formula = NULL,
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed design object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new \code{InferenceIncidExtendedRobins} object.
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidExtendedRobins-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidExtendedRobins-clone}{}}}

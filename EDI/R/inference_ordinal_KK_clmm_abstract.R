@@ -20,7 +20,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 				assertResponseType(des_obj$get_response_type(), "ordinal")
 			}
 			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")){
+				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
@@ -214,6 +214,10 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 
 			y_levels = sort(unique(private$y))
 			K        = length(y_levels)
+			if (K > 20L) {
+				private$cache_nonestimable_estimate("kk_clmm_too_many_levels")
+				return(invisible(NULL))
+			}
 			y    = as.integer(match(private$y, y_levels))
 			n_alpha  = K - 1L
 			j_T      = 0L  # treatment is always first column of X_fit

@@ -64,7 +64,7 @@ List compute_zhang_match_data_cpp(const NumericMatrix& X,
 								  const IntegerVector& m_vec);
 
 // [[Rcpp::export]]
-List draw_kk_bootstrap_sample_cpp(
+List draw_matching_bootstrap_sample_cpp(
 	const IntegerVector& i_reservoir,
 	const IntegerMatrix& pair_rows,
 	int n_reservoir
@@ -105,7 +105,7 @@ List draw_kk_bootstrap_sample_cpp(
 }
 
 // [[Rcpp::export]]
-List compute_bootstrap_kk_stats_cpp(
+List compute_bootstrap_matching_stats_cpp(
 	const NumericMatrix& X,
 	const NumericVector& y,
 	const IntegerVector& w,

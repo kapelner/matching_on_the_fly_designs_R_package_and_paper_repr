@@ -9,7 +9,7 @@ compare_bootstrap_fast_slow_asymp <- function(fast_inf, slow_inf, B = 5L, seed =
 }
 
 make_fixed_design <- function(response_type, X, y_fun, dead_fun = NULL){
-	des = FixedDesignBernoulli$new(n = nrow(X), response_type = response_type, verbose = FALSE)
+	des = DesignFixedBernoulli$new(n = nrow(X), response_type = response_type, verbose = FALSE)
 	des$add_all_subjects_to_experiment(X)
 	des$assign_w_to_all_subjects()
 	w = des$get_w()
@@ -36,7 +36,7 @@ make_fixed_blocked_cluster_design <- function(X, y_fun, cluster_size = 2L){
 	}
 
 	X_design[[cluster_col]] = factor(cluster_ids)
-	des = FixedDesignBlockedCluster$new(
+	des = DesignFixedBlockedCluster$new(
 		n = nrow(X_design),
 		strata_cols = strata_col,
 		cluster_col = cluster_col,
@@ -128,6 +128,7 @@ test_that("incidence and ordinal g-computation reusable workers match generic bo
 		SlowInferenceOrdinalGCompMeanDiff$new(ordinal_des, verbose = FALSE),
 		seed = 205
 	)
+	expect_false(inherits(InferenceOrdinalGCompMeanDiff$new(ordinal_des, verbose = FALSE), "InferenceOrdinalGCompAbstract"))
 	compare_bootstrap_fast_slow_asymp(
 		InferenceOrdinalGCompMeanDiff$new(ordinal_des, verbose = FALSE),
 		SlowInferenceOrdinalGCompMeanDiff$new(ordinal_des, verbose = FALSE),
@@ -232,6 +233,7 @@ test_that("continuous lin, count negbin, and classical incidence estimators matc
 		SlowInferenceCountHurdleNegBin$new(hurdle_des, verbose = FALSE),
 		seed = 210
 	)
+	expect_false(inherits(InferenceCountHurdleNegBin$new(hurdle_des, verbose = FALSE), "InferenceCountHurdleNegBinAbstract"))
 	compare_bootstrap_fast_slow_asymp(
 		InferenceCountHurdleNegBin$new(hurdle_des, verbose = FALSE),
 		SlowInferenceCountHurdleNegBin$new(hurdle_des, verbose = FALSE),
@@ -388,6 +390,7 @@ test_that("MLE and proportion families picked up through InferenceAsymp match ge
 		SlowInferencePropZeroOneInflatedBetaRegr$new(zoib_des, verbose = FALSE),
 		seed = 219
 	)
+	expect_false(inherits(InferencePropZeroOneInflatedBetaRegr$new(zoib_des, verbose = FALSE), "InferencePropZeroOneInflatedBetaAbstract"))
 	compare_bootstrap_fast_slow_asymp(
 		InferencePropZeroOneInflatedBetaRegr$new(zoib_des, verbose = FALSE),
 		SlowInferencePropZeroOneInflatedBetaRegr$new(zoib_des, verbose = FALSE),

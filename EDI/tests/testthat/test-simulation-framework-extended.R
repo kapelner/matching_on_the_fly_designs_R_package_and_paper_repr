@@ -6,7 +6,7 @@ test_that("SimulationFramework supports parallel execution", {
 	set.seed(123)
 	sim <- SimulationFramework$new(
 		response_type = "continuous",
-		design_classes_and_params = list(FixedDesignBernoulli),
+		design_classes_and_params = list(DesignFixedBernoulli),
 		inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
 		inference_types_and_params = list(asymp_pval = list()),
 		n = 20L,
@@ -52,7 +52,7 @@ test_that("SimulationFramework supports randomization and bootstrap inference", 
 	set.seed(789)
 	sim <- SimulationFramework$new(
 		response_type = "continuous",
-		design_classes_and_params = list(FixedDesignBernoulli),
+		design_classes_and_params = list(DesignFixedBernoulli),
 		inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
 		inference_types_and_params = list(
 			boot_ci = list(B = 20),
@@ -84,7 +84,7 @@ test_that("SimulationFramework supports custom X_mat", {
 	
 	sim <- SimulationFramework$new(
 		response_type = "continuous",
-		design_classes_and_params = list(FixedDesignBernoulli),
+		design_classes_and_params = list(DesignFixedBernoulli),
 		inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
 		inference_types_and_params = list(asymp_pval = list()),
 		n = n,
@@ -105,7 +105,7 @@ test_that("SimulationFramework can keep and retrieve intermediate data", {
 	set.seed(202)
 	sim <- SimulationFramework$new(
 		response_type = "continuous",
-		design_classes_and_params = list(FixedDesignBernoulli),
+		design_classes_and_params = list(DesignFixedBernoulli),
 		inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
 		inference_types_and_params = list(asymp_pval = list()),
 		n = 10L,
@@ -151,7 +151,7 @@ test_that("SimulationFramework survival responses respect censoring", {
 	# High censoring
 	sim_high <- SimulationFramework$new(
 		response_type = "survival",
-		design_classes_and_params = list(FixedDesignBernoulli),
+		design_classes_and_params = list(DesignFixedBernoulli),
 		inference_classes_and_params = list(InferenceSurvivalCoxPHRegr),
 		inference_types_and_params = list(asymp_pval = list()),
 		prob_censoring = 0.99, # Force heavy censoring
@@ -165,7 +165,7 @@ test_that("SimulationFramework survival responses respect censoring", {
 	# Low censoring
 	sim_low <- SimulationFramework$new(
 		response_type = "survival",
-		design_classes_and_params = list(FixedDesignBernoulli),
+		design_classes_and_params = list(DesignFixedBernoulli),
 		inference_classes_and_params = list(InferenceSurvivalCoxPHRegr),
 		inference_types_and_params = list(asymp_pval = list()),
 		prob_censoring = 0.0,
@@ -179,7 +179,7 @@ test_that("SimulationFramework survival responses respect censoring", {
 	# Deep check with intermediate data
 	sim_high_data <- SimulationFramework$new(
 		response_type = "survival",
-		design_classes_and_params = list(FixedDesignBernoulli),
+		design_classes_and_params = list(DesignFixedBernoulli),
 		inference_classes_and_params = list(InferenceSurvivalCoxPHRegr),
 		inference_types_and_params = list(asymp_pval = list()),
 		prob_censoring = 1.0, 

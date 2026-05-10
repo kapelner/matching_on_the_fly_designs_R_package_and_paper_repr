@@ -6,13 +6,13 @@
 #' \pkg{randomizr} package.
 #'
 #' @examples
-#' des = FixedDesignCluster$new(n = 20, response_type = 'continuous', cluster_col = 'cl')
+#' des = DesignFixedCluster$new(n = 20, response_type = 'continuous', cluster_col = 'cl')
 #' X = data.frame(x = rnorm(20), cl = factor(rep(1:5, each = 4)))
 #' des$add_all_subjects_to_experiment(X)
 #' des$assign_w_to_all_subjects()
 #' @export
-FixedDesignCluster = R6::R6Class("FixedDesignCluster",
-	inherit = FixedDesign,
+DesignFixedCluster = R6::R6Class("DesignFixedCluster",
+	inherit = DesignFixed,
 	public = list(
 		#' @description
 		#' Initialize a cluster randomized fixed experimental design
@@ -26,7 +26,7 @@ FixedDesignCluster = R6::R6Class("FixedDesignCluster",
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'
-		#' @return 			A new `FixedDesignCluster` object
+		#' @return 			A new `DesignFixedCluster` object
 		#'
 		initialize = function(
 				cluster_col,

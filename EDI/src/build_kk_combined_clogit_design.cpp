@@ -86,7 +86,7 @@ List collect_discordant_pairs_cpp(
 // Returns: X_comb ((nd+nR) x (p+2)), y_comb (nd+nR), nd.
 //
 // [[Rcpp::export]]
-List build_kk_combined_clogit_design_cpp(
+List build_matching_combined_clogit_design_cpp(
 	const Eigen::VectorXd&     y_m,
 	const Eigen::VectorXd&     w_m,
 	const Eigen::MatrixXd&     X_m,

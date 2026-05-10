@@ -3,7 +3,7 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-List compute_kk_grouping_cpp(const IntegerVector& m_vec) {
+List compute_matching_grouping_cpp(const IntegerVector& m_vec) {
   const int n = m_vec.size();
   IntegerVector cluster_id(n);
   NumericVector pair_active(n);
@@ -46,7 +46,7 @@ List compute_kk_grouping_cpp(const IntegerVector& m_vec) {
 }
 
 // [[Rcpp::export]]
-IntegerVector compute_kk_cluster_ids_cpp(const IntegerVector& m_vec) {
-  List grouping = compute_kk_grouping_cpp(m_vec);
+IntegerVector compute_cluster_ids_cpp(const IntegerVector& m_vec) {
+  List grouping = compute_matching_grouping_cpp(m_vec);
   return grouping["cluster_id"];
 }

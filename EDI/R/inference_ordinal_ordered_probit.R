@@ -3,23 +3,13 @@
 #' Fits an ordered probit regression for ordinal responses using the treatment
 #' indicator and, optionally, all recorded covariates as predictors.
 #'
-#' @examples
-#' \donttest{
-#' seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'ordinal')
-#' for (i in 1:10) {
-#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
-#' }
-#' seq_des$add_all_subject_responses(sample(1:4, 10, replace = TRUE))
-#' inf = InferenceOrdinalOrderedProbitRegr$new(seq_des)
-#' inf$compute_estimate()
-#' }
 #' @export
 InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRegr",
 	lock_objects = FALSE,
 	inherit = InferenceMLEorKMforGLMs,
 	public = list(
 		#' @description
-		#' Initialize an ordered-probit inference object.
+		#' Initialize an ordered probit inference object.
 		#' @param des_obj A completed \code{Design} object with an ordinal response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -54,24 +44,17 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 			X_data = private$get_X()
 
 			if (length(X_cols) == 0L){
-				# Univariate case
-				X = as.matrix(private$w)
+				X = matrix(private$w, ncol = 1L)
 				colnames(X) = "treatment"
 			} else {
-				# Multivariate case
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(treatment = private$w, X_cov)
 			}
 
-			res = fast_ordinal_probit_regression_cpp(
-				X = X, y = as.numeric(private$y),
-				start_params = private$get_fit_warm_start_for_length("params", ncol(X) + length(sort(unique(private$y))) - 1L),
-				smart_start = private$smart_default
-			)
+			res = fast_ordinal_probit_regression_cpp(X = X, y = as.numeric(private$y))
 			if (is.null(res) || length(res$b) < 1L || !is.finite(res$b[length(res$b)])){
 				return(NA_real_)
 			}
-			private$set_fit_warm_start(res$params, "params")
 			as.numeric(res$b[length(res$b)])
 		},
 
@@ -80,6 +63,10 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 		},
 
 		supports_likelihood_tests = function(){
+			TRUE
+		},
+
+		supports_fisher_information = function(){
 			TRUE
 		},
 
@@ -98,8 +85,8 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 					res = tryCatch(
 						fast_ordinal_probit_regression_cpp(
 							X_fit, y,
-							start_params = start %||% private$get_fit_warm_start_for_length("params", length(ctx$full_params)),
 							fixed_idx = j_treat, fixed_values = delta,
+							start_params = start,
 							smart_start = private$smart_default
 						),
 						error = function(e) NULL
@@ -140,6 +127,7 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 							start_params = start_params,
 							smart_start = private$smart_default
 						)
+						if (is.null(res) || length(res) == 0) return(NULL)
 						list(b = res$b, ssq_b_j = NA_real_, params = res$params, neg_loglik = res$neg_loglik)
 					} else {
 						res = fast_ordinal_probit_regression_with_var_cpp(
@@ -147,14 +135,16 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 							start_params = start_params,
 							smart_start = private$smart_default
 						)
-						list(b = res$b, ssq_b_j = res$ssq_b_2, params = res$params, neg_loglik = res$neg_loglik)
+						if (is.null(res) || length(res$b) == 0 || is.na(res$b[1])) return(NULL)
+						list(b = res$b, ssq_b_j = res$ssq_b_j, params = res$params, neg_loglik = res$neg_loglik)
 					}
 				},
 				fit_ok = function(mod, X_fit, keep){
 					j_treat = length(mod$b)
 					if (is.null(mod) || j_treat < 1L || !is.finite(mod$b[j_treat])) return(FALSE)
 					if (estimate_only) return(TRUE)
-					is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
+					ssq = mod$ssq_b_j
+					!is.null(ssq) && is.finite(ssq) && ssq > 0
 				}
 			)
 
@@ -165,8 +155,8 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 				private$cached_values$likelihood_test_context = list(
 					X = attempt$X,
 					j_treat = as.integer(n_alpha + 1L),
-					full_params = as.numeric(attempt$fit$params),
-					full_neg_loglik = as.numeric(attempt$fit$neg_loglik)
+					full_params = attempt$fit$params,
+					full_neg_loglik = attempt$fit$neg_loglik
 				)
 				list(b = c(0, attempt$fit$b[length(attempt$fit$b)]), ssq_b_2 = attempt$fit$ssq_b_j)
 			} else {

@@ -256,6 +256,8 @@ Eigen::MatrixXd get_poisson_regression_weighted_hessian_cpp(const Eigen::MatrixX
 //' @description High-performance Poisson regression fitting using IRLS or L-BFGS.
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (counts).
+//' @param start_beta Optional starting values for coefficients.
+//' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -292,6 +294,8 @@ List fast_poisson_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (counts).
 //' @param weights A numeric vector of weights.
+//' @param start_beta Optional starting values for coefficients.
+//' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -326,6 +330,8 @@ List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X,
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (counts).
 //' @param j 1-based index of the parameter for which to return specific variance.
+//' @param start_beta Optional starting values for coefficients.
+//' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -385,6 +391,8 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (counts).
 //' @param j 1-based index of the parameter for which to return specific variance.
+//' @param start_beta Optional starting values for coefficients.
+//' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -496,9 +504,13 @@ NumericVector compute_poisson_distr_parallel_cpp(
 			W.y_shifted[i] = treated ? (log_transform ? y[i] * exp_delta : y[i] + delta) : y[i];
 		}
 
-		ModelResult res = fast_poisson_internal(W.X_full, W.y_shifted, Eigen::VectorXd());
-		if (res.converged && p_full >= 2 && std::isfinite(res.b[1])) {
-			results[b] = res.b[1];
+		try {
+			ModelResult res = fast_poisson_internal(W.X_full, W.y_shifted, Eigen::VectorXd());
+			if (res.converged && p_full >= 2 && std::isfinite(res.b[1])) {
+				results[b] = res.b[1];
+			}
+		} catch (...) {
+			// Leave results[b] = NA_REAL on any optimizer failure
 		}
 	}
 

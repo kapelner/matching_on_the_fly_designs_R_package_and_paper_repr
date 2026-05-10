@@ -57,6 +57,14 @@ Rcpp::List score_test_from_score_information_cpp(const Eigen::VectorXd& score,
 }
 
 // [[Rcpp::export]]
+Rcpp::List gradient_test_from_restricted_score_cpp(const Eigen::VectorXd& score,
+                                                   double unrestricted_estimate,
+                                                   double null_value,
+                                                   int tested_idx) {
+	return gradient_test_from_restricted_score(score, unrestricted_estimate, null_value, tested_idx);
+}
+
+// [[Rcpp::export]]
 double mean_cpp(const Eigen::VectorXd& x) {
 	if (x.size() == 0) {
 	return NA_REAL;

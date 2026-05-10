@@ -1,6 +1,6 @@
 pacman::p_load(data.table, R.utils, ggplot2, gridExtra, xtable)
 
-Nrep = 3000
+Nrep = 10000
 raw_results_dt = data.table::fread(sprintf("cmh_exact_sims_results_Nrep_%d.csv.bz2", Nrep))
 raw_results_dt[, reject := pval < 0.05]
 raw_results_dt[, covers := ci_lo <= true_estimand & true_estimand <= ci_hi]
@@ -13,9 +13,14 @@ results_dt = raw_results_dt[,
     n_cov = sum(!is.na(covers)),
     len_avg = mean(ci_length, na.rm = TRUE), 
     len_sd = sd(ci_length, na.rm = TRUE), 
-    n_len = sum(!is.na(ci_length))
+    n_len = sum(!is.na(ci_length)),
+    true_estimand = first(true_estimand)
   ),
   by = c("n", "p", "betaT", "design", "inference", "cond_exp_func_model")                         
+]
+estimands = results_dt[,
+  .(true_estimand = first(true_estimand)),
+  by = c("n", "p", "betaT", "cond_exp_func_model")
 ]
 #table(results_dt$design, results_dt$inference)
 #table(results_dt$n, results_dt$p, results_dt$betaT)
@@ -282,7 +287,7 @@ for (p_ in unique(results_dt$p)) {
 }
 
 n_ = 128
-p_ = 5
+p_ = 1
 cond_exp_func_model_ = "linear"
 pow =    results_dt[betaT == 1 & n == n_ & p == p_ & cond_exp_func_model == cond_exp_func_model_, 
                  .(power = pow_avg, design = design_short, inference = inference_short)]

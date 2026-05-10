@@ -43,6 +43,8 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 						model_formula = ~ .
 					) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+			private$blocking_capable = TRUE
+			private$matching_capable = TRUE
 			private$uses_covariates = TRUE
 			private$lambda = if (is.null(lambda)) 0.1 else lambda
 			private$t_0_pct = if (is.null(t_0_pct)) 0.35 else t_0_pct
@@ -111,7 +113,7 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
-			generate_permutations_kk_cpp(
+			generate_permutations_matching_cpp(
 				as.integer(private$m),
 				as.integer(r),
 				as.numeric(private$prob_T)
@@ -124,10 +126,6 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 		t_0_pct = NULL,
 		morrison = NULL,
 		p = NULL,
-
-		draw_bootstrap_indices = function(bootstrap_type = NULL){
-			.draw_kk_bootstrap_indices(private)
-		},
 
 		compute_lambda = function(){
 			private$lambda

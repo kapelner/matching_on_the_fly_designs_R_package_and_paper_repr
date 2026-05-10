@@ -39,6 +39,7 @@ DesignSeqOneByOneSPBR = R6::R6Class("DesignSeqOneByOneSPBR",
 				model_formula = ~ .
 			) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+			private$blocking_capable = TRUE
 			private$strata_cols = strata_cols
 			private$block_size = as.integer(block_size)
 			private$uses_covariates = TRUE
@@ -103,9 +104,8 @@ DesignSeqOneByOneSPBR = R6::R6Class("DesignSeqOneByOneSPBR",
 			if (is.null(bootstrap_type) || bootstrap_type == "within_blocks") {
 				list(i_b = stratified_bootstrap_indices_cpp(as.character(unname(strata_keys))), m_vec_b = NULL)
 			} else {
-				unique_keys = unique(strata_keys)
-				sampled_keys = sample(unique_keys, length(unique_keys), replace = TRUE)
-				i_b = unlist(lapply(sampled_keys, function(key) which(strata_keys == key)), use.names = FALSE)
+				group_id = match(strata_keys, unique(strata_keys))
+				i_b = resample_group_rows_cpp(as.integer(group_id), length(unique(group_id)))
 				list(i_b = as.integer(i_b), m_vec_b = NULL)
 			}
 		},

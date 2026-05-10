@@ -58,9 +58,14 @@ NumericVector compute_bai_distr_parallel_cpp(
     int max_match = 0;
     for (int i = 0; i < n; ++i) if (m_col[i] > max_match) max_match = m_col[i];
     
+    std::vector<double> match_T, match_C;
+    std::vector<bool> has_T, has_C;
+
     if (max_match > 0) {
-      std::vector<double> match_T(max_match, 0.0), match_C(max_match, 0.0);
-      std::vector<bool> has_T(max_match, false), has_C(max_match, false);
+      match_T.assign(max_match, 0.0);
+      match_C.assign(max_match, 0.0);
+      has_T.assign(max_match, false);
+      has_C.assign(max_match, false);
       for (int i = 0; i < n; ++i) {
         double y_val = y_ptr[i] + (w_col[i] == 1 ? delta : 0.0);
         int m = m_col[i];
@@ -120,9 +125,14 @@ NumericVector compute_bai_distr_parallel_cpp(
       double lambda_squ = 0;
       if (n_halves > 0) {
         for (int i = 0; i < n_halves; ++i) {
-          int idx1 = h_ptr[i] - 1; // halves_idx is IntegerMatrix, halves_idx(i, 0)
-          int idx2 = h_ptr[i + n_halves] - 1; // halves_idx(i, 1)
-          if (idx1 < m_size && idx2 < m_size) lambda_squ += d_i[idx1] * d_i[idx2];
+          int id1 = h_ptr[i]; // Pair ID (1-indexed)
+          int id2 = h_ptr[i + n_halves]; // Pair ID (1-indexed)
+          
+          if (id1 > 0 && id1 <= max_match && id2 > 0 && id2 <= max_match) {
+            if (has_T[id1-1] && has_C[id1-1] && has_T[id2-1] && has_C[id2-1]) {
+              lambda_squ += (match_T[id1-1] - match_C[id1-1]) * (match_T[id2-1] - match_C[id2-1]);
+            }
+          }
         }
         lambda_squ /= n_halves;
       }

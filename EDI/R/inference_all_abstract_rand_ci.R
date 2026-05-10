@@ -119,10 +119,10 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			         inherits(self, "InferenceAbstractKKGLMM") ||
 			         inherits(self, "InferenceKKPassThrough") ||
 			         inherits(self, "InferencePropUniFractionalLogit") ||
-			         inherits(self, "InferencePropZeroOneInflatedBetaAbstract") ||
+			         inherits(self, "InferencePropZeroOneInflatedBetaRegr") ||
 			         inherits(self, "InferencePropGCompAbstract") ||
 			         inherits(self, "InferenceCountZeroAugmentedPoissonAbstract") ||
-			         inherits(self, "InferenceCountHurdleNegBinAbstract")
+			         inherits(self, "InferenceCountHurdleNegBin")
 			temp_inf = if (resp_type %in% c("count", "proportion", "survival")) self$duplicate() else self
 			transform_arg = "none"
 			
@@ -292,7 +292,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			if (should_run_asserts()) {
 				assertList(args)
 			}
-				is_bernoulli = is(private$des_obj, "DesignSeqOneByOneBernoulli") || is(private$des_obj, "FixedDesignBernoulli")
+				is_bernoulli = is(private$des_obj, "DesignSeqOneByOneBernoulli") || is(private$des_obj, "DesignFixedBernoulli")
 				if (should_run_asserts()) {
 					if (!is_bernoulli && !private$has_match_structure) stop("Zhang randomization inference requires Bernoulli or matching designs.")
 				assertResponseType(private$des_obj$get_response_type(), "incidence")

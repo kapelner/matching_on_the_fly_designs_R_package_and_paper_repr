@@ -1,37 +1,26 @@
-#' Cumulative Cauchit Inference for Ordinal Responses
+#' Cauchit Regression Inference for Ordinal Responses
 #'
-#' Cumulative Cauchit model inference for ordinal responses using the treatment
+#' Cauchit regression model inference for ordinal responses using the treatment
 #' indicator and, optionally, all recorded covariates as predictors.
 #'
-#' @examples
-#' \dontrun{
-#' \donttest{
-#' seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'ordinal')
-#' for (i in 1:10) {
-#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
-#' }
-#' seq_des$add_all_subject_responses(sample(1:4, 10, replace = TRUE))
-#' inf = InferenceOrdinalCauchitRegr$new(seq_des)
-#' inf$compute_estimate()
-#' }
-#' }
 #' @export
 InferenceOrdinalCauchitRegr = R6::R6Class("InferenceOrdinalCauchitRegr",
 	lock_objects = FALSE,
 	inherit = InferenceMLEorKMforGLMs,
 	public = list(
-						#' @description
-		#' Initialize a cumulative-cauchit inference object.
+		#' @description
+		#' Initialize a cauchit ordinal inference object.
 		#' @param des_obj A completed \code{Design} object with an ordinal response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		#' @param verbose  		Whether to print progress messages.
+		#' @param verbose Whether to print progress messages.
 		#' @param smart_default Whether to use smart optimizer start values by default.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
+				assertFormula(model_formula, null.ok = TRUE)
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
 			if (should_run_asserts()) {
@@ -43,23 +32,41 @@ InferenceOrdinalCauchitRegr = R6::R6Class("InferenceOrdinalCauchitRegr",
 	private = list(
 		best_X_colnames = NULL,
 
-		cauchit_polr_fallback = function(){
-			if (!check_package_installed("MASS")) return(NULL)
-			y_fac = factor(private$y, levels = sort(unique(private$y)))
-			if (length(levels(y_fac)) < 2) return(NULL)
-			dat = data.frame(y = y_fac, w = private$w)
-			mod = tryCatch(
-				MASS::polr(y ~ w, data = dat, method = "cauchit", Hess = TRUE),
-				error = function(e) NULL
-			)
-			if (is.null(mod) || !"w" %in% names(stats::coef(mod))) return(NULL)
-			coef_w = as.numeric(stats::coef(mod)["w"])
-			var_w = tryCatch(vcov(mod)["w", "w"], error = function(e) NA_real_)
-			ssq = if (is.finite(var_w) && var_w > 0) var_w else NA_real_
-			list(b = c(NA, coef_w), ssq_b_2 = ssq)
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			if (is.null(private$best_X_colnames)){
+				private$shared(estimate_only = TRUE)
+			}
+			if (is.null(private$best_X_colnames)){
+				return(self$compute_estimate(estimate_only = estimate_only))
+			}
+
+			X_cols = private$best_X_colnames
+			X_data = private$get_X()
+
+			if (length(X_cols) == 0L){
+				X = matrix(private$w, ncol = 1L)
+				colnames(X) = "treatment"
+			} else {
+				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
+				X = cbind(treatment = private$w, X_cov)
+			}
+
+			res = fast_ordinal_cauchit_regression_cpp(X = X, y = as.numeric(private$y))
+			if (is.null(res) || length(res$b) < 1L || !is.finite(res$b[length(res$b)])){
+				return(NA_real_)
+			}
+			as.numeric(res$b[length(res$b)])
+		},
+
+		supports_reusable_bootstrap_worker = function(){
+			TRUE
 		},
 
 		supports_likelihood_tests = function(){
+			TRUE
+		},
+
+		supports_fisher_information = function(){
 			TRUE
 		},
 
@@ -78,8 +85,8 @@ InferenceOrdinalCauchitRegr = R6::R6Class("InferenceOrdinalCauchitRegr",
 					res = tryCatch(
 						fast_ordinal_cauchit_regression_cpp(
 							X_fit, y,
-							start_params = start %||% private$get_fit_warm_start_for_length("params", length(ctx$full_params)),
 							fixed_idx = j_treat, fixed_values = delta,
+							start_params = start,
 							smart_start = private$smart_default
 						),
 						error = function(e) NULL
@@ -112,32 +119,32 @@ InferenceOrdinalCauchitRegr = R6::R6Class("InferenceOrdinalCauchitRegr",
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
 				required_cols = 1L,
-				fit_fun = function(X_fit, keep){
+				fit_fun = function(X_fit){
 					start_params = private$get_fit_warm_start_for_length("params", ncol(X_fit) + length(sort(unique(private$y))) - 1L)
 					if (estimate_only) {
 						res = fast_ordinal_cauchit_regression_cpp(
-							X = X_fit, y = as.numeric(private$y),
+							X_fit, private$y,
 							start_params = start_params,
 							smart_start = private$smart_default
 						)
 						if (is.null(res) || length(res) == 0) return(NULL)
-						list(b = c(NA_real_, as.numeric(res$b)), ssq_b_2 = NA_real_,
-						     params = as.numeric(res$params), neg_loglik = as.numeric(res$neg_loglik))
+						list(b = res$b, ssq_b_j = NA_real_, params = res$params, neg_loglik = res$neg_loglik)
 					} else {
 						res = fast_ordinal_cauchit_regression_with_var_cpp(
-							X = X_fit, y = as.numeric(private$y),
+							X_fit, private$y,
 							start_params = start_params,
 							smart_start = private$smart_default
 						)
 						if (is.null(res) || length(res$b) == 0 || is.na(res$b[1])) return(NULL)
-						list(b = c(NA_real_, as.numeric(res$b)), ssq_b_2 = as.numeric(res$ssq_b_2),
-						     params = as.numeric(res$params), neg_loglik = as.numeric(res$neg_loglik))
+						list(b = res$b, ssq_b_j = res$ssq_b_j, params = res$params, neg_loglik = res$neg_loglik)
 					}
 				},
 				fit_ok = function(mod, X_fit, keep){
-					if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
+					j_treat = length(mod$b)
+					if (is.null(mod) || j_treat < 1L || !is.finite(mod$b[j_treat])) return(FALSE)
 					if (estimate_only) return(TRUE)
-					is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
+					ssq = mod$ssq_b_j
+					!is.null(ssq) && is.finite(ssq) && ssq > 0
 				}
 			)
 
@@ -151,10 +158,11 @@ InferenceOrdinalCauchitRegr = R6::R6Class("InferenceOrdinalCauchitRegr",
 					full_params = attempt$fit$params,
 					full_neg_loglik = attempt$fit$neg_loglik
 				)
+				list(b = c(0, attempt$fit$b[length(attempt$fit$b)]), ssq_b_2 = attempt$fit$ssq_b_j)
 			} else {
 				private$cached_values$likelihood_test_context = NULL
+				NULL
 			}
-			attempt$fit
 		},
 
 		build_design_matrix = function(){

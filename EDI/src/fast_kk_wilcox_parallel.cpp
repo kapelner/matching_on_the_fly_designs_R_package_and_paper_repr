@@ -61,7 +61,7 @@ inline double apply_shift(double y_val, double delta, int transform_code, double
 //' @param num_cores Number of OpenMP threads.
 //' @return Numeric vector of KK Wilcoxon statistics.
 // [[Rcpp::export]]
-NumericVector compute_kk_wilcox_distr_parallel_cpp(
+NumericVector compute_matching_wilcox_distr_parallel_cpp(
     const IntegerMatrix& w_mat,
     const IntegerMatrix& m_mat,
     const NumericVector& y,

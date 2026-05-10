@@ -32,8 +32,6 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 \item \href{#method-Design-assert_all_responses_recorded}{\code{Design$assert_all_responses_recorded()}}
 \item \href{#method-Design-check_experiment_completed}{\code{Design$check_experiment_completed()}}
 \item \href{#method-Design-assert_even_allocation}{\code{Design$assert_even_allocation()}}
-\item \href{#method-Design-assert_blocking_design}{\code{Design$assert_blocking_design()}}
-\item \href{#method-Design-assert_equal_block_sizes}{\code{Design$assert_equal_block_sizes()}}
 \item \href{#method-Design-assert_fixed_sample}{\code{Design$assert_fixed_sample()}}
 \item \href{#method-Design-any_censoring}{\code{Design$any_censoring()}}
 \item \href{#method-Design-get_t}{\code{Design$get_t()}}
@@ -43,9 +41,6 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 \item \href{#method-Design-get_y}{\code{Design$get_y()}}
 \item \href{#method-Design-get_y_original}{\code{Design$get_y_original()}}
 \item \href{#method-Design-get_w}{\code{Design$get_w()}}
-\item \href{#method-Design-set_m}{\code{Design$set_m()}}
-\item \href{#method-Design-get_block_ids}{\code{Design$get_block_ids()}}
-\item \href{#method-Design-summarize_blocks}{\code{Design$summarize_blocks()}}
 \item \href{#method-Design-get_n}{\code{Design$get_n()}}
 \item \href{#method-Design-get_dead}{\code{Design$get_dead()}}
 \item \href{#method-Design-get_prob_T}{\code{Design$get_prob_T()}}
@@ -235,29 +230,6 @@ Checks if the experiment has a 50-50 allocation.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Design-assert_blocking_design"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-assert_blocking_design}{}}}
-\subsection{Method \code{assert_blocking_design()}}{
-Checks whether this design is a blocking design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$assert_blocking_design()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Design-assert_equal_block_sizes"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-assert_equal_block_sizes}{}}}
-\subsection{Method \code{assert_equal_block_sizes()}}{
-Checks whether all blocks have the same number of subjects.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$assert_equal_block_sizes()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-`TRUE` invisibly if the block sizes are equal.
-}
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-assert_fixed_sample"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-assert_fixed_sample}{}}}
 \subsection{Method \code{assert_fixed_sample()}}{
@@ -369,65 +341,6 @@ Get w
 
 \subsection{Returns}{
 A binary vector of subject assignments.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Design-set_m"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-set_m}{}}}
-\subsection{Method \code{set_m()}}{
-Set the strata (block identifiers) for this design.
-
-Can only be called when \code{private$m} is still \code{NULL} (i.e. before strata
-have been derived or assigned).  The design must support blocking; call
-\code{assert_blocking_design()} to verify this first.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$set_m(m)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{m}}{A non-negative-integer vector of block IDs, one entry per subject already
-recorded.  Values must be coercible to integer, finite, and \eqn{\ge 0}.
-Zero is reserved as a reservoir flag used by sequential KK designs.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-Invisibly returns \code{self} for method chaining.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Design-get_block_ids"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-get_block_ids}{}}}
-\subsection{Method \code{get_block_ids()}}{
-If the design is a block design, get block identifiers (otherwise halts)
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$get_block_ids()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-An integer vector of block identifiers.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Design-summarize_blocks"></a>}}
-\if{latex}{\out{\hypertarget{method-Design-summarize_blocks}{}}}
-\subsection{Method \code{summarize_blocks()}}{
-Summarize the covariates within blocks.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Design$summarize_blocks(block_ids = NULL)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{block_ids}}{A vector of block identifiers to summarize. If NULL, defaults to all blocks.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A list of data.tables, one for each block.
 }
 }
 \if{html}{\out{<hr>}}

@@ -28,9 +28,8 @@ Abstract class for asymptotic inference.
 \item \href{#method-InferenceAsymp-get_supported_testing_types}{\code{InferenceAsymp$get_supported_testing_types()}}
 \item \href{#method-InferenceAsymp-get_supported_information_preferences}{\code{InferenceAsymp$get_supported_information_preferences()}}
 \item \href{#method-InferenceAsymp-compute_wald_two_sided_pval}{\code{InferenceAsymp$compute_wald_two_sided_pval()}}
+\item \href{#method-InferenceAsymp-compute_wald_confidence_interval}{\code{InferenceAsymp$compute_wald_confidence_interval()}}
 \item \href{#method-InferenceAsymp-compute_score_two_sided_pval}{\code{InferenceAsymp$compute_score_two_sided_pval()}}
-\item \href{#method-InferenceAsymp-compute_lik_ratio_two_sided_pval}{\code{InferenceAsymp$compute_lik_ratio_two_sided_pval()}}
-\item \href{#method-InferenceAsymp-compute_likelihood_ratio_two_sided_pval}{\code{InferenceAsymp$compute_likelihood_ratio_two_sided_pval()}}
 \item \href{#method-InferenceAsymp-compute_estimate}{\code{InferenceAsymp$compute_estimate()}}
 \item \href{#method-InferenceAsymp-get_mod}{\code{InferenceAsymp$get_mod()}}
 \item \href{#method-InferenceAsymp-get_summary}{\code{InferenceAsymp$get_summary()}}
@@ -112,13 +111,15 @@ The asymptotic p-value.
 \subsection{Method \code{set_testing_type()}}{
 Sets the asymptotic testing method used by p-values and CIs.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$set_testing_type(testing_type = c("wald", "score", "lik_ratio"))}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$set_testing_type(
+  testing_type = c("wald", "score", "gradient", "lik_ratio")
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{testing_type}}{One of \code{"wald"}, \code{"score"}, or \code{"lik_ratio"}.}
+\item{\code{testing_type}}{One of \code{"wald"}, \code{"score"}, \code{"gradient"}, or \code{"lik_ratio"}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -216,46 +217,29 @@ Computes the Wald two-sided p-value regardless of configured testing type.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAsymp-compute_wald_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_wald_confidence_interval}{}}}
+\subsection{Method \code{compute_wald_confidence_interval()}}{
+Computes the Wald confidence interval regardless of configured testing type.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_wald_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level. Default 0.05.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-compute_score_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_score_two_sided_pval}{}}}
 \subsection{Method \code{compute_score_two_sided_pval()}}{
 Computes the score two-sided p-value regardless of configured testing type.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_score_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{Null treatment effect.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAsymp-compute_lik_ratio_two_sided_pval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_lik_ratio_two_sided_pval}{}}}
-\subsection{Method \code{compute_lik_ratio_two_sided_pval()}}{
-Computes the likelihood-ratio two-sided p-value regardless of configured testing type.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_lik_ratio_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{Null treatment effect.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAsymp-compute_likelihood_ratio_two_sided_pval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_likelihood_ratio_two_sided_pval}{}}}
-\subsection{Method \code{compute_likelihood_ratio_two_sided_pval()}}{
-Computes the likelihood-ratio two-sided p-value regardless of configured testing type.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_likelihood_ratio_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

@@ -67,11 +67,22 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 			list(
 				X = X, y = y, j = 1L,
 				full_fit = full_fit,
-				fit_null = function(delta){
-					res = tryCatch(fast_coxph_regression_cpp(X, y, dead, fixed_idx = 1L, fixed_values = delta,
-					               estimate_only = TRUE), error = function(e) NULL)
+				fit_null = function(delta, start = NULL){
+					res = tryCatch(
+						fast_coxph_regression_cpp(
+							X, y, dead,
+							start_beta = start,
+							fixed_idx = 1L,
+							fixed_values = delta,
+							estimate_only = TRUE
+						),
+						error = function(e) NULL
+					)
 					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
 					list(b = as.numeric(res$coefficients), neg_loglik = as.numeric(res$neg_ll))
+				},
+				extract_start = function(fit){
+					as.numeric(fit$b)
 				},
 				score = function(fit){
 					get_coxph_score_cpp(X, y, dead, as.numeric(fit$b))

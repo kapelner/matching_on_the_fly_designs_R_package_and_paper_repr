@@ -3,17 +3,17 @@ library(testthat)
 library(EDI)
 library(data.table)
 
-test_that("InferenceIncidenceExactBinomial matches binom.test for FixedDesignBinaryMatch", {
+test_that("InferenceIncidenceExactBinomial matches binom.test for DesignFixedBinaryMatch", {
 	skip_if_not_installed("GreedyExperimentalDesign")
 
 	x_dat <- data.table(
 		x1 = c(-2.00, -2.01, -1.00, -1.01, 1.00, 1.01, 2.00, 2.01),
 		x2 = c(0, 0, 1, 1, 0, 0, 1, 1)
 	)
-	des <- FixedDesignBinaryMatch$new(n = nrow(x_dat), response_type = "incidence", verbose = FALSE)
+	des <- DesignFixedBinaryMatch$new(n = nrow(x_dat), response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(x_dat)
 	des$assign_w_to_all_subjects()
-	des$.__enclos_env__$private$ensure_bms_computed()
+	des$.__enclos_env__$private$ensure_matching_structure_computed()
 	m <- as.integer(des$.__enclos_env__$private$m)
 	w <- des$get_w()
 	y <- integer(length(w))
@@ -90,6 +90,6 @@ test_that("InferenceIncidenceExactBinomial rejects unsupported designs", {
 
 	expect_error(
 		InferenceIncidenceExactBinomial$new(des, verbose = FALSE),
-		"Exact binomial incidence inference requires FixedDesignBinaryMatch or KK matching designs"
+		"Exact binomial incidence inference requires DesignFixedBinaryMatch or KK matching designs"
 	)
 })

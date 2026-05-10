@@ -5,12 +5,12 @@
 #' (equivalent to minimizing the variance of the parameter estimates).
 #'
 #' @examples
-#' des = FixedDesignDOptimal$new(n = 10, response_type = 'continuous')
+#' des = DesignFixedDOptimal$new(n = 10, response_type = 'continuous')
 #' des$add_all_subjects_to_experiment(data.frame(x1 = rnorm(10)))
 #' des$assign_w_to_all_subjects()
 #' @export
-FixedDesignDOptimal = R6::R6Class("FixedDesignDOptimal",
-	inherit = FixedDesign,
+DesignFixedDOptimal = R6::R6Class("DesignFixedDOptimal",
+	inherit = DesignFixed,
 	public = list(
 		#' @description
 		#' Initialize a D-optimal search fixed experimental design
@@ -23,7 +23,7 @@ FixedDesignDOptimal = R6::R6Class("FixedDesignDOptimal",
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'
-		#' @return 			A new `FixedDesignDOptimal` object
+		#' @return 			A new `DesignFixedDOptimal` object
 		#'
 		initialize = function(
 				response_type,

@@ -16,7 +16,7 @@
 #' @export
 InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 	lock_objects = FALSE,
-	inherit = InferenceMLEorKMforGLMs,
+	inherit = InferenceCountLikelihood,
 	public = list(
 				
 		#' @description

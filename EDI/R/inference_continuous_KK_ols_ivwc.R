@@ -34,7 +34,7 @@ InferenceContinKKOLSIVWC = R6::R6Class("InferenceContinKKOLSIVWC",
 				assertFormula(model_formula, null.ok = TRUE)
 			}
 			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")){
+				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}

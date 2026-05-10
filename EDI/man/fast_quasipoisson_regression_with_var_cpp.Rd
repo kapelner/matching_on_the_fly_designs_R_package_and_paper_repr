@@ -25,6 +25,10 @@ fast_quasipoisson_regression_with_var_cpp(
 
 \item{j}{The index of the coefficient to compute the variance for. Defaults to 2.}
 
+\item{start_beta}{Optional starting values for coefficients.}
+
+\item{smart_start}{Logical. If TRUE, use an initial OLS-based guess.}
+
 \item{maxit}{Maximum number of iterations for the IRLS algorithm. Defaults to 100.}
 
 \item{tol}{Convergence tolerance. Defaults to 1e-8.}

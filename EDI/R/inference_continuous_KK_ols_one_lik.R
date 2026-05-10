@@ -34,7 +34,7 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 				assertFormula(model_formula, null.ok = TRUE)
 			}
 			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "FixedDesignBinaryMatch")){
+				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
@@ -60,11 +60,19 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
-			private$fit_combined()
-			if (should_run_asserts()) {
-				private$assert_finite_se()
-			}
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
+			switch(
+				private$testing_type,
+				wald = {
+					private$fit_combined()
+					if (should_run_asserts()) {
+						private$assert_finite_se()
+					}
+					private$compute_z_or_t_ci_from_s_and_df(alpha)
+				},
+				score = private$invert_test_pval_confidence_interval(alpha),
+				gradient = private$invert_gradient_ci_uniroot(alpha),
+				lik_ratio = private$invert_lik_ratio_ci_newton(alpha)
+			)
 		},
 
 		#' @description
@@ -85,6 +93,7 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 					private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 				},
 				score = private$compute_score_two_sided_pval_impl(delta),
+				gradient = private$compute_gradient_two_sided_pval_impl(delta),
 				lik_ratio = private$compute_lik_ratio_two_sided_pval_impl(delta)
 			)
 		},
@@ -110,11 +119,28 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp, preserve_cache_keys = preserve)
 		},
 
+		get_standard_error = function(){
+			private$fit_combined(estimate_only = FALSE)
+			private$cached_values$s_beta_hat_T %||% NA_real_
+		},
+
+		get_degrees_of_freedom = function(){
+			private$fit_combined(estimate_only = FALSE)
+			private$cached_values$df %||% NA_real_
+		},
+
 		supports_likelihood_tests = function() TRUE,
-		get_supported_testing_types_impl = function() c("wald", "score", "lik_ratio"),
+		get_supported_testing_types_impl = function() c("wald", "score", "gradient", "lik_ratio"),
+		get_score_test_information_matrix = function(spec, fit){
+			tryCatch(spec$fisher_information(fit), error = function(e) NULL)
+		},
 
 		compute_score_two_sided_pval_impl = function(delta){
 			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "score")
+		},
+
+		compute_gradient_two_sided_pval_impl = function(delta){
+			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "gradient")
 		},
 
 		compute_lik_ratio_two_sided_pval_impl = function(delta){
@@ -144,6 +170,9 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 						fixed_values = delta
 					)
 				},
+				extract_start = function(fit){
+					as.numeric(fit$b)
+				},
 				score = function(fit){
 					as.numeric(t(X_fit) %*% (y - X_fit %*% as.numeric(fit$b)) / sig2)
 				},
@@ -170,30 +199,12 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 		compute_likelihood_test_two_sided_pval = function(delta, testing_type){
 			spec = private$get_likelihood_test_spec()
 			if (is.null(spec)) return(NA_real_)
-
-			j = as.integer(spec$j)
-			null_fit = tryCatch(spec$fit_null(delta), error = function(e) NULL)
-			if (is.null(null_fit) || is.null(null_fit$b) || length(null_fit$b) < j || !is.finite(null_fit$b[j])) {
-				return(NA_real_)
-			}
-
-			if (testing_type == "score") {
-				score = tryCatch(spec$score(null_fit), error = function(e) NULL)
-				# Use expected information (Fisher) for OLS
-				information = tryCatch(spec$fisher_information(null_fit), error = function(e) NULL)
-				if (is.null(score) || is.null(information)) return(NA_real_)
-				res = score_test_from_score_information_cpp(as.numeric(score), as.matrix(information), j)
-				return(as.numeric(res$p_value %||% res))
-			}
-
-			if (testing_type == "lik_ratio") {
-				full_negloglik = tryCatch(spec$neg_loglik(spec$full_fit), error = function(e) NA_real_)
-				null_negloglik = tryCatch(spec$neg_loglik(null_fit), error = function(e) NA_real_)
-				if (!is.finite(full_negloglik) || !is.finite(null_negloglik)) return(NA_real_)
-				res = likelihood_ratio_test_from_negloglik_cpp(full_negloglik, null_negloglik, df = 1L)
-				return(as.numeric(res$p_value %||% res))
-			}
-			NA_real_
+			private$get_memoized_likelihood_test_pval(
+				delta = delta,
+				testing_type = testing_type,
+				spec = spec,
+				warm_cache_key = paste0("likelihood_test:", testing_type)
+			)
 		},
 
 		reduce_design_matrix_once = function(X, j_treat, cache_key){

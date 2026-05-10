@@ -54,7 +54,7 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 			}
 			
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
-			
+			private$blocking_capable = TRUE
 			private$strata_cols = strata_cols
 			private$block_sizes = as.integer(block_sizes)
 			private$uses_covariates = !is.null(strata_cols)

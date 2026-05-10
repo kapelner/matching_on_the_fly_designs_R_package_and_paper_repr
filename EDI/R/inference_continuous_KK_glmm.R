@@ -53,6 +53,9 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 
 		glmm_response_type = function() "continuous",
 		glmm_family        = function() stats::gaussian(link = "identity"),
+		supports_likelihood_tests = function(){
+			isTRUE(private$use_rcpp)
+		},
 
 		# glmmTMB path: univariate → treatment only
 		glmm_predictors_df = function(){
@@ -73,6 +76,8 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && isTRUE(private$cached_values$s_beta_hat_T > 0)) return(invisible(NULL))
 			private$clear_nonestimable_state()
+			private$cached_mod = NULL
+			private$cached_values$likelihood_test_context = NULL
 
 			# ── Group IDs (same logic as fit_glmm_on_data) ───────────────────
 			m_vec = private$m
@@ -117,6 +122,15 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 				return(super$shared(estimate_only = estimate_only))
 			}
 
+			private$cached_mod = fit
+			private$set_fit_warm_start(as.numeric(fit$b), "params")
+			private$cached_values$likelihood_test_context = list(
+				X = X_fit,
+				y = as.numeric(private$y),
+				group_id = as.integer(group_id),
+				j_treat = j_T_r,
+				start = as.numeric(fit$b)
+			)
 			private$cached_values$beta_hat_T = beta_hat_T
 			private$cached_values$df   = Inf
 
@@ -124,6 +138,58 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 
 			ssq = fit$ssq_b_T
 			private$cached_values$s_beta_hat_T = if (!is.null(ssq) && is.finite(ssq) && ssq > 0) sqrt(ssq) else NA_real_
+		}
+		,
+
+		get_likelihood_test_spec = function(){
+			if (!isTRUE(private$use_rcpp)) return(NULL)
+			private$shared(estimate_only = FALSE)
+			ctx = private$cached_values$likelihood_test_context
+			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+			X_fit = ctx$X
+			y = as.numeric(ctx$y)
+			group_id = as.integer(ctx$group_id)
+			j_treat = as.integer(ctx$j_treat)
+			list(
+				X = X_fit,
+				y = y,
+				group_id = group_id,
+				j = j_treat,
+				full_fit = private$cached_mod,
+				fit_null = function(delta, start = NULL){
+					start_par = start %||% private$get_fit_warm_start_for_length("params", length(ctx$start)) %||% ctx$start
+					fast_gaussian_lmm_cpp(
+						X = X_fit,
+						y = y,
+						group_id = group_id,
+						start_par = start_par,
+						estimate_only = FALSE,
+						maxit = 300L,
+						eps_g = 1e-6,
+						fixed_idx = j_treat,
+						fixed_values = delta,
+						optimization_alg = private$optimization_alg
+					)
+				},
+				extract_start = function(fit){
+					as.numeric(fit$b)
+				},
+				score = function(fit){
+					as.numeric(get_gaussian_lmm_score_cpp(X_fit, y, group_id, as.numeric(fit$b)))
+				},
+				observed_information = function(fit){
+					as.matrix(get_gaussian_lmm_fisher_cpp(X_fit, y, group_id, as.numeric(fit$b)))
+				},
+				fisher_information = function(fit){
+					as.matrix(get_gaussian_lmm_fisher_cpp(X_fit, y, group_id, as.numeric(fit$b)))
+				},
+				information = function(fit){
+					as.matrix(get_gaussian_lmm_fisher_cpp(X_fit, y, group_id, as.numeric(fit$b)))
+				},
+				neg_loglik = function(fit){
+					as.numeric(fit$neg_loglik %||% fit$neg_ll)
+				}
+			)
 		}
 	)
 )

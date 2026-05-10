@@ -23,7 +23,7 @@ test_that("log-binomial reusable bootstrap worker matches generic path", {
 	set.seed(20260410)
 	n = 60
 	X = data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
-	des = FixedDesignBernoulli$new(n = n, response_type = "incidence", verbose = FALSE)
+	des = DesignFixedBernoulli$new(n = n, response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(X)
 	des$assign_w_to_all_subjects()
 	w = des$get_w()
@@ -58,7 +58,7 @@ test_that("binomial identity reusable bootstrap worker matches generic path", {
 	set.seed(20260411)
 	n = 64
 	X = data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
-	des = FixedDesignBernoulli$new(n = n, response_type = "incidence", verbose = FALSE)
+	des = DesignFixedBernoulli$new(n = n, response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(X)
 	des$assign_w_to_all_subjects()
 	w = des$get_w()
@@ -113,7 +113,7 @@ test_that("count reusable bootstrap workers match generic paths", {
 	set.seed(20260412)
 	n = 68
 	X = data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
-	des = FixedDesignBernoulli$new(n = n, response_type = "count", verbose = FALSE)
+	des = DesignFixedBernoulli$new(n = n, response_type = "count", verbose = FALSE)
 	des$add_all_subjects_to_experiment(X)
 	des$assign_w_to_all_subjects()
 	w = des$get_w()
@@ -127,6 +127,27 @@ test_that("count reusable bootstrap workers match generic paths", {
 	compare_bootstrap_fast_slow(InferenceCountRobustPoisson$new(des, verbose = FALSE), SlowInferenceCountRobustPoisson$new(des, verbose = FALSE), seed = 108)
 	compare_bootstrap_fast_slow(InferenceCountQuasiPoisson$new(des, verbose = FALSE), SlowInferenceCountQuasiPoisson$new(des, verbose = FALSE), seed = 109)
 	compare_bootstrap_fast_slow(InferenceCountQuasiPoisson$new(des, verbose = FALSE), SlowInferenceCountQuasiPoisson$new(des, verbose = FALSE), seed = 110)
+})
+
+test_that("count likelihood phase 1 and 2 classes share the count likelihood base", {
+	set.seed(20260415)
+	n = 40
+	X = data.frame(x1 = rnorm(n), x2 = rnorm(n))
+	des = DesignFixedBernoulli$new(n = n, response_type = "count", verbose = FALSE)
+	des$add_all_subjects_to_experiment(X)
+	des$assign_w_to_all_subjects()
+	w = des$get_w()
+	y = stats::rpois(n, exp(0.3 + 0.25 * w + 0.1 * X$x1))
+	des$add_all_subject_responses(y)
+
+	expect_true(inherits(InferenceCountPoisson$new(des, verbose = FALSE), "InferenceCountLikelihood"))
+	expect_true(inherits(InferenceCountNegBin$new(des, verbose = FALSE), "InferenceCountLikelihood"))
+	expect_true(inherits(InferenceCountZeroInflatedPoisson$new(des, verbose = FALSE), "InferenceCountLikelihood"))
+	expect_true(inherits(InferenceCountZeroInflatedNegBin$new(des, verbose = FALSE), "InferenceCountLikelihood"))
+	expect_true(inherits(InferenceCountHurdlePoisson$new(des, verbose = FALSE), "InferenceCountLikelihood"))
+	expect_true(inherits(InferenceCountHurdleNegBin$new(des, verbose = FALSE), "InferenceCountLikelihood"))
+	expect_true(inherits(InferenceCountRobustPoisson$new(des, verbose = FALSE), "InferenceCountCompositeLikelihood"))
+	expect_true(inherits(InferenceCountQuasiPoisson$new(des, verbose = FALSE), "InferenceCountCompositeLikelihood"))
 })
 
 test_that("continuous robust reusable bootstrap worker matches generic path", {
@@ -144,7 +165,7 @@ test_that("continuous robust reusable bootstrap worker matches generic path", {
 	set.seed(20260413)
 	n = 60
 	X = data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
-	des = FixedDesignBernoulli$new(n = n, response_type = "continuous", verbose = FALSE)
+	des = DesignFixedBernoulli$new(n = n, response_type = "continuous", verbose = FALSE)
 	des$add_all_subjects_to_experiment(X)
 	des$assign_w_to_all_subjects()
 	w = des$get_w()
@@ -172,7 +193,7 @@ test_that("continuous quantile reusable bootstrap worker matches generic path", 
 	set.seed(20260414)
 	n = 56
 	X = data.frame(x1 = rnorm(n), x2 = rnorm(n), x3 = rnorm(n))
-	des = FixedDesignBernoulli$new(n = n, response_type = "continuous", verbose = FALSE)
+	des = DesignFixedBernoulli$new(n = n, response_type = "continuous", verbose = FALSE)
 	des$add_all_subjects_to_experiment(X)
 	des$assign_w_to_all_subjects()
 	w = des$get_w()

@@ -16,7 +16,7 @@
 #' @export
 InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 	lock_objects = FALSE,
-	inherit = InferenceMLEorKMforGLMs,
+	inherit = InferenceCountLikelihood,
 	public = list(
 				
 		#' @description

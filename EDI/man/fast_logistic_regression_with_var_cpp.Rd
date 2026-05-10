@@ -22,6 +22,10 @@ fast_logistic_regression_with_var_cpp(
 
 \item{j}{The 1-based index of the parameter for which to return specific variance.}
 
+\item{start_beta}{Optional starting values for coefficients.}
+
+\item{smart_start}{Logical. If TRUE, use an initial OLS-based guess.}
+
 \item{fixed_idx}{Optional indices of fixed parameters.}
 
 \item{fixed_values}{Optional values for fixed parameters.}
@@ -35,9 +39,6 @@ A list containing coefficients, vcov, score, and likelihood statistics.
 Logistic regression with full variance-covariance matrix and score calculation.
 }
 \examples{
-X = matrix(rnorm(100), 10, 10)
-y = rbinom(10, 1, 0.5)
-fast_logistic_regression_with_var_cpp(X, y)
 X = matrix(rnorm(100), 10, 10)
 y = rbinom(10, 1, 0.5)
 fast_logistic_regression_with_var_cpp(X, y)

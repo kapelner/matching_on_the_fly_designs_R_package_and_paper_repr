@@ -1269,7 +1269,7 @@ fast_negbin_regression_with_var <- function(X, y, j = 2, optimization_alg = "new
 #' @param w_m       Treatment indicator (0/1) for matched subjects.
 #' @param strata_m  Integer stratum IDs (pair labels) for matched subjects.
 #' @return          Result list from fast_logistic_regression_with_var:
-#                  b[1] = beta_T, ssq_b_j = Var(beta_T). NULL on failure.
+#'                  b[1] = beta_T, ssq_b_j = Var(beta_T). NULL on failure.
 #' @keywords internal
 clogit_helper = function(y_m, X_m, w_m, strata_m){
 	p     = if (is.null(X_m) || ncol(X_m) == 0L) 0L else ncol(X_m)

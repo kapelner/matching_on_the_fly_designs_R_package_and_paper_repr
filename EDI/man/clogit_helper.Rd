@@ -17,6 +17,7 @@ clogit_helper(y_m, X_m, w_m, strata_m)
 }
 \value{
 Result list from fast_logistic_regression_with_var:
+                 b[1] = beta_T, ssq_b_j = Var(beta_T). NULL on failure.
 }
 \description{
 Internal method.

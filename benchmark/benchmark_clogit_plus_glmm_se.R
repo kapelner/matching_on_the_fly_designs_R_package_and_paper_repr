@@ -103,7 +103,7 @@ make_fixed_binary = function(n = 200L, p = 5L) {
   Xdf = as.data.frame(X)
   beta_x = seq(0.25, -0.15, length.out = p)
 
-  des = FixedDesignBinaryMatch$new(n = n, response_type = "incidence", verbose = FALSE)
+  des = DesignFixedBinaryMatch$new(n = n, response_type = "incidence", verbose = FALSE)
   des$add_all_subjects_to_experiment(Xdf)
   des$overwrite_all_subject_assignments(rep(c(1, 0), n / 2L))
   des$.__enclos_env__$private$ensure_bms_computed()

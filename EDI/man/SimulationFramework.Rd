@@ -139,7 +139,7 @@ outcome variable.  One of \code{"continuous"}, \code{"incidence"},
 \item{\code{design_classes_and_params}}{\code{NULL} (default) or a list
   describing design classes and optional constructor parameters.
   Unnamed R6 class generators use default parameters, for example
-  \code{list(DesignSeqOneByOneKK21, FixedDesignBernoulli)}.  Named
+  \code{list(DesignSeqOneByOneKK21, DesignFixedBernoulli)}.  Named
   entries use the entry name as the design class and the value as the
   parameter list, for example
   \code{list(DesignSeqOneByOneUrn = list(alpha = 2, beta = 2))}.
@@ -156,7 +156,7 @@ outcome variable.  One of \code{"continuous"}, \code{"incidence"},
   \preformatted{design_classes_and_params = list(
   DesignSeqOneByOneKK21 = list(lambda = 0.5, t_0_pct = 0.1),
   DesignSeqOneByOneUrn  = list(alpha  = 2,   beta    = 2),
-  FixedDesignBernoulli  # default params
+  DesignFixedBernoulli  # default params
 )}
   Commonly useful design constructor parameters:
   \describe{
@@ -168,8 +168,8 @@ outcome variable.  One of \code{"continuous"}, \code{"incidence"},
     \item{\code{alpha}, \code{beta}}{Shape parameters for
       \code{DesignSeqOneByOneUrn}.}
     \item{\code{preferred_num_bins_for_continuous_covariate}}{Bin count for
-      \code{FixedDesignBlocking} and \code{FixedDesignBlockedCluster}.}
-    \item{\code{B_target}}{Target number of blocks for \code{FixedDesignBlocking}.}
+      \code{DesignFixedBlocking} and \code{DesignFixedBlockedCluster}.}
+    \item{\code{B_target}}{Target number of blocks for \code{DesignFixedBlocking}.}
   }}
 
 \item{\code{inference_classes_and_params}}{\code{NULL} (default) or a list

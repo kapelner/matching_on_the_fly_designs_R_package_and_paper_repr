@@ -19,7 +19,7 @@ List match_stats_from_indices_cpp(
 );
 
 // [[Rcpp::export]]
-NumericVector kk_bootstrap_loop_cpp(
+NumericVector matching_bootstrap_loop_cpp(
 	const NumericMatrix& X,
 	const NumericVector& y,
 	const NumericVector& w,

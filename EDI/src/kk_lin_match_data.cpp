@@ -3,7 +3,7 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-List compute_kk_lin_match_data_cpp(const NumericMatrix& X,
+List compute_matching_lin_match_data_cpp(const NumericMatrix& X,
                                    const NumericVector& y,
                                    const IntegerVector& w,
                                    const IntegerVector& m_vec) {
@@ -106,7 +106,7 @@ List compute_kk_lin_match_data_cpp(const NumericMatrix& X,
 }
 
 // [[Rcpp::export]]
-List compute_kk_lin_wy_stats_cpp(const IntegerVector& w,
+List compute_matching_lin_wy_stats_cpp(const IntegerVector& w,
                                   const NumericVector& y,
                                   const IntegerVector& m_vec) {
   const int n = w.size();

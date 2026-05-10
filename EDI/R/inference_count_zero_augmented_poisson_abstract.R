@@ -9,7 +9,7 @@
 #' @noRd
 InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugmentedPoissonAbstract",
 	lock_objects = FALSE,
-	inherit = InferenceAsymp,
+	inherit = InferenceCountLikelihood,
 	public = list(
 				
 		#' @description
@@ -82,7 +82,8 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		}
 	),
 
-	private = list(
+		private = list(
+		cached_mod = NULL,
 		get_standard_error = function(){
 			private$shared(estimate_only = FALSE)
 			se = private$compute_standard_error_from_information_matrix()
@@ -92,7 +93,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 
 		get_degrees_of_freedom = function(){
 			private$shared(estimate_only = FALSE)
-			private$cached_values$df
+			private$cached_values$df %||% NA_real_
 		},
 
 		best_X_colnames = NULL,
@@ -157,7 +158,11 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		za_description = function() stop(class(self)[1], " must implement za_description()."),
 
 		supports_likelihood_tests = function(){
-			isTRUE(private$use_rcpp) && identical(private$za_description(), "Zero-Inflated Negative Binomial")
+			isTRUE(private$use_rcpp) && private$za_description() %in% c(
+				"Zero-Inflated Negative Binomial",
+				"Zero-Inflated Poisson",
+				"Hurdle Poisson"
+			)
 		},
 
 		get_likelihood_test_spec = function(){
@@ -167,38 +172,77 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			X_fit = ctx$X
 			y = as.numeric(private$y)
 			j_treat = as.integer(ctx$j_treat)
+			is_hurdle = isTRUE(ctx$is_hurdle)
+			is_zinb = identical(private$za_description(), "Zero-Inflated Negative Binomial")
+			start_len = if (is_zinb) 2L * ncol(X_fit) + 1L else 2L * ncol(X_fit)
 			list(
 				X = X_fit,
 				y = y,
 				j = j_treat,
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
-					start_params = start %||% private$get_fit_warm_start_for_length("params", 2L * ncol(X_fit) + 1L)
-					fast_zinb_cpp(
-						X = X_fit,
-						y = y,
-						Xzi = X_fit,
-						start_params = start_params,
-						estimate_only = FALSE,
-						optimization_alg = private$optimization_alg,
-						fixed_idx = j_treat,
-						fixed_values = delta
-					)
+					start_params = start %||% private$get_fit_warm_start_for_length("params", start_len)
+					fit = if (is_zinb) {
+						fast_zinb_cpp(
+							X = X_fit,
+							y = y,
+							Xzi = X_fit,
+							start_params = start_params,
+							estimate_only = FALSE,
+							optimization_alg = private$optimization_alg,
+							fixed_idx = j_treat,
+							fixed_values = delta
+						)
+					} else {
+						fast_zero_augmented_poisson_cpp(
+							X = X_fit,
+							y = y,
+							Xzi = X_fit,
+							is_hurdle = is_hurdle,
+							start_params = start_params,
+							estimate_only = FALSE,
+							optimization_alg = private$optimization_alg,
+							fixed_idx = j_treat,
+							fixed_values = delta
+						)
+					}
+					if (!is.null(fit) && is.null(fit$b) && is.null(fit$params) && !is.null(fit$coefficients)) {
+						fit$params = as.numeric(c(fit$coefficients$cond, fit$coefficients$zi))
+					}
+					fit
 				},
 				extract_start = function(fit){
-					as.numeric(fit$params)
+					as.numeric(fit$params %||% c(as.numeric(fit$coefficients$cond), as.numeric(fit$coefficients$zi)))
 				},
 				score = function(fit){
-					as.numeric(fit$score %||% get_zinb_score_cpp(X = X_fit, y = y, Xzi = X_fit, as.numeric(fit$params)))
+					params = as.numeric(fit$params %||% c(as.numeric(fit$coefficients$cond), as.numeric(fit$coefficients$zi)))
+					if (is_zinb) {
+						as.numeric(fit$score %||% get_zinb_score_cpp(X = X_fit, y = y, Xzi = X_fit, params))
+					} else {
+						as.numeric(fit$score %||% get_zero_augmented_poisson_score_cpp(X = X_fit, y = y, Xzi = X_fit, params, is_hurdle = is_hurdle))
+					}
 				},
 				observed_information = function(fit){
-					as.matrix(fit$information)
+					mat = fit$information %||% fit$observed_information
+					if (!is.null(mat)) return(as.matrix(mat))
+					params = as.numeric(fit$params %||% c(as.numeric(fit$coefficients$cond), as.numeric(fit$coefficients$zi)))
+					if (is_zinb) NULL
+					else as.matrix(-get_zero_augmented_poisson_hessian_cpp(X = X_fit, y = y, Xzi = X_fit, params = params, is_hurdle = is_hurdle))
 				},
 				information = function(fit){
-					as.matrix(fit$information)
+					mat = fit$information %||% fit$observed_information
+					if (!is.null(mat)) return(as.matrix(mat))
+					params = as.numeric(fit$params %||% c(as.numeric(fit$coefficients$cond), as.numeric(fit$coefficients$zi)))
+					if (is_zinb) NULL
+					else as.matrix(-get_zero_augmented_poisson_hessian_cpp(X = X_fit, y = y, Xzi = X_fit, params = params, is_hurdle = is_hurdle))
 				},
 				neg_loglik = function(fit){
-					as.numeric(fit$neg_loglik %||% fit$neg_ll %||% get_zinb_neg_loglik_cpp(X = X_fit, y = y, Xzi = X_fit, as.numeric(fit$params)))
+					params = as.numeric(fit$params %||% c(as.numeric(fit$coefficients$cond), as.numeric(fit$coefficients$zi)))
+					if (is_zinb) {
+						as.numeric(fit$neg_loglik %||% fit$neg_ll %||% get_zinb_neg_loglik_cpp(X = X_fit, y = y, Xzi = X_fit, params))
+					} else {
+						as.numeric(fit$neg_loglik %||% fit$neg_ll)
+					}
 				}
 			)
 		},
@@ -309,7 +353,8 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				private$cached_mod = fit
 				private$cached_values$likelihood_test_context = list(
 					X = X_fit,
-					j_treat = 2L
+					j_treat = 2L,
+					is_hurdle = FALSE
 				)
 				private$cached_values$beta_hat_T = as.numeric(fit$coefficients$cond[2])
 				if (!estimate_only) {
@@ -329,7 +374,11 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				}
 				private$set_fit_warm_start(as.numeric(c(fit$coefficients$cond, fit$coefficients$zi)), "params")
 				private$cached_mod = fit
-				private$cached_values$likelihood_test_context = NULL
+				private$cached_values$likelihood_test_context = list(
+					X = X_fit,
+					j_treat = 2L,
+					is_hurdle = is_hurdle
+				)
 
 				private$cached_values$beta_hat_T = as.numeric(fit$coefficients$cond[2])
 				if (!estimate_only) {

@@ -2,7 +2,7 @@
 #'
 #' Performs exact matched-pair binomial inference for binary outcomes using only
 #' discordant matched pairs. This class is available for
-#' \code{FixedDesignBinaryMatch} and KK matching-on-the-fly designs. For KK
+#' \code{DesignFixedBinaryMatch} and KK matching-on-the-fly designs. For KK
 #' designs, only the matched-pair data are used and the reservoir is ignored.
 #'
 #' @examples
@@ -38,10 +38,10 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 				assertNoCensoring(private$any_censoring)
 			}
 			if (!private$design_supports_exact_binomial()) {
-				stop("Exact binomial incidence inference requires FixedDesignBinaryMatch or KK matching designs.")
+				stop("Exact binomial incidence inference requires DesignFixedBinaryMatch or KK matching designs.")
 			}
-			if (inherits(des_obj, "FixedDesignBinaryMatch")) {
-				private$des_obj_priv_int$ensure_bms_computed()
+			if (inherits(des_obj, "DesignFixedBinaryMatch")) {
+				private$des_obj_priv_int$ensure_matching_structure_computed()
 			}
 		},
 
@@ -86,7 +86,7 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 				assertNoCensoring(private$any_censoring)
 			}
 			if (!private$design_supports_exact_binomial()) {
-				stop("Exact binomial incidence inference requires FixedDesignBinaryMatch or KK matching designs.")
+				stop("Exact binomial incidence inference requires DesignFixedBinaryMatch or KK matching designs.")
 			}
 			stats = private$get_exact_binomial_stats()
 			if (should_run_asserts()) {
@@ -121,7 +121,7 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 		},
 
 		design_supports_exact_binomial = function(){
-			is(private$des_obj, "FixedDesignBinaryMatch") || is(private$des_obj, "DesignSeqOneByOneKK14")
+			is(private$des_obj, "DesignFixedBinaryMatch") || is(private$des_obj, "DesignSeqOneByOneKK14")
 		},
 
 		pval_exact_binomial = function(delta_0){
@@ -149,8 +149,8 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 				return(private$cached_values$incidence_exact_binomial_stats)
 			}
 
-			if (is(private$des_obj, "FixedDesignBinaryMatch")) {
-				private$des_obj_priv_int$ensure_bms_computed()
+			if (is(private$des_obj, "DesignFixedBinaryMatch")) {
+				private$des_obj_priv_int$ensure_matching_structure_computed()
 			}
 
 			m_vec = private$des_obj_priv_int$m

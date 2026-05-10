@@ -4,6 +4,11 @@
 \alias{InferenceOrdinalGCompMeanDiff}
 \title{G-Computation Mean-Difference Inference for Ordinal Responses}
 \description{
+G-Computation Mean-Difference Inference for Ordinal Responses
+
+G-Computation Mean-Difference Inference for Ordinal Responses
+}
+\details{
 Fits a proportional-odds working model for an ordinal outcome using treatment
 and, optionally, all recorded covariates, then estimates the marginal mean
 difference by standardizing predicted mean ranks under all-treated and
@@ -21,11 +26,15 @@ inf$compute_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{EDI::InferenceOrdinalGCompAbstract} -> \code{InferenceOrdinalGCompMeanDiff}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceOrdinalGCompMeanDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceOrdinalGCompMeanDiff-new}{\code{InferenceOrdinalGCompMeanDiff$new()}}
+\item \href{#method-InferenceOrdinalGCompMeanDiff-compute_estimate}{\code{InferenceOrdinalGCompMeanDiff$compute_estimate()}}
+\item \href{#method-InferenceOrdinalGCompMeanDiff-compute_asymp_confidence_interval}{\code{InferenceOrdinalGCompMeanDiff$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceOrdinalGCompMeanDiff-compute_asymp_two_sided_pval}{\code{InferenceOrdinalGCompMeanDiff$compute_asymp_two_sided_pval()}}
 \item \href{#method-InferenceOrdinalGCompMeanDiff-clone}{\code{InferenceOrdinalGCompMeanDiff$clone()}}
 }
 }
@@ -54,9 +63,8 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBoot$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_lik_ratio_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_lik_ratio_two_sided_pval'><code>EDI::InferenceAsymp$compute_lik_ratio_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_likelihood_ratio_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_likelihood_ratio_two_sided_pval'><code>EDI::InferenceAsymp$compute_likelihood_ratio_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_score_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_score_two_sided_pval'><code>EDI::InferenceAsymp$compute_score_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_confidence_interval'><code>EDI::InferenceAsymp$compute_wald_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_two_sided_pval'><code>EDI::InferenceAsymp$compute_wald_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_information_preference"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_information_preference'><code>EDI::InferenceAsymp$get_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_information_source_used"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_information_source_used'><code>EDI::InferenceAsymp$get_information_source_used()</code></a></span></li>
@@ -67,13 +75,88 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_testing_type"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_testing_type'><code>EDI::InferenceAsymp$get_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="set_information_preference"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-set_information_preference'><code>EDI::InferenceAsymp$set_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-set_testing_type'><code>EDI::InferenceAsymp$set_testing_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalGCompAbstract" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceOrdinalGCompAbstract.html#method-InferenceOrdinalGCompAbstract-compute_asymp_confidence_interval'><code>EDI::InferenceOrdinalGCompAbstract$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalGCompAbstract" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceOrdinalGCompAbstract.html#method-InferenceOrdinalGCompAbstract-compute_asymp_two_sided_pval'><code>EDI::InferenceOrdinalGCompAbstract$compute_asymp_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalGCompAbstract" data-id="compute_estimate"><a href='../../EDI/html/InferenceOrdinalGCompAbstract.html#method-InferenceOrdinalGCompAbstract-compute_estimate'><code>EDI::InferenceOrdinalGCompAbstract$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceOrdinalGCompAbstract" data-id="initialize"><a href='../../EDI/html/InferenceOrdinalGCompAbstract.html#method-InferenceOrdinalGCompAbstract-initialize'><code>EDI::InferenceOrdinalGCompAbstract$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceOrdinalGCompMeanDiff-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalGCompMeanDiff-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the g-computation (G-Comp) inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalGCompMeanDiff$new(
+  des_obj,
+  model_formula = NULL,
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with an ordinal response.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL}
+(default), the formula from the design object is used and its pre-computed design
+matrix is reused. If a formula is provided, a new design matrix is constructed from
+the design's imputed covariates.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceOrdinalGCompMeanDiff-compute_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalGCompMeanDiff-compute_estimate}{}}}
+\subsection{Method \code{compute_estimate()}}{
+Computes the g-computation (G-Comp) treatment-effect estimate (mean difference).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalGCompMeanDiff$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceOrdinalGCompMeanDiff-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalGCompMeanDiff-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes a 1 - \code{alpha} confidence interval for the G-Comp mean difference.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalGCompMeanDiff$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The significance level (default 0.05).}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceOrdinalGCompMeanDiff-compute_asymp_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalGCompMeanDiff-compute_asymp_two_sided_pval}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes a two-sided Wald p-value for the G-Comp mean difference.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalGCompMeanDiff$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null treatment effect (default 0).}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalGCompMeanDiff-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalGCompMeanDiff-clone}{}}}

@@ -4,13 +4,13 @@
 #' blocking experimental design.
 #'
 #' @examples
-#' des = FixedDesignBlocking$new(n = 20, response_type = 'continuous', strata_cols = 'x2', equal_block_sizes = FALSE)
+#' des = DesignFixedBlocking$new(n = 20, response_type = 'continuous', strata_cols = 'x2', equal_block_sizes = FALSE)
 #' X = data.frame(x1 = rnorm(20), x2 = factor(rep(1:2, 10)))
 #' des$add_all_subjects_to_experiment(X)
 #' des$assign_w_to_all_subjects()
 #' @export
-FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
-	inherit = FixedDesign,
+DesignFixedBlocking = R6::R6Class("DesignFixedBlocking",
+	inherit = DesignFixed,
 	public = list(
 		#' @description
 		#' Initialize a fixed stratified blocking experimental design
@@ -46,7 +46,7 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'
-		#' @return  A new `FixedDesignBlocking` object
+		#' @return  A new `DesignFixedBlocking` object
 			initialize = function(
 						strata_cols = NULL,
 						response_type,
@@ -74,6 +74,7 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 				}
 			}
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+			private$blocking_capable = TRUE
 			private$strata_cols = strata_cols
 			private$preferred_num_bins_for_continuous_covariate = preferred_num_bins_for_continuous_covariate
 			private$B_target = B_target
@@ -123,9 +124,8 @@ FixedDesignBlocking = R6::R6Class("FixedDesignBlocking",
 			if (is.null(bootstrap_type) || bootstrap_type == "within_blocks") {
 				list(i_b = stratified_bootstrap_indices_cpp(as.character(strata_keys)), m_vec_b = NULL)
 			} else {
-				unique_keys = unique(strata_keys)
-				sampled_keys = sample(unique_keys, length(unique_keys), replace = TRUE)
-				i_b = unlist(lapply(sampled_keys, function(key) which(strata_keys == key)), use.names = FALSE)
+				group_id = match(strata_keys, unique(strata_keys))
+				i_b = resample_group_rows_cpp(as.integer(group_id), length(unique(group_id)))
 				list(i_b = as.integer(i_b), m_vec_b = NULL)
 			}
 		}

@@ -8,11 +8,11 @@
 #'
 #' @examples
 #' \dontrun{
-#' des = FixedDesignRerandomization$new(n = 10, response_type = 'continuous')
+#' des = DesignFixedRerandomization$new(n = 10, response_type = 'continuous')
 #' }
 #' @export
-FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
-	inherit = FixedDesign,
+DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
+	inherit = DesignFixed,
 	public = list(
 		#' @description
 		#' Initialize a rerandomization fixed experimental design
@@ -27,7 +27,7 @@ FixedDesignRerandomization = R6::R6Class("FixedDesignRerandomization",
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'
-		#' @return 			A new `FixedDesignRerandomization` object
+		#' @return 			A new `DesignFixedRerandomization` object
 		#'
 		initialize = function(
 				response_type,

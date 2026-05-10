@@ -6,11 +6,11 @@
 #'
 #' @examples
 #' \dontrun{
-#' des = FixedDesignMatchingGreedyPairSwitching$new(n = 10, response_type = 'continuous')
+#' des = DesignFixedMatchingGreedyPairSwitching$new(n = 10, response_type = 'continuous')
 #' }
 #' @export
-FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyPairSwitching",
-	inherit = FixedDesign,
+DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyPairSwitching",
+	inherit = DesignFixed,
 	public = list(
 		#' @description
 		#' Initialize a fixed design that performs binary matching followed by greedy pair switching.
@@ -27,7 +27,7 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 		#' @param wait If \code{TRUE}, wait for the search to finish before returning.
 		#' @param diff_method Passed to the upstream binary-match-then-greedy initializer.
 		#'
-		#' @return A new \code{FixedDesignMatchingGreedyPairSwitching} object.
+		#' @return A new \code{DesignFixedMatchingGreedyPairSwitching} object.
 		initialize = function(
 				response_type,
 				prob_T = 0.5,
@@ -43,10 +43,10 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 			) {
 			if (should_run_asserts()) {
 				if (prob_T != 0.5) {
-					stop("FixedDesignMatchingGreedyPairSwitching only supports balanced designs (prob_T = 0.5).")
+					stop("DesignFixedMatchingGreedyPairSwitching only supports balanced designs (prob_T = 0.5).")
 				}
 			}
-			assert_greedy_experimental_design_installed("FixedDesignMatchingGreedyPairSwitching")
+			assert_greedy_experimental_design_installed("DesignFixedMatchingGreedyPairSwitching")
 
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 
@@ -69,7 +69,7 @@ FixedDesignMatchingGreedyPairSwitching = R6::R6Class("FixedDesignMatchingGreedyP
 			if (should_run_asserts()) {
 				assertCount(r, positive = TRUE)
 			}
-			assert_greedy_experimental_design_installed("FixedDesignMatchingGreedyPairSwitching")
+			assert_greedy_experimental_design_installed("DesignFixedMatchingGreedyPairSwitching")
 			if (should_run_asserts()) {
 				self$assert_all_subjects_arrived()
 			}

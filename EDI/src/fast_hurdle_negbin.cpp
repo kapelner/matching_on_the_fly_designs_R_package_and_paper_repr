@@ -354,3 +354,75 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X,
 	fit["hurdle_ssq_b_2"] = hurdle_ssq_b_2;
 	return fit;
 }
+
+// [[Rcpp::export]]
+List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X,
+                                                                         const Eigen::VectorXd& y,
+                                                                         Nullable<NumericVector> start_params = R_NilValue,
+                                                                         bool estimate_only = false,
+                                                                         int maxit = 1000,
+                                                                         double tol = 1e-8,
+                                                                         Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                                                         Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                                                         std::string optimization_alg = "lbfgs") {
+        optimization_alg = normalize_optimizer_algorithm(optimization_alg, "lbfgs", false);
+
+        List pos = build_positive_hurdle_negbin_data(X, y);
+        MatrixXd X_pos = pos["X_pos"];
+        VectorXi y_pos = pos["y_pos"];
+        const int p = X_pos.cols();
+        if (X_pos.rows() <= p){
+                return List::create(
+                        Named("b") = NumericVector(p, NA_REAL),
+                        Named("params") = NumericVector(p + 1, NA_REAL),
+                        Named("converged") = false,
+                        Named("neg_ll") = NA_REAL
+                );
+        }
+
+        VectorXd params(p + 1);
+        if (start_params.isNotNull()) {
+                params = as<VectorXd>(NumericVector(start_params));
+        } else {
+                params.setZero();
+                params[0] = std::log(std::max(1.0, y_pos.cast<double>().mean()));
+        }
+
+        FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
+        TruncatedNegBinCount fun(X_pos, y_pos);
+        LikelihoodFitResult fit;
+        try {
+                fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs");
+        } catch (const std::exception& e) {
+                Rcpp::warning(e.what());
+                return List::create(
+                        Named("b") = NumericVector(p, NA_REAL),
+                        Named("params") = NumericVector(p + 1, NA_REAL),
+                        Named("converged") = false,
+                        Named("neg_ll") = NA_REAL
+                );
+        }
+
+        params = fit.params;
+        VectorXd beta = params.head(p);
+        List out = List::create(
+                Named("b") = beta,
+                Named("params") = params,
+                Named("converged") = fit.converged,
+                Named("neg_ll") = fit.value
+        );
+        if (estimate_only || !fit.converged){
+                return out;
+        }
+
+        VectorXd score = get_hurdle_negbin_count_score_cpp(X, y, params);
+        MatrixXd H = fun.hessian(params);
+        MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
+        MatrixXd vcov = expand_free_covariance(p + 1, fixed_spec, H_free.inverse(), true);
+        out["score"] = score;
+        out["observed_information"] = H;
+        out["information"] = H;
+        out["hessian"] = -H;
+        out["vcov"] = vcov;
+        return out;
+}

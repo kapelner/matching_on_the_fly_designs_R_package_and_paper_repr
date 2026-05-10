@@ -4,12 +4,12 @@
 #' completely randomized experimental design.
 #'
 #' @examples
-#' des = FixedDesigniBCRD$new(n = 10, response_type = 'continuous')
+#' des = DesignFixediBCRD$new(n = 10, response_type = 'continuous')
 #' des$add_all_subjects_to_experiment(data.frame(x1 = rnorm(10)))
 #' des$assign_w_to_all_subjects()
 #' @export
-FixedDesigniBCRD = R6::R6Class("FixedDesigniBCRD",
-	inherit = FixedDesign,
+DesignFixediBCRD = R6::R6Class("DesignFixediBCRD",
+	inherit = DesignFixed,
 	public = list(
 		#' @description
 		#' Initialize a fixed balanced completely randomized experimental design
@@ -23,7 +23,7 @@ FixedDesigniBCRD = R6::R6Class("FixedDesigniBCRD",
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#'
-		#' @return  A new `FixedDesigniBCRD` object
+		#' @return  A new `DesignFixediBCRD` object
 		initialize = function(
 						response_type,
 						prob_T = 0.5,

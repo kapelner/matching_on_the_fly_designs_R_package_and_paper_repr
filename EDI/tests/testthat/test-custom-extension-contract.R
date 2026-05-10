@@ -4,14 +4,14 @@ test_that("custom extension base classes are internal but usable for subclassing
 	expect_false("InferenceCustomRand" %in% exports)
 	expect_false("InferenceCustomBoot" %in% exports)
 	expect_false("DesignCustomSequential" %in% exports)
-	expect_false("DesignCustomFixed" %in% exports)
+	expect_false("DesignFixedCustom" %in% exports)
 
 	expect_true(is.environment(getNamespace("EDI")))
 	expect_s3_class(getFromNamespace("InferenceCustomAsymp", "EDI"), "R6ClassGenerator")
 	expect_s3_class(getFromNamespace("InferenceCustomRand", "EDI"), "R6ClassGenerator")
 	expect_s3_class(getFromNamespace("InferenceCustomBoot", "EDI"), "R6ClassGenerator")
 	expect_s3_class(getFromNamespace("DesignCustomSequential", "EDI"), "R6ClassGenerator")
-	expect_s3_class(getFromNamespace("DesignCustomFixed", "EDI"), "R6ClassGenerator")
+	expect_s3_class(getFromNamespace("DesignFixedCustom", "EDI"), "R6ClassGenerator")
 })
 
 test_that("custom asymptotic inference works from an external-package-like environment", {
@@ -43,7 +43,7 @@ test_that("custom asymptotic inference works from an external-package-like envir
 		)
 	}, envir = ext_env)
 
-	des = FixedDesignBernoulli$new(n = 20, response_type = "continuous", verbose = FALSE)
+	des = DesignFixedBernoulli$new(n = 20, response_type = "continuous", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = seq_len(20)))
 	des$overwrite_all_subject_assignments(rep(c(0, 1), each = 10))
 	des$add_all_subject_responses(c(1:10, 12:21))
@@ -73,7 +73,7 @@ test_that("custom asymptotic inference works from an external-package-like envir
 })
 
 test_that("custom design extension bases delegate user assignment rules", {
-	CustomFixedBase = getFromNamespace("DesignCustomFixed", "EDI")
+	CustomFixedBase = getFromNamespace("DesignFixedCustom", "EDI")
 	CustomSequentialBase = getFromNamespace("DesignCustomSequential", "EDI")
 
 	AlternatingFixed = R6::R6Class(

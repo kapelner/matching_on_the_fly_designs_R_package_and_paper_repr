@@ -5,7 +5,7 @@
 #' @keywords internal
 InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 	lock_objects = FALSE,
-	inherit = InferenceAsymp,
+	inherit = InferenceAsympLik,
 	public = list(
 
 		#' @description
@@ -18,6 +18,10 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 	),
 
 	private = list(
+		supports_likelihood_tests = function(){
+			TRUE
+		},
+
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
@@ -55,6 +59,10 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "score")
 		},
 
+		compute_gradient_two_sided_pval_impl = function(delta){
+			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "gradient")
+		},
+
 		compute_lik_ratio_two_sided_pval_impl = function(delta){
 			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "lik_ratio")
 		},
@@ -88,38 +96,12 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 		},
 
 		compute_likelihood_test_two_sided_pval = function(delta, testing_type){
-			spec = private$get_likelihood_test_spec()
-			if (is.null(spec)) {
-				stop(class(self)[1], " does not expose a likelihood-test specification.", call. = FALSE)
-			}
-
-			j = as.integer(spec$j)
-			if (length(j) != 1L || !is.finite(j) || j < 1L) return(NA_real_)
-
-			fit_null = private$make_warm_fit_null_wrapper(spec, cache_key = paste0("likelihood_test:", testing_type))
-			null_fit = tryCatch(fit_null(delta), error = function(e) NULL)
-			null_params = null_fit$b %||% null_fit$params
-			if (is.null(null_fit) || is.null(null_params) || length(null_params) < j || !is.finite(null_params[j])) {
-				return(NA_real_)
-			}
-
-			if (testing_type == "score") {
-				score = tryCatch(spec$score(null_fit), error = function(e) NULL)
-				information = tryCatch(private$get_information_matrix(spec = spec, fit = null_fit), error = function(e) NULL)
-				if (is.null(score) || is.null(information)) return(NA_real_)
-				res = score_test_from_score_information_cpp(as.numeric(score), as.matrix(information), j)
-				return(as.numeric(res$p_value %||% res))
-			}
-
-			if (testing_type == "lik_ratio") {
-				full_negloglik = tryCatch(spec$neg_loglik(spec$full_fit), error = function(e) NA_real_)
-				null_negloglik = tryCatch(spec$neg_loglik(null_fit), error = function(e) NA_real_)
-				if (!is.finite(full_negloglik) || !is.finite(null_negloglik)) return(NA_real_)
-				res = likelihood_ratio_test_from_negloglik_cpp(full_negloglik, null_negloglik, df = 1L)
-				return(as.numeric(res$p_value %||% res))
-			}
-
-			stop("Unsupported testing_type: ", testing_type, call. = FALSE)
+			private$get_memoized_likelihood_test_pval(
+				delta = delta,
+				testing_type = testing_type,
+				spec = private$get_likelihood_test_spec(),
+				warm_cache_key = paste0("likelihood_test:", testing_type)
+			)
 		},
 
 		shared = function(estimate_only = FALSE){

@@ -22,6 +22,10 @@ fast_poisson_regression_cpp(
 
 \item{y}{A numeric vector of the response variable, expected to be counts.}
 
+\item{start_beta}{Optional starting values for coefficients.}
+
+\item{smart_start}{Logical. If TRUE, use an initial OLS-based guess.}
+
 \item{maxit}{Maximum number of iterations for the IRLS algorithm. Defaults to 100.}
 
 \item{tol}{Convergence tolerance. Defaults to 1e-8.}
@@ -50,9 +54,6 @@ This function provides a fast implementation of Poisson regression using a C++ b
 It is designed to efficiently estimate regression coefficients for count outcomes.
 }
 \examples{
-X = matrix(rnorm(100), 10, 10)
-y = rpois(10, 2)
-fast_poisson_regression_cpp(X, y)
 X = matrix(rnorm(100), 10, 10)
 y = rpois(10, 2)
 fast_poisson_regression_cpp(X, y)
