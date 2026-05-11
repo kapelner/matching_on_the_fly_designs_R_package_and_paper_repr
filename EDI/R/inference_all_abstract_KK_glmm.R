@@ -5,8 +5,7 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
 	public = list(
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -38,17 +37,13 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 				}
 			}
 		},
-
-		#' @description
-		#' Returns the estimated treatment effect.
+		#' @description Returns the estimated treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes the asymptotic confidence interval.
+		#' @description Computes the asymptotic confidence interval.
 		#' @param alpha                                   The confidence level in the computed
 		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -64,9 +59,7 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Computes the asymptotic p-value.
+		#' @description Computes the asymptotic p-value.
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval = function(delta = 0){
@@ -83,19 +76,16 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
-
 	private = list(
 		m = NULL,
+		optimization_alg = "lbfgs",
 		# Subclasses that provide their own fitter (e.g. Rcpp) set this to TRUE
 		# before calling super$initialize() to suppress the glmmTMB package check.
 			skip_glmm_pkg_check = FALSE,
-
 		# Abstract: subclasses must return the expected response type string.
 		glmm_response_type = function() stop(class(self)[1], " must implement glmm_response_type()"),
-
 		# Abstract: subclasses must return the glm family object for glmmTMB.
 		glmm_family = function() stop(class(self)[1], " must implement glmm_family()"),
-
 		# Default (multivariate): all covariates + treatment.
 		# Univariate subclasses override this to return data.frame(w = private$w).
 		glmm_predictors_df = function(){
@@ -105,13 +95,11 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 				colnames(df)[colnames(df) == "treatment"] = "w"
 			df
 		},
-
 		glmm_predictors_df_candidates = function(){
 			predictors_df = private$glmm_predictors_df()
 			if (!private$harden || is.null(predictors_df) || ncol(predictors_df) <= 1L){
 				return(list(predictors_df))
 			}
-
 			X_full = as.matrix(predictors_df)
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
@@ -134,25 +122,20 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			}
 			candidates
 		},
-
 			max_abs_reasonable_coef = 1e4,
-
 			get_standard_error = function(){
 				private$shared(estimate_only = FALSE)
 				se = private$compute_standard_error_from_information_matrix()
 				if (is.finite(se)) return(se)
 				private$cached_values$s_beta_hat_T
 			},
-
 			get_degrees_of_freedom = function(){
 				private$shared(estimate_only = FALSE)
 				private$cached_values$df
 			},
-
 			supports_likelihood_tests = function(){
 				isTRUE(private$use_rcpp)
 			},
-
 			get_likelihood_test_spec = function(){
 				private$shared(estimate_only = FALSE)
 				ctx = private$cached_values$likelihood_test_context
@@ -196,18 +179,15 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 					}
 				)
 			},
-
 			shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && isTRUE(private$cached_values$s_beta_hat_T > 0)) return(invisible(NULL))
 			private$clear_nonestimable_state()
-
 			mod = private$fit_glmm(se = !estimate_only)
 			if (is.null(mod)){
 				private$cache_nonestimable_estimate("kk_glmm_fit_failed")
 				return(invisible(NULL))
 			}
-
 			# glmmTMB fixed effects for the conditional model
 			beta = glmmTMB::fixef(mod)$cond
 			if ("w" %in% names(beta)){
@@ -215,9 +195,7 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			} else {
 				private$cached_values$beta_hat_T = NA_real_
 			}
-
 			if (estimate_only) return(invisible(NULL))
-
 			coef_table = summary(mod)$coefficients$cond
 			if ("w" %in% rownames(coef_table) && "Std. Error" %in% colnames(coef_table)){
 				private$cached_values$s_beta_hat_T = as.numeric(coef_table["w", "Std. Error"])
@@ -227,17 +205,14 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			private$cached_values$df = Inf
 			private$cached_values$summary_table = coef_table
 		},
-
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T))
 				return(invisible(NULL))
 		},
-
 		fit_glmm_on_data = function(predictors_df, se = TRUE){
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
-
 			group_id = m_vec
 			reservoir_idx = which(group_id == 0L)
 			if (length(reservoir_idx) > 0L)
@@ -263,7 +238,6 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 				NULL
 			})
 		},
-
 		fit_glmm = function(se = TRUE){
 			for (predictors_df in private$glmm_predictors_df_candidates()){
 				mod = private$fit_glmm_on_data(predictors_df, se = se)
@@ -271,7 +245,6 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 			}
 			NULL
 		},
-
 		.is_usable_glmm_fit = function(mod, se){
 			if (is.null(mod)) return(FALSE)
 			beta = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)

@@ -91,6 +91,7 @@ Initialize a binary match fixed experimental design
   mahal_match = FALSE,
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
+  m = NULL,
   verbose = FALSE,
   missingness_method = "impute",
   model_formula = ~.
@@ -109,6 +110,11 @@ Initialize a binary match fixed experimental design
 \item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
 
 \item{\code{n}}{The sample size.}
+
+\item{\code{m}}{Optional integer vector of explicit matched-pair identifiers, one per
+subject. If supplied, `n` must also be supplied, `length(m)` must equal `n`,
+all values must be positive, and each pair ID must occur exactly twice.
+This bypasses the package-computed matching step.}
 
 \item{\code{verbose}}{Flag for verbosity.}
 

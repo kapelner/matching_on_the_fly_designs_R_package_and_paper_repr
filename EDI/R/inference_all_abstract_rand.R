@@ -7,8 +7,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 	inherit = Inference,
 	lock_objects = FALSE,
 	public = list(
-		#' @description
-		#' Set Custom Randomization Statistic Computation
+		#' @description Set Custom Randomization Statistic Computation
 		#' @param custom_randomization_statistic_function  A function that returns a scalar value.
 		set_custom_randomization_statistic_function = function(custom_randomization_statistic_function){
 			if (should_run_asserts()) {
@@ -22,9 +21,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			private$cached_values$rand_distr_cache = list()
 			private$cached_values$custom_stat_analysis = NULL
 		},
-
-		#' @description
-		#' Computes the randomization distribution of the treatment effect estimate under the sharp null.
+		#' @description Computes the randomization distribution of the treatment effect estimate under the sharp null.
 		#'
 		#' @param r  					Number of randomization vectors. Default 501.
 		#' @param delta  				The null difference. Default 0.
@@ -47,15 +44,12 @@ InferenceRand = R6::R6Class("InferenceRand",
 				private$assert_design_supports_resampling("Randomization inference")
 				assertNumeric(delta); assertCount(r, positive = TRUE); assertFlag(debug)
 			}
-
 			if (is.null(permutations)) permutations = private$generate_permutations(r)
 			setup = private$setup_randomization_template_and_shifts(delta, transform_responses, zero_one_logit_clamp)
-
 			if (!isTRUE(debug) && !is.null(permutations) && private$has_private_method("compute_fast_randomization_distr")) {
 				fast_distr = private$compute_fast_randomization_distr(setup$template$.__enclos_env__$private$y, permutations, delta, transform_responses, zero_one_logit_clamp)
 				if (!is.null(fast_distr)) return(fast_distr)
 			}
-
 			if (!isTRUE(debug) && !is.null(permutations) &&
 				isTRUE(private$use_reusable_bootstrap_worker()) &&
 				is.null(private[["custom_randomization_statistic_function"]])) {
@@ -70,15 +64,12 @@ InferenceRand = R6::R6Class("InferenceRand",
 					zero_one_logit_clamp = zero_one_logit_clamp
 				))
 			}
-
 			custom_stat_analysis = private$analyze_custom_randomization_statistic()
 			use_lightweight_custom_stat = isTRUE(custom_stat_analysis$can_use_lightweight_yw_only)
 			use_perms = !is.null(permutations) && (!is.null(permutations$w_mat) || length(permutations) >= r)
-
 			need_thread_objs = !(use_lightweight_custom_stat && use_perms)
 			inf_template = if (need_thread_objs) self$duplicate() else NULL
 			des_template = if (need_thread_objs) setup$template$duplicate() else NULL
-
 			# Warm up the design template cache if it is a sequential design that uses covariates.
 			if (!is.null(des_template) && isTRUE(des_template$.__enclos_env__$private$uses_covariates)) {
 				if (private$verbose) cat("Warming up design cache... ")
@@ -98,17 +89,14 @@ InferenceRand = R6::R6Class("InferenceRand",
 					if (private$verbose) cat("failed.\n")
 				})
 			}
-
 			if (!is.null(inf_template) && private$has_match_structure && private$object_has_private_method(inf_template, "compute_basic_match_data"))
 				inf_template$.__enclos_env__$private$compute_basic_match_data()
-
 			if (isTRUE(debug)) {
 				debug_results = if (isTRUE(private$use_reusable_bootstrap_worker()) && is.null(private$custom_randomization_statistic_function)){
 					# Fast path: use reused workers
 					worker_state = private$create_bootstrap_worker_state()
 					cleanup_worker = private$cleanup_bootstrap_worker_state
 					if (is.function(cleanup_worker)) on.exit(cleanup_worker(worker_state), add = TRUE)
-
 					lapply(seq_len(r), function(idx){
 						iter_warns = character(0)
 						iter_result = withCallingHandlers(
@@ -157,7 +145,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 						)
 					})
 				}
-
 				debug_results = debug_results[!vapply(debug_results, is.null, logical(1))]
 				if (length(debug_results) == 0L) {
 					stop("All randomization iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
@@ -178,7 +165,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 					prop_illegal_values = mean(!is.finite(values))
 				))
 			}
-
 			actual_rand_cores = private$effective_parallel_cores("rand_pval", self$num_cores)
 			if (actual_rand_cores > 1L && need_thread_objs) {
 				do_warmup_iter = function() {
@@ -197,7 +183,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 				fork_cl = get_global_fork_cluster()
 				fork_overhead_estimate = if (!is.null(fork_cl)) 0.01 else 0.5
 				cluster_create_overhead = 0.0 # Cluster is global and pre-created
-
 				# Better logic: if total estimated time is much greater than overhead, use all cores.
 				# We multiply overhead by actual_rand_cores to account for total fork cost.
 				if (t_rand_warmup * r < fork_overhead_estimate * actual_rand_cores * 2.0 + cluster_create_overhead) {
@@ -223,7 +208,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 					actual_rand_cores = 1L
 				}
 			}
-
 			beta_hat_T_diff_ws = unlist(private$par_lapply(1:r, function(idx) {
 				suppressWarnings({
 					worker_des = if (!is.null(des_template)) des_template$duplicate() else NULL
@@ -241,13 +225,10 @@ InferenceRand = R6::R6Class("InferenceRand",
 				use_perms = use_perms,
 				zero_one_logit_clamp = zero_one_logit_clamp
 			)))
-
 			if (!is.numeric(beta_hat_T_diff_ws)) beta_hat_T_diff_ws = as.numeric(beta_hat_T_diff_ws)
 			beta_hat_T_diff_ws
 		},
-
-		#' @description
-		#' Computes a randomization-based p-value.
+		#' @description Computes a randomization-based p-value.
 		#' @param r  	Number of randomization vectors.
 		#' @param delta  				Null difference.
 		#' @param transform_responses  Transformation.
@@ -263,7 +244,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 				if (private$des_obj_priv_int$response_type == "incidence" && is.null(private$custom_randomization_statistic_function)) stop("Randomization tests are not supported for incidence. Use Zhang method.")
 			}
 			if (is.null(permutations)) permutations = private$generate_permutations(r)
-
 			if (identical(transform_responses, "none")) {
 				transform_responses = switch(
 					private$des_obj_priv_int$response_type,
@@ -274,9 +254,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 					"none"
 				)
 			}
-
 			cache_key = private$build_randomization_distribution_cache_key(r, delta, transform_responses, permutations)
-
 			if (transform_responses == "none" && is.null(private[["custom_randomization_statistic_function"]]) && !is.null(private$cached_values$t0s_rand) && length(private$cached_values$t0s_rand) >= r) {
 				t0s = private$cached_values$t0s_rand[seq_len(r)] + delta
 				t = private$compute_treatment_estimate_during_randomization_inference()
@@ -287,13 +265,10 @@ InferenceRand = R6::R6Class("InferenceRand",
 				if (nsim_adj == 0L) return(NA_real_)
 				return(min(1, max(2 / nsim_adj, 2 * min(sum(t0s >= t, na.rm = TRUE) / nsim_adj, sum(t0s <= t, na.rm = TRUE) / nsim_adj))))
 			}
-
 			if (is.null(private$cached_values$rand_distr_cache)) private$cached_values$rand_distr_cache = list()
-
 			t = private$compute_treatment_estimate_during_randomization_inference()
 			if (is.function(self$is_nonestimable) && isTRUE(self$is_nonestimable("estimate"))) return(NA_real_)
 			if (length(t) != 1 || !is.finite(t)) return(NA_real_)
-
 			mc_pval = private$compute_two_sided_pval_with_sequential_mc(
 				t = t,
 				r = r,
@@ -305,7 +280,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 				zero_one_logit_clamp = zero_one_logit_clamp
 			)
 			if (!is.null(mc_pval)) return(mc_pval)
-
 			t0s = private$get_randomization_distribution_prefix(
 				r = r,
 				delta = delta,
@@ -315,15 +289,12 @@ InferenceRand = R6::R6Class("InferenceRand",
 				cache_key = cache_key,
 				zero_one_logit_clamp = zero_one_logit_clamp
 			)
-
 			private$compute_two_sided_randomization_pval_from_t0s(t0s, t)
 		}
 	),
-
 	private = list(
 		custom_randomization_statistic_function = NULL,
 		randomization_mc_control = NULL,
-
 		normalize_delta_for_cache = function(delta, resolution = NULL){
 			if (!is.finite(delta)) return("NA")
 			if (!is.null(resolution) && is.finite(resolution) && resolution > 0) {
@@ -331,11 +302,9 @@ InferenceRand = R6::R6Class("InferenceRand",
 			}
 			format(as.numeric(delta), scientific = TRUE, digits = 17)
 		},
-
 		compute_randomization_distr_via_reused_worker_states = function(permutations, delta, transform_responses, actual_rand_cores, show_progress, setup, zero_one_logit_clamp) {
 			nsim = if (!is.null(permutations$w_mat)) ncol(permutations$w_mat) else length(permutations)
 			if (!isTRUE(nsim > 0L)) return(numeric(0))
-
 			get_perm_w = if (!is.null(permutations$w_mat)) {
 				w_mat_local = permutations$w_mat
 				function(i) w_mat_local[, i]
@@ -345,11 +314,9 @@ InferenceRand = R6::R6Class("InferenceRand",
 					if (is.list(p) && !is.null(p$w)) p$w else p
 				}
 			}
-
 			chunk_n = max(1L, min(as.integer(actual_rand_cores), nsim))
 			chunk_id = ceiling(seq_len(nsim) / ceiling(nsim / chunk_n))
 			chunks = split(seq_len(nsim), chunk_id)
-
 			run_chunk = function(idxs) {
 				worker_state = private$create_bootstrap_worker_state()
 				out = numeric(length(idxs))
@@ -366,9 +333,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 				}
 				out
 			}
-
 			if (actual_rand_cores <= 1L) return(as.numeric(run_chunk(seq_len(nsim))))
-
 			as.numeric(unlist(private$par_lapply(
 				chunks,
 				run_chunk,
@@ -377,7 +342,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 				show_progress = show_progress
 			), use.names = FALSE))
 		},
-
 		build_fast_randomization_worker_cache = function(prev_cache = NULL, preserve_cache_keys = character()){
 			cache = list()
 			if (is.null(prev_cache)) {
@@ -391,14 +355,11 @@ InferenceRand = R6::R6Class("InferenceRand",
 			cache$rand_distr_cache = list()
 			cache
 		},
-
 		compute_fast_randomization_distr_via_reused_worker = function(y, permutations, delta, transform_responses, preserve_cache_keys = character(), zero_one_logit_clamp = .Machine$double.eps){
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			if (is.null(permutations)) return(NULL)
-
 			nsim = if (!is.null(permutations$w_mat)) ncol(permutations$w_mat) else length(permutations)
 			if (!isTRUE(nsim > 0L)) return(numeric(0))
-
 			get_perm_data = if (!is.null(permutations$w_mat)) {
 				w_mat = permutations$w_mat
 				m_mat = permutations$m_mat
@@ -411,12 +372,10 @@ InferenceRand = R6::R6Class("InferenceRand",
 			} else {
 				function(i) permutations[[i]]
 			}
-
 			actual_rand_cores = min(private$effective_parallel_cores("rand_pval", self$num_cores), nsim)
 			chunk_n = max(1L, min(as.integer(actual_rand_cores), nsim))
 			chunk_id = ceiling(seq_len(nsim) / ceiling(nsim / chunk_n))
 			chunks = split(seq_len(nsim), chunk_id)
-
 			run_chunk = function(idxs) {
 				worker = self$duplicate(verbose = FALSE, make_fork_cluster = FALSE)
 				worker$num_cores = 1L
@@ -495,7 +454,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 				}
 				out
 			}
-
 			as.numeric(unlist(private$par_lapply(
 				chunks,
 				run_chunk,
@@ -510,14 +468,12 @@ InferenceRand = R6::R6Class("InferenceRand",
 				)
 			), use.names = FALSE))
 		},
-
 		compute_two_sided_randomization_pval_from_t0s = function(t0s, t){
 			na_t0s = !is.finite(t0s)
 			nsim_adj = sum(!na_t0s)
 			if (nsim_adj == 0L) return(NA_real_)
 			min(1, max(2 / nsim_adj, 2 * min(sum(t0s >= t, na.rm = TRUE) / nsim_adj, sum(t0s <= t, na.rm = TRUE) / nsim_adj)))
 		},
-
 		compute_two_sided_randomization_pval_band = function(t0s, t, conf_level){
 			valid = is.finite(t0s)
 			n = sum(valid)
@@ -535,7 +491,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 			band = c(2 * min(band_ge[1], band_le[1]), 2 * min(band_ge[2], band_le[2]))
 			pmin(1, pmax(0, band))
 		},
-
 		subset_permutations = function(permutations, indices){
 			if (is.null(permutations)) return(NULL)
 			if (!is.null(permutations$w_mat)) {
@@ -547,7 +502,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 				permutations[indices]
 			}
 		},
-
 		get_randomization_distribution_prefix = function(r, delta, transform_responses, show_progress, permutations, cache_key, batch_size = NULL, zero_one_logit_clamp = .Machine$double.eps){
 			if (is.null(private$cached_values$rand_distr_cache)) private$cached_values$rand_distr_cache = list()
 			cached = if (!is.null(cache_key)) private$cached_values$rand_distr_cache[[cache_key]] else NULL
@@ -572,7 +526,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 			}
 			cached[seq_len(target)]
 		},
-
 		compute_two_sided_pval_with_sequential_mc = function(t, r, delta, transform_responses, show_progress, permutations, cache_key, zero_one_logit_clamp = .Machine$double.eps){
 			mc_control = private$randomization_mc_control
 			if (is.null(mc_control) || !isTRUE(mc_control$mc_enable) || !is.finite(mc_control$mc_stop_threshold)) return(NULL)
@@ -603,12 +556,10 @@ InferenceRand = R6::R6Class("InferenceRand",
 				if (length(t0s) >= as.integer(r)) return(p_hat)
 			}
 		},
-
 		generate_permutations = function(r){
 			if (should_run_asserts()) {
 				assertCount(r, positive = TRUE)
 			}
-
 			design_sig = private$stable_signature(list(
 				class = class(private$des_obj),
 				n = private$n,
@@ -619,14 +570,12 @@ InferenceRand = R6::R6Class("InferenceRand",
 			cache_key = paste0(as.integer(r), "|", design_sig)
 			cached = private$des_obj_priv_int$permutations_cache[[cache_key]]
 			if (!is.null(cached)) return(cached)
-
 			des_template = private$des_obj$duplicate()
 			w_mat = des_template$draw_ws_according_to_design(as.integer(r))
 			if (!is.matrix(w_mat)) {
 				w_mat = matrix(as.numeric(w_mat), nrow = private$n)
 			}
 			storage.mode(w_mat) = "numeric"
-
 			permutations = list(
 				w_mat = w_mat,
 				m_mat = NULL
@@ -634,19 +583,16 @@ InferenceRand = R6::R6Class("InferenceRand",
 			private$des_obj_priv_int$permutations_cache[[cache_key]] = permutations
 			permutations
 		},
-
 		build_randomization_distribution_cache_key = function(r, delta, transform_responses, permutations){
 			delta_key = formatC(as.numeric(delta), digits = 17, format = "fg", flag = "#")
 			perm_sig = private$stable_signature(permutations)
 			paste(as.integer(r), delta_key, transform_responses, perm_sig, sep = "|")
 		},
-
 		shift_randomization_responses = function(y, w, delta, transform_responses, response_type, inverse = FALSE, zero_one_logit_clamp = .Machine$double.eps){
 			if (delta == 0) return(y)
 			y_shifted = y
 			idx_treated = which(w == 1)
 			if (length(idx_treated) == 0L) return(y_shifted)
-
 			signed_delta = if (isTRUE(inverse)) -delta else delta
 			if (transform_responses == "logit") {
 				y_shifted[idx_treated] = inv_logit(logit(y_shifted[idx_treated], zero_one_logit_clamp) + signed_delta, zero_one_logit_clamp)
@@ -664,11 +610,9 @@ InferenceRand = R6::R6Class("InferenceRand",
 				y_shifted[idx_treated] = y_shifted[idx_treated] * exp(signed_delta)
 				return(y_shifted)
 			}
-
 			y_shifted[idx_treated] = y_shifted[idx_treated] + signed_delta
 			y_shifted
 		},
-
 		setup_randomization_template_and_shifts = function(delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			# Use the design matrix and response vector from the design object.
 			template = private$des_obj$duplicate()
@@ -690,7 +634,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 			}
 			list(template = template, y_delta = y_delta, base_template_y = private$y, base_template_dead = private$dead, lightweight_custom_context = private$des_obj_priv_int)
 		},
-
 		load_randomization_perm_into_worker = function(worker_state, perm_w, delta, transform_responses, y_delta, base_template_y, base_template_dead, zero_one_logit_clamp = .Machine$double.eps){
 			inf_priv = if (!is.null(worker_state$worker_inf)) {
 				worker_state$worker_inf$.__enclos_env__$private
@@ -736,12 +679,10 @@ InferenceRand = R6::R6Class("InferenceRand",
 			if (!is.null(inf_priv$compute_basic_match_data)) inf_priv$compute_basic_match_data()
 			invisible(NULL)
 		},
-
 		sync_randomization_worker_state = function(thread_des_obj, thread_inf_obj){
 			if (is.null(thread_des_obj) || is.null(thread_inf_obj)) return(invisible(NULL))
 			des_priv = thread_des_obj$.__enclos_env__$private
 			inf_priv = thread_inf_obj$.__enclos_env__$private
-
 			inf_priv$des_obj = thread_des_obj
 			inf_priv$des_obj_priv_int = des_priv
 			inf_priv$w = des_priv$w
@@ -749,11 +690,9 @@ InferenceRand = R6::R6Class("InferenceRand",
 			inf_priv$y_temp = des_priv$y
 			inf_priv$dead = des_priv$dead
 			if (private$has_match_structure) inf_priv$m = des_priv$m
-
 			if (!is.null(inf_priv$compute_basic_match_data)) inf_priv$compute_basic_match_data()
 			invisible(NULL)
 		},
-
 		run_randomization_iteration = function(thread_des_obj, thread_inf_obj, perm_idx, permutations, delta, transform_responses, y_delta, base_template_y, base_template_dead, custom_stat_analysis, lightweight_custom_context, debug = FALSE, zero_one_logit_clamp = .Machine$double.eps){
 			use_perms = !is.null(perm_idx)
 			get_perm_data = if (use_perms) {
@@ -762,7 +701,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 					function(i) { j = ((i - 1L) %% n_avail) + 1L; list(w = permutations$w_mat[, j], m_vec = if (!is.null(permutations$m_mat)) permutations$m_mat[, j] else NULL) }
 				} else function(i) permutations[[i]]
 			} else NULL
-
 			if (isTRUE(custom_stat_analysis$can_use_lightweight_yw_only) && use_perms) {
 				perm_data = get_perm_data(perm_idx); w_sim = perm_data$w; y_sim = y_delta
 				if (delta != 0) {
@@ -780,7 +718,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 				if (isTRUE(debug)) return(list(val = val, error = NULL))
 				return(val)
 			}
-
 			if (use_perms) {
 				perm_data = get_perm_data(perm_idx)
 				thread_des_obj$.__enclos_env__$private$w = perm_data$w
@@ -788,7 +725,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 			} else {
 				thread_des_obj$.__enclos_env__$private$resample_assignment()
 			}
-
 			if (delta != 0) {
 				y_sim = private$shift_randomization_responses(
 					y = y_delta,
@@ -801,9 +737,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 				)
 				thread_des_obj$.__enclos_env__$private$y = y_sim
 			}
-
 			private$sync_randomization_worker_state(thread_des_obj, thread_inf_obj)
-
 			iter_error = NULL
 			estimate = tryCatch(
 				thread_inf_obj$.__enclos_env__$private$compute_treatment_estimate_during_randomization_inference(estimate_only = TRUE),
@@ -817,7 +751,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 			if (isTRUE(debug)) return(list(val = val, error = iter_error))
 			val
 		},
-
 		analyze_custom_randomization_statistic = function(){
 			if (!is.null(private$cached_values$custom_stat_analysis)) return(private$cached_values$custom_stat_analysis)
 			if (is.null(private$custom_randomization_statistic_function)) {
@@ -832,7 +765,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 			private$cached_values$custom_stat_analysis = analysis
 			analysis
 		},
-
 		evaluate_lightweight_custom_randomization_statistic = function(lightweight_custom_context, y, w, dead){
 			# We simulate the environment for the custom statistic
 			eval_env = new.env(parent = .GlobalEnv)
@@ -846,7 +778,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 			environment(fn) = eval_env
 			fn()
 		},
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (identical(private$des_obj_priv_int$response_type, "proportion") &&
 			    (inherits(self, "InferenceAbstractKKQuantileRegrIVWC") || inherits(self, "InferenceAbstractKKQuantileRegrOneLik"))){

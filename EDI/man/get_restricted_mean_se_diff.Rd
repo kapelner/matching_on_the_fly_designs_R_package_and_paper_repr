@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{get_restricted_mean_se_diff}
 \alias{get_restricted_mean_se_diff}
-\title{Calculates the standard error of the difference in restricted mean survival times.}
+\title{Calculates the standard error of the difference in restricted mean survival times}
 \usage{
 get_restricted_mean_se_diff(y, dead, w)
 }
@@ -17,6 +17,6 @@ get_restricted_mean_se_diff(y, dead, w)
 The standard error of the difference.
 }
 \description{
-Calculates the standard error of the difference in restricted mean survival times.
+Calculates the standard error of the difference in restricted mean survival times
 }
 \keyword{internal}

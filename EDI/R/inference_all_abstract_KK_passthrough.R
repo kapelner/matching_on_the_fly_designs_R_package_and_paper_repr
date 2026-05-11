@@ -7,9 +7,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
 	public = list(
-
-		#' @description
-		#' Initialize
+		#' @description Initialize
 		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
 		#'   and response y is recorded within.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -36,10 +34,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 					private$compute_basic_match_data()
 				}
 		},
-
-
-		#' @description
-		#' Creates the boostrap distribution of the estimate for the treatment effect
+		#' @description Creates the boostrap distribution of the estimate for the treatment effect
 		#'
 		#' @param B  					Number of bootstrap samples. The default is 501.
 		#'
@@ -65,7 +60,25 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         If \code{TRUE}, return a list with the distribution values and
 		#'   per-iteration diagnostics. Default \code{FALSE}.
-		#' @param bootstrap_type      The type of bootstrap resampling to perform.
+		#' @param bootstrap_type Optional bootstrap-resampling scheme. Legal public values are:
+		#'   \describe{
+		#'     \item{\code{NULL}}{Use the design's default row-resampling bootstrap. For ordinary
+		#'       non-blocking designs this is the usual subject-level resample-with-replacement
+		#'       bootstrap. For certain blocking designs, \code{NULL} maps to the same behavior
+		#'       as \code{"within_blocks"}.}
+		#'     \item{\code{"within_blocks"}}{Only legal for blocking-style designs that support
+		#'       block-aware bootstrap resampling:
+		#'       \code{DesignFixedBlocking}, \code{DesignFixedOptimalBlocks},
+		#'       \code{DesignSeqOneByOneSPBR}, and \code{DesignFixedBlockedCluster}.
+		#'       Resamples observational units within each observed block/stratum. For blocked
+		#'       cluster designs this means resampling clusters within strata.}
+		#'     \item{\code{"resample_blocks"}}{Only legal for the same blocking-style designs as
+		#'       \code{"within_blocks"}. Resamples entire observed blocks/strata with replacement
+		#'       rather than resampling units within each block.}
+		#'   }
+		#'   Any non-\code{NULL} value is rejected for designs outside that blocking family.
+		#'   Note that the internal engine also contains an \code{"assignment"} branch, but that
+		#'   is not currently part of the validated public API for \code{bootstrap_type}.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 				if (should_run_asserts()) {
 					private$assert_valid_bootstrap_type(bootstrap_type)
@@ -76,30 +89,25 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 					if (should_run_asserts()) {
 						assertCount(B, positive = TRUE)
 					}
-
 					if (is.null(private$cached_values$KKstats)){
 						private$compute_basic_match_data()
 					}
-
 					n = private$n
 					y = private$y
 					dead = private$dead
 					w = private$w
 					X = private$get_X()
-
 					# Let Design initialise and own the bootstrap pair structure
 					des_priv = private$des_obj_priv_int
 					des_priv$init_matching_bootstrap_structure()
 					n_reservoir = des_priv$boot_n_reservoir
 					m            = nrow(des_priv$boot_pair_rows)
-
 					# For the C++ fast-path we still need i_reservoir / m_vec in Inference scope
 					i_reservoir  = des_priv$boot_i_reservoir
 					m_vec = private$m
 					if (is.null(m_vec)) m_vec = rep(0L, n)
 					m_vec = as.integer(m_vec)
 					m_vec[is.na(m_vec)] = 0L
-
 					# Check if subclass provides a C++ OpenMP dispatcher to bypass the slow R loop
 					if (!isTRUE(debug) && private$has_private_method("compute_fast_bootstrap_distr")) {
 						fast_distr = private$compute_fast_bootstrap_distr(B, i_reservoir, n_reservoir, m, y, w, m_vec)
@@ -107,17 +115,14 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 							return(fast_distr)
 						}
 					}
-
 					kk_boot_context = private$create_kk_bootstrap_context(
 						y = y, dead = dead, w = w, X = X,
 						m = m, n_reservoir = n_reservoir
 					)
-
 					if (isTRUE(private$use_reusable_kk_bootstrap_worker())) {
 						if (isTRUE(debug)) {
 							return(private$compute_kk_bootstrap_debug_with_reused_worker(B, kk_boot_context))
 						}
-
 						actual_cores = private$effective_parallel_cores("bootstrap", self$num_cores)
 						if (actual_cores > 1L) {
 							do_warmup_iter = function() {
@@ -133,7 +138,6 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 								actual_cores = 1L
 							}
 						}
-
 						return(private$compute_kk_bootstrap_distribution_with_reused_workers(
 							B = B,
 							kk_boot_context = kk_boot_context,
@@ -141,7 +145,6 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 							show_progress = show_progress
 						))
 					}
-
 					if (isTRUE(debug)) {
 						debug_results = vector("list", B)
 						has_res_stat_debug = private$has_private_method("compute_reservoir_and_match_statistics")
@@ -191,7 +194,6 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 							prop_illegal_values = mean(!is.finite(values))
 						))
 					}
-
 					# Pure R KK bootstrap implementation
 					if (self$num_cores == 1) {
 						pb = NULL
@@ -200,7 +202,6 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 							on.exit(close(pb), add = TRUE)
 						}
 						beta_hat_T_bs = rep(NA_real_, B)
-
 						has_res_stat_serial = private$has_private_method("compute_reservoir_and_match_statistics")
 						for (b in 1:B) {
 							boot_sample = des_priv$draw_bootstrap_indices()
@@ -224,7 +225,6 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 					} else {
 						# Parallel bootstrap execution for KK designs
 						cores_to_use = self$num_cores
-
 						if (cores_to_use > 1L) {
 							boot_sample_w = des_priv$draw_bootstrap_indices()
 							i_b_w   = boot_sample_w$i_b
@@ -246,10 +246,8 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 							if (!(t_warmup_kk * B > fork_overhead_estimate * cores_to_use))
 								cores_to_use = 1L
 						}
-
 						kk_template = self$duplicate()
 						has_res_stat = private$object_has_private_method(kk_template, "compute_reservoir_and_match_statistics")
-
 						# Use private$par_lapply which handles both persistent fork clusters and other strategies.
 						beta_hat_T_bs = unlist(private$par_lapply(1:B, function(b) {
 							boot_sample = des_priv$draw_bootstrap_indices()
@@ -279,16 +277,13 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		}
 	),
 	private = list(
-
 		m = NULL,
 		supports_likelihood_tests = function(){
 			FALSE
 		},
-
 		use_reusable_kk_bootstrap_worker = function(){
 			TRUE
 		},
-
 		create_kk_bootstrap_context = function(y, dead, w, X, m, n_reservoir){
 			X_mat = if (is.null(X)) {
 				matrix(numeric(0), nrow = length(y), ncol = 0L)
@@ -304,7 +299,6 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				n_reservoir = as.integer(n_reservoir)
 			)
 		},
-
 		create_kk_bootstrap_worker_state = function(kk_boot_context){
 			worker = self$duplicate(verbose = FALSE, make_fork_cluster = FALSE)
 			worker$num_cores = 1L
@@ -320,7 +314,6 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				has_res_stat = private$object_has_private_method(worker, "compute_reservoir_and_match_statistics")
 			)
 		},
-
 		load_kk_bootstrap_sample_into_worker = function(worker_state, sample_info){
 			worker_priv = worker_state$worker_priv
 			i_b = sample_info$i_b
@@ -347,11 +340,9 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				worker_priv$compute_reservoir_and_match_statistics()
 			}
 		},
-
 		compute_kk_bootstrap_worker_estimate = function(worker_state){
 			as.numeric(worker_state$worker$compute_estimate(estimate_only = TRUE))[1L]
 		},
-
 		compute_kk_bootstrap_debug_with_reused_worker = function(B, kk_boot_context){
 			worker_state = private$create_kk_bootstrap_worker_state(kk_boot_context)
 			debug_results = vector("list", B)
@@ -393,13 +384,11 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				prop_illegal_values = mean(!is.finite(values))
 			)
 		},
-
 		compute_kk_bootstrap_distribution_with_reused_workers = function(B, kk_boot_context, actual_cores, show_progress = FALSE){
 			chunk_n = max(1L, min(as.integer(actual_cores), as.integer(B)))
 			chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
 			chunks = split(seq_len(B), chunk_id)
 			des_priv_rw = private$des_obj_priv_int
-
 			run_chunk = function(idxs) {
 				worker_state = private$create_kk_bootstrap_worker_state(kk_boot_context)
 				out = numeric(length(idxs))
@@ -412,11 +401,9 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				}
 				out
 			}
-
 			if (actual_cores <= 1L) {
 				return(as.numeric(run_chunk(seq_len(B))))
 			}
-
 			as.numeric(unlist(private$par_lapply(
 				chunks,
 				run_chunk,
@@ -425,7 +412,6 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				show_progress = show_progress
 			), use.names = FALSE))
 		},
-
 		compute_basic_match_data = function(){
 			private$cached_values$KKstats = .compute_kk_basic_match_data_cached(
 				private_env = private,
@@ -437,7 +423,6 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				m_vec = private$m
 			)
 		},
-
 		compute_concordant_and_discordant_match_statistics = function(){
 			m = private$cached_values$KKstats$m
 			y_matched_diffs = private$cached_values$KKstats$y_matched_diffs
@@ -455,7 +440,6 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 			private$cached_values$KKstats$y_conc = private$y[i_conc]
 			private$cached_values$KKstats$w_conc = private$w[i_conc]
 		},
-
 		#not used now, but could be used for random effects models in the future
 		compute_model_matrix_with_matching_dummies = function(){
 			if (is.null(private$cached_values$data_frame_with_matching_dummies)){

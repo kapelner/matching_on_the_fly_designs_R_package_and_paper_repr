@@ -10,9 +10,7 @@ InferenceAbstractQuantileRandCI = R6::R6Class("InferenceAbstractQuantileRandCI",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
-
-		#' @description
-		#' Computes a randomization-based confidence interval via Zhang's combined test.
+		#' @description Computes a randomization-based confidence interval via Zhang's combined test.
 		#'
 		#' @param alpha  				The confidence level is 1 - \code{alpha}.
 		#' @param r  	Number of random sign-flips / permutations.
@@ -35,7 +33,6 @@ InferenceAbstractQuantileRandCI = R6::R6Class("InferenceAbstractQuantileRandCI",
 			private$ci_exact_zhang_combined(alpha, pval_epsilon)
 		}
 	),
-
 	private = list(
 		nsim_rand = 499L
 	)

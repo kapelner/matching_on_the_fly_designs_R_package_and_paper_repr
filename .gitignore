@@ -228,6 +228,7 @@ simulations/*.tex
 package_metadata/gradient_method_comparison_outputs/*
 package_metadata/likelihood_upgrade_sweep_report.md
 package_metadata/run_gradient_method_comparison.R
+benchmark/simd_matrix/*
 
 
 

@@ -20,8 +20,7 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -43,17 +42,13 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-
-		#' @description
-		#' Returns the combined OLS estimate of the treatment effect.
+		#' @description Returns the combined OLS estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$fit_combined(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes the approximate confidence interval.
+		#' @description Computes the approximate confidence interval.
 		#' @param alpha The confidence level in the computed confidence interval is 1 -
 		#'   \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -74,9 +69,7 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 				lik_ratio = private$invert_lik_ratio_ci_newton(alpha)
 			)
 		},
-
-		#' @description
-		#' Computes the approximate p-value.
+		#' @description Computes the approximate p-value.
 		#' @param delta The null difference to test against. For any treatment effect at all this
 		#'   is set to zero (the default).
 		compute_asymp_two_sided_pval = function(delta = 0){
@@ -97,9 +90,7 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 				lik_ratio = private$compute_lik_ratio_two_sided_pval_impl(delta)
 			)
 		},
-
-		#' @description
-		#' Returns the log-likelihood, gradient, and Hessian at the current estimate.
+		#' @description Returns the log-likelihood, gradient, and Hessian at the current estimate.
 		#' @return A list with \code{loglik}, \code{gradient}, and \code{hessian}.
 		get_likelihood_components = function(){
 			private$fit_combined()
@@ -112,41 +103,33 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 			)
 		}
 	),
-
 	private = list(
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			preserve = if (is.null(permutations$m_mat)) c("kk_ols_combined_reduced_design") else character()
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp, preserve_cache_keys = preserve)
 		},
-
 		get_standard_error = function(){
 			private$fit_combined(estimate_only = FALSE)
 			private$cached_values$s_beta_hat_T %||% NA_real_
 		},
-
 		get_degrees_of_freedom = function(){
 			private$fit_combined(estimate_only = FALSE)
 			private$cached_values$df %||% NA_real_
 		},
-
 		supports_likelihood_tests = function() TRUE,
 		get_supported_testing_types_impl = function() c("wald", "score", "gradient", "lik_ratio"),
 		get_score_test_information_matrix = function(spec, fit){
 			tryCatch(spec$fisher_information(fit), error = function(e) NULL)
 		},
-
 		compute_score_two_sided_pval_impl = function(delta){
 			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "score")
 		},
-
 		compute_gradient_two_sided_pval_impl = function(delta){
 			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "gradient")
 		},
-
 		compute_lik_ratio_two_sided_pval_impl = function(delta){
 			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "lik_ratio")
 		},
-
 		get_likelihood_test_spec = function(){
 			private$fit_combined()
 			ctx = private$cached_values$likelihood_test_context
@@ -193,8 +176,7 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 				}
 			)
 		},
-
-		# Copied from InferenceMLEorKMforGLMs to avoid multiple inheritance issues 
+		# Copied from InferenceAsympLikStdModCache to avoid multiple inheritance issues 
 		# while still using the shared infrastructure.
 		compute_likelihood_test_two_sided_pval = function(delta, testing_type){
 			spec = private$get_likelihood_test_spec()
@@ -206,11 +188,9 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 				warm_cache_key = paste0("likelihood_test:", testing_type)
 			)
 		},
-
 		reduce_design_matrix_once = function(X, j_treat, cache_key){
 			cached = private$cached_values[[cache_key]]
 			if (!is.null(cached)) return(cached)
-
 			qr_X = qr(X)
 			if (qr_X$rank < ncol(X)){
 				keep = qr_X$pivot[seq_len(qr_X$rank)]
@@ -219,45 +199,36 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 				X = X[, keep, drop = FALSE]
 				j_treat = which(keep == j_treat)
 			}
-
 			cached = list(X = X, j_treat = j_treat)
 			private$cached_values[[cache_key]] = cached
 			cached
 		},
-
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
 			}
 		},
-
 		fit_ols = function(X, y, j_treat, estimate_only = FALSE){
 			if (nrow(X) <= ncol(X)) return(NULL)
-
 			fit = tryCatch(stats::lm.fit(X, y), error = function(e) NULL)
 			if (is.null(fit) || length(stats::coef(fit)) < j_treat || !is.finite(stats::coef(fit)[j_treat])){
 				return(NULL)
 			}
-
 			beta_vec = as.numeric(stats::coef(fit))
 			beta = beta_vec[j_treat]
 			df = nrow(X) - ncol(X)
 			if (estimate_only) return(list(b = beta_vec, beta = beta, se = NA_real_, mod = NULL, df = df))
-
 			if (df <= 0) return(NULL)
 			post_fit = tryCatch(
 				ols_hc2_post_fit_cpp(X, as.numeric(y), beta_vec, j_treat),
 				error = function(e) NULL
 			)
 			if (is.null(post_fit)) return(NULL)
-
 			se = as.numeric(post_fit$std_err[j_treat])
 			if (!is.finite(se) || se <= 0) return(NULL)
-
 			res = stats::residuals(fit)
 			rss = sum(res^2)
 			sig2 = rss / df
-
 			list(
 				b = beta_vec,
 				beta = beta,
@@ -268,23 +239,18 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 				vcov = post_fit$vcov
 			)
 		},
-
-
 		fit_combined = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			KKstats = private$cached_values$KKstats
 			if (is.null(KKstats)){
 				private$compute_basic_match_data()
 				KKstats = private$cached_values$KKstats
 			}
-
 			m   = KKstats$m
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
 			nR  = nRT + nRC
-
 			if (m > 0 && nRT > 0 && nRC > 0){
 				if (ncol(as.matrix(private$X)) > 0){
 					Xd_full = as.matrix(KKstats$X_matched_diffs_full)
@@ -314,7 +280,6 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				return(invisible(NULL))
 			}
-
 			reduced = private$reduce_design_matrix_once(
 				X_comb,
 				j_treat,
@@ -322,7 +287,6 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 			)
 			X_comb = reduced$X
 			j_treat = reduced$j_treat
-
 			fit = private$fit_ols(X_comb, y_comb, j_treat, estimate_only = estimate_only)
 			if (is.null(fit)){
 				private$cached_values$beta_hat_T   = NA_real_
@@ -330,7 +294,6 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 				private$cached_values$likelihood_test_context = NULL
 				return(invisible(NULL))
 			}
-
 			private$cached_values$beta_hat_T   = fit$beta
 			if (!estimate_only) {
 				private$cached_values$s_beta_hat_T = fit$se

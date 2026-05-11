@@ -20,8 +20,7 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-		#' @description
-		#' Initialize the g-computation (G-Comp) inference object.
+		#' @description Initialize the g-computation (G-Comp) inference object.
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an ordinal response.
 		#' @param model_formula Optional formula for covariate adjustment. If \code{NULL}
 		#' (default), the formula from the design object is used and its pre-computed design
@@ -37,17 +36,13 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-
-		#' @description
-		#' Computes the g-computation (G-Comp) treatment-effect estimate (mean difference).
+		#' @description Computes the g-computation (G-Comp) treatment-effect estimate (mean difference).
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$md
 		},
-
-		#' @description
-		#' Computes a 1 - \code{alpha} confidence interval for the G-Comp mean difference.
+		#' @description Computes a 1 - \code{alpha} confidence interval for the G-Comp mean difference.
 		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -66,9 +61,7 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 			ci
 		},
-
-		#' @description
-		#' Computes a two-sided Wald p-value for the G-Comp mean difference.
+		#' @description Computes a two-sided Wald p-value for the G-Comp mean difference.
 		#' @param delta The null treatment effect (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -86,10 +79,8 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 			2 * stats::pnorm(-abs(z_val))
 		}
 	),
-
 	private = list(
 		best_X_colnames = NULL,
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -97,17 +88,14 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-
 			X_cols = private$best_X_colnames
 			X_data = private$get_X()
-
 			X_fit = if (length(X_cols) == 0L){
 				matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
 			} else {
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				cbind(treatment = private$w, X_cov)
 			}
-
 			fit = tryCatch(
 				fast_ordinal_regression_cpp(X = X_fit, y = as.numeric(private$y)),
 				error = function(e) NULL
@@ -115,7 +103,6 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 			if (is.null(fit) || length(fit$b) == 0 || is.null(fit$alpha)){
 				return(NA_real_)
 			}
-
 			res = gcomp_ordinal_proportional_odds_post_fit_cpp(
 				X_fit = X_fit,
 				coef_hat = as.numeric(fit$b),
@@ -124,9 +111,15 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 			)
 			as.numeric(res$md)
 		},
-
-		build_design_matrix = function() stop(class(self)[1], " must implement build_design_matrix()."),
-
+		build_design_matrix = function(){
+			X_cov = private$X
+			if (is.null(X_cov) || ncol(X_cov) == 0) {
+				X = cbind(`(Intercept)` = 1, treatment = private$w)
+			} else {
+				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
+			}
+			X
+		},
 		get_covariate_names = function(){
 			X = private$get_X()
 			p = ncol(X)
@@ -136,22 +129,17 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 			}
 			x_names
 		},
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			if (!is.null(private$cached_values$md)) return(invisible(NULL))
-
 			X_full = private$build_design_matrix()
 			X_fit = X_full[, -1, drop = FALSE]
 			j_treat = 1
-
 			fit = tryCatch(
 				fast_ordinal_regression_with_var_cpp(X = X_fit, y = as.numeric(private$y)),
 				error = function(e) NULL
 			)
-
 			if (is.null(fit) || length(fit$b) == 0 || is.null(fit$alpha)){
 				private$cached_values$mean1 = NA_real_
 				private$cached_values$mean0 = NA_real_
@@ -159,22 +147,18 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 				private$cached_values$se_md = NA_real_
 				return(invisible(NULL))
 			}
-
 			private$best_X_colnames = setdiff(colnames(X_fit), "treatment")
 			coef_hat = as.numeric(fit$b)
 			alpha_hat = as.numeric(fit$alpha)
-
 			res = gcomp_ordinal_proportional_odds_post_fit_cpp(
 				X_fit = X_fit,
 				coef_hat = coef_hat,
 				alpha_hat = alpha_hat,
 				j_treat = j_treat
 			)
-
 			private$cached_values$mean1 = res$mean1
 			private$cached_values$mean0 = res$mean0
 			private$cached_values$md = res$md
-
 			theta = c(alpha_hat, coef_hat)
 			vcov_mat = if (!is.null(fit$vcov)) as.matrix(fit$vcov) else NULL
 			if (!is.null(vcov_mat) && length(theta) > 0L &&
@@ -186,7 +170,6 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 				private$cached_values$se_md = NA_real_
 			}
 		},
-
 		compute_md_gradient = function(X_fit, theta, n_alpha, j_treat, base_step = 1e-6){
 			n_params = length(theta)
 			grad = numeric(n_params)
@@ -202,7 +185,6 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 			}
 			grad
 		},
-
 		compute_md_from_theta = function(X_fit, theta, n_alpha, j_treat){
 			alpha_vec = theta[seq_len(n_alpha)]
 			coef_vec = theta[(n_alpha + 1):length(theta)]
@@ -215,7 +197,6 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 				)$md
 			)
 		},
-
 		has_finite_md_se = function(){
 			se = private$cached_values$se_md
 			is.finite(se) && se > 0

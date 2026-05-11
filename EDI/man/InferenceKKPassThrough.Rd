@@ -35,7 +35,7 @@ beta_hat_T_bs
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceBoot]{EDI::InferenceBoot}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceKKPassThrough}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceKKPassThrough}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -67,8 +67,8 @@ beta_hat_T_bs
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>EDI::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_confidence_interval'><code>EDI::InferenceBoot$compute_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBoot" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBoot.html#method-InferenceBoot-compute_bootstrap_two_sided_pval'><code>EDI::InferenceBoot$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_estimate"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_estimate'><code>EDI::InferenceAsymp$compute_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_confidence_interval'><code>EDI::InferenceAsymp$compute_wald_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_two_sided_pval'><code>EDI::InferenceAsymp$compute_wald_two_sided_pval()</code></a></span></li>
@@ -153,7 +153,25 @@ Creates the boostrap distribution of the estimate for the treatment effect
 \item{\code{debug}}{If \code{TRUE}, return a list with the distribution values and
 per-iteration diagnostics. Default \code{FALSE}.}
 
-\item{\code{bootstrap_type}}{The type of bootstrap resampling to perform.}
+\item{\code{bootstrap_type}}{Optional bootstrap-resampling scheme. Legal public values are:
+\describe{
+  \item{\code{NULL}}{Use the design's default row-resampling bootstrap. For ordinary
+    non-blocking designs this is the usual subject-level resample-with-replacement
+    bootstrap. For certain blocking designs, \code{NULL} maps to the same behavior
+    as \code{"within_blocks"}.}
+  \item{\code{"within_blocks"}}{Only legal for blocking-style designs that support
+    block-aware bootstrap resampling:
+    \code{DesignFixedBlocking}, \code{DesignFixedOptimalBlocks},
+    \code{DesignSeqOneByOneSPBR}, and \code{DesignFixedBlockedCluster}.
+    Resamples observational units within each observed block/stratum. For blocked
+    cluster designs this means resampling clusters within strata.}
+  \item{\code{"resample_blocks"}}{Only legal for the same blocking-style designs as
+    \code{"within_blocks"}. Resamples entire observed blocks/strata with replacement
+    rather than resampling units within each block.}
+}
+Any non-\code{NULL} value is rejected for designs outside that blocking family.
+Note that the internal engine also contains an \code{"assignment"} branch, but that
+is not currently part of the validated public API for \code{bootstrap_type}.}
 }
 \if{html}{\out{</div>}}
 }

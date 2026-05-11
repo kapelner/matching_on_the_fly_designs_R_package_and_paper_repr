@@ -10,16 +10,13 @@ DesignFixedCustom = R6::R6Class("DesignFixedCustom",
 	lock_objects = FALSE,
 	inherit = DesignFixed,
 	public = list(
-		#' @description
-		#' Draw assignments from the custom design.
+		#' @description Draw assignments from the custom design.
 		#' @param r Number of assignment vectors to draw.
 		#' @return An \code{n x r} matrix of 0/1 assignments.
 		draw_assignments = function(r = 1){
 			stop("Custom fixed-design subclasses must implement public$draw_assignments(r).")
 		},
-
-		#' @description
-		#' Internal redraw utility.
+		#' @description Internal redraw utility.
 		#' @param r Number of assignment vectors.
 		#' @return An \code{n x r} matrix.
 		draw_ws_according_to_design = function(r = 100){
@@ -40,7 +37,6 @@ DesignFixedCustom = R6::R6Class("DesignFixedCustom",
 		}
 	)
 )
-
 #' Internal base for user-defined sequential-design extensions
 #'
 #' \code{DesignCustomSequential} is intentionally not exported. Subclasses
@@ -53,15 +49,12 @@ DesignCustomSequential = R6::R6Class("DesignCustomSequential",
 	lock_objects = FALSE,
 	inherit = DesignSeqOneByOne,
 	public = list(
-		#' @description
-		#' User-defined assignment rule.
+		#' @description User-defined assignment rule.
 		#' @return A binary treatment assignment.
 		assignment_rule = function(){
 			stop("Custom sequential-design subclasses must implement public$assignment_rule().")
 		},
-
-		#' @description
-		#' Standard internal assignment entry point.
+		#' @description Standard internal assignment entry point.
 		#' @return A binary treatment assignment.
 		assign_wt = function(){
 			w_t = self$assignment_rule()

@@ -20,8 +20,7 @@ InferenceCountPoissonKKGEE = R6::R6Class("InferenceCountPoissonKKGEE",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGEE,
 	public = list(
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj A completed \code{Design} object with a count response.
 		#' @param model_formula   Optional formula for covariate adjustment.
 		#' @param use_rcpp Whether to use the internal Rcpp solver.
@@ -40,7 +39,6 @@ InferenceCountPoissonKKGEE = R6::R6Class("InferenceCountPoissonKKGEE",
 		gee_family        = function() stats::poisson(link = "log")
 	)
 )
-
 #' Univariate GEE Inference for KK Designs with Count Response
 #'
 #' Fits a Poisson GEE model using only the treatment indicator as a predictor.
@@ -63,7 +61,6 @@ InferenceCountPoissonUnivKKGEE = R6::R6Class("InferenceCountPoissonUnivKKGEE",
 		gee_predictors_df = function() data.frame(w = private$w)
 	)
 )
-
 #' Multivariate GEE Inference for KK Designs with Count Response
 #'
 #' Fits a Poisson GEE model using the treatment indicator and all recorded 

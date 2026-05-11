@@ -4,7 +4,7 @@
 
 Add an intermediate `InferenceAsympLik` class between `InferenceAsymp` and the likelihood-backed families:
 
-- `InferenceMLEorKMforGLMs`
+- `InferenceAsympLikStdModCache`
 - `InferenceKKPassThrough`
 - `InferenceAbstractKKGLMM`
 
@@ -80,7 +80,7 @@ Best version:
 
 1. Keep `InferenceAsymp` as the generic Wald/asymptotic shell.
 2. Move the likelihood-specific machinery into `InferenceAsympLik`.
-3. Make `InferenceMLEorKMforGLMs`, `InferenceKKPassThrough`, and `InferenceAbstractKKGLMM` inherit from `InferenceAsympLik`.
+3. Make `InferenceAsympLikStdModCache`, `InferenceKKPassThrough`, and `InferenceAbstractKKGLMM` inherit from `InferenceAsympLik`.
 4. Leave non-likelihood families on `InferenceAsymp`.
 
 That would make the class tree clearer and reduce the impression that every asymptotic model must know about likelihood inversion internals.

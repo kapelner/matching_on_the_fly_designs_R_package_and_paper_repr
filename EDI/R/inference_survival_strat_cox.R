@@ -9,10 +9,9 @@
 #' @noRd
 InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAbstract",
 	lock_objects = FALSE,
-	inherit = InferenceMLEorKMforGLMs,
+	inherit = InferenceAsympLikStdModCache,
 	public = list(
-		#' @description
-		#' Initialize
+		#' @description Initialize
 	#' @param des_obj A completed \code{Design} object.
 	#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 	#'   the formula from the design object is used and its pre-computed design matrix is
@@ -31,18 +30,13 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			private$use_rcpp = use_rcpp
 		},
-
-
-		#' @description
-		#' Compute treatment estimate
+		#' @description Compute treatment estimate
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Compute asymp confidence interval
+		#' @description Compute asymp confidence interval
 		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -51,9 +45,7 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Compute asymp two sided pval for treatment effect
+		#' @description Compute asymp two sided pval for treatment effect
 		#' @param delta The null treatment effect (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -62,9 +54,7 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			private$shared()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-
-		#' @description
-		#' Compute confidence interval rand
+		#' @description Compute confidence interval rand
 		#' @param alpha The significance level (default 0.05).
 		#' @param r Number of vectors to draw.
 		#' @param pval_epsilon The bisection convergence tolerance.
@@ -74,15 +64,12 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			stop("Randomization confidence intervals are not supported for stratified Cox PH models because the estimator units (Log-Hazard Ratio) are inconsistent with the randomization test's required transformed scale (Log-Time Ratio / AFT effect).")
 		}
 	),
-
 		private = list(
 		use_rcpp = TRUE,
 		cached_mod = NULL,
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			mod = private$generate_mod()
 			private$cached_values$beta_hat_T = as.numeric(mod$b[2])
@@ -91,11 +78,9 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			private$cached_values$s_beta_hat_T = se
 			private$cached_values$df = NA_real_
 		},
-
 		supports_likelihood_tests = function(){
 			isTRUE(private$use_rcpp)
 		},
-
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context
@@ -178,13 +163,11 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 				}
 			)
 		},
-
 		compute_strata_info = function(X_full) {
 			n = length(private$y)
 			if (is.null(X_full) || ncol(X_full) == 0){
 				return(list(strata_id = rep.int(1L, n), selected_cols = integer(0), num_strata = 1L))
 			}
-
 			info = tryCatch(
 				compute_survival_strata_ids_cpp(as.matrix(X_full)),
 				error = function(e) NULL
@@ -192,24 +175,20 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			if (is.null(info)){
 				return(list(strata_id = rep.int(1L, n), selected_cols = integer(0), num_strata = 1L))
 			}
-
 			list(
 				strata_id = as.integer(info$strata_id),
 				selected_cols = as.integer(info$selected_cols),
 				num_strata = as.integer(info$num_strata)
 			)
 		},
-
 		reduce_covariates_preserving_treatment = function(X_covars){
 			if (is.null(X_covars) || ncol(X_covars) == 0){
 				return(matrix(numeric(0), nrow = length(private$y), ncol = 0))
 			}
-
 			X_covars = as.matrix(X_covars)
 			if (ncol(X_covars) == 0){
 				return(matrix(numeric(0), nrow = nrow(X_covars), ncol = 0))
 			}
-
 			full_design = cbind(w = private$w, X_covars)
 			reduced = drop_linearly_dependent_cols(full_design)
 			X_keep = reduced$M
@@ -219,10 +198,8 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			if (!("w" %in% colnames(X_keep))){
 				return(matrix(numeric(0), nrow = nrow(full_design), ncol = 0))
 			}
-
 			X_keep[, colnames(X_keep) != "w", drop = FALSE]
 		},
-
 		get_informative_rows = function(strata_id){
 			if (length(strata_id) != length(private$y)) return(integer(0))
 			good = rep(FALSE, length(strata_id))
@@ -235,14 +212,12 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			}
 			which(good)
 		},
-
 		fit_cox_with_formula = function(dat, formula_str){
 			tryCatch(
 				suppressWarnings(survival::coxph(stats::as.formula(formula_str), data = dat)),
 				error = function(e) NULL
 			)
 		},
-
 		format_mod_output = function(mod){
 			if (is.null(mod)){
 				return(list(b = c(NA_real_, NA_real_), ssq_b_2 = NA_real_))
@@ -254,7 +229,6 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 				ssq_b_2 = if (is.finite(ssq_w) && ssq_w > 0) ssq_w else NA_real_
 			)
 		},
-
 		# Build (y, dead, X_mat) for a given row set.  X_mat = cbind(w, X_linear).
 		build_rcpp_inputs = function(rows, X_linear){
 			y_r    = as.numeric(private$y[rows])
@@ -267,7 +241,6 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			}
 			list(y = y_r, dead = dead_r, X = as.matrix(X_mat))
 		},
-
 		fit_rcpp_stratified = function(rows, X_linear, strata_id){
 			inp  = private$build_rcpp_inputs(rows, X_linear)
 			strata_sub = as.integer(strata_id[rows])
@@ -285,7 +258,6 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			if (is.null(fit)) return(NULL)
 			list(fit = fit, X = inp$X, y = inp$y, dead = inp$dead, strata = strata_sub, stratified = TRUE)
 		},
-
 		fit_rcpp_unstratified = function(rows, X_linear){
 			inp = private$build_rcpp_inputs(rows, X_linear)
 			fit = tryCatch(
@@ -301,7 +273,6 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			if (is.null(fit)) return(NULL)
 			list(fit = fit, X = inp$X, y = inp$y, dead = inp$dead, strata = NULL, stratified = FALSE)
 		},
-
 		format_rcpp_output = function(fit){
 			if (is.null(fit) || !isTRUE(fit$converged)) return(list(b = c(NA_real_, NA_real_), ssq_b_2 = NA_real_))
 			beta_w  = as.numeric(fit$coefficients[1])
@@ -309,11 +280,9 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 				fit$vcov[1, 1] else NA_real_
 			list(b = c(0, beta_w), ssq_b_2 = ssq_w)
 		},
-
 		generate_mod = function(estimate_only = FALSE){
 			X_full      = private$X
 			strata_info = private$compute_strata_info(X_full)
-
 			X_linear = matrix(numeric(0), nrow = length(private$y), ncol = 0)
 			if (ncol(as.matrix(private$X)) > 0 && !is.null(X_full) && ncol(X_full) > 0){
 				keep_cols = setdiff(seq_len(ncol(X_full)), strata_info$selected_cols)
@@ -321,12 +290,10 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 					X_linear = private$reduce_covariates_preserving_treatment(X_full[, keep_cols, drop = FALSE])
 				}
 			}
-
 			informative_rows = integer(0)
 			if (!is.null(strata_info$strata_id) && isTRUE(strata_info$num_strata > 1L)){
 				informative_rows = private$get_informative_rows(strata_info$strata_id)
 			}
-
 			if (length(informative_rows) >= 4){
 				if (private$use_rcpp){
 					res = private$fit_rcpp_stratified(informative_rows, X_linear, strata_info$strata_id)
@@ -396,7 +363,6 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 					}
 				}
 			}
-
 			all_rows = seq_len(length(private$y))
 			if (private$use_rcpp){
 				res = private$fit_rcpp_unstratified(all_rows, X_linear)
@@ -442,7 +408,6 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 		}
 	)
 )
-
 #' Stratified Cox PH Inference for Survival Responses
 #'
 #' Fits an auto-stratified Cox PH regression.
@@ -464,8 +429,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 	lock_objects = FALSE,
 	inherit = InferenceSurvivalStratCoxPHAbstract,
 	public = list(
-		#' @description
-		#' Initialize
+		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object with a survival response.
 		#' @param model_formula Optional formula for covariate adjustment. If \code{NULL} (default), 
 		#'   covariates from the design object are included. Use \code{~ 1} for univariate.

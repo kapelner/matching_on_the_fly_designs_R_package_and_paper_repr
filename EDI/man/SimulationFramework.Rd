@@ -28,7 +28,7 @@ following are supported by the inference class:
 \itemize{
   \item \strong{asymptotic} (\code{InferenceAsymp} subclasses): Wald CI and
     p-value.
-  \item \strong{bootstrap} (\code{InferenceBoot} subclasses): percentile CI
+  \item \strong{bootstrap} (\code{InferenceNonParamBootstrap} subclasses): percentile CI
     and p-value.
   \item \strong{randomisation} (\code{InferenceRand} subclasses): p-value;
     additionally a test-inversion CI for \code{continuous},
@@ -75,6 +75,7 @@ sim$summarize()
 \item \href{#method-SimulationFramework-get_all_intermediate_data}{\code{SimulationFramework$get_all_intermediate_data()}}
 \item \href{#method-SimulationFramework-clear_all_intermediate_data_and_gc}{\code{SimulationFramework$clear_all_intermediate_data_and_gc()}}
 \item \href{#method-SimulationFramework-get_results}{\code{SimulationFramework$get_results()}}
+\item \href{#method-SimulationFramework-get_errors}{\code{SimulationFramework$get_errors()}}
 \item \href{#method-SimulationFramework-summarize}{\code{SimulationFramework$summarize()}}
 \item \href{#method-SimulationFramework-print}{\code{SimulationFramework$print()}}
 \item \href{#method-SimulationFramework-clone}{\code{SimulationFramework$clone()}}
@@ -124,7 +125,8 @@ Create a new \code{SimulationFramework}.
   turn_off_asserts_for_speed = TRUE,
   inference_types_and_params = NULL,
   results_filename = "simulation_framework_results.csv.bz2",
-  continue_from_last_result_row = TRUE
+  continue_from_last_result_row = TRUE,
+  stop_on_error = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -278,7 +280,10 @@ In this case, \code{cov_draw_method} must be \code{NULL}.}
 parallel execution of Monte Carlo replications.  Note that when
 \code{num_cores > 1}, parallelization *within* individual inference
 routines (e.g. bootstrap, randomization) is automatically disabled
-to prevent thread oversubscription.  Default \code{1}.}
+to prevent thread oversubscription. On Unix-like systems the
+replication loop uses forked workers; on non-Unix systems it uses
+\pkg{mirai} when available and otherwise falls back to serial
+execution with a warning. Default \code{1}.}
 
 \item{\code{seed}}{Integer or \code{NULL} (default).  Random seed for the
 entire simulation run.}
@@ -342,6 +347,13 @@ Default \code{"simulation_framework_results.csv.bz2"}.}
 \item{\code{continue_from_last_result_row}}{Logical. If \code{TRUE} (default),
 the framework loads existing results from \code{results_filename} and
 skips previously completed replications.}
+
+\item{\code{stop_on_error}}{Logical. If \code{TRUE} (default), any error raised
+during a simulation path aborts the run immediately. If \code{FALSE},
+the framework records the error, skips the failing path, and continues
+with the remaining replications / design / inference combinations. Use
+\code{$get_errors()} after \code{$run()} to inspect the captured
+errors.}
 }
 \if{html}{\out{</div>}}
 }
@@ -403,6 +415,21 @@ Get the raw results of the simulation.
 \subsection{Returns}{
 A \code{data.table} containing one row per (replication, design,
   inference class, and inference type.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-SimulationFramework-get_errors"></a>}}
+\if{latex}{\out{\hypertarget{method-SimulationFramework-get_errors}{}}}
+\subsection{Method \code{get_errors()}}{
+Return all errors captured during the most recent run.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$get_errors()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A list of named lists, one per captured error, including the
+  simulation cell metadata, replication number, design / inference path,
+  user-supplied parameters, error stage, and error message.
 }
 }
 \if{html}{\out{<hr>}}

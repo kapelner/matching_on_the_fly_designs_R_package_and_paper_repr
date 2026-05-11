@@ -16,10 +16,9 @@
 #' @export
 InferenceOrdinalAdjCatLogitRegr = R6::R6Class("InferenceOrdinalAdjCatLogitRegr",
 	lock_objects = FALSE,
-	inherit = InferenceMLEorKMforGLMs,
+	inherit = InferenceAsympLikStdModCache,
 	public = list(
-		#' @description
-		#' Initialize an adjacent-category-logit inference object.
+		#' @description Initialize an adjacent-category-logit inference object.
 		#' @param des_obj A completed \code{Design} object with an ordinal response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -39,10 +38,8 @@ InferenceOrdinalAdjCatLogitRegr = R6::R6Class("InferenceOrdinalAdjCatLogitRegr",
 			}
 		}
 	),
-
 	private = list(
 		best_Xmm_colnames = NULL,
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_Xmm_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -50,10 +47,8 @@ InferenceOrdinalAdjCatLogitRegr = R6::R6Class("InferenceOrdinalAdjCatLogitRegr",
 			if (is.null(private$best_Xmm_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-
 			X_cols = private$best_Xmm_colnames
 			X_data = private$get_X()
-
 			if (length(X_cols) == 0L){
 				X = as.matrix(private$w)
 				colnames(X) = "treatment"
@@ -61,21 +56,17 @@ InferenceOrdinalAdjCatLogitRegr = R6::R6Class("InferenceOrdinalAdjCatLogitRegr",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(treatment = private$w, X_cov)
 			}
-
 			res = fast_adjacent_category_logit_cpp(X = X, y = as.numeric(private$y))
 			if (is.null(res) || length(res$b) < 1L || !is.finite(res$b[length(res$b)])){
 				return(NA_real_)
 			}
 			as.numeric(res$b[length(res$b)])
 		},
-
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
-
 		generate_mod = function(estimate_only = FALSE){
 			X_full = private$build_design_matrix()
-
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
 				required_cols = 1L,
@@ -94,7 +85,6 @@ InferenceOrdinalAdjCatLogitRegr = R6::R6Class("InferenceOrdinalAdjCatLogitRegr",
 					is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
 				}
 			)
-
 			if (!is.null(attempt$fit)){
 				private$best_Xmm_colnames = setdiff(colnames(attempt$X), "treatment")
 				list(b = c(0, attempt$fit$b[1]), ssq_b_2 = attempt$fit$ssq_b_j)
@@ -102,7 +92,6 @@ InferenceOrdinalAdjCatLogitRegr = R6::R6Class("InferenceOrdinalAdjCatLogitRegr",
 				NULL
 			}
 		},
-
 		build_design_matrix = function(){
 			X_cov = private$X
 			if (is.null(X_cov) || ncol(X_cov) == 0) {

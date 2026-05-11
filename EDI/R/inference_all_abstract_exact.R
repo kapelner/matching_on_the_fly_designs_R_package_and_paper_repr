@@ -9,8 +9,7 @@ InferenceExact = R6::R6Class("InferenceExact",
 	lock_objects = FALSE,
 	inherit = Inference,
 	public = list(
-		#' @description
-		#' Computes an exact confidence interval for the requested exact method.
+		#' @description Computes an exact confidence interval for the requested exact method.
 		#' @param alpha            Significance level.
 		#' @param pval_epsilon     Reserved for future exact methods that invert p-values.
 		#' @param type             Exact inference type. Concrete subclasses provide a default.
@@ -24,9 +23,7 @@ InferenceExact = R6::R6Class("InferenceExact",
 			exact_args = private$normalize_exact_inference_args(exact_type, args_for_type = args_for_type)
 			private$compute_exact_confidence_interval_by_type(exact_type, alpha, exact_args)
 		},
-
-		#' @description
-		#' Computes an exact two-sided p-value for the requested exact method.
+		#' @description Computes an exact two-sided p-value for the requested exact method.
 		#' @param delta            Null treatment effect on the log-odds-ratio scale.
 		#' @param type             Exact inference type. Concrete subclasses provide a default.
 		#' @param args_for_type    Structured per-type arguments as a list.
@@ -39,10 +36,8 @@ InferenceExact = R6::R6Class("InferenceExact",
 			private$compute_exact_two_sided_pval_for_treatment_effect_by_type(exact_type, delta, exact_args)
 		}
 	),
-
 	private = list(
 		default_exact_type = NULL,
-
 		resolve_exact_type = function(type){
 			if (is.null(type)) type = private$default_exact_type
 			if (should_run_asserts()) {
@@ -50,14 +45,12 @@ InferenceExact = R6::R6Class("InferenceExact",
 			}
 			type
 		},
-
 		normalize_exact_inference_args = function(type, args_for_type = NULL){
 			if (should_run_asserts()) {
 				assertList(args_for_type, null.ok = TRUE)
 			}
 			utils::modifyList(setNames(list(list()), type), if (is.null(args_for_type)) list() else args_for_type)
 		},
-
 		assert_exact_inference_params = function(type, args_for_type){
 			if (should_run_asserts()) {
 				assertString(type, min.chars = 1)
@@ -72,7 +65,6 @@ InferenceExact = R6::R6Class("InferenceExact",
 			}
 			invisible(args)
 		},
-
 		compute_exact_confidence_interval_by_type = function(type, alpha, args_for_type){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -80,7 +72,6 @@ InferenceExact = R6::R6Class("InferenceExact",
 			}
 			stop("Exact confidence intervals are not implemented for this exact inference class.")
 		},
-
 		compute_exact_two_sided_pval_for_treatment_effect_by_type = function(type, delta, args_for_type){
 			if (should_run_asserts()) {
 				assertNumeric(delta, len = 1)

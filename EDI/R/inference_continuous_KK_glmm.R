@@ -23,8 +23,7 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGLMM,
 	public = list(
-		#' @description
-		#' Initialize a KK GLMM inference object.
+		#' @description Initialize a KK GLMM inference object.
 		#' @param des_obj A completed \code{Design} object with a continuous response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -44,24 +43,20 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 			if (use_rcpp) private$skip_glmm_pkg_check = TRUE
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
 			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
-
 			private$use_rcpp = use_rcpp
 		}
 	),
 	private = list(
 		use_rcpp = TRUE,
-
 		glmm_response_type = function() "continuous",
 		glmm_family        = function() stats::gaussian(link = "identity"),
 		supports_likelihood_tests = function(){
 			isTRUE(private$use_rcpp)
 		},
-
 		# glmmTMB path: univariate → treatment only
 		glmm_predictors_df = function(){
 			super$glmm_predictors_df()
 		},
-
 		# ── Dispatch ─────────────────────────────────────────────────────────
 		shared = function(estimate_only = FALSE){
 			if (private$use_rcpp) {
@@ -70,7 +65,6 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 				super$shared(estimate_only)
 			}
 		},
-
 		# ── Rcpp Gaussian LMM path ────────────────────────────────────────────
 		shared_rcpp = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
@@ -78,7 +72,6 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 			private$clear_nonestimable_state()
 			private$cached_mod = NULL
 			private$cached_values$likelihood_test_context = NULL
-
 			# ── Group IDs (same logic as fit_glmm_on_data) ───────────────────
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
@@ -87,18 +80,15 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 			reservoir_idx = which(group_id == 0L)
 			if (length(reservoir_idx) > 0L)
 				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
-
 			# ── Design matrix: (intercept, w, covariates) ────────────────────
 			X_fit = private$create_design_matrix()
 			# create_design_matrix uses "treatment"; Rcpp path expects "w" in the search for j_T_r
 			if ("treatment" %in% colnames(X_fit))
 				colnames(X_fit)[colnames(X_fit) == "treatment"] = "w"
 			X_fit = as.matrix(X_fit)
-
 			# Treatment column index (1-based in R, 0-based in C++ is handled via ssq_b_T)
 			j_T_r = which(colnames(X_fit) == "w")
 			if (length(j_T_r) == 0L) j_T_r = 2L   # fallback: second column
-
 			fit = tryCatch(
 				fast_gaussian_lmm_cpp(
 					X             = X_fit,
@@ -111,17 +101,13 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 				),
 				error = function(e) NULL
 			)
-
 			if (is.null(fit) || !isTRUE(fit$converged)) {
 				return(super$shared(estimate_only = estimate_only))
 			}
-
 			beta_hat_T = as.numeric(fit$b[j_T_r])
-
 			if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
 				return(super$shared(estimate_only = estimate_only))
 			}
-
 			private$cached_mod = fit
 			private$set_fit_warm_start(as.numeric(fit$b), "params")
 			private$cached_values$likelihood_test_context = list(
@@ -133,14 +119,11 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 			)
 			private$cached_values$beta_hat_T = beta_hat_T
 			private$cached_values$df   = Inf
-
 			if (estimate_only) return(invisible(NULL))
-
 			ssq = fit$ssq_b_T
 			private$cached_values$s_beta_hat_T = if (!is.null(ssq) && is.finite(ssq) && ssq > 0) sqrt(ssq) else NA_real_
 		}
 		,
-
 		get_likelihood_test_spec = function(){
 			if (!isTRUE(private$use_rcpp)) return(NULL)
 			private$shared(estimate_only = FALSE)

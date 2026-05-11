@@ -30,9 +30,7 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-
-		#' @description
-		#' Initialize a simple mean-difference inference object.
+		#' @description Initialize a simple mean-difference inference object.
 		#' @param des_obj A DesignSeqOneByOne object whose entire n subjects are assigned
 		#'   and response y is recorded within.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -51,9 +49,7 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			private$max_resample_attempts = max_resample_attempts
 		},
-
-		#' @description
-		#' Computes the appropriate estimate for mean difference
+		#' @description Computes the appropriate estimate for mean difference
 		#'
 		#' @return    The setting-appropriate (see description) numeric estimate of the treatment effect
 		#'
@@ -62,22 +58,15 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$cached_values$yTs = private$y[private$w == 1]
 				private$cached_values$yCs = private$y[private$w == 0]
-
 				# Check for empty groups in bootstrap samples
 				if (length(private$cached_values$yTs) == 0 || length(private$cached_values$yCs) == 0) {
 					return(NA_real_) # Return NA if either group is empty
 				}
-
 				private$cached_values$beta_hat_T = mean(private$cached_values$yTs) - mean(private$cached_values$yCs)
 			}
 			private$cached_values$beta_hat_T
 		},
-
-
-
-
-		#' @description
-		#' Computes a 1-alpha level frequentist confidence interval for the randomization test
+		#' @description Computes a 1-alpha level frequentist confidence interval for the randomization test
 		#'
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
@@ -96,7 +85,6 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 			super$compute_rand_confidence_interval(alpha = alpha, r = r, pval_epsilon = pval_epsilon, show_progress = show_progress, ci_search_control = ci_search_control)
 		}
 	),
-
 	private = list(
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$cached_values$beta_hat_T)){
@@ -107,23 +95,19 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 			}
 			private$cached_values$beta_hat_T
 		},
-
 		max_resample_attempts = 50L,
 		get_standard_error = function(){
 			if (is.null(private$cached_values$s_beta_hat_T)) private$shared()
 			private$cached_values$s_beta_hat_T
 		},
-
 		get_degrees_of_freedom = function(){
 			if (is.null(private$cached_values$df)) private$shared()
 			private$cached_values$df
 		},
-
 		compute_fast_bootstrap_distr = function(B, ...) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			# KK designs use design-aware resampling not available via these args; fall back to R loop.
 			if (private$is_KK) return(NULL)
-
 			# Simple (non-KK) bootstrap: args = (n, y, dead, w)
 			args = list(...)
 			max_resample_attempts = private$max_resample_attempts
@@ -131,10 +115,8 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 			y = args[[2]]
 			dead = args[[3]]
 			w = args[[4]]
-
 			y_mat = matrix(NA_real_, nrow = n, ncol = B)
 			w_mat = matrix(NA_integer_, nrow = n, ncol = B)
-
 			for (b in 1:B) {
 				attempt = 1
 				repeat {
@@ -153,7 +135,6 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 					w_mat[, b] = w_b
 				}
 			}
-
 			# Vectorized mean-diff per bootstrap sample: mean(y_b[w_b==1]) - mean(y_b[w_b==0])
 			is_T = (w_mat == 1L)
 			has_val = !is.na(w_mat)
@@ -164,34 +145,27 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 			res = ifelse(nT > 0 & nC > 0, sum_yT / nT - sum_yC / nC, NA_real_)
 			return(res)
 		},
-
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
-
 			# Optimization: w_mat is already pre-computed in generate_permutations
 			w_mat = permutations$w_mat
 			res = compute_simple_mean_diff_parallel_cpp(as.numeric(y), w_mat, as.numeric(delta), private$n_cpp_threads(ncol(w_mat)))
 			return(res)
 		},
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 					if (is.null(private$cached_values$beta_hat_T)){
 						self$compute_estimate()
 					}
-
 	                # Check for insufficient samples for variance calculation
 					nT = length(private$cached_values$yTs)
 					nC = length(private$cached_values$yCs)
-
 	                if (nT <= 1 || nC <= 1) { # Need at least 2 samples for variance
 	                    private$cached_values$s_beta_hat_T = NA_real_
 	                    private$cached_values$df = NA_real_
 	                    return() # Exit early
 	                }
-
 					s_1_sq = var(private$cached_values$yTs) / nT
 					s_2_sq = var(private$cached_values$yCs) / nC
 					private$cached_values$s_beta_hat_T = sqrt(s_1_sq + s_2_sq)

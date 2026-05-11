@@ -11,8 +11,7 @@
 DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 	inherit = DesignFixed,
 	public = list(
-		#' @description
-		#' Initialize a greedy search fixed experimental design
+		#' @description Initialize a greedy search fixed experimental design
 		#'
 		#' @param response_type 	The data type of response values.
 		#' @param prob_T  The probability of the treatment assignment. Must be 0.5.
@@ -46,10 +45,7 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 			private$objective = objective
 			private$uses_covariates = TRUE
 		},
-
-
-		#' @description
-		#' Draw multiple treatment assignment vectors.
+		#' @description Draw multiple treatment assignment vectors.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'
@@ -72,10 +68,8 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 				w_mat = replicate(r, sample(c(rep(1, n / 2), rep(0, n / 2))))
 				return(private$validate_allocation_matrix(w_mat, n = n, r = r))
 			}
-
 			private$covariate_impute_if_necessary_and_then_create_model_matrix()
 			X = private$X[1:n, , drop = FALSE]
-
 			search_obj = GreedyExperimentalDesign::initGreedyExperimentalDesignObject(
 				X          = X,
 				max_designs = r,
@@ -91,10 +85,8 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 			private$validate_allocation_matrix(w_mat, n = n, r = r)
 		}
 	),
-
 	private = list(
 		objective = NULL,
-
 		validate_allocation_matrix = function(w_mat, n, r){
 			if (is.vector(w_mat)) {
 				w_mat = matrix(w_mat, nrow = n, ncol = 1)
@@ -104,10 +96,8 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 					stop("GreedyExperimentalDesign returned an unexpected allocation matrix shape.")
 				}
 			}
-
 			w_mat = w_mat[, seq_len(r), drop = FALSE]
 			storage.mode(w_mat) = "numeric"
-
 			if (should_run_asserts()) {
 				if (any(!is.finite(w_mat)) || any(is.na(w_mat))) {
 					stop("GreedyExperimentalDesign returned non-finite treatment assignments.")
@@ -116,14 +106,12 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 					stop("GreedyExperimentalDesign returned an invalid treatment assignment matrix.")
 				}
 			}
-
 			treated_counts = colSums(w_mat)
 			if (should_run_asserts()) {
 				if (any(treated_counts != n / 2)) {
 					stop("GreedyExperimentalDesign returned an unbalanced allocation.")
 				}
 			}
-
 			w_mat
 		}
 	)

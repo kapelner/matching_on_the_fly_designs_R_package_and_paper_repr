@@ -29,8 +29,7 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 	inherit = InferenceAsymp,
 	public = list(
 				
-		#' @description
-		#' Initialize a quantile-regression inference object for a completed design
+		#' @description Initialize a quantile-regression inference object for a completed design
 		#' with a continuous response.
 		#' @param des_obj A completed \code{Design} object with a continuous response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -58,17 +57,13 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 			
 			private$tau = tau
 		},
-
-		#' @description
-		#' Computes the quantile-regression estimate of the treatment effect.
+		#' @description Computes the quantile-regression estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes an approximate confidence interval for the treatment effect.
+		#' @description Computes an approximate confidence interval for the treatment effect.
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -78,9 +73,7 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Computes an approximate two-sided p-value for the treatment effect.
+		#' @description Computes an approximate two-sided p-value for the treatment effect.
 		#' @param delta The null difference to test against. Default is zero.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -90,41 +83,32 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
-
 	private = list(
 		tau = NULL,
 		fit_warm_keep = NULL,
-
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
-
 		create_bootstrap_worker_state = function(){
 			private$create_design_backed_bootstrap_worker_state()
 		},
-
 		load_bootstrap_sample_into_worker = function(worker_state, indices){
 			private$load_bootstrap_sample_into_design_backed_worker(worker_state, indices)
 		},
-
 		compute_bootstrap_worker_estimate = function(worker_state){
 			private$compute_bootstrap_worker_estimate_via_compute_treatment_estimate(worker_state)
 		},
-
 		build_design_matrix = function(){
 			private$create_design_matrix()
 		},
-
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
 		},
-
 		set_failed_fit_cache = function(){
 			private$cached_values$beta_hat_T = NA_real_
 			private$cached_values$s_beta_hat_T = NA_real_
 			private$cached_values$df = NA_real_
 		},
-
 		get_ci_fit_controls = function(){
 			ctrl = private$randomization_mc_control
 			list(
@@ -132,11 +116,9 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 				reuse_factorizations = !is.null(ctrl) && isTRUE(ctrl$fit_reuse_factorizations)
 			)
 		},
-
 		reduce_design_matrix_for_quantile = function(X_full, reuse_factorizations = FALSE){
 			if (is.null(dim(X_full))) X_full = matrix(X_full, ncol = 2L)
 			if (ncol(X_full) < 2L) return(list(X = NULL, j_treat = NA_integer_))
-
 			if (reuse_factorizations && !is.null(private$fit_warm_keep) && length(private$fit_warm_keep) > 0L &&
 				max(private$fit_warm_keep) <= ncol(X_full) && 2L %in% private$fit_warm_keep) {
 				X_try = X_full[, private$fit_warm_keep, drop = FALSE]
@@ -145,14 +127,12 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 					return(list(X = X_try, j_treat = j_try))
 				}
 			}
-
 			reduced = private$reduce_design_matrix_preserving_treatment_fixed_covariates(X_full)
 			if (reuse_factorizations && !is.null(reduced$keep) && length(reduced$keep) > 0L && is.finite(reduced$j_treat)) {
 				private$fit_warm_keep = reduced$keep
 			}
 			reduced
 		},
-
 		fit_quantile_model = function(X_fit, estimate_only = FALSE){
 			if (estimate_only) {
 				fit = tryCatch(
@@ -166,7 +146,6 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 				fit$coefficients = coef_vec
 				return(fit)
 			}
-
 			dat = as.data.frame(X_fit)
 			dat$y__ = private$y
 			tryCatch(
@@ -174,22 +153,18 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 				error = function(e) NULL
 			)
 		},
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			fit_controls = private$get_ci_fit_controls()
 			X_full = private$build_design_matrix()
 			reduced = private$reduce_design_matrix_for_quantile(X_full, reuse_factorizations = fit_controls$reuse_factorizations)
 			X_fit = reduced$X
 			j_treat = reduced$j_treat
-
 			if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
 				private$set_failed_fit_cache()
 				return(invisible(NULL))
 			}
-
 			if (is.null(colnames(X_fit)) || length(colnames(X_fit)) != ncol(X_fit)) {
 				if (ncol(X_fit) == 1L && isTRUE(j_treat == 1L)) {
 					colnames(X_fit) = "treatment"
@@ -205,7 +180,6 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 				private$set_failed_fit_cache()
 				return(invisible(NULL))
 			}
-
 			coef_vec = tryCatch(
 				if (estimate_only) as.numeric(fit$coefficients) else as.numeric(stats::coef(fit)),
 				error = function(e) NULL
@@ -214,11 +188,9 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 				names(coef_vec) = coef_names
 				private$cached_values$full_coefficients = coef_vec
 			}
-
 			beta = if (!is.null(coef_vec) && length(coef_vec) >= j_treat) as.numeric(coef_vec[j_treat]) else NA_real_
 			private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
 			if (estimate_only) return(invisible(NULL))
-
 			se = .extract_se_from_rq_fit(fit, "treatment")
 			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
 			private$cached_values$df = nrow(X_fit) - ncol(X_fit)

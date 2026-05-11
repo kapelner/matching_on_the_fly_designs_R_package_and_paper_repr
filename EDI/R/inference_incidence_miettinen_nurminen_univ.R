@@ -26,9 +26,7 @@ InferenceIncidMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidMiettinenNu
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-
-		#' @description
-		#' Initialize a Miettinen-Nurminen risk-difference inference object for a
+		#' @description Initialize a Miettinen-Nurminen risk-difference inference object for a
 		#' completed design with an incidence response.
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an incidence response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -58,17 +56,13 @@ InferenceIncidMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidMiettinenNu
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-
-		#' @description
-		#' Computes the observed risk-difference estimate.
+		#' @description Computes the observed risk-difference estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes a 1 - \code{alpha} Miettinen-Nurminen score confidence interval.
+		#' @description Computes a 1 - \code{alpha} Miettinen-Nurminen score confidence interval.
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		#' @param pval_epsilon Bisection tolerance for CI bounds.
@@ -84,9 +78,7 @@ InferenceIncidMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidMiettinenNu
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 			ci
 		},
-
-		#' @description
-		#' Computes a two-sided Miettinen-Nurminen score p-value.
+		#' @description Computes a two-sided Miettinen-Nurminen score p-value.
 		#' @param delta The null treatment effect on the risk-difference scale.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -103,17 +95,14 @@ InferenceIncidMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidMiettinenNu
 			res
 		}
 	),
-
 	private = list(
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
 		mn_eps = function(){
 			sqrt(.Machine$double.eps)
 		},
-
 		get_counts = function(){
 			i_t = private$w == 1
 			i_c = private$w == 0
@@ -121,7 +110,6 @@ InferenceIncidMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidMiettinenNu
 			n_c = sum(i_c)
 			x_t = sum(private$y[i_t])
 			x_c = sum(private$y[i_c])
-
 			list(
 				n_t = n_t,
 				n_c = n_c,
@@ -131,7 +119,6 @@ InferenceIncidMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidMiettinenNu
 				p_c = if (n_c > 0) x_c / n_c else NA_real_
 			)
 		},
-
 		set_failed_fit_cache = function(){
 			private$cached_values$mn_counts = NULL
 			private$cache_nonestimable_estimate("miettinen_nurminen_fit_unavailable")
@@ -139,26 +126,21 @@ InferenceIncidMiettinenNurminenRiskDiff = R6::R6Class("InferenceIncidMiettinenNu
 			private$cached_values$full_vcov = NULL
 			private$cached_values$summary_table = NULL
 		},
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-
 			counts = private$get_counts()
 			if (counts$n_t == 0 || counts$n_c == 0 || !is.finite(counts$p_t) || !is.finite(counts$p_c)){
 				private$set_failed_fit_cache()
 				return(invisible(NULL))
 			}
-
 			est = counts$p_t - counts$p_c
 			correction = (counts$n_t + counts$n_c) / max(counts$n_t + counts$n_c - 1, 1)
 			se = sqrt(correction * (
 				counts$p_t * (1 - counts$p_t) / counts$n_t +
 				counts$p_c * (1 - counts$p_c) / counts$n_c
 			))
-
 			private$cached_values$mn_counts = counts
 			private$cached_values$beta_hat_T = est
 			if (estimate_only) return(invisible(NULL))

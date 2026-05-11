@@ -25,9 +25,7 @@ InferenceIncidNewcombeRiskDiff = R6::R6Class("InferenceIncidNewcombeRiskDiff",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-
-		#' @description
-		#' Initialize a Newcombe risk-difference inference object.
+		#' @description Initialize a Newcombe risk-difference inference object.
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with an incidence response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -43,17 +41,13 @@ InferenceIncidNewcombeRiskDiff = R6::R6Class("InferenceIncidNewcombeRiskDiff",
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-
-		#' @description
-		#' Computes the observed risk-difference estimate.
+		#' @description Computes the observed risk-difference estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes a 1 - \code{alpha} Newcombe confidence interval.
+		#' @description Computes a 1 - \code{alpha} Newcombe confidence interval.
 		#' @param alpha The significance level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -67,9 +61,7 @@ InferenceIncidNewcombeRiskDiff = R6::R6Class("InferenceIncidNewcombeRiskDiff",
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 			ci
 		},
-
-		#' @description
-		#' Computes a two-sided p-value by inverting the Newcombe interval.
+		#' @description Computes a two-sided p-value by inverting the Newcombe interval.
 		#' @param delta The null risk difference.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -90,13 +82,11 @@ InferenceIncidNewcombeRiskDiff = R6::R6Class("InferenceIncidNewcombeRiskDiff",
 			res
 		}
 	),
-
 	private = list(
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
 		get_counts = function(){
 			i_t = private$w == 1
 			i_c = private$w == 0
@@ -104,7 +94,6 @@ InferenceIncidNewcombeRiskDiff = R6::R6Class("InferenceIncidNewcombeRiskDiff",
 			n_c = sum(i_c)
 			x_t = sum(private$y[i_t])
 			x_c = sum(private$y[i_c])
-
 			list(
 				n_t = n_t, n_c = n_c,
 				x_t = x_t, x_c = x_c,
@@ -112,11 +101,9 @@ InferenceIncidNewcombeRiskDiff = R6::R6Class("InferenceIncidNewcombeRiskDiff",
 				p_c = if (n_c > 0) x_c / n_c else NA_real_
 			)
 		},
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			counts = private$get_counts()
 			private$cached_values$counts = counts

@@ -26,9 +26,7 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
-
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param  des_obj  	A completed KK matching-on-the-fly design object.
 		#' @param  verbose  		Whether to print progress messages.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -46,25 +44,19 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
-
-		#' @description
-		#' Returns the estimated treatment effect (proportion of pairs where T > C).
+		#' @description Returns the estimated treatment effect (proportion of pairs where T > C).
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes the confidence interval for the probability P(T > C).
+		#' @description Computes the confidence interval for the probability P(T > C).
 		#' @param  alpha  				The significance level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Computes the p-value for the sign test.
+		#' @description Computes the p-value for the sign test.
 		#' @param  delta  				The null difference (must be 0 for sign test).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -75,12 +67,10 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
-
 	private = list(
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			
 			if (is.null(private$cached_values$KKstats)){

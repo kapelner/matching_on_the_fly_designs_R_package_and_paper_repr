@@ -24,7 +24,6 @@ InferenceCountZeroInflatedPoisson = R6::R6Class("InferenceCountZeroInflatedPoiss
 		za_description = function() "Zero-Inflated Poisson"
 	)
 )
-
 #' Zero-Inflated Negative Binomial Regression Inference for Count Responses
 #'
 #' Fits a zero-inflated negative binomial regression for count responses using
@@ -45,8 +44,7 @@ InferenceCountZeroInflatedNegBin = R6::R6Class("InferenceCountZeroInflatedNegBin
 	lock_objects = FALSE,
 	inherit = InferenceCountZeroAugmentedPoissonAbstract,
 	public = list(
-		#' @description
-		#' Initialize a zero-inflated negative binomial inference object.
+		#' @description Initialize a zero-inflated negative binomial inference object.
 		#' @param des_obj A completed \code{Design} object with a count response.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use our internal Rcpp

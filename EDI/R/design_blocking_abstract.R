@@ -13,17 +13,14 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 	lock_objects = FALSE,
 	inherit = Design,
 	public = list(
-		#' @description
-		#' Checks whether this design currently has blocking structure.
+		#' @description Checks whether this design currently has blocking structure.
 		#'
 		#' @return \code{TRUE} if the design supports blocking or manual block IDs
 		#'   have been recorded, \code{FALSE} otherwise.
 		is_blocking_design = function(){
 			isTRUE(private$blocking_capable) || !is.null(private$m)
 		},
-
-		#' @description
-		#' Checks whether this design is a blocking design.
+		#' @description Checks whether this design is a blocking design.
 		assert_blocking_design = function(){
 			if (should_run_asserts()) {
 				if (!self$is_blocking_design()){
@@ -31,9 +28,7 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 				}
 			}
 		},
-
-		#' @description
-		#' Check whether the current blocking structure is complete.
+		#' @description Check whether the current blocking structure is complete.
 		#'
 		#' @return \code{TRUE} if blocking is defined and all block IDs are positive.
 		is_complete_blocking_design = function(){
@@ -43,9 +38,7 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 			block_ids = self$get_block_ids()
 			length(block_ids) > 0L && all(is.finite(block_ids)) && all(block_ids > 0L)
 		},
-
-		#' @description
-		#' Checks whether all blocks have the same number of subjects.
+		#' @description Checks whether all blocks have the same number of subjects.
 		#'
 		#' @return `TRUE` invisibly if the block sizes are equal.
 		assert_equal_block_sizes = function(){
@@ -59,9 +52,7 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 			}
 			invisible(TRUE)
 		},
-
-		#' @description
-		#' Record externally-supplied matched-pair or block identifiers.
+		#' @description Record externally-supplied matched-pair or block identifiers.
 		#'
 		#' This is primarily for post-hoc analysis of completed experiments whose
 		#' block IDs were defined outside the built-in design classes.
@@ -76,7 +67,6 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 			private$m = as.integer(m)
 			invisible(self)
 		},
-
 		#' @description Set the strata (block identifiers) for this design.
 		#'
 		#' Can only be called when \code{private$m} is still \code{NULL} (i.e. before strata
@@ -99,7 +89,6 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 			private$m = as.integer(m)
 			invisible(self)
 		},
-
 		#' @description If the design is a block design, get block identifiers (otherwise halts)
 		#'
 		#' @return An integer vector of block identifiers.
@@ -137,9 +126,7 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 			private$m = block_ids
 			block_ids
 		},
-
-		#' @description
-		#' Summarize the covariates within blocks.
+		#' @description Summarize the covariates within blocks.
 		#'
 		#' @param block_ids A vector of block identifiers to summarize. If NULL, defaults to all blocks.
 		#'
@@ -152,7 +139,6 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 			if (is.null(block_ids)) {
 				block_ids = sort(unique(all_block_ids))
 			}
-
 			Xraw = self$get_X_raw()
 			res = list()
 			for (bid in block_ids) {
@@ -205,20 +191,6 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 		exact_num_blocks = FALSE,
 		equal_block_sizes = TRUE,
 		blocking_capable = FALSE,
-
-		resample_assignment = function(){
-			n = private$n
-			i_b = sample_int_replace_cpp(n, n)
-			private$w    = private$w[i_b]
-			private$y    = private$y[i_b]
-			private$y_original = private$y_original[i_b]
-			private$dead = private$dead[i_b]
-			if (!is.null(private$m)){
-				private$m = private$m[i_b]
-			}
-			invisible(self)
-		},
-
 		get_strata_keys = function(){
 			n = private$t
 			if (n == 0) return(character(0))
@@ -228,7 +200,6 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 			} else {
 				NULL
 			}
-
 			col_to_str = function(col, num_bins = private$preferred_num_bins_for_continuous_covariate) {
 				vec = private$Xraw[[col]]
 				if (is.numeric(vec)) {
@@ -241,22 +212,18 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 				s[is.na(s)] = "NA"
 				s
 			}
-
 			append_key = function(keys, col_str) {
 				if (all(nchar(keys) == 0L)) col_str else paste(keys, col_str, sep = "|")
 			}
-
 			has_equal_block_sizes = function(keys) {
 				block_counts = as.integer(table(keys))
 				length(block_counts) <= 1L || all(block_counts == block_counts[1L])
 			}
-
 			choose_column_keys = function(keys, col) {
 				vec = private$Xraw[[col]]
 				if (!isTRUE(private$exact_num_blocks) || is.null(target) || !is.numeric(vec)) {
 					return(append_key(keys, col_to_str(col)))
 				}
-
 				max_bins = max(1L, min(n, target))
 				candidate_bins = unique(c(
 					as.integer(private$preferred_num_bins_for_continuous_covariate),
@@ -264,7 +231,6 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 				))
 				best_keys = keys
 				best_num_blocks = length(unique(keys))
-
 				for (num_bins in candidate_bins) {
 					candidate_keys = append_key(keys, col_to_str(col, num_bins = num_bins))
 					num_blocks = length(unique(candidate_keys))
@@ -276,10 +242,8 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 					}
 					if (num_blocks == target) break
 				}
-
 				best_keys
 			}
-
 			keys = rep("", n)
 			if (!is.null(target)) {
 				for (col in strata_cols) {
@@ -293,7 +257,6 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 					keys = append_key(keys, col_to_str(col))
 				}
 			}
-
 			num_blocks = length(unique(keys))
 			if (isTRUE(private$equal_block_sizes)) {
 				block_counts = as.integer(table(keys))

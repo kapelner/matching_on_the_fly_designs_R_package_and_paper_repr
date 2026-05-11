@@ -12,8 +12,7 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 	inherit = DesignSeqOneByOneKK14,
 	public = list(
 		#'
-		#' @description
-		#' Initialize a matching-on-the-fly sequential experimental design which matches based on
+		#' @description Initialize a matching-on-the-fly sequential experimental design which matches based on
 		#' Kapelner and Krieger (2021) with
 		#' option to use matching parameters of Morrison and Owen (2025)
 		#'
@@ -124,26 +123,19 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 			private$uses_covariates = TRUE
 			private$iteration_weights = list()
 		},
-
-		#' @description
-		#' Returns the weights calculated at each iteration.
+		#' @description Returns the weights calculated at each iteration.
 		#'
 		#' @return  A list of weights.
 		get_iteration_weights = function(){
 			private$iteration_weights
 		},
-
-
-		#' @description
-		#' Get the covariate weights calculated at the current iteration.
+		#' @description Get the covariate weights calculated at the current iteration.
 		#'
 		#' @return  A numeric vector of weights.
 		get_covariate_weights = function(){
 			private$covariate_weights
 		},
-
-		#' @description
-		#' Assign the next subject to a treatment group using the KK21 algorithm.
+		#' @description Assign the next subject to a treatment group using the KK21 algorithm.
 		#'
 		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){
@@ -163,7 +155,6 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 						all_subject_data = private$compute_all_subject_data()
 						#1) need to calculate the weights - this is different between KK21 and KK21stepwise
 						raw_weights = private$compute_weights(all_subject_data)
-
 						if (should_run_asserts()) {
 							if (any(is.na(raw_weights)) | any(is.infinite(raw_weights)) | any(is.nan(raw_weights)) | any(raw_weights < 0)){
 								stop("raw weight values illegal in design ", class(self)[1])
@@ -174,7 +165,6 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 						names(private$covariate_weights) = colnames(all_subject_data$X_all_with_y_scaled)
 						private$iteration_weights[[private$t]] = private$covariate_weights
 						#cat("    assign_wt_KK21 using sorted weights t", private$t, "weights", sort(weights), "\n")
-
 						#2) now iterate over all items in reservoir and calculate the weighted sqd distiance vs new guy
 						reservoir_indices = which(private$m == 0)
 						weighted_features = colnames(all_subject_data$X_all_with_y_scaled)
@@ -187,7 +177,6 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 								x_new = all_subject_data$xt_all_scaled[common_weighted_features]
 								X_all_scaled_col_subset = all_subject_data$X_all_scaled[, common_weighted_features, drop = FALSE]
 								covariate_weights_for_distance = private$covariate_weights[common_weighted_features]
-
 #						weighted_sqd_distances = array(NA, length(reservoir_indices))
 #						for (r in 1 : length(reservoir_indices)){
 #							x_r_x_new_delta = x_new - X_all_scaled_col_subset[reservoir_indices[r], ]
@@ -201,7 +190,6 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 													 )
 								#3) find minimum weighted sqd distiance index
 								min_weighted_sqd_dist_index = which(weighted_sqd_distances == min(weighted_sqd_distances))
-
 								#generate a cutoff for the weighted minimum distance squared based on bootstrap
 #						bootstrapped_weighted_sqd_distances = array(NA, private$num_boot)
 #						for (b in 1 : private$num_boot){
@@ -209,16 +197,13 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 #							delta_x = two_xs[1, ] - two_xs[2, ]
 #							bootstrapped_weighted_sqd_distances[b] = delta_x^2 %*% private$covariate_weights
 #						}
-
 								bootstrapped_weighted_sqd_distances = compute_bootstrapped_weighted_sqd_distances_cpp(
 																    X_all_scaled_col_subset,
 																    covariate_weights_for_distance,
 																    private$t,
 																    private$num_boot
 																  )
-
 								min_weighted_dsqd_cutoff_sq = stats::quantile(bootstrapped_weighted_sqd_distances, private$compute_lambda())
-
 								#5) Now, does the minimum make the cut?
 								if (length(weighted_sqd_distances[min_weighted_sqd_dist_index]) > 1 || length(min_weighted_dsqd_cutoff_sq) > 1){
 									min_weighted_sqd_dist_index = min_weighted_sqd_dist_index[1] #if there's a tie, just take the first one
@@ -253,18 +238,15 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 		proportion_use_speedup = NULL,
 		survival_use_speedup_for_no_censoring = NULL,
 		ordinal_use_speedup = NULL,
-
 		duplicate = function(){
 			d = super$duplicate()
 			d
 		},
-
 		compute_weights = function(all_subject_data){
 			xs = all_subject_data$X_all_with_y_scaled
 			i_y_present = which(!is.na(private$y))
 			ys = private$y[i_y_present]
 			deads = private$dead[i_y_present]
-
 			if (private$too_early_to_match()){
 				return(rep(1, all_subject_data$rank_all_with_y_scaled))
 			}
@@ -298,7 +280,6 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 			if (private$response_type == "ordinal" && !private$ordinal_use_speedup){
 				return(kk21_ordinal_weights_cpp(as.matrix(xs), as.numeric(ys)))
 			}
-
 			# Fallback loop for any future response types (should not reach here for current types)
 			raw_weights = array(NA, all_subject_data$rank_all_with_y_scaled)
 			for (j in 1 : all_subject_data$rank_all_with_y_scaled){
@@ -311,7 +292,6 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 			}
 			raw_weights
 		},
-
 		compute_weight_KK21_continuous = function(xs_to_date, ys_to_date, deaths_to_date, j){
 			if (nrow(xs_to_date) == 1){
 				.Machine$double.eps
@@ -327,7 +307,6 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 #			#if there was only one row, then this feature was all one unique value... so send back a weight of nada
 #			ifelse(nrow(summary_ols_mod) >= 2, abs(summary_ols_mod[2, 3]) )
 		},
-
 		compute_weight_KK21_incidence = function(xs_to_date, ys_to_date, deaths_to_date, j){
 			if (nrow(xs_to_date) == 1){
 				.Machine$double.eps
@@ -336,9 +315,6 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 				abs(mod$b[2] / sqrt(mod$ssq_b_2))
 			}
 		},
-
-
-
 		compute_weight_KK21_count = function(xs_to_date, ys_to_date, deaths_to_date, j){
 			if (!private$count_use_speedup){
 				tryCatch({
@@ -352,7 +328,6 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 			#if that didn't work, let's just use the continuous weights on a transformed proportion
 			private$compute_weight_KK21_continuous(xs_to_date, log(ys_to_date + 1), deaths_to_date, j)
 		},
-
 		compute_weight_KK21_proportion = function(xs_to_date, ys_to_date, deaths_to_date, j){
 			#sometimes the beta regression is unstable...
 			tryCatch({
@@ -366,7 +341,6 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 			#and we are not relying on the model assumptions being true
 			private$compute_weight_KK21_continuous(xs_to_date, logit(ys_to_date), deaths_to_date, j)
 		},
-
 		compute_weight_KK21_survival = function(xs_to_date, ys_to_date, deaths_to_date, j){
 			surv_obj = survival::Surv(ys_to_date, deaths_to_date)
 			#sometimes the weibull is unstable... so try other distributions... this doesn't matter since we are just trying to get weights
@@ -390,7 +364,6 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 			#and we are not relying on the model assumptions being true, this ignores censoring
 			private$compute_weight_KK21_continuous(xs_to_date, log(ys_to_date), deaths_to_date, j)
 		},
-
 		compute_weight_KK21_ordinal = function(xs_to_date, ys_to_date, deaths_to_date, j){
 			#sometimes the ordinal regression is unstable...
 			tryCatch({
@@ -401,6 +374,5 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 			#if that didn't work, default to OLS
 			private$compute_weight_KK21_continuous(xs_to_date, ys_to_date, deaths_to_date, j)
 		}
-
 	)
 )

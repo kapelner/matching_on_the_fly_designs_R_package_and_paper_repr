@@ -26,9 +26,7 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
-
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -49,17 +47,13 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-
-		#' @description
-		#' Returns the IVWC Newcombe estimate.
+		#' @description Returns the IVWC Newcombe estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined()
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Returns the asymptotic confidence interval based on pooled variance.
+		#' @description Returns the asymptotic confidence interval based on pooled variance.
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -69,9 +63,7 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 			private$shared_combined()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Returns the MLE p-value.
+		#' @description Returns the MLE p-value.
 		#' @param delta The null risk difference to test against. Default is zero.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -81,16 +73,13 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
-
 	private = list(
 		compute_basic_match_data = function(){
 			# Use the optimized Zhang helper to get counts
 			private$cached_values$KKstats = compute_zhang_match_data_cpp(private$get_X(), private$y, private$w, private$m)		},
-
 		pool_estimates_ivwc = function(est1, var1, est2, var2){
 			ok1 = is.finite(est1) && is.finite(var1) && var1 > 0
 			ok2 = is.finite(est2) && is.finite(var2) && var2 > 0
-
 			if (ok1 && ok2){
 				w1 = var2 / (var1 + var2)
 				return(list(
@@ -105,7 +94,6 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 				return(list(estimate = NA_real_, variance = NA_real_))
 			}
 		},
-
 		shared_combined = function(){
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()

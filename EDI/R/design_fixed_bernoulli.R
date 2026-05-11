@@ -10,8 +10,7 @@
 DesignFixedBernoulli = R6::R6Class("DesignFixedBernoulli",
 	inherit = DesignFixed,
 	public = list(
-		#' @description
-		#' Initialize a fixed Bernoulli experimental design
+		#' @description Initialize a fixed Bernoulli experimental design
 		#'
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
 		#'   "ordinal".
@@ -35,9 +34,7 @@ DesignFixedBernoulli = R6::R6Class("DesignFixedBernoulli",
 			) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 		},
-
-		#' @description
-		#' Draw multiple treatment assignment vectors according to Bernoulli randomization.
+		#' @description Draw multiple treatment assignment vectors according to Bernoulli randomization.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'

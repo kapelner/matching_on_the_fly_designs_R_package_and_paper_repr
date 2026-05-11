@@ -27,9 +27,7 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-
-		#' @description
-		#' Initialize a Ridit analysis inference object.
+		#' @description Initialize a Ridit analysis inference object.
 		#' @param des_obj A DesignSeqOneByOne object whose entire n subjects are assigned and
 		#'   response y is recorded within.
 		#' @param reference The group to use as the "Identified Distribution" (reference).
@@ -56,43 +54,33 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-
-		#' @description
-		#' Returns the estimated treatment effect (Mean Ridit - 0.5).
+		#' @description Returns the estimated treatment effect (Mean Ridit - 0.5).
 		#' @return The numeric estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Returns the Mean Ridit for the treatment group.
+		#' @description Returns the Mean Ridit for the treatment group.
 		#' @return The numeric Mean Ridit.
 		get_mean_ridit_treatment = function(){
 			private$shared()
 			private$cached_values$mean_ridit_t
 		},
-
-		#' @description
-		#' Returns the ridit scores for all subjects.
+		#' @description Returns the ridit scores for all subjects.
 		#' @return A numeric vector of scores.
 		get_ridit_scores = function(){
 			private$shared()
 			private$cached_values$scores
 		},
-
-		#' @description
-		#' Computes the asymptotic confidence interval for the treatment effect.
+		#' @description Computes the asymptotic confidence interval for the treatment effect.
 		#' @param alpha Significance level.
 		#' @return A numeric vector of length 2.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Computes the p-value for the null hypothesis that Mean Ridit = 0.5.
+		#' @description Computes the p-value for the null hypothesis that Mean Ridit = 0.5.
 		#' @param delta The null value (centered at 0, so delta=0 means Ridit=0.5).
 		#' @return The p-value.
 		compute_asymp_two_sided_pval = function(delta = 0){
@@ -103,39 +91,31 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
-
 	private = list(
 		reference = NULL,
 		max_resample_attempts = 50L,
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-
 			res = fast_ridit_analysis_cpp(
 				w = as.integer(private$w),
 				y = as.integer(private$y),
 				reference = private$reference
 			)
-
 			if (is.null(res) || length(res) == 0){
 				private$cache_nonestimable_estimate("ordinal_ridit_fit_unavailable")
 				return(invisible(NULL))
 			}
-
 			private$cached_values$mean_ridit_t = res$mean_ridit_t
 			private$cached_values$mean_ridit_c = res$mean_ridit_c
 			private$cached_values$beta_hat_T   = res$estimate
 			private$cached_values$s_beta_hat_T = res$se
 			private$cached_values$scores       = res$scores
 		},
-
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			if (delta != 0 || transform_responses != "none") return(NULL)
-
 			compute_ridit_distr_parallel_cpp(
 				permutations$w_mat,
 				as.integer(y),
@@ -143,12 +123,10 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 				private$n_cpp_threads(ncol(permutations$w_mat))
 			)
 		},
-
 		compute_fast_bootstrap_distr = function(B, ...){
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			# KK designs use design-aware resampling not available via these args; fall back to R loop.
 			if (private$is_KK) return(NULL)
-
 			# Simple (non-KK) bootstrap: args = (n, y, dead, w)
 			args = list(...)
 			max_resample_attempts = private$max_resample_attempts
@@ -156,7 +134,6 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 			y = args[[2]]
 			dead = args[[3]]
 			w = args[[4]]
-
 			# Generate bootstrap indices
 			indices_mat = matrix(NA_integer_, nrow = n, ncol = B)
 			for (b in 1:B) {
@@ -172,7 +149,6 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 					if (attempt > max_resample_attempts) break
 				}
 			}
-
 			compute_ridit_bootstrap_parallel_cpp(
 				as.integer(w),
 				as.integer(y),

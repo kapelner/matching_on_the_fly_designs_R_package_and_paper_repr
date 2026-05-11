@@ -50,10 +50,7 @@ InferencePropKKQuantileRegrOneLik = R6::R6Class("InferencePropKKQuantileRegrOneL
 			private$cached_values$KKstats = NULL
 			private$compute_basic_match_data()
 		},
-
-
-		#' @description
-		#' Returns the estimated treatment effect.
+		#' @description Returns the estimated treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE) super$compute_estimate()
 	)

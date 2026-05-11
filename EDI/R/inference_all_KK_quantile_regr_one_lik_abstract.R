@@ -4,8 +4,8 @@
 #' matched-pair differences and reservoir observations into one design matrix.
 #'
 #' Column layout of X_stack: [beta_0 | beta_T | beta_xs (p cols)]
-#' Pair rows:      [0 | 1   | Xd_k] → Q_tau(yd_k) = beta_T + Xd_k' beta_xs
-#' Reservoir rows: [1 | w_i | X_i]  → Q_tau(y_i)  = beta_0 + w_i*beta_T + X_i'*beta_xs
+#' Pair rows:      [0 | 1   | Xd_k] -> Q_tau(yd_k) = beta_T + Xd_k' beta_xs
+#' Reservoir rows: [1 | w_i | X_i]  -> Q_tau(y_i)  = beta_0 + w_i*beta_T + X_i'*beta_xs
 #' Fitting a single rq() on the stacked dataset minimises the combined check-function loss.
 #'
 #' Special cases:
@@ -19,9 +19,7 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 	lock_objects = FALSE,
 	inherit = InferenceAbstractQuantileRandCI,
 	public = list(
-
-		#' @description
-		#' Initialize KK quantile-regression combined-likelihood inference.
+		#' @description Initialize KK quantile-regression combined-likelihood inference.
 		#' @param des_obj A completed KK design object.
 		#' @param tau The quantile level for regression, strictly between 0 and 1. The default
 		#'   \code{tau = 0.5} estimates the median treatment effect. Values of exactly 0 or 1
@@ -54,18 +52,14 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 				private$compute_basic_match_data()
 			}
 		},
-
-		#' @description
-		#' Compute the quantile-regression treatment estimate.
+		#' @description Compute the quantile-regression treatment estimate.
 		#' @param estimate_only Whether to skip standard-error calculations.
 		#' @return The treatment estimate.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Compute an asymptotic confidence interval.
+		#' @description Compute an asymptotic confidence interval.
 		#' @param alpha Significance level.
 		#' @return A confidence interval.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -78,9 +72,7 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Compute an asymptotic two-sided p-value for the treatment effect.
+		#' @description Compute an asymptotic two-sided p-value for the treatment effect.
 		#' @param delta Null treatment effect value.
 		#' @return A two-sided p-value.
 		compute_asymp_two_sided_pval = function(delta = 0){
@@ -94,21 +86,17 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
-
 	private = list(
 		tau = NULL,
 		transform_y_fn_list = NULL,  # list(fn = ...) wrapping avoids R6 treating function as a locked method
 		m = NULL,
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp)
 		},
-
 		compute_basic_match_data = function(){
 			private$cached_values$KKstats = .compute_kk_basic_match_data_cached(
 				private_env = private,
@@ -120,19 +108,16 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 				m_vec = private$m
 			)
 		},
-
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
 			}
 		},
-
 		# Fit the combined check-function loss over matched-pair differences and
 		# reservoir observations with SHARED covariate effects beta_xs.
 		shared_combined_likelihood = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
 			}
@@ -142,16 +127,12 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 			nRC = KKstats$nRC
 			tau = private$tau
 			fn  = private$transform_y_fn_list$fn
-
 			has_reservoir = nRT > 0 && nRC > 0
-
 			y_stack  = NULL
 			X_stack  = NULL
 			j_beta_T = 2L
-
 			if (m > 0){
 				yd = fn(KKstats$yTs_matched) - fn(KKstats$yCs_matched)
-
 				if (has_reservoir){
 					# Combined case: pair rows and reservoir rows must share the same
 					# covariate columns. Use the full-width pair differences from the
@@ -183,18 +164,15 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 				y_stack  = y_r
 				j_beta_T = 2L
 			}
-
 			if (is.null(X_stack)){
 				private$cached_values$beta_hat_T   = NA_real_
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				return(invisible(NULL))
 			}
-
 			# QR-reduce to full rank, preserving beta_T column
 			reduced = qr_reduce_preserve_cols_cpp(X_stack, j_beta_T)
 			X_stack  = reduced$X_reduced
 			j_beta_T = match(j_beta_T, reduced$keep)
-
 			n_total  = nrow(X_stack)
 			n_params = ncol(X_stack)
 			if (n_total <= n_params){
@@ -202,13 +180,11 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				return(invisible(NULL))
 			}
-
 			cn = paste0("x", seq_len(n_params))
 			cn[j_beta_T] = "trt__"
 			colnames(X_stack) = cn
 			dat = as.data.frame(X_stack)
 			dat$y_stack__ = y_stack
-
 			fit = tryCatch(
 				suppressWarnings(quantreg::rq(y_stack__ ~ . - 1, tau = tau, data = dat)),
 				error = function(e) NULL
@@ -218,7 +194,6 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				return(invisible(NULL))
 			}
-
 			beta = tryCatch(coef(fit)[["trt__"]], error = function(e) NA_real_)
 			private$cached_values$beta_hat_T   = if (is.finite(beta)) beta else NA_real_
 			if (!estimate_only) {
@@ -227,7 +202,6 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 			}
 			invisible(NULL)
 		},
-
 		# Helper: extract SE from rq fit by coefficient name, trying "nid" then "iid".
 		# SEs above 1e6 are treated as invalid (the "nid" sparsity estimator can return
 		# astronomically large but finite values when the density at the quantile is near

@@ -20,8 +20,7 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 	lock_objects = FALSE,
 	inherit = InferenceExact,
 	public = list(
-		#' @description
-		#' Initialize exact matched-pair binomial inference for incidence outcomes.
+		#' @description Initialize exact matched-pair binomial inference for incidence outcomes.
 		#' @param des_obj A completed design object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -44,19 +43,15 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 				private$des_obj_priv_int$ensure_matching_structure_computed()
 			}
 		},
-
-		#' @description
-		#' Compute the matched-pair treatment estimate on the log-odds scale.
+		#' @description Compute the matched-pair treatment estimate on the log-odds scale.
 		#' @param estimate_only Ignored for this estimator.
 		#' @return The treatment estimate.
 		compute_estimate = function(estimate_only = FALSE){
 			private$get_exact_binomial_log_or_estimate()
 		}
 	),
-
 	private = list(
 		default_exact_type = "Binomial",
-
 		resolve_exact_type = function(type){
 			if (is.null(type)) type = private$default_exact_type
 			if (should_run_asserts()) {
@@ -64,7 +59,6 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 			}
 			type
 		},
-
 		normalize_exact_inference_args = function(type, args_for_type = NULL){
 			if (should_run_asserts()) {
 				assertChoice(type, c("Binomial"))
@@ -72,7 +66,6 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 			}
 			utils::modifyList(setNames(list(list()), type), if (is.null(args_for_type)) list() else args_for_type)
 		},
-
 		assert_exact_inference_params = function(type, args_for_type){
 			if (should_run_asserts()) {
 				assertChoice(type, c("Binomial"))
@@ -99,7 +92,6 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 			}
 			invisible(args)
 		},
-
 		compute_exact_confidence_interval_by_type = function(type, alpha, args_for_type){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -109,7 +101,6 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 				Binomial = private$ci_exact_binomial(alpha)
 			)
 		},
-
 		compute_exact_two_sided_pval_for_treatment_effect_by_type = function(type, delta, args_for_type){
 			if (should_run_asserts()) {
 				assertNumeric(delta, len = 1)
@@ -119,16 +110,13 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 				Binomial = private$pval_exact_binomial(delta)
 			)
 		},
-
 		design_supports_exact_binomial = function(){
 			is(private$des_obj, "DesignFixedBinaryMatch") || is(private$des_obj, "DesignSeqOneByOneKK14")
 		},
-
 		pval_exact_binomial = function(delta_0){
 			stats = private$get_exact_binomial_stats()
 			zhang_exact_binom_pval_cpp(stats$d_plus, stats$d_minus, delta_0)
 		},
-
 		ci_exact_binomial = function(alpha){
 			stats = private$get_exact_binomial_stats()
 			d_total = stats$d_plus + stats$d_minus
@@ -137,22 +125,18 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 			ci
 		},
-
 		get_exact_binomial_log_or_estimate = function(){
 			stats = private$get_exact_binomial_stats()
 			if (stats$m <= 0L) return(NA_real_)
 			log((stats$d_plus + 0.5) / (stats$d_minus + 0.5))
 		},
-
 		get_exact_binomial_stats = function(){
 			if (!is.null(private$cached_values$incidence_exact_binomial_stats)) {
 				return(private$cached_values$incidence_exact_binomial_stats)
 			}
-
 			if (is(private$des_obj, "DesignFixedBinaryMatch")) {
 				private$des_obj_priv_int$ensure_matching_structure_computed()
 			}
-
 			m_vec = private$des_obj_priv_int$m
 			if (should_run_asserts()) {
 				if (is.null(m_vec)) {

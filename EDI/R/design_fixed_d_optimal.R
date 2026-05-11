@@ -12,8 +12,7 @@
 DesignFixedDOptimal = R6::R6Class("DesignFixedDOptimal",
 	inherit = DesignFixed,
 	public = list(
-		#' @description
-		#' Initialize a D-optimal search fixed experimental design
+		#' @description Initialize a D-optimal search fixed experimental design
 		#'
 		#' @param response_type 	The data type of response values.
 		#' @param prob_T  The probability of the treatment assignment. Must be 0.5 for exchange search.
@@ -43,10 +42,7 @@ DesignFixedDOptimal = R6::R6Class("DesignFixedDOptimal",
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 			private$uses_covariates = TRUE
 		},
-
-
-		#' @description
-		#' Draw treatment assignments according to the D-optimal search fixed design.
+		#' @description Draw treatment assignments according to the D-optimal search fixed design.
 		#'
 		#' @param r Number of designs to draw.
 		#'
@@ -59,7 +55,6 @@ DesignFixedDOptimal = R6::R6Class("DesignFixedDOptimal",
 			if (is.null(private$X) || ncol(private$X) == 0){
 				return(replicate(r, sample(c(rep(1, n/2), rep(0, n/2)))))
 			}
-
 			# Precompute projection matrix P = Z0 (Z0' Z0)^-1 Z0'
 			if (is.null(private$P)){
 				X = private$X[1:n, , drop = FALSE]
@@ -68,7 +63,6 @@ DesignFixedDOptimal = R6::R6Class("DesignFixedDOptimal",
 				Q = qr.Q(Z0_qr)
 				private$P = Q %*% t(Q)
 			}
-
 			# Use C++ speedup
 			# Note: we don't parallelize here because C++ handles the loop over r
 			# and it's already very fast. If r is huge, we could parallelize outside.
@@ -79,7 +73,6 @@ DesignFixedDOptimal = R6::R6Class("DesignFixedDOptimal",
 			w_mat
 		}
 	),
-
 	private = list(
 		P = NULL # Projection matrix
 	)

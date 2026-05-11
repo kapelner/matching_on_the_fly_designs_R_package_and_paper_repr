@@ -13,8 +13,7 @@ DesignFixed = R6::R6Class("DesignFixed",
 	lock_objects = FALSE,
 	inherit = DesignMatching,
 	public = list(
-		#' @description
-		#' Initialize a fixed experimental design
+		#' @description Initialize a fixed experimental design
 		#'
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
 		#'   "ordinal".
@@ -39,15 +38,11 @@ DesignFixed = R6::R6Class("DesignFixed",
 			) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, ...)
 		},
-
-		#' @description
-		#' Assign treatment to all subjects in the fixed experiment.
+		#' @description Assign treatment to all subjects in the fixed experiment.
 		assign_w_to_all_subjects = function(){
 			private$w[1:self$get_n()] = self$draw_ws_according_to_design(1)[, 1]
 		},
-
-		#' @description
-		#' Add all subjects' covariates to a fixed design at once.
+		#' @description Add all subjects' covariates to a fixed design at once.
 		#'
 		#' @param X_all A data frame containing the full covariate matrix.
 		#' @return Invisibly returns the design object.
@@ -70,9 +65,7 @@ DesignFixed = R6::R6Class("DesignFixed",
 			private$covariate_impute_if_necessary_and_then_create_model_matrix()
 			invisible(self)
 		},
-
-		#' @description
-		#' Add all subject responses for a fixed design.
+		#' @description Add all subject responses for a fixed design.
 		#'
 		#' @param ys The responses as a numeric vector.
 		#' @param deads The binary vector indicating if dead/censored.
@@ -88,7 +81,6 @@ DesignFixed = R6::R6Class("DesignFixed",
 					assertNumeric(ys, len = private$t)
 				}
 				private$assert_y(ys, private$response_type)
-
 				assertNumeric(deads, len = private$t)
 				
 				if (private$response_type != "survival" && any(deads == 0)){
@@ -104,15 +96,12 @@ DesignFixed = R6::R6Class("DesignFixed",
 				}
 				ys = as.integer(ys)
 			}
-
 			private$y = as.numeric(ys)
 			private$y_original = as.numeric(ys)
 			private$dead = as.numeric(deads)
 			private$y_i_t_i = as.list(seq_len(private$t))
 		},
-
-		#' @description
-		#' Overwrite all subject assignments for a fixed design.
+		#' @description Overwrite all subject assignments for a fixed design.
 		#'
 		#' @param w The binary responses.
 		overwrite_all_subject_assignments = function(w){
@@ -121,18 +110,13 @@ DesignFixed = R6::R6Class("DesignFixed",
 			}
 			private$w = w
 		},
-
-		#' @description
-		#' Check if the design supports resampling.
+		#' @description Check if the design supports resampling.
 		#'
 		#' @return 	TRUE if supported.
 		supports_resampling = function(){
 			class(self)[1] != "DesignFixed"
 		},
-
-
-		#' @description
-		#' Draw multiple treatment assignment vectors.
+		#' @description Draw multiple treatment assignment vectors.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'

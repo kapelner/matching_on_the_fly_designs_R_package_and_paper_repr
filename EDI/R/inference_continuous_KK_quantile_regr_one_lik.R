@@ -54,10 +54,7 @@ InferenceContinKKQuantileRegrOneLik = R6::R6Class("InferenceContinKKQuantileRegr
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-
-
-		#' @description
-		#' Returns the estimated treatment effect.
+		#' @description Returns the estimated treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE) super$compute_estimate()
 	)

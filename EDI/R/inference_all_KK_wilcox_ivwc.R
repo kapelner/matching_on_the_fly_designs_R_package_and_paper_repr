@@ -10,9 +10,7 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
-
-		#' @description
-		#' Override to avoid O(n^2) per-resample HL computation during the bootstrap warm-start
+		#' @description Override to avoid O(n^2) per-resample HL computation during the bootstrap warm-start
 		#' inside compute_rand_confidence_interval. The asymptotic MLE CI is a perfectly
 		#' adequate starting bound for the bisection and is computed in O(1).
 		#' @param alpha  				The confidence level. Default is 0.05.
@@ -22,15 +20,12 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 		}
 	),
 	private = list(
-
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
-
 			# Optimization: w_mat and m_mat are already pre-computed matrices
 			w_mat = permutations$w_mat
 			m_mat = permutations$m_mat
 			nsim = ncol(w_mat)
-
 			# Reconstruct m_mat if NULL (KK permutations return fixed matching as NULL to save memory)
 			if (is.null(m_mat)) {
 				n_subjects = nrow(w_mat)
@@ -51,9 +46,7 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 					}
 				}
 			}
-
 			y_sim = as.numeric(y)
-
 			# Map transform_responses to transform_code
 			t_code = 0L # none
 			if (transform_responses == "log") {
@@ -63,7 +56,6 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 			} else if (transform_responses == "log1p") {
 				t_code = 3L
 			}
-
 			res = compute_matching_wilcox_distr_parallel_cpp(
 				w_mat,
 				m_mat,
@@ -85,10 +77,8 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 				private$compute_basic_match_data()
 				KKstats = private$cached_values$KKstats
 			}
-
 			stat = 0
 			n_components = 0
-
 			# Matched pairs: signed-rank W (standardized)
 			diffs = KKstats$y_matched_diffs
 			m_pairs = length(diffs)
@@ -108,7 +98,6 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 					n_components = n_components + 1
 				}
 			}
-
 			# Reservoir: rank-sum W (standardized)
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
@@ -124,12 +113,10 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 				stat = stat + (W_r - E_W) / sqrt(V_W)
 				n_components = n_components + 1
 			}
-
 			if (n_components == 0L) NA_real_ else stat
 		}
 	)
 )
-
 #' Non-parametric Wilcoxon-based Compound Inference for KK Designs
 #'
 #' Fits a non-parametric compound estimator for KK matching-on-the-fly designs.
@@ -154,9 +141,7 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKWilcoxBaseIVWC,
 	public = list(
-
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj A DesignSeqOneByOne object (must be a KK design).
 		#' @param verbose Whether to print progress messages.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -185,17 +170,13 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 				}
 			}
 		},
-
-		#' @description
-		#' Returns the estimated treatment effect (Hodges-Lehmann median shift).
+		#' @description Returns the estimated treatment effect (Hodges-Lehmann median shift).
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes the non-parametric confidence interval.
+		#' @description Computes the non-parametric confidence interval.
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -209,9 +190,7 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 			# Even though estimates are non-parametric, the combined estimator is asymptotically normal
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Computes the non-parametric p-value.
+		#' @description Computes the non-parametric p-value.
 		#' @param delta The null difference to test against. For any
 		#'   treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval = function(delta = 0){
@@ -231,27 +210,20 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 				NA_real_
 			}
 		}
-
 	),
-
 	private = list(
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-
 			# Recompute KKstats if cache was cleared (e.g., after y transformation for rand CI)
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
 			}
-
 			KKstats = private$cached_values$KKstats
 			m   = KKstats$m
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
-
 			# --- Matched pairs: Wilcoxon Signed-Rank HL Estimate ---
 			if (m > 0){
 				private$rank_for_matched_pairs()
@@ -260,7 +232,6 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 			ssq_m    = private$cached_values$ssq_beta_T_matched
 			m_ok     = !is.null(beta_m) && is.finite(beta_m) &&
 			           !is.null(ssq_m)  && is.finite(ssq_m) && ssq_m > 0
-
 			# --- Reservoir: Wilcoxon Rank-Sum HL Estimate ---
 			if (nRT > 0 && nRC > 0){
 				private$rank_for_reservoir()
@@ -269,7 +240,6 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 			ssq_r    = private$cached_values$ssq_beta_T_reservoir
 			r_ok     = !is.null(beta_r) && is.finite(beta_r) &&
 			           !is.null(ssq_r)  && is.finite(ssq_r) && ssq_r > 0
-
 			# --- Variance-weighted combination ---
 			if (m_ok && r_ok){
 				w_star = ssq_r / (ssq_r + ssq_m)
@@ -287,60 +257,47 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 				private$cached_values$s_beta_hat_T = NA_real_
 			}
 		},
-
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
 			}
 		},
-
 		rank_for_matched_pairs = function(){
 			diffs = private$cached_values$KKstats$y_matched_diffs
 			# signed-rank test requires at least some non-zero differences
 			if (all(diffs == 0)) return(invisible(NULL))
-
 			mod = tryCatch({
 				stats::wilcox.test(diffs, conf.int = TRUE)
 			}, error = function(e) NULL)
-
 			if (is.null(mod)) return(invisible(NULL))
-
 			beta = as.numeric(mod$estimate)
 			# Back-calculate SE from 95% CI width; guard against NULL/empty conf.int
 			ci = mod$conf.int
 			se = if (length(ci) == 2L) (ci[2] - ci[1]) / (2 * 1.96) else NA_real_
-
 			private$cached_values$beta_T_matched     = if (length(beta) == 1L && is.finite(beta)) beta else NA_real_
 			private$cached_values$ssq_beta_T_matched = if (length(se) == 1L && is.finite(se) && se > 0) se^2 else NA_real_
 		},
-
 		rank_for_reservoir = function(){
 			y_r = private$cached_values$KKstats$y_reservoir
 			w_r = private$cached_values$KKstats$w_reservoir
 			yT = y_r[w_r == 1]
 			yC = y_r[w_r == 0]
-
 			mod = tryCatch({
 				stats::wilcox.test(yT, yC, conf.int = TRUE)
 			}, error = function(e) NULL)
-
 			if (is.null(mod)) return(invisible(NULL))
-
 			beta = as.numeric(mod$estimate)
 			# Back-calculate SE from 95% CI width; guard against NULL/empty conf.int
 			ci = mod$conf.int
 			se = if (length(ci) == 2L) (ci[2] - ci[1]) / (2 * 1.96) else NA_real_
-
 			private$cached_values$beta_T_reservoir     = if (length(beta) == 1L && is.finite(beta)) beta else NA_real_
 			private$cached_values$ssq_beta_T_reservoir = if (length(se) == 1L && is.finite(se) && se > 0) se^2 else NA_real_
 		},
-
 		compute_fast_bootstrap_distr = function(B, i_reservoir, n_reservoir, m, y, w, m_vec){
 			# Generate bootstrap indices for KK design in R first
 			indices_mat = matrix(NA_integer_, nrow = length(y), ncol = B)
 			m_mat = matrix(NA_integer_, nrow = length(y), ncol = B)
 			w_mat = matrix(NA_integer_, nrow = length(y), ncol = B)
-
 			for (b in 1:B) {
 				i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
 				w_b_res = w[i_reservoir_b]
@@ -365,7 +322,6 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 				# Note: y is retrieved inside C++ using indices_mat
 				indices_mat[, b] = c(i_reservoir_b, i_matched_b)
 			}
-
 			compute_wilcox_matching_ivwc_bootstrap_parallel_cpp(
 				as.integer(w),
 				as.numeric(y),

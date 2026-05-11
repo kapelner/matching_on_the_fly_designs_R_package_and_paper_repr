@@ -17,6 +17,17 @@
 #' @name fast_logistic_regression_cpp
 NULL
 
+#' Normalize and validate optimizer algorithm name
+#'
+#' Internal helper to map user-supplied algorithm names to supported strings
+#' for the underlying C++ optimizers.
+#'
+#' @param optimization_alg Character string or NULL.
+#' @param allow_irls Logical. Whether "irls" is supported for this model.
+#' @param default Character string. Default if not supplied.
+#' @return A validated character string.
+#' @keywords internal
+#' @export
 .normalize_optimizer_algorithm = function(optimization_alg, allow_irls = FALSE, default = if (allow_irls) "irls" else "lbfgs"){
 	if (missing(optimization_alg) || is.null(optimization_alg)) optimization_alg = default
 	valid = if (allow_irls) c("irls", "lbfgs", "newton_raphson") else c("lbfgs", "newton_raphson")

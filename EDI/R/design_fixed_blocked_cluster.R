@@ -13,8 +13,7 @@
 DesignFixedBlockedCluster = R6::R6Class("DesignFixedBlockedCluster",
 	inherit = DesignFixed,
 	public = list(
-		#' @description
-		#' Initialize a blocked and cluster randomized fixed experimental design
+		#' @description Initialize a blocked and cluster randomized fixed experimental design
 		#'
 		#' @param strata_cols 	A character vector of column names to use for stratification (blocks).
 		#' @param cluster_col 	The column name in the data that identifies the cluster for each subject.
@@ -59,10 +58,7 @@ DesignFixedBlockedCluster = R6::R6Class("DesignFixedBlockedCluster",
 			private$preferred_num_bins_for_continuous_covariate = preferred_num_bins_for_continuous_covariate
 			private$uses_covariates = TRUE
 		},
-
-
-		#' @description
-		#' Draw multiple treatment assignment vectors according to blocked cluster randomization.
+		#' @description Draw multiple treatment assignment vectors according to blocked cluster randomization.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'
@@ -86,15 +82,12 @@ DesignFixedBlockedCluster = R6::R6Class("DesignFixedBlockedCluster",
 			w_mat
 		}
 	),
-
 	private = list(
 		cluster_col = NULL,
-
 		draw_bootstrap_indices = function(bootstrap_type = NULL){
 			n = private$t
 			strata_keys = private$get_strata_keys()
 			cluster_ids = as.character(private$Xraw[1:n, ][[private$cluster_col]])
-
 			if (is.null(bootstrap_type) || bootstrap_type == "within_blocks") {
 				# Resample clusters within each stratum
 				unique_strata = unique(strata_keys)

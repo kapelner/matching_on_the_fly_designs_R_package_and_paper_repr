@@ -30,14 +30,18 @@ run_likelihood_method_smoke_suite <- function(){
 		for (method_name in pval_methods){
 			method_fn = inf[[method_name]]
 			stopifnot(is.function(method_fn))
+			cat(sprintf("  [%s] calling %s ...\n", label, method_name))
 			val = tryCatch(method_fn(delta = 0), error = function(e) stop(label, ": ", method_name, " failed: ", e$message))
+			cat(sprintf("  [%s] %s = %s\n", label, method_name, paste(val, collapse=", ")))
 			stopifnot(is.numeric(val), length(val) == 1L, is.finite(val), val >= 0, val <= 1)
 		}
 
 		for (method_name in ci_methods){
 			method_fn = inf[[method_name]]
 			stopifnot(is.function(method_fn))
+			cat(sprintf("  [%s] calling %s ...\n", label, method_name))
 			val = tryCatch(method_fn(alpha = 0.2), error = function(e) stop(label, ": ", method_name, " failed: ", e$message))
+			cat(sprintf("  [%s] %s = %s\n", label, method_name, paste(val, collapse=", ")))
 			stopifnot(is.numeric(val), length(val) == 2L, all(is.finite(val)), val[1] <= val[2])
 		}
 
@@ -101,7 +105,7 @@ run_likelihood_method_smoke_suite <- function(){
 		des
 	}
 
-	make_kk_ordinal_design <- function(n = 16L){
+	make_kk_ordinal_design <- function(n = 32L){
 		des = DesignSeqOneByOneKK14$new(n = n, response_type = "ordinal", verbose = FALSE)
 		x1 = rnorm(n)
 		x2 = rnorm(n)
@@ -168,7 +172,7 @@ run_likelihood_method_smoke_suite <- function(){
 		"InferenceSurvivalKKLWACoxOneLik"
 	)
 	results$kk_survival_clayton = call_all_methods(
-		InferenceSurvivalKKClaytonCopulaOneLik$new(make_kk_survival_design(n = 32L), model_formula = ~ x1, verbose = FALSE),
+		InferenceSurvivalKKClaytonCopulaOneLik$new(make_kk_survival_design(n = 64L), model_formula = ~ x1, verbose = FALSE),
 		"InferenceSurvivalKKClaytonCopulaOneLik"
 	)
 	results$ordinal_kk_glmm = call_all_methods(

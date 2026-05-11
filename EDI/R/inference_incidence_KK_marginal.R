@@ -5,17 +5,13 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKMarginalIncid,
 	public = list(
-
-		#' @description
-		#' Compute treatment estimate
+		#' @description Compute treatment estimate
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Compute asymp confidence interval
+		#' @description Compute asymp confidence interval
 		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -27,9 +23,7 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Compute asymp two sided pval for treatment effect
+		#' @description Compute asymp two sided pval for treatment effect
 		#' @param delta The null treatment effect (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -42,12 +36,10 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
-
 	private = list(
 		max_abs_reasonable_coef = 1e4,
 		best_X_colnames = NULL,
 		cached_mod = NULL,
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design from the original data
 			if (is.null(private$best_X_colnames)){
@@ -57,7 +49,6 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-
 			# Use the same design matrix structure as the original fit
 			X_cols = private$best_X_colnames
 			X_data = private$get_X()
@@ -70,35 +61,29 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind("(Intercept)" = 1, treatment = private$w, X_cov)
 			}
-
 			fit = tryCatch(private$fit_modified_poisson(X, j_treat = 2L, estimate_only = estimate_only), error = function(e) NULL)
 			if (is.null(fit) || !is.finite(fit$beta_hat)){
 				return(NA_real_)
 			}
 			as.numeric(fit$beta_hat)
 		},
-
 		build_design_matrix = function() stop(class(self)[1], " must implement build_design_matrix()."),
-
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				return(invisible(NULL))
 			}
 		},
-
 		set_failed_fit_cache = function(){
 			private$cache_nonestimable_estimate("kk_modified_poisson_fit_unavailable")
 			private$cached_values$full_coefficients = NULL
 			private$cached_values$full_vcov = NULL
 			private$cached_values$summary_table = NULL
 		},
-
 		coefficients_are_usable = function(coef_hat){
 			length(coef_hat) > 0L &&
 				all(is.finite(coef_hat)) &&
 				max(abs(coef_hat), na.rm = TRUE) <= private$max_abs_reasonable_coef
 		},
-
 		fit_modified_poisson = function(X_fit, j_treat, estimate_only = FALSE){
 			mod = tryCatch(
 				fast_poisson_regression_cpp(X = X_fit, y = as.numeric(private$y)),
@@ -107,12 +92,10 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 			if (is.null(mod)){
 				return(NULL)
 			}
-
 			coef_hat = as.numeric(mod$b)
 			if (length(coef_hat) != ncol(X_fit) || !private$coefficients_are_usable(coef_hat)){
 				return(NULL)
 			}
-
 			if (estimate_only){
 				return(list(
 					beta_hat = coef_hat[j_treat],
@@ -123,12 +106,10 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 					mod = mod
 				))
 			}
-
 			mu_hat = as.numeric(exp(X_fit %*% coef_hat))
 			if (length(mu_hat) != nrow(X_fit) || any(!is.finite(mu_hat)) || any(mu_hat <= 0)){
 				return(NULL)
 			}
-
 			post_fit = tryCatch(
 				glm_cluster_sandwich_post_fit_cpp(
 					X_fit = X_fit,
@@ -144,7 +125,6 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 			if (is.null(post_fit)){
 				return(NULL)
 			}
-
 			coef_names = colnames(X_fit)
 			names(coef_hat) = coef_names
 			vcov_robust = post_fit$vcov
@@ -153,7 +133,6 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 			names(std_err) = coef_names
 			z_vals = post_fit$z_vals
 			names(z_vals) = coef_names
-
 			list(
 				beta_hat = post_fit$beta_hat,
 				se = post_fit$se,
@@ -168,21 +147,17 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 				)
 			)
 		},
-
 		get_standard_error = function(){
 			private$shared()
 			as.numeric(private$cached_values$s_beta_hat_T)
 		},
-
 		get_degrees_of_freedom = function(){
 			private$shared()
 			private$cached_values$df %||% Inf
 		},
-
 		supports_likelihood_tests = function(){
 			TRUE
 		},
-
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context
@@ -227,11 +202,9 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 				}
 			)
 		},
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && isTRUE(private$cached_values$s_beta_hat_T > 0)) return(invisible(NULL))
-
 			X_full = private$build_design_matrix()
 			if (is.null(dim(X_full))){
 				X_full = matrix(X_full, ncol = 2L)
@@ -239,7 +212,6 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 			if (is.null(colnames(X_full))) {
 				colnames(X_full) = c("(Intercept)", "treatment", if (ncol(X_full) > 2L) private$get_covariate_names() else NULL)
 			}
-
 			reduced = private$reduce_design_matrix_preserving_treatment(X_full)
 			X_fit = reduced$X
 			j_treat = reduced$j_treat
@@ -247,7 +219,6 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 				private$set_failed_fit_cache()
 				return(invisible(NULL))
 			}
-
 			fit = private$fit_modified_poisson(X_fit, j_treat, estimate_only = estimate_only)
 			if (!is.null(fit)) {
 				private$best_X_colnames = setdiff(colnames(X_fit), c("(Intercept)", "treatment"))
@@ -264,7 +235,6 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 				private$set_failed_fit_cache()
 				return(invisible(NULL))
 			}
-
 			private$cached_mod = fit$mod %||% fit
 			private$cached_values$likelihood_test_context = list(
 				X = X_fit,
@@ -280,7 +250,6 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 		}
 	)
 )
-
 #' G-Computation Risk-Difference Inference for KK Designs with Binary Responses
 #'
 #' Fits an all-subject logistic working model for a KK incidence outcome using
@@ -306,16 +275,13 @@ InferenceIncidKKGCompRiskDiff = R6::R6Class("InferenceIncidKKGCompRiskDiff",
 	inherit = InferenceIncidKKGCompAbstract,
 	public = list(
 	),
-
 	private = list(
 		build_design_matrix = function(){
 			private$create_design_matrix()
 		},
-
 		get_estimand_type = function() "RD"
 	)
 )
-
 #' G-Computation Risk-Ratio Inference for KK Designs with Binary Responses
 #'
 #' Fits a all-subject logistic working model for a KK incidence outcome using
@@ -341,16 +307,13 @@ InferenceIncidKKGCompRiskRatio = R6::R6Class("InferenceIncidKKGCompRiskRatio",
 	inherit = InferenceIncidKKGCompAbstract,
 	public = list(
 	),
-
 	private = list(
 		build_design_matrix = function(){
 			private$create_design_matrix()
 		},
-
 		get_estimand_type = function() "RR"
 	)
 )
-
 #' Modified-Poisson Inference for KK Designs with Binary Responses
 #'
 #' Fits an all-subject modified-Poisson working model for incidence outcomes under
@@ -375,7 +338,6 @@ InferenceIncidKKModifiedPoisson = R6::R6Class("InferenceIncidKKModifiedPoisson",
 	inherit = InferenceAbstractKKModifiedPoisson,
 	public = list(
 	),
-
 	private = list(
 		build_design_matrix = function(){
 			private$create_design_matrix()

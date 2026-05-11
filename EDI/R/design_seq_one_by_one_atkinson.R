@@ -10,8 +10,7 @@
 DesignSeqOneByOneAtkinson = R6::R6Class("DesignSeqOneByOneAtkinson",
 	inherit = DesignSeqOneByOne,
 	public = list(
-		#' @description
-		#' Initialize an Atkinson sequential experimental design
+		#' @description Initialize an Atkinson sequential experimental design
 		#'
 		#' @param  response_type 	The data type of response values.
 		#' @param  prob_T  The probability of the treatment assignment.
@@ -36,9 +35,7 @@ DesignSeqOneByOneAtkinson = R6::R6Class("DesignSeqOneByOneAtkinson",
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 			private$uses_covariates = TRUE
 		},
-
-		#' @description
-		#' Assign the next subject to a treatment group
+		#' @description Assign the next subject to a treatment group
 		#'
 		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){
@@ -60,9 +57,7 @@ DesignSeqOneByOneAtkinson = R6::R6Class("DesignSeqOneByOneAtkinson",
 				})
 			}
 		},
-
-		#' @description
-		#' Draw multiple treatment assignment vectors.
+		#' @description Draw multiple treatment assignment vectors.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'
@@ -76,6 +71,5 @@ DesignSeqOneByOneAtkinson = R6::R6Class("DesignSeqOneByOneAtkinson",
 				as.integer(r)
 			)$w_mat
 		}
-
 	)
 )

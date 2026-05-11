@@ -28,13 +28,10 @@
 InferenceSuite = R6::R6Class("InferenceSuite",
 	lock_objects = FALSE,
 	public = list(
-
 		#' @field applicable_design_classes Character vector of applicable inference
 		#'   class names derived during initialization.
 		applicable_design_classes = NULL,
-
-		#' @description
-		#' Initialize an \code{InferenceSuite}.
+		#' @description Initialize an \code{InferenceSuite}.
 		#' @param des_obj A completed \code{Design} object.
 		#' @param inference_params A named list of lists supplying additional
 		#'   constructor arguments for specific inference classes.  Each name
@@ -60,10 +57,8 @@ InferenceSuite = R6::R6Class("InferenceSuite",
 					 any(nchar(names(inference_params)) == 0L))) {
 				stop("InferenceSuite: inference_params must be a fully named list.")
 			}
-
 			# ── 1. Discover applicable classes ────────────────────────────────
 			self$applicable_design_classes = private$.discover_applicable_design_classes(des_obj)
-
 			# ── 2. Validate inference_params ──────────────────────────────────
 			for (cls_name in names(inference_params)) {
 				# Must be applicable for this design
@@ -74,7 +69,6 @@ InferenceSuite = R6::R6Class("InferenceSuite",
 							cls_name))
 					}
 				}
-
 				# All supplied param names must be formals of initialize
 				params = inference_params[[cls_name]]
 				if (should_run_asserts()) {
@@ -97,29 +91,25 @@ InferenceSuite = R6::R6Class("InferenceSuite",
 					}
 				}
 			}
-
 			private$des_obj          = des_obj
 			private$inference_params = inference_params
 		}
 	),
-
 	private = list(
 		des_obj          = NULL,
 		inference_params = NULL,
-
 		# Known non-instantiable base / infrastructure classes
 		.base_class_names = c(
 			"Inference",
-			"InferenceAsymp", "InferenceBoot", "InferenceRand",
+			"InferenceAsymp", "InferenceNonParamBootstrap", "InferenceRand",
 			"InferenceRandCI", "InferenceExact",
+			"InferenceAsympLik", "InferenceParamBootstrap",
 			"InferenceKKPassThrough", "InferenceKKPassThroughCompound",
-			"InferenceMLEorKMforGLMs", "InferenceMLEorKMSummaryTable"
+			"InferenceAsympLikStdModCache", "InferenceMLEorKMSummaryTable"
 		),
-
 		# Error patterns that signal a genuine incompatibility
 		.incompat_pattern =
 			"only available for|requires a .* design|only available for uncensored|not recommended for",
-
 		.is_inference_subclass = function(obj) {
 			if (!inherits(obj, "R6ClassGenerator")) return(FALSE)
 			anc = obj
@@ -129,18 +119,15 @@ InferenceSuite = R6::R6Class("InferenceSuite",
 			}
 			FALSE
 		},
-
 		.discover_applicable_design_classes = function(des_obj) {
 			ns        = getNamespace("EDI")
 			all_names = ls(ns)
-
 			# Filter to concrete Inference subclasses
 			candidates = Filter(function(nm) {
 				if (nm %in% private$.base_class_names)   return(FALSE)
 				if (grepl("Abstract", nm, fixed = TRUE)) return(FALSE)
 				private$.is_inference_subclass(get(nm, envir = ns))
 			}, all_names)
-
 			# Probe compatibility via try-construction (stdout suppressed to silence cat() calls)
 			applicable = Filter(function(nm) {
 				cls = get(nm, envir = ns)
@@ -157,7 +144,6 @@ InferenceSuite = R6::R6Class("InferenceSuite",
 				}
 				TRUE
 			}, candidates)
-
 			sort(applicable)
 		}
 	)

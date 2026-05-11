@@ -19,8 +19,7 @@ InferenceIncidenceWald = R6::R6Class("InferenceIncidenceWald",
 	lock_objects = FALSE,
 	inherit = InferenceAllSimpleMeanDiff,
 	public = list(
-		#' @description
-		#' Initialize Wald incidence inference.
+		#' @description Initialize Wald incidence inference.
 		#' @param des_obj A completed design object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -38,7 +37,6 @@ InferenceIncidenceWald = R6::R6Class("InferenceIncidenceWald",
 			}
 		}
 	),
-
 	private = list(
 		get_standard_error = function(){
 			if (is.null(private$cached_values$incidence_wald_se)) {
@@ -46,26 +44,21 @@ InferenceIncidenceWald = R6::R6Class("InferenceIncidenceWald",
 			}
 			private$cached_values$incidence_wald_se
 		},
-
 		get_degrees_of_freedom = function(){
 			NA_real_
 		},
-
 		compute_incidence_wald_components = function(){
 			if (is.null(private$cached_values$beta_hat_T)) {
 				self$compute_estimate()
 			}
-
 			y_t = private$cached_values$yTs
 			y_c = private$cached_values$yCs
 			n_t = length(y_t)
 			n_c = length(y_c)
-
 			if (n_t == 0L || n_c == 0L) {
 				private$cached_values$incidence_wald_se = NA_real_
 				return(invisible(NULL))
 			}
-
 			p_t = mean(y_t)
 			p_c = mean(y_c)
 			var_hat = p_t * (1 - p_t) / n_t + p_c * (1 - p_c) / n_c

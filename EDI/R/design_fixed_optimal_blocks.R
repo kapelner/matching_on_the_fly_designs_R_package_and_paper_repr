@@ -14,8 +14,7 @@
 DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 	inherit = DesignFixed,
 	public = list(
-			#' @description
-			#' Initialize a fixed optimal-blocks design.
+			#' @description Initialize a fixed optimal-blocks design.
 			#' @param B Number of blocks to form. If omitted and \code{n} is supplied,
 			#'   defaults to \code{floor(sqrt(n))}, with a minimum of 1.
 			#' @param method Algorithm used to partition subjects into blocks.
@@ -95,9 +94,7 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 						private$assert_feasible_block_sizes(as.integer(n))
 					}
 			},
-
-		#' @description
-		#' Draw treatment assignments according to the optimal-blocks design.
+		#' @description Draw treatment assignments according to the optimal-blocks design.
 		#' @param r Number of assignment vectors to draw.
 		#' @return A numeric matrix with one assignment vector per column.
 		draw_ws_according_to_design = function(r = 100){
@@ -110,14 +107,12 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 			w_mat
 		}
 	),
-
 	private = list(
 		B = NULL,
 		method = NULL,
 		dist_spec = NULL,
 		block_ids = NULL,
 		distance_matrix = NULL,
-
 		draw_bootstrap_indices = function(bootstrap_type = NULL){
 			block_ids = as.character(private$get_or_compute_block_ids())
 			if (is.null(bootstrap_type) || bootstrap_type == "within_blocks") {
@@ -128,7 +123,6 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 				list(i_b = as.integer(i_b), m_vec_b = NULL)
 			}
 		},
-
 		assert_feasible_block_sizes = function(n){
 			if (should_run_asserts()) {
 				if (private$B > n) {
@@ -141,17 +135,14 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 			}
 			invisible(NULL)
 		},
-
 		get_or_compute_block_ids = function(){
 			if (!is.null(private$block_ids)) {
 				return(private$block_ids)
 			}
-
 			n = self$get_n()
 			if (should_run_asserts()) {
 				private$assert_feasible_block_sizes(n)
 			}
-
 			if (is.null(private$X)) {
 				private$covariate_impute_if_necessary_and_then_create_model_matrix()
 			}
@@ -160,7 +151,6 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 				private$block_ids = factor(rep(seq_len(private$B), length.out = n))
 				return(private$block_ids)
 			}
-
 			private$block_ids = switch(private$method,
 				greedy = private$solve_greedy_blocks(X),
 				`K-way` = private$solve_kway_blocks(X),
@@ -171,12 +161,10 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 			)
 			private$block_ids
 		},
-
 			get_or_compute_distance_matrix = function(X){
 				if (!is.null(private$distance_matrix)) {
 					return(private$distance_matrix)
 				}
-
 				if (is.function(private$dist_spec)) {
 					D = optimal_blocks_distance_matrix_cpp(
 						X = X,
@@ -190,12 +178,10 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 						mahal = optimal_blocks_distance_matrix_cpp(X, dist_code = 3L)
 					)
 				}
-
 			storage.mode(D) = "double"
 			private$distance_matrix = D
 			D
 		},
-
 		solve_greedy_blocks = function(X) {
 			n    = nrow(X)
 			B    = private$B
@@ -227,18 +213,15 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 			}
 			factor(block_ids, levels = seq_len(B))
 		},
-
 		solve_kway_blocks = function(X) {
 			assignments = anticlust::balanced_clustering(X, K = private$B)
 			factor(assignments, levels = seq_len(private$B))
 		},
-
 		solve_optimal_blocks = function(D){
 			n = nrow(D)
 			B = private$B
 			lower_size = floor(n / B)
 			upper_size = ceiling(n / B)
-
 			model = ompr::MIPModel()
 			model = ompr::add_variable(model, x[i, k], i = 1:n, k = 1:B, type = "binary")
 			model = ompr::add_variable(model, z[i, j, k], i = 1:n, j = 1:n, k = 1:B, type = "binary", i < j)
@@ -247,7 +230,6 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 				ompr::sum_expr(D[i, j] * z[i, j, k], i = 1:n, j = 1:n, k = 1:B, i < j),
 				"min"
 			)
-
 			model = ompr::add_constraint(model, ompr::sum_expr(x[i, k], k = 1:B) == 1, i = 1:n)
 			model = ompr::add_constraint(model, ompr::sum_expr(x[i, k], i = 1:n) >= lower_size, k = 1:B)
 			model = ompr::add_constraint(model, ompr::sum_expr(x[i, k], i = 1:n) <= upper_size, k = 1:B)
@@ -255,7 +237,6 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 			model = ompr::add_constraint(model, z[i, j, k] <= x[i, k], i = 1:n, j = 1:n, k = 1:B, i < j)
 			model = ompr::add_constraint(model, z[i, j, k] <= x[j, k], i = 1:n, j = 1:n, k = 1:B, i < j)
 			model = ompr::add_constraint(model, z[i, j, k] >= x[i, k] + x[j, k] - 1, i = 1:n, j = 1:n, k = 1:B, i < j)
-
 			result = ompr::solve_model(model, ompr.roi::with_ROI(solver = "glpk", verbose = FALSE))
 			solution = ompr::get_solution(result, x[i, k])
 			if (should_run_asserts()) {

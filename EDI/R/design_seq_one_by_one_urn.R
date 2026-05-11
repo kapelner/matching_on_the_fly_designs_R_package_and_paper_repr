@@ -13,8 +13,7 @@ DesignSeqOneByOneUrn = R6::R6Class("DesignSeqOneByOneUrn",
 	inherit = DesignSeqOneByOne,
 	public = list(
 		#'
-		#' @description
-		#' Initialize an Urn sequential experimental design
+		#' @description Initialize an Urn sequential experimental design
 		#'
 		#' @param alpha The initial number of balls of each type (Treatment/Control) in the urn.
 		#' @param beta The number of balls of the opposite type to add to the urn after an assignment.
@@ -47,9 +46,7 @@ DesignSeqOneByOneUrn = R6::R6Class("DesignSeqOneByOneUrn",
 			private$alpha = alpha
 			private$beta = beta
 		},
-
-		#' @description
-		#' Assign the next subject to a treatment group
+		#' @description Assign the next subject to a treatment group
 		#'
 		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){
@@ -63,8 +60,6 @@ DesignSeqOneByOneUrn = R6::R6Class("DesignSeqOneByOneUrn",
 			
 			rbinom(1, 1, prob_T)
 		}
-
-
 	),
 	private = list(
 		alpha = NULL,

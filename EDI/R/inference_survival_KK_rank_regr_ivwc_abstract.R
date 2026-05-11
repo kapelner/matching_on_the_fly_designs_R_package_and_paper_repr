@@ -19,9 +19,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
-
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -50,17 +48,13 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 				}
 			}
 		},
-
-		#' @description
-		#' Returns the estimated treatment effect (log-time ratio).
+		#' @description Returns the estimated treatment effect (log-time ratio).
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes the asymptotic confidence interval.
+		#' @description Computes the asymptotic confidence interval.
 		#' @param alpha                                   The confidence level in the computed
 		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -73,9 +67,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Computes the asymptotic p-value.
+		#' @description Computes the asymptotic p-value.
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval = function(delta = 0){
@@ -96,10 +88,8 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			}
 		}
 	),
-
 	private = list(
 		max_abs_reasonable_coef = 1e4,
-
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		extract_term_estimate = function(mod, term_name = "w"){
 			coefs = tryCatch(stats::coef(mod), error = function(e) NULL)
@@ -108,7 +98,6 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			}
 			as.numeric(coefs[[term_name]])
 		},
-
 		extract_term_se = function(mod, term_name = "w"){
 			coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
 			if (is.null(coef_table)){
@@ -129,19 +118,15 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			}
 			as.numeric(tab[term_name, se_col])
 		},
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			private$clear_nonestimable_state()
-
 			KKstats = private$cached_values$KKstats
 			m   = KKstats$m
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
-
 			# --- Matched pairs: aftsrr with clustering ---
 			if (m > 0){
 				private$aftsrr_for_matched_pairs(estimate_only = estimate_only)
@@ -150,7 +135,6 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			ssq_m    = private$cached_values$ssq_beta_T_matched
 			m_ok     = !is.null(beta_m) && is.finite(beta_m) &&
 			           !is.null(ssq_m)  && is.finite(ssq_m) && ssq_m > 0
-
 			# --- Reservoir: aftsrr (independent) ---
 			if (nRT > 0 && nRC > 0){
 				private$aftsrr_for_reservoir(estimate_only = estimate_only)
@@ -159,7 +143,6 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			ssq_r    = private$cached_values$ssq_beta_T_reservoir
 			r_ok     = !is.null(beta_r) && is.finite(beta_r) &&
 			           !is.null(ssq_r)  && is.finite(ssq_r) && ssq_r > 0
-
 			# --- Variance-weighted combination ---
 			if (m_ok && r_ok){
 				w_star = ssq_r / (ssq_r + ssq_m)
@@ -189,30 +172,24 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			}
 			private$clear_nonestimable_state()
 		},
-
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
 			}
 		},
-
 		aftsrr_for_matched_pairs = function(estimate_only = FALSE){
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
-
 			i_matched = which(m_vec > 0)
 			y_m       = private$y[i_matched]
 			dead_m    = private$dead[i_matched]
 			w_m       = private$w[i_matched]
 			strata_m  = m_vec[i_matched]
-
 			# Filter strata that have no events (aftsrr needs at least some events)
 			if (sum(dead_m) < 2) return(invisible(NULL))
-
 			dat = data.frame(y = y_m, dead = dead_m, w = w_m, id = strata_m)
 			formula_str = "survival::Surv(y, dead) ~ w"
-
 			mod = NULL
 			if (ncol(as.matrix(private$X)) > 0){
 				X_m = as.matrix(private$get_X()[i_matched, drop = FALSE])
@@ -243,27 +220,20 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 					suppressMessages(aftgee::aftsrr(as.formula(formula_str), id = id, data = dat, se = se_method, B = 0))
 				}, error = function(e) NULL)
 			}
-
 			if (is.null(mod)) return(invisible(NULL))
-
 			beta = private$extract_term_estimate(mod, "w")
 			se   = if (estimate_only) NA_real_ else private$extract_term_se(mod, "w")
-
 			private$cached_values$beta_T_matched     = if (is.finite(beta) && abs(beta) <= private$max_abs_reasonable_coef) beta else NA_real_
 			private$cached_values$ssq_beta_T_matched = if (!estimate_only && is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef) se^2 else NA_real_
 		},
-
 		aftsrr_for_reservoir = function(estimate_only = FALSE){
 			y_r    = private$cached_values$KKstats$y_reservoir
 			w_r    = private$cached_values$KKstats$w_reservoir
 			dead_r = private$dead[private$m == 0]
 			X_r    = as.matrix(private$cached_values$KKstats$X_reservoir)
-
 			if (sum(dead_r) < 2) return(invisible(NULL))
-
 			dat = data.frame(y = y_r, dead = dead_r, w = w_r)
 			formula_str = "survival::Surv(y, dead) ~ w"
-
 			mod = NULL
 			if (ncol(as.matrix(private$X)) > 0){
 				for (X_candidate in private$aft_design_candidates(w_r, X_r, cache_key = "reservoir")){
@@ -293,12 +263,9 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 					suppressMessages(aftgee::aftsrr(as.formula(formula_str), data = dat, se = se_method, B = 0))
 				}, error = function(e) NULL)
 			}
-
 			if (is.null(mod)) return(invisible(NULL))
-
 			beta = private$extract_term_estimate(mod, "w")
 			se   = if (estimate_only) NA_real_ else private$extract_term_se(mod, "w")
-
 			private$cached_values$beta_T_reservoir     = if (is.finite(beta) && abs(beta) <= private$max_abs_reasonable_coef) beta else NA_real_
 			private$cached_values$ssq_beta_T_reservoir = if (!estimate_only && is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef) se^2 else NA_real_
 		}

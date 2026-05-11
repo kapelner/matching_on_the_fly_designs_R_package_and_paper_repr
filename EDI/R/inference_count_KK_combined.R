@@ -21,8 +21,7 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGLMM,
 	public = list(
-		#' @description
-		#' Initialize a KK Poisson GLMM inference object.
+		#' @description Initialize a KK Poisson GLMM inference object.
 		#' @param des_obj A completed \code{Design} object with a count response.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use the internal Rcpp Poisson GLMM.
@@ -46,7 +45,6 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 		supports_likelihood_tests = function(){
 			isTRUE(private$use_rcpp)
 		},
-
 		shared = function(estimate_only = FALSE){
 			if (private$use_rcpp) {
 				private$shared_rcpp(estimate_only)
@@ -54,14 +52,12 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 				super$shared(estimate_only)
 			}
 		},
-
 		shared_rcpp = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 			private$clear_nonestimable_state()
 			private$cached_mod = NULL
 			private$cached_values$likelihood_test_context = NULL
-
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
@@ -69,7 +65,6 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 			reservoir_idx = which(group_id == 0L)
 			if (length(reservoir_idx) > 0L)
 				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
-
 			if (ncol(as.matrix(private$X)) > 0){
 				X_fit = private$create_design_matrix()
 			} else {
@@ -77,7 +72,6 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 			}
 			X_fit = as.matrix(X_fit)
 			j_T = 1L  # 0-based index of treatment column
-
 			fit = tryCatch(
 				fast_poisson_glmm_cpp(
 					X        = X_fit,
@@ -90,18 +84,14 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 				),
 				error = function(e) NULL
 			)
-
 			if (is.null(fit) || !isTRUE(fit$converged)) {
 				# Rcpp failed; fall back to glmmTMB
 				return(super$shared(estimate_only = estimate_only))
 			}
-
 			beta_hat_T = as.numeric(fit$b[j_T + 1L])
-
 			if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
 				return(super$shared(estimate_only = estimate_only))
 			}
-
 			private$cached_mod = fit
 			private$set_fit_warm_start(as.numeric(c(fit$b, fit$log_sigma)), "params")
 			private$cached_values$likelihood_test_context = list(
@@ -113,13 +103,10 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 			)
 			private$cached_values$beta_hat_T = beta_hat_T
 			private$cached_values$df   = Inf
-
 			if (estimate_only) return(invisible(NULL))
-
 			ssq = fit$ssq_b_T
 			private$cached_values$s_beta_hat_T = if (!is.null(ssq) && is.finite(ssq) && ssq > 0) sqrt(ssq) else NA_real_
 		},
-
 		get_likelihood_test_spec = function(){
 			if (!isTRUE(private$use_rcpp)) return(NULL)
 			private$shared(estimate_only = FALSE)
@@ -177,7 +164,6 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 		}
 	)
 )
-
 #' KK Hurdle Poisson Combined-Likelihood Inference for Count Responses
 #'
 #' Fits a compound estimator for KK matching-on-the-fly designs with count

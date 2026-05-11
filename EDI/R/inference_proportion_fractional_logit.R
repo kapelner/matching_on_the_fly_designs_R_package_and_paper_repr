@@ -17,10 +17,9 @@
 #' @export
 InferencePropFractionalLogit = R6::R6Class("InferencePropFractionalLogit",
 	lock_objects = FALSE,
-	inherit = InferenceMLEorKMforGLMs,
+	inherit = InferenceAsympLikStdModCache,
 	public = list(
-		#' @description
-		#' Initialize a fractional-logit inference object.
+		#' @description Initialize a fractional-logit inference object.
 		#' @param des_obj A completed \code{Design} object with a proportion response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -38,14 +37,11 @@ InferencePropFractionalLogit = R6::R6Class("InferencePropFractionalLogit",
 			}
 		}
 	),
-
 	private = list(
 		best_X_colnames = NULL,
-
 		supports_likelihood_tests = function(){
 			FALSE
 		},
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -53,28 +49,23 @@ InferencePropFractionalLogit = R6::R6Class("InferencePropFractionalLogit",
 			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-
 			X_cols = private$best_X_colnames
 			X_data = private$get_X()
-
 			if (length(X_cols) == 0L){
 				X = cbind(`(Intercept)` = 1, treatment = private$w)
 			} else {
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
 			}
-
 			res = fast_logistic_regression_cpp(X = X, y = as.numeric(private$y))
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
 			as.numeric(res$b[2])
 		},
-
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
-
 		generate_mod = function(estimate_only = FALSE){
 			X_full = private$build_design_matrix()
 			
@@ -95,13 +86,11 @@ InferencePropFractionalLogit = R6::R6Class("InferencePropFractionalLogit",
 					is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
 				}
 			)
-
 			if (!is.null(attempt$fit)){
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 			}
 			attempt$fit
 		},
-
 		build_design_matrix = function(){
 			X_cov = private$X
 			if (is.null(X_cov) || ncol(X_cov) == 0) {

@@ -16,10 +16,9 @@
 #' @export
 InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 	lock_objects = FALSE,
-	inherit = InferenceMLEorKMforGLMs,
+	inherit = InferenceAsympLikStdModCache,
 	public = list(
-		#' @description
-		#' Initialize a beta-regression inference object.
+		#' @description Initialize a beta-regression inference object.
 		#' @param des_obj A completed \code{Design} object with a proportion response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -40,10 +39,8 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 			}
 		}
 	),
-
 	private = list(
 		best_X_colnames = NULL,
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -51,32 +48,26 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-
 			X_cols = private$best_X_colnames
 			X_data = private$get_X()
-
 			if (length(X_cols) == 0L){
 				X = cbind(`(Intercept)` = 1, treatment = private$w)
 			} else {
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
 			}
-
 			res = fast_beta_regression_cpp(X = X, y = as.numeric(private$y), optimization_alg = private$optimization_alg)
 			if (is.null(res) || !is.finite(res$coefficients[2])){
 				return(NA_real_)
 			}
 			as.numeric(res$coefficients[2])
 		},
-
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
-
 		supports_likelihood_tests = function(){
 			TRUE
 		},
-
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context
@@ -112,10 +103,8 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 				neg_loglik = function(fit){ as.numeric(fit$neg_loglik) }
 			)
 		},
-
 		generate_mod = function(estimate_only = FALSE){
 			X_full = private$build_design_matrix()
-
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
 				required_cols = 2L,
@@ -138,7 +127,6 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 					is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
 				}
 			)
-
 			if (!is.null(attempt$fit)){
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(
@@ -150,7 +138,6 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 			}
 			attempt$fit
 		},
-
 		build_design_matrix = function(){
 			X_cov = private$X
 			if (is.null(X_cov) || ncol(X_cov) == 0) {

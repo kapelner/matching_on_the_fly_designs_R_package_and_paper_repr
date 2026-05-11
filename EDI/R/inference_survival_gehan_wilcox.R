@@ -30,8 +30,7 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-		#' @description
-		#' Initialize the Inference object.
+		#' @description Initialize the Inference object.
 		#'
 		#' @param des_obj The design object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -45,10 +44,7 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
-
-
-		#' @description
-		#' Returns the mean difference in Peto-Prentice weighted martingale residuals
+		#' @description Returns the mean difference in Peto-Prentice weighted martingale residuals
 		#' between the treatment and control groups. Positive values indicate that treatment
 		#' subjects experienced fewer early events than expected.
 		#'
@@ -74,9 +70,7 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 			private$compute_shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes a (1 - alpha)-level confidence interval based on the asymptotic normality
+		#' @description Computes a (1 - alpha)-level confidence interval based on the asymptotic normality
 		#' of the Peto-Prentice weighted martingale residual mean difference. Falls back to
 		#' bootstrap if the SE is unavailable.
 		#'
@@ -111,9 +105,7 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Computes the Peto-Prentice (Gehan-Wilcoxon) two-sided p-value via
+		#' @description Computes the Peto-Prentice (Gehan-Wilcoxon) two-sided p-value via
 		#' \code{survival::survdiff(rho = 1)}, which puts greater weight on early events
 		#' relative to the standard log-rank test (\code{rho = 0}).
 		#' For delta != 0, not yet implemented.
@@ -150,9 +142,7 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 			surv_diff = survival::survdiff(surv_obj ~ private$w, rho = 1)
 			surv_diff$pvalue
 		},
-
-		#' @description
-		#' Randomization confidence intervals are not supported for this class because
+		#' @description Randomization confidence intervals are not supported for this class because
 		#' the Peto-Prentice weighted score scale is not commensurate with the time-ratio
 		#' null used by the randomization CI bisection algorithm.
 		#'
@@ -165,23 +155,17 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 			stop("Randomization confidence intervals are not supported for InferenceSurvivalGehanWilcox due to inconsistent estimator units on the Peto-Prentice score scale.")
 		}
 	),
-
 	private = list(
-
 		# Computes the Peto-Prentice weighted martingale residual estimate and SE.
 		# Results are cached in private$cached_values.
 		compute_shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-
 			y    = private$y
 			dead = private$dead
 			w    = private$w
-
 			surv_obj = survival::Surv(y, dead)
-
 			# Martingale residuals M_i = delta_i - Lambda_hat_0(t_i) from null Cox model
 			cox_null = tryCatch(
 				survival::coxph(surv_obj ~ 1),
@@ -202,7 +186,6 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 				private$cached_values$s_beta_hat_T = NA_real_
 				return(invisible(NULL))
 			}
-
 			# Peto-Prentice weights: S_hat(t_i^-) from the overall KM estimate.
 			# KM is right-continuous, so S(t^-) = km$surv at the largest event time < t.
 			# findInterval with left.open=TRUE finds the largest km_time strictly < y[i].
@@ -217,21 +200,17 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 			}
 			idx          = findInterval(y, km_all$time, left.open = TRUE)
 			peto_weights = c(1.0, km_all$surv)[idx + 1L]
-
 			# Weighted martingale residuals
 			M_w  = peto_weights * M
 			M_wT = M_w[w == 1]
 			M_wC = M_w[w == 0]
 			n_T  = length(M_wT)
 			n_C  = length(M_wC)
-
 			beta_hat = mean(M_wT) - mean(M_wC)
-
 			# Welch-style SE treating Peto-Prentice weights as fixed
 			v_T = if (n_T > 1L) var(M_wT) / n_T else 0
 			v_C = if (n_C > 1L) var(M_wC) / n_C else 0
 			se  = sqrt(v_T + v_C)
-
 			private$cached_values$beta_hat_T   = beta_hat
 			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
 		}

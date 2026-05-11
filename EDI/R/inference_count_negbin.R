@@ -16,11 +16,10 @@
 #' @export
 InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 	lock_objects = FALSE,
-	inherit = InferenceCountLikelihood,
+	inherit = InferenceAsympLikStdModCache,
 	public = list(
 				
-		#' @description
-		#' Initialize a negative binomial regression inference object.
+		#' @description Initialize a negative binomial regression inference object.
 		#' @param des_obj A completed \code{Design} object with a count response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -40,10 +39,8 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 			}
 		}
 	),
-
 	private = list(
 		best_X_colnames = NULL,
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -51,17 +48,14 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-
 			X_cols = private$best_X_colnames
 			X_data = private$get_X()
-
 			if (length(X_cols) == 0L){
 				X = cbind(1, private$w)
 			} else {
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(1, treatment = private$w, X_cov)
 			}
-
 			res = tryCatch(
 				fast_neg_bin_cpp(
 					X = X, y = as.integer(private$y),
@@ -77,15 +71,12 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 			private$set_fit_warm_start(c(as.numeric(res$b), log(as.numeric(res$theta_hat))), "params")
 			as.numeric(res$b[2])
 		},
-
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
-
 		supports_likelihood_tests = function(){
 			TRUE
 		},
-
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context
@@ -132,7 +123,6 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 				neg_loglik = function(fit){ as.numeric(fit$neg_loglik) }
 			)
 		},
-
 		generate_mod = function(estimate_only = FALSE){
 			X_data = private$get_X()
 			X_full = if (is.null(X_data) || ncol(X_data) == 0) {
@@ -140,7 +130,6 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 			} else {
 				cbind(`(Intercept)` = 1, treatment = private$w, X_data)
 			}
-
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
 				required_cols = 2L,
@@ -185,7 +174,6 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 					is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
 				}
 			)
-
 			if (!is.null(attempt$fit)){
 				private$set_fit_warm_start(c(as.numeric(attempt$fit$b), log(as.numeric(attempt$fit$theta_hat))), "params")
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))

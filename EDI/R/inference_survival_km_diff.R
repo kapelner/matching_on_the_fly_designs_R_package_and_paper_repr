@@ -21,8 +21,7 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-		#' @description
-		#' Initialize the Inference object.
+		#' @description Initialize the Inference object.
 		#'
 		#' @param des_obj The design object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -36,10 +35,7 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
-
-
-		#' @description
-		#' Computes the appropriate estimate for mean difference
+		#' @description Computes the appropriate estimate for mean difference
 		#'
 		#' @return  The setting-appropriate (see description) numeric estimate of the treatment effect
 		#'
@@ -68,9 +64,7 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 				"median"
 			)
 		},
-
-		#' @description
-		#' Computes a (1 - alpha)-level confidence interval for the difference in Kaplan-Meier
+		#' @description Computes a (1 - alpha)-level confidence interval for the difference in Kaplan-Meier
 		#' median survival times (treatment minus control).
 		#'
 		#' The Brookmeyer-Crowley confidence interval is obtained for each group's median
@@ -140,9 +134,7 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 			diff     = med_T - med_C
 			c(diff - z * se_diff, diff + z * se_diff)
 		},
-
-		#' @description
-		#' Computes a Wald-style 2-sided p-value by inverting the confidence interval.
+		#' @description Computes a Wald-style 2-sided p-value by inverting the confidence interval.
 		#'
 		#' @param delta The null difference to test against. Default is 0.
 		#'
@@ -153,9 +145,7 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 			}
 			private$invert_ci_to_find_two_sided_pval_for_treatment_effect(delta = delta)
 		},
-
-		#' @description
-		#' Computes a 2-sided p-value via the log rank test
+		#' @description Computes a 2-sided p-value via the log rank test
 		#'
 		#' @param delta The null difference to test against. For any
 		#'   treatment effect at all this is set to zero (the default).
@@ -191,9 +181,7 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 			surv_diff = survival::survdiff(survival_obj ~ private$w)
 			surv_diff$pvalue
 		},
-
-		#' @description
-		#' Computes a 1-alpha level frequentist confidence interval for the randomization test
+		#' @description Computes a 1-alpha level frequentist confidence interval for the randomization test
 		#'
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
@@ -206,6 +194,5 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 			stop("Randomization confidence intervals are not supported for InferenceSurvivalKMDiff due to inconsistent estimator units on the transformed scale.")
 		}
 	),
-
 	private = list()
 )

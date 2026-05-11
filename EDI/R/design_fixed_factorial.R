@@ -12,8 +12,7 @@
 DesignFixedFactorial = R6::R6Class("DesignFixedFactorial",
 	inherit = DesignFixed,
 	public = list(
-		#' @description
-		#' Initialize a factorial fixed experimental design
+		#' @description Initialize a factorial fixed experimental design
 		#'
 		#' @param factors         A list where names are factor names and values are number of
 		#'   levels (e.g. list(A=2, B=2)).
@@ -47,10 +46,7 @@ DesignFixedFactorial = R6::R6Class("DesignFixedFactorial",
 			private$combinations = expand.grid(lapply(factors, function(l) 1:l))
 			private$num_combinations = nrow(private$combinations)
 		},
-
-
-		#' @description
-		#' Draw multiple treatment assignment vectors according to balanced factorial randomization.
+		#' @description Draw multiple treatment assignment vectors according to balanced factorial randomization.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'
@@ -70,9 +66,7 @@ DesignFixedFactorial = R6::R6Class("DesignFixedFactorial",
 			}
 			w_mat
 		},
-
-		#' @description
-		#' Get the data frame of factor assignments for each subject.
+		#' @description Get the data frame of factor assignments for each subject.
 		#'
 		#' @return A data frame with n rows and columns corresponding to factors.
 		get_w_factorial = function(){
@@ -81,7 +75,6 @@ DesignFixedFactorial = R6::R6Class("DesignFixedFactorial",
 			private$combinations[w_idx, , drop = FALSE]
 		}
 	),
-
 	private = list(
 		factors = NULL,
 		combinations = NULL,

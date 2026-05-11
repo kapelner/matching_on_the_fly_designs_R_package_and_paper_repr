@@ -9,11 +9,10 @@
 #' @noRd
 InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugmentedPoissonAbstract",
 	lock_objects = FALSE,
-	inherit = InferenceCountLikelihood,
+	inherit = InferenceAsympLikStdModCache,
 	public = list(
 				
-		#' @description
-		#' Initialize
+		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -42,17 +41,13 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			
 			private$use_rcpp = use_rcpp
 		},
-
-		#' @description
-		#' Compute treatment estimate
+		#' @description Compute treatment estimate
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Compute asymp confidence interval
+		#' @description Compute asymp confidence interval
 		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -65,9 +60,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Compute asymp two sided pval for treatment effect
+		#' @description Compute asymp two sided pval for treatment effect
 		#' @param delta The null treatment effect (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -81,7 +74,6 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
-
 		private = list(
 		cached_mod = NULL,
 		get_standard_error = function(){
@@ -90,15 +82,12 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			if (is.finite(se)) return(se)
 			private$cached_values$s_beta_hat_T
 		},
-
 		get_degrees_of_freedom = function(){
 			private$shared(estimate_only = FALSE)
 			private$cached_values$df %||% NA_real_
 		},
-
 		best_X_colnames = NULL,
 		use_rcpp = TRUE,
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design from the original data
 			if (is.null(private$best_X_colnames)){
@@ -108,7 +97,6 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-
 			# Use the same design matrix structure as the original fit
 			X_cols = private$best_X_colnames
 			X_data = private$get_X()
@@ -121,7 +109,6 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X_fit = cbind(1, treatment = private$w, X_cov)
 			}
-
 			if (private$use_rcpp && identical(private$za_description(), "Zero-Inflated Negative Binomial")) {
 				start_params = private$get_fit_warm_start_for_length("params", 2L * ncol(X_fit) + 1L)
 				fit = tryCatch(
@@ -152,11 +139,8 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				return(as.numeric(cond_coef["w"]))
 			}
 		},
-
 		za_family = function() stop(class(self)[1], " must implement za_family()."),
-
 		za_description = function() stop(class(self)[1], " must implement za_description()."),
-
 		supports_likelihood_tests = function(){
 			isTRUE(private$use_rcpp) && private$za_description() %in% c(
 				"Zero-Inflated Negative Binomial",
@@ -164,7 +148,6 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				"Hurdle Poisson"
 			)
 		},
-
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context
@@ -246,7 +229,6 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				}
 			)
 		},
-
 		predictors_df = function(){
 			if (ncol(as.matrix(private$X)) > 0){
 				full_X = private$create_design_matrix()
@@ -257,23 +239,18 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				data.frame(w = private$w)
 			}
 		},
-
 		build_formula = function(dat){
 			fixed_terms = setdiff(colnames(dat), "y")
 			stats::as.formula(paste("y ~", paste(fixed_terms, collapse = " + ")))
 		},
-
 		build_zi_formula = function(dat){
 			fixed_terms = setdiff(colnames(dat), "y")
 			stats::as.formula(paste("~", paste(fixed_terms, collapse = " + ")))
 		},
-
 		fit_zero_augmented_model = function(dat){
 			formula_cond = private$build_formula(dat)
 			formula_zi = private$build_zi_formula(dat)
-
 			glmm_control = glmmTMB::glmmTMBControl(parallel = self$num_cores)
-
 			mod = tryCatch(
 				suppressWarnings(suppressMessages(
 					glmmTMB::glmmTMB(
@@ -286,10 +263,8 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				)),
 				error = function(e) NULL
 			)
-
 			if (!is.null(mod)) return(mod)
 			if (ncol(dat) <= 2L) return(NULL)
-
 			dat_fallback = dat[, c("y", "w"), drop = FALSE]
 			tryCatch(
 				suppressWarnings(suppressMessages(
@@ -304,12 +279,10 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				error = function(e) NULL
 			)
 		},
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 			private$cached_values$likelihood_test_context = NULL
-
 			if (is.null(private$best_X_colnames)) {
 				X_full = cbind(1, private$w, as.matrix(private$predictors_df()[, setdiff(colnames(private$predictors_df()), "w"), drop = FALSE]))
 				colnames(X_full)[1:2] = c("(Intercept)", "w")
@@ -338,7 +311,6 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					X_fit = cbind(1, w = private$w, X_cov)
 				}
 			}
-
 			if (private$use_rcpp && identical(private$za_description(), "Zero-Inflated Negative Binomial")) {
 				start_params = private$get_fit_warm_start_for_length("params", 2L * ncol(X_fit) + 1L)
 				fit = tryCatch(
@@ -379,7 +351,6 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					j_treat = 2L,
 					is_hurdle = is_hurdle
 				)
-
 				private$cached_values$beta_hat_T = as.numeric(fit$coefficients$cond[2])
 				if (!estimate_only) {
 					se = tryCatch(sqrt(fit$vcov[2, 2]), error = function(e) NA_real_)
@@ -394,13 +365,11 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				}
 					private$cached_mod = mod
 					private$cached_values$likelihood_test_context = NULL
-
 					cond_coef = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
 				if (is.null(cond_coef) || !("w" %in% names(cond_coef))){
 					private$cache_nonestimable_estimate("zero_augmented_poisson_treatment_missing")
 					return(invisible(NULL))
 				}
-
 				private$cached_values$beta_hat_T = as.numeric(cond_coef["w"])
 				if (!estimate_only) {
 					coef_table = tryCatch(summary(mod)$coefficients$cond, error = function(e) NULL)
@@ -409,7 +378,6 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				}
 			}
 		},
-
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))

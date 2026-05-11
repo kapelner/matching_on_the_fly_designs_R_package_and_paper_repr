@@ -16,11 +16,10 @@
 #' @export
 InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 	lock_objects = FALSE,
-	inherit = InferenceMLEorKMforGLMs,
+	inherit = InferenceAsympLikStdModCache,
 	public = list(
 				
-		#' @description
-		#' Initialize a logistic-regression inference object.
+		#' @description Initialize a logistic-regression inference object.
 		#' @param des_obj A completed \code{Design} object with an incidence response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -41,10 +40,8 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 			}
 		}
 	),
-
 	private = list(
 		best_X_colnames = NULL,
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design from the original data
 			if (is.null(private$best_X_colnames)){
@@ -54,11 +51,9 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-
 			# Use the same design matrix structure as the original fit
 			X_cols = private$best_X_colnames
 			X_data = private$get_X()
-
 			if (length(X_cols) == 0L){
 				# Univariate case
 				X = cbind(1, private$w)
@@ -67,7 +62,6 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(1, treatment = private$w, X_cov)
 			}
-
 			res = fast_logistic_regression_cpp(
 				X = X, y = as.numeric(private$y),
 				start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
@@ -80,19 +74,15 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 			private$set_fit_warm_start(res$b, "beta")
 			as.numeric(res$b[2])
 		},
-
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
-
 		supports_likelihood_tests = function(){
 			TRUE
 		},
-
 		supports_fisher_information = function(){
 			TRUE
 		},
-
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context
@@ -139,7 +129,6 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 				}
 			)
 		},
-
 		generate_mod = function(estimate_only = FALSE){
 			X_full = private$build_design_matrix()
 			
@@ -171,7 +160,6 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 					is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
 				}
 			)
-
 			if (!is.null(attempt$fit)){
 				private$set_fit_warm_start(attempt$fit$b, "beta")
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
@@ -184,7 +172,6 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 			}
 			attempt$fit
 		},
-
 		build_design_matrix = function(){
 			X_cov = private$X
 			if (is.null(X_cov) || ncol(X_cov) == 0) {

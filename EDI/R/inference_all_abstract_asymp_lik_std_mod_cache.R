@@ -3,44 +3,35 @@
 #' Abstract class providing MLE/KM-based inference methods for GLM and survival models.
 #'
 #' @keywords internal
-InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
+InferenceAsympLikStdModCache = R6::R6Class("InferenceAsympLikStdModCache",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLik,
+	inherit = InferenceParamBootstrap,
 	public = list(
-
-		#' @description
-		#' Computes the treatment estimate using the underlying model.
+		#' @description Computes the treatment estimate using the underlying model.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		}
 	),
-
 	private = list(
 		supports_likelihood_tests = function(){
 			TRUE
 		},
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
 		generate_mod = function(estimate_only = FALSE) stop(class(self)[1], " must implement generate_mod()"),
-
 		create_bootstrap_worker_state = function(){
 			private$create_design_backed_bootstrap_worker_state()
 		},
-
 		load_bootstrap_sample_into_worker = function(worker_state, indices){
 			private$load_bootstrap_sample_into_design_backed_worker(worker_state, indices)
 		},
-
 		compute_bootstrap_worker_estimate = function(worker_state){
 			private$compute_bootstrap_worker_estimate_via_compute_treatment_estimate(worker_state)
 		},
-
 		get_standard_error = function(){
 			private$shared(estimate_only = FALSE)
 			if (isTRUE(private$supports_information_preference())) {
@@ -49,28 +40,22 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 			}
 			private$cached_values$s_beta_hat_T
 		},
-
 		get_degrees_of_freedom = function(){
 			private$shared(estimate_only = FALSE)
 			private$cached_values$df
 		},
-
 		compute_score_two_sided_pval_impl = function(delta){
 			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "score")
 		},
-
 		compute_gradient_two_sided_pval_impl = function(delta){
 			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "gradient")
 		},
-
 		compute_lik_ratio_two_sided_pval_impl = function(delta){
 			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "lik_ratio")
 		},
-
 		get_likelihood_test_spec = function(){
 			NULL
 		},
-
 		make_warm_fit_null_wrapper = function(spec, cache_key){
 			last_start = NULL
 			last_delta = NULL
@@ -94,7 +79,6 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 				fit
 			}
 		},
-
 		compute_likelihood_test_two_sided_pval = function(delta, testing_type){
 			private$get_memoized_likelihood_test_pval(
 				delta = delta,
@@ -103,11 +87,9 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 				warm_cache_key = paste0("likelihood_test:", testing_type)
 			)
 		},
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			has_cached_se = !is.null(private$cached_values$s_beta_hat_T) &&
 				length(private$cached_values$s_beta_hat_T) == 1L &&
 				isTRUE(is.finite(private$cached_values$s_beta_hat_T))
@@ -126,7 +108,6 @@ InferenceMLEorKMforGLMs = R6::R6Class("InferenceMLEorKMforGLMs",
 			}
 			private$cached_values$beta_hat_T = model_output$b[2]
 			if (estimate_only) return(invisible(NULL))
-
 			ssq = model_output$ssq_b_2
 			if (!is.null(ssq) && !is.na(ssq) && ssq > 0) {
 				private$cached_values$s_beta_hat_T = sqrt(ssq)

@@ -11,8 +11,7 @@
 DesignFixediBCRD = R6::R6Class("DesignFixediBCRD",
 	inherit = DesignFixed,
 	public = list(
-		#' @description
-		#' Initialize a fixed balanced completely randomized experimental design
+		#' @description Initialize a fixed balanced completely randomized experimental design
 		#'
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
 		#'   "ordinal".
@@ -39,9 +38,7 @@ DesignFixediBCRD = R6::R6Class("DesignFixediBCRD",
 				private$m = rep(1L, as.integer(n))
 			}
 		},
-
-		#' @description
-		#' Draw multiple treatment assignment vectors according to balanced randomization.
+		#' @description Draw multiple treatment assignment vectors according to balanced randomization.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'
@@ -53,6 +50,5 @@ DesignFixediBCRD = R6::R6Class("DesignFixediBCRD",
 				as.numeric(private$prob_T)
 			)$w_mat
 		}
-
 	)
 )

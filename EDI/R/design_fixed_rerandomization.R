@@ -14,8 +14,7 @@
 DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 	inherit = DesignFixed,
 	public = list(
-		#' @description
-		#' Initialize a rerandomization fixed experimental design
+		#' @description Initialize a rerandomization fixed experimental design
 		#'
 		#' @param response_type 	The data type of response values.
 		#' @param prob_T  The probability of the treatment assignment.
@@ -46,10 +45,7 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 			private$objective = objective
 			private$uses_covariates = TRUE
 		},
-
-
-		#' @description
-		#' Draw multiple treatment assignment vectors.
+		#' @description Draw multiple treatment assignment vectors.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'
@@ -64,12 +60,10 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 				n_T = round(n * private$prob_T)
 				return(replicate(r, sample(c(rep(1, n_T), rep(0, n - n_T)))))
 			}
-
 			# Use GED for the balanced even-n case
 			use_ged = private$prob_T == 0.5 && n %% 2 == 0 &&
 					  check_package_installed("GreedyExperimentalDesign") &&
 					  check_package_installed("rJava")
-
 			if (use_ged){
 				private$covariate_impute_if_necessary_and_then_create_model_matrix()
 				X = private$X[1:n, , drop = FALSE]
@@ -98,7 +92,6 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 				}
 				return(w_mat[, seq_len(r), drop = FALSE])
 			}
-
 			# Fallback pure-R for unbalanced or odd-n cases
 			if (private$objective == "mahal_dist" && is.null(private$S_inv)){
 				X = private$X[1:n, , drop = FALSE]
@@ -108,7 +101,6 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 				}
 				private$S_inv = solve(S)
 			}
-
 			w_mat = matrix(NA_real_, nrow = n, ncol = r)
 			for (j in seq_len(r)){
 				w_mat[, j] = private$generate_one_rerandomized_w()
@@ -116,12 +108,10 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 			w_mat
 		}
 	),
-
 	private = list(
 		obj_val_cutoff = NULL,
 		objective = NULL,
 		S_inv = NULL,
-
 		validate_allocation_matrix = function(w_mat, n, r, require_balanced = FALSE){
 			if (is.vector(w_mat)) {
 				w_mat = matrix(w_mat, nrow = n, ncol = 1)
@@ -131,7 +121,6 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 					stop("GreedyExperimentalDesign returned an unexpected allocation matrix shape.")
 				}
 			}
-
 			storage.mode(w_mat) = "numeric"
 			if (should_run_asserts()) {
 				if (any(!is.finite(w_mat)) || any(is.na(w_mat))) {
@@ -140,7 +129,6 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 				if (any(!(w_mat %in% c(0, 1)))) {
 					stop("GreedyExperimentalDesign returned an invalid treatment assignment matrix.")
 				}
-
 				if (isTRUE(require_balanced)) {
 					treated_counts = colSums(w_mat)
 					if (any(treated_counts != n / 2)) {
@@ -148,15 +136,12 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 					}
 				}
 			}
-
 			w_mat[, seq_len(min(r, ncol(w_mat))), drop = FALSE]
 		},
-
 		generate_one_rerandomized_w = function(){
 			n = self$get_n()
 			X = private$X[1:n, , drop = FALSE]
 			n_T = round(n * private$prob_T)
-
 			repeat {
 				if (private$prob_T == 0.5){
 					w_cand = sample(c(rep(1, n_T), rep(0, n - n_T)))
@@ -169,7 +154,6 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 				}
 			}
 		},
-
 		compute_obj = function(X, w){
 			if (private$objective == "mahal_dist"){
 				diff = colMeans(X[w == 1, , drop = FALSE]) - colMeans(X[w == 0, , drop = FALSE])

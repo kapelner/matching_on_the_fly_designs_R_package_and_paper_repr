@@ -5,9 +5,7 @@ InferenceAbstractKKMarginalIncid = R6::R6Class("InferenceAbstractKKMarginalIncid
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
-
-		#' @description
-		#' Initialize
+		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -29,7 +27,6 @@ InferenceAbstractKKMarginalIncid = R6::R6Class("InferenceAbstractKKMarginalIncid
 			}
 		}
 	),
-
 	private = list(
 		get_covariate_names = function(){
 			X = private$get_X()
@@ -40,20 +37,17 @@ InferenceAbstractKKMarginalIncid = R6::R6Class("InferenceAbstractKKMarginalIncid
 			}
 			x_names
 		},
-
 		get_cluster_ids = function(){
 			des_priv = private$des_obj_priv_int
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec_int = as.integer(m_vec)
 			m_vec_int[is.na(m_vec_int)] = 0L
-
 			# Normalize design's m_vec the same way
 			des_m = des_priv$m
 			if (is.null(des_m)) des_m = rep(NA_integer_, private$n)
 			des_m_int = as.integer(des_m)
 			des_m_int[is.na(des_m_int)] = 0L
-
 			# Check design-level cache (only when m_vec matches design's m_vec)
 			if (!is.null(des_priv$cluster_id) && identical(m_vec_int, des_m_int)){
 				return(des_priv$cluster_id)
@@ -63,9 +57,7 @@ InferenceAbstractKKMarginalIncid = R6::R6Class("InferenceAbstractKKMarginalIncid
 				identical(m_vec_int, private$cached_values$cluster_id_m_vec)){
 				return(private$cached_values$cluster_id)
 			}
-
 			cluster_id = des_priv$compute_matching_cluster_ids(m_vec_int)
-
 			# Store at design level if this is the original m_vec
 			if (identical(m_vec_int, des_m_int)){
 				des_priv$cluster_id = cluster_id

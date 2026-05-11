@@ -23,6 +23,34 @@ test_that("SimulationFramework supports parallel execution", {
 	expect_true(all(results$rep %in% 1:4))
 })
 
+test_that("SimulationFramework supports mirai-backed replication parallelism", {
+	skip_if_not_installed("mirai")
+
+	on.exit(unset_num_cores(), add = TRUE)
+
+	set_num_cores(2L, force_mirai = TRUE)
+
+	results_file <- tempfile(fileext = ".csv")
+	set.seed(124)
+	sim <- SimulationFramework$new(
+		response_type = "continuous",
+		design_classes_and_params = list(DesignFixedBernoulli),
+		inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
+		inference_types_and_params = list(asymp_pval = list()),
+		n = 20L,
+		Nrep = 4L,
+		num_cores = 2L,
+		results_filename = results_file,
+		verbose = FALSE,
+		continue_from_last_result_row = FALSE
+	)
+
+	sim$run()
+	results <- sim$get_results()
+	expect_equal(nrow(results), 4L)
+	expect_true(all(results$rep %in% 1:4))
+})
+
 test_that("SimulationFramework supports sequential KK designs and specific inference", {
 	set.seed(456)
 	sim <- SimulationFramework$new(
@@ -138,7 +166,8 @@ test_that("SimulationFramework handles Friedman nonlinear model", {
 		n = 20L,
 		Nrep = 1L,
 		verbose = FALSE,
-		continue_from_last_result_row = FALSE
+		continue_from_last_result_row = FALSE,
+		stop_on_error = FALSE
 	)
 	
 	sim$run()

@@ -12,8 +12,7 @@
 DesignFixedBlocking = R6::R6Class("DesignFixedBlocking",
 	inherit = DesignFixed,
 	public = list(
-		#' @description
-		#' Initialize a fixed stratified blocking experimental design
+		#' @description Initialize a fixed stratified blocking experimental design
 		#'
 		#' @param strata_cols A character vector of column names to use for stratification.
 		#'   If `NULL` (the default), all available covariate columns are used.
@@ -33,18 +32,22 @@ DesignFixedBlocking = R6::R6Class("DesignFixedBlocking",
 		#'   are added. Set `B_target = NULL` to use all columns unconditionally.
 		#'   Set `exact_num_blocks = TRUE` to hard fail if the final key construction
 		#'   does not produce exactly `B_target` blocks.
-		#' @param exact_num_blocks Whether to require the greedy key construction to produce
-		#'   exactly `B_target` blocks. Default `FALSE`.
-		#' @param equal_block_sizes Whether to require all blocks to have the same number of
-		#'   subjects. Default `TRUE`. When `TRUE` and both `n` and `B_target` are known at
-		#'   construction time, an error is raised immediately if `n` is not divisible by
-		#'   `B_target`. A second check fires when subjects are added: if the covariate-based
-		#'   strata produce unequal block counts the design errors at that point. Set to
-		#'   `FALSE` to allow unequal blocks (note that `InferenceIncidCMH` and
-		#'   `InferenceIncidExtendedRobins` still require equal block sizes regardless).
-		#' @param verbose A flag for verbosity.
-		#' @param missingness_method How to handle missing values in covariates.
-		#' @param model_formula A formula object.
+			#' @param exact_num_blocks Whether to require the greedy key construction to produce
+			#'   exactly `B_target` blocks. Default `FALSE`.
+			#' @param equal_block_sizes Whether to require all blocks to have the same number of
+			#'   subjects. Default `TRUE`. When `TRUE` and both `n` and `B_target` are known at
+			#'   construction time, an error is raised immediately if `n` is not divisible by
+			#'   `B_target`. A second check fires when subjects are added: if the covariate-based
+			#'   strata produce unequal block counts the design errors at that point. Set to
+			#'   `FALSE` to allow unequal blocks (note that `InferenceIncidCMH` and
+			#'   `InferenceIncidExtendedRobins` still require equal block sizes regardless).
+			#' @param m Optional integer vector of explicit block identifiers, one per subject.
+			#'   If supplied, `n` must also be supplied and `length(m)` must equal `n`.
+			#'   The constructor then records this blocking structure immediately via
+			#'   `set_m()`, bypassing covariate-derived strata construction.
+			#' @param verbose A flag for verbosity.
+			#' @param missingness_method How to handle missing values in covariates.
+			#' @param model_formula A formula object.
 		#'
 		#' @return  A new `DesignFixedBlocking` object
 			initialize = function(
@@ -54,21 +57,30 @@ DesignFixedBlocking = R6::R6Class("DesignFixedBlocking",
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
 						preferred_num_bins_for_continuous_covariate = 2,
-						B_target = if (!is.null(n)) max(1L, floor(sqrt(n))) else NA_integer_,
-						exact_num_blocks = FALSE,
-						equal_block_sizes = TRUE,
-						verbose = FALSE,
-				missingness_method = "impute",
-				model_formula = ~ .) {
-			if (should_run_asserts()) {
-				if (!is.null(strata_cols)) assertCharacter(strata_cols, min.len = 1)
+							B_target = if (!is.null(n)) max(1L, floor(sqrt(n))) else NA_integer_,
+							exact_num_blocks = FALSE,
+							equal_block_sizes = TRUE,
+							m = NULL,
+							verbose = FALSE,
+					missingness_method = "impute",
+					model_formula = ~ .) {
+				if (should_run_asserts()) {
+					if (!is.null(strata_cols)) assertCharacter(strata_cols, min.len = 1)
 				assertCount(preferred_num_bins_for_continuous_covariate, positive = TRUE)
 				if (!is.null(B_target) && !is.na(B_target)) assertCount(B_target, positive = TRUE)
-				assertLogical(exact_num_blocks, len = 1)
-				assertLogical(equal_block_sizes, len = 1)
-				if (isTRUE(equal_block_sizes) && !is.null(n) && !is.null(B_target) && !is.na(B_target)) {
-					if (n %% B_target != 0L) {
-						stop("equal_block_sizes = TRUE requires n to be divisible by B_target, but n = ",
+					assertLogical(exact_num_blocks, len = 1)
+					assertLogical(equal_block_sizes, len = 1)
+					if (!is.null(m)) {
+						if (is.null(n)) {
+							stop("When supplying m to DesignFixedBlocking$new(), n must also be supplied.")
+						}
+						if (length(m) != as.integer(n)) {
+							stop("When supplying m to DesignFixedBlocking$new(), length(m) must equal n.")
+						}
+					}
+					if (isTRUE(equal_block_sizes) && !is.null(n) && !is.null(B_target) && !is.na(B_target)) {
+						if (n %% B_target != 0L) {
+							stop("equal_block_sizes = TRUE requires n to be divisible by B_target, but n = ",
 							n, " is not divisible by B_target = ", B_target, ".")
 					}
 				}
@@ -77,14 +89,15 @@ DesignFixedBlocking = R6::R6Class("DesignFixedBlocking",
 			private$blocking_capable = TRUE
 			private$strata_cols = strata_cols
 			private$preferred_num_bins_for_continuous_covariate = preferred_num_bins_for_continuous_covariate
-			private$B_target = B_target
-			private$exact_num_blocks = exact_num_blocks
-			private$equal_block_sizes = equal_block_sizes
-			private$uses_covariates = TRUE
-		},
-
-		#' @description
-		#' Draw multiple treatment assignment vectors according to stratified blocking.
+				private$B_target = B_target
+				private$exact_num_blocks = exact_num_blocks
+				private$equal_block_sizes = equal_block_sizes
+				private$uses_covariates = TRUE
+				if (!is.null(m)) {
+					self$set_m(m)
+				}
+			},
+		#' @description Draw multiple treatment assignment vectors according to stratified blocking.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'

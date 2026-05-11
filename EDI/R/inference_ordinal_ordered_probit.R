@@ -6,10 +6,9 @@
 #' @export
 InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRegr",
 	lock_objects = FALSE,
-	inherit = InferenceMLEorKMforGLMs,
+	inherit = InferenceAsympLikStdModCache,
 	public = list(
-		#' @description
-		#' Initialize an ordered probit inference object.
+		#' @description Initialize an ordered probit inference object.
 		#' @param des_obj A completed \code{Design} object with an ordinal response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -28,10 +27,8 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 			}
 		}
 	),
-
 	private = list(
 		best_X_colnames = NULL,
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -39,10 +36,8 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-
 			X_cols = private$best_X_colnames
 			X_data = private$get_X()
-
 			if (length(X_cols) == 0L){
 				X = matrix(private$w, ncol = 1L)
 				colnames(X) = "treatment"
@@ -50,26 +45,21 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(treatment = private$w, X_cov)
 			}
-
 			res = fast_ordinal_probit_regression_cpp(X = X, y = as.numeric(private$y))
 			if (is.null(res) || length(res$b) < 1L || !is.finite(res$b[length(res$b)])){
 				return(NA_real_)
 			}
 			as.numeric(res$b[length(res$b)])
 		},
-
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
-
 		supports_likelihood_tests = function(){
 			TRUE
 		},
-
 		supports_fisher_information = function(){
 			TRUE
 		},
-
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context
@@ -112,10 +102,8 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 				neg_loglik = function(fit){ as.numeric(fit$neg_loglik) }
 			)
 		},
-
 		generate_mod = function(estimate_only = FALSE){
 			X_full = private$build_design_matrix()
-
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
 				required_cols = 1L,
@@ -147,7 +135,6 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 					!is.null(ssq) && is.finite(ssq) && ssq > 0
 				}
 			)
-
 			if (!is.null(attempt$fit)){
 				private$set_fit_warm_start(attempt$fit$params, "params")
 				private$best_X_colnames = setdiff(colnames(attempt$X), "treatment")
@@ -164,7 +151,6 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 				NULL
 			}
 		},
-
 		build_design_matrix = function(){
 			X_cov = private$X
 			if (is.null(X_cov) || ncol(X_cov) == 0) {

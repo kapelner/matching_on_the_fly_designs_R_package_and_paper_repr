@@ -28,11 +28,8 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
-
-
 		#'
-		#' @description
-		#' Computes the IVWC mean-difference estimate across pairs and reservoir
+		#' @description Computes the IVWC mean-difference estimate across pairs and reservoir
 		#'
 		#' @return  The setting-appropriate (see description) numeric estimate of the treatment effect
 		#'
@@ -72,9 +69,7 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 				}
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes a 1-alpha level frequentist confidence interval
+		#' @description Computes a 1-alpha level frequentist confidence interval
 		#'
 		#' The compound estimator is treated as asymptotically normal, so this
 		#' interval is based on the estimated standard error of the inverse-variance
@@ -89,15 +84,12 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
-
 			if (is.null(private$cached_values$s_beta_hat_T)){
 				private$shared()
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Computes a 2-sided p-value
+		#' @description Computes a 2-sided p-value
 		#'
 		#' @param delta   The null difference to test against. For any treatment effect at all this is
 		#'   set to zero (the default).
@@ -113,9 +105,7 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-
-		#' @description
-		#' Computes a 1-alpha level frequentist confidence interval for the randomization test
+		#' @description Computes a 1-alpha level frequentist confidence interval for the randomization test
 		#'
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
@@ -134,21 +124,17 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 			super$compute_rand_confidence_interval(alpha = alpha, r = r, pval_epsilon = pval_epsilon, show_progress = show_progress, ci_search_control = ci_search_control)
 		}
 	),
-
 	private = list(
 		compute_fast_bootstrap_distr = function(B, i_reservoir, n_reservoir, m, y, w, m_vec) {
 			# Only safe for simple additive/linear combinations right now.
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
-
 			n = length(y)
 			y_mat = matrix(0.0, nrow = n, ncol = B)
 			w_mat = matrix(0L, nrow = n, ncol = B)
 			m_mat = matrix(0L, nrow = n, ncol = B)
-
 			for (b in 1:B) {
 				# Resample reservoir with replacement
 				i_reservoir_b = sample(i_reservoir, n_reservoir, replace = TRUE)
-
 				# For matched pairs, sample which pairs to include (with replacement)
 				if (m > 0) {
 					pairs_to_include = sample_int_replace_cpp(m, m)
@@ -164,28 +150,23 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 					i_matched_b = integer(0)
 					m_vec_b_matched = integer(0)
 				}
-
 				# Combine reservoir and matched indices
 				i_b = c(i_reservoir_b, i_matched_b)
-
 				y_mat[, b] = y[i_b]
 				w_mat[, b] = w[i_b]
 				m_mat[, b] = c(rep(0L, n_reservoir), m_vec_b_matched)
 			}
-
 			res = compute_matching_compound_bootstrap_parallel_cpp(
 				w_mat,
 				m_mat,
 				y_mat,
 				private$n_cpp_threads(ncol(y_mat))
 			)
-
 			return(res)
 		},
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			if (delta != 0) return(NULL)
-
 			n = length(y)
 			w_mat = permutations$w_mat
 			m_mat = permutations$m_mat
@@ -194,7 +175,6 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 			} else {
 				m_mat[is.na(m_mat)] = 0L
 			}
-
 			res = compute_matching_compound_distr_parallel_cpp(
 				w_mat,
 				m_mat,
@@ -206,7 +186,6 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			if (is.null(private$cached_values$beta_hat_T)){
 				self$compute_estimate()
 			}
@@ -217,10 +196,8 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 				is.null(private$cached_values$KKstats$w_star)){
 				private$compute_reservoir_and_match_statistics()
 			}
-
 			ssqD = private$cached_values$KKstats$ssqD_bar
 			ssqR = private$cached_values$KKstats$ssqR
-
 			nRT = private$cached_values$KKstats$nRT
 			nRC = private$cached_values$KKstats$nRC
 			m = private$cached_values$KKstats$m

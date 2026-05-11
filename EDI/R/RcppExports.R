@@ -1317,7 +1317,7 @@ fast_dep_cens_transform_optim_cpp <- function(X, y, dead, start_params, estimate
     .Call(`_EDI_fast_dep_cens_transform_optim_cpp`, X, y, dead, start_params, estimate_only, maxit, reltol, fixed_idx, fixed_values, optimization_alg)
 }
 
-#' Calculates the median or restricted mean survival time for a single group.
+#' Calculates the median or restricted mean survival time for a single group
 #'
 #' @param y Numeric vector of survival times.
 #' @param dead Integer vector of event indicators (1=event, 0=censored).
@@ -1329,7 +1329,7 @@ get_survival_stat_for_group <- function(y, dead, requested_stat) {
 }
 
 #' Calculates the difference in a survival statistic (median or restricted mean)
-#' between two groups (treatment vs. control).
+#' between two groups (treatment vs control)
 #'
 #' @param y Numeric vector of survival times.
 #' @param dead Integer vector of event indicators (1=event, 0=censored).
@@ -1341,8 +1341,9 @@ get_survival_stat_diff <- function(y, dead, w, requested_stat) {
     .Call(`_EDI_get_survival_stat_diff`, y, dead, w, requested_stat)
 }
 
-#' Uses the standard variance formula (Uno et al.):
-#'   Var(RMST) = sum_j  A(t_j)^2 * d_j / (n_j * (n_j - d_j))
+#' Calculates standard variance using the formula from Uno et al
+#'
+#' \eqn{Var(RMST) = \sum_j A(t_j)^2 d_j / (n_j (n_j - d_j))}
 #' where \eqn{A(t_j) = \int_{t_j}^{\tau} S(u) du} is the remaining area under the KM
 #' curve from event time \eqn{t_j} to the last observation \eqn{\tau}.
 #' Here \eqn{d_j} is the number of events at \eqn{t_j}, and \eqn{n_j}
@@ -1358,7 +1359,7 @@ get_restricted_mean_se_for_group <- function(y, dead) {
     .Call(`_EDI_get_restricted_mean_se_for_group`, y, dead)
 }
 
-#' Calculates the standard error of the difference in restricted mean survival times.
+#' Calculates the standard error of the difference in restricted mean survival times
 #'
 #' @param y Numeric vector of survival times.
 #' @param dead Integer vector of event indicators (1=event, 0=censored).

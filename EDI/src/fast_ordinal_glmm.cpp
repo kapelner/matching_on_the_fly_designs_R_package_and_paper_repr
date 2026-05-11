@@ -171,82 +171,83 @@ public:
 		alpha[0] = par[0];
 		for (int k = 1; k < n_alpha; ++k) alpha[k] = alpha[k-1] + std::exp(par[k]);
 
+		const Eigen::VectorXd eta_all = dat.X_s * beta;
+		Eigen::Map<const Eigen::VectorXi> y_all(dat.y_s.data(), dat.n);
+
 		double total_nll = 0.0;
 		grad.setZero();
 
-		for (int gi = 0; gi < dat.G; ++gi) {
-			const int start = dat.grp_start[gi];
-			const int sz    = dat.grp_size[gi];
-			const Eigen::MatrixXd Xg = dat.X_s.middleRows(start, sz);
-			const Eigen::VectorXd eta0 = Xg * beta;
+		Eigen::MatrixXd log_terms_mat(dat.G, n_nodes);
+		std::vector<Eigen::VectorXd> dlogp_deta_all_nodes(n_nodes);
+		std::vector<std::vector<Eigen::VectorXd>> dlogp_dalpha_all_nodes(n_nodes, std::vector<Eigen::VectorXd>(n_alpha));
 
-			Eigen::VectorXd log_terms(n_nodes);
-			// For each node, store d(log P_ij)/d(alpha_k) and d(log P_ij)/d(eta_ij)
-			// But simpler: just dL_i/d(theta) = sum_k post_ik * sum_j d(log P_ijk)/d(theta)
+		for (int k = 0; k < n_nodes; k++) {
+			const double u = b_vals[k];
+			const Eigen::VectorXd eta_k_all = eta_all.array() + u;
 			
-			std::vector<std::vector<Eigen::VectorXd>> dlogp_dalpha_nodes(n_nodes, std::vector<Eigen::VectorXd>(sz, Eigen::VectorXd::Zero(n_alpha)));
-			std::vector<Eigen::VectorXd> dlogp_deta_nodes(n_nodes, Eigen::VectorXd::Zero(sz));
-
-			for (int k = 0; k < n_nodes; ++k) {
-				double ll = dat.gh.log_norm_weights[k];
-				for (int r = 0; r < sz; ++r) {
-					int y_ir = dat.y_s[start + r];
-					double eta_ijk = eta0[r] + b_vals[k];
-					
-					double F_up = (y_ir >= dat.K) ? 1.0 : plogis_safe(alpha[y_ir - 1] - eta_ijk);
-					double F_lo = (y_ir <= 1)      ? 0.0 : plogis_safe(alpha[y_ir - 2] - eta_ijk);
-					double prob = std::max(1e-15, F_up - F_lo);
-					ll += std::log(prob);
-
-					// d(log P)/d(cutpoint)
-					double f_up = (y_ir >= dat.K) ? 0.0 : F_up * (1.0 - F_up);
-					double f_lo = (y_ir <= 1)      ? 0.0 : F_lo * (1.0 - F_lo);
-					
-					if (y_ir < dat.K) dlogp_dalpha_nodes[k][r][y_ir - 1] += f_up / prob;
-					if (y_ir > 1)      dlogp_dalpha_nodes[k][r][y_ir - 2] -= f_lo / prob;
-
-					// d(log P)/d(eta) = - [f_up - f_lo] / prob
-					dlogp_deta_nodes[k][r] = -(f_up - f_lo) / prob;
-				}
-				log_terms[k] = ll;
+			// Matrix of size n x n_alpha storing F_k = plogis(alpha_j - eta_k)
+			Eigen::MatrixXd F_mat(dat.n, n_alpha);
+			for (int j = 0; j < n_alpha; j++) {
+				F_mat.col(j) = plogis_array_safe(alpha[j] - eta_k_all.array()).matrix();
 			}
 
-			const double ll_g = log_sum_exp_v(log_terms);
-			total_nll -= ll_g;
+			Eigen::VectorXd prob_all(dat.n);
+			Eigen::VectorXd deta_all(dat.n);
+			std::vector<Eigen::VectorXd> dalpha_all(n_alpha, Eigen::VectorXd::Zero(dat.n));
 
-			for (int k = 0; k < n_nodes; ++k) {
-				double post_k = std::exp(log_terms[k] - ll_g);
-				if (post_k < 1e-15) continue;
+			for (int i = 0; i < dat.n; i++) {
+				int yi = y_all[i];
+				double F_up = (yi >= dat.K) ? 1.0 : F_mat(i, yi - 1);
+				double F_lo = (yi <= 1)      ? 0.0 : F_mat(i, yi - 2);
+				double prob = std::max(1e-15, F_up - F_lo);
+				prob_all[i] = prob;
 
-				Eigen::VectorXd dLi_dalpha = Eigen::VectorXd::Zero(n_alpha);
-				const Eigen::VectorXd& dLi_deta = dlogp_deta_nodes[k];
+				double f_up = (yi >= dat.K) ? 0.0 : F_up * (1.0 - F_up);
+				double f_lo = (yi <= 1)      ? 0.0 : F_lo * (1.0 - F_lo);
+				deta_all[i] = -(f_up - f_lo) / prob;
+				if (yi < dat.K) dalpha_all[yi - 1][i] = f_up / prob;
+				if (yi > 1)      dalpha_all[yi - 2][i] = -f_lo / prob;
+			}
 
-				for (int r = 0; r < sz; ++r) {
-					dLi_dalpha += dlogp_dalpha_nodes[k][r];
-				}
-				const double dLi_deta_sum = dLi_deta.sum();
-				const Eigen::VectorXd dLi_dbeta = Xg.transpose() * dLi_deta;
+			dlogp_deta_all_nodes[k] = deta_all;
+			for(int j=0; j<n_alpha; j++) dlogp_dalpha_all_nodes[k][j] = dalpha_all[j];
 
-				// dLL/dalpha_k (preliminary, still need chain rule for log-diff parameterization)
-				for (int j = 0; j < n_alpha; ++j) {
-					grad[j] -= post_k * dLi_dalpha[j];
-				}
-
-				// dLL/dbeta
-				grad.segment(n_alpha, dat.p) -= post_k * dLi_dbeta;
-
-				// dLL/dlog_sigma
-				double dll_dsigma = dLi_deta_sum * std::sqrt(2.0) * dat.gh.nodes[k];
-				grad[n_alpha + dat.p] -= post_k * dll_dsigma * sigma;
+			Eigen::ArrayXd log_prob_all = prob_all.array().log();
+			for (int gi = 0; gi < dat.G; gi++) {
+				log_terms_mat(gi, k) = dat.gh.log_norm_weights[k] + 
+				                       log_prob_all.segment(dat.grp_start[gi], dat.grp_size[gi]).sum();
 			}
 		}
 
-		// Apply chain rule for cutpoint parameterization: 
-		// par[0]=alpha_1, par[j]=log(alpha_{j+1}-alpha_j)
-		// dLL/d par[j] = sum_{k=j+1}^{n_alpha} (dLL/d alpha_k) * (d alpha_k / d par[j])
-		// For j=0: d alpha_k / d par[0] = 1 for all k
-		// For j>0: d alpha_k / d par[j] = exp(par[j]) if k >= j+1, else 0
-		
+		Eigen::VectorXd ll_g_vec(dat.G);
+		for (int gi = 0; gi < dat.G; gi++) {
+			ll_g_vec[gi] = log_sum_exp_v(log_terms_mat.row(gi));
+			total_nll -= ll_g_vec[gi];
+		}
+
+		for (int k = 0; k < n_nodes; k++) {
+			Eigen::VectorXd pk_vec(dat.G);
+			for (int gi = 0; gi < dat.G; gi++) pk_vec[gi] = std::exp(log_terms_mat(gi, k) - ll_g_vec[gi]);
+
+			Eigen::VectorXd pk_expanded(dat.n);
+			for (int gi = 0; gi < dat.G; gi++) 
+				pk_expanded.segment(dat.grp_start[gi], dat.grp_size[gi]).setConstant(pk_vec[gi]);
+
+			// dLL/dalpha
+			for (int j = 0; j < n_alpha; j++) {
+				grad[j] -= pk_expanded.dot(dlogp_dalpha_all_nodes[k][j]);
+			}
+
+			// dLL/dbeta
+			Eigen::VectorXd de_pk = pk_expanded.cwiseProduct(dlogp_deta_all_nodes[k]);
+			grad.segment(n_alpha, dat.p).noalias() -= dat.X_s.transpose() * de_pk;
+
+			// dLL/dlog_sigma
+			double dll_dsigma_k = de_pk.sum() * std::sqrt(2.0) * dat.gh.nodes[k];
+			grad[n_alpha + dat.p] -= dll_dsigma_k * sigma;
+		}
+
+		// Apply chain rule for cutpoint parameterization
 		Eigen::VectorXd dLL_dalpha = grad.head(n_alpha);
 		grad[0] = dLL_dalpha.sum();
 		for (int j = 1; j < n_alpha; ++j) {
@@ -271,117 +272,160 @@ public:
 		alpha[0] = par[0];
 		for (int k = 1; k < n_alpha; ++k) alpha[k] = alpha[k - 1] + std::exp(par[k]);
 
+		const Eigen::VectorXd eta_all = dat.X_s * beta;
+		Eigen::Map<const Eigen::VectorXi> y_all(dat.y_s.data(), dat.n);
+
 		Eigen::MatrixXd H = Eigen::MatrixXd::Zero(total, total);
 
-		for (int gi = 0; gi < dat.G; gi++) {
-			const int start = dat.grp_start[gi];
-			const int sz    = dat.grp_size[gi];
-			const Eigen::MatrixXd Xg = dat.X_s.middleRows(start, sz);
-			const Eigen::VectorXd eta0 = Xg * beta;
+		Eigen::MatrixXd log_terms_mat(dat.G, n_nodes);
+		std::vector<Eigen::VectorXd> prob_all_nodes(n_nodes);
+		std::vector<Eigen::VectorXd> de_all_nodes(n_nodes);
+		std::vector<Eigen::VectorXd> d2e_all_nodes(n_nodes);
+		std::vector<std::vector<Eigen::VectorXd>> dL_da_all_nodes(n_nodes, std::vector<Eigen::VectorXd>(n_alpha));
+		std::vector<std::vector<Eigen::VectorXd>> d2L_daa_all_nodes(n_nodes, std::vector<Eigen::VectorXd>(n_alpha));
+		std::vector<std::vector<Eigen::VectorXd>> d2L_dab_all_nodes(n_nodes, std::vector<Eigen::VectorXd>(n_alpha));
+		std::vector<Eigen::VectorXd> d2L_da_prev_all_nodes(n_nodes, Eigen::VectorXd::Zero(dat.n)); // for H(j, j-1)
 
-			Eigen::VectorXd log_terms(n_nodes);
-			std::vector<std::vector<double>> p_nodes(n_nodes, std::vector<double>(sz));
-			std::vector<std::vector<double>> Fup_nodes(n_nodes, std::vector<double>(sz));
-			std::vector<std::vector<double>> Flo_nodes(n_nodes, std::vector<double>(sz));
+		for (int k = 0; k < n_nodes; k++) {
+			const double u = b_vals[k];
+			const Eigen::VectorXd eta_k_all = eta_all.array() + u;
+			
+			Eigen::MatrixXd F_mat(dat.n, n_alpha);
+			for (int j = 0; j < n_alpha; j++) F_mat.col(j) = plogis_array_safe(alpha[j] - eta_k_all.array()).matrix();
 
-			for (int k = 0; k < n_nodes; k++) {
-				double ll = dat.gh.log_norm_weights[k];
-				for (int r = 0; r < sz; r++) {
-					int y_ir = dat.y_s[start + r];
-					double eta_ijk = eta0[r] + b_vals[k];
-					double Fup = (y_ir >= dat.K) ? 1.0 : plogis_safe(alpha[y_ir - 1] - eta_ijk);
-					double Flo = (y_ir <= 1)      ? 0.0 : plogis_safe(alpha[y_ir - 2] - eta_ijk);
-					double prob = std::max(1e-15, Fup - Flo);
-					p_nodes[k][r] = prob;
-					Fup_nodes[k][r] = Fup;
-					Flo_nodes[k][r] = Flo;
-					ll += std::log(prob);
-				}
-				log_terms[k] = ll;
+			Eigen::VectorXd prob_all(dat.n);
+			Eigen::VectorXd de_all(dat.n), d2e_all(dat.n);
+			for(int j=0; j<n_alpha; j++) {
+				dL_da_all_nodes[k][j].setZero(dat.n);
+				d2L_daa_all_nodes[k][j].setZero(dat.n);
+				d2L_dab_all_nodes[k][j].setZero(dat.n);
 			}
-			const double ll_g = log_sum_exp_v(log_terms);
 
-			Eigen::MatrixXd E_Hik = Eigen::MatrixXd::Zero(total, total);
-			Eigen::MatrixXd E_GiGiT = Eigen::MatrixXd::Zero(total, total);
-			Eigen::VectorXd G_avg = Eigen::VectorXd::Zero(total);
+			for (int i = 0; i < dat.n; i++) {
+				int yi = y_all[i];
+				double Fup = (yi >= dat.K) ? 1.0 : F_mat(i, yi - 1);
+				double Flo = (yi <= 1)      ? 0.0 : F_mat(i, yi - 2);
+				double prob = std::max(1e-15, Fup - Flo);
+				prob_all[i] = prob;
 
-			for (int k = 0; k < n_nodes; k++) {
-				const double pk = std::exp(log_terms[k] - ll_g);
-				if (pk < 1e-15) continue;
+				double fup = (yi >= dat.K) ? 0.0 : Fup * (1.0 - Fup);
+				double flo = (yi <= 1)      ? 0.0 : Flo * (1.0 - Flo);
+				double hup = (yi >= dat.K) ? 0.0 : fup * (1.0 - 2.0 * Fup);
+				double hlo = (yi <= 1)      ? 0.0 : flo * (1.0 - 2.0 * Flo);
 
-				Eigen::VectorXd G_ik_raw = Eigen::VectorXd::Zero(total);
-				Eigen::MatrixXd H_ik_raw = Eigen::MatrixXd::Zero(total, total);
-				Eigen::VectorXd de_vec(sz);
-				Eigen::VectorXd d2e_vec(sz);
+				de_all[i] = -(fup - flo) / prob;
+				d2e_all[i] = -(hup - hlo) / prob + (fup-flo)*(fup-flo)/(prob*prob);
 
-				for (int r = 0; r < sz; r++) {
-					int y_ir = dat.y_s[start + r];
-					double prob = p_nodes[k][r];
-					double Fup = Fup_nodes[k][r], Flo = Flo_nodes[k][r];
-					double fup = (y_ir >= dat.K) ? 0.0 : Fup * (1.0 - Fup);
-					double flo = (y_ir <= 1)      ? 0.0 : Flo * (1.0 - Flo);
-					double hup = (y_ir >= dat.K) ? 0.0 : fup * (1.0 - 2.0 * Fup);
-					double hlo = (y_ir <= 1)      ? 0.0 : flo * (1.0 - 2.0 * Flo);
-
-					double de = -(fup - flo) / prob;
-					double d2e = -(hup - hlo) / prob + (fup-flo)*(fup-flo)/(prob*prob);
-					de_vec[r] = de;
-					d2e_vec[r] = d2e;
-
-					if (y_ir < dat.K) {
-						G_ik_raw[y_ir-1] += fup/prob;
-						H_ik_raw(y_ir-1, y_ir-1) += hup/prob - (fup*fup)/(prob*prob);
-						const double d2L_da_db = -hup/prob + (fup*(fup-flo))/(prob*prob);
-						for(int j=0; j<dat.p; j++) H_ik_raw(y_ir-1, n_alpha+j) += d2L_da_db * Xg(r, j);
-					}
-					if (y_ir > 1) {
-						G_ik_raw[y_ir-2] -= flo/prob;
-						H_ik_raw(y_ir-2, y_ir-2) += -hlo/prob - (flo*flo)/(prob*prob);
-						const double d2L_da_db = hlo/prob - (flo*(fup-flo))/(prob*prob);
-						for(int j=0; j<dat.p; j++) H_ik_raw(y_ir-2, n_alpha+j) += d2L_da_db * Xg(r, j);
-					}
-					if (y_ir > 1 && y_ir < dat.K) {
-						double cross = (fup * flo) / (prob * prob);
-						H_ik_raw(y_ir-1, y_ir-2) += cross;
-					}
-
-					const double node_factor = std::sqrt(2.0) * dat.gh.nodes[k];
-					G_ik_raw[total-1] += de * node_factor;
-					H_ik_raw(total-1, total-1) += d2e * node_factor * node_factor;
-					if (y_ir < dat.K) H_ik_raw(y_ir-1, total-1) += (-hup/prob + (fup*(fup-flo))/(prob*prob)) * node_factor;
-					if (y_ir > 1)      H_ik_raw(y_ir-2, total-1) += (hlo/prob - (flo*(fup-flo))/(prob*prob)) * node_factor;
+				if (yi < dat.K) {
+					dL_da_all_nodes[k][yi-1][i] = fup/prob;
+					d2L_daa_all_nodes[k][yi-1][i] = hup/prob - (fup*fup)/(prob*prob);
+					d2L_dab_all_nodes[k][yi-1][i] = -hup/prob + (fup*(fup-flo))/(prob*prob);
 				}
-				G_ik_raw.segment(n_alpha, dat.p).noalias() = Xg.transpose() * de_vec;
-				H_ik_raw.block(n_alpha, n_alpha, dat.p, dat.p).noalias() = weighted_crossprod(Xg, d2e_vec);
-				const double node_factor = std::sqrt(2.0) * dat.gh.nodes[k];
-				H_ik_raw.block(n_alpha, total - 1, dat.p, 1).noalias() = (Xg.transpose() * d2e_vec) * node_factor;
-				G_ik_raw[total-1] *= sigma;
-				H_ik_raw.col(total-1) *= sigma;
-				H_ik_raw.row(total-1) *= sigma;
-				H_ik_raw(total-1, total-1) += G_ik_raw[total-1];
-
-				for(int r1=0; r1<total; r1++) for(int c1=0; r1>c1; c1++) H_ik_raw(r1, c1) = H_ik_raw(c1, r1);
-
-				Eigen::MatrixXd J = Eigen::MatrixXd::Zero(total, total);
-				J(0, 0) = 1.0;
-				for (int r1 = 1; r1 < n_alpha; r1++) { J(r1, 0) = 1.0; for (int c1 = 1; c1 <= r1; c1++) J(r1, c1) = std::exp(par[c1]); }
-				for (int i = n_alpha; i < total; i++) J(i, i) = 1.0;
-
-				Eigen::VectorXd G_ik = J.transpose() * G_ik_raw;
-				Eigen::MatrixXd H_ik = J.transpose() * H_ik_raw * J;
-				for (int j = 1; j < n_alpha; j++) {
-					double sum_dL_da = 0.0;
-					for (int r1 = j; r1 < n_alpha; r1++) sum_dL_da += G_ik_raw[r1];
-					H_ik(j, j) += sum_dL_da * std::exp(par[j]);
+				if (yi > 1) {
+					dL_da_all_nodes[k][yi-2][i] = -flo/prob;
+					d2L_daa_all_nodes[k][yi-2][i] = -hlo/prob - (flo*flo)/(prob*prob);
+					d2L_dab_all_nodes[k][yi-2][i] = hlo/prob - (flo*(fup-flo))/(prob*prob);
 				}
-
-				E_Hik += pk * H_ik;
-				G_avg += pk * G_ik;
-				E_GiGiT += pk * (G_ik * G_ik.transpose());
+				if (yi > 1 && yi < dat.K) {
+					d2L_da_prev_all_nodes[k][i] = (fup * flo) / (prob * prob);
+				}
 			}
-			H -= (E_Hik + E_GiGiT - G_avg * G_avg.transpose());
+			prob_all_nodes[k] = prob_all;
+			de_all_nodes[k] = de_all;
+			d2e_all_nodes[k] = d2e_all;
+
+			Eigen::ArrayXd log_prob_all = prob_all.array().log();
+			for (int gi = 0; gi < dat.G; gi++) {
+				log_terms_mat(gi, k) = dat.gh.log_norm_weights[k] + 
+				                       log_prob_all.segment(dat.grp_start[gi], dat.grp_size[gi]).sum();
+			}
 		}
-		return H;
+
+		Eigen::VectorXd ll_g_vec(dat.G);
+		for (int gi = 0; gi < dat.G; gi++) ll_g_vec[gi] = log_sum_exp_v(log_terms_mat.row(gi));
+
+		Eigen::MatrixXd E_Hik_sum = Eigen::MatrixXd::Zero(total, total);
+		Eigen::MatrixXd E_GiGiT_sum = Eigen::MatrixXd::Zero(total, total);
+		Eigen::MatrixXd G_avg_outer_sum = Eigen::MatrixXd::Zero(total, total);
+
+		for (int k = 0; k < n_nodes; k++) {
+			Eigen::VectorXd pk_vec(dat.G);
+			for (int gi = 0; gi < dat.G; gi++) pk_vec[gi] = std::exp(log_terms_mat(gi, k) - ll_g_vec[gi]);
+			Eigen::VectorXd pk_exp(dat.n);
+			for (int gi = 0; gi < dat.G; gi++) pk_exp.segment(dat.grp_start[gi], dat.grp_size[gi]).setConstant(pk_vec[gi]);
+
+			Eigen::MatrixXd H_ik_k = Eigen::MatrixXd::Zero(total, total);
+			for(int j=0; j<n_alpha; j++) {
+				H_ik_k(j, j) = pk_exp.dot(d2L_daa_all_nodes[k][j]);
+				H_ik_k.block(j, n_alpha, 1, dat.p).noalias() = (pk_exp.cwiseProduct(d2L_dab_all_nodes[k][j])).transpose() * dat.X_s;
+			}
+			for(int j=1; j<n_alpha; j++) {
+				// This is H(j, j-1)
+				H_ik_k(j, j-1) = pk_exp.dot(d2L_da_prev_all_nodes[k]); // only non-zero when yi = j+1
+				H_ik_k(j-1, j) = H_ik_k(j, j-1);
+			}
+
+			H_ik_k.block(n_alpha, n_alpha, dat.p, dat.p).noalias() = weighted_crossprod(dat.X_s, pk_exp.cwiseProduct(d2e_all_nodes[k]));
+			
+			const double node_factor = std::sqrt(2.0) * dat.gh.nodes[k];
+			H_ik_k.block(n_alpha, total-1, dat.p, 1).noalias() = (dat.X_s.transpose() * pk_exp.cwiseProduct(d2e_all_nodes[k])) * (node_factor * sigma);
+			for(int j=0; j<n_alpha; j++) H_ik_k(j, total-1) = pk_exp.dot(d2L_dab_all_nodes[k][j]) * (node_factor * sigma);
+			
+			H_ik_k(total-1, total-1) = pk_exp.dot(d2e_all_nodes[k]) * (node_factor * node_factor * sigma * sigma);
+			// plus G_ik[total-1] part (sigma chain rule)
+			double g_sigma_k = (pk_exp.cwiseProduct(de_all_nodes[k])).sum() * node_factor * sigma;
+			H_ik_k(total-1, total-1) += g_sigma_k;
+
+			E_Hik_sum += H_ik_k;
+		}
+
+		// Outer product part (G_avg)
+		for (int gi = 0; gi < dat.G; gi++) {
+			Eigen::VectorXd G_avg_gi = Eigen::VectorXd::Zero(total);
+			Eigen::MatrixXd E_GiGiT_gi = Eigen::MatrixXd::Zero(total, total);
+			const int start = dat.grp_start[gi];
+			const int sz = dat.grp_size[gi];
+
+			for (int k = 0; k < n_nodes; k++) {
+				const double pk = std::exp(log_terms_mat(gi, k) - ll_g_vec[gi]);
+				if (pk < 1e-15) continue;
+				
+				Eigen::VectorXd G_ik = Eigen::VectorXd::Zero(total);
+				for(int j=0; j<n_alpha; j++) G_ik[j] = dL_da_all_nodes[k][j].segment(start, sz).sum();
+				G_ik.segment(n_alpha, dat.p).noalias() = dat.X_s.middleRows(start, sz).transpose() * de_all_nodes[k].segment(start, sz);
+				G_ik[total-1] = de_all_nodes[k].segment(start, sz).sum() * (std::sqrt(2.0) * dat.gh.nodes[k] * sigma);
+
+				G_avg_gi.noalias() += pk * G_ik;
+				E_GiGiT_gi.noalias() += pk * (G_ik * G_ik.transpose());
+			}
+			E_GiGiT_sum += E_GiGiT_gi;
+			G_avg_outer_sum += G_avg_gi * G_avg_gi.transpose();
+		}
+
+		// Symmetrize E_Hik_sum and apply cutpoint Jacobian J
+		for(int r1=0; r1<total; r1++) for(int c1=0; c1<r1; c1++) E_Hik_sum(r1, c1) = E_Hik_sum(c1, r1);
+		
+		Eigen::MatrixXd J = Eigen::MatrixXd::Zero(total, total);
+		J(0, 0) = 1.0;
+		for (int r1 = 1; r1 < n_alpha; r1++) { J(r1, 0) = 1.0; for (int c1 = 1; c1 <= r1; c1++) J(r1, c1) = std::exp(par[c1]); }
+		for (int i = n_alpha; i < total; i++) J(i, i) = 1.0;
+
+		Eigen::MatrixXd E_Hik_final = J.transpose() * E_Hik_sum * J;
+		// Add diagonal term for cutpoint exp-parameterization
+		for (int j = 1; j < n_alpha; j++) {
+			double sum_dL_da = 0.0;
+			for (int k = 0; k < n_nodes; k++) {
+				Eigen::VectorXd pk_vec(dat.G);
+				for (int gi = 0; gi < dat.G; gi++) pk_vec[gi] = std::exp(log_terms_mat(gi, k) - ll_g_vec[gi]);
+				for (int r1 = j; r1 < n_alpha; r1++) {
+					for(int gi=0; gi<dat.G; gi++) sum_dL_da += pk_vec[gi] * dL_da_all_nodes[k][r1].segment(dat.grp_start[gi], dat.grp_size[gi]).sum();
+				}
+			}
+			E_Hik_final(j, j) += sum_dL_da * std::exp(par[j]);
+		}
+
+		H = -(E_Hik_final + J.transpose() * (E_GiGiT_sum - G_avg_outer_sum) * J);
+		return (H + H.transpose()) / 2.0;
 	}
 };
 

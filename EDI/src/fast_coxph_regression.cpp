@@ -127,16 +127,11 @@ double compute_cox_ll_grad_hess_fast(
         (workspace.eta.array() - max_eta).exp().matrix();
 
     // --- Initialise running risk-set accumulators (full risk set) ---
-    double r_exp = 0.0;
-    r_x_exp_map.setZero();
-    if (!estimate_only) r_xx_exp_map.setZero();
-
-    for (int i = 0; i < n; ++i) {
-        Eigen::Map<const Eigen::VectorXd> xi(data.row(i), p);
-        const double wi = exp_eta[i];
-        r_exp += wi;
-        r_x_exp_map.noalias() += wi * xi;
-        if (!estimate_only) r_xx_exp_map.noalias() += wi * (xi * xi.transpose());
+    Eigen::Map<const Eigen::VectorXd> exp_eta_map(exp_eta.data(), n);
+    double r_exp = exp_eta_map.sum();
+    r_x_exp_map.noalias() = data.matrix_map().transpose() * exp_eta_map;
+    if (!estimate_only) {
+        r_xx_exp_map.noalias() = weighted_crossprod(data.matrix_map(), exp_eta_map);
     }
 
     // --- Reset output grad / hess ---

@@ -13,8 +13,8 @@
 #' At \code{tau = 0.5} this estimates the median treatment effect, which is the canonical
 #' nonparametric location estimator and is more robust to outliers and heavy-tailed
 #' response distributions than the OLS mean-based estimator. To target a different
-#' quantile of the treatment effect distribution — for example the 25th or 75th
-#' percentile — pass \code{tau = 0.25} or \code{tau = 0.75} to the constructor:
+#' quantile of the treatment effect distribution --- for example the 25th or 75th
+#' percentile --- pass \code{tau = 0.25} or \code{tau = 0.75} to the constructor:
 #' \preformatted{
 #'   inf = InferenceContinKKQuantileRegrIVWC$
 #'   new(seq_des, tau = 0.75)
@@ -48,9 +48,7 @@ InferenceContinKKQuantileRegrIVWC = R6::R6Class("InferenceContinKKQuantileRegrIV
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKQuantileRegrIVWC,
 	public = list(
-
-		#' @description
-		#' Initialize a sequential experimental design estimation and test object
+		#' @description Initialize a sequential experimental design estimation and test object
 		#' after the sequential design is completed.
 		#' @param des_obj A DesignSeqOneByOne object whose entire n subjects
 		#'   are assigned and response y is recorded within.

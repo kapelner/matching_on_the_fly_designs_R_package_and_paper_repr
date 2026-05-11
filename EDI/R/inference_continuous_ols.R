@@ -18,8 +18,7 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-		#' @description
-		#' Initialize an OLS inference object.
+		#' @description Initialize an OLS inference object.
 		#' @param des_obj A completed \code{Design} object with a continuous response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -40,17 +39,13 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 			
 			private$max_resample_attempts = max_resample_attempts
 		},
-
-		#' @description
-		#' Computes the OLS estimate of the treatment effect.
+		#' @description Computes the OLS estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes an approximate confidence interval for the treatment effect.
+		#' @description Computes an approximate confidence interval for the treatment effect.
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -60,9 +55,7 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Computes an approximate two-sided p-value for the treatment effect.
+		#' @description Computes an approximate two-sided p-value for the treatment effect.
 		#' @param delta The null difference to test against. Default is zero.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -72,10 +65,8 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
-
 	private = list(
 		max_resample_attempts = NULL,
-
 		build_design_matrix = function(){
 			X_cov = private$X
 			if (is.null(X_cov) || ncol(X_cov) == 0) {
@@ -85,11 +76,9 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 			}
 			X
 		},
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			X_full = private$build_design_matrix()
 			
 			fit = tryCatch(stats::lm.fit(X_full, private$y), error = function(e) NULL)
@@ -99,10 +88,8 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 				private$cached_values$df = NA_real_
 				return(invisible(NULL))
 			}
-
 			private$cached_values$beta_hat_T = as.numeric(stats::coef(fit)[2])
 			if (estimate_only) return(invisible(NULL))
-
 			# Standard OLS variance calculation
 			res = stats::residuals(fit)
 			rss = sum(res^2)

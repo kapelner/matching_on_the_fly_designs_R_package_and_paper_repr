@@ -5,9 +5,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
-
-		#' @description
-		#' Initialize
+		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula   Optional formula for covariate adjustment.
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use the internal Rcpp
@@ -35,17 +33,13 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			}
 			private$use_rcpp = use_rcpp
 		},
-
-		#' @description
-		#' Compute treatment estimate
+		#' @description Compute treatment estimate
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Compute asymp confidence interval
+		#' @description Compute asymp confidence interval
 		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -57,9 +51,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Compute asymp two sided pval for treatment effect
+		#' @description Compute asymp two sided pval for treatment effect
 		#' @param delta The null treatment effect (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -79,12 +71,10 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			}
 		}
 	),
-
 	private = list(
 		use_rcpp = TRUE,
 		max_abs_reasonable_coef = 1e4,
 		best_X_colnames = NULL,
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (private$use_rcpp) {
 				return(private$compute_ri_estimate_rcpp())
@@ -97,11 +87,9 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-
 			# Use the same design matrix structure as the original fit
 			X_cols = private$best_X_colnames
 			X_data = private$get_X()
-
 			X_fit = if (length(X_cols) == 0L){
 				matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
 			} else {
@@ -110,14 +98,11 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			}
 			# Add intercept column for clmm internal expectations
 			X_fit_full = cbind("(Intercept)" = 1, X_fit)
-
 			mod = private$fit_clmm(X_fit_full)
 			if (is.null(mod)) mod = private$fit_clm_fallback(X_fit_full)
 			if (is.null(mod)) return(NA_real_)
-
 			as.numeric(stats::coef(mod)["w"])
 		},
-
 		compute_ri_estimate_rcpp = function(){
 			X_fit = private$clmm_X_for_rcpp()
 			group_id = private$clmm_group_id()
@@ -140,25 +125,20 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			if (is.null(fit) || !isTRUE(fit$converged)) return(NA_real_)
 			as.numeric(fit$b[1L])
 		},
-
 		clmm_link = function() stop(class(self)[1], " must implement clmm_link()"),
-
 		clmm_predictors_df = function(){
 			full_X = private$create_design_matrix()
 			private$clmm_predictors_df_from_design(full_X)
 		},
-
 		clmm_predictors_df_from_design = function(full_X){
 			X_model = full_X[, -1, drop = FALSE]
 			colnames(X_model)[1] = "w"
 			as.data.frame(X_model)
 		},
-
 		# Build X matrix for Rcpp (no intercept, treatment at col 1)
 		clmm_X_for_rcpp = function(){
 			as.matrix(private$clmm_predictors_df())
 		},
-
 		# Build group_id vector (reservoir singletons get unique IDs)
 		clmm_group_id = function(){
 			m_vec = private$m
@@ -170,7 +150,6 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
 			group_id
 		},
-
 		# Warm start: fixed-effects ordinal MLE with appropriate link
 		clmm_warm_start = function(X_fit, y, n_alpha){
 			tryCatch({
@@ -195,7 +174,6 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 				c(alpha_par, beta_nore, -3.0)
 			}, error = function(e) NULL)
 		},
-
 		shared = function(estimate_only = FALSE){
 			if (private$use_rcpp) {
 				private$shared_rcpp(estimate_only)
@@ -203,15 +181,12 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 				private$shared_clmm(estimate_only)
 			}
 		},
-
 		shared_rcpp = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 			private$clear_nonestimable_state()
-
 			group_id = private$clmm_group_id()
 			X_fit    = private$clmm_X_for_rcpp()
-
 			y_levels = sort(unique(private$y))
 			K        = length(y_levels)
 			if (K > 20L) {
@@ -221,9 +196,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			y    = as.integer(match(private$y, y_levels))
 			n_alpha  = K - 1L
 			j_T      = 0L  # treatment is always first column of X_fit
-
 			start = private$clmm_warm_start(X_fit, y, n_alpha)
-
 			fit = tryCatch(
 				fast_ordinal_clmm_cpp(
 					X             = X_fit,
@@ -238,32 +211,24 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 				),
 				error = function(e) NULL
 			)
-
 			if (is.null(fit) || !isTRUE(fit$converged)) {
 				private$cache_nonestimable_estimate("kk_clmm_rcpp_failed")
 				return(invisible(NULL))
 			}
-
 			beta_hat_T = as.numeric(fit$b[j_T + 1L])
-
 			if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
 				private$cache_nonestimable_estimate("kk_clmm_rcpp_nonestimable")
 				return(invisible(NULL))
 			}
-
 			private$cached_values$beta_hat_T = beta_hat_T
 			private$cached_values$df         = Inf
-
 			if (estimate_only) return(invisible(NULL))
-
 			ssq = fit$ssq_b_T
 			private$cached_values$s_beta_hat_T = if (!is.null(ssq) && is.finite(ssq) && ssq > 0) sqrt(ssq) else NA_real_
 		},
-
 		shared_clmm = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			full_X = private$create_design_matrix()
 			attempt = private$fit_with_hardened_qr_column_dropping(
@@ -300,19 +265,15 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 				private$cached_values$s_beta_hat_T = NA_real_
 				return(invisible(NULL))
 			}
-
 			private$cached_values$beta_hat_T = as.numeric(stats::coef(mod)["w"])
 			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
 		},
-
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T))
 				return(invisible(NULL))
 		},
-
 		fit_clmm = function(full_X = private$create_design_matrix()){
 			group_id = private$clmm_group_id()
-
 			dat = data.frame(
 				y = factor(private$y, ordered = TRUE),
 				private$clmm_predictors_df_from_design(full_X),
@@ -320,7 +281,6 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			)
 			fixed_terms = setdiff(colnames(dat), c("y", "group_id"))
 			clmm_formula = stats::as.formula(paste("y ~", paste(c(fixed_terms, "(1 | group_id)"), collapse = " + ")))
-
 			tryCatch({
 				utils::capture.output(mod <- suppressMessages(suppressWarnings(
 					ordinal::clmm(
@@ -332,7 +292,6 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 				mod
 			}, error = function(e) NULL)
 		},
-
 		fit_clm_fallback = function(full_X = private$create_design_matrix()){
 			dat = data.frame(
 				y = factor(private$y, ordered = TRUE),
@@ -340,7 +299,6 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			)
 			fixed_terms = setdiff(colnames(dat), "y")
 			clm_formula = stats::as.formula(paste("y ~", paste(fixed_terms, collapse = " + ")))
-
 			tryCatch({
 				utils::capture.output(mod <- suppressMessages(suppressWarnings(
 					ordinal::clm(
@@ -354,7 +312,6 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 		}
 	)
 )
-
 #' Ordinal KK CLMM (Proportional Odds / logit link)
 #'
 #' Cumulative-logit mixed model for ordinal KK designs.
@@ -387,7 +344,6 @@ InferenceOrdinalKKCLMM = R6::R6Class("InferenceOrdinalKKCLMM",
 		clmm_link = function() "logit"
 	)
 )
-
 #' Ordinal KK CLMM (Probit link)
 #'
 #' Cumulative-probit mixed model for ordinal KK designs.
@@ -416,7 +372,6 @@ InferenceOrdinalKKCLMMProbit = R6::R6Class("InferenceOrdinalKKCLMMProbit",
 		}
 	)
 )
-
 #' Ordinal KK CLMM (Cauchit link)
 #'
 #' Cumulative-cauchit mixed model for ordinal KK designs.
@@ -449,7 +404,6 @@ InferenceOrdinalKKCLMMCauchit = R6::R6Class("InferenceOrdinalKKCLMMCauchit",
 		clmm_link = function() "cauchit"
 	)
 )
-
 #' Ordinal KK CLMM (Complementary log-log link)
 #'
 #' Cumulative complementary-log-log mixed model for ordinal KK designs.

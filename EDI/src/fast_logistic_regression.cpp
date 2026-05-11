@@ -98,95 +98,50 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
     std::vector<double> w_diag(n);
     bool converged = false;
 
-    int n_threads = 1;
-    #ifdef _OPENMP
-    n_threads = omp_get_max_threads();
-    #endif
+    Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> X_free_map(X_free_raw.data(), n, p_free);
+    Eigen::Map<Eigen::VectorXd> mu_map(mu.data(), n);
+    Eigen::Map<Eigen::VectorXd> w_diag_map(w_diag.data(), n);
+    Eigen::Map<Eigen::VectorXd> beta_free_map(beta_free.data(), p_free);
+    Eigen::Map<const Eigen::VectorXd> eta_fixed_map(eta_fixed.data(), n);
 
-    std::vector<double> score_free(p_free);
-    std::vector<double> final_XtWX(p_free * p_free);
-
-    // Pre-allocate thread-local storage once
-    std::vector<double> XtWX_threads(n_threads * p_free * p_free, 0.0);
-    std::vector<double> score_threads(n_threads * p_free, 0.0);
+    Eigen::MatrixXd final_XtWX_eigen(p_free, p_free);
+    Eigen::VectorXd score_free_eigen(p_free);
 
     int iterations = 0;
     for (int iter = 0; iter < maxit; iter++) {
         iterations = iter + 1;
-        #pragma omp parallel for
-        for(int i=0; i<n; i++) {
-            double eta_i = eta_fixed[i];
-            const double* x_ptr = &X_free_raw[i * p_free];
-            for(int j=0; j<p_free; j++) eta_i += x_ptr[j] * beta_free[j];
-            mu[i] = plogis_manual(eta_i);
-            double base_w = std::max(mu[i] * (1.0 - mu[i]), 1e-10);
-            w_diag[i] = use_weights ? weights_eigen[i] * base_w : base_w;
-        }
-
-        std::fill(XtWX_threads.begin(), XtWX_threads.end(), 0.0);
-        std::fill(score_threads.begin(), score_threads.end(), 0.0);
-
-        #pragma omp parallel
-        {
-            int tid = 0;
-            #ifdef _OPENMP
-            tid = omp_get_thread_num();
-            #endif
-            double* t_xtwx = &XtWX_threads[tid * p_free * p_free];
-            double* t_score = &score_threads[tid * p_free];
-
-            #pragma omp for
-            for(int i=0; i<n; i++) {
-                double diff = y_eigen[i] - mu[i];
-                if (use_weights) diff *= weights_eigen[i];
-                double wi = w_diag[i];
-                const double* x_ptr = &X_free_raw[i * p_free];
-                for(int r=0; r<p_free; r++) {
-                    double x_ir = x_ptr[r];
-                    t_score[r] += x_ir * diff;
-                    double xirwi = x_ir * wi;
-                    // Full row (not triangular) so the inner loop has a fixed bound
-                    // the compiler can auto-vectorize. The matrix is symmetric by
-                    // construction so no explicit symmetrization is needed afterward.
-                    for(int c=0; c<p_free; c++) {
-                        t_xtwx[r * p_free + c] += xirwi * x_ptr[c];
-                    }
-                }
-            }
-        }
-
-        std::fill(final_XtWX.begin(), final_XtWX.end(), 0.0);
-        std::fill(score_free.begin(), score_free.end(), 0.0);
-        for (int t = 0; t < n_threads; ++t) {
-            for(int r=0; r<p_free; r++) {
-                score_free[r] += score_threads[t * p_free + r];
-                for(int c=0; c<p_free; c++) final_XtWX[r * p_free + c] += XtWX_threads[t * p_free * p_free + r * p_free + c];
-            }
-        }
-
-        std::vector<double> delta(p_free);
-        if (!solve_llt_raw(delta.data(), final_XtWX.data(), score_free.data(), p_free)) break;
         
-        double norm_delta_sq = 0.0;
-        for(int j=0; j<p_free; j++) {
-            beta_free[j] += delta[j];
-            norm_delta_sq += delta[j] * delta[j];
-        }
-        if (std::sqrt(norm_delta_sq) < tol) { converged = true; break; }
+        // mu = plogis(X*beta + eta_fixed)
+        mu_map.noalias() = X_free_map * beta_free_map + eta_fixed_map;
+        mu_map.array() = plogis_array_safe(mu_map.array());
+
+        // w_diag = weights * mu * (1-mu)
+        w_diag_map.array() = mu_map.array() * (1.0 - mu_map.array());
+        if (use_weights) w_diag_map.array() *= weights_eigen.array();
+        w_diag_map.array() = w_diag_map.array().max(1e-10);
+
+        // score = X^T * (weights * (y - mu))
+        Eigen::VectorXd diff = y_eigen - mu_map;
+        if (use_weights) diff.array() *= weights_eigen.array();
+        score_free_eigen.noalias() = X_free_map.transpose() * diff;
+
+        // XtWX = X^T * diag(w_diag) * X
+        final_XtWX_eigen.noalias() = X_free_map.transpose() * w_diag_map.asDiagonal() * X_free_map;
+
+        Eigen::LDLT<Eigen::MatrixXd> ldlt(final_XtWX_eigen);
+        if (ldlt.info() != Eigen::Success) break;
+        Eigen::VectorXd delta = ldlt.solve(score_free_eigen);
+        if (!delta.allFinite()) break;
+
+        beta_free_map += delta;
+        if (delta.norm() < tol) { converged = true; break; }
     }
 
     ModelResult res;
-    res.b.resize(p);
-    for(int j=0; j<p; j++) res.b[j] = beta_full[j];
-    for(int j=0; j<p_free; j++) res.b[fixed_spec.free_idx[j]] = beta_free[j];
-    res.mu.resize(n);
-    for(int i=0; i<n; i++) res.mu[i] = mu[i];
-    
-    Eigen::MatrixXd info_free_eigen = Eigen::MatrixXd::Zero(p_free, p_free);
-    for(int r=0; r<p_free; r++) {
-        for(int c=0; c<p_free; c++) info_free_eigen(r, c) = final_XtWX[r * p_free + c];
-    }
-    res.XtWX = expand_free_covariance(p, fixed_spec, info_free_eigen, false);
+    res.b = beta_start; // Copy fixed values
+    for(int j=0; j<p_free; j++) res.b[fixed_spec.free_idx[j]] = beta_free_map[j];
+    res.mu = mu_map;
+    res.XtWX = expand_free_covariance(p, fixed_spec, final_XtWX_eigen, false);
     res.iterations = iterations;
     res.converged = converged;
     return res;

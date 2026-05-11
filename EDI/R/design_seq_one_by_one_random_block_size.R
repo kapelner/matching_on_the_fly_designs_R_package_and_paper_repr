@@ -13,8 +13,7 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 	inherit = DesignSeqOneByOne,
 	public = list(
 		#'
-		#' @description
-		#' Initialize a random block size sequential experimental design
+		#' @description Initialize a random block size sequential experimental design
 		#'
 		#' @param strata_cols A character vector of column names to use for stratification. If
 		#'   NULL, simple blocking is used.
@@ -69,9 +68,7 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 				}
 			}
 		},
-
-		#' @description
-		#' Assign the next subject to a treatment group
+		#' @description Assign the next subject to a treatment group
 		#'
 		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){
@@ -80,18 +77,15 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 				x_new = private$Xraw[private$t, ]
 				key = private$get_strata_key(x_row = x_new)
 			}
-
 			if (is.null(private$strata_states[[key]]) || length(private$strata_states[[key]]) == 0) {
 				# Randomly choose next block size
 				current_block_size = sample(private$block_sizes, 1)
-
 				# Refill block
 				n_T = round(current_block_size * private$prob_T)
 				n_C = current_block_size - n_T
 				new_block = sample(c(rep(1, n_T), rep(0, n_C)))
 				private$strata_states[[key]] = new_block
 			}
-
 			# Pop one
 			block = private$strata_states[[key]]
 			w_t = block[1]
@@ -103,7 +97,6 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 		strata_cols = NULL,
 		block_sizes = NULL,
 		strata_states = NULL, # hash map of stratum -> vector of remaining assignments
-
 		draw_bootstrap_indices = function(bootstrap_type = NULL) {
 			i_b = if (private$uses_covariates) {
 				strata_keys = vapply(1:private$t, function(i) {
@@ -115,7 +108,6 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 			}
 			list(i_b = i_b, m_vec_b = NULL)
 		},
-
 		get_strata_key = function(x_row) {
 			# Concatenate strata column values into a key string
 			vals = vapply(private$strata_cols, function(col) {

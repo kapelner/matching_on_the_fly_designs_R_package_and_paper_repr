@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{get_survival_stat_for_group}
 \alias{get_survival_stat_for_group}
-\title{Calculates the median or restricted mean survival time for a single group.}
+\title{Calculates the median or restricted mean survival time for a single group}
 \usage{
 get_survival_stat_for_group(y, dead, requested_stat)
 }
@@ -17,6 +17,6 @@ get_survival_stat_for_group(y, dead, requested_stat)
 The calculated statistic.
 }
 \description{
-Calculates the median or restricted mean survival time for a single group.
+Calculates the median or restricted mean survival time for a single group
 }
 \keyword{internal}

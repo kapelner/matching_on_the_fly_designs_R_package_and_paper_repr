@@ -277,6 +277,50 @@ test_that("DesignFixedBlocking equal_block_sizes = FALSE allows unequal blocks",
 	expect_equal(as.integer(table(block_ids)), c(3L, 5L))
 })
 
+test_that("DesignFixedBlocking constructor accepts explicit m", {
+	des <- DesignFixedBlocking$new(
+		response_type = "incidence",
+		n = 8L,
+		m = c(1L, 1L, 2L, 2L, 3L, 3L, 4L, 4L),
+		verbose = FALSE
+	)
+	expect_equal(des$get_block_ids(), c(1L, 1L, 2L, 2L, 3L, 3L, 4L, 4L))
+})
+
+test_that("DesignFixedBlocking constructor validates explicit m length and n presence", {
+	expect_error(
+		DesignFixedBlocking$new(
+			response_type = "incidence",
+			m = c(1L, 1L, 2L, 2L),
+			verbose = FALSE
+		),
+		"n must also be supplied"
+	)
+	expect_error(
+		DesignFixedBlocking$new(
+			response_type = "incidence",
+			n = 8L,
+			m = c(1L, 1L, 2L, 2L),
+			verbose = FALSE
+		),
+		"length\\(m\\) must equal n"
+	)
+})
+
+test_that("DesignFixedBinaryMatch constructor accepts explicit m", {
+	des <- DesignFixedBinaryMatch$new(
+		response_type = "continuous",
+		n = 8L,
+		m = c(1L, 1L, 2L, 2L, 3L, 3L, 4L, 4L),
+		verbose = FALSE
+	)
+	des$add_all_subjects_to_experiment(data.frame(x1 = seq_len(8L)))
+	expect_equal(des$get_block_ids(), c(1L, 1L, 2L, 2L, 3L, 3L, 4L, 4L))
+	W <- des$draw_ws_according_to_design(r = 3L)
+	expect_equal(dim(W), c(8L, 3L))
+	expect_true(all(colSums(W) == 4L))
+})
+
 test_that("DesignFixedBlocking with NULL strata_cols returns block IDs via all covariates", {
 	set.seed(42)
 	n <- 8L

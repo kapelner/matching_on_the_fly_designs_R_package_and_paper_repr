@@ -16,9 +16,7 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
-
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -36,17 +34,13 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
-
-		#' @description
-		#' Returns the estimated treatment effect (log-hazard ratio).
+		#' @description Returns the estimated treatment effect (log-hazard ratio).
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes the asymptotic confidence interval.
+		#' @description Computes the asymptotic confidence interval.
 		#' @param alpha                                   The confidence level in the computed
 		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -59,9 +53,7 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Computes the asymptotic p-value.
+		#' @description Computes the asymptotic p-value.
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval = function(delta = 0){
@@ -82,10 +74,8 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			}
 		}
 	),
-
 	private = list(
 		max_abs_reasonable_coef = 1e4,
-
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		cox_design_candidates = function(w, X){
 			X_full = matrix(w, ncol = 1)
@@ -97,7 +87,6 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			if (!private$harden || ncol(X_full) <= 1L){
 				return(list(X_full))
 			}
-
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
 				required_cols = 1L,
@@ -106,7 +95,6 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			)
 			candidates = list(attempt$X)
 			keys = paste(colnames(candidates[[1L]]), collapse = "|")
-
 			thresholds = c(0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
 			X_cov_orig = X_full[, -1, drop = FALSE]
 			for (thresh in thresholds){
@@ -130,7 +118,6 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			}
 			candidates
 		},
-
 		rcpp_cox_fit_is_usable = function(res, estimate_only = FALSE){
 			if (is.null(res) || !isTRUE(res$converged)) return(FALSE)
 			beta = res$coefficients[1L]
@@ -139,24 +126,19 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			se = tryCatch(sqrt(res$vcov[1L, 1L]), error = function(e) NA_real_)
 			is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef
 		},
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			private$clear_nonestimable_state()
-
 			# Recompute KKstats if cache was cleared (e.g., after y transformation for rand CI)
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
 			}
-
 			KKstats = private$cached_values$KKstats
 			m   = KKstats$m
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
-
 			# --- Matched pairs: Stratified Cox ---
 			if (m > 0){
 				private$strat_cox_for_matched_pairs(estimate_only = estimate_only)
@@ -165,7 +147,6 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			ssq_m    = private$cached_values$ssq_beta_T_matched
 			m_ok     = !is.null(beta_m) && is.finite(beta_m) &&
 			           (!estimate_only && !is.null(ssq_m) && is.finite(ssq_m) && ssq_m > 0 || estimate_only)
-
 			# --- Reservoir: Standard Cox ---
 			if (nRT > 0 && nRC > 0){
 				private$cox_for_reservoir(estimate_only = estimate_only)
@@ -174,7 +155,6 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			ssq_r    = private$cached_values$ssq_beta_T_reservoir
 			r_ok     = !is.null(beta_r) && is.finite(beta_r) &&
 			           (!estimate_only && !is.null(ssq_r) && is.finite(ssq_r) && ssq_r > 0 || estimate_only)
-
 			# --- Variance-weighted combination ---
 			if (m_ok && r_ok){
 				w_star = ssq_r / (ssq_r + ssq_m)
@@ -204,37 +184,30 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			}
 			private$clear_nonestimable_state()
 		},
-
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
 			}
 		},
-
 		strat_cox_for_matched_pairs = function(estimate_only = FALSE){
 			private$cached_values$beta_T_matched = NULL
 			private$cached_values$ssq_beta_T_matched = NULL
-
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
-
 			i_matched = which(m_vec > 0)
 			y_m       = private$y[i_matched]
 			dead_m    = private$dead[i_matched]
 			w_m       = private$w[i_matched]
 			strata_m  = m_vec[i_matched]
-
 			# Filter strata that have no events (provide no information for Cox partial likelihood)
 			strata_with_events = unique(strata_m[dead_m == 1])
 			if (length(strata_with_events) == 0) return(invisible(NULL))
-
 			i_valid = which(strata_m %in% strata_with_events)
 			y_v     = y_m[i_valid]
 			dead_v  = dead_m[i_valid]
 			w_v     = w_m[i_valid]
 			strata_v = as.integer(strata_m[i_valid])
-
 			res = NULL
 			if (ncol(as.matrix(private$X)) > 0){
 				X_m = as.matrix(private$get_X()[i_matched[i_valid], drop = FALSE])
@@ -257,7 +230,6 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 				)
 			}
 			if (is.null(res)) return(invisible(NULL))
-
 			beta = res$coefficients[1L]
 			private$cached_values$beta_T_matched = beta
 			
@@ -267,11 +239,9 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 				private$cached_values$ssq_beta_T_matched = se^2
 			}
 		},
-
 		cox_for_reservoir = function(estimate_only = FALSE){
 			private$cached_values$beta_T_reservoir = NULL
 			private$cached_values$ssq_beta_T_reservoir = NULL
-
 			y_r    = private$cached_values$KKstats$y_reservoir
 			w_r    = private$cached_values$KKstats$w_reservoir
 			m_vec_safe = private$m
@@ -279,7 +249,6 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 			m_vec_safe[is.na(m_vec_safe)] = 0L
 			dead_r = private$dead[m_vec_safe == 0]
 			X_r    = as.matrix(private$cached_values$KKstats$X_reservoir)
-
 			res = NULL
 			if (ncol(as.matrix(private$X)) > 0){
 				for (X_candidate in private$cox_design_candidates(w_r, X_r)){
@@ -301,9 +270,7 @@ InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
 					error = function(e) NULL
 				)
 			}
-
 			if (is.null(res)) return(invisible(NULL))
-
 			beta = res$coefficients[1L]
 			private$cached_values$beta_T_reservoir = beta
 			
@@ -331,8 +298,7 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj A completed KK design object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -350,17 +316,13 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
-
-		#' @description
-		#' Returns the combined-likelihood estimate of the treatment effect.
+		#' @description Returns the combined-likelihood estimate of the treatment effect.
 		#' @param estimate_only Whether to skip standard-error calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes an asymptotic confidence interval for the treatment effect.
+		#' @description Computes an asymptotic confidence interval for the treatment effect.
 		#' @param alpha Significance level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -372,9 +334,7 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Returns a 2-sided p-value for H0: beta_T = delta.
+		#' @description Returns a 2-sided p-value for H0: beta_T = delta.
 		#' @param delta Null treatment effect value.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -387,29 +347,23 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
-
 	private = list(
 		max_abs_reasonable_coef = 1e4,
 		best_X_colnames = NULL,
 		optimization_alg = "lbfgs",
-
 		get_standard_error = function(){
 			private$shared_combined_likelihood()
 			as.numeric(private$cached_values$s_beta_hat_T)
 		},
-
 		get_degrees_of_freedom = function() Inf,
-
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
 			}
 		},
-
 		supports_likelihood_tests = function(){
 			TRUE
 		},
-
 		get_likelihood_test_spec = function(){
 			private$shared_combined_likelihood(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context
@@ -492,7 +446,6 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 				}
 			)
 		},
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design from the original data
 			if (is.null(private$best_X_colnames)){
@@ -502,11 +455,9 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-
 			# Use the same design matrix structure as the original fit
 			X_cols = private$best_X_colnames
 			X_data = private$get_X()
-
 			X_cov = if (length(X_cols) == 0L){
 				matrix(0, nrow = private$n, ncol = 0)
 			} else {
@@ -517,13 +468,11 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 			if (ncol(X_cov) > 0L){
 				X_fit = cbind(X_fit, X_cov)
 			}
-
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
 			strata_id = m_vec
 			strata_id[strata_id == 0L] = max(strata_id) + 1L
-
 			res = tryCatch(
 				fast_stratified_coxph_regression_cpp(X_fit, private$y, private$dead,
 				                                     as.integer(strata_id), estimate_only = TRUE),
@@ -532,7 +481,6 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 			if (is.null(res)) return(NA_real_)
 			res$coefficients[1L]
 		},
-
 		build_design_matrix = function(){
 			X_full = matrix(private$w, ncol = 1)
 			colnames(X_full) = "w"
@@ -542,29 +490,23 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 			}
 			X_full
 		},
-
 		shared_combined_likelihood = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 			private$clear_nonestimable_state()
-
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
 			}
-
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
-
 			strata_id = m_vec
 			strata_id[strata_id == 0L] = max(strata_id) + 1L
 			strata_int = as.integer(strata_id)
-
 			if (sum(private$dead) == 0L){
 				private$cache_nonestimable_estimate("kk_strat_cox_combined_no_events")
 				return(invisible(NULL))
 			}
-
 			X_full = private$build_design_matrix()
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
@@ -584,12 +526,10 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 					is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef
 				}
 			)
-
 			if (is.null(attempt$fit) || is.null(attempt$fit$coefficients)){
 				private$cache_nonestimable_estimate("kk_strat_cox_combined_fit_failed")
 				return(invisible(NULL))
 			}
-
 			private$cached_mod = attempt$fit
 			private$cached_values$beta_hat_T = as.numeric(attempt$fit$coefficients[1L])
 			if (!estimate_only){
@@ -609,7 +549,6 @@ InferenceAbstractKKStratCoxOneLik = R6::R6Class("InferenceAbstractKKStratCoxOneL
 		}
 	)
 )
-
 #' Stratified Cox / Standard Cox Compound Inference for KK Designs
 #'
 #' Fits a compound estimator for KK matching-on-the-fly designs with survival responses.
@@ -631,8 +570,7 @@ InferenceSurvivalKKStratCoxIVWC = R6::R6Class("InferenceSurvivalKKStratCoxIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKStratCoxIVWC,
 	public = list(
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj A completed \code{Design} object with a survival response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -644,7 +582,6 @@ InferenceSurvivalKKStratCoxIVWC = R6::R6Class("InferenceSurvivalKKStratCoxIVWC",
 		}
 	)
 )
-
 #' Stratified Cox Combined-Likelihood Compound Inference for KK Designs
 #'
 #' Fits the combined stratified Cox partial likelihood (matched pairs + reservoir).
@@ -664,8 +601,7 @@ InferenceSurvivalKKStratCoxOneLik = R6::R6Class("InferenceSurvivalKKStratCoxOneL
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKStratCoxOneLik,
 	public = list(
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj A completed \code{Design} object with a survival response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is

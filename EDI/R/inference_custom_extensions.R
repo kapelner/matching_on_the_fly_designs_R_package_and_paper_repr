@@ -29,25 +29,20 @@ InferenceCustomAsymp = R6::R6Class("InferenceCustomAsymp",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-		#' @description
-		#' User-defined fit method.
+		#' @description User-defined fit method.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		#' @return A list with fit results.
 		fit = function(estimate_only = FALSE){
 			stop("Custom inference subclasses must implement public$fit(estimate_only = FALSE).")
 		},
-
-		#' @description
-		#' Compute the treatment estimate.
+		#' @description Compute the treatment estimate.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		#' @return The treatment estimate.
 		compute_estimate = function(estimate_only = FALSE){
 			private$run_custom_fit(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Compute asymptotic confidence interval.
+		#' @description Compute asymptotic confidence interval.
 		#' @param alpha Significance level.
 		#' @return Confidence interval.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -57,9 +52,7 @@ InferenceCustomAsymp = R6::R6Class("InferenceCustomAsymp",
 			private$run_custom_fit(estimate_only = FALSE)
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Compute asymptotic p-value.
+		#' @description Compute asymptotic p-value.
 		#' @param delta Null treatment effect.
 		#' @return P-value.
 		compute_asymp_two_sided_pval = function(delta = 0){
@@ -77,7 +70,6 @@ InferenceCustomAsymp = R6::R6Class("InferenceCustomAsymp",
 			result = self$fit(estimate_only = estimate_only)
 			private$cache_custom_fit_result(result, estimate_only = estimate_only)
 		},
-
 		cache_custom_fit_result = function(result, estimate_only = FALSE){
 			if (!is.list(result)) {
 				stop("Custom inference fit() must return a named list.", call. = FALSE)
@@ -88,43 +80,34 @@ InferenceCustomAsymp = R6::R6Class("InferenceCustomAsymp",
 			estimate = as.numeric(result$estimate)[1L]
 			reason = result$nonestimable_reason
 			if (!is.null(reason)) reason = as.character(reason)[1L]
-
 			private$cached_values$beta_hat_T = estimate
 			private$cached_mod = result$model
-
 			if (!is.finite(estimate)) {
 				private$cache_nonestimable_estimate(if (is.null(reason)) "custom_estimate_unavailable" else reason)
 				return(invisible(NULL))
 			}
-
 			if (isTRUE(estimate_only)) {
 				return(invisible(NULL))
 			}
-
 			se = if (is.null(result$se)) NA_real_ else as.numeric(result$se)[1L]
 			df = if (is.null(result$df)) NA_real_ else as.numeric(result$df)[1L]
-
 			private$cached_values$s_beta_hat_T = se
 			private$cached_values$df = df
-
 			if (!is.finite(se) || se <= 0) {
 				private$cache_nonestimable_se(if (is.null(reason)) "custom_standard_error_unavailable" else reason)
 			}
 			invisible(NULL)
 		},
-
 		get_standard_error = function(){
 			private$run_custom_fit(estimate_only = FALSE)
 			private$cached_values$s_beta_hat_T
 		},
-
 		get_degrees_of_freedom = function(){
 			private$run_custom_fit(estimate_only = FALSE)
 			private$cached_values$df
 		}
 	)
 )
-
 #' Internal base for user-defined randomization inference extensions
 #'
 #' This class uses the same \code{fit()} result contract as
@@ -136,16 +119,13 @@ InferenceCustomRand = R6::R6Class("InferenceCustomRand",
 	lock_objects = FALSE,
 	inherit = InferenceRand,
 	public = list(
-		#' @description
-		#' User-defined fit method.
+		#' @description User-defined fit method.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		#' @return A list with fit results.
 		fit = function(estimate_only = FALSE){
 			stop("Custom inference subclasses must implement public$fit(estimate_only = FALSE).")
 		},
-
-		#' @description
-		#' Compute the treatment estimate.
+		#' @description Compute the treatment estimate.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		#' @return The treatment estimate.
 		compute_estimate = function(estimate_only = FALSE){
@@ -164,7 +144,6 @@ InferenceCustomRand = R6::R6Class("InferenceCustomRand",
 		}
 	)
 )
-
 #' Internal base for user-defined bootstrap inference extensions
 #'
 #' This class uses the same \code{fit()} result contract as
@@ -173,18 +152,15 @@ InferenceCustomRand = R6::R6Class("InferenceCustomRand",
 #' @keywords internal
 InferenceCustomBoot = R6::R6Class("InferenceCustomBoot",
 	lock_objects = FALSE,
-	inherit = InferenceBoot,
+	inherit = InferenceNonParamBootstrap,
 	public = list(
-		#' @description
-		#' User-defined fit method.
+		#' @description User-defined fit method.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		#' @return A list with fit results.
 		fit = function(estimate_only = FALSE){
 			stop("Custom inference subclasses must implement public$fit(estimate_only = FALSE).")
 		},
-
-		#' @description
-		#' Compute the treatment estimate.
+		#' @description Compute the treatment estimate.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		#' @return The treatment estimate.
 		compute_estimate = function(estimate_only = FALSE){

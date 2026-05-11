@@ -7,8 +7,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 	lock_objects = FALSE,
 	inherit = InferenceRand,
 	public = list(
-		#' @description
-		#' Compute a randomization-based two-sided p-value for the treatment effect.
+		#' @description Compute a randomization-based two-sided p-value for the treatment effect.
 		#' @param r Number of randomization vectors.
 		#' @param delta Null treatment effect value.
 		#' @param transform_responses Response transformation to apply during the test.
@@ -56,9 +55,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				zero_one_logit_clamp = zero_one_logit_clamp
 			)
 		},
-
-		#' @description
-		#' Computes a randomization-based confidence interval.
+		#' @description Computes a randomization-based confidence interval.
 		#' @param alpha  				Significance level.
 		#' @param r  	Number of randomization vectors.
 		#' @param pval_epsilon  		Bisection tolerance.
@@ -84,7 +81,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			}
 			ci_search_control = private$normalize_randomization_ci_search_control(ci_search_control, r, pval_epsilon)
 			ci_search_control$mc_stop_threshold = alpha / 2
-
 			dispatch_cores = private$effective_parallel_cores("rand_ci", self$num_cores)
 			if (dispatch_cores != self$num_cores) {
 				serial_inf = self$duplicate(verbose = private$verbose)
@@ -99,7 +95,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 					ci_search_control = ci_search_control
 				))
 			}
-
 			resp_type = private$des_obj_priv_int$response_type
 			if (resp_type == "incidence" && is.null(private$custom_randomization_statistic_function)){
 				rand_type = if (is.null(type)) "Zhang" else type
@@ -113,8 +108,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			if (should_run_asserts()) {
 				private$assert_no_incidence_only_randomization_args(resp_type, type, args_for_type)
 			}
-
-			is_glm = inherits(self, "InferenceMLEorKMforGLMs") || 
+			is_glm = inherits(self, "InferenceAsympLikStdModCache") || 
 			         inherits(self, "InferenceAbstractKKGEE") || 
 			         inherits(self, "InferenceAbstractKKGLMM") ||
 			         inherits(self, "InferenceKKPassThrough") ||
@@ -141,7 +135,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			old_mc_control = temp_inf$.__enclos_env__$private$randomization_mc_control
 			temp_inf$.__enclos_env__$private$randomization_mc_control = ci_search_control
 			on.exit({ temp_inf$.__enclos_env__$private$randomization_mc_control = old_mc_control }, add = TRUE)
-
 			perms = temp_inf$.__enclos_env__$private$generate_permutations(r)
 			ci_pval_cache = if (isTRUE(ci_search_control$pval_cache_enable)) new.env(parent = emptyenv()) else NULL
 			bounds = private$build_randomization_ci_search_bounds(temp_inf, r, alpha, transform_arg, perms, ci_search_control, ci_pval_cache)
@@ -160,7 +153,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 				return(ci)
 			}
-
 			# Run the lower and upper bounds sequentially and reserve all available
 			# cores for the inner p-value computations inside each bisection step.
 			ci = c(
@@ -178,7 +170,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			ci
 		}
 	),
-
 	private = list(
 		assert_no_incidence_only_randomization_args = function(resp_type, type, args_for_type){
 			if (should_run_asserts()) {
@@ -191,7 +182,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			}
 			invisible(NULL)
 		},
-
 		compute_randomization_ci_pval_cached = function(inf_obj, r, delta, transform_responses, permutations, ci_search_control, ci_pval_cache){
 			cache_enabled = isTRUE(ci_search_control$pval_cache_enable) && !is.null(ci_pval_cache)
 			if (cache_enabled) {
@@ -213,7 +203,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			if (cache_enabled) ci_pval_cache[[cache_key]] = pval
 			pval
 		},
-
 		normalize_randomization_ci_search_control = function(ci_search_control, r, pval_epsilon){
 			default_mc_batch = min(as.integer(r), max(25L, as.integer(ceiling(2 * sqrt(as.integer(r))))))
 			defaults = list(
@@ -271,7 +260,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			ctrl$mc_min_draws = min(as.integer(r), max(as.integer(ctrl$mc_batch_size), as.integer(ctrl$mc_min_draws)))
 			ctrl
 		},
-
 		normalize_exact_inference_args = function(type, args_for_type = NULL, pval_epsilon = NULL){
 			if (should_run_asserts()) {
 				assertChoice(type, c("Zhang"))
@@ -281,7 +269,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			if (!is.null(pval_epsilon)) default_args$pval_epsilon = pval_epsilon
 			utils::modifyList(setNames(list(default_args), type), if (is.null(args_for_type)) list() else args_for_type)
 		},
-
 		assert_exact_inference_params = function(type, args_for_type){
 			if (should_run_asserts()) {
 				assertChoice(type, c("Zhang"))
@@ -302,7 +289,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				}
 			invisible(args)
 		},
-
 		compute_exact_confidence_interval_rand = function(type, alpha, args_for_type){
 			if (should_run_asserts()) {
 				private$assert_design_supports_resampling("Randomization inference")
@@ -317,7 +303,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				)
 			)
 		},
-
 		compute_exact_two_sided_pval_rand = function(type, delta, args_for_type){
 			if (should_run_asserts()) {
 				private$assert_design_supports_resampling("Randomization inference")
@@ -331,28 +316,24 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				)
 			)
 		},
-
 		pval_exact_zhang_combined = function(delta_0, combination_method = "Fisher"){
 			exact_stats = private$get_exact_zhang_stats()
 			p_M = if (exact_stats$m > 0) private$compute_exact_pval_matched_pairs(delta_0) else NA_real_
 			p_R = if (exact_stats$nRT > 0 && exact_stats$nRC > 0) private$compute_exact_pval_reservoir(delta_0) else NA_real_
 			zhang_combine_exact_pvals(p_M, p_R, exact_stats$m, exact_stats$nRT, exact_stats$nRC, combination_method)
 		},
-
 		compute_exact_pval_matched_pairs = function(delta_0) {
 				if (!private$has_match_structure) return(NA_real_)
 			exact_stats = private$get_exact_zhang_stats()
 			if (exact_stats$m == 0L || exact_stats$d_plus + exact_stats$d_minus == 0L) return(NA_real_)
 			zhang_exact_binom_pval_cpp(exact_stats$d_plus, exact_stats$d_minus, delta_0)
 		},
-
 		compute_exact_pval_reservoir = function(delta_0){
 			exact_stats = private$get_exact_zhang_stats()
 			if (exact_stats$nRT == 0L || exact_stats$nRC == 0L) return(NA_real_)
 			if (exact_stats$n11 + exact_stats$n01 == 0L || exact_stats$n10 + exact_stats$n00 == 0L) return(NA_real_)
 			zhang_exact_fisher_pval_cpp(exact_stats$n11, exact_stats$n10, exact_stats$n01, exact_stats$n00, delta_0)
 		},
-
 		get_exact_zhang_stats = function(){
 			if (!is.null(private$cached_values$incid_exact_zhang_stats)) return(private$cached_values$incid_exact_zhang_stats)
 				if (private$has_match_structure){
@@ -394,7 +375,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			private$cached_values$incid_exact_zhang_stats = exact_stats
 			exact_stats
 		},
-
 		ci_exact_zhang_combined = function(alpha, pval_epsilon, combination_method = "Fisher"){
 			exact_stats = private$get_exact_zhang_stats()
 			est = zhang_incid_treatment_estimate(exact_stats)
@@ -419,7 +399,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				)
 			}
 		},
-
 			compute_zhang_ci_bounds_parallel = function(est, lo_bound, hi_bound, alpha, pval_epsilon, combination_method){
 				bound_specs = list(list(inside = est, outside = lo_bound), list(inside = est, outside = hi_bound))
 				n_cores_ci = min(2L, self$num_cores)
@@ -444,7 +423,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				))
 				c(results[[1]], results[[2]])
 			},
-
 		build_randomization_ci_search_bounds = function(inf_obj, r, alpha, transform_arg, permutations, ci_search_control, ci_pval_cache){
 			normalize_ci = function(ci){
 				ci = as.numeric(ci)
@@ -491,7 +469,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			u = private$expand_bound(inf_obj, u, est, r, transform_arg, permutations, alpha / 2, FALSE, max_radius, ci_search_control$max_expansions, ci_search_control, ci_pval_cache)
 			list(est = est, l = l, u = u, fallback_ci = fallback_ci)
 		},
-
 		get_randomization_ci_seed_candidates = function(inf_obj, alpha){
 			normalize_ci = function(ci){
 				ci = as.numeric(ci)
@@ -516,7 +493,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			}
 			list(wald_ci = wald_ci, asym_ci = asym_ci)
 		},
-
 		expand_bound = function(inf_obj, bound, est, r, transform_arg, permutations, target_pval, lower, max_radius, max_expansions, ci_search_control, ci_pval_cache){
 			evaluate_pval = function(delta) {
 				private$compute_randomization_ci_pval_cached(inf_obj, r, delta, transform_arg, permutations, ci_search_control, ci_pval_cache)
@@ -536,7 +512,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			}
 			NA_real_
 		},
-
 			compute_ci_by_inverting_the_randomization_test_iteratively = function(r, l, u, pval_th, tol, transform_responses, lower, show_progress = TRUE, permutations = NULL, ci_search_control = NULL, ci_pval_cache = NULL){
 			evaluate_pval = function(delta) {
 				private$compute_randomization_ci_pval_cached(self, r, delta, transform_responses, permutations, ci_search_control, ci_pval_cache)
@@ -569,8 +544,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 		}
 	)
 )
-
-
 #' Exact Zhang Incidence Inference
 #'
 #' @examples
@@ -582,8 +555,7 @@ InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
 	lock_objects = FALSE,
 	inherit = InferenceRandCI,
 	public = list(
-		#' @description
-		#' Initialize exact Zhang incidence inference.
+		#' @description Initialize exact Zhang incidence inference.
 		#' @param des_obj A completed design object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -600,18 +572,14 @@ InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-
-		#' @description
-		#' Compute the Zhang incidence treatment estimate.
+		#' @description Compute the Zhang incidence treatment estimate.
 		#' @param estimate_only Ignored for this estimator.
 		#' @return The treatment estimate.
 		compute_estimate = function(estimate_only = FALSE){
 			stats = private$get_exact_zhang_stats()
 			zhang_incid_treatment_estimate(stats)
 		},
-
-		#' @description
-		#' Compute an exact Zhang confidence interval.
+		#' @description Compute an exact Zhang confidence interval.
 		#' @param alpha Significance level.
 		#' @param pval_epsilon Bisection tolerance for the inversion routine.
 		#' @param args_for_type Optional arguments keyed by exact type.
@@ -628,9 +596,7 @@ InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
 			)
 			private$compute_exact_confidence_interval_rand("Zhang", alpha, exact_args)
 		},
-
-		#' @description
-		#' Compute the exact Zhang two-sided p-value for a treatment effect.
+		#' @description Compute the exact Zhang two-sided p-value for a treatment effect.
 		#' @param delta Null treatment effect value.
 		#' @param args_for_type Optional arguments keyed by exact type.
 		#' @return A two-sided p-value.

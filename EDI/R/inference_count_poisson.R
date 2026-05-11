@@ -16,11 +16,10 @@
 #' @export
 InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 	lock_objects = FALSE,
-	inherit = InferenceCountLikelihood,
+	inherit = InferenceAsympLikStdModCache,
 	public = list(
 				
-		#' @description
-		#' Initialize a Poisson regression inference object.
+		#' @description Initialize a Poisson regression inference object.
 		#' @param des_obj A completed \code{Design} object with a count response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -37,19 +36,15 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-
-		#' @description
-		#' Computes the Poisson-regression estimate of the treatment effect.
+		#' @description Computes the Poisson-regression estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		}
 	),
-
 	private = list(
 		best_X_colnames = NULL,
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -57,7 +52,6 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-
 			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 			
@@ -67,7 +61,6 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(1, treatment = private$w, X_cov)
 			}
-
 			res = tryCatch(
 				fast_poisson_regression_cpp(
 					X = X, y = as.numeric(private$y),
@@ -82,19 +75,15 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 			private$set_fit_warm_start(res$b, "beta")
 			as.numeric(res$b[2])
 		},
-
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
-
 		supports_likelihood_tests = function(){
 			TRUE
 		},
-
 		supports_fisher_information = function(){
 			TRUE
 		},
-
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context
@@ -139,7 +128,6 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 				}
 			)
 		},
-
 		generate_mod = function(estimate_only = FALSE){
 			# Use the common GLM fitting pattern
 			X_data = private$get_X()
@@ -179,7 +167,6 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 					is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
 				}
 			)
-
 			if (!is.null(attempt$fit)){
 				private$set_fit_warm_start(attempt$fit$b, "beta")
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
@@ -192,7 +179,6 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 			}
 			attempt$fit
 		},
-
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			w_mat = permutations$w_mat

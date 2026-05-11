@@ -27,9 +27,7 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-
-		#' @description
-		#' Initialize the JT test object.
+		#' @description Initialize the JT test object.
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -45,42 +43,32 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-
-		#' @description
-		#' Returns the estimated treatment effect (JT superiority measure).
+		#' @description Returns the estimated treatment effect (JT superiority measure).
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Returns the exact two-sided p-value.
+		#' @description Returns the exact two-sided p-value.
 		compute_exact_two_sided_pval_for_treatment_effect = function(){
 			private$shared()
 			private$cached_values$p_exact
 		},
-
-		#' @description
-		#' Not applicable: JT test is exact, not asymptotic. Returns NA.
+		#' @description Not applicable: JT test is exact, not asymptotic. Returns NA.
 		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			c(NA_real_, NA_real_)
 		},
-
-		#' @description
-		#' Not applicable: JT test is exact. Use compute_exact_two_sided_pval_for_treatment_effect().
+		#' @description Not applicable: JT test is exact. Use compute_exact_two_sided_pval_for_treatment_effect().
 		#' @param delta The null treatment effect (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			NA_real_
 		}
 	),
-
 	private = list(
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			
 			res = exact_jonckheere_terpstra_pval_cpp(as.integer(private$y), as.integer(private$w))

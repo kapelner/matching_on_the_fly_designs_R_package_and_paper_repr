@@ -124,7 +124,7 @@ scenario_weibull_frailty <- function() {
   log_t <- drop(X %*% beta) + u + sigma_eps * rlogis(n)
   y <- pmax(exp(log_t), 1e-6)
   dead <- rbinom(n, 1, 0.7)
-  function() EDI:::fast_weibull_frailty_cpp(y, dead, X, group_id, estimate_only = TRUE, n_gh = 10L, maxit = 120L, eps_g = 1e-5, optimization_alg = "lbfgs")
+  function() EDI:::fast_weibull_frailty_cpp(X, y, dead, group_id, estimate_only = TRUE, n_gh = 10L, maxit = 120L, eps_g = 1e-5, optimization_alg = "lbfgs")
 }
 
 scenarios <- list(
@@ -138,6 +138,7 @@ scenarios <- list(
 
 rows <- list()
 for (nm in names(scenarios)) {
+  cat("Benchmarking kernel:", nm, "...\n")
   times <- timed_eval(scenarios[[nm]], cfg$reps)
   rows[[length(rows) + 1L]] <- data.frame(
     kernel = nm,

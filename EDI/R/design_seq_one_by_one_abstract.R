@@ -12,8 +12,7 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 	lock_objects = FALSE,
 	inherit = DesignMatching,
 	public = list(
-		#' @description
-		#' Initialize a sequential one-by-one design.
+		#' @description Initialize a sequential one-by-one design.
 		#' @param response_type The data type of response values.
 		#' @param prob_T The probability of the treatment assignment.
 		#' @param include_is_missing_as_a_new_feature If missing data is present, include a dummy
@@ -35,16 +34,12 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 			) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, ...)
 		},
-
-		#' @description
-		#' Checks if the design supports resampling.
+		#' @description Checks if the design supports resampling.
 		#' @return Always TRUE for sequential designs.
 		supports_resampling = function(){
 			TRUE
 		},
-
-		#' @description
-		#' Add subject-specific measurements for the next subject entrant.
+		#' @description Add subject-specific measurements for the next subject entrant.
 		#'
 		#' @param x_new A data frame with one row representing the new subject's covariates.
 		#' @param allow_new_cols Allow new features in the new subject's covariates.
@@ -66,7 +61,6 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 					}
 				}
 			}
-
 			j_with_NAs = is.na(unlist(x_new))
 			if (any(j_with_NAs) & private$t == 0){
 				x_new = x_new[which(!j_with_NAs)]
@@ -74,7 +68,6 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 					warning("There is missing data in the first subject's covariate value(s). Setting the flag allow_new_cols = FALSE will disallow additional subjects")
 				}
 			}
-
 			xnew_data_types = get_column_types_cpp(x_new)
 			if (should_run_asserts()) {
 				if ("ordered" %in% xnew_data_types){
@@ -84,7 +77,6 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 					stop("Date data type is not supported; please convert to numeric.")
 				}
 			}
-
 			if (private$t > 0){
 				Xraw_data_types = get_column_types_cpp(private$Xraw)
 				colnames_Xraw = names(private$Xraw)
@@ -113,7 +105,6 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 								)]
 							}
 						}
-
 						new_xnew_cols = setdiff(colnames_Xraw, colnames_xnew)
 						if (length(new_xnew_cols) > 0){
 							new_xnew_cols_types = Xraw_data_types[new_xnew_cols]
@@ -127,8 +118,6 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 								)]
 							}
 						}
-
-
 					} else {
 						stop(paste(
 							"The new subject vector has columns:\n  ",
@@ -143,10 +132,8 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 			#add new subject's measurements to the raw data frame (there should be the same exact columns even if there are new ones introduced)
 			private$Xraw = rbindlist(list(private$Xraw, x_new))
 			private$p_raw_t = ncol(private$Xraw)
-
 			#iterate t
 			private$t = private$t + 1L #t must be an integer for data.table's fast "set" function below to work
-
 			#we only bother with imputation and model matrices if we have enough data otherwise it's a huge mess
 			#thus, designs cannot utilize imputations nor model matrices until this condition is met
 			#luckily, those are the designs implemented herein so we have complete control (if you are extending this package, you'll have to deal with this issue here)
@@ -154,9 +141,7 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 				private$covariate_impute_if_necessary_and_then_create_model_matrix()
 			}
 		},
-
-		#' @description
-		#' Adds a subject and assigns treatment.
+		#' @description Adds a subject and assigns treatment.
 		#' @param x_new A data frame with one row representing the new subject's covariates.
 		#' @return The treatment assignment (0 or 1).
 		add_one_subject_to_experiment_and_assign = function(x_new){
@@ -173,16 +158,12 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 			}
 			private$w[private$t]
 		},
-
-		#' @description
-		#' Assigns treatment to the current subject.
+		#' @description Assigns treatment to the current subject.
 		#' @return The treatment assignment (0 or 1).
 		assign_wt = function(){
 			stop("Must be implemented by subclass.")
 		},
-
-		#' @description
-		#' Draws treatment vectors according to the design.
+		#' @description Draws treatment vectors according to the design.
 		#' @param r Number of vectors to draw.
 		#' @return A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
@@ -200,9 +181,7 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 			}
 			w_mat
 		},
-
-		#' @description
-		#' Prints the current subject's assignment.
+		#' @description Prints the current subject's assignment.
 		print_current_subject_assignment = function(){
 			cat("Subject number", private$t, "is assigned to", ifelse(private$w[private$t] == 1, "TREATMENT", "CONTROL"), "via design", class(self)[1], "\n")
 		}

@@ -3,12 +3,11 @@
 #' Abstract class for bootstrap-based inference.
 #'
 #' @keywords internal
-InferenceBoot = R6::R6Class("InferenceBoot",
+InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 	lock_objects = FALSE,
 	inherit = InferenceRandCI,
 	public = list(
-		#' @description
-		#' Creates the bootstrap distribution of the estimate for the treatment effect
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect
 		#'
 		#' @param B  					Number of bootstrap samples. The default is 501.
 		#' @param show_progress  		A flag indicating whether a progress bar should be displayed.
@@ -22,51 +21,45 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 		#'   character vectors, one per iteration), \code{num_errors}, \code{num_warnings},
 		#'   \code{prop_iterations_with_errors}, \code{prop_iterations_with_warnings}, and
 		#'   \code{prop_illegal_values}.
-		#' @param bootstrap_type      The type of bootstrap resampling to perform.
+		#' @param bootstrap_type Optional bootstrap-resampling scheme. Legal public values are:
+		#'   \describe{
+		#'     \item{\code{NULL}}{Use the design's default row-resampling bootstrap. For ordinary
+		#'       non-blocking designs this is the usual subject-level resample-with-replacement
+		#'       bootstrap. For certain blocking designs, \code{NULL} maps to the same behavior
+		#'       as \code{"within_blocks"}.}
+		#'     \item{\code{"within_blocks"}}{Only legal for blocking-style designs that support
+		#'       block-aware bootstrap resampling:
+		#'       \code{DesignFixedBlocking}, \code{DesignFixedOptimalBlocks},
+		#'       \code{DesignSeqOneByOneSPBR}, and \code{DesignFixedBlockedCluster}.
+		#'       Resamples observational units within each observed block/stratum. For blocked
+		#'       cluster designs this means resampling clusters within strata.}
+		#'     \item{\code{"resample_blocks"}}{Only legal for the same blocking-style designs as
+		#'       \code{"within_blocks"}. Resamples entire observed blocks/strata with replacement
+		#'       rather than resampling units within each block.}
+		#'   }
+		#'   Any non-\code{NULL} value is rejected for designs outside that blocking family.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			if (should_run_asserts()) {
 				private$assert_design_supports_resampling("Bootstrap inference")
 				private$assert_valid_bootstrap_type(bootstrap_type)
 				assertCount(B, positive = TRUE); assertFlag(debug)
 			}
-
 			# Check cache (skipped in debug mode to always get fresh diagnostic results)
 			cache_key = as.character(B)
 			if (!isTRUE(debug) && !is.null(private$cached_values$boot_distr_cache[[cache_key]])) {
 				return(private$cached_values$boot_distr_cache[[cache_key]])
 			}
-
 			if (private$verbose) cat("Computing bootstrap distribution...\n")
-
 			# Duplicate objects for thread safety
 			inf_template = self$duplicate()
 			des_template = private$des_obj$duplicate()
 			has_match_structure_local = private$has_match_structure
-
-			# Determine sampling strategy based on bootstrap type
-			is_assignment_resampling = identical(tolower(private$get_bootstrap_type(bootstrap_type)), "assignment")
-
 			run_one_boot_iter = function(worker_des, worker_inf) {
-				if (is_assignment_resampling) {
-					worker_des$.__enclos_env__$private$resample_assignment()
-					worker_inf$.__enclos_env__$private$cached_values = list()
-					worker_inf$.__enclos_env__$private$w = worker_des$.__enclos_env__$private$w
-					worker_inf$.__enclos_env__$private$y = worker_des$.__enclos_env__$private$y
-					worker_inf$.__enclos_env__$private$y_temp = worker_des$.__enclos_env__$private$y
-					worker_inf$.__enclos_env__$private$dead = worker_des$.__enclos_env__$private$dead
-					if (has_match_structure_local && !is.null(worker_inf$.__enclos_env__$private$compute_basic_match_data)) {
-						worker_inf$.__enclos_env__$private$m = worker_des$.__enclos_env__$private$m
-						worker_inf$.__enclos_env__$private$compute_basic_match_data()
-					}
-					worker_inf$compute_estimate(estimate_only = TRUE)
-				} else {
-					boot_draw = private$bootstrap_sample_indices(private$n, bootstrap_type)
-					sub_inf = private$bootstrap_subset_inference(boot_draw, smooth = FALSE)
-					if (is.null(sub_inf)) return(NA_real_)
-					as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
-				}
+				boot_draw = private$bootstrap_sample_indices(private$n, bootstrap_type)
+				sub_inf = private$bootstrap_subset_inference(boot_draw, smooth = FALSE)
+				if (is.null(sub_inf)) return(NA_real_)
+				as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
 			}
-
 			if (isTRUE(debug)) {
 				run_debug_boot_iter = function(worker_des = NULL, worker_inf = NULL, worker_state = NULL) {
 					iter_warns = character(0)
@@ -89,12 +82,10 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 						warnings = iter_warns
 					)
 				}
-
 					actual_debug_cores = private$effective_parallel_cores("bootstrap", self$num_cores)
 					chunk_n = max(1L, min(as.integer(actual_debug_cores), as.integer(B)))
 					chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
 					chunks = split(seq_len(B), chunk_id)
-
 					run_debug_chunk = if (isTRUE(private$use_reusable_bootstrap_worker())) {
 						function(idxs) {
 							worker_state = private$create_bootstrap_worker_state()
@@ -109,7 +100,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 							})
 						}
 					}
-
 					debug_results = if (actual_debug_cores <= 1L) {
 						run_debug_chunk(seq_len(B))
 					} else {
@@ -125,7 +115,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 						# Flatten chunks into a single list of results
 						unlist(res_raw, recursive = FALSE, use.names = FALSE)
 					}
-
 					# Harden debug_results: remove any NULLs or non-list results that might 
 					# have come from worker crashes in par_lapply/mclapply.
 					debug_results_surviving = Filter(function(x) is.list(x) && !is.null(x$val), debug_results)
@@ -139,7 +128,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 							stop("All bootstrap iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
 						}
 					}
-
 					values = vapply(debug_results, function(x) {
 						if (is.list(x) && !is.null(x[["val"]])) as.numeric(x[["val"]])[1L] else NA_real_
 					}, numeric(1))
@@ -165,7 +153,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 						prop_illegal_values = mean(!is.finite(values))
 					))
 				}
-
 			# Determine cores — warm-up guard: run one iteration serially to estimate per-iteration
 			# cost, then only parallelize if computation outweighs overhead per worker.
 			# For a persistent fork cluster the per-call overhead is ~10ms (socket round-trip);
@@ -199,7 +186,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				if (!(t_boot_warmup * B > fork_overhead_estimate * actual_cores + cluster_create_overhead))
 					actual_cores = 1L
 			}
-
 			boot_distr = if (isTRUE(private$use_reusable_bootstrap_worker())) {
 				private$compute_bootstrap_distribution_with_reused_workers(
 					B = B,
@@ -221,16 +207,12 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 					run_one_boot_iter = run_one_boot_iter
 				)))
 			}
-
 			if (!is.numeric(boot_distr)) boot_distr = as.numeric(boot_distr)
-
 			if (is.null(private$cached_values$boot_distr_cache)) private$cached_values$boot_distr_cache = list()
 			private$cached_values$boot_distr_cache[[cache_key]] = boot_distr
 			boot_distr
 		},
-
-		#' @description
-		#' Computes a bootstrap-based two-sided p-value for the treatment effect.
+		#' @description Computes a bootstrap-based two-sided p-value for the treatment effect.
 		#'
 		#' @param delta  				Null hypothesis value. Default 0.
 		#' @param B  					Number of bootstrap samples. Default 501.
@@ -271,7 +253,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			if (should_run_asserts()) {
 				assertChoice(type, c("percentile", "symmetric", "studentized", "bootstrap-t", "bca"))
 			}
-
 			# Early exit: if the treatment estimate is already cached and non-finite,
 			# skip the expensive bootstrap computation entirely.
 			est_cached = private$cached_values$beta_hat_T
@@ -279,7 +260,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				if (isTRUE(private$harden)) private$cache_nonestimable_estimate("bootstrap_original_estimate_unavailable")
 				return(NA_real_)
 			}
-
 			if (type %in% c("studentized", "bootstrap-t")) {
 				boot_stats = private$approximate_bootstrap_statistics_beta_hat_T(
 					B = B,
@@ -291,7 +271,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				boot_distr = self$approximate_bootstrap_distribution_beta_hat_T(B)
 				boot_stats = NULL
 			}
-
 			if (isTRUE(na.rm)) boot_distr = boot_distr[is.finite(boot_distr)]
 			else if (any(!is.finite(boot_distr))) return(NA_real_)
 			if (length(boot_distr) < as.integer(min_number_usable_samples)) {
@@ -299,14 +278,12 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				return(NA_real_)
 			}
 			if (length(boot_distr) == 0L) return(NA_real_)
-
 			est = as.numeric(self$compute_estimate())
 			if (length(est) == 0L || !is.finite(est[1])) {
 				if (isTRUE(private$harden)) private$cache_nonestimable_estimate("bootstrap_original_estimate_unavailable")
 				return(NA_real_)
 			}
 			est = est[1]
-
 			if (type == "percentile") {
 				# Shift bootstrap distribution to be centred at delta (null hypothesis)
 				boot_null = boot_distr - mean(boot_distr) + delta
@@ -361,9 +338,7 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				pval
 			}
 		},
-
-		#' @description
-		#' Computes a bootstrap-based confidence interval.
+		#' @description Computes a bootstrap-based confidence interval.
 		#'
 		#' @param alpha  				The confidence level 1 - \code{alpha}. Default 0.05.
 		#' @param B  					Number of bootstrap samples. Default 501.
@@ -399,7 +374,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 					"double-bootstrap", "calibrated", "smoothed"
 				))
 			}
-
 			est = as.numeric(self$compute_estimate(estimate_only = FALSE))
 			if (length(est) == 0L || !is.finite(est[1])) {
 				if (isTRUE(private$harden)) {
@@ -408,7 +382,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				stop("Bootstrap confidence interval returned NA bounds")
 			}
 			est = est[1]
-
 			# BCa only needs theta (not se), so route it through the parallel bootstrap path.
 			# studentized/symmetric-percentile-t need se per replicate → serial statistics path.
 			boot_stats = if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t", "prepivoted", "double-bootstrap", "calibrated", "smoothed")) {
@@ -422,7 +395,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			} else {
 				list(theta = self$approximate_bootstrap_distribution_beta_hat_T(B = B, show_progress = show_progress), se = NULL)
 			}
-
 			boot_distr = boot_stats$theta
 			boot_distr = boot_distr[is.finite(boot_distr)]
 			if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t")) {
@@ -440,7 +412,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				}
 				stop("Bootstrap confidence interval returned NA bounds")
 			}
-
 			ci = tryCatch({
 				if (type == "percentile") {
 					private$ci_from_boot_distribution(boot_distr, alpha, "percentile")
@@ -469,7 +440,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				}
 				stop(e)
 			})
-
 			if (length(ci) < 2L || !all(is.finite(ci[1:2]))) {
 				if (isTRUE(private$harden)) {
 					stage = if (type %in% c("studentized", "bootstrap-t", "symmetric-percentile-t")) "se" else "estimate"
@@ -478,7 +448,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				}
 				stop("Bootstrap confidence interval returned NA bounds")
 			}
-
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 			ci
 		}
@@ -486,7 +455,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 	private = list(
 		# Cache for bootstrap distributions
 		boot_distr_cache = list(),
-
 		assert_valid_bootstrap_type = function(bootstrap_type){
 			if (is.null(bootstrap_type)) return(invisible(NULL))
 			if (should_run_asserts()) {
@@ -500,12 +468,10 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			}
 			invisible(NULL)
 		},
-
 		get_bootstrap_type = function(type) {
 			if (!is.null(type)) return(type)
 			edi_bootstrap_dispatch_policy(class(self), object = self)
 		},
-
 		missing_bootstrap_ci = function(alpha, reason, stage = c("estimate", "se")){
 			stage = match.arg(stage)
 			if (identical(stage, "se")) private$cache_nonestimable_se(reason)
@@ -514,15 +480,12 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 			ci
 		},
-
 		supports_reusable_bootstrap_worker = function(){
 			FALSE
 		},
-
 		create_bootstrap_worker_state = function(){
 			NULL
 		},
-
 		create_design_backed_bootstrap_worker_state = function(){
 			worker = self$duplicate(verbose = FALSE, make_fork_cluster = FALSE)
 			worker$num_cores = 1L
@@ -549,11 +512,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				n = private$n
 			)
 		},
-
 		load_bootstrap_sample_into_worker = function(worker_state, indices){
 			stop("Reusable bootstrap workers are not implemented for this class.")
 		},
-
 		load_bootstrap_sample_into_design_backed_worker = function(worker_state, indices){
 			indices = as.integer(indices)
 			w_priv = worker_state$worker_priv
@@ -577,7 +538,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			w_priv$best_Xmm_colnames = NULL
 			w_priv$fit_warm_coefficients = NULL
 			w_priv$cached_mod = NULL
-
 			des_priv = worker_state$worker_des_priv
 			if (!is.null(des_priv)) {
 				des_priv$X = w_priv$X
@@ -591,11 +551,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				des_priv$lin_centered_covariates = NULL
 			}
 		},
-
 		compute_bootstrap_worker_estimate = function(worker_state){
 			stop("Reusable bootstrap workers are not implemented for this class.")
 		},
-
 		compute_bootstrap_worker_estimate_via_compute_treatment_estimate = function(worker_state){
 			theta = as.numeric(worker_state$worker$compute_estimate(estimate_only = TRUE))[1L]
 			if (is.function(worker_state$worker$is_nonestimable) &&
@@ -604,12 +562,10 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			}
 			theta
 		},
-
 		compute_bootstrap_distribution_with_reused_workers = function(B, actual_cores, show_progress = FALSE, bootstrap_type = NULL){
 			chunk_n = max(1L, min(as.integer(actual_cores), as.integer(B)))
 			chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
 			chunks = split(seq_len(B), chunk_id)
-
 			run_chunk = function(idxs) {
 				worker_state = private$create_bootstrap_worker_state()
 				out = numeric(length(idxs))
@@ -622,11 +578,9 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				}
 				out
 			}
-
 			if (actual_cores <= 1L) {
 				return(as.numeric(run_chunk(seq_len(B))))
 			}
-
 			as.numeric(unlist(private$par_lapply(
 				chunks,
 				run_chunk,
@@ -635,14 +589,12 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				show_progress = show_progress
 			), use.names = FALSE))
 		},
-
 		bootstrap_sample_indices = function(n, bootstrap_type = NULL){
 			if (!is.null(private$des_obj)){
 				return(private$des_obj_priv_int$draw_bootstrap_indices(bootstrap_type))
 			}
 			list(i_b = sample.int(n, n, replace = TRUE), m_vec_b = NULL)
 		},
-
 		bootstrap_subset_inference = function(boot_draw, smooth = FALSE){
 			# boot_draw is list(i_b, m_vec_b) from des_obj$draw_bootstrap_indices()
 			# For backward compatibility also accept a bare integer vector.
@@ -654,12 +606,10 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				m_vec_b = NULL
 			}
 			if (length(indices) == 0L) return(NULL)
-
 			orig_des = private$des_obj
 			orig_des_priv = private$des_obj_priv_int
 			sub_des = orig_des$duplicate(verbose = FALSE)
 			sub_des_priv = sub_des$.__enclos_env__$private
-
 			subset_field = function(x){
 				if (is.null(x)) return(NULL)
 				if (is.data.frame(x) || is.matrix(x)) return(x[indices, , drop = FALSE])
@@ -667,7 +617,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				if (is.atomic(x) && length(x) >= max(indices)) return(x[indices])
 				x
 			}
-
 			if (!is.null(orig_des_priv$Xraw)) sub_des_priv$Xraw = subset_field(orig_des_priv$Xraw)
 			if (!is.null(orig_des_priv$Ximp)) sub_des_priv$Ximp = subset_field(orig_des_priv$Ximp)
 			if (!is.null(orig_des_priv$X)) sub_des_priv$X = subset_field(orig_des_priv$X)
@@ -697,7 +646,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 					sub_des_priv$y = as.numeric(sub_des_priv$y) + stats::rnorm(length(sub_des_priv$y), 0, sd_y / sqrt(max(1, length(indices))))
 				}
 			}
-
 			sub_inf = self$duplicate(verbose = FALSE, make_fork_cluster = FALSE)
 			sub_inf_priv = sub_inf$.__enclos_env__$private
 			sub_inf_priv$des_obj = sub_des
@@ -717,7 +665,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			if (!is.null(sub_des_priv$m)) sub_inf_priv$m = sub_des_priv$m
 			sub_inf
 		},
-
 		bootstrap_replication_stats = function(boot_draw, smooth = FALSE, require_se = FALSE){
 			sub_inf = private$bootstrap_subset_inference(boot_draw, smooth = smooth)
 			if (is.null(sub_inf)) return(c(theta = NA_real_, se = NA_real_))
@@ -738,7 +685,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				c(theta = theta, se = se)
 			}, error = function(e) c(theta = NA_real_, se = NA_real_))
 		},
-
 		approximate_bootstrap_statistics_beta_hat_T = function(B = 501, show_progress = TRUE, na.rm = TRUE, smooth = FALSE, require_se = FALSE){
 			if (should_run_asserts()) {
 				assertCount(B, positive = TRUE)
@@ -774,7 +720,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			}
 			list(theta = stats_mat[, 1L], se = stats_mat[, 2L])
 		},
-
 		approximate_jackknife_distribution_beta_hat_T = function(){
 			n = private$des_obj$get_n()
 			if (n <= 1L) return(numeric(0))
@@ -790,7 +735,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			}, n_cores = actual_cores, show_progress = FALSE), use.names = FALSE)
 			as.numeric(jack)
 		},
-
 		ci_from_boot_distribution = function(boot_distr, alpha, type, est = NULL){
 			type = tolower(type)
 			if (should_run_asserts()) {
@@ -803,7 +747,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				2 * est - stats::quantile(boot_distr, probs = c(1 - alpha / 2, alpha / 2), names = FALSE, type = 8)
 			}
 		},
-
 		ci_studentized = function(boot_stats, alpha, est){
 			se_hat = private$infer_original_se()
 			if (should_run_asserts()) {
@@ -817,7 +760,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			q = stats::quantile(t_vals, probs = c(1 - alpha / 2, alpha / 2), names = FALSE, type = 8)
 			c(est - q[1L] * se_hat, est - q[2L] * se_hat)
 		},
-
 		ci_symmetric_studentized = function(boot_stats, alpha, est){
 			se_hat = private$infer_original_se()
 			if (should_run_asserts()) {
@@ -831,7 +773,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			q = stats::quantile(t_vals, probs = 1 - alpha, names = FALSE, type = 8)
 			c(est - q[1L] * se_hat, est + q[1L] * se_hat)
 		},
-
 		ci_bca = function(boot_distr, alpha, est){
 			jack = private$approximate_jackknife_distribution_beta_hat_T()
 			jack = jack[is.finite(jack)]
@@ -851,7 +792,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			adj = pmin(1, pmax(0, adj))
 			stats::quantile(boot_distr, probs = adj, names = FALSE, type = 8)
 		},
-
 		ci_calibrated_bootstrap = function(alpha, B, type, est, show_progress = TRUE, na.rm = TRUE){
 			n_outer = max(25L, min(as.integer(B), 101L))
 			n_inner = max(25L, min(as.integer(B), 51L))
@@ -897,7 +837,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			}
 			ci
 		},
-
 		ci_smoothed_bootstrap = function(alpha, B, est, show_progress = TRUE, na.rm = TRUE){
 			boot_stats = private$approximate_bootstrap_statistics_beta_hat_T(B = B, show_progress = show_progress, na.rm = na.rm, smooth = TRUE)
 			boot_distr = boot_stats$theta[is.finite(boot_stats$theta)]
@@ -906,7 +845,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 			}
 			private$ci_from_boot_distribution(boot_distr, alpha, "percentile", est = est)
 		},
-
 		infer_original_se = function(){
 			fresh = self$duplicate(verbose = FALSE, make_fork_cluster = FALSE)
 			fresh$.__enclos_env__$private$cached_values = list()
@@ -915,7 +853,6 @@ InferenceBoot = R6::R6Class("InferenceBoot",
 				as.numeric(fresh$.__enclos_env__$private$cached_values$s_beta_hat_T)[1]
 			}, error = function(e) NA_real_)
 		},
-
 		# BCa p-value via closed-form CI inversion (Efron 1987; Efron & Tibshirani 1993).
 		# Derives the bias-correction (z0) and acceleration (a) constants from the bootstrap
 		# distribution and jackknife estimates, then computes the BCa-adjusted CDF value at

@@ -9,8 +9,7 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
 				
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param method  		Robust-regression fitting method for `MASS::rlm`; one of `"M"` or `"MM"`.
 		#' @param maxit  		Maximum number of robust-regression iterations. If `NULL`, a
@@ -50,9 +49,7 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 			private$rlm_acc = acc
 			private$rlm_start_with_ols = start_with_ols
 		},
-
-		#' @description
-		#' Returns the combined robust-regression estimate of the treatment effect.
+		#' @description Returns the combined robust-regression estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations and use
 		#'   the faster \code{"M"} robust estimator regardless of the \code{method}
 		#'   argument passed at construction time.
@@ -60,9 +57,7 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 			private$fit_combined(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes the approximate confidence interval.
+		#' @description Computes the approximate confidence interval.
 		#' @param alpha The confidence level in the computed confidence interval is 1 -
 		#'   \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -75,9 +70,7 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Computes the approximate p-value.
+		#' @description Computes the approximate p-value.
 		#' @param delta The null difference to test against. For any treatment effect at all this
 		#'   is set to zero (the default).
 		compute_asymp_two_sided_pval = function(delta = 0){
@@ -90,9 +83,7 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-
-		#' @description
-		#' Duplicate
+		#' @description Duplicate
 		#' @param verbose A flag indicating whether messages should be displayed.
 		#' @param make_fork_cluster Whether the duplicate should be allowed to create a fork cluster.
 		duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){
@@ -100,7 +91,6 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 			i
 		}
 	),
-
 	private = list(
 		rlm_method = NULL,
 		rlm_maxit = NULL,
@@ -111,12 +101,10 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp, preserve_cache_keys = preserve)
 		},
 		rlm_force_M = FALSE,
-
 		
 		reduce_design_matrix_once = function(X, j_treat, cache_key){
 			cached = private$cached_values[[cache_key]]
 			if (!is.null(cached)) return(cached)
-
 			qr_X = qr(X)
 			if (qr_X$rank < ncol(X)){
 				keep = qr_X$pivot[seq_len(qr_X$rank)]
@@ -125,12 +113,10 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 				X = X[, keep, drop = FALSE]
 				j_treat = which(keep == j_treat)
 			}
-
 			cached = list(X = X, j_treat = j_treat)
 			private$cached_values[[cache_key]] = cached
 			cached
 		},
-
 		resolve_rlm_control = function(X){
 			p = ncol(X)
 			maxit = private$rlm_maxit
@@ -147,24 +133,20 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 			}
 			list(maxit = as.integer(maxit), acc = as.numeric(acc))
 		},
-
 		is_rlm_nonconvergence_warning = function(w){
 			msg = conditionMessage(w)
 			grepl("'rlm' failed to converge", msg, fixed = TRUE) ||
 				grepl("alternation limit reached", msg, fixed = TRUE)
 		},
-
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
 			}
 		},
-
 		# estimate_only = TRUE forces "M" (fast, no LQS phase) and skips summary().
 		fit_rlm = function(X, y, j_treat, estimate_only = FALSE){
 			if (nrow(X) <= ncol(X)) return(NULL)
 			ctrl = private$resolve_rlm_control(X)
-
 			run_rlm = function(method, init = NULL){
 				nonconverged = FALSE
 				tryCatch({
@@ -198,7 +180,6 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 					list(mod = mod, nonconverged = nonconverged)
 				}, error = function(e) e)
 			}
-
 			# When only the point estimate is needed, skip the expensive MM/LQS phase.
 			method_to_try = if (estimate_only || isTRUE(private$rlm_force_M)) "M" else private$rlm_method
 			start_coef = NULL
@@ -226,7 +207,6 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 			if (inherits(rlm_attempt, "error") || isTRUE(rlm_attempt$nonconverged)) return(NULL)
 			mod = rlm_attempt$mod
 			if (is.null(mod)) return(NULL)
-
 			# Fast path: extract coefficient directly without calling summary().
 			if (estimate_only) {
 				coef_vec = tryCatch(as.numeric(stats::coef(mod)), error = function(e) NULL)
@@ -235,7 +215,6 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 				if (!is.finite(beta)) return(NULL)
 				return(list(beta = beta, se = NA_real_, mod = NULL))
 			}
-
 			coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
 			if ((is.null(coef_table) || nrow(coef_table) < j_treat) && identical(method_to_try, "MM")){
 				private$rlm_force_M = TRUE
@@ -260,25 +239,20 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 				se   = as.numeric(coef_table[j_treat, "Std. Error"])
 			}
 			if (!is.finite(beta) || !is.finite(se) || se <= 0) return(NULL)
-
 			list(beta = beta, se = se, mod = mod)
 		},
-
 		fit_combined = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			KKstats = private$cached_values$KKstats
 			if (is.null(KKstats)){
 				private$compute_basic_match_data()
 				KKstats = private$cached_values$KKstats
 			}
-
 			m   = KKstats$m
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
 			nR  = nRT + nRC
-
 			if (m > 0 && nRT > 0 && nRC > 0){
 				if (ncol(as.matrix(private$X)) > 0){
 					Xd_full = as.matrix(KKstats$X_matched_diffs_full)
@@ -308,7 +282,6 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				return(invisible(NULL))
 			}
-
 			reduced = private$reduce_design_matrix_once(
 				X_comb,
 				j_treat,
@@ -316,14 +289,12 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 			)
 			X_comb = reduced$X
 			j_treat = reduced$j_treat
-
 			fit = private$fit_rlm(X_comb, y_comb, j_treat, estimate_only = estimate_only)
 			if (is.null(fit)){
 				private$cached_values$beta_hat_T   = NA_real_
 				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
 				return(invisible(NULL))
 			}
-
 			private$cached_values$beta_hat_T   = fit$beta
 			if (!estimate_only) {
 				private$cached_values$s_beta_hat_T = fit$se
@@ -336,7 +307,6 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 		}
 	)
 )
-
 #' Robust-Regression Combined-Likelihood Inference for KK Designs
 #'
 #' Fits a single stacked robust regression over matched-pair differences and

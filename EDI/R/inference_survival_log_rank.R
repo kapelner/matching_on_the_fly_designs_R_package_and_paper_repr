@@ -39,8 +39,7 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-		#' @description
-		#' Initialize the Inference object.
+		#' @description Initialize the Inference object.
 		#'
 		#' @param des_obj The design object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -54,18 +53,13 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
-
-
-		#' @description
-		#' Computes the treatment-effect estimate on the martingale-residual mean-difference scale.
+		#' @description Computes the treatment-effect estimate on the martingale-residual mean-difference scale.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$compute_shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes a (1 - alpha)-level confidence interval based on the asymptotic
+		#' @description Computes a (1 - alpha)-level confidence interval based on the asymptotic
 		#' normality of the martingale-residual mean-difference estimate.
 		#' Falls back to bootstrap if the estimated standard error is unavailable.
 		#' @param alpha Significance level.
@@ -79,9 +73,7 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Computes a Wald-style 2-sided p-value by inverting the confidence interval.
+		#' @description Computes a Wald-style 2-sided p-value by inverting the confidence interval.
 		#'
 		#' @param delta The null difference to test against. Default is 0.
 		#'
@@ -92,32 +84,25 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 			}
 			private$invert_ci_to_find_two_sided_pval_for_treatment_effect(delta = delta)
 		},
-
-		#' @description
-		#' Computes the standard two-sided log-rank p-value for a zero treatment effect.
+		#' @description Computes the standard two-sided log-rank p-value for a zero treatment effect.
 		#' @param delta Null treatment effect to test against. Only \code{0} is supported.
 		compute_asymp_log_rank_two_sided_pval_for_treatment_effect = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
 			private$compute_shared()
-
 			if (should_run_asserts()) {
 				if (delta != 0){
 					stop("Testing non-zero delta is not yet implemented for InferenceSurvivalLogRank.")
 				}
 			}
-
 			if (!is.finite(private$cached_values$logrank_var) || private$cached_values$logrank_var <= 0){
 				return(self$compute_bootstrap_two_sided_pval(delta = delta, na.rm = TRUE))
 			}
-
 			chisq_stat = private$cached_values$logrank_score ^ 2 / private$cached_values$logrank_var
 			stats::pchisq(chisq_stat, df = 1, lower.tail = FALSE)
 		},
-
-		#' @description
-		#' Randomization confidence intervals are not supported for this class because
+		#' @description Randomization confidence intervals are not supported for this class because
 		#' the martingale-residual score scale is not commensurate with the transformed
 		#' time-ratio null used by the randomization CI algorithm.
 		#' @param alpha Unused.
@@ -129,15 +114,11 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 			stop("Randomization confidence intervals are not supported for InferenceSurvivalLogRank due to inconsistent estimator units on the log-rank score scale.")
 		}
 	),
-
 	private = list(
-
 		compute_shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-
 			logrank_stats = tryCatch(
 				fast_logrank_stats_cpp(
 					w = as.integer(private$w),
@@ -146,7 +127,6 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 				),
 				error = function(e) NULL
 			)
-
 			if (is.null(logrank_stats)){
 				private$cached_values$beta_hat_T = NA_real_
 			if (estimate_only) return(invisible(NULL))
@@ -155,7 +135,6 @@ InferenceSurvivalLogRank = R6::R6Class("InferenceSurvivalLogRank",
 				private$cached_values$logrank_var = NA_real_
 				return(invisible(NULL))
 			}
-
 			private$cached_values$beta_hat_T = as.numeric(logrank_stats$beta_hat)
 			private$cached_values$s_beta_hat_T = as.numeric(logrank_stats$se_beta_hat)
 			private$cached_values$logrank_score = as.numeric(logrank_stats$score)

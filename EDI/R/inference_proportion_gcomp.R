@@ -20,9 +20,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-
-		#' @description
-		#' Initialize the g-computation inference object.
+		#' @description Initialize the g-computation inference object.
 		#' @param des_obj A completed \code{DesignSeqOneByOne} object with a proportion response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -105,17 +103,13 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			private$variance_fallback_methods = variance_fallback_methods
 			private$max_resample_attempts = max_resample_attempts
 		},
-
-		#' @description
-		#' Computes the g-computation treatment-effect estimate.
+		#' @description Computes the g-computation treatment-effect estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$md
 		},
-
-		#' @description
-		#' Computes a 1 - \code{alpha} confidence interval.
+		#' @description Computes a 1 - \code{alpha} confidence interval.
 		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -129,9 +123,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				c(NA_real_, NA_real_)
 			})
 		},
-
-		#' @description
-		#' Computes a two-sided p-value for the treatment effect.
+		#' @description Computes a two-sided p-value for the treatment effect.
 		#' @param delta The null mean difference. Defaults to 0.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -145,9 +137,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				NA_real_
 			})
 		},
-
-		#' @description
-		#' Computes a bootstrap two-sided p-value for the treatment effect.
+		#' @description Computes a bootstrap two-sided p-value for the treatment effect.
 		#' @param delta The null mean difference. Defaults to 0.
 		#' @param B Number of bootstrap samples.
 		#' @param na.rm Whether to remove non-finite bootstrap replicates.
@@ -155,7 +145,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @param max_boundary_mass Reject a resample when at least this fraction is near the boundary.
 		#' @param sep_tol Separation tolerance used to reject nearly perfectly separated resamples.
 		#' @param min_group_n Minimum number of observations required in each treatment arm.
-		#' @param type Bootstrap p-value type. See \code{InferenceBoot$compute_bootstrap_two_sided_pval}.
+		#' @param type Bootstrap p-value type. See \code{InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval}.
 		#' @param min_number_usable_samples Minimum number of finite bootstrap samples required.
 		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = "symmetric", na.rm = FALSE,
 			boundary_tol = 0.02, max_boundary_mass = 0.95, sep_tol = 0.02, min_group_n = 5L,
@@ -173,9 +163,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			on.exit({private$bootstrap_screening_control = old_bootstrap_screening}, add = TRUE)
 			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, type = type, na.rm = na.rm, min_number_usable_samples = min_number_usable_samples)
 		},
-
-		#' @description
-		#' Computes a bootstrap confidence interval.
+		#' @description Computes a bootstrap confidence interval.
 		#' @param alpha The confidence level 1 - \code{alpha}.
 		#' @param B Number of bootstrap samples.
 		#' @param type Bootstrap CI type.
@@ -202,9 +190,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				min_number_usable_samples = min_number_usable_samples
 			)
 		},
-
-		#' @description
-		#' Abbreviated bootstrap sampler that reuses a bootstrap worker.
+		#' @description Abbreviated bootstrap sampler that reuses a bootstrap worker.
 		#' @param B The number of bootstrap samples (default 501).
 		#' @param show_progress Whether to show a progress bar.
 		#' @param max_resample_attempts Maximum redraw attempts per bootstrap replicate before
@@ -240,7 +226,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				min_group_n = as.integer(min_group_n)
 			)
 			on.exit({private$bootstrap_screening_control = old_bootstrap_screening}, add = TRUE)
-
 			draw_one = function(worker_state){
 				attempt = 1L
 				repeat {
@@ -256,7 +241,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 					if (attempt > max_resample_attempts) return(NA_real_)
 				}
 			}
-
 			if (isTRUE(debug)) {
 				worker_state = private$create_bootstrap_worker_state()
 				debug_results = vector("list", B)
@@ -278,7 +262,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 						stop("All bootstrap iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
 					}
 				}
-
 				values = sapply(debug_results, `[[`, "val")
 				errors_list = lapply(debug_results, `[[`, "errors")
 				warnings_list = lapply(debug_results, `[[`, "warnings")
@@ -295,7 +278,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 					prop_illegal_values = mean(!is.finite(values))
 				))
 			}
-
 			actual_cores = private$effective_parallel_cores("bootstrap", self$num_cores)
 			chunk_n = max(1L, min(as.integer(actual_cores), as.integer(B)))
 			chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
@@ -317,21 +299,17 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			)))
 		}
 	),
-
 	private = list(
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$md
 		},
-
 		gcomp_design_colnames = NULL,
 		gcomp_design_j_treat = NULL,
 		bootstrap_screening_control = NULL,
-
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
-
 		create_bootstrap_worker_state = function(){
 			state = private$create_design_backed_bootstrap_worker_state()
 			state$base_X_full = private$build_named_design_matrix()
@@ -342,7 +320,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			state$runtime$current_y = NULL
 			state
 		},
-
 		load_bootstrap_sample_into_worker = function(worker_state, indices){
 			private$load_bootstrap_sample_into_design_backed_worker(worker_state, indices)
 			indices = as.integer(indices)
@@ -367,7 +344,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			worker_state$runtime$sample_usable = usable
 			list(sample_usable = usable, X_full = X_full_b, y = y_b)
 		},
-
 		compute_bootstrap_worker_estimate = function(worker_state){
 			if (!isTRUE(worker_state$runtime$sample_usable)) return(NA_real_)
 			worker_state$worker_priv$bootstrap_effect_from_sample(
@@ -399,7 +375,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			}
 			X_full
 		},
-
 		get_covariate_names = function(){
 			X = private$get_X()
 			p = ncol(X)
@@ -409,7 +384,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			}
 			x_names
 		},
-
 		set_failed_fit_cache = function(){
 			private$cached_values$summary_table = NULL
 			private$cached_values$full_coefficients = NULL
@@ -419,26 +393,21 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			private$cached_values$md = NA_real_
 			private$cached_values$se_md = NA_real_
 		},
-
 		effects_are_usable = function(effects, estimate_only = FALSE){
 			if (estimate_only) return(is.finite(effects$md))
 			is.finite(effects$md) && is.finite(effects$se_md) && effects$se_md > 0
 		},
-
 		select_covariate_to_drop = function(X_curr, coef_hat){
 			covariate_cols = seq.int(3L, ncol(X_curr))
 			if (length(covariate_cols) == 0L) return(NA_integer_)
-
 			coef_mags = abs(coef_hat[covariate_cols])
 			if (length(coef_mags) == 0L || all(!is.finite(coef_mags))){
 				return(tail(covariate_cols, 1L))
 			}
 			covariate_cols[which.max(replace(coef_mags, !is.finite(coef_mags), -Inf))]
 		},
-
 		fit_fractional_logit_with_sandwich = function(X_full, estimate_only = FALSE){
 			X_curr = X_full
-
 			repeat {
 				reduced = private$reduce_design_matrix_preserving_treatment(X_curr)
 				X_fit = reduced$X
@@ -446,7 +415,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
 					return(NULL)
 				}
-
 				mod = tryCatch(
 					fast_logistic_regression_cpp(X = X_fit, y = as.numeric(private$y)),
 					error = function(e) NULL
@@ -454,7 +422,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				if (is.null(mod)){
 					return(NULL)
 				}
-
 				coef_hat = as.numeric(mod$b)
 				converged = all(is.finite(coef_hat))
 				if (!converged){
@@ -464,7 +431,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 					X_curr = X_curr[, -drop_col, drop = FALSE]
 					next
 				}
-
 				if (estimate_only){
 					private$gcomp_design_colnames = colnames(X_fit)
 					private$gcomp_design_j_treat = j_treat
@@ -475,7 +441,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 						estimate_only = TRUE
 					))
 				}
-
 				mu_hat = inv_logit(X_fit %*% coef_hat)
 				mu_hat = pmin(pmax(as.numeric(mu_hat), .Machine$double.eps), 1 - .Machine$double.eps)
 				W = mu_hat * (1 - mu_hat)
@@ -486,7 +451,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 					X_curr = X_curr[, -drop_col, drop = FALSE]
 					next
 				}
-
 				post_fit = tryCatch(
 					gcomp_fractional_logit_post_fit_cpp(
 						X_fit = X_fit,
@@ -504,15 +468,12 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 					X_curr = X_curr[, -drop_col, drop = FALSE]
 					next
 				}
-
 				coef_names = colnames(X_fit)
 				names(coef_hat) = coef_names
 				vcov_robust = post_fit$vcov
 				colnames(vcov_robust) = rownames(vcov_robust) = coef_names
-
 				private$gcomp_design_colnames = coef_names
 				private$gcomp_design_j_treat = j_treat
-
 				return(list(
 					X = X_fit,
 					j_treat = j_treat,
@@ -523,13 +484,11 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				))
 			}
 		},
-
 			compute_standardized_effect_components = function(X_fit, coef_hat, j_treat, clip_lower = NULL, clip_upper = NULL){
 				X1 = X_fit
 				X0 = X_fit
 				X1[, j_treat] = 1
 				X0[, j_treat] = 0
-
 				eta1 = as.numeric(X1 %*% coef_hat)
 				eta0 = as.numeric(X0 %*% coef_hat)
 				mean1_i = stats::plogis(eta1)
@@ -540,7 +499,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 					mean1_i = pmin(clip_upper, pmax(clip_lower, mean1_i))
 					mean0_i = pmin(clip_upper, pmax(clip_lower, mean0_i))
 				}
-
 				list(
 					X1 = X1,
 					X0 = X0,
@@ -551,7 +509,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 					md = mean(mean1_i) - mean(mean0_i)
 				)
 			},
-
 		stabilize_covariance_matrix = function(vcov_mat, ridge_factor = 1e-8){
 			if (is.null(vcov_mat) || !is.matrix(vcov_mat) || any(!is.finite(vcov_mat))) return(NULL)
 			vcov_sym = (vcov_mat + t(vcov_mat)) / 2
@@ -565,7 +522,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			dimnames(vcov_psd) = dimnames(vcov_mat)
 			vcov_psd
 		},
-
 		invert_information_matrix = function(info_mat, ridge_factor = 1e-8){
 			if (is.null(info_mat) || !is.matrix(info_mat) || any(!is.finite(info_mat))) return(NULL)
 			info_sym = (info_mat + t(info_mat)) / 2
@@ -579,7 +535,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			dimnames(inv_info) = dimnames(info_mat)
 			inv_info
 		},
-
 			model_based_covariance_matrix = function(X_fit, coef_hat, clip_lower = 1e-6, clip_upper = 1 - 1e-6){
 				eta = as.numeric(X_fit %*% coef_hat)
 				mu_hat = stats::plogis(eta)
@@ -589,7 +544,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				colnames(info_mat) = rownames(info_mat) = names(coef_hat)
 				private$invert_information_matrix(info_mat)
 			},
-
 			finite_difference_md_gradient = function(X_fit, coef_hat, j_treat, clip_lower = NULL, clip_upper = NULL){
 				p = length(coef_hat)
 				grad = rep(NA_real_, p)
@@ -610,20 +564,16 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				names(grad) = names(coef_hat)
 				grad
 			},
-
 		variance_from_gradient = function(grad, vcov_mat){
 			if (is.null(vcov_mat) || any(!is.finite(grad)) || any(!is.finite(vcov_mat))) return(NA_real_)
 			var_md = suppressWarnings(as.numeric(t(grad) %*% vcov_mat %*% grad))
 			if (is.finite(var_md) && var_md > 0) var_md else NA_real_
 		},
-
 			resolve_effect_variance = function(X_fit, coef_hat, j_treat, vcov_robust, components){
 				grad1 = as.numeric(crossprod(components$X1, components$mean1_i * (1 - components$mean1_i))) / nrow(components$X1)
 				grad0 = as.numeric(crossprod(components$X0, components$mean0_i * (1 - components$mean0_i))) / nrow(components$X0)
 				grad_md = grad1 - grad0
-
 				strong_clip = private$prob_clip_strong_eps
-
 				# Lazily initialised intermediates — computed only when first needed.
 				vcov_stable     = NULL
 				vcov_model      = NULL
@@ -631,23 +581,18 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				grad_fd         = NULL
 				grad_md_clip    = NULL
 				grad_fd_clip    = NULL
-
 				for (method in private$variance_fallback_methods) {
 					# Ensure each required intermediate exists before it is used.
 					if (method %in% c("stabilized_robust", "stabilized_robust_fd", "stabilized_robust_strong_clip") && is.null(vcov_stable))
 						vcov_stable = private$stabilize_covariance_matrix(vcov_robust)
-
 					if (method %in% c("model_based", "model_based_fd") && is.null(vcov_model))
 						vcov_model = private$model_based_covariance_matrix(X_fit, coef_hat,
 							clip_lower = private$prob_clip_eps, clip_upper = 1 - private$prob_clip_eps)
-
 					if (method %in% c("model_based_strong_clip", "model_based_fd_strong_clip") && is.null(vcov_model_clip))
 						vcov_model_clip = private$model_based_covariance_matrix(X_fit, coef_hat,
 							clip_lower = strong_clip, clip_upper = 1 - strong_clip)
-
 					if (method %in% c("stabilized_robust_fd", "model_based_fd") && is.null(grad_fd))
 						grad_fd = private$finite_difference_md_gradient(X_fit, coef_hat, j_treat)
-
 					if (method %in% c("stabilized_robust_strong_clip", "model_based_strong_clip") && is.null(grad_md_clip)) {
 						comps_clip = private$compute_standardized_effect_components(X_fit, coef_hat, j_treat,
 							clip_lower = strong_clip, clip_upper = 1 - strong_clip)
@@ -655,11 +600,9 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 						g0c = as.numeric(crossprod(comps_clip$X0, comps_clip$mean0_i * (1 - comps_clip$mean0_i))) / nrow(comps_clip$X0)
 						grad_md_clip = g1c - g0c
 					}
-
 					if (method == "model_based_fd_strong_clip" && is.null(grad_fd_clip))
 						grad_fd_clip = private$finite_difference_md_gradient(X_fit, coef_hat, j_treat,
 							clip_lower = strong_clip, clip_upper = 1 - strong_clip)
-
 					grad = switch(method,
 						robust               = ,
 						stabilized_robust    = ,
@@ -680,27 +623,22 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 						model_based_strong_clip       = ,
 						model_based_fd_strong_clip    = vcov_model_clip
 					)
-
 					if (is.null(grad) || is.null(vcov_use)) next
 					var_md = private$variance_from_gradient(grad, vcov_use)
 					if (is.finite(var_md)) return(list(var_md = var_md, vcov = vcov_use, method = method))
 				}
-
 				fallback_vcov = if (!is.null(vcov_model_clip)) vcov_model_clip else
 				                if (!is.null(vcov_stable))     vcov_stable     else
 				                if (!is.null(vcov_model))      vcov_model      else vcov_robust
 				list(var_md = NA_real_, vcov = fallback_vcov, method = "failed")
 			},
-
 		compute_standardized_effects_r = function(fit){
 			X_fit = fit$X
 			coef_hat = fit$coefficients
 			vcov_robust = fit$vcov
 			j_treat = fit$j_treat
 			estimate_only = isTRUE(fit$estimate_only)
-
 			components = private$compute_standardized_effect_components(X_fit, coef_hat, j_treat)
-
 			if (estimate_only){
 				return(list(
 					mean1 = components$mean1,
@@ -712,7 +650,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 					summary_table = NULL
 				))
 			}
-
 			var_res = private$resolve_effect_variance(X_fit, coef_hat, j_treat, vcov_robust, components)
 			vcov_used = var_res$vcov
 			std_err = if (!is.null(vcov_used)) sqrt(pmax(diag(vcov_used), 0)) else rep(NA_real_, length(coef_hat))
@@ -728,7 +665,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				`z value` = z_vals,
 				`Pr(>|z|)` = 2 * stats::pnorm(-abs(z_vals))
 			)
-
 			list(
 				mean1 = components$mean1,
 				mean0 = components$mean0,
@@ -739,7 +675,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				summary_table = summary_table
 			)
 		},
-
 		compute_standardized_effects = function(fit){
 			if (isTRUE(fit$estimate_only)){
 				return(private$compute_standardized_effects_r(fit))
@@ -749,34 +684,26 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			if (is.null(fast)){
 				return(private$compute_standardized_effects_r(fit))
 			}
-
 			fit$vcov = fast$vcov
 			colnames(fit$vcov) = rownames(fit$vcov) = names(coef_hat)
 			private$compute_standardized_effects_r(fit)
 		},
-
 			bootstrap_sample_is_usable = function(w_b, y_b, boundary_tol = 0.02, max_boundary_mass = 0.95, sep_tol = 0.02, min_group_n = 5L){
 				if (length(w_b) != length(y_b) || length(y_b) == 0L) return(FALSE)
 				if (any(!is.finite(y_b))) return(FALSE)
 				if (!any(w_b == 1, na.rm = TRUE) || !any(w_b == 0, na.rm = TRUE)) return(FALSE)
-
 				boundary_mass = mean(y_b <= boundary_tol | y_b >= 1 - boundary_tol)
 				if (!is.finite(boundary_mass) || boundary_mass >= max_boundary_mass) return(FALSE)
-
 				y1 = y_b[w_b == 1]
 				y0 = y_b[w_b == 0]
 				if (length(y1) < min_group_n || length(y0) < min_group_n) return(FALSE)
-
 				sep_hi = min(y1, na.rm = TRUE) >= max(y0, na.rm = TRUE) + sep_tol
 				sep_lo = min(y0, na.rm = TRUE) >= max(y1, na.rm = TRUE) + sep_tol
 				if (isTRUE(sep_hi) || isTRUE(sep_lo)) return(FALSE)
-
 				TRUE
 			},
-
 			bootstrap_fit_from_sample = function(X_b_full, y_b){
 				X_curr = X_b_full
-
 				repeat {
 					reduced = private$reduce_design_matrix_preserving_treatment(X_curr)
 					X_fit = reduced$X
@@ -784,7 +711,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 					if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
 						return(NULL)
 					}
-
 					mod = tryCatch(
 						fast_logistic_regression_cpp(X = X_fit, y = as.numeric(y_b)),
 						error = function(e) NULL
@@ -792,33 +718,28 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 					if (is.null(mod)){
 						return(NULL)
 					}
-
 					coef_hat = as.numeric(mod$b)
 					if (all(is.finite(coef_hat))){
 						coef_names = colnames(X_fit)
 						names(coef_hat) = coef_names
 						return(list(X = X_fit, j_treat = j_treat, coefficients = coef_hat))
 					}
-
 					if (ncol(X_curr) <= 2L) return(NULL)
 					drop_col = private$select_covariate_to_drop(X_curr, coef_hat)
 					if (!is.finite(drop_col)) return(NULL)
 					X_curr = X_curr[, -drop_col, drop = FALSE]
 				}
 			},
-
 			bootstrap_effect_from_sample = function(X_b_full, y_b){
 				if (nrow(X_b_full) == 0) return(NA_real_)
 				fit = private$bootstrap_fit_from_sample(X_b_full, y_b)
 				if (is.null(fit)) return(NA_real_)
-
 				md_val = private$compute_standardized_effect_components(fit$X, fit$coefficients, fit$j_treat)$md
 				if (!is.finite(md_val)){
 					return(NA_real_)
 				}
 				md_val
 			},
-
 		compute_effect_confidence_interval = function(alpha){
 			z = stats::qnorm(1 - alpha / 2)
 			est = private$cached_values$md
@@ -830,7 +751,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 			ci
 		},
-
 		compute_effect_pvalue = function(delta){
 			est = private$cached_values$md
 			se = private$cached_values$se_md
@@ -840,12 +760,9 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			z_stat = (est - delta) / se
 			2 * stats::pnorm(-abs(z_stat))
 		},
-
 		shared = function(estimate_only = FALSE){
 			if (!is.null(private$cached_values$md) && (estimate_only || !is.null(private$cached_values$summary_table))) return(invisible(NULL))
-
 			X_full = private$build_named_design_matrix()
-
 			fit = private$fit_fractional_logit_with_sandwich(X_full, estimate_only = estimate_only)
 			if (!is.null(fit)) {
 				private$gcomp_design_colnames = setdiff(colnames(fit$X), c("(Intercept)", "treatment"))
@@ -860,7 +777,6 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				private$set_failed_fit_cache()
 				return(invisible(NULL))
 			}
-
 			private$cached_values$summary_table = effects$summary_table
 			private$cached_values$full_coefficients = effects$full_coefficients
 			private$cached_values$full_vcov = effects$full_vcov
@@ -894,7 +810,6 @@ InferencePropGCompMeanDiff = R6::R6Class("InferencePropGCompMeanDiff",
 	inherit = InferencePropGCompAbstract,
 	public = list(
 	),
-
 	private = list(
 		build_design_matrix = function(){
 			private$create_design_matrix()

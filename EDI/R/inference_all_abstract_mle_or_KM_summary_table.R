@@ -9,9 +9,7 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-
-		#' @description
-		#' Computes the appropriate estimate for mean difference
+		#' @description Computes the appropriate estimate for mean difference
 		#'
 		#' @return 	The setting-appropriate (see description) numeric estimate of the treatment effect
 		#'
@@ -35,9 +33,7 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes a 1-alpha level frequentist confidence interval
+		#' @description Computes a 1-alpha level frequentist confidence interval
 		#'
 		#' @param alpha                                   The confidence level in the computed
 		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
@@ -50,9 +46,7 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Computes a 2-sided p-value
+		#' @description Computes a 2-sided p-value
 		#'
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).
@@ -75,50 +69,39 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 	),
 	private = list(
 		generate_mod = function() stop(class(self)[1], " must implement generate_mod()"),
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$summary_table)) return(invisible(NULL))
-
 			model_output = private$generate_mod(estimate_only = estimate_only) # Implemented by child classes (Weibull, NegBin)
 			private$cached_mod = model_output
-
 			if (should_run_asserts()) {
 				if (is.null(model_output$coefficients) || (!estimate_only && is.null(model_output$vcov))){
 					stop("Model output (coefficients or vcov) is NULL or invalid from generate_mod().")
 				}
 			}
-
 			full_coefficients = model_output$coefficients
 			treatment_coef_name = "treatment"
 			if (!treatment_coef_name %in% names(full_coefficients)){
 				treatment_coef_name = names(full_coefficients)[length(full_coefficients)]
 			}
 			private$cached_values$beta_hat_T = as.numeric(full_coefficients[treatment_coef_name])
-
 			if (estimate_only) return(invisible(NULL))
-
 			# Construct summary table (as expected by this class)
 			full_vcov = model_output$vcov
 			diag_vcov = diag(full_vcov)
 			# Ensure we don't take sqrt of negative numbers
 			full_std_errs = ifelse(diag_vcov > 0, sqrt(diag_vcov), NA_real_)
-
 			summary_table = matrix(NA, nrow = length(full_coefficients), ncol = 4)
 			rownames(summary_table) = names(full_coefficients)
 			colnames(summary_table) = c("Value", "Std. Error", "z value", "Pr(>|z|)")
-
 			summary_table[, 1] = full_coefficients
 			summary_table[, 2] = full_std_errs
 			summary_table[, 3] = full_coefficients / full_std_errs # z value
 			summary_table[, 4] = 2 * stats::pnorm(-abs(summary_table[, 3])) # p-value
-
 			private$cached_values$summary_table = summary_table
-
 			# Populate full_coefficients and full_vcov for consistency across all inference classes
 			private$cached_values$full_coefficients = full_coefficients
 			private$cached_values$full_vcov = full_vcov
-
 			private$cached_values$s_beta_hat_T = as.numeric(full_std_errs[treatment_coef_name])
 		}
 	)

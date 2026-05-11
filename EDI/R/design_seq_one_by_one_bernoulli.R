@@ -9,8 +9,7 @@
 DesignSeqOneByOneBernoulli = R6::R6Class("DesignSeqOneByOneBernoulli",
 	inherit = DesignSeqOneByOne,
 	public = list(
-		#' @description
-		#' Initialize a Bernoulli sequential experimental design
+		#' @description Initialize a Bernoulli sequential experimental design
 		#'
 		#' @param  response_type 	The data type of response values which must be one of the following:
 		#' 								"continuous",
@@ -40,17 +39,13 @@ DesignSeqOneByOneBernoulli = R6::R6Class("DesignSeqOneByOneBernoulli",
 			) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 		},
-
-		#' @description
-		#' Assign the next subject to a treatment group
+		#' @description Assign the next subject to a treatment group
 		#'
 		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){
 			rbinom(1, 1, private$prob_T)
 		},
-
-		#' @description
-		#' Draw multiple treatment assignment vectors according to Bernoulli randomization.
+		#' @description Draw multiple treatment assignment vectors according to Bernoulli randomization.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'

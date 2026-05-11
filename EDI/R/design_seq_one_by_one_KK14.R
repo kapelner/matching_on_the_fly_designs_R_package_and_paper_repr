@@ -11,8 +11,7 @@
 DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 	inherit = DesignSeqOneByOne,
 	public = list(
-		#' @description
-		#' Initialize a KK14 sequential experimental design
+		#' @description Initialize a KK14 sequential experimental design
 		#'
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
 		#'   "ordinal".
@@ -51,9 +50,7 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 			private$morrison = morrison
 			private$p = p
 		},
-
-		#' @description
-		#' Assign the next subject to a treatment group
+		#' @description Assign the next subject to a treatment group
 		#'
 		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){
@@ -83,7 +80,6 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 						T_cutoff_sq = all_subject_data$rank_prev * (n - 1) / (n - all_subject_data$rank_prev) * F_crit
 						min_sqd_dist_index = which(sqd_distances_times_two == min(sqd_distances_times_two))
 						if (length(min_sqd_dist_index) > 1) min_sqd_dist_index = min_sqd_dist_index[1]
-
 						if (sqd_distances_times_two[min_sqd_dist_index] < T_cutoff_sq){
 							#we matched!
 							match_num = max(private$m) + 1
@@ -105,9 +101,7 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 			}
 			wt
 		},
-
-		#' @description
-		#' Draw multiple treatment assignment vectors according to KK14 design.
+		#' @description Draw multiple treatment assignment vectors according to KK14 design.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'
@@ -126,14 +120,11 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 		t_0_pct = NULL,
 		morrison = NULL,
 		p = NULL,
-
 		compute_lambda = function(){
 			private$lambda
 		},
-
 		too_early_to_match = function(){
 			private$t <= private$t_0_pct * private$n | is.null(private$X)
 		}
-
 	)
 )

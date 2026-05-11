@@ -62,12 +62,14 @@ inline Eigen::MatrixXd weighted_crossprod(const Eigen::MatrixBase<XDerived>& X,
                                           const Eigen::MatrixBase<WDerived>& w) {
     const int n = X.rows();
     const int p = X.cols();
-    if (w.rows() != n || w.cols() != 1) {
+    if (w.rows() != n || (w.cols() != 1 && w.rows() != 0)) {
         Rcpp::stop("weighted_crossprod: weight vector has incompatible dimensions");
     }
 
-    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(p, p);
-    if (p <= 8 || n <= 32) {
+    // For tiny n (e.g. matched pairs in GLMMs), Eigen's general matrix product
+    // can be slower than a specialized manual loop or rank-1 updates.
+    if (n <= 16 || p <= 4) {
+        Eigen::MatrixXd out = Eigen::MatrixXd::Zero(p, p);
         for (int i = 0; i < n; ++i) {
             const double wi = w(i);
             if (wi == 0.0) continue;
@@ -83,15 +85,9 @@ inline Eigen::MatrixXd weighted_crossprod(const Eigen::MatrixBase<XDerived>& X,
         return out;
     }
 
-    auto out_lower = out.selfadjointView<Eigen::Lower>();
-    for (int i = 0; i < n; ++i) {
-        const double wi = w(i);
-        if (wi == 0.0) continue;
-        out_lower.rankUpdate(X.row(i).transpose(), wi);
-    }
-    out.template triangularView<Eigen::StrictlyUpper>() =
-        out.transpose().template triangularView<Eigen::StrictlyUpper>();
-    return out;
+    // For larger matrices, leverage Eigen's highly optimized specialization for
+    // Matrix^T * Diagonal * Matrix, which is fully SIMD-vectorized and multi-threaded.
+    return X.transpose() * w.asDiagonal() * X;
 }
 
 template <typename XDerived, typename WDerived, typename YDerived>
@@ -725,12 +721,7 @@ inline Rcpp::List gradient_test_from_restricted_score(const Eigen::VectorXd& sco
     if (R_finite(score_t) && R_finite(estimate_gap)) {
         statistic = score_t * estimate_gap;
         if (statistic < 0.0) {
-            const double scale = std::max(1.0, std::abs(score_t * estimate_gap));
-            if (statistic >= -1e-10 * scale) {
-                statistic = 0.0;
-            } else {
-                statistic = NA_REAL;
-            }
+            statistic = 0.0;
         }
         if (R_finite(statistic)) {
             p_value = R::pchisq(statistic, 1.0, false, false);

@@ -10,8 +10,7 @@
 DesignSeqOneByOneEfron = R6::R6Class("DesignSeqOneByOneEfron",
 	inherit = DesignSeqOneByOne,
 	public = list(
-		#' @description
-		#' Initialize an Efron biased coin sequential experimental design
+		#' @description Initialize an Efron biased coin sequential experimental design
 		#'
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
 		#'   "ordinal".
@@ -38,9 +37,7 @@ DesignSeqOneByOneEfron = R6::R6Class("DesignSeqOneByOneEfron",
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 			private$weighted_coin_prob = weighted_coin_prob
 		},
-
-		#' @description
-		#' Assign the next subject to a treatment group
+		#' @description Assign the next subject to a treatment group
 		#'
 		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){
@@ -59,9 +56,7 @@ DesignSeqOneByOneEfron = R6::R6Class("DesignSeqOneByOneEfron",
 				}
 			}
 		},
-
-		#' @description
-		#' Draw multiple treatment assignment vectors according to Efron's design.
+		#' @description Draw multiple treatment assignment vectors according to Efron's design.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'

@@ -21,8 +21,7 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-		#' @description
-		#' Initialize the Inference object.
+		#' @description Initialize the Inference object.
 		#'
 		#' @param des_obj The design object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -36,10 +35,7 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
-
-
-		#' @description
-		#' Computes the appropriate estimate for mean difference
+		#' @description Computes the appropriate estimate for mean difference
 		#'
 		#' @return  The setting-appropriate (see description) numeric estimate of the treatment effect
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -54,9 +50,7 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 			}
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes a 1-alpha level frequentist confidence interval
+		#' @description Computes a 1-alpha level frequentist confidence interval
 		#' differently for all response types, estimate types, and
 		#' test types.
 		#'
@@ -83,9 +77,7 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Computes a 2-sided p-value via the log rank test
+		#' @description Computes a 2-sided p-value via the log rank test
 		#'
 		#' @param delta The null difference to test against. For any
 		#'   treatment effect at all this is set to zero (the default).
@@ -95,7 +87,6 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
-
 			if (delta == 0){
 				if (is.null(private$cached_values$s_beta_hat_T)){
 					private$compute_s_beta_hat_T()
@@ -112,9 +103,7 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 				NA_real_
 			}
 		},
-
-		#' @description
-		#' Computes a 1-alpha level frequentist confidence interval for the randomization test
+		#' @description Computes a 1-alpha level frequentist confidence interval for the randomization test
 		#'
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
@@ -127,7 +116,6 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 			stop("Randomization confidence intervals are not supported for InferenceSurvivalRestrictedMeanDiff due to inconsistent estimator units on the transformed scale (estimates time difference, but randomization test searches for log-time ratio).")
 		}
 	),
-
 	private = list(
 		compute_s_beta_hat_T = function(){
 			se_val = get_restricted_mean_se_diff(

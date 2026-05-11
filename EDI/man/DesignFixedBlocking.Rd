@@ -94,6 +94,7 @@ Initialize a fixed stratified blocking experimental design
   B_target = if (!is.null(n)) max(1L, floor(sqrt(n))) else NA_integer_,
   exact_num_blocks = FALSE,
   equal_block_sizes = TRUE,
+  m = NULL,
   verbose = FALSE,
   missingness_method = "impute",
   model_formula = ~.
@@ -138,6 +139,11 @@ construction time, an error is raised immediately if `n` is not divisible by
 strata produce unequal block counts the design errors at that point. Set to
 `FALSE` to allow unequal blocks (note that `InferenceIncidCMH` and
 `InferenceIncidExtendedRobins` still require equal block sizes regardless).}
+
+\item{\code{m}}{Optional integer vector of explicit block identifiers, one per subject.
+If supplied, `n` must also be supplied and `length(m)` must equal `n`.
+The constructor then records this blocking structure immediately via
+`set_m()`, bypassing covariate-derived strata construction.}
 
 \item{\code{verbose}}{A flag for verbosity.}
 

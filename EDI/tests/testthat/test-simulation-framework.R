@@ -1,3 +1,13 @@
+InferenceAlwaysFailsPval <- R6::R6Class(
+	"InferenceAlwaysFailsPval",
+	inherit = InferenceAllSimpleMeanDiff,
+	public = list(
+		compute_asymp_two_sided_pval = function(...) {
+			stop("intentional p-value failure for testing")
+		}
+	)
+)
+
 test_that("SimulationFramework accepts merged design classes and params", {
 	set.seed(20260429)
 	sim <- SimulationFramework$new(
@@ -96,6 +106,97 @@ test_that("SimulationFramework defaults to csv.bz2 results and rejects unsupport
 		),
 		"results_filename must end in either '.csv' or '.csv.bz2'"
 	)
+})
+
+test_that("SimulationFramework supports X_mat with DesignFixedBlocking explicit m", {
+	X_mat <- matrix(
+		c(-1.2, -0.8, -0.3, 0.1, 0.4, 0.9, 1.3, 1.8),
+		ncol = 1L
+	)
+	colnames(X_mat) <- "x1"
+	m_vec <- c(1L, 1L, 2L, 2L, 3L, 3L, 4L, 4L)
+
+	sim <- SimulationFramework$new(
+		response_type = "incidence",
+		design_classes_and_params = list(
+			DesignFixedBlocking = list(
+				m = m_vec,
+				equal_block_sizes = TRUE
+			)
+		),
+		inference_classes_and_params = list(InferenceIncidCMH),
+		inference_types_and_params = list(asymp_pval = list()),
+		n = 8L,
+		p = 1L,
+		X_mat = X_mat,
+		cov_draw_method = NULL,
+		Nrep = 1L,
+		results_filename = tempfile(fileext = ".csv"),
+		continue_from_last_result_row = FALSE,
+		verbose = FALSE,
+		stop_on_error = TRUE,
+		turn_off_asserts_for_speed = FALSE
+	)
+
+	sim$run()
+	res <- sim$get_results()
+	expect_equal(nrow(res), 1L)
+	expect_true(grepl("DesignFixedBlocking", res$design[[1L]], fixed = TRUE))
+
+	priv <- sim$.__enclos_env__$private
+	rep_data <- priv$.generate_data_from_X(X_mat)
+	des <- priv$.build_design(
+		DesignFixedBlocking,
+		rep_data$X,
+		rep_data$y_linear_model,
+		list(m = m_vec, equal_block_sizes = TRUE)
+	)
+	expect_equal(des$get_block_ids(), as.integer(m_vec))
+})
+
+test_that("SimulationFramework supports X_mat with DesignFixedBinaryMatch explicit m", {
+	X_mat <- matrix(
+		c(-1.2, -0.8, -0.3, 0.1, 0.4, 0.9, 1.3, 1.8),
+		ncol = 1L
+	)
+	colnames(X_mat) <- "x1"
+	m_vec <- c(1L, 1L, 2L, 2L, 3L, 3L, 4L, 4L)
+
+	sim <- SimulationFramework$new(
+		response_type = "continuous",
+		design_classes_and_params = list(
+			DesignFixedBinaryMatch = list(
+				m = m_vec
+			)
+		),
+		inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
+		inference_types_and_params = list(asymp_pval = list()),
+		n = 8L,
+		p = 1L,
+		X_mat = X_mat,
+		cov_draw_method = NULL,
+		Nrep = 1L,
+		results_filename = tempfile(fileext = ".csv"),
+		continue_from_last_result_row = FALSE,
+		verbose = FALSE,
+		stop_on_error = TRUE,
+		turn_off_asserts_for_speed = FALSE
+	)
+
+	sim$run()
+	res <- sim$get_results()
+	expect_equal(nrow(res), 1L)
+	expect_true(grepl("DesignFixedBinaryMatch", res$design[[1L]], fixed = TRUE))
+
+	priv <- sim$.__enclos_env__$private
+	rep_data <- priv$.generate_data_from_X(X_mat)
+	des <- priv$.build_design(
+		DesignFixedBinaryMatch,
+		rep_data$X,
+		rep_data$y_linear_model,
+		list(m = m_vec)
+	)
+	expect_equal(des$get_block_ids(), as.integer(m_vec))
 })
 
 test_that("SimulationFramework validates merged inference constructor params", {
@@ -343,4 +444,62 @@ test_that("SimulationFramework summarize preserves raw metric precision", {
 	expect_equal(sm$coverage, 2 / 3, tolerance = 1e-15)
 	expect_false(identical(sm$coverage, round(sm$coverage, 3)))
 	expect_false(identical(sm$MSE, round(sm$MSE, 5)))
+})
+
+test_that("SimulationFramework stop_on_error TRUE fails fast on simulation path errors", {
+	sim <- SimulationFramework$new(
+		response_type = "continuous",
+		design_classes_and_params = list(DesignFixedBernoulli),
+		inference_classes_and_params = list(InferenceAlwaysFailsPval),
+		inference_types_and_params = list(asymp_pval = list()),
+		n = 8L,
+		p = 2L,
+		Nrep = 1L,
+		results_filename = tempfile(fileext = ".csv"),
+		continue_from_last_result_row = FALSE,
+		verbose = FALSE,
+		stop_on_error = TRUE,
+		turn_off_asserts_for_speed = FALSE
+	)
+
+	expect_error(
+		sim$run(),
+		"SimulationFramework stopped on error\\."
+	)
+})
+
+test_that("SimulationFramework get_errors captures structured runtime errors when stop_on_error is FALSE", {
+	sim <- SimulationFramework$new(
+		response_type = "continuous",
+		design_classes_and_params = list(DesignFixedBernoulli),
+		inference_classes_and_params = list(
+			InferenceAllSimpleMeanDiff,
+			InferenceAlwaysFailsPval
+		),
+		inference_types_and_params = list(asymp_pval = list(delta = 0)),
+		n = 8L,
+		p = 2L,
+		Nrep = 1L,
+		results_filename = tempfile(fileext = ".csv"),
+		continue_from_last_result_row = FALSE,
+		verbose = FALSE,
+		stop_on_error = FALSE,
+		turn_off_asserts_for_speed = FALSE
+	)
+
+	sim$run()
+	res <- sim$get_results()
+	errs <- sim$get_errors()
+
+	expect_equal(nrow(res), 2L)
+	expect_true(any(is.na(res[inference == "InferenceAlwaysFailsPval"]$pval)))
+	expect_length(errs, 1L)
+	expect_equal(errs[[1L]]$stage, "inference_call")
+	expect_equal(errs[[1L]]$rep, 1L)
+	expect_equal(errs[[1L]]$design, "DesignFixedBernoulli")
+	expect_equal(errs[[1L]]$inference, "InferenceAlwaysFailsPval")
+	expect_equal(errs[[1L]]$inference_type, "asymp_pval")
+	expect_match(errs[[1L]]$error_message, "intentional p-value failure for testing")
+	expect_equal(errs[[1L]]$inference_type_params$delta, 0)
+	expect_equal(sim$.__enclos_env__$private$stop_on_error, FALSE)
 })

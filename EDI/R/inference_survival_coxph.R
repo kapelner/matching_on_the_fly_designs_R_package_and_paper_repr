@@ -16,11 +16,10 @@
 #' @export
 InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 	lock_objects = FALSE,
-	inherit = InferenceMLEorKMforGLMs,
+	inherit = InferenceAsympLikStdModCache,
 	public = list(
 				
-		#' @description
-		#' Initialize a Cox PH inference object.
+		#' @description Initialize a Cox PH inference object.
 		#' @param des_obj A completed \code{Design} object with a survival response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -39,22 +38,17 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 			
 			private$use_rcpp = use_rcpp
 		},
-
-		#' @description
-		#' Computes the Cox PH estimate of the treatment effect.
+		#' @description Computes the Cox PH estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			super$compute_estimate(estimate_only = estimate_only)
 		}
 	),
-
 	private = list(
 		use_rcpp = TRUE,
-
 		supports_likelihood_tests = function(){
 			isTRUE(private$use_rcpp)
 		},
-
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context
@@ -99,7 +93,6 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 				neg_loglik = function(fit){ as.numeric(fit$neg_loglik) }
 			)
 		},
-
 		generate_mod = function(estimate_only = FALSE){
 			X_cov = private$get_X()
 			X_fit = if (!is.null(X_cov) && ncol(X_cov) > 0){
@@ -107,7 +100,6 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 			} else {
 				matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
 			}
-
 			if (private$use_rcpp) {
 				fit = tryCatch(
 					fast_coxph_regression(X_fit, private$y, private$dead, use_rcpp = TRUE, estimate_only = estimate_only),
@@ -122,7 +114,7 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 					full_neg_loglik = fit$neg_log_lik
 				)
 				# fast_coxph_regression returns coefficients with intercept=FALSE for Cox.
-				# InferenceMLEorKMforGLMs expects intercept in first position if it exists.
+				# InferenceAsympLikStdModCache expects intercept in first position if it exists.
 				# But Cox has no intercept. So we prefix 0.
 				return(list(
 					b = c(0, fit$b),
@@ -134,11 +126,9 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 					}
 				))
 			}
-
 			surv_obj = survival::Surv(private$y, private$dead)
 			tryCatch({
 				coxph_mod = suppressWarnings(survival::coxph(surv_obj ~ X_fit))
-
 				if (estimate_only) {
 					list(
 						b = c(0, stats::coef(coxph_mod)),

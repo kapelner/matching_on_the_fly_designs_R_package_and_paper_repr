@@ -189,7 +189,7 @@ get_r6_init_fn = function(r6gen) {
 #' \itemize{
 #'   \item \strong{asymptotic} (\code{InferenceAsymp} subclasses): Wald CI and
 #'     p-value.
-#'   \item \strong{bootstrap} (\code{InferenceBoot} subclasses): percentile CI
+#'   \item \strong{bootstrap} (\code{InferenceNonParamBootstrap} subclasses): percentile CI
 #'     and p-value.
 #'   \item \strong{randomisation} (\code{InferenceRand} subclasses): p-value;
 #'     additionally a test-inversion CI for \code{continuous},
@@ -232,8 +232,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
   lock_objects = FALSE,
   # ── public ─────────────────────────────────────────────────────────────────
   public = list(
-    #' @description
-    #' Create a new \code{SimulationFramework}.
+    #' @description Create a new \code{SimulationFramework}.
     #'
     #' @param response_type \strong{(required)} Character scalar or vector.  The type of
     #'   outcome variable.  One of \code{"continuous"}, \code{"incidence"},
@@ -418,7 +417,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   parallel execution of Monte Carlo replications.  Note that when
     #'   \code{num_cores > 1}, parallelization *within* individual inference
     #'   routines (e.g. bootstrap, randomization) is automatically disabled
-    #'   to prevent thread oversubscription.  Default \code{1}.
+    #'   to prevent thread oversubscription. On Unix-like systems the
+    #'   replication loop uses forked workers; on non-Unix systems it uses
+    #'   \pkg{mirai} when available and otherwise falls back to serial
+    #'   execution with a warning. Default \code{1}.
     #'
     #' @param results_filename Character scalar. The filename for the results
     #'   file. Supported extensions are \code{.csv} and \code{.csv.bz2}.
@@ -427,6 +429,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #' @param continue_from_last_result_row Logical. If \code{TRUE} (default),
     #'   the framework loads existing results from \code{results_filename} and
     #'   skips previously completed replications.
+    #'
+    #' @param stop_on_error Logical. If \code{TRUE} (default), any error raised
+    #'   during a simulation path aborts the run immediately. If \code{FALSE},
+    #'   the framework records the error, skips the failing path, and continues
+    #'   with the remaining replications / design / inference combinations. Use
+    #'   \code{$get_errors()} after \code{$run()} to inspect the captured
+    #'   errors.
     #'
     #' @param inference_types_and_params \code{NULL} (default) or a named list
     #'   from inference type to a named list of arguments for that type's function
@@ -484,7 +493,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       turn_off_asserts_for_speed = TRUE,
       inference_types_and_params = NULL,
       results_filename      = "simulation_framework_results.csv.bz2",
-      continue_from_last_result_row = TRUE
+      continue_from_last_result_row = TRUE,
+      stop_on_error         = TRUE
     ) {
       valid_rt = c("continuous", "incidence", "proportion",
                    "count", "survival", "ordinal")
@@ -574,6 +584,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$keep_all_intermediate_data = keep_all_intermediate_data
       private$results_filename     = results_filename
       private$continue_from_last_result_row = continue_from_last_result_row
+      private$stop_on_error        = isTRUE(stop_on_error)
       private$inf_types        = inf_types
       private$inference_type_params = inf_type_spec
       private$param_grid       = private$.build_param_grid(
@@ -605,11 +616,11 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$design_labels    = private$.compute_design_labels()
       private$inference_labels = private$.compute_inference_labels()
       private$raw_results = list()
+      private$error_log   = list()
       private$has_run     = FALSE
     },
     # ── run() ─────────────────────────────────────────────────────────────────
-    #' @description
-    #' Execute the simulation replications.
+    #' @description Execute the simulation replications.
     #'
     #' @return The \code{SimulationFramework} object itself (invisibly).
     run = function() {
@@ -635,6 +646,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       prev_threads = getOption(".edi_last_set_threads")
       if (is.null(prev_threads)) prev_threads = 1L
       prev_global_cores = get_num_cores()
+      prev_global_mirai_cores = get_global_mirai_cores()
       prev_override = ns$edi_env$num_cores_override
       
       num_cores = private$num_cores
@@ -649,10 +661,31 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       on.exit({
         set_package_threads(prev_threads)
         if (get_num_cores() != prev_global_cores) {
-           set_num_cores(prev_global_cores)
+           set_num_cores(prev_global_cores, force_mirai = !is.null(prev_global_mirai_cores))
         }
         assign("num_cores_override", prev_override, envir = ns$edi_env)
       }, add = TRUE)
+      use_mirai_backend = isTRUE(num_cores > 1L) &&
+        (.Platform$OS.type != "unix" || !is.null(prev_global_mirai_cores))
+      if (use_mirai_backend) {
+        if (!check_package_installed("mirai")) {
+          use_mirai_backend = FALSE
+          if (isTRUE(private$verbose)) {
+            private$.message_stderr(
+              "Warning: Parallelism (num_cores > 1) requires the 'mirai' package on non-Unix systems. Serial execution used for this run.\n"
+            )
+          }
+        } else {
+          private$.ensure_mirai_daemons(num_cores)
+          on.exit({
+            if (!is.null(prev_global_mirai_cores)) {
+              private$.ensure_mirai_daemons(prev_global_mirai_cores)
+            } else {
+              tryCatch(mirai::daemons(0), error = function(e) invisible(NULL))
+            }
+          }, add = TRUE)
+        }
+      }
       # Handle cleanup/setup
       if (!isTRUE(private$continue_from_last_result_row)) {
         if (file.exists(private$results_filename)) unlink(private$results_filename)
@@ -717,6 +750,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$valid_combos          = list()
       private$seen_combo_keys      = character(0L)
       private$exact_warned_classes = character(0L)
+      private$error_log            = list()
       if (isTRUE(private$verbose)) {
         message(sprintf(
           "simulations: CEF_mod=%s  n=%s  p=%s  Nrep=%d  betaT=%s designs=%d inferences=%d num_cores=%d",
@@ -916,14 +950,118 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           survival_clamp = private$survival_clamp, survival_min_time = private$survival_min_time, count_min_rate = private$count_min_rate,
           count_shift = private$count_shift, prob_censoring = private$prob_censoring,
           inference_type_params = private$inference_type_params,
-          cell_key_prefix = cell_key_prefix
+          cell_key_prefix = cell_key_prefix,
+          stop_on_error = private$stop_on_error
         )
         num_cores_to_use = 1L
         private$current_task_label = "Des/Inf"
         if (num_cores > 1L) {
           has_java_designs = any(vapply(private$design_classes, function(cls) cls$classname %in% c("DesignFixedBinaryMatch", "DesignFixedGreedy", "DesignFixedMatchingGreedyPairSwitching", "DesignFixedRerandomization"), logical(1L)))
-          if (has_java_designs) {
+          if (!use_mirai_backend && has_java_designs) {
             if (isTRUE(private$verbose)) private$.message_stderr("Warning: Multithreading disabled for Java-based designs; forking is unstable. Serial execution used for this cell.\n")
+          } else if (use_mirai_backend) {
+            num_cores_to_use = num_cores
+            private$current_task_label = "Chunk Reps"
+            chunk_size = num_cores_to_use
+            rep_chunks = split(seq_len(private$Nrep), (seq_len(private$Nrep) - 1) %/% chunk_size)
+            for (chunk in rep_chunks) {
+               active_reps = chunk[run_required_v[chunk]]
+               
+               if (length(active_reps) == 0L) {
+                  private$current_rep_idx = chunk[[length(chunk)]]
+                  private$tasks_per_rep = length(chunk)
+                  private$current_task_in_rep_idx = length(chunk)
+                  private$.draw_progress()
+                  next
+               }
+               private$current_rep_idx = chunk[[1L]]
+               private$tasks_per_rep = length(active_reps)
+               private$current_task_in_rep_idx = 0L
+               private$last_progress_draw_time = 0
+               private$.draw_progress()
+               
+               RUN_REP_DETACHED = private$.run_single_replication_in_worker; environment(RUN_REP_DETACHED) = asNamespace("EDI")
+               RUN_REP = function(rep_i) RUN_REP_DETACHED(rep_i, cell_state, progress_cb = NULL, is_forked = FALSE)
+               jobs = lapply(active_reps, function(rep_i) {
+                 mirai::mirai({ RUN_REP(rep_i) }, RUN_REP = RUN_REP, rep_i = rep_i)
+               })
+               names(jobs) = as.character(active_reps)
+               chunk_results = vector("list", length(active_reps))
+               names(chunk_results) = as.character(active_reps)
+               completed_in_chunk = 0L
+               while (completed_in_chunk < length(active_reps)) {
+                 ready = names(jobs)[!vapply(jobs, mirai::unresolved, logical(1L))]
+                 if (length(ready) == 0L) {
+                   Sys.sleep(0.1)
+                   next
+                 }
+                 for (nm in ready) {
+                   if (is.null(chunk_results[[nm]])) {
+                     job_res = tryCatch(jobs[[nm]][], error = function(e) e)
+                     chunk_results[[nm]] = job_res
+                     if (!inherits(job_res, "error") &&
+                         !is.null(job_res) &&
+                         !is.null(job_res$fatal_error)) {
+                       pending_jobs = jobs[setdiff(names(jobs), ready)]
+                       if (length(pending_jobs) > 0L) {
+                         invisible(lapply(pending_jobs, function(job) {
+                           try(mirai::stop_mirai(job), silent = TRUE)
+                         }))
+                       }
+                     }
+                     completed_in_chunk = completed_in_chunk + 1L
+                   }
+                 }
+                 jobs[ready] = NULL
+                 private$current_rep_idx = min(chunk[[length(chunk)]], chunk[[1L]] - 1L + completed_in_chunk)
+                 private$current_task_in_rep_idx = completed_in_chunk
+                 private$.draw_progress()
+               }
+               chunk_results = unname(chunk_results[as.character(active_reps)])
+               chunk_results_ok = chunk_results[!vapply(chunk_results, function(x) inherits(x, "error") || is.null(x), logical(1L))]
+               if (length(chunk_results_ok) > 0L) {
+                 all_chunk_dt = data.table::rbindlist(lapply(chunk_results_ok, function(w) w$results_dt), use.names = TRUE, fill = TRUE)
+                 all_chunk_skipped = sum(vapply(chunk_results_ok, function(w) w$skipped_count, 0L))
+                 private$.append_errors(unlist(lapply(chunk_results_ok, `[[`, "errors"), recursive = FALSE))
+                 private$current_rep_idx = chunk[[length(chunk)]]
+                 private$current_task_in_rep_idx = length(chunk)
+                 private$.record_batch(all_chunk_dt, all_chunk_skipped)
+               }
+               fatal_errors = unlist(lapply(chunk_results_ok, function(x) {
+                 if (is.null(x$fatal_error)) list() else list(x$fatal_error)
+               }), recursive = FALSE)
+               if (length(fatal_errors) > 0L) {
+                 private$.abort_from_error_record(fatal_errors[[1L]])
+               }
+               failed_indices = which(vapply(chunk_results, function(x) inherits(x, "error") || is.null(x), logical(1L)))
+               if (length(failed_indices) > 0L) {
+                 failed_errors = lapply(failed_indices, function(idx) {
+                   private$.make_error_record(
+                     stage = "worker_execution",
+                     rep = active_reps[[idx]],
+                     design = NA_character_,
+                     design_params = NULL,
+                     inference = NA_character_,
+                     inference_params = NULL,
+                     inference_type = NA_character_,
+                     inference_type_params = NULL,
+                     message = if (is.null(chunk_results[[idx]])) {
+                       "Worker returned NULL output."
+                     } else {
+                       conditionMessage(chunk_results[[idx]])
+                     },
+                     metadata = list(cell_index = cell_idx, chunk_rep = active_reps[[idx]], backend = "mirai")
+                   )
+                 })
+                 private$.append_errors(failed_errors)
+                 if (isTRUE(private$stop_on_error)) {
+                   private$.abort_from_error_record(failed_errors[[1L]])
+                 }
+                 tasks_to_add = sum(cell_req[failed_indices, , drop = FALSE])
+                 private$progress_count = private$progress_count + tasks_to_add
+                 private$.draw_progress()
+               }
+            }
           } else {
             num_cores_to_use = num_cores
             private$current_task_label = "Chunk Reps"
@@ -967,9 +1105,18 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                  for (nm in names(collected)) {
                    if (is.null(chunk_results[[nm]])) {
                      chunk_results[[nm]] = collected[[nm]]
+                     if (!is.null(collected[[nm]]$fatal_error)) {
+                       pending_jobs = jobs[setdiff(names(jobs), names(collected))]
+                       if (length(pending_jobs) > 0L) {
+                         invisible(lapply(pending_jobs, function(job) {
+                           try(parallel::mckill(job), silent = TRUE)
+                         }))
+                       }
+                     }
                      completed_in_chunk = completed_in_chunk + 1L
                    }
                  }
+                 jobs[names(collected)] = NULL
                  private$current_rep_idx = min(chunk[[length(chunk)]], chunk[[1L]] - 1L + completed_in_chunk)
                  private$current_task_in_rep_idx = completed_in_chunk
                  private$.draw_progress()
@@ -979,12 +1126,37 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                if (length(chunk_results_ok) > 0L) {
                  all_chunk_dt = data.table::rbindlist(lapply(chunk_results_ok, function(w) w$results_dt), use.names = TRUE, fill = TRUE)
                  all_chunk_skipped = sum(vapply(chunk_results_ok, function(w) w$skipped_count, 0L))
+                 private$.append_errors(unlist(lapply(chunk_results_ok, `[[`, "errors"), recursive = FALSE))
                  private$current_rep_idx = chunk[[length(chunk)]]
                  private$current_task_in_rep_idx = length(chunk)
                  private$.record_batch(all_chunk_dt, all_chunk_skipped)
                }
+               fatal_errors = unlist(lapply(chunk_results_ok, function(x) {
+                 if (is.null(x$fatal_error)) list() else list(x$fatal_error)
+               }), recursive = FALSE)
+               if (length(fatal_errors) > 0L) {
+                 private$.abort_from_error_record(fatal_errors[[1L]])
+               }
                failed_indices = which(vapply(chunk_results, function(x) is(x, "try-error") || is.null(x), logical(1L)))
                if (length(failed_indices) > 0L) {
+                 failed_errors = lapply(failed_indices, function(idx) {
+                   private$.make_error_record(
+                     stage = "worker_execution",
+                     rep = active_reps[[idx]],
+                     design = NA_character_,
+                     design_params = NULL,
+                     inference = NA_character_,
+                     inference_params = NULL,
+                     inference_type = NA_character_,
+                     inference_type_params = NULL,
+                     message = if (is.null(chunk_results[[idx]])) "Worker returned NULL output." else as.character(chunk_results[[idx]]),
+                     metadata = list(cell_index = cell_idx, chunk_rep = active_reps[[idx]])
+                   )
+                 })
+                 private$.append_errors(failed_errors)
+                 if (isTRUE(private$stop_on_error)) {
+                   private$.abort_from_error_record(failed_errors[[1L]])
+                 }
                  # For failures, we only advance progress by the number of tasks
                  # that were actually pending for these replications (to avoid double-counting existing ones).
                  tasks_per_rep = cell_tasks_count[cell_idx]
@@ -1026,10 +1198,30 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                private$all_intermediate_data[[rep_slot]]$y_linear_model = y_linear_model
             }
             if (!is(worker_out, "try-error") && !is.null(worker_out)) {
+               private$.append_errors(worker_out$errors)
+               if (!is.null(worker_out$fatal_error)) {
+                 private$.abort_from_error_record(worker_out$fatal_error)
+               }
                n_res = if (is.null(worker_out$results_dt)) 0L else nrow(worker_out$results_dt)
                private$current_task_in_rep_idx = worker_out$skipped_count + n_res
                private$.record_batch(worker_out$results_dt, worker_out$skipped_count)
             } else {
+               worker_error = private$.make_error_record(
+                 stage = "worker_execution",
+                 rep = rep,
+                 design = NA_character_,
+                 design_params = NULL,
+                 inference = NA_character_,
+                 inference_params = NULL,
+                 inference_type = NA_character_,
+                 inference_type_params = NULL,
+                 message = if (is.null(worker_out)) "Worker returned NULL output." else as.character(worker_out),
+                 metadata = list(cell_index = cell_idx, num_cores = num_cores_to_use)
+               )
+               private$.append_errors(list(worker_error))
+               if (isTRUE(private$stop_on_error)) {
+                 private$.abort_from_error_record(worker_error)
+               }
                # For failures, we only advance progress by the number of tasks
                # that were actually pending for this replication.
                tasks_to_add = sum(cell_req[rep, ])
@@ -1041,8 +1233,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$.finish_run()
       invisible(self)
     },
-    #' @description
-    #' Retrieve the stored intermediate data (design and inference objects)
+    #' @description Retrieve the stored intermediate data (design and inference objects)
     #' for every replication. Only available if \code{keep_all_intermediate_data = TRUE}
     #' was passed to the constructor.
     #'
@@ -1054,8 +1245,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$all_intermediate_data
     },
     # ── clear_all_intermediate_data_and_gc() ─────────────────────────────────
-    #' @description
-    #' Release all stored intermediate data and invoke the garbage collector.
+    #' @description Release all stored intermediate data and invoke the garbage collector.
     #' Useful after inspecting intermediate results to free memory before
     #' further processing.  Sets the internal store to \code{NULL} and calls
     #' \code{gc()}.
@@ -1067,8 +1257,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       invisible(self)
     },
     # ── get_results() ─────────────────────────────────────────────────────────
-    #' @description
-    #' Get the raw results of the simulation.
+    #' @description Get the raw results of the simulation.
     #'
     #' @return A \code{data.table} containing one row per (replication, design,
     #'   inference class, and inference type.
@@ -1085,9 +1274,17 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       # Prune pre-allocated list to only include what was actually recorded
       data.table::rbindlist(private$raw_results[seq_len(private$results_idx)], use.names = TRUE, fill = TRUE)
     },
+    #' @description Return all errors captured during the most recent run.
+    #'
+    #' @return A list of named lists, one per captured error, including the
+    #'   simulation cell metadata, replication number, design / inference path,
+    #'   user-supplied parameters, error stage, and error message.
+    get_errors = function() {
+      if (!private$has_run) stop("Call $run() first.")
+      private$error_log
+    },
     # ── summarize() ───────────────────────────────────────────────────────────
-    #' @description
-    #' Aggregate and summarize simulation results.
+    #' @description Aggregate and summarize simulation results.
     #'
     #' @return A \code{data.table} with aggregated metrics (MSE, coverage,
     #'   power) grouped by design, inference class, and inference type.
@@ -1174,8 +1371,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       result[order(cond_exp_func_model, n, p, design, inference, inference_type)]
     },
     # ── print() ───────────────────────────────────────────────────────────────
-    #' @description
-    #' Print a summary of the \code{SimulationFramework} configuration and status.
+    #' @description Print a summary of the \code{SimulationFramework} configuration and status.
     print = function() {
       cat("SimulationFramework\n")
       cat("  response_type :", private$.format_values(private$response_type_values), "\n")
@@ -1184,6 +1380,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       cat("  Nrep / betaT  :", private$Nrep, "/", private$.format_values(private$betaT_values), "\n")
       cat("  alpha / B_boot / r_rand :",
           private$alpha, "/", private$B_boot, "/", private$r_rand, "\n")
+      cat("  stop_on_error :", private$stop_on_error, "\n")
       cat("  inference_types:", paste(private$inf_types, collapse = ", "), "\n")
       if (any(vapply(private$design_params, length, integer(1L)) > 0L))
         cat("  design_classes_and_params: (", length(private$design_params), " designs)\n", sep = "")
@@ -1268,6 +1465,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     initial_progress_count = NULL,
     initial_cell_in_progress_prop = NULL,
     continue_from_last_result_row = NULL,
+    stop_on_error = TRUE,
     design_params    = NULL,
     inference_constructor_params = NULL,
     inference_type_params = NULL,
@@ -1278,6 +1476,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     inference_labels = NULL,
     turn_off_asserts_for_speed = NULL,
     raw_results               = NULL,
+    error_log                 = NULL,
     results_idx               = 0L,
     all_intermediate_data     = NULL,    keep_all_intermediate_data = FALSE,
     has_run                   = FALSE,
@@ -1298,6 +1497,29 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     use_progress_bar         = FALSE,
     progress_log_interval    = 0L,
     progress_bar_drawn       = NULL,
+    .ensure_mirai_daemons = function(n) {
+      s = tryCatch(mirai::status(), error = function(e) list(connections = 0L))
+      n_running = if (is.numeric(s$connections) && length(s$connections) == 1L) as.integer(s$connections) else 0L
+      if (n_running != as.integer(n)) mirai::daemons(as.integer(n))
+      tryCatch(
+        mirai::everywhere({
+          Sys.setenv(
+            OMP_NUM_THREADS        = 1L,
+            MKL_NUM_THREADS        = 1L,
+            OPENBLAS_NUM_THREADS   = 1L,
+            GOTO_NUM_THREADS       = 1L,
+            VECLIB_MAXIMUM_THREADS = 1L,
+            NUMEXPR_NUM_THREADS    = 1L
+          )
+          options(mc.cores = 1L)
+          if (requireNamespace("data.table", quietly = TRUE)) data.table::setDTthreads(1L)
+          if (requireNamespace("fixest", quietly = TRUE)) suppressWarnings(try(fixest::setFixest_nthreads(1L), silent = TRUE))
+          invisible(NULL)
+        }),
+        error = function(e) invisible(NULL)
+      )
+      invisible(NULL)
+    },
     # ── Design spec parsing ───────────────────────────────────────────────────
     .parse_design_classes_and_params = function(spec, eval_env) {
       if (is.null(spec)) {
@@ -1693,6 +1915,61 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         inference_type = inference_type
       )
     },
+    .make_error_record = function(stage, rep, design, design_params, inference,
+                                  inference_params, inference_type,
+                                  inference_type_params, message,
+                                  metadata = NULL) {
+      list(
+        response_type = private$current_response_type,
+        cond_exp_func_model = private$current_cond_exp_func_model,
+        n = as.integer(private$current_n),
+        p = as.integer(private$current_p),
+        betaT = as.numeric(private$current_betaT),
+        rep = if (is.null(rep) || !length(rep)) NA_integer_ else as.integer(rep),
+        design = design %||% NA_character_,
+        design_params = design_params,
+        inference = inference %||% NA_character_,
+        inference_params = inference_params,
+        inference_type = inference_type %||% NA_character_,
+        inference_type_params = inference_type_params,
+        stage = stage,
+        error_message = as.character(message)[1L],
+        metadata = metadata %||% list(),
+        timestamp = as.character(Sys.time())
+      )
+    },
+    .append_errors = function(errors) {
+      if (length(errors) == 0L) return(invisible(NULL))
+      private$error_log = c(private$error_log, errors)
+      invisible(NULL)
+    },
+    .format_error_record = function(err) {
+      path_parts = c(err$design, err$inference, err$inference_type)
+      path_parts = path_parts[is.finite(nchar(path_parts)) & nzchar(path_parts) & !is.na(path_parts)]
+      path = if (length(path_parts) == 0L) "<no path>" else paste(path_parts, collapse = " -> ")
+      sprintf(
+        paste0(
+          "SimulationFramework stopped on error.\n",
+          "stage: %s\n",
+          "cell: response_type=%s, cond_exp_func_model=%s, n=%s, p=%s, betaT=%s\n",
+          "rep: %s\n",
+          "path: %s\n",
+          "message: %s"
+        ),
+        err$stage,
+        err$response_type,
+        err$cond_exp_func_model,
+        err$n,
+        err$p,
+        err$betaT,
+        if (is.na(err$rep)) "NA" else err$rep,
+        path,
+        err$error_message
+      )
+    },
+    .abort_from_error_record = function(err) {
+      stop(private$.format_error_record(err), call. = FALSE)
+    },
     .log_skip = function(rep, design, inference, inference_type) {
       invisible(NULL)
     },
@@ -1710,7 +1987,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           intersect(private$inf_types, c("exact_ci", "exact_pval"))
         )
       }
-      if (is(inf_obj, "InferenceBoot")) {
+      if (is(inf_obj, "InferenceNonParamBootstrap")) {
         valid_inference_types = c(
           valid_inference_types,
           intersect(private$inf_types, c("boot_ci", "boot_pval"))
@@ -1785,18 +2062,67 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         unset_num_cores() # Clear any inherited clusters
       }
       
-      # Pre-format key prefix for this replication
-      rep_key_prefix = paste(state$cell_key_prefix, rep_i, sep = "|")
+      error_records = list()
+      make_error = function(stage, design = NA_character_, design_params = NULL,
+                            inference = NA_character_, inference_params = NULL,
+                            inference_type = NA_character_, inference_type_params = NULL,
+                            message, metadata = NULL) {
+        list(
+          response_type = state$response_type,
+          cond_exp_func_model = state$cond_exp_func_model,
+          n = as.integer(state$n),
+          p = as.integer(state$p),
+          betaT = as.numeric(state$betaT),
+          rep = as.integer(rep_i),
+          design = design %||% NA_character_,
+          design_params = design_params,
+          inference = inference %||% NA_character_,
+          inference_params = inference_params,
+          inference_type = inference_type %||% NA_character_,
+          inference_type_params = inference_type_params,
+          stage = stage,
+          error_message = as.character(message)[1L],
+          metadata = metadata %||% list(),
+          timestamp = as.character(Sys.time())
+        )
+      }
+      handle_error = function(err) {
+        error_records[[length(error_records) + 1L]] <<- err
+        if (isTRUE(state$stop_on_error)) {
+          return(list(
+            results_dt = if (length(results) > 0L) data.table::rbindlist(results) else NULL,
+            skipped_count = skipped_count,
+            errors = error_records,
+            fatal_error = err
+          ))
+        }
+        NULL
+      }
       # 1. Generate data
-      data = generate_covariate_dataset(
-        n                    = state$n,
-        p                    = state$p,
-        cond_exp_func_model  = state$cond_exp_func_model,
-        norm_sq_beta_vec     = state$norm_sq_beta_vec,
-        X_mat                = state$shared_X %||% state$X_mat,
-        cov_draw_method      = if (is.null(state$shared_X) && is.null(state$X_mat)) state$cov_draw_method else NULL,
-        cov_draw_method_args = state$cov_draw_method_args
+      data = tryCatch(
+        generate_covariate_dataset(
+          n                    = state$n,
+          p                    = state$p,
+          cond_exp_func_model  = state$cond_exp_func_model,
+          norm_sq_beta_vec     = state$norm_sq_beta_vec,
+          X_mat                = state$shared_X %||% state$X_mat,
+          cov_draw_method      = if (is.null(state$shared_X) && is.null(state$X_mat)) state$cov_draw_method else NULL,
+          cov_draw_method_args = state$cov_draw_method_args
+        ),
+        error = function(e) {
+          fatal = handle_error(make_error(
+            stage = "data_generation",
+            message = conditionMessage(e),
+            metadata = list(condition_class = class(e))
+          ))
+          if (!is.null(fatal)) return(fatal)
+          NULL
+        }
       )
+      if (is.list(data) && !is.null(data$fatal_error)) return(data)
+      if (is.null(data)) {
+        return(list(results_dt = NULL, skipped_count = 0L, errors = error_records, fatal_error = NULL))
+      }
       y_linear_model = as.numeric(scale(data$y_cont))
       X = data$X
       
@@ -1882,16 +2208,47 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             d$add_all_subject_responses(out$y, out$dead)
           }
           d
-        }, error = function(e) NULL)
+        }, error = function(e) {
+          fatal = handle_error(make_error(
+            stage = "design_build",
+            design = design_name,
+            design_params = design_extra,
+            message = conditionMessage(e),
+            metadata = list(
+              design_class = design_gen$classname,
+              condition_class = class(e)
+            )
+          ))
+          if (!is.null(fatal)) return(fatal)
+          NULL
+        })
+        if (is.list(des_obj) && !is.null(des_obj$fatal_error)) return(des_obj)
         
         if (is.null(des_obj)) next
         for (ii in seq_along(state$inference_classes)) {
           inf_gen  = state$inference_classes[[ii]]
           inf_name = state$inference_labels[[ii]]
-          inf_ctor_extra = state$inference_constructor_params[[ii]]
+          inf_ctor_extra = state$inference_ctor_params[[ii]]
           inf_obj = tryCatch({
             do.call(inf_gen$new, c(list(des_obj), inf_ctor_extra))
-          }, error = function(e) NULL)
+          }, error = function(e) {
+            fatal = handle_error(make_error(
+              stage = "inference_initialize",
+              design = design_name,
+              design_params = design_extra,
+              inference = inf_name,
+              inference_params = inf_ctor_extra,
+              message = conditionMessage(e),
+              metadata = list(
+                design_class = design_gen$classname,
+                inference_class = inf_gen$classname,
+                condition_class = class(e)
+              )
+            ))
+            if (!is.null(fatal)) return(fatal)
+            NULL
+          })
+          if (is.list(inf_obj) && !is.null(inf_obj$fatal_error)) return(inf_obj)
           
           if (is.null(inf_obj)) next
           is_mean_diff = is(inf_obj, "InferenceAllSimpleMeanDiff") ||
@@ -1911,7 +2268,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             valid_inference_types = c(valid_inference_types, intersect(state$inf_types, c("asymp_ci", "asymp_pval")))
           if (is(inf_obj, "InferenceExact"))
             valid_inference_types = c(valid_inference_types, intersect(state$inf_types, c("exact_ci", "exact_pval")))
-          if (is(inf_obj, "InferenceBoot"))
+          if (is(inf_obj, "InferenceNonParamBootstrap"))
             valid_inference_types = c(valid_inference_types, intersect(state$inf_types, c("boot_ci", "boot_pval")))
           if (is(inf_obj, "InferenceRand")) {
             valid_inference_types = c(valid_inference_types, intersect(state$inf_types, "rand_pval"))
@@ -1942,7 +2299,25 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           est = tryCatch({
             v = inf_obj$compute_estimate()
             if (is.null(v) || length(v) == 0L) NA_real_ else as.numeric(v)[1L]
-          }, error = function(e) NA_real_)
+          }, error = function(e) {
+            fatal = handle_error(make_error(
+              stage = "estimate",
+              design = design_name,
+              design_params = design_extra,
+              inference = inf_name,
+              inference_params = inf_ctor_extra,
+              message = conditionMessage(e),
+              metadata = list(
+                design_class = design_gen$classname,
+                inference_class = inf_gen$classname,
+                pending_inference_types = pending_inference_types,
+                condition_class = class(e)
+              )
+            ))
+            if (!is.null(fatal)) return(fatal)
+            NA_real_
+          })
+          if (is.list(est) && !is.null(est$fatal_error)) return(est)
           # Helper to merge user-supplied params with defaults
           get_args = function(type, defaults = list()) {
             user_args = state$inference_type_params[[type]]
@@ -1982,12 +2357,52 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           if (is(inf_obj, "InferenceAsymp") && any(c("asymp_ci", "asymp_pval") %in% pending_inference_types)) {
             if ("asymp_pval" %in% pending_inference_types) {
               args = get_args("asymp_pval")
-              pval_a = tryCatch(do.call(inf_obj$compute_asymp_two_sided_pval, args), error = function(e) NA_real_)
+              pval_a = tryCatch(do.call(inf_obj$compute_asymp_two_sided_pval, args), error = function(e) {
+                fatal = handle_error(make_error(
+                  stage = "inference_call",
+                  design = design_name,
+                  design_params = design_extra,
+                  inference = inf_name,
+                  inference_params = inf_ctor_extra,
+                  inference_type = "asymp_pval",
+                  inference_type_params = args,
+                  message = conditionMessage(e),
+                  metadata = list(
+                    method = "compute_asymp_two_sided_pval",
+                    design_class = design_gen$classname,
+                    inference_class = inf_gen$classname,
+                    condition_class = class(e)
+                  )
+                ))
+                if (!is.null(fatal)) return(fatal)
+                NA_real_
+              })
+              if (is.list(pval_a) && !is.null(pval_a$fatal_error)) return(pval_a)
               local_record("asymp_pval", c(NA_real_, NA_real_), pval_a)
             }
             if ("asymp_ci" %in% pending_inference_types) {
               args = get_args("asymp_ci", list(alpha = state$alpha))
-              ci_a = tryCatch(do.call(inf_obj$compute_asymp_confidence_interval, args), error = function(e) c(NA_real_, NA_real_))
+              ci_a = tryCatch(do.call(inf_obj$compute_asymp_confidence_interval, args), error = function(e) {
+                fatal = handle_error(make_error(
+                  stage = "inference_call",
+                  design = design_name,
+                  design_params = design_extra,
+                  inference = inf_name,
+                  inference_params = inf_ctor_extra,
+                  inference_type = "asymp_ci",
+                  inference_type_params = args,
+                  message = conditionMessage(e),
+                  metadata = list(
+                    method = "compute_asymp_confidence_interval",
+                    design_class = design_gen$classname,
+                    inference_class = inf_gen$classname,
+                    condition_class = class(e)
+                  )
+                ))
+                if (!is.null(fatal)) return(fatal)
+                c(NA_real_, NA_real_)
+              })
+              if (is.list(ci_a) && !is.null(ci_a$fatal_error)) return(ci_a)
               local_record("asymp_ci", ci_a, NA_real_)
             }
           }
@@ -1995,26 +2410,105 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           if (is(inf_obj, "InferenceExact") && any(c("exact_ci", "exact_pval") %in% pending_inference_types)) {
             if ("exact_pval" %in% pending_inference_types) {
               args = get_args("exact_pval")
-              pval_e = tryCatch(do.call(inf_obj$compute_exact_two_sided_pval_for_treatment_effect, args), error = function(e) NA_real_)
+              pval_e = tryCatch(do.call(inf_obj$compute_exact_two_sided_pval_for_treatment_effect, args), error = function(e) {
+                fatal = handle_error(make_error(
+                  stage = "inference_call",
+                  design = design_name,
+                  design_params = design_extra,
+                  inference = inf_name,
+                  inference_params = inf_ctor_extra,
+                  inference_type = "exact_pval",
+                  inference_type_params = args,
+                  message = conditionMessage(e),
+                  metadata = list(
+                    method = "compute_exact_two_sided_pval_for_treatment_effect",
+                    design_class = design_gen$classname,
+                    inference_class = inf_gen$classname,
+                    condition_class = class(e)
+                  )
+                ))
+                if (!is.null(fatal)) return(fatal)
+                NA_real_
+              })
+              if (is.list(pval_e) && !is.null(pval_e$fatal_error)) return(pval_e)
               local_record("exact_pval", c(NA_real_, NA_real_), pval_e)
             }
             if ("exact_ci" %in% pending_inference_types) {
               args = get_args("exact_ci", list(alpha = state$alpha))
-              ci_e = tryCatch(do.call(inf_obj$compute_exact_confidence_interval, args), error = function(e) c(NA_real_, NA_real_))
+              ci_e = tryCatch(do.call(inf_obj$compute_exact_confidence_interval, args), error = function(e) {
+                fatal = handle_error(make_error(
+                  stage = "inference_call",
+                  design = design_name,
+                  design_params = design_extra,
+                  inference = inf_name,
+                  inference_params = inf_ctor_extra,
+                  inference_type = "exact_ci",
+                  inference_type_params = args,
+                  message = conditionMessage(e),
+                  metadata = list(
+                    method = "compute_exact_confidence_interval",
+                    design_class = design_gen$classname,
+                    inference_class = inf_gen$classname,
+                    condition_class = class(e)
+                  )
+                ))
+                if (!is.null(fatal)) return(fatal)
+                c(NA_real_, NA_real_)
+              })
+              if (is.list(ci_e) && !is.null(ci_e$fatal_error)) return(ci_e)
               local_record("exact_ci", ci_e, NA_real_)
             }
           }
           
-          if (is(inf_obj, "InferenceBoot") && any(c("boot_ci", "boot_pval") %in% pending_inference_types)) {
+          if (is(inf_obj, "InferenceNonParamBootstrap") && any(c("boot_ci", "boot_pval") %in% pending_inference_types)) {
             if ("boot_pval" %in% pending_inference_types) {
               args = get_args("boot_pval", list(B = state$B_boot, na.rm = TRUE))
-              pval_b = tryCatch(do.call(inf_obj$compute_bootstrap_two_sided_pval, args), error = function(e) NA_real_)
+              pval_b = tryCatch(do.call(inf_obj$compute_bootstrap_two_sided_pval, args), error = function(e) {
+                fatal = handle_error(make_error(
+                  stage = "inference_call",
+                  design = design_name,
+                  design_params = design_extra,
+                  inference = inf_name,
+                  inference_params = inf_ctor_extra,
+                  inference_type = "boot_pval",
+                  inference_type_params = args,
+                  message = conditionMessage(e),
+                  metadata = list(
+                    method = "compute_bootstrap_two_sided_pval",
+                    design_class = design_gen$classname,
+                    inference_class = inf_gen$classname,
+                    condition_class = class(e)
+                  )
+                ))
+                if (!is.null(fatal)) return(fatal)
+                NA_real_
+              })
+              if (is.list(pval_b) && !is.null(pval_b$fatal_error)) return(pval_b)
               local_record("boot_pval", c(NA_real_, NA_real_), pval_b)
             }
             if ("boot_ci" %in% pending_inference_types) {
               args = get_args("boot_ci", list(B = state$B_boot, alpha = state$alpha, na.rm = TRUE, show_progress = FALSE))
-              ci_b = tryCatch(do.call(inf_obj$compute_bootstrap_confidence_interval, args), 
-                              error = function(e) c(NA_real_, NA_real_))
+              ci_b = tryCatch(do.call(inf_obj$compute_bootstrap_confidence_interval, args), error = function(e) {
+                fatal = handle_error(make_error(
+                  stage = "inference_call",
+                  design = design_name,
+                  design_params = design_extra,
+                  inference = inf_name,
+                  inference_params = inf_ctor_extra,
+                  inference_type = "boot_ci",
+                  inference_type_params = args,
+                  message = conditionMessage(e),
+                  metadata = list(
+                    method = "compute_bootstrap_confidence_interval",
+                    design_class = design_gen$classname,
+                    inference_class = inf_gen$classname,
+                    condition_class = class(e)
+                  )
+                ))
+                if (!is.null(fatal)) return(fatal)
+                c(NA_real_, NA_real_)
+              })
+              if (is.list(ci_b) && !is.null(ci_b$fatal_error)) return(ci_b)
               local_record("boot_ci", ci_b, NA_real_)
             }
           }
@@ -2022,13 +2516,52 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           if (is(inf_obj, "InferenceRand") && any(c("rand_ci", "rand_pval") %in% pending_inference_types)) {
             if ("rand_pval" %in% pending_inference_types) {
               args = get_args("rand_pval", list(r = state$r_rand, na.rm = TRUE, show_progress = FALSE))
-              pval_r = tryCatch(do.call(inf_obj$compute_rand_two_sided_pval, args), error = function(e) NA_real_)
+              pval_r = tryCatch(do.call(inf_obj$compute_rand_two_sided_pval, args), error = function(e) {
+                fatal = handle_error(make_error(
+                  stage = "inference_call",
+                  design = design_name,
+                  design_params = design_extra,
+                  inference = inf_name,
+                  inference_params = inf_ctor_extra,
+                  inference_type = "rand_pval",
+                  inference_type_params = args,
+                  message = conditionMessage(e),
+                  metadata = list(
+                    method = "compute_rand_two_sided_pval",
+                    design_class = design_gen$classname,
+                    inference_class = inf_gen$classname,
+                    condition_class = class(e)
+                  )
+                ))
+                if (!is.null(fatal)) return(fatal)
+                NA_real_
+              })
+              if (is.list(pval_r) && !is.null(pval_r$fatal_error)) return(pval_r)
               local_record("rand_pval", c(NA_real_, NA_real_), pval_r)
             }
             if ("rand_ci" %in% pending_inference_types && is(inf_obj, "InferenceRandCI") && state$response_type %in% c("continuous", "proportion", "count")) {
               args = get_args("rand_ci", list(r = state$r_rand, alpha = state$alpha, pval_epsilon = state$pval_epsilon, show_progress = FALSE))
-              ci_r = tryCatch(do.call(inf_obj$compute_rand_confidence_interval, args), 
-                              error = function(e) c(NA_real_, NA_real_))
+              ci_r = tryCatch(do.call(inf_obj$compute_rand_confidence_interval, args), error = function(e) {
+                fatal = handle_error(make_error(
+                  stage = "inference_call",
+                  design = design_name,
+                  design_params = design_extra,
+                  inference = inf_name,
+                  inference_params = inf_ctor_extra,
+                  inference_type = "rand_ci",
+                  inference_type_params = args,
+                  message = conditionMessage(e),
+                  metadata = list(
+                    method = "compute_rand_confidence_interval",
+                    design_class = design_gen$classname,
+                    inference_class = inf_gen$classname,
+                    condition_class = class(e)
+                  )
+                ))
+                if (!is.null(fatal)) return(fatal)
+                c(NA_real_, NA_real_)
+              })
+              if (is.list(ci_r) && !is.null(ci_r$fatal_error)) return(ci_r)
               local_record("rand_ci", ci_r, NA_real_)
             }
           }
@@ -2037,7 +2570,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       # Return results as a data.table for efficiency in master loop
       list(
         results_dt = if (length(results) > 0L) data.table::rbindlist(results) else NULL,
-        skipped_count = skipped_count
+        skipped_count = skipped_count,
+        errors = error_records,
+        fatal_error = NULL
       )
     },
     .advance_progress = function() {

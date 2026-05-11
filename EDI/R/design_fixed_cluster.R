@@ -14,8 +14,7 @@
 DesignFixedCluster = R6::R6Class("DesignFixedCluster",
 	inherit = DesignFixed,
 	public = list(
-		#' @description
-		#' Initialize a cluster randomized fixed experimental design
+		#' @description Initialize a cluster randomized fixed experimental design
 		#'
 		#' @param cluster_col 	The column name in the data that identifies the cluster for each subject.
 		#' @param response_type 	The data type of response values.
@@ -46,10 +45,7 @@ DesignFixedCluster = R6::R6Class("DesignFixedCluster",
 			private$cluster_col = cluster_col
 			private$uses_covariates = TRUE
 		},
-
-
-		#' @description
-		#' Draw multiple treatment assignment vectors according to cluster randomization.
+		#' @description Draw multiple treatment assignment vectors according to cluster randomization.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'
@@ -71,7 +67,6 @@ DesignFixedCluster = R6::R6Class("DesignFixedCluster",
 			w_mat
 		}
 	),
-
 	private = list(
 		cluster_col = NULL
 	)

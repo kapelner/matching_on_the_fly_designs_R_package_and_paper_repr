@@ -2,7 +2,7 @@
 
 ## Goal
 
-Split the count-model likelihood code away from `InferenceMLEorKMforGLMs` without losing the shared likelihood-test and fit-reuse machinery.
+Split the count-model likelihood code away from `InferenceAsympLikStdModCache` without losing the shared likelihood-test and fit-reuse machinery.
 
 The current situation mixes two different concepts:
 
@@ -19,7 +19,7 @@ No structural change:
 
 ```text
 InferenceAsympLik
-└─ InferenceMLEorKMforGLMs
+└─ InferenceAsympLikStdModCache
    ├─ InferenceCountPoisson
    ├─ InferenceCountNegBin
    ├─ InferenceIncidLogRegr
@@ -97,7 +97,7 @@ This should not pretend to be a full likelihood base for the reported estimator.
 
 ## Why This Split Is Better
 
-`InferenceMLEorKMforGLMs` already does useful work and should stay in place. The count classes are different enough that forcing them through that class makes the abstraction leaky:
+`InferenceAsympLikStdModCache` already does useful work and should stay in place. The count classes are different enough that forcing them through that class makes the abstraction leaky:
 
 - zero-augmented models need two linear predictors and special null-fit handling
 - negative binomial models carry an extra dispersion parameter
@@ -140,11 +140,11 @@ Do these last. They are structurally different because the likelihood path is a 
 
 ## Recommendation
 
-I would not try to flatten `InferenceMLEorKMforGLMs` into the count branch.
+I would not try to flatten `InferenceAsympLikStdModCache` into the count branch.
 
 Instead:
 
-- keep `InferenceMLEorKMforGLMs` for ordinary GLM/KM models
+- keep `InferenceAsympLikStdModCache` for ordinary GLM/KM models
 - add `InferenceCountLikelihood` for true count-likelihood models
 - add `InferenceCountCompositeLikelihood` for robust/quasi companion-model testing
 

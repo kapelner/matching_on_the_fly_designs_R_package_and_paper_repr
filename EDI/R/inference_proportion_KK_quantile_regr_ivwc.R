@@ -19,7 +19,7 @@
 #' treatment effect on the logit scale is exactly 1, so no \code{skip_ci} is needed.
 #'
 #' \strong{Default quantile: \code{tau = 0.5} (median regression).}
-#' To target a different quantile — for example the 25th or 75th percentile — pass
+#' To target a different quantile --- for example the 25th or 75th percentile --- pass
 #' \code{tau = 0.25} or \code{tau = 0.75} to the constructor:
 #' \preformatted{
 #'   inf = InferencePropKKQuantileRegrIVWC$
@@ -49,9 +49,7 @@ InferencePropKKQuantileRegrIVWC = R6::R6Class("InferencePropKKQuantileRegrIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKQuantileRegrIVWC,
 	public = list(
-
-		#' @description
-		#' Initialize a sequential experimental design estimation and test object
+		#' @description Initialize a sequential experimental design estimation and test object
 		#' after the sequential design is completed.
 		#' @param des_obj A DesignSeqOneByOne object whose entire n subjects
 		#'   are assigned and response y is recorded within.

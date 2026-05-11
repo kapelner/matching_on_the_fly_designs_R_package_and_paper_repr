@@ -1,14 +1,14 @@
-# InferenceMLEorKMforGLMs Flattening Report
+# InferenceAsympLikStdModCache Flattening Report
 
 ## Conclusion
 
-`InferenceMLEorKMforGLMs` is not duplicative in the sense of a removable wrapper. It is a real shared implementation base for the package’s likelihood-backed GLM and KM-style inference classes. I would **not** flatten it.
+`InferenceAsympLikStdModCache` is not duplicative in the sense of a removable wrapper. It is a real shared implementation base for the package’s likelihood-backed GLM and KM-style inference classes. I would **not** flatten it.
 
 The class owns shared fit caching, estimate extraction, bootstrap worker reuse, randomization-inference reuse, standard-error extraction, degrees-of-freedom handling, and likelihood-test dispatch. If it were flattened into each concrete subclass, that logic would have to be copied into many children or moved into yet another replacement base class with effectively the same responsibility.
 
 ## What It Provides
 
-| Responsibility | Present in `InferenceMLEorKMforGLMs` | Why it matters |
+| Responsibility | Present in `InferenceAsympLikStdModCache` | Why it matters |
 |---|---:|---|
 | Shared treatment-estimate extraction | Yes | Concrete subclasses rely on `shared()` to populate `beta_hat_T`. |
 | Shared bootstrap worker path | Yes | Many subclasses reuse the design-backed bootstrap state. |
@@ -20,7 +20,7 @@ The class owns shared fit caching, estimate extraction, bootstrap worker reuse, 
 
 ## Evidence It Is Not Just a Wrapper
 
-The source file [EDI/R/inference_all_abstract_mle_or_KM_for_GLMs.R](../EDI/R/inference_all_abstract_mle_or_KM_for_GLMs.R) contains substantial private implementation:
+The source file [EDI/R/inference_all_abstract_asymp_lik_std_mod_cache.R](../EDI/R/inference_all_abstract_asymp_lik_std_mod_cache.R) contains substantial private implementation:
 
 - `shared()`
 - `generate_mod()` as an abstract hook used by subclasses
@@ -73,10 +73,10 @@ There is one nearby abstraction that still looks flattenable:
 |---|---|---|
 | `InferenceSurvivalStratCoxPHAbstract` | `InferenceSurvivalStratCoxPHRegr` | Candidate for flattening |
 
-That is a separate cleanup from `InferenceMLEorKMforGLMs`. The survival stratified Cox abstract is a single-child wrapper on top of this base class.
+That is a separate cleanup from `InferenceAsympLikStdModCache`. The survival stratified Cox abstract is a single-child wrapper on top of this base class.
 
 ## Recommendation
 
-Keep `InferenceMLEorKMforGLMs` as a shared implementation base.
+Keep `InferenceAsympLikStdModCache` as a shared implementation base.
 
-If the goal is hierarchy cleanup, focus on the single-child abstract wrappers above it, not this class. Flattening `InferenceMLEorKMforGLMs` would remove a useful seam and replace it with duplicated code or a new equivalent base under another name.
+If the goal is hierarchy cleanup, focus on the single-child abstract wrappers above it, not this class. Flattening `InferenceAsympLikStdModCache` would remove a useful seam and replace it with duplicated code or a new equivalent base under another name.

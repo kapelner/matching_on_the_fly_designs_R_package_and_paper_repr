@@ -12,8 +12,7 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 	inherit = DesignSeqOneByOneKK21,
 	public = list(
 		#'
-		#' @description
-		#' Initialize a matching-on-the-fly sequential experimental design which matches based on the
+		#' @description Initialize a matching-on-the-fly sequential experimental design which matches based on the
 		#' stepwise version of
 		#' Kapelner and Krieger (2021) with option to use matching parameters of Morrison and Owen
 		#' (2025)
@@ -104,7 +103,6 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 		}
 	),
 	private = list(
-
 		compute_weights = function(all_subject_data){ #stepwise function
 			xs = all_subject_data$X_all_with_y_scaled
 			ys = all_subject_data$y_all
@@ -115,7 +113,6 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 			# break, the remaining features retain NA. Replace NA with 0 so those features
 			# are simply excluded from distance matching rather than crashing the design.
 			na0 = function(w) { w[is.na(w)] = 0; w }
-
 			if (private$response_type == "continuous"){
 				return(na0(kk21_stepwise_continuous_weights_cpp(xs, ys, ws)))
 			}
@@ -149,7 +146,6 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 			if (private$response_type == "ordinal" && !private$ordinal_use_speedup){
 				return(na0(kk21_stepwise_ordinal_weights_cpp(xs, ys, ws)))
 			}
-
 			# Fallback for future response types (should not reach here for current types)
 			private[[paste0("compute_weights_KK21stepwise_", private$response_type)]](
 				xs,
@@ -158,12 +154,10 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 				deads
 			)
 		},
-
 		compute_weights_KK21stepwise = function(X, response_obj, ws, abs_z_compute_fun){
 			weights = array(NA, ncol(X))
 			j_droppeds = c()
 			X_stepwise = matrix(NA, nrow = nrow(X), ncol = 0)
-
 			repeat {
 				covs_to_try = setdiff(1 : ncol(X), j_droppeds)
 				if (length(covs_to_try) == 0){ #if there's none left, we jet
@@ -183,28 +177,22 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 #			}
 			weights
 		},
-
 		compute_weights_KK21stepwise_continuous = function(xs, ys, ws, ...){
 			private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){
 #				ols_mod = lm(response_obj ~ covariate_data_matrix)
 #				abs(stats::coef(suppressWarnings(summary(ols_mod)))[2, 3])
-
 				mod = fast_ols_with_var_cpp(cbind(1, covariate_data_matrix), response_obj)
 				abs(mod$b[2] / sqrt(mod$ssq_b_j))
 			})
 		},
-
 		compute_weights_KK21stepwise_incidence = function(xs, ys, ws, ...){
 			private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){
 #				logistic_regr_mod = suppressWarnings(glm(response_obj ~ covariate_data_matrix, family = "binomial"))
 #				abs(stats::coef(summary_glm_lean(logistic_regr_mod))[2, 3])
-
-
 				mod = fast_logistic_regression_with_var(cbind(1, covariate_data_matrix), response_obj)
 				abs(mod$b[2] / sqrt(mod$ssq_b_2))
 			})
 		},
-
 		compute_weights_KK21stepwise_count = function(xs, ys, ws, ...){
 			if (!private$count_use_speedup){
 				weight = private$compute_weights_KK21stepwise(xs, ys, ws, function(response_obj, covariate_data_matrix){
@@ -219,7 +207,6 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 			}
 			private$compute_weights_KK21stepwise_continuous(xs, log(ys + 1), ws, ...)
 		},
-
 		compute_weights_KK21stepwise_proportion = function(xs, ys, ws, ...){
 			if (!private$proportion_use_speedup){
 				tryCatch({
@@ -237,7 +224,6 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 			ys[ys == 1] = 1 - .Machine$double.eps
 			private$compute_weights_KK21stepwise_continuous(xs, log(ys / (1 - ys)), ws, ...)
 		},
-
 		compute_weights_KK21stepwise_survival = function(xs, ys, ws, deaths){
 			private$compute_weights_KK21stepwise(xs, survival::Surv(ys, deaths), ws, function(response_obj, covariate_data_matrix){
 				#sometimes the weibull is unstable... so try other distributions... this doesn't matter since we are just trying to get weights
@@ -263,7 +249,6 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 				abs(stats::coef(suppressWarnings(summary(ols_mod)))[2, 3])
 			})
 		},
-
 		compute_weights_KK21stepwise_ordinal = function(xs, ys, ws, ...){
 			if (!private$ordinal_use_speedup){
 				tryCatch({

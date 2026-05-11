@@ -43,7 +43,7 @@ The package currently has **37** R likelihood-spec entry points (`get_likelihood
 
 That means “all likelihood paths” spans several distinct families, not one homogeneous regression stack:
 
-- ordinary GLM-style models under [EDI/R/inference_all_abstract_mle_or_KM_for_GLMs.R](/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI/R/inference_all_abstract_mle_or_KM_for_GLMs.R)
+- ordinary GLM-style models under [EDI/R/inference_all_abstract_asymp_lik_std_mod_cache.R](/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI/R/inference_all_abstract_asymp_lik_std_mod_cache.R)
 - count-likelihood models under [EDI/R/inference_count_likelihood.R](/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI/R/inference_count_likelihood.R)
 - companion-likelihood count models such as [EDI/R/inference_count_quasipoisson.R](/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI/R/inference_count_quasipoisson.R) and [EDI/R/inference_count_robust_poisson.R](/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI/R/inference_count_robust_poisson.R)
 - ordinal likelihood models with threshold parameters

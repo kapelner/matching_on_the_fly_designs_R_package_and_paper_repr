@@ -23,9 +23,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
-
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -46,17 +44,13 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-
-		#' @description
-		#' Returns the combined-likelihood estimate of the treatment effect.
+		#' @description Returns the combined-likelihood estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes an asymptotic confidence interval for the treatment effect.
+		#' @description Computes an asymptotic confidence interval for the treatment effect.
 		#' @param alpha Significance level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -71,9 +65,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Computes an asymptotic two-sided p-value for the treatment effect.
+		#' @description Computes an asymptotic two-sided p-value for the treatment effect.
 		#' @param delta Null treatment effect value.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -89,29 +81,23 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
-
 	private = list(
 			max_abs_reasonable_coef = 1e4,
-
 			get_standard_error = function(){
 				private$shared_combined_likelihood(estimate_only = FALSE)
 				se = private$compute_standard_error_from_information_matrix()
 				if (is.finite(se)) return(se)
 				private$cached_values$s_beta_hat_T
 			},
-
 			get_degrees_of_freedom = function(){
 				private$cached_values$df %||% NA_real_
 			},
-
 			supports_likelihood_tests = function(){
 				TRUE
 			},
-
 			supports_fisher_information = function(){
 				TRUE
 			},
-
 			get_likelihood_test_spec = function(){
 				private$shared_combined_likelihood(estimate_only = FALSE)
 				ctx = private$cached_values$likelihood_test_context
@@ -152,7 +138,6 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 					}
 				)
 			},
-
 			fit_combined_logistic_candidate = function(X_comb, y_comb, j_beta_T, estimate_only = FALSE){
 			tryCatch(
 				if (estimate_only) {
@@ -163,21 +148,18 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 				error = function(e) NULL
 			)
 		},
-
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
 			}
 		},
-
 		# Fit the combined logistic likelihood over discordant matched-pair differences
 		# and reservoir observations with SHARED covariate effects beta_xs.
 			shared_combined_likelihood = function(estimate_only = FALSE){
 				if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 				if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 				private$cached_values$likelihood_test_context = NULL
-
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
 			}
@@ -185,15 +167,12 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 			m   = KKstats$m
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
-
 			p             = ncol(as.matrix(private$X))
 			has_reservoir = nRT > 0 && nRC > 0
-
 			# ---- Build combined design matrix ------------------------------------
 			X_comb   = NULL
 			y_comb   = NULL
 			j_beta_T = 2L
-
 			if (m > 0){
 				m_vec = private$m
 				if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
@@ -203,7 +182,6 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 				w_m      = private$w[i_matched]
 				strata_m = m_vec[i_matched]
 				X_mat    = if (p > 0L) as.matrix(private$get_X()[i_matched, drop = FALSE]) else matrix(nrow = length(y_m), ncol = 0L)
-
 				if (has_reservoir){
 					y_r    = KKstats$y_reservoir
 					w_r    = KKstats$w_reservoir
@@ -231,15 +209,12 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 				X_comb = if (p > 0L) cbind(1, w_r, as.matrix(KKstats$X_reservoir)) else cbind(1, w_r)
 				y_comb = y_r
 			}
-
 			if (is.null(X_comb)){
 				private$cache_nonestimable_estimate("kk_clogit_combined_no_informative_data")
 				return(invisible(NULL))
 			}
-
 			colnames(X_comb) = paste0("x", seq_len(ncol(X_comb)))
 			colnames(X_comb)[j_beta_T] = "beta_T"
-
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_comb,
 				required_cols = j_beta_T,
@@ -268,7 +243,6 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 				private$cache_nonestimable_estimate("kk_clogit_combined_extreme_coefficients")
 				return(invisible(NULL))
 			}
-
 				private$cached_values$beta_hat_T   = as.numeric(mod$b[j_beta_T])
 				private$cached_mod = mod
 				private$cached_values$likelihood_test_context = list(
@@ -307,9 +281,7 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
-
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -330,17 +302,13 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-
-		#' @description
-		#' Returns the estimated treatment effect (log-odds ratio).
+		#' @description Returns the estimated treatment effect (log-odds ratio).
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes the asymptotic confidence interval.
+		#' @description Computes the asymptotic confidence interval.
 		#' @param alpha                                   The confidence level in the computed
 		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -353,9 +321,7 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Computes the asymptotic p-value.
+		#' @description Computes the asymptotic p-value.
 		#' @param delta                                   The null difference to test against. Default is 0.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -367,9 +333,7 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-
-		#' @description
-		#' Duplicates the object while preserving caches.
+		#' @description Duplicates the object while preserving caches.
 		#' @param verbose Whether the duplicate should be verbose.
 		#' @param make_fork_cluster Whether the duplicate should be allowed to create a fork cluster.
 		duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){
@@ -377,20 +341,16 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			inf_obj
 		}
 	),
-
 	private = list(
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design and parameters from the original data
 			if (is.null(private$best_X_colnames_matched) && is.null(private$best_X_colnames_reservoir)){
 				private$shared()
 			}
-
 			# If we still don't have enough (e.g., initial fit failed), fall back to standard
 			if (is.null(private$best_X_colnames_matched) && is.null(private$best_X_colnames_reservoir)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
 			}
@@ -398,9 +358,7 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			m = KKstats$m
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
-
 			X_data = private$get_X()
-
 			# Matched pairs component (Clogit)
 			beta_m = NA_real_
 			ssq_m = NA_real_
@@ -409,10 +367,8 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 				if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 				m_vec[is.na(m_vec)] = 0L
 				i_matched = which(m_vec > 0L)
-
 				X_cov = X_data[i_matched, intersect(private$best_X_colnames_matched, colnames(X_data)), drop = FALSE]
 				X = cbind(w = private$w[i_matched], X_cov)
-
 				fit_m = clogit_helper(
 					y_m = private$y[i_matched],
 					X_m = X_cov,
@@ -426,7 +382,6 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 					}
 				}
 			}
-
 			# Reservoir component (Logistic)
 			beta_r = NA_real_
 			ssq_r = NA_real_
@@ -435,10 +390,8 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 				if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 				m_vec[is.na(m_vec)] = 0L
 				i_reservoir = which(m_vec == 0L)
-
 				X_cov = X_data[i_reservoir, intersect(private$best_X_colnames_reservoir, colnames(X_data)), drop = FALSE]
 				X = cbind(`(Intercept)` = 1, w = private$w[i_reservoir], X_cov)
-
 				fit_r = fast_logistic_regression_with_var(
 					X = X,
 					y = private$y[i_reservoir],
@@ -452,11 +405,9 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 					}
 				}
 			}
-
 			# Inverse-variance weighted pooling
 			m_ok = is.finite(beta_m) && (!estimate_only && is.finite(ssq_m) || estimate_only)
 			r_ok = is.finite(beta_r) && (!estimate_only && is.finite(ssq_r) || estimate_only)
-
 			if (m_ok && r_ok){
 				if (estimate_only) {
 					ssq_m_orig = private$cached_values$ssq_beta_T_matched
@@ -476,25 +427,19 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			}
 			NA_real_
 		},
-
 		best_X_colnames_matched = NULL,
 		best_X_colnames_reservoir = NULL,
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
 			}
-
 			KKstats = private$cached_values$KKstats
 			m = KKstats$m
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
-
 			if (m > 0){
 				private$clogit_for_matched_pairs(estimate_only = estimate_only)
 			}
@@ -502,7 +447,6 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			ssq_m = private$cached_values$ssq_beta_T_matched
 			m_ok = !is.null(beta_m) && is.finite(beta_m) && 
 			       (!estimate_only && !is.null(ssq_m) && is.finite(ssq_m) && ssq_m > 0 || estimate_only)
-
 			if (nRT > 0 && nRC > 0){
 				private$logistic_for_reservoir(estimate_only = estimate_only)
 			}
@@ -510,7 +454,6 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			ssq_r = private$cached_values$ssq_beta_T_reservoir
 			r_ok = !is.null(beta_r) && is.finite(beta_r) &&
 			       (!estimate_only && !is.null(ssq_r) && is.finite(ssq_r) && ssq_r > 0 || estimate_only)
-
 			if (m_ok && r_ok){
 				w_star = ssq_r / (ssq_r + ssq_m)
 				private$cached_values$beta_hat_T = w_star * beta_m + (1 - w_star) * beta_r
@@ -527,24 +470,19 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 				private$cached_values$s_beta_hat_T = NA_real_
 			}
 		},
-
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
 			}
 		},
-
 		clogit_for_matched_pairs = function(estimate_only = FALSE){
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
-
 			i_matched = which(m_vec > 0L)
 			if (length(i_matched) == 0L) return(invisible(NULL))
-
 			X_data = private$get_X()
 			X_matched = X_data[i_matched, , drop = FALSE]
-
 			fit = clogit_helper(
 				y_m = private$y[i_matched],
 				X_m = X_matched,
@@ -558,19 +496,15 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 				private$best_X_colnames_matched = if (is.null(X_matched) || ncol(X_matched) == 0) character(0) else colnames(X_matched)
 			}
 		},
-
 		logistic_for_reservoir = function(estimate_only = FALSE){
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
-
 			i_reservoir = which(m_vec == 0L)
 			if (length(i_reservoir) == 0L) return(invisible(NULL))
-
 			X_data = private$get_X()
 			X_reservoir = X_data[i_reservoir, , drop = FALSE]
 			X_full = cbind(`(Intercept)` = 1, w = private$w[i_reservoir], X_reservoir)
-
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
 				required_cols = 2L, # intercept and treatment
@@ -619,8 +553,7 @@ InferenceIncidKKClogitIVWC = R6::R6Class("InferenceIncidKKClogitIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKClogitIVWC,
 	public = list(
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj A completed \code{DesignSeqOneByOneKK14} object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -632,7 +565,6 @@ InferenceIncidKKClogitIVWC = R6::R6Class("InferenceIncidKKClogitIVWC",
 		}
 	)
 )
-
 #' Conditional-Logistic Inference for KK Designs with Combined Likelihood
 #'
 #' Fits a conditional-logistic regression for binary (incidence) responses under
@@ -653,8 +585,7 @@ InferenceIncidKKClogitOneLik = R6::R6Class("InferenceIncidKKClogitOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKClogitOneLik,
 	public = list(
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj A completed \code{DesignSeqOneByOneKK14} object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is

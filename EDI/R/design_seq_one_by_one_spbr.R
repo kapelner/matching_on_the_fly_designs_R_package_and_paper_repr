@@ -11,8 +11,7 @@
 DesignSeqOneByOneSPBR = R6::R6Class("DesignSeqOneByOneSPBR",
 	inherit = DesignSeqOneByOne,
 	public = list(
-		#' @description
-		#' Initialize a stratified permuted block sequential experimental design
+		#' @description Initialize a stratified permuted block sequential experimental design
 		#'
 		#' @param strata_cols A character vector of column names to use for stratification.
 		#' @param block_size The size of the permuted blocks.
@@ -51,9 +50,7 @@ DesignSeqOneByOneSPBR = R6::R6Class("DesignSeqOneByOneSPBR",
 				}
 			}
 		},
-
-		#' @description
-		#' Assign the next subject to a treatment group
+		#' @description Assign the next subject to a treatment group
 		#'
 		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){
@@ -72,9 +69,7 @@ DesignSeqOneByOneSPBR = R6::R6Class("DesignSeqOneByOneSPBR",
 			private$strata_states[[key]] = block[-1]
 			w_t
 		},
-
-		#' @description
-		#' Draw multiple treatment assignment vectors according to SPBR design.
+		#' @description Draw multiple treatment assignment vectors according to SPBR design.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'
@@ -96,7 +91,6 @@ DesignSeqOneByOneSPBR = R6::R6Class("DesignSeqOneByOneSPBR",
 		strata_cols = NULL,
 		block_size = NULL,
 		strata_states = NULL,
-
 		draw_bootstrap_indices = function(bootstrap_type = NULL){
 			strata_keys = vapply(1:private$t, function(i) {
 				private$get_strata_key(private$Xraw[i, ])
@@ -109,7 +103,6 @@ DesignSeqOneByOneSPBR = R6::R6Class("DesignSeqOneByOneSPBR",
 				list(i_b = as.integer(i_b), m_vec_b = NULL)
 			}
 		},
-
 		get_strata_key = function(x_row) {
 			vals = vapply(private$strata_cols, function(col) {
 				val = x_row[[col]]
@@ -117,6 +110,5 @@ DesignSeqOneByOneSPBR = R6::R6Class("DesignSeqOneByOneSPBR",
 			}, character(1))
 			paste(vals, collapse = "|")
 		}
-
 	)
 )

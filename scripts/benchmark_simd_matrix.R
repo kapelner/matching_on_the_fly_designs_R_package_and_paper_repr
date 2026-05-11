@@ -74,10 +74,10 @@ summary <- aggregate(
 summary_expanded <- data.frame(
   build = summary$build,
   kernel = summary$kernel,
-  median_elapsed = vapply(summary$elapsed, `[[`, numeric(1), "median"),
-  mean_elapsed = vapply(summary$elapsed, `[[`, numeric(1), "mean"),
-  min_elapsed = vapply(summary$elapsed, `[[`, numeric(1), "min"),
-  max_elapsed = vapply(summary$elapsed, `[[`, numeric(1), "max"),
+  median_elapsed = summary$elapsed[, "median"],
+  mean_elapsed = summary$elapsed[, "mean"],
+  min_elapsed = summary$elapsed[, "min"],
+  max_elapsed = summary$elapsed[, "max"],
   stringsAsFactors = FALSE
 )
 

@@ -13,8 +13,7 @@
 DesignFixedAOptimal = R6::R6Class("DesignFixedAOptimal",
 	inherit = DesignFixed,
 	public = list(
-		#' @description
-		#' Initialize an A-optimal search fixed experimental design
+		#' @description Initialize an A-optimal search fixed experimental design
 		#'
 		#' @param response_type "continuous", "incidence", "proportion", "count", "survival", or
 		#'   "ordinal".
@@ -45,10 +44,7 @@ DesignFixedAOptimal = R6::R6Class("DesignFixedAOptimal",
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 			private$uses_covariates = TRUE
 		},
-
-
-		#' @description
-		#' Draw treatment assignments according to the A-optimal search fixed design.
+		#' @description Draw treatment assignments according to the A-optimal search fixed design.
 		#'
 		#' @param r Number of designs to draw.
 		#'
@@ -61,7 +57,6 @@ DesignFixedAOptimal = R6::R6Class("DesignFixedAOptimal",
 			if (is.null(private$X) || ncol(private$X) == 0){
 				return(replicate(r, sample(c(rep(1, n/2), rep(0, n/2)))))
 			}
-
 			if (is.null(private$P)){
 				X = private$X[1:n, , drop = FALSE]
 				Z0 = cbind(1, X)
@@ -82,7 +77,6 @@ DesignFixedAOptimal = R6::R6Class("DesignFixedAOptimal",
 				H_kernel = M %*% M
 				private$H = Z0 %*% H_kernel %*% t(Z0)
 			}
-
 			# Use C++ speedup
 			res = a_optimal_search_cpp(private$P, private$H, as.integer(r), as.integer(round(n * private$prob_T)))
 			w_mat = res
@@ -90,7 +84,6 @@ DesignFixedAOptimal = R6::R6Class("DesignFixedAOptimal",
 			w_mat
 		}
 	),
-
 	private = list(
 		P = NULL, # Projection matrix
 		H = NULL  # Trace-inverse kernel matrix

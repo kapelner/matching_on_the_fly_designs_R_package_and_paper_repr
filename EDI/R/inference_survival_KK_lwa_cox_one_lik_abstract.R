@@ -10,9 +10,7 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
-
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -30,17 +28,13 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		},
-
-		#' @description
-		#' Returns the combined-likelihood estimate of the treatment effect.
+		#' @description Returns the combined-likelihood estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Compute an asymptotic confidence interval.
+		#' @description Compute an asymptotic confidence interval.
 		#' @param alpha Significance level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -52,9 +46,7 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Compute an asymptotic two-sided p-value.
+		#' @description Compute an asymptotic two-sided p-value.
 		#' @param delta Null treatment effect value.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -67,29 +59,23 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
-
 	private = list(
 		max_abs_reasonable_coef = 1e4,
 		best_X_colnames = NULL,
 		optimization_alg = "lbfgs",
-
 		get_standard_error = function(){
 			private$shared_combined_likelihood()
 			as.numeric(private$cached_values$s_beta_hat_T)
 		},
-
 		get_degrees_of_freedom = function() Inf,
-
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
 			}
 		},
-
 		supports_likelihood_tests = function(){
 			isTRUE(private$use_rcpp)
 		},
-
 		get_likelihood_test_spec = function(){
 			private$shared_combined_likelihood(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context
@@ -142,7 +128,6 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 				}
 			)
 		},
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Re-read w, y, dead because they might have been transformed for randomization
 			private$w = private$des_obj_priv_int$w
@@ -160,7 +145,6 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 			if (is.null(private$best_X_colnames)){
 				return(NA_real_)
 			}
-
 			X_data = private$get_X()
 			X_full = matrix(private$w, ncol = 1)
 			colnames(X_full) = "w"
@@ -172,7 +156,6 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
-
 			# Clusters: pairs + reservoir
 			cluster_ids = m_vec
 			res_idx = which(cluster_ids == 0L)
@@ -180,7 +163,6 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 				max_m = if (any(cluster_ids > 0)) max(cluster_ids) else 0L
 				cluster_ids[res_idx] = max_m + seq_along(res_idx)
 			}
-
 			fit = tryCatch(
 				fast_coxph_regression_cpp(
 					X = as.matrix(X_full),
@@ -195,7 +177,6 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 			if (is.null(fit) || length(fit$coefficients) < 1 || !is.finite(fit$coefficients[1])) return(NA_real_)
 			as.numeric(fit$coefficients[1])
 		},
-
 		design_matrix_candidates = function(){
 			X_full = matrix(private$w, ncol = 1)
 			colnames(X_full) = "w"
@@ -205,20 +186,16 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 			}
 			X_full
 		},
-
 		shared_combined_likelihood = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 			private$clear_nonestimable_state()
-
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
 			}
-
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
-
 			# Clusters: pairs + reservoir
 			cluster_ids = m_vec
 			res_idx = which(cluster_ids == 0L)
@@ -226,9 +203,7 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 				max_m = max(cluster_ids)
 				cluster_ids[res_idx] = max_m + seq_along(res_idx)
 			}
-
 			X_full = private$design_matrix_candidates()
-
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
 				required_cols = 1L, # treatment
@@ -269,7 +244,6 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 				}
 				return(invisible(NULL))
 			}
-
 			private$cache_nonestimable_estimate("kk_lwa_cox_combined_fit_failed")
 			invisible(NULL)
 		}

@@ -10,8 +10,7 @@
 DesignSeqOneByOneiBCRD = R6::R6Class("DesignSeqOneByOneiBCRD",
 	inherit = DesignSeqOneByOne,
 	public = list(
-		#' @description
-		#' Initialize a balanced sequential experimental design
+		#' @description Initialize a balanced sequential experimental design
 		#'
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or
 		#'   "ordinal".
@@ -35,9 +34,7 @@ DesignSeqOneByOneiBCRD = R6::R6Class("DesignSeqOneByOneiBCRD",
 			) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 		},
-
-		#' @description
-		#' Adds a subject and assigns treatment.
+		#' @description Adds a subject and assigns treatment.
 		#' Sets a single-block match vector once all subjects have arrived.
 		#' @param x_new A data frame with one row representing the new subject's covariates.
 		#' @return The treatment assignment (0 or 1).
@@ -46,9 +43,7 @@ DesignSeqOneByOneiBCRD = R6::R6Class("DesignSeqOneByOneiBCRD",
 			private$m = rep(1L, private$t)
 			w_t
 		},
-
-		#' @description
-		#' Assign the next subject to a treatment group
+		#' @description Assign the next subject to a treatment group
 		#'
 		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){
@@ -70,9 +65,7 @@ DesignSeqOneByOneiBCRD = R6::R6Class("DesignSeqOneByOneiBCRD",
 				rbinom(1, 1, nT_rem / (nT_rem + nC_rem))
 			}
 		},
-
-		#' @description
-		#' Draw multiple treatment assignment vectors according to balanced randomization.
+		#' @description Draw multiple treatment assignment vectors according to balanced randomization.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'

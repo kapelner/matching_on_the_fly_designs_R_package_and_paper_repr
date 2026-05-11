@@ -19,8 +19,7 @@ InferenceIncidKKGEE = R6::R6Class("InferenceIncidKKGEE",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGEE,
 	public = list(
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj A completed \code{Design} object with an incidence response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -42,7 +41,6 @@ InferenceIncidKKGEE = R6::R6Class("InferenceIncidKKGEE",
 		gee_family        = function() stats::binomial(link = "logit")
 	)
 )
-
 #' GLMM Inference for KK Designs with Binary Response
 #'
 #' Fits a Generalized Linear Mixed Model (GLMM) for binary (incidence) responses
@@ -68,8 +66,7 @@ InferenceIncidKKGLMM = R6::R6Class("InferenceIncidKKGLMM",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKGLMM,
 	public = list(
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj A completed \code{Design} object with an incidence response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -93,7 +90,6 @@ InferenceIncidKKGLMM = R6::R6Class("InferenceIncidKKGLMM",
 		use_rcpp = TRUE,
 		glmm_response_type  = function() "incidence",
 		glmm_family         = function() stats::binomial(link = "logit"),
-
 		shared = function(estimate_only = FALSE){
 			if (private$use_rcpp) {
 				private$shared_rcpp(estimate_only)
@@ -101,13 +97,11 @@ InferenceIncidKKGLMM = R6::R6Class("InferenceIncidKKGLMM",
 				super$shared(estimate_only)
 			}
 		},
-
 			shared_rcpp = function(estimate_only = FALSE){
 				if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 				if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 				private$clear_nonestimable_state()
 				private$cached_values$likelihood_test_context = NULL
-
 				m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
@@ -115,7 +109,6 @@ InferenceIncidKKGLMM = R6::R6Class("InferenceIncidKKGLMM",
 			reservoir_idx = which(group_id == 0L)
 			if (length(reservoir_idx) > 0L)
 				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
-
 			# X WITH intercept; treatment is at 0-based index j_T = 1 (second column)
 			if (ncol(as.matrix(private$X)) > 0){
 				X_fit = private$create_design_matrix()
@@ -124,13 +117,11 @@ InferenceIncidKKGLMM = R6::R6Class("InferenceIncidKKGLMM",
 			}
 			X_fit = as.matrix(X_fit)
 			j_T = 1L  # 0-based index of treatment column
-
 			y_vals = as.numeric(private$y)
 			finite_y = y_vals[is.finite(y_vals)]
 			if (length(finite_y) == 0L || any(finite_y < 0) || any(finite_y > 1)) {
 				return(super$shared(estimate_only = estimate_only))
 			}
-
 			fit = tryCatch(
 				fast_logistic_glmm_cpp(
 					X        = X_fit,
@@ -143,18 +134,14 @@ InferenceIncidKKGLMM = R6::R6Class("InferenceIncidKKGLMM",
 				),
 				error = function(e) NULL
 			)
-
 				if (is.null(fit) || !isTRUE(fit$converged)) {
 					return(super$shared(estimate_only = estimate_only))
 				}
-
 			# b[j_T+1] in R 1-based = treatment coefficient
 			beta_hat_T = as.numeric(fit$b[j_T + 1L])
-
 				if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
 					return(super$shared(estimate_only = estimate_only))
 				}
-
 				private$cached_mod = fit
 				private$cached_values$likelihood_test_context = list(
 					X = X_fit,
@@ -166,9 +153,7 @@ InferenceIncidKKGLMM = R6::R6Class("InferenceIncidKKGLMM",
 				)
 				private$cached_values$beta_hat_T = beta_hat_T
 			private$cached_values$df   = Inf
-
 			if (estimate_only) return(invisible(NULL))
-
 			ssq = fit$ssq_b_T
 			private$cached_values$s_beta_hat_T = if (!is.null(ssq) && is.finite(ssq) && ssq > 0) sqrt(ssq) else NA_real_
 		}

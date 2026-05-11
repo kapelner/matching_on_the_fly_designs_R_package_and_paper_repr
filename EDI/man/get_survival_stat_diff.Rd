@@ -3,7 +3,7 @@
 \name{get_survival_stat_diff}
 \alias{get_survival_stat_diff}
 \title{Calculates the difference in a survival statistic (median or restricted mean)
-between two groups (treatment vs. control).}
+between two groups (treatment vs control)}
 \usage{
 get_survival_stat_diff(y, dead, w, requested_stat)
 }
@@ -21,6 +21,6 @@ The difference in the statistic (treatment - control).
 }
 \description{
 Calculates the difference in a survival statistic (median or restricted mean)
-between two groups (treatment vs. control).
+between two groups (treatment vs control)
 }
 \keyword{internal}

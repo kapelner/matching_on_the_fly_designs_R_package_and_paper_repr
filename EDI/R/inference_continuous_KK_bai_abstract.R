@@ -12,9 +12,7 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
-
-	#' @description
-	#' Initialize a sequential experimental design estimation and test object after the
+	#' @description Initialize a sequential experimental design estimation and test object after the
 	#' sequential design is completed.
 		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
 		#'   and response y is recorded within.
@@ -40,10 +38,8 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 			assertNoCensoring(private$any_censoring)
 		}
 	},
-
 	#'
-	#' @description
-	#' Computes the appropriate estimate for compound mean difference across pairs and reservoir
+	#' @description Computes the appropriate estimate for compound mean difference across pairs and reservoir
 	#'
 	#' @return 	The setting-appropriate (see description) numeric estimate of the treatment effect
 	#'
@@ -74,7 +70,6 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		no_matches = !is.finite(m) || m <= 1
 		has_matched_est = is.finite(KKstats$d_bar)
 		has_reservoir_est = is.finite(KKstats$r_bar)
-
 		private$cached_values$beta_hat_T =
 			if (reservoir_unusable && has_matched_est){
 				KKstats$d_bar
@@ -95,9 +90,7 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 			}
 		private$cached_values$beta_hat_T
 	},
-
-	#' @description
-	#' Computes a 1-alpha level frequentist confidence interval
+	#' @description Computes a 1-alpha level frequentist confidence interval
 	#'
 	#' Here we use the theory that MLE's computed for GLM's are asymptotically normal
 	#' (except in the case
@@ -138,9 +131,7 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		}
 		private$compute_z_or_t_ci_from_s_and_df(alpha)
 	},
-
-	#' @description
-	#' Computes a 2-sided p-value
+	#' @description Computes a 2-sided p-value
 	#'
 	#' @param delta   The null difference to test against. For any treatment effect at all
 	#'   this is set to zero (the default).
@@ -175,10 +166,8 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		2 * stats::pnorm(
 		 -abs(private$cached_values$beta_hat_T / private$cached_values$s_beta_hat_T)
 		) #approximate by using N(0, 1) distribution
-
 	}
 	),
-
 	private = list(
 	convex_flag = NULL,
 	compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps) {
@@ -222,7 +211,6 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 		if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
 		if (is.null(private$cached_values$KKstats$d_bar)) private$compute_reservoir_and_match_statistics()
 		KKstats = private$cached_values$KKstats
@@ -259,12 +247,9 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		yC = private$cached_values$KKstats$yCs_matched,
 		d_i = private$cached_values$KKstats$y_matched_diffs
 		)
-
 		halves = private$compute_halves()
-
 		delta_sq = mean(pairs_df$d_i)^2
 		tau_sq = mean(pairs_df$d_i^2)
-
 		# lambda_squ^2 term
 		lambda_squ = 0
 		if (nrow(halves) > 0){
@@ -275,7 +260,6 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		}
 		}
 		v_sq = tau_sq - (lambda_squ + delta_sq) / 2
-
 		########################## alternative bai estimate, does not work ####################
 		# if(private$aultimate_bai) {
 		#   # This implements the estimator from Remark 3.11, Equation (28) in Bai et al. (2022)
@@ -308,7 +292,6 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		#
 		# } else {
 		######################################################################################
-
 		# The variance cannot be negative.
 		max(v_sq, 1e-8)
 	},
@@ -317,21 +300,16 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		
 		m = private$cached_values$KKstats$m
 		if (m < 2) return(data.frame()) # Cannot make pairs of pairs if there's < 2 pairs
-
 		X = private$get_X()
-
 		pair_avg = compute_pair_averages_cpp(X, private$des_obj_priv_int$m, m)
-
 		weights = private$des_obj_priv_int$covariate_weights
 		if (is.null(weights) || length(weights) != ncol(pair_avg)){
 		weights = numeric()
 		}
 		dist_mat = compute_pair_distance_matrix_cpp(pair_avg, weights)
-
 		# Use nbpMatching to find the optimal pairing of the pairs to minimize total distance
 		dist_obj = suppressWarnings(nbpMatching::distancematrix(dist_mat))
 		match_obj = suppressWarnings(nbpMatching::nonbimatch(dist_obj))
-
 		halves = match_obj$halves
 		# If there's an odd number of pairs, remove the "ghost" match
 		if (m %% 2 == 1){

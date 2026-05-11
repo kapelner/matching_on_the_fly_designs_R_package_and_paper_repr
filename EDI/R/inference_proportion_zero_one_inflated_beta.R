@@ -24,11 +24,9 @@
 #' @export
 InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflatedBetaRegr",
 	lock_objects = FALSE,
-	inherit = InferenceMLEorKMforGLMs,
+	inherit = InferenceAsympLikStdModCache,
 	public = list(
-
-		#' @description
-		#' Initialize a zero-one-inflated beta regression inference object.
+		#' @description Initialize a zero-one-inflated beta regression inference object.
 		#' @param des_obj A completed \code{Design} object with a proportion response.
 		#' @param model_formula Optional formula for covariate adjustment. If \code{NULL}
 		#'   (default), the formula from the design object is used and its pre-computed
@@ -45,10 +43,8 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 			}
 		}
 	),
-
 	private = list(
 		best_X_colnames = NULL,
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -56,7 +52,6 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-
 			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 			X = if (length(X_cols) == 0L) {
@@ -64,7 +59,6 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 			} else {
 				cbind(`(Intercept)` = 1, treatment = private$w, X_data[, X_cols, drop = FALSE])
 			}
-
 			res = tryCatch(
 				fast_zero_one_inflated_beta_cpp(X, private$y, init = rep(0, ncol(X) + 3)),
 				error = function(e) NULL
@@ -72,15 +66,12 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 			if (is.null(res) || length(res$b) < 2 || !is.finite(res$b[2])) return(NA_real_)
 			as.numeric(res$b[2])
 		},
-
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
-
 		supports_likelihood_tests = function(){
 			TRUE
 		},
-
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context
@@ -122,7 +113,6 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 				neg_loglik = function(fit){ as.numeric(fit$neg_loglik) }
 			)
 		},
-
 		generate_mod = function(estimate_only = FALSE){
 			X_data = private$get_X()
 			X_full = if (is.null(X_data) || ncol(X_data) == 0) {
@@ -130,7 +120,6 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 			} else {
 				cbind(`(Intercept)` = 1, treatment = private$w, X_data)
 			}
-
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
 				required_cols = 2L,
@@ -162,7 +151,6 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 					is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
 				}
 			)
-
 			if (!is.null(attempt$fit)){
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(

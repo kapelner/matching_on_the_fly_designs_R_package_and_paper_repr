@@ -9,8 +9,7 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 	lock_objects = FALSE,
 	inherit = InferenceExact,
 	public = list(
-		#' @description
-		#' Initialize exact Fisher inference for incidence outcomes.
+		#' @description Initialize exact Fisher inference for incidence outcomes.
 		#' @param des_obj A completed design object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -27,19 +26,15 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-
-		#' @description
-		#' Compute the Fisher exact treatment estimate on the log-odds scale.
+		#' @description Compute the Fisher exact treatment estimate on the log-odds scale.
 		#' @param estimate_only Ignored for this estimator.
 		#' @return The treatment estimate.
 		compute_estimate = function(estimate_only = FALSE){
 			private$get_exact_fisher_log_or_estimate()
 		}
 	),
-
 	private = list(
 		default_exact_type = "Fisher",
-
 		resolve_exact_type = function(type){
 			if (is.null(type)) type = private$default_exact_type
 			if (should_run_asserts()) {
@@ -47,7 +42,6 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 			}
 			type
 		},
-
 		normalize_exact_inference_args = function(type, args_for_type = NULL){
 			if (should_run_asserts()) {
 				assertChoice(type, c("Fisher"))
@@ -55,7 +49,6 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 			}
 			utils::modifyList(setNames(list(list()), type), if (is.null(args_for_type)) list() else args_for_type)
 		},
-
 		assert_exact_inference_params = function(type, args_for_type){
 			if (should_run_asserts()) {
 				assertChoice(type, c("Fisher"))
@@ -75,7 +68,6 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 			}
 			invisible(args)
 		},
-
 		compute_exact_confidence_interval_by_type = function(type, alpha, args_for_type){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -85,7 +77,6 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 				Fisher = private$ci_exact_fisher(alpha)
 			)
 		},
-
 		compute_exact_two_sided_pval_for_treatment_effect_by_type = function(type, delta, args_for_type){
 			if (should_run_asserts()) {
 				assertNumeric(delta, len = 1)
@@ -95,35 +86,29 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 				Fisher = private$pval_exact_fisher(delta)
 			)
 		},
-
 		design_supports_exact_fisher = function(){
 				is(private$des_obj, "DesignSeqOneByOneiBCRD") ||
 					is(private$des_obj, "DesignFixediBCRD") ||
 					private$is_supported_blocking_design(private$des_obj) ||
 					private$has_match_structure
 		},
-
 		is_supported_blocking_design = function(des_obj){
 			is(des_obj, "DesignFixedBlocking") ||
 				is(des_obj, "DesignSeqOneByOneSPBR") ||
 				is(des_obj, "DesignSeqOneByOneRandomBlockSize")
 		},
-
 		pval_exact_fisher = function(delta_0){
 			as.numeric(private$get_exact_fisher_htest(delta_0 = delta_0)$p.value)
 		},
-
 		ci_exact_fisher = function(alpha){
 			test = private$get_exact_fisher_htest(alpha = alpha, delta_0 = 0)
 			ci = log(as.numeric(test$conf.int))
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 			ci
 		},
-
 		get_exact_fisher_log_or_estimate = function(){
 			log(as.numeric(private$get_exact_fisher_htest()$estimate[[1]]))
 		},
-
 		get_exact_fisher_htest = function(alpha = 0.05, delta_0 = 0){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -151,7 +136,6 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 				conf.level = conf_level
 			)
 		},
-
 		get_exact_fisher_tables = function(){
 			if (!is.null(private$cached_values$incid_exact_fisher_tables)) {
 				return(private$cached_values$incid_exact_fisher_tables)
@@ -167,7 +151,6 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 			private$cached_values$incid_exact_fisher_tables = fisher_tables
 			fisher_tables
 		},
-
 		build_exact_fisher_tables_blocking = function(){
 			strata_cols = private$des_obj_priv_int$strata_cols
 			if (is.null(strata_cols) || length(strata_cols) == 0L) {
@@ -180,14 +163,12 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 			strata_indices = split(seq_len(private$n), strata_keys)
 			private$format_exact_fisher_tables(lapply(strata_indices, private$build_exact_fisher_2x2_table))
 		},
-
 		get_exact_fisher_strata_key = function(x_row, strata_cols){
 			paste(vapply(strata_cols, function(col){
 				val = x_row[[col]]
 				if (is.na(val)) "NA" else as.character(val)
 			}, character(1)), collapse = "|")
 		},
-
 		build_exact_fisher_tables_kk = function(){
 			m_vec = private$des_obj_priv_int$m
 			if (should_run_asserts()) {
@@ -208,7 +189,6 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 			}
 			private$format_exact_fisher_tables(table_list)
 		},
-
 		build_exact_fisher_2x2_table = function(indices){
 			i_t = private$w[indices] == 1L
 			i_c = private$w[indices] == 0L
@@ -225,7 +205,6 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 				dimnames = list(c("treated", "control"), c("case", "noncase"))
 			)
 		},
-
 		format_exact_fisher_tables = function(table_list){
 			table_list = Filter(function(tab) sum(tab[1, ]) > 0L && sum(tab[2, ]) > 0L, table_list)
 			if (should_run_asserts()) {

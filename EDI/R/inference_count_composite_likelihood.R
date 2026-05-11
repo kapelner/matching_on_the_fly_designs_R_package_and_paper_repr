@@ -6,6 +6,6 @@
 #' @keywords internal
 InferenceCountCompositeLikelihood = R6::R6Class("InferenceCountCompositeLikelihood",
 	lock_objects = FALSE,
-	inherit = InferenceCountLikelihood,
+	inherit = InferenceAsympLikStdModCache,
 	public = list()
 )

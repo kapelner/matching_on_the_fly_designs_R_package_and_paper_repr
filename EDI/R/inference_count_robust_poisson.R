@@ -20,8 +20,7 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 	inherit = InferenceCountCompositeLikelihood,
 	public = list(
 				
-		#' @description
-		#' Initialize a robust Poisson regression inference object.
+		#' @description Initialize a robust Poisson regression inference object.
 		#' @param des_obj A completed \code{Design} object with a count response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -37,20 +36,16 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-
-		#' @description
-		#' Computes the robust Poisson estimate of the treatment effect.
+		#' @description Computes the robust Poisson estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		}
 	),
-
 	private = list(
 		best_X_colnames = NULL,
 		cached_mod = NULL,
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -58,7 +53,6 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-
 			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 			
@@ -68,22 +62,18 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(1, treatment = private$w, X_cov)
 			}
-
 			res = tryCatch(fast_poisson_regression_cpp(X = X, y = as.numeric(private$y)), error = function(e) NULL)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
 			as.numeric(res$b[2])
 		},
-
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
-
 		build_design_matrix = function(){
 			private$create_design_matrix()
 		},
-
 		fit_count_model_with_var = function(X, estimate_only = FALSE){
 			reduced = private$reduce_design_matrix_preserving_treatment_fixed_covariates(X)
 			X_fit = reduced$X
@@ -91,7 +81,6 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
 				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat))
 			}
-
 			mod = tryCatch(
 				fast_poisson_regression_cpp(X = X_fit, y = as.numeric(private$y)),
 				error = function(e) NULL
@@ -99,24 +88,20 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			if (is.null(mod)){
 				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat))
 			}
-
 			coef_hat = as.numeric(mod$b)
 			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat))){
 				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat))
 			}
-
 			if (estimate_only){
 				b_full = rep(NA_real_, ncol(X))
 				b_full[reduced$keep] = coef_hat
 				names(b_full) = colnames(X)
 				return(list(b = b_full, ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat))
 			}
-
 			mu_hat = as.numeric(exp(X_fit %*% coef_hat))
 			if (length(mu_hat) != nrow(X_fit) || any(!is.finite(mu_hat)) || any(mu_hat <= 0)){
 				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat))
 			}
-
 			bread = NULL
 			var_keep = seq_len(ncol(X_fit))
 			X_var = X_fit
@@ -151,7 +136,6 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			if (is.null(bread)){
 				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat))
 			}
-
 			resid = as.numeric(private$y) - mu_hat
 			meat = crossprod(X_var, X_var * (resid^2))
 			vcov_trim = bread %*% meat %*% bread
@@ -166,22 +150,18 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				}
 			}
 			vcov_robust = (vcov_full + t(vcov_full)) / 2
-
 			ssq_b_j = as.numeric(vcov_robust[j_treat, j_treat])
 			if (!is.finite(ssq_b_j) || ssq_b_j < 0){
 				ssq_b_j = NA_real_
 			}
-
 			b_full = rep(NA_real_, ncol(X))
 			b_full[reduced$keep] = coef_hat
 			names(b_full) = colnames(X)
 			list(b = b_full, ssq_b_2 = ssq_b_j, mod = mod, X_fit = X_fit, j_treat = j_treat)
 		},
-
 		supports_likelihood_tests = function(){
 			TRUE
 		},
-
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context
@@ -227,7 +207,6 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				}
 			)
 		},
-
 		generate_mod = function(estimate_only = FALSE){
 			model_output = private$fit_count_model_with_var(private$build_design_matrix(), estimate_only = estimate_only)
 			if (!is.null(model_output$mod)) {
@@ -245,11 +224,9 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			}
 			model_output
 		},
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			has_cached_se = !is.null(private$cached_values$s_beta_hat_T) &&
 				length(private$cached_values$s_beta_hat_T) == 1L &&
 				is.finite(private$cached_values$s_beta_hat_T)
@@ -257,7 +234,6 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			model_output = private$generate_mod(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T = model_output$b[2]
 			if (estimate_only) return(invisible(NULL))
-
 			ssq = model_output$ssq_b_2
 			if (!is.null(ssq) && !is.na(ssq) && ssq > 0) {
 				private$cached_values$s_beta_hat_T = sqrt(ssq)

@@ -17,11 +17,10 @@
 #' @export
 InferenceIncidBinomialIdentityRiskDiff = R6::R6Class("InferenceIncidBinomialIdentityRiskDiff",
 	lock_objects = FALSE,
-	inherit = InferenceMLEorKMforGLMs,
+	inherit = InferenceAsympLikStdModCache,
 	public = list(
 				
-		#' @description
-		#' Initialize a binomial identity-link risk-difference inference object.
+		#' @description Initialize a binomial identity-link risk-difference inference object.
 		#' @param des_obj A completed \code{Design} object with an incidence response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -38,10 +37,8 @@ InferenceIncidBinomialIdentityRiskDiff = R6::R6Class("InferenceIncidBinomialIden
 			}
 		}
 	),
-
 	private = list(
 		best_X_colnames = NULL,
-
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -49,32 +46,26 @@ InferenceIncidBinomialIdentityRiskDiff = R6::R6Class("InferenceIncidBinomialIden
 			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-
 			X_cols = private$best_X_colnames
 			X_data = private$get_X()
-
 			if (length(X_cols) == 0L){
 				X = cbind(1, private$w)
 			} else {
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(1, treatment = private$w, X_cov)
 			}
-
 			res = tryCatch(fast_identity_binomial_regression_cpp(X = X, y = as.numeric(private$y)), error = function(e) NULL)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
 			as.numeric(res$b[2])
 		},
-
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
-
 		supports_likelihood_tests = function(){
 			TRUE
 		},
-
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context
@@ -109,7 +100,6 @@ InferenceIncidBinomialIdentityRiskDiff = R6::R6Class("InferenceIncidBinomialIden
 				}
 			)
 		},
-
 		generate_mod = function(estimate_only = FALSE){
 			X_data = private$get_X()
 			X_full = if (is.null(X_data) || ncol(X_data) == 0) {
@@ -117,7 +107,6 @@ InferenceIncidBinomialIdentityRiskDiff = R6::R6Class("InferenceIncidBinomialIden
 			} else {
 				cbind(`(Intercept)` = 1, treatment = private$w, X_data)
 			}
-
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
 				required_cols = 2L,
@@ -142,7 +131,6 @@ InferenceIncidBinomialIdentityRiskDiff = R6::R6Class("InferenceIncidBinomialIden
 					is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
 				}
 			)
-
 			if (!is.null(attempt$fit)){
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(

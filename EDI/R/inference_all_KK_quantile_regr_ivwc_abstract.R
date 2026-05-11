@@ -10,9 +10,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 	lock_objects = FALSE,
 	inherit = InferenceAbstractQuantileRandCI,
 	public = list(
-
-		#' @description
-		#' Initialize
+		#' @description Initialize
 		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
 		#'   and response y is recorded within.
 		#' @param tau The quantile level for regression, strictly between 0 and 1. The default
@@ -48,9 +46,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 				private$compute_basic_match_data()
 			}
 		},
-
-		#' @description
-		#' Computes the appropriate quantile regression compound estimate
+		#' @description Computes the appropriate quantile regression compound estimate
 		#'
 		#' @return 	The setting-appropriate numeric estimate of the treatment effect
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -60,9 +56,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			}
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Computes a 1-alpha level frequentist confidence interval based on asymptotic normality
+		#' @description Computes a 1-alpha level frequentist confidence interval based on asymptotic normality
 		#' of the quantile regression estimator (z-based).
 		#'
 		#' @param alpha                                   The confidence level in the computed
@@ -78,9 +72,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Computes a 2-sided p-value based on asymptotic normality of the quantile regression estimator.
+		#' @description Computes a 2-sided p-value based on asymptotic normality of the quantile regression estimator.
 		#'
 		#' @param delta  				The null difference to test against. Default is zero.
 		#'
@@ -95,12 +87,10 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
-
 	private = list(
 		tau = NULL,
 		transform_y_fn_list = NULL,  # list(fn = ...) wrapping avoids R6 treating function as a locked method
 		m = NULL,
-
 		compute_basic_match_data = function(){
 			private$cached_values$KKstats = .compute_kk_basic_match_data_cached(
 				private_env = private,
@@ -112,44 +102,36 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 				m_vec = private$m
 			)
 		},
-
 		matrix_with_n_rows = function(X, n_rows){
 			if (is.null(X)) return(matrix(numeric(0), nrow = n_rows, ncol = 0))
 			if (!is.null(dim(X))) return(as.matrix(X))
 			if (length(X) == 0L) return(matrix(numeric(0), nrow = n_rows, ncol = 0))
 			matrix(X, nrow = n_rows)
 		},
-
 		reduce_full_rank_matrix = function(X, n_rows){
 			X_orig = private$matrix_with_n_rows(X, n_rows)
 			if (ncol(X_orig) == 0L) return(list(X = X_orig, keep = integer(0)))
-
 			reduced = qr_reduce_full_rank_cpp(X_orig)
 			keep = as.integer(reduced$keep)
 			if (length(keep) > 0L && all(is.finite(keep)) && all(keep >= 1L) && all(keep <= ncol(X_orig))){
 				X_red = X_orig[, keep, drop = FALSE]
 				return(list(X = X_red, keep = keep))
 			}
-
 			X_red = private$matrix_with_n_rows(reduced$X_reduced, nrow(X_orig))
 			list(X = X_red, keep = seq_len(ncol(X_red)))
 		},
-
 		reduce_preserve_cols_matrix = function(X, required_cols){
 			X_orig = as.matrix(X)
 			if (ncol(X_orig) == 0L) return(list(X = X_orig, keep = integer(0)))
-
 			reduced = qr_reduce_preserve_cols_cpp(X_orig, required_cols)
 			keep = as.integer(reduced$keep)
 			if (length(keep) > 0L && all(is.finite(keep)) && all(keep >= 1L) && all(keep <= ncol(X_orig))){
 				X_red = X_orig[, keep, drop = FALSE]
 				return(list(X = X_red, keep = keep))
 			}
-
 			X_red = private$matrix_with_n_rows(reduced$X_reduced, nrow(X_orig))
 			list(X = X_red, keep = seq_len(ncol(X_red)))
 		},
-
 		set_colnames_safely = function(X, names_vec){
 			n = ncol(X)
 			if (is.null(n) || n == 0L) return(X)
@@ -159,26 +141,21 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			colnames(X) = names_vec
 			X
 		},
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-
 			KKstats = private$cached_values$KKstats
 			if (is.null(KKstats)){
 				private$compute_basic_match_data()
 				KKstats = private$cached_values$KKstats
 			}
-
 			m    = KKstats$m
 			nRT  = KKstats$nRT
 			nRC  = KKstats$nRC
-
 			beta_m  = NA_real_
 			ssq_m   = NA_real_
 			beta_r  = NA_real_
 			ssq_r   = NA_real_
-
 			if (m > 0){
 				res_m = private$quantile_for_matched_pairs()
 				beta_m = res_m$beta
@@ -189,10 +166,8 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 				beta_r = res_r$beta
 				ssq_r  = res_r$ssq
 			}
-
 			m_ok = is.finite(beta_m) && is.finite(ssq_m) && ssq_m > 0
 			r_ok = is.finite(beta_r) && is.finite(ssq_r) && ssq_r > 0
-
 			if (m_ok && r_ok){
 				w_star = ssq_r / (ssq_r + ssq_m)
 				private$cached_values$beta_hat_T   = w_star * beta_m + (1 - w_star) * beta_r
@@ -210,20 +185,17 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			}
 			invisible(NULL)
 		},
-
 		quantile_for_matched_pairs = function(){
 			yd = private$transform_y_fn_list$fn(private$cached_values$KKstats$yTs_matched) -
 			     private$transform_y_fn_list$fn(private$cached_values$KKstats$yCs_matched)
 			Xd = private$cached_values$KKstats$X_matched_diffs
 			m  = length(yd)
 			tau = private$tau
-
 			# QR-reduce Xd to full rank (same logic as OLS compound)
 			if (ncol(Xd) > 0){
 				Xd = private$reduce_full_rank_matrix(Xd, m)$X
 			}
 			p_kept = ncol(Xd)
-
 			# Underdetermined: fall back to intercept-only quantile regression
 			if (m <= p_kept + 1){
 				fit0 = tryCatch(
@@ -240,7 +212,6 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 				}
 				return(list(beta = beta, ssq = se^2))
 			}
-
 			# Main path: rq on differences with reduced covariates
 			p = ncol(Xd)
 			Xd = private$set_colnames_safely(Xd, paste0("xd", seq_len(p)))
@@ -253,7 +224,6 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			if (is.null(fit)){
 				return(list(beta = NA_real_, ssq = NA_real_))
 			}
-
 			se = private$extract_se_from_rq(fit, "(Intercept)")
 			if (!is.finite(se) || se <= 0){
 				se = private$iqr_se(yd, m)
@@ -261,13 +231,11 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			beta = tryCatch(coef(fit)[["(Intercept)"]], error = function(e) NA_real_)
 			list(beta = beta, ssq = if (is.finite(se) && se > 0) se^2 else NA_real_)
 		},
-
 		quantile_for_reservoir = function(){
 			y_r = private$transform_y_fn_list$fn(private$cached_values$KKstats$y_reservoir)
 			w_r = private$cached_values$KKstats$w_reservoir
 			X_r = as.matrix(private$cached_values$KKstats$X_reservoir)
 			tau = private$tau
-
 			# Build full design matrix and QR-reduce, always preserving treatment column
 			X_full  = cbind(1, w_r, X_r)
 			j_treat = 2L
@@ -275,15 +243,12 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			X_full  = reduced$X
 			j_treat = match(2L, reduced$keep)
 			if (!is.finite(j_treat)) return(list(beta = NA_real_, ssq = NA_real_))
-
 			p = ncol(X_full)
 			cn = paste0("xr", seq_len(p))
 			cn[j_treat] = "trt__"
 			X_full = private$set_colnames_safely(X_full, cn)
-
 			dat = as.data.frame(X_full)
 			dat$yr__ = y_r
-
 			fit = tryCatch(
 				suppressWarnings(quantreg::rq(yr__ ~ . - 1, tau = tau, data = dat)),
 				error = function(e) NULL
@@ -291,7 +256,6 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			if (is.null(fit)){
 				return(list(beta = NA_real_, ssq = NA_real_))
 			}
-
 			se   = private$extract_se_from_rq(fit, "trt__")
 			if (!is.finite(se) || se <= 0){
 				nRT = private$cached_values$KKstats$nRT
@@ -305,7 +269,6 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			beta = tryCatch(coef(fit)[["trt__"]], error = function(e) NA_real_)
 			list(beta = beta, ssq = if (is.finite(se) && se > 0) se^2 else NA_real_)
 		},
-
 		# IQR-based SE for a sample quantile: CLT approximation SE = IQR/(2*qnorm(0.75)) / sqrt(n)
 		iqr_se = function(x, n){
 			if (n < 2) return(NA_real_)
@@ -313,7 +276,6 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			if (!is.finite(iqr) || iqr <= 0) return(NA_real_)
 			iqr / (2 * stats::qnorm(0.75)) / sqrt(n)
 		},
-
 		# Helper: extract SE from rq fit by coefficient name, trying "nid" then "iid".
 		# SEs above 1e6 are treated as invalid (the "nid" sparsity estimator can return
 		# astronomically large but finite values when the density at the quantile is near
@@ -321,7 +283,6 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 		extract_se_from_rq = function(fit, coef_name){
 			.extract_se_from_rq_fit(fit, coef_name)
 		},
-
 		# Two-sided sign-flip randomisation test for matched pairs at H0: Q_tau(yd) = delta_0.
 		# Within each pair the sign of (transform(yT) - transform(yC)) is equally likely to be
 		# + or - under randomisation.  Flipping the assignment also flips X_d, so both are negated.
@@ -329,18 +290,14 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			KKstats = private$cached_values$KKstats
 			fn  = private$transform_y_fn_list$fn
 			tau = private$tau
-
 			yd_adj = fn(KKstats$yTs_matched) - fn(KKstats$yCs_matched) - delta_0
 			Xd     = KKstats$X_matched_diffs
 			m      = length(yd_adj)
-
 			if (ncol(Xd) > 0){
 				Xd = private$reduce_full_rank_matrix(Xd, m)$X
 			}
-
 			T_obs = private$qr_intercept_pairs(yd_adj, Xd, tau, m)
 			if (!is.finite(T_obs)) return(NA_real_)
-
 			T_rand = replicate(private$nsim_rand, {
 				signs = 2L * sample_int_replace_cpp(2L, m) - 3L
 				private$qr_intercept_pairs(
@@ -353,17 +310,14 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			if (length(T_rand) == 0L) return(NA_real_)
 			mean(abs(T_rand) >= abs(T_obs))
 		},
-
 		# Two-sided permutation test for reservoir at H0: Q_tau(transform(y)|w=1,X) - Q_tau(...|w=0,X) = delta_0.
 		compute_rand_pval_reservoir = function(delta_0){
 			KKstats = private$cached_values$KKstats
 			fn  = private$transform_y_fn_list$fn
 			tau = private$tau
-
 			w_r = KKstats$w_reservoir
 			X_r = as.matrix(KKstats$X_reservoir)
 			ty  = fn(KKstats$y_reservoir)
-
 			X_full  = cbind(1, w_r, X_r)
 			j_treat = 2L
 			reduced = private$reduce_preserve_cols_matrix(X_full, j_treat)
@@ -374,11 +328,9 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			cn = paste0("xr", seq_len(p))
 			cn[j_treat] = "trt__"
 			X_full = private$set_colnames_safely(X_full, cn)
-
 			y_adj_obs = ty - delta_0 * w_r
 			T_obs = private$qr_trt_coef_reservoir(y_adj_obs, X_full, tau)
 			if (!is.finite(T_obs)) return(NA_real_)
-
 			T_rand = replicate(private$nsim_rand, {
 				w_perm = sample(w_r)
 				X_perm = X_full
@@ -389,7 +341,6 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			if (length(T_rand) == 0L) return(NA_real_)
 			mean(abs(T_rand) >= abs(T_obs))
 		},
-
 		# Helper: QR intercept from rq(yd ~ Xd) for matched-pair randomisation iterations
 		qr_intercept_pairs = function(yd, Xd, tau, m){
 			p = ncol(Xd)
@@ -411,7 +362,6 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			if (is.null(fit)) return(NA_real_)
 			tryCatch(coef(fit)[["(Intercept)"]], error = function(e) NA_real_)
 		},
-
 		# Helper: QR treatment coefficient from rq(y_adj ~ X_full - 1) for reservoir randomisation iterations
 		qr_trt_coef_reservoir = function(y_adj, X_full, tau){
 			dat = as.data.frame(X_full)

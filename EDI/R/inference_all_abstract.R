@@ -10,8 +10,7 @@
 Inference = R6::R6Class("Inference",
 	lock_objects = FALSE,
 	public = list(
-		#' @description
-		#' Initialize an estimation and test object after the design is completed.
+		#' @description Initialize an estimation and test object after the design is completed.
 		#' @param des_obj         A completed \code{Design} object whose entire n subjects are
 		#'   assigned and response y is recorded within.
 		#' @param verbose Whether to print progress messages.
@@ -41,7 +40,6 @@ Inference = R6::R6Class("Inference",
 			}
 			private$harden = harden
 			private$smart_default = smart_default
-
 			private$cached_values = list()
 			private$any_censoring = des_obj$any_censoring()
 			private$des_obj = des_obj
@@ -55,7 +53,6 @@ Inference = R6::R6Class("Inference",
 			private$n = des_obj$get_n()
 			private$prob_T = des_obj$get_prob_T()
 			private$supports_design_resampling = isTRUE(des_obj$supports_resampling())
-
 			# Handle model_formula and X matrix construction
 			if (is.null(model_formula)) {
 				private$model_formula = des_obj$get_model_formula()
@@ -94,31 +91,23 @@ Inference = R6::R6Class("Inference",
 				))
 			}
 		},
-
-		#' @description
-		#' Computes an exact two-sided p-value. Subclasses that support exact inference override this.
+		#' @description Computes an exact two-sided p-value. Subclasses that support exact inference override this.
 		#' @param ... Other arguments passed to the method.
 		compute_exact_two_sided_pval_for_treatment_effect = function(...){
 			stop("Exact inference is only supported for exact inference classes.")
 		},
-
-		#' @description
-		#' Computes an exact confidence interval. Subclasses that support exact inference override this.
+		#' @description Computes an exact confidence interval. Subclasses that support exact inference override this.
 		#' @param ... Other arguments passed to the method.
 		compute_exact_confidence_interval = function(...){
 			stop("Exact inference is only supported for exact inference classes.")
 		},
-
-		#' @description
-		#' Computes the treatment estimate.
+		#' @description Computes the treatment estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		#' @return A numeric treatment estimate.
 		compute_estimate = function(estimate_only = FALSE){
 			stop("Must be implemented by concrete class.")
 		},
-
-		#' @description
-		#' Returns whether the most recent inference attempt explicitly marked the
+		#' @description Returns whether the most recent inference attempt explicitly marked the
 		#' result as non-estimable.
 		#' @param type Which stage to query: \code{"any"}, \code{"estimate"}, or \code{"se"}.
 		#' @return A logical scalar.
@@ -131,23 +120,17 @@ Inference = R6::R6Class("Inference",
 			if (identical(type, "se")) return(identical(stage, "se"))
 			FALSE
 		},
-
-		#' @description
-		#' Returns the reason recorded for the most recent explicit non-estimability.
+		#' @description Returns the reason recorded for the most recent explicit non-estimability.
 		#' @return A character scalar or \code{NULL}.
 		get_nonestimable_reason = function(){
 			private$cached_values$nonestimable_reason
 		},
-
-		#' @description
-		#' Returns the stage recorded for the most recent explicit non-estimability.
+		#' @description Returns the stage recorded for the most recent explicit non-estimability.
 		#' @return A character scalar or \code{NULL}.
 		get_nonestimable_stage = function(){
 			private$cached_values$nonestimable_stage
 		},
-
-		#' @description
-		#' Duplicate this inference object
+		#' @description Duplicate this inference object
 		#' @param verbose 	A flag indicating whether messages should be displayed.
 		#' @param make_fork_cluster 	Whether the duplicate should be allowed to create a fork 
 		#'   cluster. Default FALSE.
@@ -156,12 +139,10 @@ Inference = R6::R6Class("Inference",
 			i = self$clone()
 			i$.__enclos_env__$private$verbose = verbose
 			i$.__enclos_env__$private$fork_cluster = NULL
-
 			i$.__enclos_env__$private$cached_values = list()
 			i$.__enclos_env__$private$cached_values$m_cache = private$cached_values$m_cache
 			i$.__enclos_env__$private$cached_values$t0s_rand = private$cached_values$t0s_rand
 			i$.__enclos_env__$private$cached_values$likelihood_test_eval_cache = list()
-
 			if (private$has_private_method("custom_randomization_statistic_function") &&
 				!is.null(i$.__enclos_env__$private$custom_randomization_statistic_function)){
 				clone_private = i$.__enclos_env__$private
@@ -175,9 +156,7 @@ Inference = R6::R6Class("Inference",
 			}
 			i
 		},
-
-		#' @description
-		#' Return the response vector used by inference extension classes.
+		#' @description Return the response vector used by inference extension classes.
 		#'
 		#' This accessor is part of the supported extension contract for user-defined
 		#' R6 inference classes. Prefer this method over direct access to private
@@ -187,9 +166,7 @@ Inference = R6::R6Class("Inference",
 		get_response = function(){
 			private$y
 		},
-
-		#' @description
-		#' Return the treatment-assignment vector used by inference extension classes.
+		#' @description Return the treatment-assignment vector used by inference extension classes.
 		#'
 		#' This accessor is part of the supported extension contract for user-defined
 		#' R6 inference classes. Treatment is encoded as 0/1.
@@ -198,9 +175,7 @@ Inference = R6::R6Class("Inference",
 		get_treatment = function(){
 			private$w
 		},
-
-		#' @description
-		#' Return the processed covariate matrix used by inference extension classes.
+		#' @description Return the processed covariate matrix used by inference extension classes.
 		#'
 		#' This accessor returns the design object's model-matrix covariates, after
 		#' the package's missingness handling and encoding. It may be \code{NULL} if
@@ -210,9 +185,7 @@ Inference = R6::R6Class("Inference",
 		get_covariates = function(){
 			private$des_obj$get_X()
 		},
-
-		#' @description
-		#' Return a data frame with response, treatment, censoring status, and covariates.
+		#' @description Return a data frame with response, treatment, censoring status, and covariates.
 		#'
 		#' This accessor is the preferred data interface for user-defined R6
 		#' inference classes. It avoids reliance on private implementation fields.
@@ -236,9 +209,7 @@ Inference = R6::R6Class("Inference",
 			}
 			out
 		},
-
-		#' @description
-		#' Return the completed design object backing this inference object.
+		#' @description Return the completed design object backing this inference object.
 		#'
 		#' This accessor is part of the supported extension contract. Extension
 		#' classes should use this method instead of \code{private$des_obj}.
@@ -247,9 +218,7 @@ Inference = R6::R6Class("Inference",
 		get_design_object = function(){
 			private$des_obj
 		},
-
-		#' @description
-		#' Return the response type for the backing design.
+		#' @description Return the response type for the backing design.
 		#'
 		#' @return A character scalar such as \code{"continuous"},
 		#'   \code{"incidence"}, \code{"proportion"}, \code{"count"},
@@ -257,16 +226,12 @@ Inference = R6::R6Class("Inference",
 		get_response_type = function(){
 			private$des_obj$get_response_type()
 		},
-
-		#' @description
-		#' Return the model formula used for covariate adjustment.
+		#' @description Return the model formula used for covariate adjustment.
 		#' @return A formula object or \code{NULL}.
 		get_model_formula = function(){
 			private$model_formula
 		},
-
-		#' @description
-		#' Set the optimizer used by likelihood-based inference implementations.
+		#' @description Set the optimizer used by likelihood-based inference implementations.
 		#' @param optimization_alg The optimizer name. Valid values are configured by
 		#'   the concrete inference class.
 		#' @param allow_irls 		Whether to allow IRLS (Iteratively Reweighted Least Squares)
@@ -290,14 +255,11 @@ Inference = R6::R6Class("Inference",
 			private$optimization_alg = new_optimization_alg
 			invisible(self)
 		},
-
-		#' @description
-		#' Return the optimizer used by likelihood-based inference implementations.
+		#' @description Return the optimizer used by likelihood-based inference implementations.
 		get_optimization_alg = function(){
 			private$optimization_alg
 		}
 		),
-
 	active = list(
 		#' @field num_cores Current number of cores for this inference object.
 		#'   Defaults to the global budget unless overridden on the object.
@@ -313,7 +275,6 @@ Inference = R6::R6Class("Inference",
 			invisible(self)
 		}
 	),
-
 	private = list(
 		finalize = function(){
 			# We no longer own the cluster, it is global.
@@ -351,7 +312,6 @@ Inference = R6::R6Class("Inference",
 		fixed_covariate_keep_cache = NULL,
 			cached_values = list(),
 			num_cores_override = NULL,
-
 		# Returns the number of C++ OpenMP threads to use for a parallel C++ function
 		# with n_work_items items of work. Caps threads so that each thread handles
 		# at least 10 items; for tiny r/B values this prevents thread-management
@@ -359,7 +319,6 @@ Inference = R6::R6Class("Inference",
 		n_cpp_threads = function(n_work_items) {
 			min(self$num_cores, max(1L, as.integer(n_work_items) %/% 10L))
 		},
-
 		parallel_dispatch_policy = function(operation) {
 			edi_parallel_dispatch_policy(
 				inference_class = class(self)[1],
@@ -367,7 +326,6 @@ Inference = R6::R6Class("Inference",
 				operation = operation
 			)
 		},
-
 		effective_parallel_cores = function(operation, requested_cores = self$num_cores) {
 			requested_cores = max(1L, as.integer(requested_cores))
 			policy = private$parallel_dispatch_policy(operation)
@@ -376,20 +334,17 @@ Inference = R6::R6Class("Inference",
 			}
 			requested_cores
 		},
-
 		clear_nonestimable_state = function(){
 			private$cached_values$nonestimable = FALSE
 			private$cached_values$nonestimable_reason = NULL
 			private$cached_values$nonestimable_stage = NULL
 			invisible(NULL)
 		},
-
 		clear_fit_warm_start = function(){
 			private$fit_warm_start = NULL
 			private$fit_warm_start_type = NULL
 			invisible(NULL)
 		},
-
 		set_fit_warm_start = function(start, type = c("beta", "params")){
 			if (!isTRUE(private$fit_warm_start_enabled)) {
 				private$clear_fit_warm_start()
@@ -409,7 +364,6 @@ Inference = R6::R6Class("Inference",
 			private$fit_warm_start_type = type
 			invisible(NULL)
 		},
-
 		get_fit_warm_start = function(type = c("beta", "params")){
 			if (!isTRUE(private$fit_warm_start_enabled)) return(NULL)
 			type = match.arg(type)
@@ -418,7 +372,6 @@ Inference = R6::R6Class("Inference",
 			if (is.null(start) || !length(start) || any(!is.finite(start))) return(NULL)
 			start
 		},
-
 		get_fit_warm_start_for_length = function(type = c("beta", "params"), expected_length = NULL){
 			start = private$get_fit_warm_start(match.arg(type))
 			if (is.null(start) || is.null(expected_length)) return(start)
@@ -427,17 +380,14 @@ Inference = R6::R6Class("Inference",
 			if (length(start) != expected_length) return(NULL)
 			start
 		},
-
 		clear_likelihood_null_warm_cache = function(){
 			private$likelihood_null_warm_cache = list()
 			invisible(NULL)
 		},
-
 		clear_likelihood_test_eval_cache = function(){
 			private$cached_values$likelihood_test_eval_cache = list()
 			invisible(NULL)
 		},
-
 		get_likelihood_test_eval_cache = function(){
 			cache = private$cached_values$likelihood_test_eval_cache
 			if (is.null(cache)) {
@@ -446,51 +396,43 @@ Inference = R6::R6Class("Inference",
 			}
 			cache
 		},
-
 		normalize_likelihood_test_delta = function(delta){
 			delta = as.numeric(delta)[1L]
 			if (!is.finite(delta)) return(delta)
 			if (identical(delta, 0) || abs(delta) < .Machine$double.eps) return(0)
 			delta
 		},
-
 		likelihood_test_delta_key = function(testing_type, delta){
 			delta = private$normalize_likelihood_test_delta(delta)
 			paste0(as.character(testing_type)[1L], "::", sprintf("%.17g", delta))
 		},
-
 		get_likelihood_test_eval_entry = function(testing_type, delta){
 			cache = private$get_likelihood_test_eval_cache()
 			cache[[private$likelihood_test_delta_key(testing_type, delta)]]
 		},
-
 		set_likelihood_test_eval_entry = function(testing_type, delta, entry){
 			cache = private$get_likelihood_test_eval_cache()
 			cache[[private$likelihood_test_delta_key(testing_type, delta)]] = entry
 			private$cached_values$likelihood_test_eval_cache = cache
 			invisible(entry)
 		},
-
 		get_likelihood_null_warm_state = function(key){
 			if (!isTRUE(private$null_fit_warm_start_enabled)) return(NULL)
 			cache = private$likelihood_null_warm_cache
 			if (is.null(cache) || is.null(cache[[key]])) return(NULL)
 			cache[[key]]
 		},
-
 		set_likelihood_null_warm_state = function(key, delta, start){
 			if (!isTRUE(private$null_fit_warm_start_enabled)) return(invisible(NULL))
 			if (is.null(private$likelihood_null_warm_cache)) private$likelihood_null_warm_cache = list()
 			private$likelihood_null_warm_cache[[key]] = list(delta = as.numeric(delta)[1L], start = start)
 			invisible(NULL)
 		},
-
 		use_reusable_bootstrap_worker = function(){
 			isTRUE(private$reusable_bootstrap_worker_enabled) &&
 				private$has_private_method("supports_reusable_bootstrap_worker") &&
 				isTRUE(tryCatch(private$supports_reusable_bootstrap_worker(), error = function(e) FALSE))
 		},
-
 		cache_nonestimable_estimate = function(reason = "not_estimable"){
 			private$cached_values$beta_hat_T = NA_real_
 			private$cached_values$s_beta_hat_T = NA_real_
@@ -500,7 +442,6 @@ Inference = R6::R6Class("Inference",
 			if (is.null(private$cached_values$df)) private$cached_values$df = NA_real_
 			invisible(NULL)
 		},
-
 		cache_nonestimable_se = function(reason = "standard_error_unavailable"){
 			if (is.null(private$cached_values$beta_hat_T)) private$cached_values$beta_hat_T = NA_real_
 			private$cached_values$s_beta_hat_T = NA_real_
@@ -510,7 +451,6 @@ Inference = R6::R6Class("Inference",
 			if (is.null(private$cached_values$df)) private$cached_values$df = NA_real_
 			invisible(NULL)
 		},
-
 			par_lapply = function(X, FUN, n_cores = self$num_cores, budget = 1L, show_progress = FALSE, export_list = NULL){
 				if (length(X) == 0L) return(list())
 				n_cores = max(1L, min(as.integer(n_cores), length(X)))
@@ -518,7 +458,6 @@ Inference = R6::R6Class("Inference",
 				chunk_count = min(length(X), max(1L, 4L * n_cores))
 				chunk_size = max(1L, ceiling(length(X) / chunk_count))
 				chunks = split(X, ceiling(seq_along(X) / chunk_size))
-
 				# Run a whole chunk under the requested worker budget so we do not
 				# pay scheduler/export overhead once per iteration.
 				RUN_CHUNK = function(chunk) {
@@ -537,17 +476,13 @@ Inference = R6::R6Class("Inference",
 					}, add = TRUE)
 					lapply(chunk, FUN)
 				}
-
 				flatten_chunk_results = function(results) {
 					if (length(results) == 0L) return(list())
 					unlist(results, recursive = FALSE, use.names = FALSE)
 				}
-
 				if (n_cores <= 1L) return(RUN_CHUNK(X))
-
 				global_cl = get_global_fork_cluster()
 				global_mirai_cores = get_global_mirai_cores()
-
 				if (!is.null(global_cl)){
 					worker_cl = global_cl[seq_len(min(n_cores, length(global_cl)))]
 					tryCatch({
@@ -592,20 +527,16 @@ Inference = R6::R6Class("Inference",
 					}
 				}
 			},
-
-
 		ensure_mirai_daemons = function(n){
 			s = tryCatch(mirai::status(), error = function(e) list(connections = 0L))
 			n_running = if (is.numeric(s$connections) && length(s$connections) == 1L) as.integer(s$connections) else 0L
 			if (n_running != n) mirai::daemons(n)
 			invisible(NULL)
 		},
-
 		stable_signature = function(obj){
 			raw_sig = serialize(obj, NULL, xdr = FALSE)
 			ints = as.integer(raw_sig)
 			if (length(ints) == 0L) return("0:0:0")
-
 			modulus = 2147483647
 			h1 = 0
 			h2 = 0
@@ -619,7 +550,6 @@ Inference = R6::R6Class("Inference",
 			}
 			paste(length(ints), as.integer(h1), as.integer(h2), sep = ":")
 		},
-
 		extract_dollar_paths = function(expr){
 			paths = list()
 			if (is.call(expr)) {
@@ -633,7 +563,6 @@ Inference = R6::R6Class("Inference",
 			}
 			paths
 		},
-
 		resolve_dollar_path = function(expr){
 			if (is.symbol(expr)) return(as.character(expr))
 			if (is.call(expr) && identical(expr[[1]], as.name("$")) && length(expr) == 3L) {
@@ -644,15 +573,12 @@ Inference = R6::R6Class("Inference",
 			}
 			NULL
 		},
-
 		has_private_method = function(method_name){
 			method_name %in% names(private)
 		},
-
 			object_has_private_method = function(obj, method_name){
 				method_name %in% names(obj$.__enclos_env__$private)
 			},
-
 			get_or_create_fork_cluster = function(){
 				cl = get_global_fork_cluster()
 				if (should_run_asserts()) {
@@ -662,25 +588,21 @@ Inference = R6::R6Class("Inference",
 				}
 				cl
 			},
-
 			assert_design_supports_resampling = function(method_family){
 				if (isTRUE(private$supports_design_resampling)) return(invisible(NULL))
 				if (should_run_asserts()) {
 					stop(method_family, " is not available for plain DesignFixed objects. Use asymptotic inference or a concrete design subclass.")
 				}
 			},
-
 		create_design_matrix = function(){
 			X_cov = private$get_X()
 			if (is.null(X_cov)) {
 				return(cbind(`(Intercept)` = 1, treatment = private$w))
 			}
-
 			X_cov = as.matrix(X_cov)
 			if (!ncol(X_cov)) {
 				return(cbind(`(Intercept)` = 1, treatment = private$w))
 			}
-
 			cov_names = colnames(X_cov)
 			if (is.null(cov_names) || length(cov_names) != ncol(X_cov) ||
 				any(is.na(cov_names)) || any(!nzchar(cov_names)) ||
@@ -688,13 +610,11 @@ Inference = R6::R6Class("Inference",
 				cov_names = paste0("x", seq_len(ncol(X_cov)))
 			}
 			colnames(X_cov) = cov_names
-
 			if (isTRUE(private$harden)){
 				# Drop highly correlated covariates first to improve condition number.
 				# We only do this for covariates, keeping intercept and treatment safe.
 				X_cov = drop_highly_correlated_cols(X_cov, threshold = 0.999)$M
 			}
-
 			X_full = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
 			
 			if (isTRUE(private$harden)){
@@ -707,14 +627,12 @@ Inference = R6::R6Class("Inference",
 			}
 			X_full
 		},
-
 		get_X = function(){
 			if (!is.null(private$X)) return(private$X)  # transient bootstrap override
 			if (is.null(private$des_obj_priv_int$X))
 				private$des_obj_priv_int$covariate_impute_if_necessary_and_then_create_model_matrix()
 			private$des_obj_priv_int$X
 		},
-
 		reduce_treatment_only_design_fast = function(X_full){
 			if (is.null(dim(X_full)) || ncol(X_full) != 2L || nrow(X_full) == 0L) return(NULL)
 			X_mat = as.matrix(X_full)
@@ -728,14 +646,12 @@ Inference = R6::R6Class("Inference",
 			}
 			list(X = NULL, keep = 1L, j_treat = NA_integer_)
 		},
-
 		try_cached_reduced_design_keep = function(X_full, keep = private$reduced_design_keep_cache){
 			if (is.null(keep) || !length(keep)) return(NULL)
 			keep = sort(unique(as.integer(keep)))
 			if (any(!is.finite(keep)) || any(keep < 1L) || any(keep > ncol(X_full)) || !(2L %in% keep)) {
 				return(NULL)
 			}
-
 			X_try = as.matrix(X_full[, keep, drop = FALSE])
 			if (ncol(X_try) == 2L) {
 				fast = private$reduce_treatment_only_design_fast(X_try)
@@ -744,48 +660,38 @@ Inference = R6::R6Class("Inference",
 				}
 				return(NULL)
 			}
-
 			if (qr(X_try)$rank != ncol(X_try)) return(NULL)
 			list(X = X_try, keep = keep, j_treat = match(2L, keep))
 		},
-
 		reduce_design_matrix_preserving_treatment = function(X_full){
 			if (!private$harden) {
 				X_mat = as.matrix(X_full)
 				return(list(X = X_mat, keep = seq_len(ncol(X_mat)), j_treat = 2L))
 			}
-
 			fast = private$reduce_treatment_only_design_fast(X_full)
 			if (!is.null(fast)) return(fast)
-
 			cached = private$try_cached_reduced_design_keep(X_full)
 			if (!is.null(cached)) return(cached)
-
 			reduced = qr_reduce_preserve_cols_cpp(as.matrix(X_full), c(1L, 2L))
 			keep = as.integer(reduced$keep)
 			if (!(2L %in% keep)) return(list(X = NULL, keep = keep, j_treat = NA_integer_))
 			private$reduced_design_keep_cache = keep
-
 			list(
 				X = reduced$X_reduced,
 				keep = keep,
 				j_treat = match(2L, keep)
 			)
 		},
-
 		reduce_design_matrix_preserving_treatment_fixed_covariates = function(X_full){
 			if (!private$harden) {
 				X_mat = as.matrix(X_full)
 				return(list(X = X_mat, keep = seq_len(ncol(X_mat)), j_treat = 2L))
 			}
-
 			fast = private$reduce_treatment_only_design_fast(X_full)
 			if (!is.null(fast)) return(fast)
 			if (is.null(dim(X_full)) || ncol(X_full) <= 2L) return(private$reduce_design_matrix_preserving_treatment(X_full))
-
 			cached = private$try_cached_reduced_design_keep(X_full)
 			if (!is.null(cached)) return(cached)
-
 			other_cols = c(1L, seq.int(3L, ncol(X_full)))
 			keep_other = private$fixed_covariate_keep_cache
 			if (is.null(keep_other) || !length(keep_other) || any(keep_other < 1L) || any(keep_other > ncol(X_full)) || !(1L %in% keep_other)) {
@@ -794,18 +700,15 @@ Inference = R6::R6Class("Inference",
 				keep_other = other_cols[as.integer(reduced_other$keep)]
 				private$fixed_covariate_keep_cache = keep_other
 			}
-
 			X_other_reduced = as.matrix(X_full[, keep_other, drop = FALSE])
 			treatment = as.numeric(X_full[, 2L])
 			if (any(!is.finite(treatment)) || any(!is.finite(X_other_reduced))) {
 				return(private$reduce_design_matrix_preserving_treatment(X_full))
 			}
-
 			X_trial = cbind(X_other_reduced, treatment)
 			if (qr(X_trial)$rank <= ncol(X_other_reduced)) {
 				return(private$reduce_design_matrix_preserving_treatment(X_full))
 			}
-
 			keep = sort(c(keep_other, 2L))
 			private$reduced_design_keep_cache = keep
 			list(
@@ -814,11 +717,9 @@ Inference = R6::R6Class("Inference",
 				j_treat = match(2L, keep)
 			)
 		},
-
 		reduce_design_matrix_preserving_treatment_matrix = function(X_full){
 			private$reduce_design_matrix_preserving_treatment(X_full)$X
 		},
-
 		fit_with_hardened_qr_column_dropping = function(X_full, fit_fun, fit_ok, required_cols = 1L){
 			X_mat = as.matrix(X_full)
 			if (is.null(dim(X_mat))){
@@ -831,14 +732,12 @@ Inference = R6::R6Class("Inference",
 					keep = integer()
 				))
 			}
-
 			required_cols = sort(unique(as.integer(required_cols)))
 			required_cols = required_cols[
 				is.finite(required_cols) &
 				required_cols >= 1L &
 				required_cols <= ncol(X_mat)
 			]
-
 			fit_fun_formals = names(formals(fit_fun))
 			fit_fun_accepts_keep = "keep" %in% fit_fun_formals || "..." %in% fit_fun_formals
 			attempt_fit = function(keep){
@@ -852,25 +751,20 @@ Inference = R6::R6Class("Inference",
 					keep = keep
 				)
 			}
-
 			if (!private$harden || ncol(X_mat) <= length(required_cols)){
 				return(attempt_fit(seq_len(ncol(X_mat))))
 			}
-
 			qr_X = qr(X_mat)
 			keep = sort(unique(c(required_cols, qr_X$pivot[seq_len(qr_X$rank)])))
 			if (!length(keep)) keep = seq_len(ncol(X_mat))
 			removable = rev(setdiff(qr_X$pivot[qr_X$pivot %in% keep], required_cols))
-
 			best_attempt = attempt_fit(keep)
 			if (isTRUE(fit_ok(best_attempt$fit, best_attempt$X, best_attempt$keep))){
 				return(best_attempt)
 			}
-
 			if (!length(removable)){
 				return(best_attempt)
 			}
-
 			for (k in seq_along(removable)){
 				keep_try = sort(setdiff(keep, removable[seq_len(k)]))
 				if (!all(required_cols %in% keep_try)) next
@@ -880,7 +774,6 @@ Inference = R6::R6Class("Inference",
 					return(attempt)
 				}
 			}
-
 			best_attempt
 		}
 	)

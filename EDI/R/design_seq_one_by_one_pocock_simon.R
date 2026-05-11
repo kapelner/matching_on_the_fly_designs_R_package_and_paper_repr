@@ -11,8 +11,7 @@
 DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 	inherit = DesignSeqOneByOne,
 	public = list(
-		#' @description
-		#' Initialize a Pocock & Simon sequential experimental design
+		#' @description Initialize a Pocock & Simon sequential experimental design
 		#'
 		#' @param strata_cols     The names of the covariates to be used for minimization. These
 		#'   must be factor or categorical variables.
@@ -61,9 +60,7 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 				private$weights = weights
 			}
 		},
-
-		#' @description
-		#' Assign the next subject to a treatment group using minimization.
+		#' @description Assign the next subject to a treatment group using minimization.
 		#'
 		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){
@@ -83,9 +80,7 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 				private$prob_T
 			)
 		},
-
-		#' @description
-		#' Draw multiple treatment assignment vectors according to Pocock & Simon design.
+		#' @description Draw multiple treatment assignment vectors according to Pocock & Simon design.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'
@@ -97,7 +92,6 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 			for (i in 1 : n){
 				x_levels_matrix[i, ] = private$get_subject_levels_idx(private$Xraw[i, ])
 			}
-
 			generate_permutations_pocock_simon_cpp(
 				x_levels_matrix,
 				as.integer(private$num_levels_total),
@@ -107,9 +101,7 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 				as.integer(r)
 			)$w_mat
 		}
-
 	),
-
 	private = list(
 		p_best = NULL,
 		weights = NULL,
@@ -119,14 +111,12 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 		draw_bootstrap_indices = function(bootstrap_type = NULL) {
 			list(i_b = sample_int_replace_cpp(private$t, private$t), m_vec_b = NULL)
 		},
-
 		ensure_factor_metadata = function(){
 			if (is.null(private$strata_level_rows)) private$strata_level_rows = vector("list", length(private$strata_cols))
 			if (length(private$strata_level_rows) != length(private$strata_cols)) {
 				private$strata_level_rows = vector("list", length(private$strata_cols))
 			}
 			names(private$strata_level_rows) = private$strata_cols
-
 			next_row = 1L
 			for (col in private$strata_cols) {
 				row_map = private$strata_level_rows[[col]]
@@ -142,7 +132,6 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 				private$strata_level_rows[[col]] = row_map
 				if (length(row_map) > 0L) next_row = max(unname(row_map)) + 1L
 			}
-
 			private$num_levels_total = max(0L, next_row - 1L)
 			if (!is.null(private$counts) && nrow(private$counts) < private$num_levels_total) {
 				expanded = matrix(0, nrow = private$num_levels_total, ncol = 2L)
@@ -150,7 +139,6 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 				private$counts = expanded
 			}
 		},
-
 		get_subject_levels_idx = function(x_row){
 			private$ensure_factor_metadata()
 			vapply(private$strata_cols, function(col) {

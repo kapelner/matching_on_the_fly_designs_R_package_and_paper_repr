@@ -21,8 +21,7 @@ InferenceSurvivalKKRankRegrIVWC = R6::R6Class("InferenceSurvivalKKRankRegrIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKSurvivalRankRegrIVWC,
 	public = list(
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj A completed \code{DesignSeqOneByOneKK14} object with a survival response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -33,7 +32,6 @@ InferenceSurvivalKKRankRegrIVWC = R6::R6Class("InferenceSurvivalKKRankRegrIVWC",
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 		}
 	),
-
 	private = list(
 		build_design_matrix = function(){
 			X_cov = private$X

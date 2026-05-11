@@ -20,8 +20,7 @@ InferenceIncidCMH = R6::R6Class("InferenceIncidCMH",
 	lock_objects = FALSE,
 	inherit = InferenceAllSimpleMeanDiff,
 	public = list(
-		#' @description
-		#' Initialize CMH blocked-design incidence inference.
+		#' @description Initialize CMH blocked-design incidence inference.
 		#' @param des_obj A completed design object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -41,7 +40,6 @@ InferenceIncidCMH = R6::R6Class("InferenceIncidCMH",
 			}
 		}
 	),
-
 	private = list(
 		get_standard_error = function(){
 			if (!is.null(private$cached_values$cmh_s_beta_hat_T)) {
@@ -54,7 +52,6 @@ InferenceIncidCMH = R6::R6Class("InferenceIncidCMH",
 			)
 			private$cached_values$cmh_s_beta_hat_T
 		},
-
 		get_degrees_of_freedom = function(){
 			NA_real_
 		}

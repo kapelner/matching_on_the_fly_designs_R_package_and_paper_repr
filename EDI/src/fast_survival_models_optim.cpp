@@ -496,14 +496,35 @@ List fast_clayton_weibull_aft_optim_cpp(
     ClaytonWeibullLikelihood fun(y, dead, X, pair_idx, singleton_rows);
     Eigen::VectorXd params = start_params;
     FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
+    params = apply_fixed_values(params, fixed_spec);
     LikelihoodFitResult fit;
     try {
         fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, reltol, optimization_alg, "lbfgs");
     } catch (const std::exception& e) {
         Rcout << "Optimization failed: " << e.what() << std::endl;
-        return List::create(Named("converged") = false, Named("error") = e.what());
+        const Eigen::VectorXd p_fixed = apply_fixed_values(params, fixed_spec);
+        double last_val = NA_REAL;
+        try {
+            Eigen::VectorXd g(p_fixed.size());
+            last_val = fun(p_fixed, g);
+        } catch (...) {}
+        return List::create(
+            Named("converged") = false, Named("error") = e.what(),
+            Named("par") = p_fixed, Named("params") = p_fixed, Named("b") = p_fixed,
+            Named("value") = last_val, Named("neg_loglik") = last_val, Named("neg_ll") = last_val
+        );
     } catch (...) {
-        return List::create(Named("converged") = false, Named("error") = "unknown");
+        const Eigen::VectorXd p_fixed = apply_fixed_values(params, fixed_spec);
+        double last_val = NA_REAL;
+        try {
+            Eigen::VectorXd g(p_fixed.size());
+            last_val = fun(p_fixed, g);
+        } catch (...) {}
+        return List::create(
+            Named("converged") = false, Named("error") = "unknown",
+            Named("par") = p_fixed, Named("params") = p_fixed, Named("b") = p_fixed,
+            Named("value") = last_val, Named("neg_loglik") = last_val, Named("neg_ll") = last_val
+        );
     }
     params = fit.params;
     

@@ -19,9 +19,7 @@ InferenceOrdinalKKCondAdjCatLogitRegr = R6::R6Class("InferenceOrdinalKKCondAdjCa
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThrough,
 	public = list(
-
-		#' @description
-		#' Initialize the inference object.
+		#' @description Initialize the inference object.
 		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object.
 		#' @param model_formula   Optional formula for covariate adjustment.
 		#' @param verbose Flag for progress messages.
@@ -30,26 +28,20 @@ InferenceOrdinalKKCondAdjCatLogitRegr = R6::R6Class("InferenceOrdinalKKCondAdjCa
 		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_default = TRUE){
 			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_default = smart_default)
 		},
-
-		#' @description
-		#' Returns the treatment effect estimate.
+		#' @description Returns the treatment effect estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-
-		#' @description
-		#' Returns the asymptotic confidence interval.
+		#' @description Returns the asymptotic confidence interval.
 		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			private$shared()
 			ordinal_cond_clogit_assert_finite_se(private, class(self)[1])
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-
-		#' @description
-		#' Returns the asymptotic p-value.
+		#' @description Returns the asymptotic p-value.
 		#' @param delta Null hypothesis treatment effect.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			private$shared()
@@ -57,7 +49,6 @@ InferenceOrdinalKKCondAdjCatLogitRegr = R6::R6Class("InferenceOrdinalKKCondAdjCa
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
-
 	private = list(
 		shared = function(estimate_only = FALSE){
 			ordinal_cond_clogit_shared_multi(private, expand_adjacent_category_data_cpp, function(y_i, n_alpha) {
