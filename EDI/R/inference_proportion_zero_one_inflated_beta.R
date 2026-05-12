@@ -7,9 +7,10 @@
 #' the logit scale.
 #'
 #' @details
-#' The inflation probabilities for exact 0 and exact 1 are intercept-only in this
-#' implementation. The beta mean submodel uses treatment alone in the
-#' univariate class and treatment plus covariates in the multivariate class.
+#' The beta mean submodel uses treatment alone in the univariate class and
+#' treatment plus covariates in the multivariate class. The zero/one inflation
+#' submodels use \code{model_formula_zero_one}, which defaults to \code{~ .}
+#' so that treatment plus all available covariates enter those auxiliary pieces.
 #'
 #' @examples
 #' \donttest{
@@ -32,19 +33,51 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 		#'   (default), the formula from the design object is used and its pre-computed
 		#'   design matrix is reused. If a formula is provided, a new design matrix is
 		#'   constructed from the design's imputed covariates.
+		#' @param model_formula_zero_one Formula for the zero/one inflation submodels.
+		#'   Defaults to \code{~ .}, meaning treatment plus all available covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, model_formula_zero_one = ~ ., verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "proportion")
+				assertFormula(model_formula_zero_one, null.ok = FALSE)
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+			private$model_formula_zero_one = model_formula_zero_one
 		}
 	),
 	private = list(
 		best_X_colnames = NULL,
+		best_X_zero_one_colnames = NULL,
+		model_formula_zero_one = NULL,
+		build_component_matrix = function(model_formula, selected_colnames = NULL, treatment_name = "treatment"){
+			if (is.null(selected_colnames)) {
+				if (identical(model_formula, ~ .)) {
+					X_cov = private$get_X()
+				} else {
+					X_imp = private$des_obj$get_X_imp()
+					X_cov = if (is.null(X_imp)) matrix(NA_real_, nrow = private$n, ncol = 0) else create_model_matrix_from_features(model_formula, X_imp)
+				}
+			} else {
+				if (identical(model_formula, ~ .)) {
+					X_cov_all = private$get_X()
+				} else {
+					X_imp = private$des_obj$get_X_imp()
+					X_cov_all = if (is.null(X_imp)) matrix(NA_real_, nrow = private$n, ncol = 0) else create_model_matrix_from_features(model_formula, X_imp)
+				}
+				X_cov = if (is.null(X_cov_all) || !length(selected_colnames)) matrix(NA_real_, nrow = private$n, ncol = 0) else as.matrix(X_cov_all[, intersect(selected_colnames, colnames(X_cov_all)), drop = FALSE])
+			}
+			if (is.null(X_cov) || ncol(as.matrix(X_cov)) == 0L) {
+				X_fit = cbind(`(Intercept)` = 1, treatment = private$w)
+				colnames(X_fit)[2] = treatment_name
+				return(X_fit)
+			}
+			X_fit = cbind(`(Intercept)` = 1, treatment = private$w, as.matrix(X_cov))
+			colnames(X_fit)[2] = treatment_name
+			X_fit
+		},
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -52,15 +85,10 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 			if (is.null(private$best_X_colnames)){
 				return(self$compute_estimate(estimate_only = estimate_only))
 			}
-			X_cols = private$best_X_colnames
-			X_data = private$get_X()
-			X = if (length(X_cols) == 0L) {
-				cbind(`(Intercept)` = 1, treatment = private$w)
-			} else {
-				cbind(`(Intercept)` = 1, treatment = private$w, X_data[, X_cols, drop = FALSE])
-			}
+			X = private$build_component_matrix(private$model_formula, private$best_X_colnames)
+			X_zero_one = private$build_component_matrix(private$model_formula_zero_one, private$best_X_zero_one_colnames)
 			res = tryCatch(
-				fast_zero_one_inflated_beta_cpp(X, private$y, init = rep(0, ncol(X) + 3)),
+				fast_zero_one_inflated_beta_cpp(X, X_zero_one, private$y, init = rep(0, ncol(X) + 1L + 2L * ncol(X_zero_one))),
 				error = function(e) NULL
 			)
 			if (is.null(res) || length(res$b) < 2 || !is.finite(res$b[2])) return(NA_real_)
@@ -77,17 +105,19 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 			ctx = private$cached_values$likelihood_test_context
 			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
 			X_fit = ctx$X
+			X_zero_one = ctx$X_zero_one
 			y = as.numeric(private$y)
 			j_treat = as.integer(ctx$j_treat)
 			full_params = ctx$full_params
 			list(
-				X = X_fit, y = y, j = j_treat,
+				X = X_fit, X_zero_one = X_zero_one, y = y, j = j_treat,
 				full_fit = private$cached_mod,
 				fit_null = function(delta){
-					init = if (!is.null(full_params)) as.numeric(full_params) else rep(0, ncol(X_fit) + 3)
+					init = if (!is.null(full_params)) as.numeric(full_params) else rep(0, ncol(X_fit) + 1L + 2L * ncol(X_zero_one))
 					res = tryCatch(
 						fast_zero_one_inflated_beta_cpp(
 							X_fit,
+							X_zero_one,
 							y,
 							init = init,
 							fixed_idx = j_treat,
@@ -99,35 +129,39 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 					res
 				},
 				score = function(fit){
-					get_zero_one_inflated_beta_score_cpp(X_fit, y, as.numeric(fit$params))
+					get_zero_one_inflated_beta_score_cpp(X_fit, X_zero_one, y, as.numeric(fit$params))
 				},
 				observed_information = function(fit){
-					-get_zero_one_inflated_beta_hessian_cpp(X_fit, y, as.numeric(fit$params))
+					-get_zero_one_inflated_beta_hessian_cpp(X_fit, X_zero_one, y, as.numeric(fit$params))
 				},
 				fisher_information = function(fit){
-					-get_zero_one_inflated_beta_hessian_cpp(X_fit, y, as.numeric(fit$params))
+					-get_zero_one_inflated_beta_hessian_cpp(X_fit, X_zero_one, y, as.numeric(fit$params))
 				},
 				information = function(fit){
-					-get_zero_one_inflated_beta_hessian_cpp(X_fit, y, as.numeric(fit$params))
+					-get_zero_one_inflated_beta_hessian_cpp(X_fit, X_zero_one, y, as.numeric(fit$params))
 				},
 				neg_loglik = function(fit){ as.numeric(fit$neg_loglik) }
 			)
 		},
 		generate_mod = function(estimate_only = FALSE){
-			X_data = private$get_X()
-			X_full = if (is.null(X_data) || ncol(X_data) == 0) {
-				cbind(`(Intercept)` = 1, treatment = private$w)
-			} else {
-				cbind(`(Intercept)` = 1, treatment = private$w, X_data)
-			}
+			X_full = private$build_component_matrix(private$model_formula)
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
 				required_cols = 2L,
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
-					init = rep(0, ncol(X_fit) + 3)
+					if (is.null(private$best_X_zero_one_colnames)) {
+						X_zero_one_full = private$build_component_matrix(private$model_formula_zero_one)
+						red_zo = private$reduce_design_matrix_preserving_treatment(X_zero_one_full)
+						X_zero_one = red_zo$X
+						if (is.null(X_zero_one)) return(NULL)
+						colnames(X_zero_one) = colnames(X_zero_one_full)[red_zo$keep]
+					} else {
+						X_zero_one = private$build_component_matrix(private$model_formula_zero_one, private$best_X_zero_one_colnames)
+					}
+					init = rep(0, ncol(X_fit) + 1L + 2L * ncol(X_zero_one))
 					res = tryCatch(
-						fast_zero_one_inflated_beta_cpp(X_fit, private$y, init = init),
+						fast_zero_one_inflated_beta_cpp(X_fit, X_zero_one, private$y, init = init),
 						error = function(e) NULL
 					)
 					if (is.null(res)) return(NULL)
@@ -141,7 +175,8 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 						ssq_b_j = ssq_b_j,
 						j_treat = j_treat,
 						params = as.numeric(res$params),
-						neg_loglik = as.numeric(res$neg_loglik)
+						neg_loglik = as.numeric(res$neg_loglik),
+						X_zero_one = X_zero_one
 					)
 				},
 				fit_ok = function(mod, X_fit, keep){
@@ -153,8 +188,10 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 			)
 			if (!is.null(attempt$fit)){
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
+				private$best_X_zero_one_colnames = setdiff(colnames(attempt$fit$X_zero_one), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(
 					X = attempt$X,
+					X_zero_one = attempt$fit$X_zero_one,
 					j_treat = attempt$fit$j_treat,
 					full_params = attempt$fit$params
 				)

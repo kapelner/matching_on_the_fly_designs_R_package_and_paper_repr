@@ -18,6 +18,18 @@ InferenceCountHurdlePoisson = R6::R6Class("InferenceCountHurdlePoisson",
 	lock_objects = FALSE,
 	inherit = InferenceCountZeroAugmentedPoissonAbstract,
 	public = list(
+		#' @description Initialize a hurdle Poisson inference object.
+		#' @param des_obj A completed \code{Design} object with a count response.
+		#' @param model_formula Optional formula for the count submodel.
+		#' @param model_formula_hurdle Formula for the hurdle submodel. Defaults to
+		#'   \code{~ .}, meaning treatment plus all available covariates.
+		#' @param use_rcpp Logical. If \code{TRUE} (default), use the internal Rcpp
+		#'   implementation. If \code{FALSE}, use \pkg{glmmTMB}.
+		#' @param verbose Whether to print progress messages.
+		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
+		initialize = function(des_obj, model_formula = NULL, model_formula_hurdle = ~ ., use_rcpp = TRUE, verbose = FALSE, optimization_alg = NULL){
+			super$initialize(des_obj, model_formula = model_formula, model_formula_zero = model_formula_hurdle, use_rcpp = use_rcpp, verbose = verbose, optimization_alg = optimization_alg)
+		}
 	),
 	private = list(
 		za_family = function() glmmTMB::truncated_poisson(link = "log"),
@@ -47,15 +59,19 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula Optional formula for covariate adjustment.
+		#' @param model_formula_hurdle Formula for the hurdle submodel. Defaults to
+		#'   \code{~ .}, meaning treatment plus all available covariates.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, model_formula_hurdle = ~ ., verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
+				assertFormula(model_formula_hurdle, null.ok = FALSE)
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+			private$model_formula_hurdle = model_formula_hurdle
 		},
 		#' @description Compute treatment estimate
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -101,15 +117,43 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 	private = list(
 		hurdle_description = function() "Hurdle Negative Binomial",
 		cached_mod = NULL,
+		model_formula_hurdle = NULL,
+		best_hurdle_X_colnames = NULL,
+		build_component_matrix = function(model_formula, selected_colnames = NULL, treatment_name = "treatment"){
+			if (is.null(selected_colnames)) {
+				if (identical(model_formula, ~ .)) {
+					X_cov = private$get_X()
+				} else {
+					X_imp = private$des_obj$get_X_imp()
+					X_cov = if (is.null(X_imp)) matrix(NA_real_, nrow = private$n, ncol = 0) else create_model_matrix_from_features(model_formula, X_imp)
+				}
+			} else {
+				if (identical(model_formula, ~ .)) {
+					X_cov_all = private$get_X()
+				} else {
+					X_imp = private$des_obj$get_X_imp()
+					X_cov_all = if (is.null(X_imp)) matrix(NA_real_, nrow = private$n, ncol = 0) else create_model_matrix_from_features(model_formula, X_imp)
+				}
+				X_cov = if (is.null(X_cov_all) || !length(selected_colnames)) matrix(NA_real_, nrow = private$n, ncol = 0) else as.matrix(X_cov_all[, intersect(selected_colnames, colnames(X_cov_all)), drop = FALSE])
+			}
+			if (is.null(X_cov) || ncol(as.matrix(X_cov)) == 0L) {
+				X_fit = cbind(1, private$w)
+				colnames(X_fit) = c("(Intercept)", treatment_name)
+				return(X_fit)
+			}
+			X_fit = cbind(1, private$w, as.matrix(X_cov))
+			colnames(X_fit)[1:2] = c("(Intercept)", treatment_name)
+			X_fit
+		},
 		predictors_df = function(){
 			data.frame(w = private$w)
 		},
-		try_hurdle_negbin_fit = function(X_f, j_t, estimate_only = FALSE){
+		try_hurdle_negbin_fit = function(X_f, X_hurdle, j_t, estimate_only = FALSE){
 			mod = tryCatch(
 				if (estimate_only) {
-					fast_hurdle_negbin_cpp(X_f, private$y)
+					fast_hurdle_negbin_cpp(X_f, private$y, X_hurdle = X_hurdle)
 				} else {
-					fast_hurdle_negbin_with_var_cpp(X_f, private$y, j = j_t)
+					fast_hurdle_negbin_with_var_cpp(X_f, private$y, X_hurdle = X_hurdle, j = j_t)
 				},
 				error = function(e) NULL
 			)
@@ -118,7 +162,7 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 			ssq = if (estimate_only) NA_real_ else as.numeric(mod$ssq_b_j)
 			if (length(b) != ncol(X_f) || any(!is.finite(b))) return(NULL)
 			if (!estimate_only && (!is.finite(ssq) || ssq < 0)) return(NULL)
-			list(mod = mod, b = b, ssq = ssq, j = j_t, X = X_f)
+			list(mod = mod, b = b, ssq = ssq, j = j_t, X = X_f, X_hurdle = X_hurdle)
 		},
 		supports_likelihood_tests = function(){
 			TRUE
@@ -128,6 +172,7 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 			ctx = private$cached_values$count_likelihood_context
 			if (is.null(ctx)) return(NULL)
 			X_fit = ctx$X
+			X_hurdle = ctx$X_hurdle
 			y = as.numeric(private$y)
 			j_treat = as.integer(ctx$j_treat)
 			opt_alg = private$optimization_alg %||% "lbfgs"
@@ -142,11 +187,12 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 				error = function(e) NULL
 			)
 			if (is.null(full_fit) || !isTRUE(full_fit$converged)) return(NULL)
-			list(
-				X = X_fit,
-				y = y,
-				j = j_treat,
-				full_fit = full_fit,
+				list(
+					X = X_fit,
+					X_hurdle = X_hurdle,
+					y = y,
+					j = j_treat,
+					full_fit = full_fit,
 				fit_null = function(delta, start = NULL){
 					start_params = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L)
 					fast_truncated_negbin_count_cpp(
@@ -183,8 +229,7 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			X_full = cbind(1, private$w, as.matrix(private$predictors_df()[, setdiff(colnames(private$predictors_df()), "w"), drop = FALSE]))
-			colnames(X_full)[1:2] = c("(Intercept)", "treatment")
+			X_full = private$build_component_matrix(private$model_formula, treatment_name = "treatment")
 			reduced = private$reduce_design_matrix_preserving_treatment(X_full)
 			X_fit = reduced$X
 			j_treat = reduced$j_treat
@@ -192,10 +237,25 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 				private$cache_nonestimable_estimate("hurdle_negbin_design_unusable")
 				return(invisible(NULL))
 			}
-			fit = private$try_hurdle_negbin_fit(X_fit, j_treat, estimate_only = estimate_only)
+			colnames(X_fit) = colnames(X_full)[reduced$keep]
+			if (is.null(private$best_hurdle_X_colnames)) {
+				X_hurdle_full = private$build_component_matrix(private$model_formula_hurdle, treatment_name = "treatment")
+				reduced_hurdle = private$reduce_design_matrix_preserving_treatment(X_hurdle_full)
+				X_hurdle = reduced_hurdle$X
+				if (is.null(X_hurdle)) {
+					private$cache_nonestimable_estimate("hurdle_negbin_aux_design_unusable")
+					return(invisible(NULL))
+				}
+				colnames(X_hurdle) = colnames(X_hurdle_full)[reduced_hurdle$keep]
+				private$best_hurdle_X_colnames = setdiff(colnames(X_hurdle), c("(Intercept)", "treatment"))
+			} else {
+				X_hurdle = private$build_component_matrix(private$model_formula_hurdle, private$best_hurdle_X_colnames, treatment_name = "treatment")
+			}
+			fit = private$try_hurdle_negbin_fit(X_fit, X_hurdle, j_treat, estimate_only = estimate_only)
 			if (private$harden && is.null(fit) && ncol(X_fit) > 2L){
 				X_treat_only = X_fit[, 1:2, drop = FALSE]
-				fit = private$try_hurdle_negbin_fit(X_treat_only, 2L, estimate_only = estimate_only)
+				X_hurdle_treat_only = X_hurdle[, 1:2, drop = FALSE]
+				fit = private$try_hurdle_negbin_fit(X_treat_only, X_hurdle_treat_only, 2L, estimate_only = estimate_only)
 				reduced = list(X = X_treat_only, keep = 1:2, j_treat = 2L)
 			}
 			if (is.null(fit)){
@@ -203,7 +263,7 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 				return(invisible(NULL))
 			}
 			private$cached_mod = fit$mod
-			private$cached_values$count_likelihood_context = list(X = fit$X, j_treat = fit$j)
+			private$cached_values$count_likelihood_context = list(X = fit$X, X_hurdle = fit$X_hurdle, j_treat = fit$j)
 			private$set_fit_warm_start(c(as.numeric(fit$b), log(as.numeric(fit$mod$theta_hat))), "params")
 			b_full = rep(NA_real_, ncol(X_full))
 			b_full[reduced$keep] = fit$b

@@ -156,6 +156,52 @@ test_that("SimulationFramework can keep and retrieve intermediate data", {
 	expect_null(sim$get_all_intermediate_data())
 })
 
+test_that("SimulationFramework supports custom replication and response hooks", {
+	custom_data <- function(state, rep) {
+		expect_equal(state$n, 6L)
+		expect_true(is.null(rep) || identical(rep, 1L))
+		list(
+			X = data.frame(x1 = seq_len(state$n)),
+			y_linear_model = seq(0, 1, length.out = state$n)
+		)
+	}
+
+	custom_apply <- function(y_linear_model, w, state) {
+		list(
+			y = as.numeric(y_linear_model) + ifelse(as.integer(w) == 1L, 5, 0),
+			dead = rep(1L, length(w))
+		)
+	}
+
+	custom_te <- function(y_linear_model, state) {
+		999
+	}
+
+	sim <- SimulationFramework$new(
+		response_type = "continuous",
+		design_classes_and_params = list(DesignFixedBernoulli),
+		inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
+		inference_types_and_params = list(asymp_pval = list()),
+		n = 6L,
+		p = 1L,
+		Nrep = 1L,
+		betaT = 2,
+		custom_replication_data_generator = custom_data,
+		custom_apply_treatment_and_noise = custom_apply,
+		custom_true_estimand = custom_te,
+		results_filename = tempfile(fileext = ".csv"),
+		continue_from_last_result_row = FALSE,
+		verbose = FALSE
+	)
+
+	sim$run()
+	res <- sim$get_results()
+
+	expect_equal(nrow(res), 1L)
+	expect_equal(res$true_estimand[[1L]], 999)
+	expect_true(is.finite(res$estimate[[1L]]))
+})
+
 test_that("SimulationFramework handles Friedman nonlinear model", {
 	set.seed(303)
 	sim <- SimulationFramework$new(

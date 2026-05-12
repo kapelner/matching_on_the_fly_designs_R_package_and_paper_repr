@@ -32,11 +32,13 @@ inline void clamp_probs(Eigen::VectorXd& v, double lower = 1e-8, double upper = 
 
 class ZeroOneInflatedBeta {
 public:
-	ZeroOneInflatedBeta(const Eigen::VectorXd& y, const Eigen::MatrixXd& X):
+	ZeroOneInflatedBeta(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& X_zero_one):
 		m_y(y),
 		m_X(X),
+		m_X_zero_one(X_zero_one),
 		m_n(X.rows()),
-		m_p(X.cols())
+		m_p(X.cols()),
+		m_p_zero_one(X_zero_one.cols())
 	{
 		m_n_zero = 0;
 		m_n_one = 0;
@@ -68,8 +70,8 @@ public:
 		double log_phi = params[m_p];
 		double phi = std::exp(log_phi);
 
-		double alpha0 = params[m_p + 1];
-		double alpha1 = params[m_p + 2];
+		Eigen::VectorXd gamma0 = params.segment(m_p + 1, m_p_zero_one);
+		Eigen::VectorXd gamma1 = params.tail(m_p_zero_one);
 
 		Eigen::VectorXd eta = m_X * beta;
 		Eigen::VectorXd mu = logistic(eta);
@@ -79,19 +81,38 @@ public:
 		Eigen::VectorXd mu_beta = logistic(eta_beta);
 		clamp_probs(mu_beta);
 
-		Eigen::Vector3d logits;
-		logits << alpha0, alpha1, 0.0;
-		double max_logit = logits.maxCoeff();
-		Eigen::Vector3d exp_logits = (logits.array() - max_logit).exp();
-		double sum_exp = exp_logits.sum();
-		Eigen::Vector3d pis = exp_logits / sum_exp;
-		double pi0 = pis[0];
-		double pi1 = pis[1];
-		double pib = pis[2];
-
-		double mixture_loglik = m_n_zero * std::log(pi0) +
-			m_n_one * std::log(pi1) +
-			m_n_beta * std::log(pib);
+		Eigen::VectorXd eta0 = m_X_zero_one * gamma0;
+		Eigen::VectorXd eta1 = m_X_zero_one * gamma1;
+		Eigen::VectorXd pi0(m_n);
+		Eigen::VectorXd pi1(m_n);
+		Eigen::VectorXd pib(m_n);
+		double mixture_loglik = 0.0;
+		Eigen::VectorXd grad_gamma0 = Eigen::VectorXd::Zero(m_p_zero_one);
+		Eigen::VectorXd grad_gamma1 = Eigen::VectorXd::Zero(m_p_zero_one);
+		for (int i = 0; i < m_n; ++i){
+			double max_logit = std::max(std::max(eta0[i], eta1[i]), 0.0);
+			double e0 = std::exp(eta0[i] - max_logit);
+			double e1 = std::exp(eta1[i] - max_logit);
+			double eb = std::exp(-max_logit);
+			double denom = e0 + e1 + eb;
+			pi0[i] = e0 / denom;
+			pi1[i] = e1 / denom;
+			pib[i] = eb / denom;
+			const Eigen::VectorXd xzi = m_X_zero_one.row(i).transpose();
+			if (m_y[i] <= 0){
+				mixture_loglik += std::log(pi0[i]);
+				grad_gamma0.noalias() += xzi * (1.0 - pi0[i]);
+				grad_gamma1.noalias() -= xzi * pi1[i];
+			} else if (m_y[i] >= 1){
+				mixture_loglik += std::log(pi1[i]);
+				grad_gamma0.noalias() -= xzi * pi0[i];
+				grad_gamma1.noalias() += xzi * (1.0 - pi1[i]);
+			} else {
+				mixture_loglik += std::log(pib[i]);
+				grad_gamma0.noalias() -= xzi * pi0[i];
+				grad_gamma1.noalias() -= xzi * pi1[i];
+			}
+		}
 
 		Eigen::VectorXd mu_beta_phi = mu_beta.array() * phi;
 		Eigen::VectorXd one_minus_mu_beta_phi = (1.0 - mu_beta.array()) * phi;
@@ -109,7 +130,7 @@ public:
 
 		double neg_ll = -mixture_loglik + neg_ll_beta;
 
-		grad.resize(m_p + 3);
+		grad.resize(m_p + 1 + 2 * m_p_zero_one);
 
 		Eigen::VectorXd d_mu_d_eta_beta = mu_beta.array() * (1.0 - mu_beta.array());
 		Eigen::VectorXd digamma_mu_phi = mu_beta_phi.unaryExpr(DigammaFunctor());
@@ -133,15 +154,14 @@ public:
 			sum_mu_logy -
 			sum_one_minus_log1y;
 		grad[m_p] = d_neg_ll_d_phi * phi;
-
-		grad[m_p + 1] = pi0 * m_n - m_n_zero;
-		grad[m_p + 2] = pi1 * m_n - m_n_one;
+		grad.segment(m_p + 1, m_p_zero_one) = -grad_gamma0;
+		grad.tail(m_p_zero_one) = -grad_gamma1;
 
 		return neg_ll;
 	}
 
 	Eigen::MatrixXd hessian(const Eigen::VectorXd& params){
-		Eigen::MatrixXd H(m_p + 3, m_p + 3);
+		Eigen::MatrixXd H(m_p + 1 + 2 * m_p_zero_one, m_p + 1 + 2 * m_p_zero_one);
 		H.setZero();
 
 		Eigen::VectorXd beta = params.head(m_p);
@@ -192,31 +212,46 @@ public:
 			H(m_p, m_p) = phi * d_neg_ll_d_phi + phi * phi * d2_neg_ll_d_phi2;
 		}
 
-		Eigen::Vector3d logits;
-		logits << params[m_p + 1], params[m_p + 2], 0.0;
-		double max_logit = logits.maxCoeff();
-		Eigen::Vector3d exp_logits = (logits.array() - max_logit).exp();
-		Eigen::Vector3d pis = exp_logits / exp_logits.sum();
-		const double pi0 = pis[0];
-		const double pi1 = pis[1];
-		H(m_p + 1, m_p + 1) = m_n * pi0 * (1.0 - pi0);
-		H(m_p + 2, m_p + 2) = m_n * pi1 * (1.0 - pi1);
-		H(m_p + 1, m_p + 2) = -m_n * pi0 * pi1;
-		H(m_p + 2, m_p + 1) = H(m_p + 1, m_p + 2);
-
-		H.bottomLeftCorner(1, m_p) = H.topRightCorner(m_p, 1).transpose();
+		Eigen::VectorXd gamma0 = params.segment(m_p + 1, m_p_zero_one);
+		Eigen::VectorXd gamma1 = params.tail(m_p_zero_one);
+		Eigen::MatrixXd H00 = Eigen::MatrixXd::Zero(m_p_zero_one, m_p_zero_one);
+		Eigen::MatrixXd H11 = Eigen::MatrixXd::Zero(m_p_zero_one, m_p_zero_one);
+		Eigen::MatrixXd H01 = Eigen::MatrixXd::Zero(m_p_zero_one, m_p_zero_one);
+		Eigen::VectorXd eta0 = m_X_zero_one * gamma0;
+		Eigen::VectorXd eta1 = m_X_zero_one * gamma1;
+		for (int i = 0; i < m_n; ++i){
+			double max_logit = std::max(std::max(eta0[i], eta1[i]), 0.0);
+			double e0 = std::exp(eta0[i] - max_logit);
+			double e1 = std::exp(eta1[i] - max_logit);
+			double eb = std::exp(-max_logit);
+			double denom = e0 + e1 + eb;
+			double pi0 = e0 / denom;
+			double pi1 = e1 / denom;
+			const Eigen::VectorXd xzi = m_X_zero_one.row(i).transpose();
+			H00.noalias() += pi0 * (1.0 - pi0) * (xzi * xzi.transpose());
+			H11.noalias() += pi1 * (1.0 - pi1) * (xzi * xzi.transpose());
+			H01.noalias() += (-pi0 * pi1) * (xzi * xzi.transpose());
+		}
+		const int g0_start = m_p + 1;
+		const int g1_start = m_p + 1 + m_p_zero_one;
+		H.block(g0_start, g0_start, m_p_zero_one, m_p_zero_one) = H00;
+		H.block(g1_start, g1_start, m_p_zero_one, m_p_zero_one) = H11;
+		H.block(g0_start, g1_start, m_p_zero_one, m_p_zero_one) = H01;
+		H.block(g1_start, g0_start, m_p_zero_one, m_p_zero_one) = H01.transpose();
 		return H;
 	}
 
 private:
 	const Eigen::VectorXd m_y;
 	const Eigen::MatrixXd m_X;
+	const Eigen::MatrixXd m_X_zero_one;
 	Eigen::MatrixXd m_X_beta;
 	Eigen::VectorXd m_y_beta;
 	Eigen::VectorXd m_log_y_beta;
 	Eigen::VectorXd m_log1_y_beta;
 	int m_n;
 	int m_p;
+	int m_p_zero_one;
 	int m_n_beta;
 	int m_n_zero;
 	int m_n_one;
@@ -224,11 +259,12 @@ private:
 
 // [[Rcpp::export]]
 Eigen::VectorXd get_zero_one_inflated_beta_score_cpp(Eigen::MatrixXd X,
+													 Eigen::MatrixXd X_zero_one,
 													 NumericVector y,
 													 NumericVector params){
 	Eigen::VectorXd y_eigen = Rcpp::as<Eigen::VectorXd>(y);
 	Eigen::VectorXd par = Rcpp::as<Eigen::VectorXd>(params);
-	ZeroOneInflatedBeta fun(y_eigen, X);
+	ZeroOneInflatedBeta fun(y_eigen, X, X_zero_one);
 	Eigen::VectorXd grad(par.size());
 	fun(par, grad);
 	return -grad;
@@ -236,16 +272,18 @@ Eigen::VectorXd get_zero_one_inflated_beta_score_cpp(Eigen::MatrixXd X,
 
 // [[Rcpp::export]]
 Eigen::MatrixXd get_zero_one_inflated_beta_hessian_cpp(Eigen::MatrixXd X,
+													   Eigen::MatrixXd X_zero_one,
 													   NumericVector y,
 													   NumericVector params){
 	Eigen::VectorXd y_eigen = Rcpp::as<Eigen::VectorXd>(y);
 	Eigen::VectorXd par = Rcpp::as<Eigen::VectorXd>(params);
-	ZeroOneInflatedBeta fun(y_eigen, X);
+	ZeroOneInflatedBeta fun(y_eigen, X, X_zero_one);
 	return -fun.hessian(par);
 }
 
 // [[Rcpp::export]]
 List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
+									 Eigen::MatrixXd X_zero_one,
 									 NumericVector y,
 									 NumericVector init,
 									 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -255,7 +293,7 @@ List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
 	Eigen::VectorXd params = Rcpp::as<Eigen::VectorXd>(init);
 	FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
 
-	ZeroOneInflatedBeta fun(y_eigen, X);
+	ZeroOneInflatedBeta fun(y_eigen, X, X_zero_one);
 	LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, 1500, 1e-6, optimization_alg, "lbfgs");
 	params = fit.params;
 
@@ -286,11 +324,12 @@ List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
 	}
 
 	int p = X.cols();
+	int p_zero_one = X_zero_one.cols();
 	return List::create(
 		Named("b") = params.head(p),
 		Named("log_phi") = params[p],
-		Named("logit_alpha0") = params[p + 1],
-		Named("logit_alpha1") = params[p + 2],
+		Named("zero_one_b0") = params.segment(p + 1, p_zero_one),
+		Named("zero_one_b1") = params.tail(p_zero_one),
 		Named("params") = params,
 		Named("vcov") = vcov_mat,
 		Named("neg_loglik") = fit.value

@@ -477,12 +477,12 @@ get_hurdle_negbin_count_hessian_cpp <- function(X, y, params) {
     .Call(`_EDI_get_hurdle_negbin_count_hessian_cpp`, X, y, params)
 }
 
-fast_hurdle_negbin_cpp <- function(X, y, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
-    .Call(`_EDI_fast_hurdle_negbin_cpp`, X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg)
+fast_hurdle_negbin_cpp <- function(X, y, X_hurdle, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
+    .Call(`_EDI_fast_hurdle_negbin_cpp`, X, y, X_hurdle, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
-fast_hurdle_negbin_with_var_cpp <- function(X, y, j = 2L, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
-    .Call(`_EDI_fast_hurdle_negbin_with_var_cpp`, X, y, j, maxit, tol, fixed_idx, fixed_values, optimization_alg)
+fast_hurdle_negbin_with_var_cpp <- function(X, y, X_hurdle, j = 2L, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
+    .Call(`_EDI_fast_hurdle_negbin_with_var_cpp`, X, y, X_hurdle, j, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
 fast_truncated_negbin_count_cpp <- function(X, y, start_params = NULL, estimate_only = FALSE, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
@@ -1485,16 +1485,16 @@ fast_zero_augmented_poisson_cpp <- function(X, y, Xzi, is_hurdle, start_params =
     .Call(`_EDI_fast_zero_augmented_poisson_cpp`, X, y, Xzi, is_hurdle, start_params, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg)
 }
 
-get_zero_one_inflated_beta_score_cpp <- function(X, y, params) {
-    .Call(`_EDI_get_zero_one_inflated_beta_score_cpp`, X, y, params)
+get_zero_one_inflated_beta_score_cpp <- function(X, X_zero_one, y, params) {
+    .Call(`_EDI_get_zero_one_inflated_beta_score_cpp`, X, X_zero_one, y, params)
 }
 
-get_zero_one_inflated_beta_hessian_cpp <- function(X, y, params) {
-    .Call(`_EDI_get_zero_one_inflated_beta_hessian_cpp`, X, y, params)
+get_zero_one_inflated_beta_hessian_cpp <- function(X, X_zero_one, y, params) {
+    .Call(`_EDI_get_zero_one_inflated_beta_hessian_cpp`, X, X_zero_one, y, params)
 }
 
-fast_zero_one_inflated_beta_cpp <- function(X, y, init, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
-    .Call(`_EDI_fast_zero_one_inflated_beta_cpp`, X, y, init, fixed_idx, fixed_values, optimization_alg)
+fast_zero_one_inflated_beta_cpp <- function(X, X_zero_one, y, init, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs") {
+    .Call(`_EDI_fast_zero_one_inflated_beta_cpp`, X, X_zero_one, y, init, fixed_idx, fixed_values, optimization_alg)
 }
 
 get_zinb_score_cpp <- function(X, y, Xzi, params) {

@@ -960,12 +960,16 @@ NULL
 	-ll
 }
 
-.fit_zero_one_inflated_beta = function(y, X, estimate_only = FALSE, starts = NULL, optimization_alg = "lbfgs"){
+.fit_zero_one_inflated_beta = function(y, X, X_zero_one = X, estimate_only = FALSE, starts = NULL, optimization_alg = "lbfgs"){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	y = as.numeric(y)
 	X = as.matrix(X)
+	X_zero_one = as.matrix(X_zero_one)
 	if (length(y) != nrow(X)){
 		stop("Zero/one-inflated beta fit inputs must have matching row counts.")
+	}
+	if (nrow(X_zero_one) != length(y)){
+		stop("Zero/one-inflated beta auxiliary inputs must have matching row counts.")
 	}
 	if (!all(is.finite(y)) || any(y < 0 | y > 1)){
 		stop("Zero/one-inflated beta requires y in [0, 1].")
@@ -994,7 +998,7 @@ NULL
 	best_val = Inf
 	for (start_par in starts){
 		fit = tryCatch(
-			fast_zero_one_inflated_beta_cpp(X, y, start_par, optimization_alg = optimization_alg),
+			fast_zero_one_inflated_beta_cpp(X, X_zero_one, y, start_par, optimization_alg = optimization_alg),
 			error = function(e) NULL
 		)
 		if (is.null(fit) || !is.finite(fit$neg_loglik)) next

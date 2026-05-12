@@ -92,6 +92,7 @@ Initialize a zero-inflated negative binomial inference object.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountZeroInflatedNegBin$new(
   des_obj,
   model_formula = NULL,
+  model_formula_zero = ~.,
   use_rcpp = TRUE,
   verbose = FALSE,
   optimization_alg = NULL
@@ -104,6 +105,9 @@ Initialize a zero-inflated negative binomial inference object.
 \item{\code{des_obj}}{A completed \code{Design} object with a count response.}
 
 \item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{model_formula_zero}}{Formula for the zero-inflation submodel. Defaults
+to \code{~ .}, meaning treatment plus all available covariates.}
 
 \item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), use our internal Rcpp
 implementation. If \code{FALSE}, use \pkg{glmmTMB}.}

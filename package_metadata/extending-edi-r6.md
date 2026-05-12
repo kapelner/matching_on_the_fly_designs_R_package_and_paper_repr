@@ -1,15 +1,4 @@
----
-title: "Extending EDI with Custom R6 Inference Classes"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Extending EDI with Custom R6 Inference Classes}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
-```{r, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
-```
+# Extending EDI with Custom R6 Inference Classes
 
 EDI is implemented with R6 classes. Advanced users can define their own R6
 classes outside the package and reuse EDI's design storage, response handling,
@@ -18,7 +7,7 @@ randomization, bootstrap, and summary methods.
 The custom-extension base classes are intentionally internal while the extension
 contract is experimental. Retrieve them with `getFromNamespace()`:
 
-```{r}
+```r
 library(EDI)
 library(R6)
 
@@ -49,7 +38,7 @@ Use public accessors instead of private fields:
 
 ## Example
 
-```{r}
+```r
 InferenceMedianDiff <- R6Class(
   "InferenceMedianDiff",
   inherit = InferenceCustomAsymp,
@@ -90,7 +79,7 @@ inf$compute_bootstrap_two_sided_pval(B = 501)
 
 EDI also provides internal bases for user-defined designs:
 
-```{r}
+```r
 DesignCustomFixed <- getFromNamespace("DesignCustomFixed", "EDI")
 DesignCustomSequential <- getFromNamespace("DesignCustomSequential", "EDI")
 ```

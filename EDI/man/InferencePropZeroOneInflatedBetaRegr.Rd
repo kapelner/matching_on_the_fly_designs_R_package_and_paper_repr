@@ -16,9 +16,10 @@ treatment effect is the treatment coefficient from the beta mean submodel, on
 the logit scale.
 
 
-The inflation probabilities for exact 0 and exact 1 are intercept-only in this
-implementation. The beta mean submodel uses treatment alone in the
-univariate class and treatment plus covariates in the multivariate class.
+The beta mean submodel uses treatment alone in the univariate class and
+treatment plus covariates in the multivariate class. The zero/one inflation
+submodels use \code{model_formula_zero_one}, which defaults to \code{~ .}
+so that treatment plus all available covariates enter those auxiliary pieces.
 }
 \examples{
 \donttest{
@@ -100,6 +101,7 @@ Initialize a zero-one-inflated beta regression inference object.
 \if{html}{\out{<div class="r">}}\preformatted{InferencePropZeroOneInflatedBetaRegr$new(
   des_obj,
   model_formula = NULL,
+  model_formula_zero_one = ~.,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
 }
@@ -113,6 +115,9 @@ Initialize a zero-one-inflated beta regression inference object.
 (default), the formula from the design object is used and its pre-computed
 design matrix is reused. If a formula is provided, a new design matrix is
 constructed from the design's imputed covariates.}
+
+\item{\code{model_formula_zero_one}}{Formula for the zero/one inflation submodels.
+Defaults to \code{~ .}, meaning treatment plus all available covariates.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
 }

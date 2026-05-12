@@ -89,7 +89,12 @@ inf$compute_estimate()
 \subsection{Method \code{new()}}{
 Initialize
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceCountHurdleNegBin$new(des_obj, model_formula = NULL, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceCountHurdleNegBin$new(
+  des_obj,
+  model_formula = NULL,
+  model_formula_hurdle = ~.,
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -98,6 +103,9 @@ Initialize
 \item{\code{des_obj}}{A completed \code{Design} object.}
 
 \item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{model_formula_hurdle}}{Formula for the hurdle submodel. Defaults to
+\code{~ .}, meaning treatment plus all available covariates.}
 
 \item{\code{verbose}}{A flag indicating whether messages should be displayed.}
 }

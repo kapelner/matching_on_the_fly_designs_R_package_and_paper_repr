@@ -399,6 +399,20 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   censoring probability; applied only when
     #'   \code{response_type = "survival"}.  Default \code{0.25}.
     #'
+    #' @param custom_replication_data_generator Optional function for custom
+    #'   replication data. When supplied, it is called as
+    #'   \code{fn(state, rep)} and must return a list containing at least
+    #'   \code{X} and \code{y_linear_model}.
+    #'
+    #' @param custom_apply_treatment_and_noise Optional function for custom
+    #'   response generation. When supplied, it is called as
+    #'   \code{fn(y_linear_model, w, state)} and must return a list with
+    #'   components \code{y} and \code{dead}.
+    #'
+    #' @param custom_true_estimand Optional function for a custom true
+    #'   estimand. When supplied, it is called as
+    #'   \code{fn(y_linear_model, state)} and must return a numeric scalar.
+    #'
     #' @param verbose Logical.  If \code{TRUE}, prints a message for every
     #'   replication and for every \code{(design, inference)} pair that is
     #'   skipped due to an error.  Default \code{TRUE}.
@@ -488,6 +502,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       cov_draw_method_args  = list(mean = 0, sd = 1),
       random_X_draws        = TRUE,
       prob_censoring        = 0.25,
+      custom_replication_data_generator = NULL,
+      custom_apply_treatment_and_noise = NULL,
+      custom_true_estimand = NULL,
       verbose                    = TRUE,
       keep_all_intermediate_data = FALSE,
       turn_off_asserts_for_speed = TRUE,
@@ -574,6 +591,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$cov_draw_method_args = cov_draw_method_args
       private$random_X_draws       = random_X_draws
       private$prob_censoring       = prob_censoring
+      private$custom_replication_data_generator = custom_replication_data_generator
+      private$custom_apply_treatment_and_noise = custom_apply_treatment_and_noise
+      private$custom_true_estimand = custom_true_estimand
       private$verbose                    = verbose
       private$turn_off_asserts_for_speed = turn_off_asserts_for_speed
       
@@ -941,6 +961,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           response_type = private$current_response_type, random_X_draws = private$random_X_draws,
           shared_X = if (!isTRUE(private$random_X_draws)) shared_X_draws[[paste(private$current_n, private$current_p, sep = "|")]] else NULL,
           X_mat = private$X_mat, cov_draw_method = private$cov_draw_method, cov_draw_method_args = private$cov_draw_method_args,
+          custom_replication_data_generator = private$custom_replication_data_generator,
+          custom_apply_treatment_and_noise = private$custom_apply_treatment_and_noise,
+          custom_true_estimand = private$custom_true_estimand,
           design_classes = private$design_classes, design_labels = private$design_labels, design_params = private$design_params,
           inference_classes = private$inference_classes, inference_labels = private$inference_labels, inference_ctor_params = private$inference_constructor_params,
           inf_types = private$inf_types, alpha = private$alpha, B_boot = private$B_boot, r_rand = private$r_rand,
@@ -1459,6 +1482,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     cov_draw_method_args = NULL,
     random_X_draws       = NULL,
     prob_censoring       = NULL,
+    custom_replication_data_generator = NULL,
+    custom_apply_treatment_and_noise = NULL,
+    custom_true_estimand = NULL,
     verbose          = NULL,
     results_filename = NULL,
     simulation_start_time = NULL,
@@ -2098,17 +2124,62 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         }
         NULL
       }
+      state_for_rep = function() {
+        state$rep = rep_i
+        state
+      }
+      validate_custom_replication_data = function(data) {
+        if (!is.list(data))
+          stop("custom_replication_data_generator must return a list")
+        if (is.null(data$X) || is.null(data$y_linear_model))
+          stop("custom_replication_data_generator must return 'X' and 'y_linear_model'")
+        X = data$X
+        if (!is.data.frame(X)) X = as.data.frame(X)
+        y_linear_model = as.numeric(data$y_linear_model)
+        if (nrow(X) != state$n)
+          stop("custom replication data returned X with ", nrow(X), " rows; expected ", state$n)
+        if (length(y_linear_model) != state$n)
+          stop("custom replication data returned y_linear_model of length ", length(y_linear_model), "; expected ", state$n)
+        data$X = X
+        data$y_linear_model = y_linear_model
+        data
+      }
+      apply_treatment_and_noise = function(y_linear_model, w) {
+        if (!is.null(state$custom_apply_treatment_and_noise)) {
+          out = state$custom_apply_treatment_and_noise(y_linear_model, w, state_for_rep())
+          if (!is.list(out) || is.null(out$y) || is.null(out$dead)) {
+            stop("custom_apply_treatment_and_noise must return a list with 'y' and 'dead'")
+          }
+          return(list(y = out$y, dead = out$dead))
+        }
+        apply_treatment_and_noise_cpp(
+          y_linear_model, w,
+          state$response_type, state$betaT,
+          state$sd_noise, state$prob_censoring,
+          state$n_ordinal_levels,
+          phi_proportion = state$phi_proportion,
+          k_survival = state$k_survival,
+          incidence_clamp = state$incidence_clamp,
+          proportion_clamp = state$proportion_clamp,
+          count_clamp = state$count_clamp,
+          survival_clamp = state$survival_clamp
+        )
+      }
       # 1. Generate data
       data = tryCatch(
-        generate_covariate_dataset(
-          n                    = state$n,
-          p                    = state$p,
-          cond_exp_func_model  = state$cond_exp_func_model,
-          norm_sq_beta_vec     = state$norm_sq_beta_vec,
-          X_mat                = state$shared_X %||% state$X_mat,
-          cov_draw_method      = if (is.null(state$shared_X) && is.null(state$X_mat)) state$cov_draw_method else NULL,
-          cov_draw_method_args = state$cov_draw_method_args
-        ),
+        if (!is.null(state$custom_replication_data_generator)) {
+          validate_custom_replication_data(state$custom_replication_data_generator(state_for_rep(), rep_i))
+        } else {
+          generate_covariate_dataset(
+            n                    = state$n,
+            p                    = state$p,
+            cond_exp_func_model  = state$cond_exp_func_model,
+            norm_sq_beta_vec     = state$norm_sq_beta_vec,
+            X_mat                = state$shared_X %||% state$X_mat,
+            cov_draw_method      = if (is.null(state$shared_X) && is.null(state$X_mat)) state$cov_draw_method else NULL,
+            cov_draw_method_args = state$cov_draw_method_args
+          )
+        },
         error = function(e) {
           fatal = handle_error(make_error(
             stage = "data_generation",
@@ -2123,32 +2194,40 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       if (is.null(data)) {
         return(list(results_dt = NULL, skipped_count = 0L, errors = error_records, fatal_error = NULL))
       }
-      y_linear_model = as.numeric(scale(data$y_cont))
+      y_linear_model = if (!is.null(state$custom_replication_data_generator)) {
+        as.numeric(data$y_linear_model)
+      } else {
+        as.numeric(scale(data$y_cont))
+      }
       X = data$X
       
       # True ATE calculation logic (extracted from compute_true_mean_diff_ate)
       clamp = function(x, lo, hi) {
         pmin(hi, pmax(lo, x))
       }
-      true_mean_diff_ate = switch(state$response_type,
-        continuous = state$betaT,
-        incidence = {
-          p_t = clamp(stats::plogis(y_linear_model + state$betaT), state$incidence_clamp, 1 - state$incidence_clamp)
-          p_c = clamp(stats::plogis(y_linear_model), state$incidence_clamp, 1 - state$incidence_clamp)
-          mean(p_t - p_c)
-        },
-        proportion = {
-          p_t = clamp(stats::plogis(y_linear_model + state$betaT), state$proportion_clamp, 1 - state$proportion_clamp)
-          p_c = clamp(stats::plogis(y_linear_model), state$proportion_clamp, 1 - state$proportion_clamp)
-          mean(p_t - p_c)
-        },
-        count = {
-          r_t = clamp(exp(y_linear_model + state$betaT), state$count_clamp, Inf)
-          r_c = clamp(exp(y_linear_model), state$count_clamp, Inf)
-          mean(r_t - r_c)
-        },
-        NA_real_
-      )
+      true_mean_diff_ate = if (!is.null(state$custom_true_estimand)) {
+        as.numeric(state$custom_true_estimand(y_linear_model, state_for_rep()))[1L]
+      } else {
+        switch(state$response_type,
+          continuous = state$betaT,
+          incidence = {
+            p_t = clamp(stats::plogis(y_linear_model + state$betaT), state$incidence_clamp, 1 - state$incidence_clamp)
+            p_c = clamp(stats::plogis(y_linear_model), state$incidence_clamp, 1 - state$incidence_clamp)
+            mean(p_t - p_c)
+          },
+          proportion = {
+            p_t = clamp(stats::plogis(y_linear_model + state$betaT), state$proportion_clamp, 1 - state$proportion_clamp)
+            p_c = clamp(stats::plogis(y_linear_model), state$proportion_clamp, 1 - state$proportion_clamp)
+            mean(p_t - p_c)
+          },
+          count = {
+            r_t = clamp(exp(y_linear_model + state$betaT), state$count_clamp, Inf)
+            r_c = clamp(exp(y_linear_model), state$count_clamp, Inf)
+            mean(r_t - r_c)
+          },
+          NA_real_
+        )
+      }
       results = list()
       result_keys = character()
       skipped_count = 0L
@@ -2177,34 +2256,14 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           if (inherits(d, "DesignSeqOneByOne")) {
             for (t in seq_len(state$n)) {
               w_t = d$add_one_subject_to_experiment_and_assign(X[t, , drop = FALSE])
-              out = apply_treatment_and_noise_cpp(
-                y_linear_model[t], w_t,
-                state$response_type, state$betaT,
-                state$sd_noise, state$prob_censoring,
-                state$n_ordinal_levels,
-                phi_proportion = state$phi_proportion,
-                k_survival = state$k_survival,
-                incidence_clamp = state$incidence_clamp,
-                proportion_clamp = state$proportion_clamp,
-                count_clamp = state$count_clamp,
-                survival_clamp = state$survival_clamp)
+              out = apply_treatment_and_noise(y_linear_model[t], w_t)
               d$add_one_subject_response(t, out$y, out$dead)
             }
           } else {
             d$add_all_subjects_to_experiment(X)
             d$assign_w_to_all_subjects()
             w = d$get_w()
-            out = apply_treatment_and_noise_cpp(
-              y_linear_model, w,
-              state$response_type, state$betaT,
-              state$sd_noise, state$prob_censoring,
-              state$n_ordinal_levels,
-              phi_proportion = state$phi_proportion,
-              k_survival = state$k_survival,
-              incidence_clamp = state$incidence_clamp,
-              proportion_clamp = state$proportion_clamp,
-              count_clamp = state$count_clamp,
-              survival_clamp = state$survival_clamp)
+            out = apply_treatment_and_noise(y_linear_model, w)
             d$add_all_subject_responses(out$y, out$dead)
           }
           d
@@ -2849,8 +2908,82 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       labels
     },
+    .state_for_current_cell = function(rep = NULL) {
+      list(
+        response_type = private$current_response_type,
+        cond_exp_func_model = private$current_cond_exp_func_model,
+        n = private$current_n,
+        p = private$current_p,
+        betaT = private$current_betaT,
+        alpha = private$alpha,
+        B_boot = private$B_boot,
+        r_rand = private$r_rand,
+        pval_epsilon = private$pval_epsilon,
+        sd_noise = private$sd_noise,
+        n_ordinal_levels = private$n_ordinal_levels,
+        proportion_epsilon = private$proportion_epsilon,
+        phi_proportion = private$phi_proportion,
+        k_survival = private$k_survival,
+        incidence_clamp = private$incidence_clamp,
+        proportion_clamp = private$proportion_clamp,
+        count_clamp = private$count_clamp,
+        survival_clamp = private$survival_clamp,
+        survival_min_time = private$survival_min_time,
+        count_min_rate = private$count_min_rate,
+        count_shift = private$count_shift,
+        norm_sq_beta_vec = private$norm_sq_beta_vec,
+        prob_censoring = private$prob_censoring,
+        rep = rep
+      )
+    },
+    .validate_custom_replication_data = function(data) {
+      if (!is.list(data))
+        stop("custom_replication_data_generator must return a list")
+      if (is.null(data$X) || is.null(data$y_linear_model))
+        stop("custom_replication_data_generator must return 'X' and 'y_linear_model'")
+      X = data$X
+      if (!is.data.frame(X)) X = as.data.frame(X)
+      y_linear_model = as.numeric(data$y_linear_model)
+      if (nrow(X) != private$current_n)
+        stop("custom replication data returned X with ", nrow(X), " rows; expected ", private$current_n)
+      if (length(y_linear_model) != private$current_n)
+        stop("custom replication data returned y_linear_model of length ", length(y_linear_model), "; expected ", private$current_n)
+      data$X = X
+      data$y_linear_model = y_linear_model
+      data
+    },
+    .apply_treatment_and_noise = function(y_linear_model, w) {
+      if (!is.null(private$custom_apply_treatment_and_noise)) {
+        out = private$custom_apply_treatment_and_noise(
+          y_linear_model,
+          w,
+          private$.state_for_current_cell()
+        )
+        if (!is.list(out) || is.null(out$y) || is.null(out$dead)) {
+          stop("custom_apply_treatment_and_noise must return a list with 'y' and 'dead'")
+        }
+        return(list(y = out$y, dead = out$dead))
+      }
+      apply_treatment_and_noise_cpp(
+        y_linear_model, w,
+        private$current_response_type, private$current_betaT,
+        private$sd_noise, private$prob_censoring,
+        private$n_ordinal_levels,
+        phi_proportion = private$phi_proportion,
+        k_survival = private$k_survival,
+        incidence_clamp = private$incidence_clamp,
+        proportion_clamp = private$proportion_clamp,
+        count_clamp = private$count_clamp,
+        survival_clamp = private$survival_clamp
+      )
+    },
     # ── Data generation ───────────────────────────────────────────────────────
     .generate_data = function() {
+      if (!is.null(private$custom_replication_data_generator)) {
+        return(private$.validate_custom_replication_data(
+          private$custom_replication_data_generator(private$.state_for_current_cell(), NULL)
+        ))
+      }
       data = generate_covariate_dataset(
         n                    = private$current_n,
         p                    = private$current_p,
@@ -2865,6 +2998,11 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       data
     },
     .generate_data_from_X = function(X_mat) {
+      if (!is.null(private$custom_replication_data_generator)) {
+        return(private$.validate_custom_replication_data(
+          private$custom_replication_data_generator(private$.state_for_current_cell(), NULL)
+        ))
+      }
       data = generate_covariate_dataset(
         n                    = private$current_n,
         p                    = private$current_p,
@@ -2879,6 +3017,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       data
     },
     compute_true_mean_diff_ate = function(y_linear_model) {
+      if (!is.null(private$custom_true_estimand)) {
+        return(as.numeric(private$custom_true_estimand(
+          y_linear_model,
+          private$.state_for_current_cell()
+        ))[1L])
+      }
       eta_c = y_linear_model
       eta_t = y_linear_model + private$current_betaT
       clamp = function(x, lo, hi) {
@@ -2998,17 +3142,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         for (t in seq_len(n)) {
           w_t = des_obj$add_one_subject_to_experiment_and_assign(
             X[t, , drop = FALSE])
-          out = apply_treatment_and_noise_cpp(
-            y_linear_model[t], w_t,
-	            private$current_response_type, private$current_betaT,
-	            private$sd_noise, private$prob_censoring,
-	            private$n_ordinal_levels,
-	            phi_proportion = private$phi_proportion,
-	            k_survival = private$k_survival,
-	            incidence_clamp = private$incidence_clamp,
-	            proportion_clamp = private$proportion_clamp,
-	            count_clamp = private$count_clamp,
-	            survival_clamp = private$survival_clamp)
+          out = private$.apply_treatment_and_noise(y_linear_model[t], w_t)
           des_obj$add_one_subject_response(t, out$y, out$dead)
         }
       } else {
@@ -3016,17 +3150,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         des_obj$add_all_subjects_to_experiment(X)
         des_obj$assign_w_to_all_subjects()
         w   = des_obj$get_w()
-        out = apply_treatment_and_noise_cpp(
-          y_linear_model, w,
-	          private$current_response_type, private$current_betaT,
-	          private$sd_noise, private$prob_censoring,
-	          private$n_ordinal_levels,
-	          phi_proportion = private$phi_proportion,
-	          k_survival = private$k_survival,
-	          incidence_clamp = private$incidence_clamp,
-	          proportion_clamp = private$proportion_clamp,
-	          count_clamp = private$count_clamp,
-	          survival_clamp = private$survival_clamp)
+        out = private$.apply_treatment_and_noise(y_linear_model, w)
         des_obj$add_all_subject_responses(out$y, out$dead)
       }
       des_obj

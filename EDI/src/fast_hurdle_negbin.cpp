@@ -190,6 +190,7 @@ Eigen::MatrixXd get_hurdle_negbin_count_hessian_cpp(const Eigen::MatrixXd& X,
 // [[Rcpp::export]]
 List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 						   const Eigen::VectorXd& y,
+						   const Eigen::MatrixXd& X_hurdle,
 						   int maxit = 1000,
 						   double tol = 1e-8,
 						   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -197,27 +198,16 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 						   std::string optimization_alg = "lbfgs") {
 	const int n = X.rows();
 	const int p = X.cols();
+	const int p_hurdle = X_hurdle.cols();
 	std::string alg = normalize_optimizer_algorithm(optimization_alg, "lbfgs", false);
 	FixedParamSpec count_fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
-	IntegerVector hurdle_fixed_idx;
-	NumericVector hurdle_fixed_values;
-	if (fixed_idx.isNotNull()) {
-		IntegerVector idx_r(fixed_idx);
-		NumericVector val_r(fixed_values);
-		for (int k = 0; k < idx_r.size(); ++k) {
-			if (idx_r[k] <= p) {
-				hurdle_fixed_idx.push_back(idx_r[k]);
-				hurdle_fixed_values.push_back(val_r[k]);
-			}
-		}
-	}
 
 	VectorXd y_pos_ind = (y.array() > 0.0).cast<double>();
-	Eigen::VectorXd hurdle_b = Eigen::VectorXd::Constant(p, NA_REAL);
+	Eigen::VectorXd hurdle_b = Eigen::VectorXd::Constant(p_hurdle, NA_REAL);
 	bool hurdle_converged = false;
     
 	if (y_pos_ind.minCoeff() < y_pos_ind.maxCoeff()) {
-        ModelResult hurdle_res = fast_logistic_regression_internal(X, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, hurdle_fixed_idx, hurdle_fixed_values, alg);
+        ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, R_NilValue, R_NilValue, alg);
 		hurdle_b = hurdle_res.b;
 		hurdle_converged = hurdle_res.converged;
 	}
@@ -275,13 +265,14 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 // [[Rcpp::export]]
 List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X,
 									 const Eigen::VectorXd& y,
+									 const Eigen::MatrixXd& X_hurdle,
 									 int j = 2,
 									 int maxit = 1000,
 									 double tol = 1e-8,
 									 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
 									 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
 									 std::string optimization_alg = "lbfgs") {
-	List fit = fast_hurdle_negbin_cpp(X, y, maxit, tol, fixed_idx, fixed_values, optimization_alg);
+	List fit = fast_hurdle_negbin_cpp(X, y, X_hurdle, maxit, tol, fixed_idx, fixed_values, optimization_alg);
 	SEXP b_sexp = fit["b"];
 	NumericVector b_nv(b_sexp);
 	const int p = b_nv.size();
@@ -291,24 +282,12 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X,
 	if (fit.containsElementNamed("hurdle_b")) {
 		VectorXd y_pos_ind = (y.array() > 0.0).cast<double>();
 		if (y_pos_ind.minCoeff() < y_pos_ind.maxCoeff()) {
-			IntegerVector hurdle_fixed_idx;
-			NumericVector hurdle_fixed_values;
-			if (fixed_idx.isNotNull()) {
-				IntegerVector idx_r(fixed_idx);
-				NumericVector val_r(fixed_values);
-				for (int k = 0; k < idx_r.size(); ++k) {
-					if (idx_r[k] <= p) {
-						hurdle_fixed_idx.push_back(idx_r[k]);
-						hurdle_fixed_values.push_back(val_r[k]);
-					}
-				}
-			}
-			ModelResult hurdle_res = fast_logistic_regression_internal(X, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, hurdle_fixed_idx, hurdle_fixed_values, optimization_alg);
-			FixedParamSpec hurdle_spec = make_fixed_param_spec(p, hurdle_fixed_idx, hurdle_fixed_values);
+			ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, R_NilValue, R_NilValue, optimization_alg);
+			FixedParamSpec hurdle_spec = make_fixed_param_spec(X_hurdle.cols(), R_NilValue, R_NilValue);
 			MatrixXd info_free = subset_matrix(hurdle_res.XtWX, hurdle_spec.free_idx, hurdle_spec.free_idx);
-			MatrixXd vcov = expand_free_covariance(p, hurdle_spec, info_free.inverse(), true);
-			if (j > 0 && j <= p) hurdle_ssq_b_j = vcov(j - 1, j - 1);
-			if (p >= 2) hurdle_ssq_b_2 = vcov(1, 1);
+			MatrixXd vcov = expand_free_covariance(X_hurdle.cols(), hurdle_spec, info_free.inverse(), true);
+			if (j > 0 && j <= X_hurdle.cols()) hurdle_ssq_b_j = vcov(j - 1, j - 1);
+			if (X_hurdle.cols() >= 2) hurdle_ssq_b_2 = vcov(1, 1);
 		}
 	}
 
