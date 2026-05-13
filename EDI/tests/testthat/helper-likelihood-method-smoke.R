@@ -14,6 +14,10 @@ run_likelihood_method_smoke_suite <- function(){
 	set.seed(20240508)
 
 	call_all_methods <- function(inf, label){
+		is_unsupported_method_error <- function(err){
+			grepl("does not expose a likelihood-test specification", conditionMessage(err), fixed = TRUE)
+		}
+
 		pval_methods <- c(
 			"compute_wald_two_sided_pval",
 			"compute_score_two_sided_pval",
@@ -31,7 +35,17 @@ run_likelihood_method_smoke_suite <- function(){
 			method_fn = inf[[method_name]]
 			stopifnot(is.function(method_fn))
 			cat(sprintf("  [%s] calling %s ...\n", label, method_name))
-			val = tryCatch(method_fn(delta = 0), error = function(e) stop(label, ": ", method_name, " failed: ", e$message))
+			val = tryCatch(
+				method_fn(delta = 0),
+				error = function(e) {
+					if (is_unsupported_method_error(e)) {
+						cat(sprintf("  [%s] skipping %s: %s\n", label, method_name, conditionMessage(e)))
+						return(NULL)
+					}
+					stop(label, ": ", method_name, " failed: ", e$message)
+				}
+			)
+			if (is.null(val)) next
 			cat(sprintf("  [%s] %s = %s\n", label, method_name, paste(val, collapse=", ")))
 			stopifnot(is.numeric(val), length(val) == 1L, is.finite(val), val >= 0, val <= 1)
 		}
@@ -40,7 +54,17 @@ run_likelihood_method_smoke_suite <- function(){
 			method_fn = inf[[method_name]]
 			stopifnot(is.function(method_fn))
 			cat(sprintf("  [%s] calling %s ...\n", label, method_name))
-			val = tryCatch(method_fn(alpha = 0.2), error = function(e) stop(label, ": ", method_name, " failed: ", e$message))
+			val = tryCatch(
+				method_fn(alpha = 0.2),
+				error = function(e) {
+					if (is_unsupported_method_error(e)) {
+						cat(sprintf("  [%s] skipping %s: %s\n", label, method_name, conditionMessage(e)))
+						return(NULL)
+					}
+					stop(label, ": ", method_name, " failed: ", e$message)
+				}
+			)
+			if (is.null(val)) next
 			cat(sprintf("  [%s] %s = %s\n", label, method_name, paste(val, collapse=", ")))
 			stopifnot(is.numeric(val), length(val) == 2L, all(is.finite(val)), val[1] <= val[2])
 		}

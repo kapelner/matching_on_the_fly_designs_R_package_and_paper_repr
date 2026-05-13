@@ -11,12 +11,13 @@ ModelResult fast_logistic_regression_internal(
 	const Eigen::VectorXd& y,
 	const Eigen::VectorXd& weights = Eigen::VectorXd(),
 	Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
-	bool smart_start = true,
 	int maxit = 100,
 	double tol = 1e-8,
 	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
 	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-	std::string optimization_alg = "lbfgs");
+	std::string optimization_alg = "lbfgs",
+	Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue);
 
 namespace {
 
@@ -195,7 +196,9 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 						   double tol = 1e-8,
 						   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
 						   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-						   std::string optimization_alg = "lbfgs") {
+						   std::string optimization_alg = "lbfgs",
+						   Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+						   Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_hurdle_fisher_info = R_NilValue) {
 	const int n = X.rows();
 	const int p = X.cols();
 	const int p_hurdle = X_hurdle.cols();
@@ -207,7 +210,7 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 	bool hurdle_converged = false;
     
 	if (y_pos_ind.minCoeff() < y_pos_ind.maxCoeff()) {
-        ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, R_NilValue, R_NilValue, alg);
+        ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, 100, 1e-8, R_NilValue, R_NilValue, alg, R_NilValue, warm_start_hurdle_fisher_info);
 		hurdle_b = hurdle_res.b;
 		hurdle_converged = hurdle_res.converged;
 	}
@@ -241,8 +244,16 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 	TruncatedNegBinCount fun(X_pos, y_pos);
 	double neg_ll = NA_REAL;
 	bool converged = false;
+
+	Eigen::MatrixXd info_start;
+	const Eigen::MatrixXd* info_start_ptr = nullptr;
+	if (warm_start_fisher_info.isNotNull()) {
+		info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+		info_start_ptr = &info_start;
+	}
+
 	try {
-		LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, count_fixed_spec, maxit, tol, alg, "lbfgs");
+		LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, count_fixed_spec, maxit, tol, alg, "lbfgs", 0, info_start_ptr);
 		params = fit.params;
 		neg_ll = fit.value;
         converged = fit.converged;
@@ -282,7 +293,7 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X,
 	if (fit.containsElementNamed("hurdle_b")) {
 		VectorXd y_pos_ind = (y.array() > 0.0).cast<double>();
 		if (y_pos_ind.minCoeff() < y_pos_ind.maxCoeff()) {
-			ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, R_NilValue, R_NilValue, optimization_alg);
+			ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, 100, 1e-8, R_NilValue, R_NilValue, optimization_alg, R_NilValue, R_NilValue);
 			FixedParamSpec hurdle_spec = make_fixed_param_spec(X_hurdle.cols(), R_NilValue, R_NilValue);
 			MatrixXd info_free = subset_matrix(hurdle_res.XtWX, hurdle_spec.free_idx, hurdle_spec.free_idx);
 			MatrixXd vcov = expand_free_covariance(X_hurdle.cols(), hurdle_spec, info_free.inverse(), true);
@@ -343,7 +354,8 @@ List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X,
                                                                          double tol = 1e-8,
                                                                          Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                                          Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                                                         std::string optimization_alg = "lbfgs") {
+                                                                         std::string optimization_alg = "lbfgs",
+                                                                         Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
         optimization_alg = normalize_optimizer_algorithm(optimization_alg, "lbfgs", false);
 
         List pos = build_positive_hurdle_negbin_data(X, y);
@@ -369,9 +381,17 @@ List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X,
 
         FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
         TruncatedNegBinCount fun(X_pos, y_pos);
+
+        Eigen::MatrixXd info_start;
+        const Eigen::MatrixXd* info_start_ptr = nullptr;
+        if (warm_start_fisher_info.isNotNull()) {
+            info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+            info_start_ptr = &info_start;
+        }
+
         LikelihoodFitResult fit;
         try {
-                fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs");
+                fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_start_ptr);
         } catch (const std::exception& e) {
                 Rcpp::warning(e.what());
                 return List::create(

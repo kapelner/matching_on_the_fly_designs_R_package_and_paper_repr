@@ -15,7 +15,8 @@ fast_coxph_regression_cpp(
   cluster = NULL,
   fixed_idx = NULL,
   fixed_values = NULL,
-  optimization_alg = "newton_raphson"
+  optimization_alg = "newton_raphson",
+  warm_start_fisher_info = NULL
 )
 }
 \arguments{

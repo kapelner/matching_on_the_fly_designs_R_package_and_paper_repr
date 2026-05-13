@@ -628,7 +628,8 @@ Eigen::MatrixXd get_stereotype_logit_hessian_cpp(const Eigen::MatrixXd& X,
 List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                std::string optimization_alg = "newton_raphson") {
+                                std::string optimization_alg = "newton_raphson",
+                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     StereotypeLogitRegression model(X, y);
     if (model.num_categories() < 2) {
         stop("Stereotype logistic regression requires at least two observed outcome categories.");
@@ -639,7 +640,14 @@ List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
     StereotypeObjective obj(model);
 
-    LikelihoodFitResult fit = optimize_fixed_likelihood(obj, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
+    Eigen::MatrixXd info_start;
+    const Eigen::MatrixXd* info_start_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        info_start_ptr = &info_start;
+    }
+
+    LikelihoodFitResult fit = optimize_fixed_likelihood(obj, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, info_start_ptr);
     params = fit.params;
 
     int n_alpha = model.num_alpha();
@@ -670,7 +678,8 @@ List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
 List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
                                          Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                          Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                         std::string optimization_alg = "newton_raphson") {
+                                         std::string optimization_alg = "newton_raphson",
+                                         Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     StereotypeLogitRegression model(X, y);
     if (model.num_categories() < 2) {
         stop("Stereotype logistic regression requires at least two observed outcome categories.");
@@ -681,7 +690,14 @@ List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::V
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
     StereotypeObjective obj(model);
 
-    LikelihoodFitResult fit = optimize_fixed_likelihood(obj, params_init, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
+    Eigen::MatrixXd info_start;
+    const Eigen::MatrixXd* info_start_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        info_start_ptr = &info_start;
+    }
+
+    LikelihoodFitResult fit = optimize_fixed_likelihood(obj, params_init, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, info_start_ptr);
     VectorXd params = fit.params;
     MatrixXd H = model.loglik_hessian(params);
     MatrixXd info = -H;

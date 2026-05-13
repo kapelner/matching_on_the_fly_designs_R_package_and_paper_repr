@@ -220,7 +220,8 @@ List fast_cpoisson_combined_with_var_cpp(
 	int    maxit = 100,
 	double tol   = 1e-8,
 	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue
+	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
 	const int nd = (int)yT_v.size();
 	const int nR = (int)y_r.size();
@@ -247,60 +248,81 @@ List fast_cpoisson_combined_with_var_cpp(
 		grad.setZero();
 		H.setZero();
 
-		// ---- Pair component (conditional Poisson) -------------------------
-		// X_pairs_eff row k = [0, 1, X_diff_v[k,:]]  →  cols 1..np-1 only
-		VectorXd eta_p = VectorXd::Constant(nd, beta_T);
-		if (p > 0) eta_p.noalias() += X_diff_v * beta_xs;
+        if (iter == 0 && warm_start_fisher_info.isNotNull()) {
+            H = as<MatrixXd>(warm_start_fisher_info);
+            if (H.rows() != np || H.cols() != np) Rcpp::stop("warm_start_fisher_info must be a (p+2) x (p+2) matrix");
+            
+            // Still need to compute gradient
+            VectorXd eta_p = VectorXd::Constant(nd, beta_T);
+            if (p > 0) eta_p.noalias() += X_diff_v * beta_xs;
+            ArrayXd  p_k_arr  = plogis_array(eta_p.array());
+            VectorXd resid_p  = (n_k_v.array() * p_k_arr - yT_v.array()).matrix();
+            grad[1] += resid_p.sum();
+            if (p > 0) grad.tail(p).noalias() += X_diff_v.transpose() * resid_p;
 
-		// Logistic probabilities and Fisher weights
-		ArrayXd  p_k_arr  = plogis_array(eta_p.array());
-		ArrayXd  w_p_arr  = n_k_v.array() * p_k_arr * (1.0 - p_k_arr);
-		VectorXd resid_p  = (n_k_v.array() * p_k_arr - yT_v.array()).matrix();
+            VectorXd eta_r = VectorXd::Constant(nR, beta_0) + beta_T * w_r;
+            if (p > 0) eta_r.noalias() += X_r * beta_xs;
+            VectorXd mu_r   = eta_r.array().exp();
+            VectorXd resid_r = mu_r - y_r;
+            grad[0] += resid_r.sum();
+            grad[1] += resid_r.dot(w_r);
+            if (p > 0) grad.tail(p).noalias() += X_r.transpose() * resid_r;
+        } else {
+            // ---- Pair component (conditional Poisson) -------------------------
+            // X_pairs_eff row k = [0, 1, X_diff_v[k,:]]  →  cols 1..np-1 only
+            VectorXd eta_p = VectorXd::Constant(nd, beta_T);
+            if (p > 0) eta_p.noalias() += X_diff_v * beta_xs;
 
-		// Gradient contributions from pairs  (d(-L)/d beta_T and d beta_xs)
-		grad[1] += resid_p.sum();
-		if (p > 0) grad.tail(p).noalias() += X_diff_v.transpose() * resid_p;
+            // Logistic probabilities and Fisher weights
+            ArrayXd  p_k_arr  = plogis_array(eta_p.array());
+            ArrayXd  w_p_arr  = n_k_v.array() * p_k_arr * (1.0 - p_k_arr);
+            VectorXd resid_p  = (n_k_v.array() * p_k_arr - yT_v.array()).matrix();
 
-		// Fisher block H[1..np-1, 1..np-1]:
-		//   [1 | X_diff_v]' * diag(w_p) * [1 | X_diff_v]
-		VectorXd w_p_vec = w_p_arr.matrix();
-		H(1, 1) += w_p_vec.sum();
-		if (p > 0) {
-			VectorXd Xdw = X_diff_v.transpose() * w_p_vec;        // p-vector
-			H.block(1, 2, 1, p).noalias() += Xdw.transpose();
-			H.block(2, 1, p, 1).noalias() += Xdw;
-			H.block(2, 2, p, p).noalias() += weighted_crossprod(X_diff_v, w_p_vec);
-		}
+            // Gradient contributions from pairs  (d(-L)/d beta_T and d beta_xs)
+            grad[1] += resid_p.sum();
+            if (p > 0) grad.tail(p).noalias() += X_diff_v.transpose() * resid_p;
 
-		// ---- Reservoir component (marginal Poisson) -----------------------
-		// X_res_eff row i = [1, w_r[i], X_r[i,:]]
-		VectorXd eta_r = VectorXd::Constant(nR, beta_0) + beta_T * w_r;
-		if (p > 0) eta_r.noalias() += X_r * beta_xs;
+            // Fisher block H[1..np-1, 1..np-1]:
+            //   [1 | X_diff_v]' * diag(w_p) * [1 | X_diff_v]
+            VectorXd w_p_vec = w_p_arr.matrix();
+            H(1, 1) += w_p_vec.sum();
+            if (p > 0) {
+                VectorXd Xdw = X_diff_v.transpose() * w_p_vec;        // p-vector
+                H.block(1, 2, 1, p).noalias() += Xdw.transpose();
+                H.block(2, 1, p, 1).noalias() += Xdw;
+                H.block(2, 2, p, p).noalias() += weighted_crossprod(X_diff_v, w_p_vec);
+            }
 
-		VectorXd mu_r   = eta_r.array().exp();
-		VectorXd resid_r = mu_r - y_r;
+            // ---- Reservoir component (marginal Poisson) -----------------------
+            // X_res_eff row i = [1, w_r[i], X_r[i,:]]
+            VectorXd eta_r = VectorXd::Constant(nR, beta_0) + beta_T * w_r;
+            if (p > 0) eta_r.noalias() += X_r * beta_xs;
 
-		// Gradient contributions from reservoir
-		grad[0] += resid_r.sum();
-		grad[1] += resid_r.dot(w_r);
-		if (p > 0) grad.tail(p).noalias() += X_r.transpose() * resid_r;
+            VectorXd mu_r   = eta_r.array().exp();
+            VectorXd resid_r = mu_r - y_r;
 
-		// Fisher block H += [1|w_r|X_r]' * diag(mu_r) * [1|w_r|X_r]
-		const double mu_sum  = mu_r.sum();
-		const double muw_sum = mu_r.dot(w_r);
-		H(0, 0) += mu_sum;
-		H(0, 1) += muw_sum;
-		H(1, 0) += muw_sum;
-		H(1, 1) += (mu_r.array() * w_r.array().square()).sum();
-		if (p > 0) {
-			VectorXd Xrmu  = X_r.transpose() * mu_r;
-			VectorXd Xrwmu = X_r.transpose() * mu_r.cwiseProduct(w_r);
-			H.block(0, 2, 1, p).noalias() += Xrmu.transpose();
-			H.block(2, 0, p, 1).noalias() += Xrmu;
-			H.block(1, 2, 1, p).noalias() += Xrwmu.transpose();
-			H.block(2, 1, p, 1).noalias() += Xrwmu;
-			H.block(2, 2, p, p).noalias() += weighted_crossprod(X_r, mu_r);
-		}
+            // Gradient contributions from reservoir
+            grad[0] += resid_r.sum();
+            grad[1] += resid_r.dot(w_r);
+            if (p > 0) grad.tail(p).noalias() += X_r.transpose() * resid_r;
+
+            // Fisher block H += [1|w_r|X_r]' * diag(mu_r) * [1|w_r|X_r]
+            const double mu_sum  = mu_r.sum();
+            const double muw_sum = mu_r.dot(w_r);
+            H(0, 0) += mu_sum;
+            H(0, 1) += muw_sum;
+            H(1, 0) += muw_sum;
+            H(1, 1) += (mu_r.array() * w_r.array().square()).sum();
+            if (p > 0) {
+                VectorXd Xrmu  = X_r.transpose() * mu_r;
+                VectorXd Xrwmu = X_r.transpose() * mu_r.cwiseProduct(w_r);
+                H.block(0, 2, 1, p).noalias() += Xrmu.transpose();
+                H.block(2, 0, p, 1).noalias() += Xrmu;
+                H.block(1, 2, 1, p).noalias() += Xrwmu.transpose();
+                H.block(2, 1, p, 1).noalias() += Xrwmu;
+                H.block(2, 2, p, p).noalias() += weighted_crossprod(X_r, mu_r);
+            }
+        }
 
 		// ---- Newton step over free parameters ----------------------------
 		VectorXd delta_full = VectorXd::Zero(np);

@@ -193,10 +193,10 @@ Eigen::MatrixXd get_adjacent_category_logit_hessian_cpp(const Eigen::MatrixXd& X
 
 // [[Rcpp::export]]
 List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
-                                       Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-                                       Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                       std::string optimization_alg = "newton_raphson") {
-    std::vector<double> levels = get_levels(y);
+                                        Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                        Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                        std::string optimization_alg = "newton_raphson",
+                                        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {    std::vector<double> levels = get_levels(y);
     int K = levels.size();
     if (K < 2) {
         stop("Adjacent-category logits require at least two observed outcome categories.");
@@ -207,7 +207,15 @@ List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::Vec
     int n_par = (K - 1) + X.cols();
     VectorXd params = VectorXd::Zero(n_par);
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
-    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
+    
+    Eigen::MatrixXd info_start;
+    const Eigen::MatrixXd* info_start_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        info_start_ptr = &info_start;
+    }
+    
+    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, info_start_ptr);
 
     return List::create(
         Named("b") = fit.params.tail(X.cols()),
@@ -221,7 +229,8 @@ List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::Vec
 List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
                                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                                std::string optimization_alg = "newton_raphson") {
+                                                std::string optimization_alg = "newton_raphson",
+                                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     std::vector<double> levels = get_levels(y);
     int K = levels.size();
     if (K < 2) {
@@ -233,7 +242,15 @@ List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const E
     int n_par = (K - 1) + X.cols();
     VectorXd params = VectorXd::Zero(n_par);
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
-    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
+    
+    Eigen::MatrixXd info_start;
+    const Eigen::MatrixXd* info_start_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        info_start_ptr = &info_start;
+    }
+    
+    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, info_start_ptr);
 
     MatrixXd info = fun.hessian(fit.params);
     MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);

@@ -185,10 +185,10 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 				attempt = private$fit_with_hardened_qr_column_dropping(
 					X_full = X_full,
 					required_cols = match("treatment", colnames(X_full)),
-					fit_fun = function(X_fit, j_treat){
+					fit_fun = function(X_fit, keep){
 						mod = private$fit_rlm_model(X_fit, estimate_only = estimate_only, warm_start = fit_controls$warm_start)
 						if (is.null(mod)) return(NULL)
-						mod$j_treat = j_treat
+						mod$j_treat = which(keep == match("treatment", colnames(X_full)))
 						mod
 					},
 					fit_ok = function(mod, X_fit, keep){
@@ -213,7 +213,7 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 				}
 				
 				fit = attempt$fit
-				X_fit = attempt$X_fit
+				X_fit = attempt$X
 				j_treat = fit$j_treat
 				private$best_X_colnames = setdiff(colnames(X_fit), c("(Intercept)", "treatment"))
 				private$fit_warm_coefficients = as.numeric(if (private$use_rcpp) fit$coefficients else stats::coef(fit))

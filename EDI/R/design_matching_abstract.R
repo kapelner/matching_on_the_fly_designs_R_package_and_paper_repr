@@ -116,7 +116,7 @@ DesignMatching = R6::R6Class("DesignMatching",
 		},
 		draw_bootstrap_indices = function(bootstrap_type = NULL){
 			private$ensure_matching_structure_computed()
-			if (is.null(private$m)){
+			if (!isTRUE(private$matching_capable) || is.null(private$m)){
 				n = self$get_n()
 				return(list(i_b = sample_int_replace_cpp(n, n), m_vec_b = NULL))
 			}

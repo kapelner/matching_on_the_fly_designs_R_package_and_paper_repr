@@ -288,13 +288,22 @@ List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
 									 NumericVector init,
 									 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
 									 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-									 std::string optimization_alg = "lbfgs"){
+									 std::string optimization_alg = "lbfgs",
+                                     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue){
 	Eigen::VectorXd y_eigen = Rcpp::as<Eigen::VectorXd>(y);
 	Eigen::VectorXd params = Rcpp::as<Eigen::VectorXd>(init);
 	FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
 
 	ZeroOneInflatedBeta fun(y_eigen, X, X_zero_one);
-	LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, 1500, 1e-6, optimization_alg, "lbfgs");
+    
+    Eigen::MatrixXd info_start;
+    const Eigen::MatrixXd* info_start_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        info_start_ptr = &info_start;
+    }
+    
+	LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, 1500, 1e-6, optimization_alg, "lbfgs", 0, info_start_ptr);
 	params = fit.params;
 
 	Eigen::MatrixXd H = fun.hessian(params);

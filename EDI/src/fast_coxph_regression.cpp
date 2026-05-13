@@ -210,7 +210,8 @@ CoxFitResult cox_newton_raphson(
     const FixedParamSpec& fixed_spec,
     bool estimate_only,
     int maxit,
-    double tol)
+    double tol,
+    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
 {
     const int p = strata_data[0].p;
     Eigen::VectorXd beta = Eigen::VectorXd::Zero(p);
@@ -240,13 +241,21 @@ CoxFitResult cox_newton_raphson(
             CoxWorkspace& ws = workspaces[s];
             ll += compute_cox_ll_grad_hess_fast(sd, beta_vec, ws.grad, ws.hess, false, ws);
             for (int q = 0; q < p; ++q) grad_vec[q] += ws.grad[q];
-            for (int qq = 0; qq < p * p; ++qq) hess_vec[qq] += ws.hess[qq];
+            if (iter > 0 || warm_start_fisher_info.isNull()) {
+                for (int qq = 0; qq < p * p; ++qq) hess_vec[qq] += ws.hess[qq];
+            }
         }
 
         if (std::abs(old_ll - ll) < tol) break;
         old_ll = ll;
 
-        Eigen::MatrixXd H = Eigen::Map<const Eigen::MatrixXd>(hess_vec.data(), p, p);
+        Eigen::MatrixXd H;
+        if (iter == 0 && warm_start_fisher_info.isNotNull()) {
+            H = as<Eigen::MatrixXd>(warm_start_fisher_info);
+            if (H.rows() != p || H.cols() != p) Rcpp::stop("warm_start_fisher_info must be a p x p matrix");
+        } else {
+            H = Eigen::Map<const Eigen::MatrixXd>(hess_vec.data(), p, p);
+        }
         Eigen::VectorXd g = Eigen::Map<const Eigen::VectorXd>(grad_vec.data(), p);
 
         // Apply fixed parameter constraints to NR step
@@ -340,7 +349,8 @@ CoxFitResult cox_lbfgs(
     const FixedParamSpec& fixed_spec,
     bool estimate_only,
     int maxit,
-    double tol)
+    double tol,
+    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
 {
     const int p = strata_data[0].p;
     Eigen::VectorXd par = Eigen::VectorXd::Zero(p);
@@ -351,7 +361,15 @@ CoxFitResult cox_lbfgs(
     par = apply_fixed_values(par, fixed_spec);
 
     StratifiedCoxObjective obj(strata_data, p);
-    LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, tol, "lbfgs", "lbfgs");
+    
+    Eigen::MatrixXd info_start;
+    Eigen::MatrixXd* info_start_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        info_start_ptr = &info_start;
+    }
+
+    LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, tol, "lbfgs", "lbfgs", 0, info_start_ptr);
 
     CoxFitResult res;
     res.beta.assign(fit.params.data(), fit.params.data() + p);
@@ -382,11 +400,12 @@ CoxFitResult cox_fit(
     bool estimate_only,
     int maxit,
     double tol,
-    const std::string& optimization_alg)
+    const std::string& optimization_alg,
+    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
 {
     if (optimization_alg == "lbfgs")
         return cox_lbfgs(strata_data, start_beta, fixed_spec, estimate_only, maxit, tol);
-    return cox_newton_raphson(strata_data, start_beta, fixed_spec, estimate_only, maxit, tol);
+    return cox_newton_raphson(strata_data, start_beta, fixed_spec, estimate_only, maxit, tol, warm_start_fisher_info);
 }
 
 // Compute Lin-Wei-Amato sandwich vcov given converged beta and cluster IDs.
@@ -554,14 +573,15 @@ List fast_coxph_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
                                Nullable<IntegerVector> cluster = R_NilValue,
                                Nullable<IntegerVector> fixed_idx = R_NilValue,
                                Nullable<NumericVector> fixed_values = R_NilValue,
-                               std::string optimization_alg = "newton_raphson") {
+                               std::string optimization_alg = "newton_raphson",
+                               Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     int p = X.cols();
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
 
     std::vector<CoxData> strata_data;
     strata_data.emplace_back(y, dead, X);
 
-    CoxFitResult fit = cox_fit(strata_data, start_beta, fixed_spec, estimate_only, maxit, tol, optimization_alg);
+    CoxFitResult fit = cox_fit(strata_data, start_beta, fixed_spec, estimate_only, maxit, tol, optimization_alg, warm_start_fisher_info);
 
     NumericVector coef_r(p);
     for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];
@@ -628,7 +648,8 @@ List fast_stratified_coxph_regression_cpp(
     double tol = 1e-9,
     Nullable<IntegerVector> fixed_idx = R_NilValue,
     Nullable<NumericVector> fixed_values = R_NilValue,
-    std::string optimization_alg = "newton_raphson")
+    std::string optimization_alg = "newton_raphson",
+    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
 {
     const int n = y.size();
     const int p = X.cols();
@@ -657,7 +678,7 @@ List fast_stratified_coxph_regression_cpp(
         strata_data.emplace_back(y_s, dead_s, X_s);
     }
 
-    CoxFitResult fit = cox_fit(strata_data, start_beta, fixed_spec, estimate_only, maxit, tol, optimization_alg);
+    CoxFitResult fit = cox_fit(strata_data, start_beta, fixed_spec, estimate_only, maxit, tol, optimization_alg, warm_start_fisher_info);
 
     NumericVector coef_r(p);
     for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];

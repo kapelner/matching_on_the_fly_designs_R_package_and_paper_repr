@@ -71,7 +71,8 @@ public:
 template <typename Link>
 List run_fast_ordinal_clmm(const GLMMData& dat, int K, int j_T, bool estimate_only, int maxit, double eps_g, 
                            const Eigen::VectorXd& start_full, const std::string& optimization_alg,
-                           const FixedParamSpec& fixed_spec) {
+                           const FixedParamSpec& fixed_spec,
+                           const Eigen::MatrixXd* info_start_ptr = nullptr) {
     OrdinalLikelihood<Link> model(K);
     GLMMObjective<OrdinalLikelihood<Link>> obj(dat, model);
     
@@ -80,7 +81,7 @@ List run_fast_ordinal_clmm(const GLMMData& dat, int K, int j_T, bool estimate_on
     bool converged = false;
     
     try {
-        LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs");
+        LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
         par = fit.params;
         neg_ll = fit.value;
         converged = std::isfinite(neg_ll) && fit.converged;
@@ -135,7 +136,8 @@ List fast_ordinal_clmm_cpp(
     Rcpp::Nullable<Rcpp::NumericVector> start = R_NilValue,
     std::string optimization_alg = "lbfgs",
     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue
+    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
     int n = X.rows();
     int p = X.cols();
@@ -165,11 +167,19 @@ List fast_ordinal_clmm_cpp(
         start_full.setZero();
         start_full[total - 1] = -3.0;
     }
+    start_full = apply_fixed_values(start_full, fixed_spec);
 
-    if (link == "logit")   return run_fast_ordinal_clmm<LogitLink>(dat, K, j_T, estimate_only, maxit, eps_g, start_full, optimization_alg, fixed_spec);
-    if (link == "probit")  return run_fast_ordinal_clmm<ProbitLink>(dat, K, j_T, estimate_only, maxit, eps_g, start_full, optimization_alg, fixed_spec);
-    if (link == "cauchit") return run_fast_ordinal_clmm<CauchitLink>(dat, K, j_T, estimate_only, maxit, eps_g, start_full, optimization_alg, fixed_spec);
-    if (link == "cloglog") return run_fast_ordinal_clmm<CloglogLink>(dat, K, j_T, estimate_only, maxit, eps_g, start_full, optimization_alg, fixed_spec);
+    Eigen::MatrixXd info_start;
+    const Eigen::MatrixXd* info_start_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        info_start_ptr = &info_start;
+    }
+
+    if (link == "logit")   return run_fast_ordinal_clmm<LogitLink>(dat, K, j_T, estimate_only, maxit, eps_g, start_full, optimization_alg, fixed_spec, info_start_ptr);
+    if (link == "probit")  return run_fast_ordinal_clmm<ProbitLink>(dat, K, j_T, estimate_only, maxit, eps_g, start_full, optimization_alg, fixed_spec, info_start_ptr);
+    if (link == "cauchit") return run_fast_ordinal_clmm<CauchitLink>(dat, K, j_T, estimate_only, maxit, eps_g, start_full, optimization_alg, fixed_spec, info_start_ptr);
+    if (link == "cloglog") return run_fast_ordinal_clmm<CloglogLink>(dat, K, j_T, estimate_only, maxit, eps_g, start_full, optimization_alg, fixed_spec, info_start_ptr);
 
     Rcpp::stop("Unknown link: " + link);
     return List::create();

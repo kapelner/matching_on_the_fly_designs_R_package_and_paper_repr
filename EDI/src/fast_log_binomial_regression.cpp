@@ -73,7 +73,10 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
                                        int maxit,
                                        double tol,
                                        Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-                                       Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
+                                       Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                       Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                       Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+                                       Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
   const int n = X.rows();
   const int p = X.cols();
   if (y.size() != n) stop("dimension mismatch in constrained binomial regression");
@@ -87,30 +90,44 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
   }
 
   Eigen::VectorXd beta = Eigen::VectorXd::Zero(p);
-  const double y_mean = std::min(std::max(y.mean(), kMinMu), kMaxMu);
-  beta[0] = (link_type == BinomialConstrainedLink::kLog) ? std::log(y_mean) : y_mean;
+  if (start_beta.isNotNull()) {
+    beta = as<Eigen::VectorXd>(start_beta);
+    if (beta.size() != p) stop("start_beta must have length equal to ncol(X)");
+  } else {
+    const double y_mean = std::min(std::max(y.mean(), kMinMu), kMaxMu);
+    beta[0] = (link_type == BinomialConstrainedLink::kLog) ? std::log(y_mean) : y_mean;
+  }
   beta = apply_fixed_values(beta, fixed_spec);
   Eigen::VectorXd beta_free = subset_vector(beta, fixed_spec.free_idx);
 
   bool converged = false;
-  Eigen::VectorXd mu = Eigen::VectorXd::Constant(n, y_mean);
-  Eigen::VectorXd w = Eigen::VectorXd::Constant(
-    n,
-    (link_type == BinomialConstrainedLink::kLog) ?
-      y_mean / (1.0 - y_mean) :
-      1.0 / (y_mean * (1.0 - y_mean))
-  );
+  Eigen::VectorXd mu = Eigen::VectorXd::Constant(n, y.mean());
+  Eigen::VectorXd w = Eigen::VectorXd::Constant(n, 1.0);
 
+  int iterations = 0;
   for (int iter = 0; iter < maxit; ++iter) {
+    iterations = iter + 1;
     Eigen::VectorXd eta = eta_fixed + X_free * beta_free;
     if (link_type == BinomialConstrainedLink::kLog) {
       eta = eta.array().min(kMaxEtaLog).matrix();
       mu = eta.array().exp().matrix();
-      w = (mu.array() / (1.0 - mu.array()).max(kEps)).max(kEps).matrix();
+      if (iter == 0 && warm_start_weights.isNotNull()) {
+        Eigen::VectorXd ww = as<Eigen::VectorXd>(warm_start_weights);
+        if (ww.size() != n) stop("warm_start_weights must have length equal to nrow(X)");
+        w = ww;
+      } else {
+        w = (mu.array() / (1.0 - mu.array()).max(kEps)).max(kEps).matrix();
+      }
     } else {
       eta = eta.array().max(kMinMu).min(kMaxMu).matrix();
       mu = eta;
-      w = (1.0 / (mu.array() * (1.0 - mu.array())).max(kEps)).max(kEps).matrix();
+      if (iter == 0 && warm_start_weights.isNotNull()) {
+        Eigen::VectorXd ww = as<Eigen::VectorXd>(warm_start_weights);
+        if (ww.size() != n) stop("warm_start_weights must have length equal to nrow(X)");
+        w = ww;
+      } else {
+        w = (1.0 / (mu.array() * (1.0 - mu.array())).max(kEps)).max(kEps).matrix();
+      }
     }
 
     Eigen::VectorXd z = (link_type == BinomialConstrainedLink::kLog) ?
@@ -118,7 +135,14 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
       y;
     Eigen::VectorXd z_adj = z - eta_fixed;
 
-    Eigen::MatrixXd XtWX = weighted_crossprod(X_free, w);
+    Eigen::MatrixXd XtWX;
+    if (iter == 0 && warm_start_fisher_info.isNotNull()) {
+      Eigen::MatrixXd info_full = as<Eigen::MatrixXd>(warm_start_fisher_info);
+      if (info_full.rows() != p || info_full.cols() != p) stop("warm_start_fisher_info must be a p x p matrix");
+      XtWX = subset_matrix(info_full, fixed_spec.free_idx, fixed_spec.free_idx);
+    } else {
+      XtWX = weighted_crossprod(X_free, w);
+    }
     Eigen::VectorXd XtWz = weighted_crossprod_rhs(X_free, w, z_adj);
 
     Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
@@ -172,20 +196,23 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
     _["b"] = beta,
     _["mu_hat"] = mu,
     _["working_weights"] = w,
+    _["iterations"] = iterations,
     _["converged"] = converged && all_finite_vec(beta) && all_finite_vec(mu) && all_finite_vec(w)
   );
 }
 
 List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& X,
-                                                const Eigen::VectorXd& y,
-                                                BinomialConstrainedLink link_type,
-                                                int j,
-                                                int maxit,
-                                                double tol,
-                                                Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-                                                Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
-  List fit = fit_constrained_binomial_cpp_impl(X, y, link_type, maxit, tol, fixed_idx, fixed_values);
-  const bool converged = as<bool>(fit["converged"]);
+                                                 const Eigen::VectorXd& y,
+                                                 BinomialConstrainedLink link_type,
+                                                 int j,
+                                                 int maxit,
+                                                 double tol,
+                                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                                 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                                 Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                                 Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+                                                 Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+  List fit = fit_constrained_binomial_cpp_impl(X, y, link_type, maxit, tol, fixed_idx, fixed_values, start_beta, warm_start_weights, warm_start_fisher_info);  const bool converged = as<bool>(fit["converged"]);
   Eigen::VectorXd beta = fit["b"];
   Eigen::VectorXd w = fit["working_weights"];
 
@@ -361,6 +388,9 @@ Eigen::MatrixXd get_identity_binomial_regression_hessian_cpp(const Eigen::Matrix
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
+//' @param start_beta Optional starting values for coefficients.
+//' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
 //' @return A list containing coefficients and fitted values.
 //' @export
 //' @keywords internal
@@ -370,8 +400,11 @@ List fast_log_binomial_regression_cpp(const Eigen::MatrixXd& X,
                                       int maxit = 100,
                                       double tol = 1e-8,
                                       Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-                                      Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
-  return fit_constrained_binomial_cpp_impl(X, y, BinomialConstrainedLink::kLog, maxit, tol, fixed_idx, fixed_values);
+                                      Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                      Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                      Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+                                      Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+  return fit_constrained_binomial_cpp_impl(X, y, BinomialConstrainedLink::kLog, maxit, tol, fixed_idx, fixed_values, start_beta, warm_start_weights, warm_start_fisher_info);
 }
 
 //' @title Fast Log-Binomial Regression with Variance (C++)
@@ -383,6 +416,9 @@ List fast_log_binomial_regression_cpp(const Eigen::MatrixXd& X,
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
+//' @param start_beta Optional starting values for coefficients.
+//' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
 //' @return A list containing coefficients, vcov, and standard errors.
 //' @export
 //' @keywords internal
@@ -393,8 +429,11 @@ List fast_log_binomial_regression_with_var_cpp(const Eigen::MatrixXd& X,
                                                int maxit = 100,
                                                double tol = 1e-8,
                                                Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-                                               Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
-  return fit_constrained_binomial_with_var_cpp_impl(X, y, BinomialConstrainedLink::kLog, j, maxit, tol, fixed_idx, fixed_values);
+                                               Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                               Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                               Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+                                               Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+  return fit_constrained_binomial_with_var_cpp_impl(X, y, BinomialConstrainedLink::kLog, j, maxit, tol, fixed_idx, fixed_values, start_beta, warm_start_weights, warm_start_fisher_info);
 }
 
 //' @title Fast Identity-Binomial Regression (C++)
@@ -405,6 +444,9 @@ List fast_log_binomial_regression_with_var_cpp(const Eigen::MatrixXd& X,
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
+//' @param start_beta Optional starting values for coefficients.
+//' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
 //' @return A list containing coefficients and fitted values.
 //' @export
 //' @keywords internal
@@ -414,8 +456,11 @@ List fast_identity_binomial_regression_cpp(const Eigen::MatrixXd& X,
                                            int maxit = 100,
                                            double tol = 1e-8,
                                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-                                           Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
-  return fit_constrained_binomial_cpp_impl(X, y, BinomialConstrainedLink::kIdentity, maxit, tol, fixed_idx, fixed_values);
+                                           Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                           Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                           Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+                                           Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+  return fit_constrained_binomial_cpp_impl(X, y, BinomialConstrainedLink::kIdentity, maxit, tol, fixed_idx, fixed_values, start_beta, warm_start_weights, warm_start_fisher_info);
 }
 
 //' @title Fast Identity-Binomial Regression with Variance (C++)
@@ -427,6 +472,9 @@ List fast_identity_binomial_regression_cpp(const Eigen::MatrixXd& X,
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
+//' @param start_beta Optional starting values for coefficients.
+//' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
 //' @return A list containing coefficients, vcov, and standard errors.
 //' @export
 //' @keywords internal
@@ -437,6 +485,9 @@ List fast_identity_binomial_regression_with_var_cpp(const Eigen::MatrixXd& X,
                                                     int maxit = 100,
                                                     double tol = 1e-8,
                                                     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-                                                    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
-  return fit_constrained_binomial_with_var_cpp_impl(X, y, BinomialConstrainedLink::kIdentity, j, maxit, tol, fixed_idx, fixed_values);
+                                                    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                                    Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                                    Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+                                                    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+  return fit_constrained_binomial_with_var_cpp_impl(X, y, BinomialConstrainedLink::kIdentity, j, maxit, tol, fixed_idx, fixed_values, start_beta, warm_start_weights, warm_start_fisher_info);
 }

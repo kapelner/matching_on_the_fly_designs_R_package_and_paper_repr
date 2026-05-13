@@ -9,12 +9,13 @@ fast_logistic_regression_weighted_cpp(
   y,
   weights,
   start_beta = NULL,
-  smart_start = TRUE,
   maxit = 100L,
   tol = 1e-08,
   fixed_idx = NULL,
   fixed_values = NULL,
-  optimization_alg = "irls"
+  optimization_alg = "irls",
+  warm_start_weights = NULL,
+  warm_start_fisher_info = NULL
 )
 }
 \arguments{
@@ -26,8 +27,6 @@ fast_logistic_regression_weighted_cpp(
 
 \item{start_beta}{Optional starting values for coefficients.}
 
-\item{smart_start}{Logical. If TRUE, use an initial OLS-based guess.}
-
 \item{maxit}{Maximum number of iterations.}
 
 \item{tol}{Convergence tolerance.}
@@ -36,7 +35,9 @@ fast_logistic_regression_weighted_cpp(
 
 \item{fixed_values}{Optional values for fixed parameters.}
 
-\item{optimization_alg}{Optimization algorithm.}
+\item{optimization_alg}{Optimization algorithm: \code{"newton_raphson"} (default), \code{"lbfgs"}, or \code{"irls"}.}
+
+\item{warm_start_weights}{Optional initial working weights for the first IRLS iteration.}
 }
 \value{
 A list containing the following components:

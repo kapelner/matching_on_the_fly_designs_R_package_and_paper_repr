@@ -388,13 +388,15 @@ List fast_logistic_glmm_cpp(
 	const Eigen::VectorXd& y,       // responses in [0,1], length n
 	const Eigen::VectorXi& group_id,// group IDs, sorted internally
 	int j_T,                        // 0-based treatment column index in X
+	Nullable<NumericVector> start_par = R_NilValue,
 	bool estimate_only = false,
 	int n_gh = 20,
 	int maxit = 300,
 	double eps_g = 1e-6,
 	std::string optimization_alg = "lbfgs",
 	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue
+	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
 	const int n = X.rows();
 	const int p = X.cols();
@@ -410,15 +412,28 @@ List fast_logistic_glmm_cpp(
 	Eigen::VectorXd par(total);
 	par.head(p).setZero();
 	par[total - 1] = -3.0;
+	if (start_par.isNotNull()) {
+		NumericVector sp(start_par);
+		if (sp.size() == total) {
+			for (int i = 0; i < total; ++i) par[i] = sp[i];
+		}
+	}
 
 	LogisticGLMMObjective obj(dat);
 	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
+
+	Eigen::MatrixXd info_start;
+	Eigen::MatrixXd* info_start_ptr = nullptr;
+	if (warm_start_fisher_info.isNotNull()) {
+		info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+		info_start_ptr = &info_start;
+	}
 
 	double neg_ll = NA_REAL;
 	int niter = maxit;
 	bool converged = false;
 	try {
-		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs");
+		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
 		par = fit.params;
 		neg_ll = fit.value;
 		niter = fit.niter;

@@ -88,6 +88,7 @@ Eigen::MatrixXd get_ordinal_regression_hessian_cpp(const Eigen::MatrixXd& X, con
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
 //' @param optimization_alg Optimization algorithm.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
 //' @return A list containing coefficients (beta), thresholds (alpha), and convergence status.
 //' @export
 //' @keywords internal
@@ -95,7 +96,8 @@ Eigen::MatrixXd get_ordinal_regression_hessian_cpp(const Eigen::MatrixXd& X, con
 List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> start_params = R_NilValue, bool smart_start = true, int maxit = 100, double tol = 1e-6,
                                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                  std::string optimization_alg = "newton_raphson") {
+                                  std::string optimization_alg = "newton_raphson",
+                                  Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     OrdinalRegression model(X, y);
     int p = X.cols();
     int K = OrdinalRegression::init_levels(y).size();
@@ -120,7 +122,15 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
         );
     }
     params = apply_fixed_values(params, fixed_spec);
-    LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
+
+    Eigen::MatrixXd H_start;
+    const Eigen::MatrixXd* h_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        H_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        h_ptr = &H_start;
+    }
+
+    LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, h_ptr);
     params = fit.params;
 
     return List::create(
@@ -141,6 +151,7 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
 //' @param optimization_alg Optimization algorithm.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
 //' @return A list containing coefficients, thresholds, vcov, and convergence status.
 //' @export
 //' @keywords internal
@@ -148,10 +159,12 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y,
                                            Nullable<NumericVector> start_params = R_NilValue,
                                            bool smart_start = true,
+                                           int maxit = 100, double tol = 1e-6,
                                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                            Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                           std::string optimization_alg = "newton_raphson") {
-    List res = fast_ordinal_regression_cpp(X, y, start_params, smart_start, 100, 1e-6, fixed_idx, fixed_values, optimization_alg);
+                                           std::string optimization_alg = "newton_raphson",
+                                           Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+    List res = fast_ordinal_regression_cpp(X, y, start_params, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
     VectorXd params = res["params"];
     bool converged = res["converged"];
     OrdinalRegression model(X, y);

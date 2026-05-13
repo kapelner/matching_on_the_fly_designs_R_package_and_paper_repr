@@ -2,12 +2,22 @@
 rm(list = ls())
 set.seed(1)
 
+script_file_arg = grep("^--file=", commandArgs(FALSE), value = TRUE)
+script_path = if (length(script_file_arg)) {
+	normalizePath(sub("^--file=", "", script_file_arg[1]), mustWork = TRUE)
+} else {
+	normalizePath("package_tests/comprehensive_tests.R", mustWork = TRUE)
+}
+script_dir = dirname(script_path)
+repo_root = normalizePath(file.path(script_dir, ".."), mustWork = TRUE)
+repo_path = function(...) file.path(repo_root, ...)
+
 pacman::p_load(doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table, profvis)
 suppressPackageStartupMessages(library(EDI))
-source("EDI/tests/testthat/helper-likelihood-method-smoke.R")
+source(repo_path("EDI", "tests", "testthat", "helper-likelihood-method-smoke.R"))
 
 max_n_dataset = 148 #needs to be divisible by 4 for some blocking designs
-source("package_tests/_dataset_load.R")
+source(repo_path("package_tests", "_dataset_load.R"))
 # options(error = recover)
 # options(warn=2)
 
@@ -52,9 +62,9 @@ pending_design_header = NULL
 pending_banner = NULL
 
 results_file = if (is.na(RESPONSE_TYPE_FILTER)) {
-	paste0("package_tests/comprehensive_tests_results_nc_", NUM_CORES, ".csv")
+	repo_path("package_tests", paste0("comprehensive_tests_results_nc_", NUM_CORES, ".csv"))
 } else {
-	paste0("package_tests/comprehensive_tests_results_nc_", NUM_CORES, "_", RESPONSE_TYPE_FILTER, ".csv")
+	repo_path("package_tests", paste0("comprehensive_tests_results_nc_", NUM_CORES, "_", RESPONSE_TYPE_FILTER, ".csv"))
 }
 existing_results_dt = if (file.exists(results_file)) data.table::fread(results_file) else data.table::data.table()
 run_row_id = if ("run_row_id" %in% colnames(existing_results_dt) && nrow(existing_results_dt) > 0L) {
@@ -841,7 +851,20 @@ run_exhaustive_remaining_inference_classes = function(des_obj, response_type, de
 		"InferenceRandCI",
 		"InferenceQuantileRandCI"
 	))
+	is_response_family_mismatch = function(class_name, response_type){
+		switch(
+			response_type,
+			continuous = grepl("Count|Incid|Survival|Ordinal|^InferenceProp", class_name),
+			incidence = grepl("Count|Contin|Survival|Ordinal|^InferenceProp", class_name),
+			proportion = grepl("Count|Contin|Incid|Survival|Ordinal", class_name),
+			count = grepl("Contin|Incid|Survival|Ordinal|^InferenceProp", class_name),
+			survival = grepl("Count|Contin|Incid|Ordinal|^InferenceProp", class_name),
+			ordinal = grepl("Count|Contin|Incid|Survival|^InferenceProp", class_name),
+			FALSE
+		)
+	}
 	for (class_name in sort(unique(gen_names))){
+		if (is_response_family_mismatch(class_name, response_type)) next
 		class_gen = get(class_name, envir = ns)
 		inf_obj = instantiate_inference_generator(class_gen, des_obj, model_formula = model_formula)
 		if (is.null(inf_obj)) next

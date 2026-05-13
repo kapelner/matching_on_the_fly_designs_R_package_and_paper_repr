@@ -120,6 +120,9 @@ Create a new \code{SimulationFramework}.
   cov_draw_method_args = list(mean = 0, sd = 1),
   random_X_draws = TRUE,
   prob_censoring = 0.25,
+  custom_replication_data_generator = NULL,
+  custom_apply_treatment_and_noise = NULL,
+  custom_true_estimand = NULL,
   verbose = TRUE,
   keep_all_intermediate_data = FALSE,
   turn_off_asserts_for_speed = TRUE,
@@ -306,6 +309,20 @@ replications.}
 \item{\code{prob_censoring}}{Numeric in \eqn{[0,1]}.  Per-subject independent
 censoring probability; applied only when
 \code{response_type = "survival"}.  Default \code{0.25}.}
+
+\item{\code{custom_replication_data_generator}}{Optional function for custom
+replication data. When supplied, it is called as
+\code{fn(state, rep)} and must return a list containing at least
+\code{X} and \code{y_linear_model}.}
+
+\item{\code{custom_apply_treatment_and_noise}}{Optional function for custom
+response generation. When supplied, it is called as
+\code{fn(y_linear_model, w, state)} and must return a list with
+components \code{y} and \code{dead}.}
+
+\item{\code{custom_true_estimand}}{Optional function for a custom true
+estimand. When supplied, it is called as
+\code{fn(y_linear_model, state)} and must return a numeric scalar.}
 
 \item{\code{verbose}}{Logical.  If \code{TRUE}, prints a message for every
 replication and for every \code{(design, inference)} pair that is

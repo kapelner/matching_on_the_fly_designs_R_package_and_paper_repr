@@ -294,7 +294,8 @@ List fast_poisson_glmm_cpp(
 	double eps_g = 1e-6,
 	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
 	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-	std::string optimization_alg = "lbfgs"
+	std::string optimization_alg = "lbfgs",
+	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
 	const int n = X.rows();
 	const int p = X.cols();
@@ -323,10 +324,17 @@ List fast_poisson_glmm_cpp(
 	PoissonGLMMObjective obj(dat);
 	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
 
+	Eigen::MatrixXd info_start;
+	Eigen::MatrixXd* info_start_ptr = nullptr;
+	if (warm_start_fisher_info.isNotNull()) {
+		info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+		info_start_ptr = &info_start;
+	}
+
 	double neg_ll = NA_REAL;
 	bool converged = false;
 	try {
-		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs");
+		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
 		par       = fit.params;
 		neg_ll    = fit.value;
 		converged = std::isfinite(neg_ll) && fit.converged;

@@ -4,6 +4,11 @@
 \alias{InferenceCountZeroInflatedPoisson}
 \title{Zero-Inflated Poisson Regression Inference for Count Responses}
 \description{
+Zero-Inflated Poisson Regression Inference for Count Responses
+
+Zero-Inflated Poisson Regression Inference for Count Responses
+}
+\details{
 Fits a zero-inflated Poisson regression for count responses using the
 treatment indicator and, optionally, all recorded covariates as predictors.
 }
@@ -75,7 +80,6 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceCountZeroAugmentedPoissonAbstract" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceCountZeroAugmentedPoissonAbstract.html#method-InferenceCountZeroAugmentedPoissonAbstract-compute_asymp_confidence_interval'><code>EDI::InferenceCountZeroAugmentedPoissonAbstract$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceCountZeroAugmentedPoissonAbstract" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceCountZeroAugmentedPoissonAbstract.html#method-InferenceCountZeroAugmentedPoissonAbstract-compute_asymp_two_sided_pval'><code>EDI::InferenceCountZeroAugmentedPoissonAbstract$compute_asymp_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceCountZeroAugmentedPoissonAbstract" data-id="compute_estimate"><a href='../../EDI/html/InferenceCountZeroAugmentedPoissonAbstract.html#method-InferenceCountZeroAugmentedPoissonAbstract-compute_estimate'><code>EDI::InferenceCountZeroAugmentedPoissonAbstract$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceCountZeroAugmentedPoissonAbstract" data-id="initialize"><a href='../../EDI/html/InferenceCountZeroAugmentedPoissonAbstract.html#method-InferenceCountZeroAugmentedPoissonAbstract-initialize'><code>EDI::InferenceCountZeroAugmentedPoissonAbstract$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -102,8 +106,8 @@ Initialize a zero-inflated Poisson inference object.
 
 \item{\code{model_formula}}{Optional formula for the count submodel.}
 
-\item{\code{model_formula_zero}}{Formula for the zero-inflation submodel. Defaults
-to \code{~ .}, meaning treatment plus all available covariates.}
+\item{\code{model_formula_zero}}{Formula for the zero-inflation submodel. Defaults to
+\code{~ .}, meaning treatment plus all available covariates.}
 
 \item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), use our internal Rcpp
 implementation. If \code{FALSE}, use \pkg{glmmTMB}.}

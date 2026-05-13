@@ -121,7 +121,8 @@ Eigen::MatrixXd get_continuation_ratio_regression_hessian_cpp(const Eigen::Matri
 List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
                                              Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                              Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                             std::string optimization_alg = "newton_raphson") {
+                                             std::string optimization_alg = "newton_raphson",
+                                             Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     int p = X.cols();
     List aug = build_continuation_ratio_augmented_data(X, y);
     MatrixXd X_aug = aug["X_aug"];
@@ -136,7 +137,14 @@ List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eige
     VectorXd beta = VectorXd::Zero(p_aug);
     FixedParamSpec fixed_spec = make_fixed_param_spec(p_aug, fixed_idx, fixed_values);
     
-    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, beta, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
+    Eigen::MatrixXd info_start;
+    const Eigen::MatrixXd* info_start_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        info_start_ptr = &info_start;
+    }
+
+    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, beta, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, info_start_ptr);
     
     return List::create(
         Named("b") = fit.params.tail(p),
@@ -152,7 +160,8 @@ List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eige
 List fast_continuation_ratio_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
                                                       Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                       Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                                      std::string optimization_alg = "newton_raphson") {
+                                                      std::string optimization_alg = "newton_raphson",
+                                                      Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     int p = X.cols();
     List aug = build_continuation_ratio_augmented_data(X, y);
     MatrixXd X_aug = aug["X_aug"];
@@ -167,7 +176,14 @@ List fast_continuation_ratio_regression_with_var_cpp(const Eigen::MatrixXd& X, c
     VectorXd beta = VectorXd::Zero(p_aug);
     FixedParamSpec fixed_spec = make_fixed_param_spec(p_aug, fixed_idx, fixed_values);
     
-    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, beta, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
+    Eigen::MatrixXd info_start;
+    const Eigen::MatrixXd* info_start_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        info_start_ptr = &info_start;
+    }
+
+    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, beta, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, info_start_ptr);
     
     MatrixXd info = fun.hessian(fit.params);
     MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);

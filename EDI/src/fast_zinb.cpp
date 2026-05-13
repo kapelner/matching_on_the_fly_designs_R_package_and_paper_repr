@@ -249,7 +249,8 @@ List fast_zinb_cpp(
     double tol = 1e-6,
     std::string optimization_alg = "newton_raphson",
     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue
+    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
     const int pc = X.cols();
     const int pz = Xzi.cols();
@@ -273,9 +274,17 @@ List fast_zinb_cpp(
 
     ZeroInflatedNegBin fun(y, X, Xzi);
     FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
+    
+    Eigen::MatrixXd H_start;
+    const Eigen::MatrixXd* h_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        H_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        h_ptr = &H_start;
+    }
+    
     LikelihoodFitResult fit;
     try {
-        fit = optimize_fixed_likelihood(fun, par, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
+        fit = optimize_fixed_likelihood(fun, par, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, h_ptr);
     } catch (...) {
         return List::create(Named("converged") = false);
     }

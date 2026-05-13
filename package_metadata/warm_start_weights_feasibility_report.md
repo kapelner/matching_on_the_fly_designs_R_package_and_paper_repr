@@ -267,7 +267,8 @@ Prefer a richer cached fit state instead of raw weight-only starts, for example:
 list(
   beta = ...,
   mu = ...,
-  working_weights = ...
+  working_weights = ...,
+  fisher_information = ...
 )
 ```
 
@@ -275,6 +276,14 @@ Then the solver can:
 
 - use `beta` as the canonical warm start
 - optionally skip recomputing some derived quantities when safe
+- reuse the Fisher Information or its decomposition (e.g., LDLT) for the first iteration
+
+This richer state is particularly valuable for:
+
+- **Bootstrap Sample Estimation**: Repeatedly fitting the same model on slightly different weights.
+- **Randomization Test Estimation**: Refitting the model under many different treatment assignments.
+
+In these high-volume scenarios, bypassing the redundant setup of the first IRLS iteration (especially the matrix crossproduct and decomposition) can lead to significant cumulative performance gains.
 
 That is more defensible than a bare `warm_start_weights` vector.
 

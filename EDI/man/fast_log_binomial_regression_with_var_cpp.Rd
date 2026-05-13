@@ -11,7 +11,10 @@ fast_log_binomial_regression_with_var_cpp(
   maxit = 100L,
   tol = 1e-08,
   fixed_idx = NULL,
-  fixed_values = NULL
+  fixed_values = NULL,
+  start_beta = NULL,
+  warm_start_weights = NULL,
+  warm_start_fisher_info = NULL
 )
 }
 \arguments{
@@ -28,6 +31,12 @@ fast_log_binomial_regression_with_var_cpp(
 \item{fixed_idx}{Optional indices of fixed parameters.}
 
 \item{fixed_values}{Optional values for fixed parameters.}
+
+\item{start_beta}{Optional starting values for coefficients.}
+
+\item{warm_start_weights}{Optional initial working weights for the first IRLS iteration.}
+
+\item{warm_start_fisher_info}{Optional initial Fisher Information matrix for the first IRLS iteration.}
 }
 \value{
 A list containing coefficients, vcov, and standard errors.

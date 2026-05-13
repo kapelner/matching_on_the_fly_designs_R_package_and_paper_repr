@@ -133,7 +133,8 @@ List fast_weibull_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
                                  double tol = 1e-6,
                                  Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                  Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                 std::string optimization_alg = "newton_raphson") {
+                                 std::string optimization_alg = "newton_raphson",
+                                 Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     int p = X.cols();
     Eigen::VectorXd params(p + 1);
     FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
@@ -187,8 +188,14 @@ List fast_weibull_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 
     WeibullAFTLikelihood fun(y, dead, X);
     LikelihoodFitResult fit;
+    Eigen::MatrixXd info_start;
+    Eigen::MatrixXd* info_start_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        info_start_ptr = &info_start;
+    }
     try {
-        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
+        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, info_start_ptr);
     } catch (...) {
         return List::create(Named("converged") = false);
     }

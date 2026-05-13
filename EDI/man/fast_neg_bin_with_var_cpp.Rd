@@ -14,7 +14,8 @@ fast_neg_bin_with_var_cpp(
   eps_g = 1e-05,
   fixed_idx = NULL,
   fixed_values = NULL,
-  optimization_alg = "newton_raphson"
+  optimization_alg = "newton_raphson",
+  warm_start_fisher_info = NULL
 )
 }
 \arguments{
@@ -37,6 +38,8 @@ fast_neg_bin_with_var_cpp(
 \item{fixed_values}{Optional values for fixed parameters.}
 
 \item{optimization_alg}{Optimization algorithm.}
+
+\item{warm_start_fisher_info}{Optional initial Fisher Information matrix for the first IRLS iteration.}
 }
 \value{
 A list containing the following components:

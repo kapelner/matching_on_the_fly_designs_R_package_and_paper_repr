@@ -9,10 +9,11 @@ fast_logistic_regression_with_var_cpp(
   y,
   j = 2L,
   start_beta = NULL,
-  smart_start = TRUE,
   fixed_idx = NULL,
   fixed_values = NULL,
-  optimization_alg = "irls"
+  optimization_alg = "irls",
+  warm_start_weights = NULL,
+  warm_start_fisher_info = NULL
 )
 }
 \arguments{
@@ -24,13 +25,11 @@ fast_logistic_regression_with_var_cpp(
 
 \item{start_beta}{Optional starting values for coefficients.}
 
-\item{smart_start}{Logical. If TRUE, use an initial OLS-based guess.}
-
 \item{fixed_idx}{Optional indices of fixed parameters.}
 
 \item{fixed_values}{Optional values for fixed parameters.}
 
-\item{optimization_alg}{Optimization algorithm.}
+\item{warm_start_weights}{Optional initial working weights for the first IRLS iteration.}
 }
 \value{
 A list containing coefficients, vcov, score, and likelihood statistics.

@@ -13,7 +13,8 @@ fast_ordinal_regression_cpp(
   tol = 1e-06,
   fixed_idx = NULL,
   fixed_values = NULL,
-  optimization_alg = "newton_raphson"
+  optimization_alg = "newton_raphson",
+  warm_start_fisher_info = NULL
 )
 }
 \arguments{
@@ -30,6 +31,8 @@ fast_ordinal_regression_cpp(
 \item{fixed_values}{Optional values for fixed parameters.}
 
 \item{optimization_alg}{Optimization algorithm.}
+
+\item{warm_start_fisher_info}{Optional initial Fisher Information matrix for the first IRLS iteration.}
 }
 \value{
 A list containing coefficients (beta), thresholds (alpha), and convergence status.

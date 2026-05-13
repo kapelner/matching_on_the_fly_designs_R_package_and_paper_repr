@@ -62,7 +62,9 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
 							 double tol = 1e-8,
                              Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                              Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                             std::string optimization_alg = "lbfgs") {
+                             std::string optimization_alg = "lbfgs",
+                             Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+                             Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
 	const int n = X.rows();
 	const int p = X.cols();
     bool use_weights = (weights.size() == n);
@@ -124,10 +126,16 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
 		mu = eta.array().exp().matrix();
 		mu = mu.array().max(1e-10);
         
-        if (use_weights) {
-            w.array() = mu.array() * weights.array();
+        if (iter == 0 && warm_start_weights.isNotNull()) {
+            Eigen::VectorXd ww = as<Eigen::VectorXd>(warm_start_weights);
+            if (ww.size() != n) Rcpp::stop("warm_start_weights must have length equal to nrow(X)");
+            w = ww;
         } else {
-            w = mu;
+            if (use_weights) {
+                w.array() = mu.array() * weights.array();
+            } else {
+                w = mu;
+            }
 		}
 
 		z.noalias() = y - mu;
@@ -135,7 +143,13 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
         z += eta;
         z_adj = z;
         z_adj -= eta_fixed;
-		XtWX_free = weighted_crossprod(X_free, w);
+        if (iter == 0 && warm_start_fisher_info.isNotNull()) {
+            Eigen::MatrixXd info_full = as<Eigen::MatrixXd>(warm_start_fisher_info);
+            if (info_full.rows() != p || info_full.cols() != p) Rcpp::stop("warm_start_fisher_info must be a p x p matrix");
+            XtWX_free = subset_matrix(info_full, fixed_spec.free_idx, fixed_spec.free_idx);
+        } else {
+            XtWX_free = weighted_crossprod(X_free, w);
+        }
 		XtWz.noalias() = weighted_crossprod_rhs(X_free, w, z_adj);
 
 		beta_new = XtWX_free.ldlt().solve(XtWz);
@@ -182,8 +196,10 @@ ModelResult fast_poisson_regression_internal(const Eigen::MatrixXd& X,
                                              double tol = 1e-8,
                                              Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                              Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                             std::string optimization_alg = "lbfgs") {
-    return fast_poisson_internal(X, y, weights, start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg);
+                                             std::string optimization_alg = "lbfgs",
+                                             Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+                                             Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+    return fast_poisson_internal(X, y, weights, start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
 }
 
 //' @title Compute Poisson Regression Score
@@ -263,6 +279,8 @@ Eigen::MatrixXd get_poisson_regression_weighted_hessian_cpp(const Eigen::MatrixX
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
 //' @param optimization_alg Optimization algorithm ("lbfgs" or "irls").
+//' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
 //' @return A list containing coefficients, fitted values, and information matrix.
 //' @export
 //' @keywords internal
@@ -278,8 +296,10 @@ List fast_poisson_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 									 double tol = 1e-8,
                                      Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                      Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                     std::string optimization_alg = "lbfgs") {
-	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg);
+                                     std::string optimization_alg = "lbfgs",
+                                     Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
 	return List::create(
 		Named("b") = res.b,
 		Named("mu") = res.mu,
@@ -301,6 +321,8 @@ List fast_poisson_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
 //' @param optimization_alg Optimization algorithm.
+//' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
 //' @return A list containing coefficients, fitted values, and information matrix.
 //' @export
 //' @keywords internal
@@ -314,8 +336,10 @@ List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X,
                                           double tol = 1e-8,
                                           Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                           Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                          std::string optimization_alg = "irls") {
-	ModelResult res = fast_poisson_internal(X, y, weights, start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg);
+                                          std::string optimization_alg = "irls",
+                                          Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+                                          Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+	ModelResult res = fast_poisson_internal(X, y, weights, start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
 	return List::create(
 		Named("b") = res.b,
 		Named("mu") = res.mu,
@@ -337,6 +361,8 @@ List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X,
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
 //' @param optimization_alg Optimization algorithm.
+//' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
 //' @return A list containing coefficients, vcov, score, and likelihood statistics.
 //' @export
 //' @keywords internal
@@ -352,8 +378,10 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
 											  double tol = 1e-8,
                                               Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                               Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                              std::string optimization_alg = "lbfgs") {
-	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg);
+                                              std::string optimization_alg = "lbfgs",
+                                              Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+                                              Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
     MatrixXd cov_free = info_free.inverse();
@@ -398,6 +426,8 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
 //' @param optimization_alg Optimization algorithm.
+//' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
 //' @return A list containing coefficients, vcov, and dispersion estimate.
 //' @export
 //' @keywords internal
@@ -411,8 +441,10 @@ List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& X,
 												   double tol = 1e-8,
                                                    Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                                   std::string optimization_alg = "lbfgs") {
-	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg);
+                                                   std::string optimization_alg = "lbfgs",
+                                                   Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+                                                   Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
     MatrixXd cov_free = info_free.inverse();

@@ -50,7 +50,9 @@ RobustModelResult fast_robust_regression_internal(
     double tol = 1e-7,
     double scale_est = -1.0, // If negative, compute MAD
     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue
+    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+    Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
     int n = X.rows();
     int p = X.cols();
@@ -102,18 +104,31 @@ RobustModelResult fast_robust_regression_internal(
         res.iterations = iter;
         
         // Update weights
-        const Eigen::ArrayXd u = r.array() / res.scale;
-        if (method == "M") {
-            const Eigen::ArrayXd abs_u = u.abs();
-            res.w = (abs_u <= c).select(1.0, c / abs_u).matrix();
+        if (iter == 1 && warm_start_weights.isNotNull()) {
+            Eigen::VectorXd ww = as<Eigen::VectorXd>(warm_start_weights);
+            if (ww.size() != n) stop("warm_start_weights must have length equal to nrow(X)");
+            res.w = ww;
         } else {
-            const Eigen::ArrayXd abs_u = u.abs();
-            const Eigen::ArrayXd tmp = 1.0 - (u / c_bisquare).square();
-            res.w = (abs_u <= c_bisquare).select(tmp.square(), 0.0).matrix();
+            const Eigen::ArrayXd u = r.array() / res.scale;
+            if (method == "M") {
+                const Eigen::ArrayXd abs_u = u.abs();
+                res.w = (abs_u <= c).select(1.0, c / abs_u).matrix();
+            } else {
+                const Eigen::ArrayXd abs_u = u.abs();
+                const Eigen::ArrayXd tmp = 1.0 - (u / c_bisquare).square();
+                res.w = (abs_u <= c_bisquare).select(tmp.square(), 0.0).matrix();
+            }
         }
 
         // Solve Weighted Least Squares
-        Eigen::MatrixXd XtWX = weighted_crossprod(X_free, res.w);
+        Eigen::MatrixXd XtWX;
+        if (iter == 1 && warm_start_fisher_info.isNotNull()) {
+            Eigen::MatrixXd info_full = as<Eigen::MatrixXd>(warm_start_fisher_info);
+            if (info_full.rows() != p || info_full.cols() != p) stop("warm_start_fisher_info must be a p x p matrix");
+            XtWX = subset_matrix(info_full, fixed_spec.free_idx, fixed_spec.free_idx);
+        } else {
+            XtWX = weighted_crossprod(X_free, res.w);
+        }
         Eigen::VectorXd XtWy = weighted_crossprod_rhs(X_free, res.w, y_adj);
         
         Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
@@ -135,6 +150,23 @@ RobustModelResult fast_robust_regression_internal(
     return res;
 }
 
+//' @title Fast Robust Regression (C++)
+//' @description High-performance robust regression fitting using IRLS.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param start_beta Optional starting values for coefficients.
+//' @param method Robust estimation method ("M" or "MM").
+//' @param j 1-based index of the parameter for which to return specific variance.
+//' @param c Huber constant.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
+//' @return A list containing coefficients, weights, and scale estimate.
+//' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_robust_regression_cpp(
     const Eigen::MatrixXd& X, 
@@ -146,9 +178,11 @@ List fast_robust_regression_cpp(
     int maxit = 50,
     double tol = 1e-7,
     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue
+    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+    Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
-    RobustModelResult res = fast_robust_regression_internal(X, y, start_beta, method, c, 4.685, maxit, tol, -1.0, fixed_idx, fixed_values);
+    RobustModelResult res = fast_robust_regression_internal(X, y, start_beta, method, c, 4.685, maxit, tol, -1.0, fixed_idx, fixed_values, warm_start_weights, warm_start_fisher_info);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     
     if (!res.converged && res.XtWX.rows() == 0) {

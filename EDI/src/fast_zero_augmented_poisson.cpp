@@ -194,7 +194,8 @@ List fast_zero_augmented_poisson_cpp(const Eigen::MatrixXd& X,
                                      double tol = 1e-6,
                                      Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                      Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                     std::string optimization_alg = "newton_raphson") {
+                                     std::string optimization_alg = "newton_raphson",
+                                     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     int p_cond = X.cols();
     int p_zi = Xzi.cols();
     int total_p = p_cond + p_zi;
@@ -216,9 +217,16 @@ List fast_zero_augmented_poisson_cpp(const Eigen::MatrixXd& X,
     FixedParamSpec fixed_spec = make_fixed_param_spec(total_p, fixed_idx, fixed_values);
 
     ZeroAugmentedPoisson fun(y, X, Xzi, is_hurdle);
+    Eigen::MatrixXd H_start;
+    const Eigen::MatrixXd* h_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        H_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        h_ptr = &H_start;
+    }
+
     LikelihoodFitResult fit;
     try {
-        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
+        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, h_ptr);
     } catch (...) {
         return List::create(Named("converged") = false);
     }

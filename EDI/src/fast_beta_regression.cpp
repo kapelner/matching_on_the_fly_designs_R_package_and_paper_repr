@@ -136,7 +136,8 @@ ModelResult fast_beta_regression_internal(const Eigen::MatrixXd& X,
                                         double start_phi = 10.0,
                                         Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                         Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                        std::string optimization_alg = "newton_raphson") {
+                                        std::string optimization_alg = "newton_raphson",
+                                        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     int p = X.cols();
     ModelResult res;
     Eigen::VectorXd params(p + 1);
@@ -146,7 +147,15 @@ ModelResult fast_beta_regression_internal(const Eigen::MatrixXd& X,
     FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
 
     BetaRegression fun(y, X);
-    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, 1000, 1e-6, optimization_alg, "newton_raphson");
+    
+    Eigen::MatrixXd H_start;
+    const Eigen::MatrixXd* h_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        H_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        h_ptr = &H_start;
+    }
+    
+    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, 1000, 1e-6, optimization_alg, "newton_raphson", 0, h_ptr);
     params = fit.params;
 
     res.b = params.head(p);
@@ -202,6 +211,7 @@ Eigen::MatrixXd get_beta_regression_hessian_cpp(const Eigen::MatrixXd& X,
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
 //' @param optimization_alg Optimization algorithm.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
 //' @return A list containing coefficients, phi, and convergence status.
 //' @export
 //' @keywords internal
@@ -217,7 +227,8 @@ List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
                                 bool compute_std_errs = false,
                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                std::string optimization_alg = "newton_raphson") {
+                                std::string optimization_alg = "newton_raphson",
+                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
 
 	Eigen::VectorXd y_eigen = as<Eigen::VectorXd>(y);
     Eigen::VectorXd sb;
@@ -227,7 +238,7 @@ List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
         sb_ptr = &sb;
     }
 
-    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, start_phi, fixed_idx, fixed_values, optimization_alg);
+    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
 
     Eigen::VectorXd params_full(fit.b.size() + 1);
     params_full.head(fit.b.size()) = fit.b;

@@ -57,12 +57,13 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
                                               const Eigen::VectorXd& y_eigen, 
                                               const Eigen::VectorXd& weights_eigen = Eigen::VectorXd(),
                                               Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
-                                              bool smart_start = true,
                                               int maxit = 100, 
                                               double tol = 1e-8,
                                               Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                               Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                              std::string optimization_alg = "irls") {
+                                              std::string optimization_alg = "irls",
+                                              Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+                                              Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     int n = X_eigen.rows();
     int p = X_eigen.cols();
     bool use_weights = (weights_eigen.size() == n);
@@ -116,9 +117,15 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
         mu_map.array() = plogis_array_safe(mu_map.array());
 
         // w_diag = weights * mu * (1-mu)
-        w_diag_map.array() = mu_map.array() * (1.0 - mu_map.array());
-        if (use_weights) w_diag_map.array() *= weights_eigen.array();
-        w_diag_map.array() = w_diag_map.array().max(1e-10);
+        if (iter == 0 && warm_start_weights.isNotNull()) {
+            Eigen::VectorXd ww = as<Eigen::VectorXd>(warm_start_weights);
+            if (ww.size() != n) Rcpp::stop("warm_start_weights must have length equal to nrow(X)");
+            w_diag_map = ww;
+        } else {
+            w_diag_map.array() = mu_map.array() * (1.0 - mu_map.array());
+            if (use_weights) w_diag_map.array() *= weights_eigen.array();
+            w_diag_map.array() = w_diag_map.array().max(1e-10);
+        }
 
         // score = X^T * (weights * (y - mu))
         Eigen::VectorXd diff = y_eigen - mu_map;
@@ -126,7 +133,13 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
         score_free_eigen.noalias() = X_free_map.transpose() * diff;
 
         // XtWX = X^T * diag(w_diag) * X
-        final_XtWX_eigen.noalias() = X_free_map.transpose() * w_diag_map.asDiagonal() * X_free_map;
+        if (iter == 0 && warm_start_fisher_info.isNotNull()) {
+            Eigen::MatrixXd info_full = as<Eigen::MatrixXd>(warm_start_fisher_info);
+            if (info_full.rows() != p || info_full.cols() != p) Rcpp::stop("warm_start_fisher_info must be a p x p matrix");
+            final_XtWX_eigen = subset_matrix(info_full, fixed_spec.free_idx, fixed_spec.free_idx);
+        } else {
+            final_XtWX_eigen.noalias() = X_free_map.transpose() * w_diag_map.asDiagonal() * X_free_map;
+        }
 
         Eigen::LDLT<Eigen::MatrixXd> ldlt(final_XtWX_eigen);
         if (ldlt.info() != Eigen::Success) break;
@@ -210,12 +223,11 @@ Eigen::MatrixXd get_logistic_regression_weighted_hessian_cpp(const Eigen::Matrix
 //' @param X A numeric matrix of predictors.
 //' @param y A binary numeric vector of responses.
 //' @param start_beta Optional starting values for coefficients.
-//' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
-//' @param optimization_alg Optimization algorithm (e.g., "irls").
+//' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
 //' @return A list containing coefficients and weights.
 //' @export
 //' @keywords internal
@@ -226,12 +238,13 @@ Eigen::MatrixXd get_logistic_regression_weighted_hessian_cpp(const Eigen::Matrix
 // [[Rcpp::export]]
 List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y,
                                   Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
-                                  bool smart_start = true,
                                   int maxit = 100, double tol = 1e-8,
                                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                  std::string optimization_alg = "irls") {
-    ModelResult res = fast_logistic_regression_internal(X, y, Eigen::VectorXd(), start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg);
+                                  std::string optimization_alg = "irls",
+                                  Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+                                  Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+    ModelResult res = fast_logistic_regression_internal(X, y, Eigen::VectorXd(), start_beta, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
     Eigen::VectorXd weights_vec(X.rows());
     for(int i=0; i<X.rows(); i++) weights_vec[i] = res.mu[i] * (1.0 - res.mu[i]);
     return List::create(
@@ -247,24 +260,24 @@ List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorX
 //' @param y A binary numeric vector of responses.
 //' @param weights A numeric vector of weights.
 //' @param start_beta Optional starting values for coefficients.
-//' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
-//' @param optimization_alg Optimization algorithm.
+//' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
 //' @return A list containing coefficients, fitted values, and information matrix.
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
 List fast_logistic_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights,
                                            Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
-                                           bool smart_start = true,
                                            int maxit = 100, double tol = 1e-8,
                                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                            Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                           std::string optimization_alg = "irls") {
-    ModelResult res = fast_logistic_regression_internal(X, y, weights, start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg);
+                                           std::string optimization_alg = "irls",
+                                           Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+                                           Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+    ModelResult res = fast_logistic_regression_internal(X, y, weights, start_beta, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
     return List::create(
         Named("b") = res.b,
         Named("mu") = res.mu,
@@ -280,10 +293,9 @@ List fast_logistic_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen
 //' @param y A binary numeric vector of responses.
 //' @param j The 1-based index of the parameter for which to return specific variance.
 //' @param start_beta Optional starting values for coefficients.
-//' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
-//' @param optimization_alg Optimization algorithm.
+//' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
 //' @return A list containing coefficients, vcov, score, and likelihood statistics.
 //' @export
 //' @keywords internal
@@ -294,11 +306,12 @@ List fast_logistic_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen
 // [[Rcpp::export]]
 List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j = 2,
                                            Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
-                                           bool smart_start = true,
                                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                            Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                           std::string optimization_alg = "irls") {
-    ModelResult res = fast_logistic_regression_internal(X, y, Eigen::VectorXd(), start_beta, smart_start, 100, 1e-8, fixed_idx, fixed_values, optimization_alg);
+                                           std::string optimization_alg = "irls",
+                                           Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
+                                           Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+    ModelResult res = fast_logistic_regression_internal(X, y, Eigen::VectorXd(), start_beta, 100, 1e-8, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     
     int p_free = fixed_spec.free_idx.size();

@@ -70,7 +70,8 @@ List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X,
                                           double tol = 1e-6, 
                                           std::string optimization_alg = "newton_raphson",
                                           Nullable<IntegerVector> fixed_idx = R_NilValue,
-                                          Nullable<NumericVector> fixed_values = R_NilValue) {
+                                          Nullable<NumericVector> fixed_values = R_NilValue,
+                                          Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     OrdinalCLLRegression model(X, y);
     int p = X.cols();
     int K = OrdinalCLLRegression::init_levels(y).size();
@@ -97,7 +98,15 @@ List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X,
     }
 
     params = apply_fixed_values(params, fixed_spec);
-    LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson");
+
+    Eigen::MatrixXd info_start;
+    const Eigen::MatrixXd* info_start_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        info_start_ptr = &info_start;
+    }
+
+    LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, info_start_ptr);
     params = fit.params;
 
     return List::create(
@@ -118,8 +127,9 @@ List fast_ordinal_cloglog_regression_with_var_cpp(const Eigen::MatrixXd& X,
                                                    bool smart_start = true,
                                                    std::string optimization_alg = "newton_raphson",
                                                    Nullable<IntegerVector> fixed_idx = R_NilValue,
-                                                   Nullable<NumericVector> fixed_values = R_NilValue) {
-    List res = fast_ordinal_cloglog_regression_cpp(X, y, start_params, smart_start, 100, 1e-6, optimization_alg, fixed_idx, fixed_values);
+                                                   Nullable<NumericVector> fixed_values = R_NilValue,
+                                                   Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+    List res = fast_ordinal_cloglog_regression_cpp(X, y, start_params, smart_start, 100, 1e-6, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info);
     if (res.size() == 0) return List::create(Named("b") = NumericVector::create(NA_REAL), Named("ssq_b_2") = NA_REAL);
     
     VectorXd params = res["params"];

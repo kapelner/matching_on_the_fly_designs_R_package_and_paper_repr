@@ -106,8 +106,8 @@ Initialize a zero-inflated negative binomial inference object.
 
 \item{\code{model_formula}}{Optional formula for covariate adjustment.}
 
-\item{\code{model_formula_zero}}{Formula for the zero-inflation submodel. Defaults
-to \code{~ .}, meaning treatment plus all available covariates.}
+\item{\code{model_formula_zero}}{Formula for the zero-inflation submodel. Defaults to
+\code{~ .}, meaning treatment plus all available covariates.}
 
 \item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), use our internal Rcpp
 implementation. If \code{FALSE}, use \pkg{glmmTMB}.}

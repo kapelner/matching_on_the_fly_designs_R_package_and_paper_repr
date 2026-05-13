@@ -491,15 +491,24 @@ List fast_clayton_weibull_aft_optim_cpp(
     double reltol = 1e-9,
     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
     Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-    std::string optimization_alg = "lbfgs"
+    std::string optimization_alg = "lbfgs",
+    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
     ClaytonWeibullLikelihood fun(y, dead, X, pair_idx, singleton_rows);
     Eigen::VectorXd params = start_params;
     FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
     params = apply_fixed_values(params, fixed_spec);
+    
+    Eigen::MatrixXd H_start;
+    const Eigen::MatrixXd* h_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        H_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        h_ptr = &H_start;
+    }
+    
     LikelihoodFitResult fit;
     try {
-        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, reltol, optimization_alg, "lbfgs");
+        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, reltol, optimization_alg, "lbfgs", 0, h_ptr);
     } catch (const std::exception& e) {
         Rcout << "Optimization failed: " << e.what() << std::endl;
         const Eigen::VectorXd p_fixed = apply_fixed_values(params, fixed_spec);
@@ -566,14 +575,23 @@ List fast_dep_cens_transform_optim_cpp(
     double reltol = 1e-9,
     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
     Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-    std::string optimization_alg = "lbfgs"
+    std::string optimization_alg = "lbfgs",
+    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
     DepCensTransformLikelihood fun(y, dead, X);
     Eigen::VectorXd params = start_params;
     FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
+    
+    Eigen::MatrixXd H_start;
+    const Eigen::MatrixXd* h_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        H_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        h_ptr = &H_start;
+    }
+    
     LikelihoodFitResult fit;
     try {
-        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, reltol, optimization_alg, "lbfgs");
+        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, reltol, optimization_alg, "lbfgs", 0, h_ptr);
     } catch (const std::exception& e) {
         Rcout << "Optimization failed: " << e.what() << std::endl;
         return List::create(Named("converged") = false, Named("error") = e.what());

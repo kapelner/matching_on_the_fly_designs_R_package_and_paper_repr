@@ -792,7 +792,8 @@ template <typename LikelihoodFunctor>
 inline LikelihoodFitResult optimize_likelihood_newton(LikelihoodFunctor& fun,
                                                       Eigen::VectorXd params,
                                                       int maxit,
-                                                      double tol) {
+                                                      double tol,
+                                                      const Eigen::MatrixXd* warm_start_hessian = nullptr) {
     LikelihoodFitResult fit;
     fit.params = params;
 
@@ -808,7 +809,16 @@ inline LikelihoodFitResult optimize_likelihood_newton(LikelihoodFunctor& fun,
             return fit;
         }
 
-        Eigen::MatrixXd H = fun.hessian(params);
+        Eigen::MatrixXd H;
+        if (iter == 0 && warm_start_hessian != nullptr) {
+            if (warm_start_hessian->rows() != params.size() || warm_start_hessian->cols() != params.size()) {
+                Rcpp::stop("warm_start_hessian has incorrect dimensions");
+            }
+            H = *warm_start_hessian;
+        } else {
+            H = fun.hessian(params);
+        }
+        
         if (!H.allFinite()) break;
         Eigen::FullPivLU<Eigen::MatrixXd> lu(H);
         if (!lu.isInvertible()) break;
@@ -849,8 +859,9 @@ inline LikelihoodFitResult optimize_likelihood_newton_then_lbfgs(LikelihoodFunct
                                                                  Eigen::VectorXd params,
                                                                  int maxit,
                                                                  double tol,
-                                                                 int max_linesearch = 0) {
-    LikelihoodFitResult newton_fit = optimize_likelihood_newton(fun, params, maxit, tol);
+                                                                 int max_linesearch = 0,
+                                                                 const Eigen::MatrixXd* warm_start_hessian = nullptr) {
+    LikelihoodFitResult newton_fit = optimize_likelihood_newton(fun, params, maxit, tol, warm_start_hessian);
     if (newton_fit.converged) {
         return newton_fit;
     }
@@ -891,11 +902,20 @@ inline LikelihoodFitResult optimize_fixed_likelihood_newton(FullFunctor& fun,
                                                             Eigen::VectorXd params,
                                                             const FixedParamSpec& fixed_spec,
                                                             int maxit,
-                                                            double tol) {
+                                                            double tol,
+                                                            const Eigen::MatrixXd* warm_start_hessian = nullptr) {
     params = apply_fixed_values(params, fixed_spec);
     Eigen::VectorXd params_free = subset_vector(params, fixed_spec.free_idx);
     FixedParameterFunctor<FullFunctor> fixed_fun(fun, fixed_spec, params);
-    LikelihoodFitResult fit = optimize_likelihood_newton(fixed_fun, params_free, maxit, tol);
+    
+    Eigen::MatrixXd H_free;
+    const Eigen::MatrixXd* h_ptr = nullptr;
+    if (warm_start_hessian != nullptr) {
+        H_free = subset_matrix(*warm_start_hessian, fixed_spec.free_idx, fixed_spec.free_idx);
+        h_ptr = &H_free;
+    }
+    
+    LikelihoodFitResult fit = optimize_likelihood_newton(fixed_fun, params_free, maxit, tol, h_ptr);
     fit.params = fixed_fun.expand(fit.params);
     return fit;
 }
@@ -908,7 +928,8 @@ inline LikelihoodFitResult optimize_fixed_likelihood(FullFunctor& fun,
                                                      double tol,
                                                      const std::string& optimization_alg,
                                                      const std::string& default_optimization_alg,
-                                                     int max_linesearch = 0) {
+                                                     int max_linesearch = 0,
+                                                     const Eigen::MatrixXd* warm_start_hessian = nullptr) {
     std::string alg = normalize_optimizer_algorithm(optimization_alg, default_optimization_alg, false);
     if (alg == "lbfgs") {
         return optimize_fixed_likelihood_lbfgs(fun, params, fixed_spec, maxit, tol, max_linesearch);
@@ -916,7 +937,15 @@ inline LikelihoodFitResult optimize_fixed_likelihood(FullFunctor& fun,
     params = apply_fixed_values(params, fixed_spec);
     Eigen::VectorXd params_free = subset_vector(params, fixed_spec.free_idx);
     FixedParameterFunctor<FullFunctor> fixed_fun(fun, fixed_spec, params);
-    LikelihoodFitResult fit = optimize_likelihood_newton_then_lbfgs(fixed_fun, params_free, maxit, tol, max_linesearch);
+    
+    Eigen::MatrixXd H_free;
+    const Eigen::MatrixXd* h_ptr = nullptr;
+    if (warm_start_hessian != nullptr) {
+        H_free = subset_matrix(*warm_start_hessian, fixed_spec.free_idx, fixed_spec.free_idx);
+        h_ptr = &H_free;
+    }
+
+    LikelihoodFitResult fit = optimize_likelihood_newton_then_lbfgs(fixed_fun, params_free, maxit, tol, max_linesearch, h_ptr);
     fit.params = fixed_fun.expand(fit.params);
     return fit;
 }
@@ -928,12 +957,13 @@ inline LikelihoodFitResult optimize_likelihood(LikelihoodFunctor& fun,
                                                double tol,
                                                const std::string& optimization_alg,
                                                const std::string& default_optimization_alg,
-                                               int max_linesearch = 0) {
+                                               int max_linesearch = 0,
+                                               const Eigen::MatrixXd* warm_start_hessian = nullptr) {
     std::string alg = normalize_optimizer_algorithm(optimization_alg, default_optimization_alg, false);
     if (alg == "lbfgs") {
         return optimize_likelihood_lbfgs(fun, params, maxit, tol, max_linesearch);
     }
-    return optimize_likelihood_newton_then_lbfgs(fun, params, maxit, tol, max_linesearch);
+    return optimize_likelihood_newton_then_lbfgs(fun, params, maxit, tol, max_linesearch, warm_start_hessian);
 }
 
 #endif

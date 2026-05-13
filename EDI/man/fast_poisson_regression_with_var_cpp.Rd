@@ -14,7 +14,9 @@ fast_poisson_regression_with_var_cpp(
   tol = 1e-08,
   fixed_idx = NULL,
   fixed_values = NULL,
-  optimization_alg = "lbfgs"
+  optimization_alg = "lbfgs",
+  warm_start_weights = NULL,
+  warm_start_fisher_info = NULL
 )
 }
 \arguments{
@@ -37,6 +39,10 @@ fast_poisson_regression_with_var_cpp(
 \item{fixed_values}{Optional values for fixed parameters.}
 
 \item{optimization_alg}{Optimization algorithm.}
+
+\item{warm_start_weights}{Optional initial working weights for the first IRLS iteration.}
+
+\item{warm_start_fisher_info}{Optional initial Fisher Information matrix for the first IRLS iteration.}
 }
 \value{
 A list containing the following components:

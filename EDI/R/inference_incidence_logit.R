@@ -65,7 +65,6 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 			res = fast_logistic_regression_cpp(
 				X = X, y = as.numeric(private$y),
 				start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
-				smart_start = private$smart_default,
 				optimization_alg = private$optimization_alg
 			)
 			if (is.null(res) || !is.finite(res$b[2])){
@@ -103,7 +102,6 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 						start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
 						fixed_idx = j_treat,
 						fixed_values = delta,
-						smart_start = private$smart_default,
 						optimization_alg = private$optimization_alg
 					)
 				},
@@ -141,7 +139,6 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 						res = fast_logistic_regression_cpp(
 							X_fit, private$y,
 							start_beta = start_beta,
-							smart_start = private$smart_default,
 							optimization_alg = private$optimization_alg
 						)
 						list(b = res$b, ssq_b_2 = NA_real_)
@@ -149,7 +146,6 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 						fast_logistic_regression_with_var_cpp(
 							X_fit, private$y,
 							start_beta = start_beta,
-							smart_start = private$smart_default,
 							optimization_alg = private$optimization_alg
 						)
 					}
