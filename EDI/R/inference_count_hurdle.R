@@ -27,8 +27,8 @@ InferenceCountHurdlePoisson = R6::R6Class("InferenceCountHurdlePoisson",
 		#'   implementation. If \code{FALSE}, use \pkg{glmmTMB}.
 		#' @param verbose Whether to print progress messages.
 		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
-		initialize = function(des_obj, model_formula = NULL, model_formula_hurdle = ~ ., use_rcpp = TRUE, verbose = FALSE, optimization_alg = NULL){
-			super$initialize(des_obj, model_formula = model_formula, model_formula_zero = model_formula_hurdle, use_rcpp = use_rcpp, verbose = verbose, optimization_alg = optimization_alg)
+		initialize = function(des_obj, model_formula = NULL, model_formula_hurdle = ~ ., use_rcpp = TRUE, verbose = FALSE, smart_default = TRUE, optimization_alg = NULL){
+			super$initialize(des_obj, model_formula = model_formula, model_formula_zero = model_formula_hurdle, use_rcpp = use_rcpp, verbose = verbose, smart_default = smart_default, optimization_alg = optimization_alg)
 		}
 	),
 	private = list(
@@ -62,12 +62,12 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 		#' @param model_formula_hurdle Formula for the hurdle submodel. Defaults to
 		#'   \code{~ .}, meaning treatment plus all available covariates.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, model_formula = NULL, model_formula_hurdle = ~ ., verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, model_formula_hurdle = ~ ., verbose = FALSE, smart_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 				assertFormula(model_formula_hurdle, null.ok = FALSE)
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -157,12 +157,14 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 					fast_hurdle_negbin_cpp(
 						X_f, private$y, X_hurdle = X_hurdle,
 						start_params = start_params,
+						smart_start = private$smart_default,
 						warm_start_fisher_info = warm_fisher
 					)
 				} else {
 					fast_hurdle_negbin_with_var_cpp(
 						X_f, private$y, X_hurdle = X_hurdle, j = j_t,
 						start_params = start_params,
+						smart_start = private$smart_default,
 						warm_start_fisher_info = warm_fisher
 					)
 				},
@@ -214,6 +216,7 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 						y = y,
 						start_params = start_params,
 						warm_start_fisher_info = warm_fisher,
+						smart_start = private$smart_default,
 						estimate_only = FALSE,
 						optimization_alg = opt_alg,
 						fixed_idx = j_treat,

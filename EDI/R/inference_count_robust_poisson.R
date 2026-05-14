@@ -27,11 +27,11 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -64,12 +64,14 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			}
 			res = tryCatch(
 				fast_poisson_regression_cpp(
-					X = X, y = as.numeric(private$y),
-					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
-					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X))
+					X = X_fit, y = as.numeric(private$y),
+					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+					smart_start = private$smart_default,
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
 				),
 				error = function(e) NULL
 			)
+
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
@@ -92,11 +94,13 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			mod = tryCatch(
 				fast_poisson_regression_cpp(
 					X = X_fit, y = as.numeric(private$y),
-					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+					smart_start = private$smart_default,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
 				),
 				error = function(e) NULL
 			)
+
 			if (is.null(mod)){
 				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat))
 			}
@@ -192,7 +196,7 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 						X = X_fit,
 						y = y,
 						j = j_treat,
-						start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
 						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
 						fixed_idx = j_treat,
 						fixed_values = delta,

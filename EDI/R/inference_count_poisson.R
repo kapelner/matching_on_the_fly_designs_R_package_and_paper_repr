@@ -41,6 +41,49 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
+		},
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			X_data = private$get_X()
+			if (is.null(X_data) || ncol(X_data) == 0) {
+				X_full = cbind(`(Intercept)` = 1, treatment = private$w)
+			} else {
+				X_full = cbind(`(Intercept)` = 1, treatment = private$w, X_data)
+			}
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 2L,
+				fit_fun = function(X_fit, keep){
+					j_treat = which(keep == 2L)
+					res = fast_poisson_regression_weighted_cpp(
+						X = X_fit,
+						y = private$y,
+						weights = row_weights,
+						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
+						smart_start = private$smart_default
+					)
+					list(b = res$b, XtWX = res$XtWX, ssq_b_j = NA_real_, j_treat = j_treat)
+				},
+				fit_ok = function(mod, X_fit, keep){
+					!is.null(mod) && length(mod$b) >= mod$j_treat && is.finite(mod$b[mod$j_treat])
+				}
+			)
+			private$cached_mod = attempt$fit
+			if (is.null(attempt$fit) || is.null(attempt$fit$b)) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				return(NA_real_)
+			}
+			j_treat = attempt$fit$j_treat %||% 2L
+			private$cached_values$beta_hat_T = as.numeric(attempt$fit$b[j_treat])
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$set_fit_warm_start(
+				as.numeric(attempt$fit$b),
+				"beta",
+				fisher = attempt$fit$XtWX
+			)
+			private$cached_values$beta_hat_T
 		}
 	),
 	private = list(
@@ -64,7 +107,7 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 			res = tryCatch(
 				fast_poisson_regression_cpp(
 					X = X, y = as.numeric(private$y),
-					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
+					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X)),
 					smart_start = private$smart_default
 				),
@@ -102,7 +145,7 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 						X = X_fit,
 						y = y,
 						j = j_treat,
-						start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
 						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
 						fixed_idx = j_treat,
 						fixed_values = delta,
@@ -143,12 +186,12 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 				required_cols = 2L,
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
-					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit))
+					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit))
 					warm_fisher = private$get_fit_warm_start_fisher(ncol(X_fit))
 					if (estimate_only) {
 						res = fast_poisson_regression_cpp(
 							X = X_fit, y = private$y,
-							start_beta = start_beta,
+							warm_start_beta = warm_start_beta,
 							warm_start_fisher_info = warm_fisher,
 							smart_start = private$smart_default
 						)
@@ -156,7 +199,7 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 					} else {
 						res = fast_poisson_regression_with_var_cpp(
 							X = X_fit, y = private$y, j = j_treat,
-							start_beta = start_beta,
+							warm_start_beta = warm_start_beta,
 							warm_start_fisher_info = warm_fisher,
 							smart_start = private$smart_default
 						)

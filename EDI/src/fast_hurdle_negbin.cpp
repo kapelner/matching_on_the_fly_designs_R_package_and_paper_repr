@@ -10,7 +10,7 @@ ModelResult fast_logistic_regression_internal(
 	const Eigen::MatrixXd& X,
 	const Eigen::VectorXd& y,
 	const Eigen::VectorXd& weights = Eigen::VectorXd(),
-	Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
 	int maxit = 100,
 	double tol = 1e-8,
 	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -67,7 +67,7 @@ VectorXd make_truncated_negbin_start(const MatrixXd& X_pos, const VectorXi& y_po
 	if (p > 0 && X_pos.col(0).array().isApprox(ArrayXd::Ones(X_pos.rows()), 1e-12)) {
 		legacy_beta[0] = std::log(std::max(mean_y, 1e-8));
 	}
-	VectorXd beta_smart = ols_start_beta_on_log1p(X_pos, y_double);
+	VectorXd beta_smart = ols_warm_start_beta_on_log1p(X_pos, y_double);
 	VectorXd beta_start = vector_is_usable_start(beta_smart, p) ? beta_smart : legacy_beta;
 	VectorXd params = VectorXd::Zero(p + 1);
 	params.head(p) = beta_start;
@@ -92,7 +92,7 @@ std::vector<VectorXd> make_truncated_negbin_candidate_starts(const MatrixXd& X_p
 	std::vector<VectorXd> beta_candidates;
 	beta_candidates.push_back(legacy_beta);
 
-	VectorXd beta_log1p = ols_start_beta_on_log1p(X_pos, y_double);
+	VectorXd beta_log1p = ols_warm_start_beta_on_log1p(X_pos, y_double);
 	if (vector_is_usable_start(beta_log1p, p)) beta_candidates.push_back(beta_log1p);
 
 	VectorXd beta_log = safe_ols_solve(X_pos, y_double.array().max(1.0).log().matrix());
@@ -548,7 +548,7 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X,
 // [[Rcpp::export]]
 List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X,
                                                                          const Eigen::VectorXd& y,
-                                                                         Nullable<NumericVector> start_params = R_NilValue,
+                                                                         Nullable<NumericVector> warm_start_params = R_NilValue,
                                                                          bool estimate_only = false,
                                                                          int maxit = 1000,
                                                                          double tol = 1e-8,
@@ -574,8 +574,8 @@ List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X,
         std::vector<VectorXd> start_candidates = make_truncated_negbin_candidate_starts(X_pos, y_pos);
         VectorXd heuristic_start = start_candidates.front();
         VectorXd params = heuristic_start;
-        if (start_params.isNotNull()) {
-                params = as<VectorXd>(NumericVector(start_params));
+        if (warm_start_params.isNotNull()) {
+                params = as<VectorXd>(NumericVector(warm_start_params));
         }
 
         FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);

@@ -42,7 +42,8 @@ struct RobustModelResult {
 RobustModelResult fast_robust_regression_internal(
     const Eigen::MatrixXd& X, 
     const Eigen::VectorXd& y, 
-    Nullable<NumericVector> start_beta = R_NilValue,
+    Nullable<NumericVector> warm_start_beta = R_NilValue,
+    bool smart_start = true,
     std::string method = "MM",
     double c = 1.345, // Huber constant
     double c_bisquare = 4.685, // Bisquare constant
@@ -69,13 +70,15 @@ RobustModelResult fast_robust_regression_internal(
 
     // 1. Initial estimate
     Eigen::VectorXd b_free;
-    if (start_beta.isNotNull()) {
-        Eigen::VectorXd b_start = as<Eigen::VectorXd>(NumericVector(start_beta));
+    if (warm_start_beta.isNotNull()) {
+        Eigen::VectorXd b_start = as<Eigen::VectorXd>(NumericVector(warm_start_beta));
         b_start = apply_fixed_values(b_start, fixed_spec);
         b_free = subset_vector(b_start, fixed_spec.free_idx);
-    } else {
+    } else if (smart_start) {
         Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(X_free);
         b_free = qr.solve(y_adj);
+    } else {
+        b_free = Eigen::VectorXd::Zero(p_free);
     }
     res.b = Eigen::VectorXd::Zero(p);
     for (int j = 0; j < p_free; ++j) res.b[fixed_spec.free_idx[j]] = b_free[j];
@@ -154,7 +157,7 @@ RobustModelResult fast_robust_regression_internal(
 //' @description High-performance robust regression fitting using IRLS.
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses.
-//' @param start_beta Optional starting values for coefficients.
+//' @param warm_start_beta Optional starting values for coefficients.
 //' @param method Robust estimation method ("M" or "MM").
 //' @param j 1-based index of the parameter for which to return specific variance.
 //' @param c Huber constant.
@@ -171,7 +174,8 @@ RobustModelResult fast_robust_regression_internal(
 List fast_robust_regression_cpp(
     const Eigen::MatrixXd& X, 
     const Eigen::VectorXd& y, 
-    Nullable<NumericVector> start_beta = R_NilValue,
+    Nullable<NumericVector> warm_start_beta = R_NilValue,
+    bool smart_start = true,
     std::string method = "MM",
     int j = 2,
     double c = 1.345,
@@ -182,7 +186,7 @@ List fast_robust_regression_cpp(
     Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
-    RobustModelResult res = fast_robust_regression_internal(X, y, start_beta, method, c, 4.685, maxit, tol, -1.0, fixed_idx, fixed_values, warm_start_weights, warm_start_fisher_info);
+    RobustModelResult res = fast_robust_regression_internal(X, y, warm_start_beta, smart_start, method, c, 4.685, maxit, tol, -1.0, fixed_idx, fixed_values, warm_start_weights, warm_start_fisher_info);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     
     if (!res.converged && res.XtWX.rows() == 0) {

@@ -19,7 +19,7 @@ test_that("GEE Rcpp solver utilizes warm starts correctly", {
 
 	# Second fit: Warm start with same data
 	fit2 <- EDI:::gee_pairs_singletons_cpp(X, y, group_id, family_str = "binomial", 
-	                                      start_beta = fit1$beta, 
+	                                      warm_start_beta = fit1$beta, 
 	                                      warm_start_fisher_info = fit1$fisher_information)
 	
 	expect_true(fit2$converged)
@@ -29,7 +29,7 @@ test_that("GEE Rcpp solver utilizes warm starts correctly", {
 
 	# Third fit: Perturbed warm start
 	fit3 <- EDI:::gee_pairs_singletons_cpp(X, y, group_id, family_str = "binomial", 
-	                                      start_beta = fit1$beta + 0.1)
+	                                      warm_start_beta = fit1$beta + 0.1)
 	expect_true(fit3$converged)
 	expect_equal(as.numeric(fit3$beta), as.numeric(fit1$beta), tolerance = 1e-6)
 })

@@ -26,12 +26,12 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 				assertFormula(model_formula, null.ok = TRUE)
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
 		}
 	),
 	private = list(
@@ -55,7 +55,12 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 			start_params = private$get_fit_warm_start_for_length("params", n_params)
 			if (is.null(start_params)) start_params = rep(0, n_params)
 			warm_fisher = private$get_fit_warm_start_fisher(n_params)
-			res = fast_dep_cens_transform_optim_cpp(y = private$y, dead = private$dead, X = X, start_params = start_params, warm_start_fisher_info = warm_fisher)
+			res = fast_dep_cens_transform_optim_cpp(
+				y = private$y, dead = private$dead, X = X,
+				start_params = private$get_fit_warm_start_for_length("params", n_params),
+				warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
+				smart_start = private$smart_default
+			)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
@@ -82,11 +87,11 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
 					start_params = start %||% private$get_fit_warm_start_for_length("params", n_params)
-					if (is.null(start_params)) start_params = rep(0, n_params)
 					warm_fisher = private$get_fit_warm_start_fisher(n_params)
 					tryCatch(fast_dep_cens_transform_optim_cpp(
 						y = y, dead = dead, X = X_fit, start_params = start_params,
 						warm_start_fisher_info = warm_fisher,
+						smart_start = private$smart_default,
 						fixed_idx = j_treat, fixed_values = delta
 					), error = function(e) NULL)
 				},
@@ -116,11 +121,11 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 				fit_fun = function(X_fit){
 					n_params = 2 * ncol(X_fit) + 3L
 					start_params = private$get_fit_warm_start_for_length("params", n_params)
-					if (is.null(start_params)) start_params = rep(0, n_params)
 					warm_fisher = private$get_fit_warm_start_fisher(n_params)
 					res = tryCatch(fast_dep_cens_transform_optim_cpp(
 						y = private$y, dead = private$dead, X = X_fit, start_params = start_params,
-						warm_start_fisher_info = warm_fisher
+						warm_start_fisher_info = warm_fisher,
+						smart_start = private$smart_default
 					), error = function(e) NULL)
 					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
 					list(

@@ -285,14 +285,48 @@ Eigen::MatrixXd get_zero_one_inflated_beta_hessian_cpp(Eigen::MatrixXd X,
 List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
 									 Eigen::MatrixXd X_zero_one,
 									 NumericVector y,
-									 NumericVector init,
+									 Nullable<NumericVector> warm_start_params = R_NilValue,
+									 bool smart_start = true,
 									 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
 									 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
 									 std::string optimization_alg = "lbfgs",
                                      Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue){
 	Eigen::VectorXd y_eigen = Rcpp::as<Eigen::VectorXd>(y);
-	Eigen::VectorXd params = Rcpp::as<Eigen::VectorXd>(init);
-	FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
+	int p = X.cols();
+	int p_zo = X_zero_one.cols();
+	int total = p + 1 + 2 * p_zo;
+	Eigen::VectorXd params(total);
+	
+	if (warm_start_params.isNotNull()) {
+		params = Rcpp::as<Eigen::VectorXd>(warm_start_params);
+	} else if (smart_start) {
+		// Beta component: OLS on logit(y) for entries in (0, 1)
+		std::vector<int> idx_mid;
+		for(int i=0; i<y_eigen.size(); ++i) if(y_eigen[i] > 0 && y_eigen[i] < 1) idx_mid.push_back(i);
+		if (idx_mid.size() > (size_t)p) {
+			Eigen::MatrixXd X_mid(idx_mid.size(), p);
+			Eigen::VectorXd y_logit(idx_mid.size());
+			for(size_t i=0; i<idx_mid.size(); ++i) {
+				X_mid.row(i) = X.row(idx_mid[i]);
+				double yi = y_eigen[idx_mid[i]];
+				y_logit[i] = std::log(yi / (1.0 - yi));
+			}
+			params.head(p) = safe_ols_solve(X_mid, y_logit);
+		} else {
+			params.head(p).setZero();
+		}
+		params[p] = 2.0; // log_phi warm_start_params
+		
+		// Zero/One components: OLS on indicators
+		Eigen::VectorXd y_is_zero = (y_eigen.array() == 0.0).cast<double>();
+		Eigen::VectorXd y_is_one  = (y_eigen.array() == 1.0).cast<double>();
+		params.segment(p + 1, p_zo) = ols_warm_start_beta(X_zero_one, y_is_zero);
+		params.tail(p_zo)           = ols_warm_start_beta(X_zero_one, y_is_one);
+	} else {
+		params.setZero();
+		params[p] = 2.0;
+	}
+	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
 
 	ZeroOneInflatedBeta fun(y_eigen, X, X_zero_one);
     

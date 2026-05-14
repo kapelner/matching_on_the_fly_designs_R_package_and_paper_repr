@@ -152,7 +152,7 @@ InferenceCustomRand = R6::R6Class("InferenceCustomRand",
 #' @keywords internal
 InferenceCustomBoot = R6::R6Class("InferenceCustomBoot",
 	lock_objects = FALSE,
-	inherit = InferenceNonParamBootstrap,
+	inherit = InferenceJackknife,
 	public = list(
 		#' @description User-defined fit method.
 		#' @param estimate_only If TRUE, skip variance calculations.

@@ -101,7 +101,7 @@ InferenceSuite = R6::R6Class("InferenceSuite",
 		# Known non-instantiable base / infrastructure classes
 		.base_class_names = c(
 			"Inference",
-			"InferenceAsymp", "InferenceNonParamBootstrap", "InferenceRand",
+			"InferenceAsymp", "InferenceJackknife", "InferenceNonParamBootstrap", "InferenceBayesianBootstrap", "InferenceRand",
 			"InferenceRandCI", "InferenceExact",
 			"InferenceAsympLik", "InferenceParamBootstrap",
 			"InferenceKKPassThrough", "InferenceKKPassThroughCompound",

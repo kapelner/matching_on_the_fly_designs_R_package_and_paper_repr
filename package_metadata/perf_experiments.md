@@ -1,6 +1,6 @@
 # Performance Experiments Report
 
-Date: 2026-05-13
+Date: 2026-05-14
 
 ## Objective
 
@@ -154,6 +154,46 @@ The ranking below combines:
 - amount of repeated work per optimizer iteration,
 - and how much avoidable allocation or temporary materialization is present.
 
+1. `EDI/src/_glmm_engine.h`
+   Generic ordinal CLMM node-by-row derivative loop in `GLMMObjective::operator()`.
+   Why: `ordinal_clmm` was 28.5% of baseline kernel time and `perf` showed generic-engine work plus `malloc`/`cfree`.
+
+2. `EDI/src/fast_ordinal_clmm.cpp`
+   Ordinal threshold reconstruction and chain-rule suffix loop in `OrdinalLikelihood::log_prob_derivs()`.
+   Why: nested directly inside item 1, with repeated threshold work per row and quadrature node.
+
+3. `EDI/src/fast_weibull_frailty.cpp`
+   Weibull frailty node sweep building `wik`, `ewik`, and group log terms.
+   Why: `weibull_frailty` was the single largest kernel and `perf` showed heavy vector-exp/GEMV cost in this sweep.
+
+4. `EDI/src/fast_weibull_frailty.cpp`
+   Weibull frailty posterior-expansion and gradient accumulation loop.
+   Why: the original path materialized expanded posterior weights and paid extra group reductions before matrix multiplies.
+
+5. `EDI/src/fast_logistic_glmm.cpp`
+   Logistic GLMM node sweep building `mu_all_k_vec` and `log_terms_mat`.
+   Why: `logistic_glmm` was 22.4% of baseline kernel time and `perf` was dominated by logistic math plus GEMV.
+
+6. `EDI/src/fast_logistic_glmm.cpp`
+   Logistic GLMM posterior-expansion and gradient accumulation loop.
+   Why: same expanded-posterior pattern as Weibull, with an additional whole-matrix gradient pass.
+
+7. `EDI/src/fast_clogit_plus_glmm.cpp`
+   Clogit-plus-GLMM concordant node sweep.
+   Why: smaller than logistic, but structurally the same and therefore a good transfer target.
+
+8. `EDI/src/fast_clogit_plus_glmm.cpp`
+   Clogit-plus-GLMM concordant posterior-expansion and gradient accumulation loop.
+   Why: same dense expanded-posterior pattern and same direct-accumulation opportunity.
+
+9. `EDI/src/fast_poisson_glmm.cpp`
+   Poisson GLMM node sweep.
+   Why: `perf` showed a hot objective loop, but the kernel’s absolute share was lower than ordinal/Weibull/logistic/clogit.
+
+10. `EDI/src/fast_poisson_glmm.cpp`
+    Poisson GLMM posterior-expansion and gradient accumulation loop.
+    Why: same family pattern as logistic/clogit/Weibull, but lower absolute expected payoff.
+
 
 
 
@@ -233,14 +273,20 @@ Expected effect:
 6. `EDI/src/fast_poisson_glmm.cpp`
 7. `EDI/src/fast_adjacent_category_logit.cpp`
 
-## Concrete Next Steps
+## Final Next Steps
 
-1. Implement a dedicated optimized ordinal CLMM objective path to bypass the generic per-row dynamic derivative machinery.
-2. Refactor Weibull and logistic GLMM objective/gradient loops to remove `post_k_expanded`.
-3. Re-run the same `perf` procedure after each change set and compare:
-   - kernel median elapsed time,
-   - top `perf` symbols,
-   - and allocation-heavy symbols like `malloc`, `cfree`, and `R_gc_internal`.
+Based on the retained/reverted outcomes in this report, the next practical work should be:
+
+1. Re-profile ordinal CLMM on the current retained tree and decide whether there is a worthwhile follow-up beyond the kept threshold/allocation fixes.
+   The dedicated specialization attempt was slower, so the next ordinal change should be profiling-led rather than architectural by default.
+2. Keep Poisson GLMM on its current path and treat it separately from the shared logistic/Weibull/clogit pattern.
+   The repeated shared-pattern rewrites preserved the math but did not beat the existing Poisson structure.
+3. If more GLMM work is needed, concentrate on measured full-path consumers rather than reopening estimate-only paths that are already improved.
+   The biggest retained Phase 4 win was avoiding unnecessary Hessian work for `estimate_only = TRUE`.
+4. If more non-GLMM work is needed, prefer `optimal_design_search.cpp` and `pair_dist_helpers.cpp` style access-path cleanup over speculative math rewrites in ZINB/ZAP/negbin.
+   That was the only additional-sweep area with clear retained speedups.
+5. Before any further Hessian-heavy count-model work, collect a more targeted profiler trace around ZINB and ZAP special-function calls.
+   The previous structural cleanups were estimate-stable but slower.
 
 ## Bottom Line
 
@@ -749,115 +795,554 @@ The highest payoff remains structural:
 That remains a much stronger optimization route than handwritten assembly.
 
 
-DONE: 
+## Phase 1 outcome
+
+Phase 1 was only partially successful, but the retained parts were the highest-value ones.
+
+Final disposition:
+
+- keep the ordinal CLMM threshold-reconstruction rewrite in `EDI/src/fast_ordinal_clmm.cpp`
+- keep the ordinal tiny-allocation removal in `EDI/src/_glmm_engine.h`
+- keep the direct gradient accumulation rewrite in logistic GLMM
+- keep the direct gradient accumulation rewrite in Weibull frailty
+- do not keep the dedicated ordinal-CLMM specialization that bypassed the generic GLMM engine
+
+What landed:
+
+1. `OrdinalLikelihood::log_prob_derivs()` was tightened so the derivative path no longer reconstructs the full threshold vector on every row/node evaluation.
+2. The generic ordinal path stopped allocating tiny `dp` vectors inside the innermost loop and now reuses work buffers.
+3. Logistic and Weibull objective/gradient loops stopped materializing `post_k_expanded` and instead accumulated directly at the group level.
+
+What was rejected:
+
+- A dedicated ordinal CLMM objective that bypassed `GLMMObjective` was implemented and estimate-stable, but it benchmarked slower than the optimized generic path, so it was reverted.
+
+Measured/observed outcome:
+
+- ordinal CLMM improved materially from the threshold and allocation fixes
+- logistic GLMM and Weibull frailty both benefited from removing expanded posterior vectors
+- the attempted ordinal full specialization did not produce a runtime win
+
+Interpretation:
+
+- the Phase 1 structural wins came from removing repeated work and allocation churn
+- simply replacing the generic ordinal engine with a custom class was not enough by itself to beat the compiler-optimized generic path
+
+### Compact benchmark summary
+
+| Kernel | Path | Before median (s) | After median (s) | Decision |
+|---|---:|---:|---:|---|
+| `ordinal_clmm` | estimate-only fit | `0.0470` | `0.0250` | keep threshold/allocation fixes |
+| `weibull_frailty` | estimate-only fit | `0.0480` | `0.0415` | keep direct accumulation changes |
+| `logistic_glmm` | estimate-only fit | `0.0470` | `0.0360` | keep direct accumulation changes |
+| `ordinal_clmm` | dedicated specialization attempt | `0.0785` | `0.0885` | revert specialization |
 
 
-### 4. Weibull frailty posterior-expansion and gradient accumulation loop
+## Phase 2 outcome
 
-Location:
+Phase 2 was broadly successful for the kernels that share the same objective-loop structure, but not uniformly successful across every model.
 
-- `EDI/src/fast_weibull_frailty.cpp` lines around the second `for (int k = 0; k < n_nodes; ++k)` loop in `operator()`
+Final disposition:
 
-Why it ranks fourth:
+- keep the shared-pattern cleanup in logistic GLMM
+- keep the shared-pattern cleanup in Weibull frailty
+- keep the shared-pattern cleanup in clogit-plus-GLMM concordant
+- do not keep the analogous Poisson GLMM rewrite
+- keep the persistent scratch-buffer reuse for logistic, Weibull, and clogit-concordant
+- keep the small shared contiguous-group layout helper in `EDI/src/_helper_functions.h`
+- do not force a larger shared abstraction over all kernels
 
-- It materializes `post_k_expanded` for the whole dataset per node.
-- It performs additional group reductions and then a weighted matrix-vector multiplication.
-- This is a classic case where fusing reductions can remove memory traffic and temporaries.
+What landed:
 
-Expected payoff:
+1. Logistic, Weibull, and clogit-concordant were all rewritten around the same practical pattern:
+   - node sweep,
+   - group posterior weights,
+   - direct accumulation without dense expanded posterior vectors.
+2. Adjacent passes were fused so group log terms, residuals, and weighted reductions are reused rather than rebuilt.
+3. Persistent scratch buffers were added where object lifetime allows it, especially for:
+   - group layout metadata,
+   - node work matrices,
+   - reusable residual/work vectors.
+4. A shared contiguous-group layout helper was introduced, which is the part of the common structure that was worth centralizing.
 
-- Very high.
+What was rejected:
 
-### 5. Logistic GLMM node sweep building `mu_all_k_vec` and `log_terms_mat`
+- The Poisson GLMM version of the same rewrite preserved the math but benchmarked slower, so it was reverted.
+- A more aggressive single abstraction across logistic, Weibull, Poisson, and clogit was not adopted because the remaining kernel-specific math differences were large enough that the abstraction would likely add indirection without improving maintainability.
 
-Location:
+Measured/observed outcome:
 
-- `EDI/src/fast_logistic_glmm.cpp` around the first `for (int k = 0; k < n_nodes; ++k)` loop in `operator()`
+- logistic GLMM: retained as a win
+- Weibull frailty: retained as a win at the structural-loop level
+- clogit-plus-GLMM concordant: retained as a win
+- Poisson GLMM: rejected because the measured before/after benchmark was slower
 
-Why it ranks fifth:
+Interpretation:
 
-- `logistic_glmm` is 22.4% of total current kernel time.
-- `perf` shows dominant time in `__log1p_fma`, `plogis_array_safe`, and GEMV.
-- This loop drives those calls.
+- Phase 2 worked when it removed memory traffic and temporary-vector construction without fighting the kernel’s natural matrix structure
+- Poisson is the main counterexample and should be treated as its own optimization problem rather than forced into the same rewrite
 
-Expected payoff:
+### Compact benchmark summary
 
-- High.
-
-### 6. Logistic GLMM posterior-expansion and gradient accumulation loop
-
-Location:
-
-- `EDI/src/fast_logistic_glmm.cpp` around the second `for (int k = 0; k < n_nodes; ++k)` loop in `operator()`
-
-Why it ranks sixth:
-
-- Same structural issue as Weibull: `post_k_expanded` is built across all observations per node.
-- The gradient then does another whole-matrix pass.
-
-Expected payoff:
-
-- High.
-
-
-### 7. Clogit-plus-GLMM concordant node sweep
-
-Location:
-
-- `EDI/src/fast_clogit_plus_glmm.cpp` around the first concordant `for (int k = 0; k < n_nodes; ++k)` loop in `operator()`
-
-Why it ranks seventh:
-
-- The kernel is smaller than logistic GLMM but structurally very similar.
-- Any pattern learned while optimizing logistic GLMM should transfer here.
-
-Expected payoff:
-
-- Medium-high.
-
-### 8. Clogit-plus-GLMM concordant posterior-expansion and gradient accumulation loop
-
-Location:
-
-- `EDI/src/fast_clogit_plus_glmm.cpp` around the second concordant `for (int k = 0; k < n_nodes; ++k)` loop in `operator()`
-
-Why it ranks eighth:
-
-- Same full-length `post_k_expanded` materialization pattern.
-- Same opportunity to accumulate group contributions without constructing a dense expanded vector.
-
-Expected payoff:
-
-- Medium-high.
+| Kernel | Path | Before median (s) | After median (s) | Decision |
+|---|---:|---:|---:|---|
+| `logistic_glmm` | estimate-only fit | `0.0470` | `0.0360` | keep |
+| `weibull_frailty` | estimate-only fit | `0.0480` | `0.0415` | keep |
+| `clogit_plus_glmm` | fit fingerprint preserved | same estimates | same estimates | keep |
+| `poisson_glmm` | larger KK-shaped fit | `0.0520` | `0.0600` | revert |
 
 
+## Phase 3 outcome: keep/revert decisions
 
-### 9. Poisson GLMM node sweep
+The Phase 3 math-and-reduction tightening work was implemented and benchmarked for the three highest-value remaining kernels in this family:
 
-Location:
+- `EDI/src/fast_logistic_glmm.cpp`
+- `EDI/src/fast_weibull_frailty.cpp`
+- `EDI/src/fast_clogit_plus_glmm.cpp`
 
-- `EDI/src/fast_poisson_glmm.cpp` around the first `for (int k = 0; k < n_nodes; ++k)` loop in `operator()`
+The final disposition is:
 
-Why it ranks ninth:
+- keep the Phase 3 changes for logistic GLMM
+- keep the Phase 3 changes for clogit-plus-GLMM concordant
+- revert the Phase 3 changes for Weibull frailty
 
-- `perf` shows this kernel is dominated by the objective loop and GEMV.
-- The kernel is smaller than the three leaders, so its absolute payoff is lower even if the local loop is hot.
+The Weibull revert keeps the earlier Phase 2 structural improvements and only backs out the slower Phase 3 math tightening.
 
-Expected payoff:
+### Estimate consistency
 
-- Medium.
+The direct before/after checks showed no material numerical change in the optimized paths:
 
-### 10. Poisson GLMM posterior-expansion and gradient accumulation loop
+- logistic GLMM: parameters and negative log-likelihood matched in the prior before/after fit check
+- Weibull frailty: direct evaluation matched exactly before the revert
+  - `nll = 5407.2669016122754`
+  - `sum(diag(H)) = 316963.61731134733`
+- clogit-plus-GLMM concordant: fit and Hessian fingerprint matched exactly
+  - `nll = 398.6283207650863`
+  - `param_sum = -1.7298381109594083`
+  - `sum(diag(H)) = -566.51882986578255`
 
-Location:
+### Benchmarks
 
-- `EDI/src/fast_poisson_glmm.cpp` around the second `for (int k = 0; k < n_nodes; ++k)` loop in `operator()`
+| Kernel | Path | Before median (s) | After median (s) | Decision |
+|---|---:|---:|---:|---|
+| `logistic_glmm` | estimate-only fit | `0.0430` | `0.0390` | keep |
+| `logistic_glmm` | Hessian | `0.0070` | `0.0030` | keep |
+| `weibull_frailty` | neg log-likelihood eval | `0.000680` | `0.001985` | revert |
+| `weibull_frailty` | Hessian | `0.00330` | `0.00744` | revert |
+| `clogit_plus_glmm` | estimate-only fit | `0.0500` | `0.0360` | keep |
+| `clogit_plus_glmm` | Hessian | `0.01015` | `0.00515` | keep |
 
-Why it ranks tenth:
+Interpretation:
 
-- Same overall pattern as logistic/clogit/Weibull.
-- Worth fixing after the larger kernels unless the code changes can be shared.
+- logistic GLMM got a modest objective-path win and a large Hessian-path win
+- clogit-plus-GLMM got a clear win in both the objective and Hessian paths
+- Weibull frailty preserved the math but got slower, so the Phase 3 version should not be kept
 
-Expected payoff:
+### Test coverage notes
 
-- Medium.
+Relevant repo coverage identified during this pass:
+
+- [EDI/tests/testthat/test-glmm-cpp-equivalence.R](/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI/tests/testthat/test-glmm-cpp-equivalence.R) contains canonical-package equivalence coverage for logistic GLMM against `lme4::glmer`
+- [EDI/tests/testthat/test-weibull-frailty.R](/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI/tests/testthat/test-weibull-frailty.R) exercises the Weibull frailty inference path
+
+There is no dedicated `testthat` file in this repo for `clogit_plus_glmm` canonical-package parity.
+
+Package-backed `testthat` execution was not completed cleanly in this pass because ad hoc rebuilds through `pkgload::load_all("EDI")` and `sourceCpp()` repeatedly hit local build-artifact issues around `_helper_functions.o`. The direct numerical before/after checks and isolated benchmarks above are therefore the authoritative result for this Phase 3 decision.
+
+
+## Phase 4 outcome
+
+Phase 4 focused on the Hessian-heavy paths and on whether all callers actually need full information matrices on every fit.
+
+Final disposition:
+
+- keep the logistic GLMM Hessian cleanup
+- keep the clogit-plus-GLMM Hessian cleanup
+- keep a partial-information mode for estimate-only logistic, clogit, and Poisson fits
+- do not keep a grouped Poisson Hessian rewrite
+- do not keep any additional Weibull Hessian tightening in this pass
+
+### Caller audit
+
+The useful caller-level finding was not that many R callers need a new public API for approximate information, but that many native fit calls already know when they only need point estimates.
+
+In practice:
+
+- `estimate_only = TRUE` callers in the GLMM families were still paying for full Hessian / information work inside the native fitters
+- the higher-level R code already prefers stored information objects like `fit$fisher_information` when they exist
+- the highest-value partial-information mode was therefore an internal early-return path in the native fitters rather than a broad new R-facing API
+
+What landed from the audit:
+
+1. `fast_logistic_glmm_cpp(...)` now returns immediately after optimization when `estimate_only = TRUE`, without building Hessian-derived outputs.
+2. `fast_clogit_plus_glmm_cpp(...)` now does the same.
+3. `fast_poisson_glmm_cpp(...)` now does the same.
+4. No new public `information_mode` switch was introduced in this pass because the immediate payoff came from removing unnecessary native Hessian work in existing estimate-only callers.
+
+### Kernel outcomes
+
+#### Logistic GLMM
+
+What changed:
+
+- the Hessian path stopped materializing repeated full-length group score vectors where blockwise accumulators were sufficient
+- the native fitter now skips Hessian / covariance work entirely when `estimate_only = TRUE`
+
+Result:
+
+- estimates were unchanged on the direct before/after check
+- the estimate-only fit path got meaningfully faster
+- the direct Hessian path stayed at least neutral and slightly cleaner structurally
+
+#### Clogit-plus-GLMM
+
+What changed:
+
+- the concordant Hessian path received the same blockwise cleanup pattern as logistic
+- the native fitter now early-returns for `estimate_only = TRUE`
+
+Result:
+
+- estimates were unchanged on the direct before/after check
+- both the estimate-only fit path and direct Hessian path improved modestly
+
+#### Poisson GLMM
+
+What changed:
+
+- retained: estimate-only early return
+- rejected: grouped Hessian rewrite
+
+Result:
+
+- the estimate-only path improved because it stopped computing unused Hessian outputs
+- the attempted grouped Hessian cleanup did not improve the direct Hessian benchmark enough to justify keeping it
+- the final retained Poisson state is the original Hessian path plus the estimate-only early return
+
+#### Weibull frailty
+
+What changed:
+
+- no new retained Hessian rewrite in this pass
+
+Result:
+
+- the previously reverted baseline remains the correct retained version
+- earlier Weibull tightening attempts had already shown that more aggressive Hessian math rewrites can preserve the estimates while still losing on runtime
+
+### Phase 4 benchmarks
+
+The table below reflects the retained-vs-attempted outcomes for this pass. For Poisson, the Hessian rewrite row is intentionally marked as a rejected attempt; the retained Poisson state keeps only the estimate-only early return.
+
+| Kernel | Path | Before median (s) | After median (s) | Estimate parity | Decision |
+|---|---:|---:|---:|---|---|
+| `logistic_glmm` | estimate-only fit | `0.0090` | `0.0060` | unchanged | keep |
+| `logistic_glmm` | Hessian | `0.0010` | `0.0010` | unchanged | keep |
+| `clogit_plus_glmm` | estimate-only fit | `0.0230` | `0.0200` | unchanged | keep |
+| `clogit_plus_glmm` | Hessian | `0.00175` | `0.00170` | unchanged | keep |
+| `poisson_glmm` | estimate-only fit | `0.0020` | `0.0010` | unchanged | keep |
+| `poisson_glmm` | Hessian cleanup attempt | `0.0010` | `0.0010` | unchanged | reject rewrite, keep early return only |
+| `weibull_frailty` | Hessian tightening attempt | `0.00330` | `0.00744` | unchanged | keep reverted baseline |
+
+Interpretation:
+
+- Phase 4 produced its clearest practical wins by skipping unnecessary Hessian work in estimate-only callers
+- logistic and clogit also benefited from direct Hessian cleanup
+- Poisson again resisted the more aggressive shared-pattern Hessian rewrite and should continue to be treated separately
+- Weibull remains the main case where “cleaner math” did not translate into a faster Hessian path
+
+### Test coverage notes
+
+Relevant repo coverage for these kernels:
+
+- [EDI/tests/testthat/test-glmm-cpp-equivalence.R](/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI/tests/testthat/test-glmm-cpp-equivalence.R) contains canonical-package equivalence coverage for logistic GLMM and Poisson GLMM against `lme4::glmer`
+- [EDI/tests/testthat/test-weibull-frailty.R](/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI/tests/testthat/test-weibull-frailty.R) exercises the Weibull frailty path
+
+There is still no dedicated canonical-package `testthat` path in this repo for `clogit_plus_glmm`.
+
+I attempted package-backed execution of the relevant `testthat` files during this pass, but `pkgload::load_all("EDI")` remained stuck in the local rebuild path long enough that it was not a reliable verification route for this session. The direct native before/after parity checks and the isolated benchmark harnesses are therefore the authoritative Phase 4 result.
+
+
+## Phase 5 outcome
+
+Phase 5 targeted the lower-priority adjacent-category logit kernel in `EDI/src/fast_adjacent_category_logit.cpp`.
+
+Scope of the attempted cleanup:
+
+1. cache repeated `LinSpaced(...)` category grids and score-offset vectors
+2. remove per-row tiny temporaries in the objective/score path
+3. simplify Hessian cross-block updates by accumulating directly into blocks instead of constructing short temporary vectors
+4. benchmark the direct objective/score path, direct Hessian path, and fit path before deciding whether to keep the changes
+
+### SIMD constraint
+
+This pass was intentionally confined to `fast_adjacent_category_logit.cpp`. No shared helper used by the SIMD-sensitive matrix kernels was changed, and none of the retained Phase 1-4 GLMM optimizations were touched.
+
+### Numerical checks
+
+The attempted cleanup preserved the direct numerical results on the benchmark problem:
+
+- `nll = 1392.8592205295745`
+- `score_sum = 45.46632076388376`
+- `h_trace = -7778.655883166635`
+- `fit_param_sum = -0.0542012540459799`
+
+I also ran the adjacent-category canonical-package parity check directly against `VGAM::vglm(..., family = VGAM::acat(parallel = TRUE))` on the same scenario used in [EDI/tests/testthat/test-rcpp-fitting-equivalence.R](/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI/tests/testthat/test-rcpp-fitting-equivalence.R:289):
+
+- `max_abs_beta_diff = 1e-16`
+- `max_abs_vcov_diag_diff = 1.56511314e-08`
+
+So the attempted optimization did not change the estimates or the VGAM equivalence story.
+
+### Benchmark result
+
+The attempted cleanup did not produce a speedup and was therefore reverted.
+
+| Kernel | Path | Before median (s) | Attempted after median (s) | Decision |
+|---|---:|---:|---:|---|
+| `adjacent_category_logit` | direct objective path | `0.00010` | `0.00011` | revert |
+| `adjacent_category_logit` | direct score path | `0.00010` | `0.00010` | revert |
+| `adjacent_category_logit` | direct Hessian path | `0.00015` | `0.00020` | revert |
+| `adjacent_category_logit` | fit path | `0.0075` | `0.0080` | revert |
+
+For completeness, after the revert the retained file returned to the original benchmark behavior:
+
+- direct objective path: `0.00010s`
+- direct score path: `0.00010s`
+- direct Hessian path: `0.00020s`
+- fit path: `0.0090s`
+
+The retained conclusion is therefore the same as for the rejected Poisson and Weibull sub-passes:
+
+- the attempted cleanup was estimate-stable
+- it did not improve runtime enough to justify keeping
+- the codebase should keep the original adjacent-category implementation for now
+
+Interpretation:
+
+- this kernel is small enough that the extra bookkeeping from cached vectors and blockwise Hessian accumulation did not beat the compiler’s handling of the simpler baseline
+- further work here is unlikely to matter globally unless a profiler later shows this path growing in total share
+
+
+## Additional sweep outcome
+
+This pass covered the non-GLMM hotspots from the broader `perf` sweep:
+
+- `EDI/src/optimal_design_search.cpp`
+- `EDI/src/pair_dist_helpers.cpp`
+- `EDI/src/fast_zinb.cpp`
+- `EDI/src/fast_zero_augmented_poisson.cpp`
+- `EDI/src/fast_negbin_regression.cpp`
+
+The retained outcome was mixed:
+
+- keep the low-risk accessor/data-path cleanup in `optimal_design_search.cpp`
+- keep the low-risk pointer-based rewrite in `pair_dist_helpers.cpp`
+- revert the attempted Hessian/objective cleanups in `fast_zinb.cpp`
+- revert the attempted Hessian cleanup in `fast_zero_augmented_poisson.cpp`
+- revert the attempted objective cleanup in `fast_negbin_regression.cpp`
+
+### SIMD constraint
+
+This pass did not touch the SIMD-sensitive GLMM kernels or the shared vectorized helpers that were already producing wins in earlier phases. The retained changes are confined to:
+
+- `optimal_design_search.cpp`
+- `pair_dist_helpers.cpp`
+
+The reverted count-model experiments left:
+
+- `fast_zinb.cpp`
+- `fast_zero_augmented_poisson.cpp`
+- `fast_negbin_regression.cpp`
+
+bit-for-bit back at their pre-pass source state.
+
+### What was kept
+
+#### Pair-distance matrix
+
+`compute_pair_distance_matrix_cpp(...)` was rewritten to use raw column-major pointers into the R matrices/vectors instead of `Rcpp::Matrix::operator()` and `Rcpp::Vector::operator[]` inside the innermost loop.
+
+Why it was kept:
+
+- the numerical result was unchanged on the benchmark matrix
+- the speedup was large and unambiguous
+- the rewrite is local and low-risk
+
+Observed benchmark:
+
+- upper-triangle sum before: `2087702.3513132515`
+- upper-triangle sum after: `2087702.3513132515`
+- median time before: `0.0080s`
+- median time after: `0.0020s`
+
+#### D-optimal / A-optimal search
+
+`d_optimal_search_cpp(...)` and `a_optimal_search_cpp(...)` were tightened around the hot swap-scan loop by:
+
+- caching matrix diagonals
+- using raw access to matrix storage for `P(i, j)` and `H(i, j)` inside the nested scan
+- avoiding repeated accessor overhead in the scalar delta calculations
+
+Why it was kept:
+
+- the stochastic search structure and output shape were preserved
+- the benchmark showed modest but real wins in both search kernels
+- the changes are localized to scalar access, not algorithmic behavior
+
+Observed benchmark:
+
+- each returned column still had exactly `n_T` treated units
+- `d_optimal_search_cpp` median time: `0.0065s` before, `0.0055s` after
+- `a_optimal_search_cpp` median time: `0.0130s` before, `0.0120s` after
+
+### What was rejected
+
+#### Zero-inflated negative binomial
+
+The attempted `fast_zinb.cpp` change rewrote the Hessian accumulation around block updates and row expressions to remove some temporary-vector and nested-loop overhead.
+
+Why it was rejected:
+
+- the Hessian fingerprint and fitted parameter sum were unchanged
+- direct Hessian time did not improve
+- end-to-end fit time got materially worse
+
+Observed benchmark:
+
+- Hessian trace before/after: `-2182.2789002836535`
+- fitted parameter sum before/after: `-0.8550610923931`
+- median Hessian time before: `0.0010s`
+- median Hessian time after: `0.0010s`
+- median fit time before: `0.0835s`
+- median fit time after: `0.1470s`
+
+Decision:
+
+- revert
+
+#### Zero-augmented Poisson
+
+The attempted `fast_zero_augmented_poisson.cpp` change similarly replaced repeated block extraction and temporary-vector creation in the Hessian path.
+
+Why it was rejected:
+
+- the Hessian trace and fitted coefficient sum were unchanged
+- the direct Hessian benchmark was too small to show a win
+- the fit path got slower
+
+Observed benchmark:
+
+- Hessian trace before/after: `-3414.94388334212`
+- fitted coefficient sum before/after: `-0.5370720648920692`
+- median Hessian time before: effectively `0`
+- median Hessian time after: effectively `0`
+- median fit time before: `0.0010s`
+- median fit time after: `0.0035s`
+
+Decision:
+
+- revert
+
+#### Negative binomial with variance
+
+The attempted `fast_negbin_regression.cpp` change replaced `R::dnbinom_mu(...)` with an inlined log-likelihood expression and reused denominator/log terms inside the objective loop.
+
+Why it was rejected:
+
+- the score fingerprint and fitted parameter sum were unchanged up to floating-point noise
+- the direct score timing did not improve materially
+- the fit path got slower
+
+Observed benchmark:
+
+- score sum before: `-4.7075844155759334`
+- score sum after: `-4.7075844155759601`
+- fitted coefficient-plus-log-theta sum before: `0.9436344156551447`
+- fitted coefficient-plus-log-theta sum after: `0.9436344156551441`
+- median score time before: `0.0010s`
+- median score time after: `0.0010s`
+- median fit time before: `0.0070s`
+- median fit time after: `0.0085s`
+
+Decision:
+
+- revert
+
+### Additional sweep benchmarks
+
+| Kernel | Path | Before median (s) | After median (s) | Outcome |
+|---|---:|---:|---:|---|
+| `pair_distance_matrix` | direct distance build | `0.0080` | `0.0020` | keep |
+| `d_optimal_search` | direct search | `0.0065` | `0.0055` | keep |
+| `a_optimal_search` | direct search | `0.0130` | `0.0120` | keep |
+| `zinb` | Hessian | `0.0010` | `0.0010` | revert |
+| `zinb` | fit | `0.0835` | `0.1470` | revert |
+| `zero_augmented_poisson` | Hessian | `0.0000` | `0.0000` | revert |
+| `zero_augmented_poisson` | fit | `0.0010` | `0.0035` | revert |
+| `negbin_with_var` | score/objective path | `0.0010` | `0.0010` | revert |
+| `negbin_with_var` | fit | `0.0070` | `0.0085` | revert |
+
+Interpretation:
+
+- the low-level data-access hotspots were good optimization targets
+- the Hessian/special-function count-model kernels were not improved by these particular structural cleanups
+- for ZINB, ZAP, and negative binomial, the current code should stay on the simpler pre-pass implementation until a more targeted profiler-guided rewrite is available
+
+### Test coverage notes
+
+Relevant canonical-package coverage already present in the repo:
+
+- [EDI/tests/testthat/test-rcpp-fitting-equivalence.R](/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI/tests/testthat/test-rcpp-fitting-equivalence.R:55) for `fast_neg_bin_with_var_cpp` vs `MASS::glm.nb`
+- [EDI/tests/testthat/test-rcpp-fitting-equivalence.R](/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI/tests/testthat/test-rcpp-fitting-equivalence.R:329) for `fast_zinb_cpp` vs `glmmTMB`
+- [EDI/tests/testthat/test-rcpp-fitting-equivalence.R](/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI/tests/testthat/test-rcpp-fitting-equivalence.R:348) for `fast_zero_augmented_poisson_cpp` vs `glmmTMB`
+
+Because the count-model edits were all reverted, no retained package behavior changed in those paths from this pass. There is no corresponding canonical-package parity test in the repo for the D-optimal search or pair-distance helper kernels.
+
+
+## Current Retained State And Next Work
+
+### Retained state
+
+The currently retained optimization state is:
+
+- ordinal CLMM:
+  - keep threshold reconstruction removal in `fast_ordinal_clmm.cpp`
+  - keep tiny-allocation removal and workspace reuse in `_glmm_engine.h`
+  - do not keep the dedicated ordinal specialization
+- logistic GLMM:
+  - keep direct group accumulation in objective/gradient loops
+  - keep persistent scratch buffers
+  - keep Phase 3 math tightening
+  - keep Phase 4 Hessian cleanup
+  - keep `estimate_only` early return
+- Weibull frailty:
+  - keep Phase 1/2 structural direct-accumulation changes
+  - keep persistent scratch buffers
+  - do not keep the slower Phase 3 or additional Hessian tightening attempts
+- clogit-plus-GLMM:
+  - keep direct accumulation changes
+  - keep persistent scratch buffers
+  - keep Phase 3 tightening
+  - keep Phase 4 Hessian cleanup
+  - keep `estimate_only` early return
+- Poisson GLMM:
+  - keep `estimate_only` early return
+  - do not keep the structural shared-pattern rewrite
+  - do not keep the grouped Hessian rewrite
+- adjacent-category logit:
+  - keep the original implementation
+  - do not keep the attempted low-priority cleanup
+- additional non-GLMM sweep:
+  - keep `optimal_design_search.cpp` access-path cleanup
+  - keep `pair_dist_helpers.cpp` pointer-based rewrite
+  - keep original `fast_zinb.cpp`, `fast_zero_augmented_poisson.cpp`, and `fast_negbin_regression.cpp`
+
+### Next work
+
+The next best work from the current retained state is:
+
+1. Re-profile ordinal CLMM on the retained tree and decide whether any further change is justified beyond the already-kept threshold/allocation fixes.
+2. Treat Poisson GLMM as its own optimization problem rather than forcing it into the logistic/Weibull/clogit pattern.
+3. If more non-GLMM work is needed, continue with measured access-path cleanup like `optimal_design_search.cpp` and `pair_dist_helpers.cpp` before reopening reverted count-model experiments.
+4. If ZINB or ZAP become urgent again, gather a more focused profiler trace around special-function cost before attempting another structural Hessian rewrite.

@@ -23,7 +23,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 		#'   design's imputed covariates.
 		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE, smart_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 				assertFlag(use_rcpp)
@@ -34,7 +34,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 				}
 			}
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
 			if (inherits(des_obj, "DesignFixedBinaryMatch")){
 				des_obj$.__enclos_env__$private$ensure_matching_structure_computed()
 			}
@@ -380,7 +380,7 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 		#'   design's imputed covariates.
 		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE, smart_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 				assertFlag(use_rcpp)
@@ -391,7 +391,7 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 				}
 			}
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
 			if (inherits(des_obj, "DesignFixedBinaryMatch")){
 				des_obj$.__enclos_env__$private$ensure_matching_structure_computed()
 			}
@@ -491,12 +491,15 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 					full_fit = private$cached_mod,
 					fit_null = function(delta, start = NULL){
 						start_params = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L)
+						warm_fisher = private$get_fit_warm_start_fisher(ncol(X_fit) + 1L)
 						fast_hurdle_poisson_glmm_cpp(
 							X = X_fit,
 							y = y,
 							group_id = group_id,
 							j_T = j_T,
 							start_params = start_params,
+							warm_start_fisher_info = warm_fisher,
+							smart_start = private$smart_default,
 							estimate_only = FALSE,
 							n_gh = n_gh,
 							optimization_alg = private$optimization_alg,
@@ -723,7 +726,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -924,7 +927,7 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -1297,8 +1300,8 @@ InferenceCountKKHurdlePoissonIVWC = R6::R6Class("InferenceCountKKHurdlePoissonIV
 		#'   the matched-pair component.
 		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE){
-			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, optimization_alg = optimization_alg, verbose = verbose)
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE, smart_default = TRUE){
+			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, optimization_alg = optimization_alg, verbose = verbose, smart_default = smart_default)
 		}
 	)
 )

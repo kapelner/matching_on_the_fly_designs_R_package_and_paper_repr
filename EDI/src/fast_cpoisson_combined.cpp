@@ -221,7 +221,9 @@ List fast_cpoisson_combined_with_var_cpp(
 	double tol   = 1e-8,
 	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
 	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
+	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue
 ) {
 	const int nd = (int)yT_v.size();
 	const int nR = (int)y_r.size();
@@ -230,9 +232,24 @@ List fast_cpoisson_combined_with_var_cpp(
 
 	// ---- Initialise params -----------------------------------------------
 	VectorXd params = VectorXd::Zero(np);
-	if (nR > 0) params[0] = std::log(std::max(1.0, y_r.mean()));
+	
+	if (warm_start_params.isNotNull()) {
+		params = as<VectorXd>(warm_start_params);
+		if (params.size() != np) stop("warm_start_params size mismatch");
+	} else if (warm_start_beta.isNotNull()) {
+		VectorXd sb = as<VectorXd>(warm_start_beta);
+		if (sb.size() == np) {
+			params = sb;
+		} else if (sb.size() == p + 1) {
+			// Assume [beta_T, beta_xs]
+			params.tail(p + 1) = sb;
+		}
+	} else {
+		if (nR > 0) params[0] = std::log(std::max(1.0, y_r.mean()));
+	}
+
 	FixedParamSpec fixed_spec = make_fixed_param_spec(np, fixed_idx, fixed_values);
-	for (int k = 0; k < fixed_spec.fixed_idx.size(); ++k) {
+	for (int k = 0; k < (int)fixed_spec.fixed_idx.size(); ++k) {
 		params[fixed_spec.fixed_idx[k]] = fixed_spec.fixed_values[k];
 	}
 
@@ -263,10 +280,10 @@ List fast_cpoisson_combined_with_var_cpp(
             VectorXd eta_r = VectorXd::Constant(nR, beta_0) + beta_T * w_r;
             if (p > 0) eta_r.noalias() += X_r * beta_xs;
             VectorXd mu_r   = eta_r.array().exp();
-            VectorXd resid_r = mu_r - y_r;
-            grad[0] += resid_r.sum();
-            grad[1] += resid_r.dot(w_r);
-            if (p > 0) grad.tail(p).noalias() += X_r.transpose() * resid_r;
+            VectorXd score_r = y_r - mu_r;
+            grad[0] -= score_r.sum();
+            grad[1] -= score_r.dot(w_r);
+            if (p > 0) grad.tail(p).noalias() -= X_r.transpose() * score_r;
         } else {
             // ---- Pair component (conditional Poisson) -------------------------
             // X_pairs_eff row k = [0, 1, X_diff_v[k,:]]  →  cols 1..np-1 only
@@ -329,14 +346,14 @@ List fast_cpoisson_combined_with_var_cpp(
 		if (fixed_spec.free_idx.size() > 0) {
 			MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
 			VectorXd grad_free(fixed_spec.free_idx.size());
-			for (int k = 0; k < fixed_spec.free_idx.size(); ++k) grad_free[k] = grad[fixed_spec.free_idx[k]];
+			for (int k = 0; k < (int)fixed_spec.free_idx.size(); ++k) grad_free[k] = grad[fixed_spec.free_idx[k]];
 			VectorXd delta_free = H_free.ldlt().solve(grad_free);
-			for (int k = 0; k < fixed_spec.free_idx.size(); ++k) {
+			for (int k = 0; k < (int)fixed_spec.free_idx.size(); ++k) {
 				delta_full[fixed_spec.free_idx[k]] = delta_free[k];
 				params[fixed_spec.free_idx[k]] -= delta_free[k];
 			}
 		}
-		for (int k = 0; k < fixed_spec.fixed_idx.size(); ++k) {
+		for (int k = 0; k < (int)fixed_spec.fixed_idx.size(); ++k) {
 			params[fixed_spec.fixed_idx[k]] = fixed_spec.fixed_values[k];
 		}
 

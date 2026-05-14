@@ -27,14 +27,14 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use the internal Rcpp Poisson GLMM.
 		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE, smart_default = TRUE){
 			if (should_run_asserts()) {
 				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(use_rcpp)
 			}
 			if (use_rcpp) private$skip_glmm_pkg_check = TRUE
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
 			private$use_rcpp = use_rcpp
 		}
 	),
@@ -72,20 +72,21 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 			}
 			X_fit = as.matrix(X_fit)
 			j_T = 1L  # 0-based index of treatment column
-			n_params = ncol(X_fit) + 1L
 			fit = tryCatch(
 				fast_poisson_glmm_cpp(
 					X        = X_fit,
 					y        = as.numeric(private$y),
 					group_id = as.integer(group_id),
+					j_T      = j_T,
 					start_par = private$get_fit_warm_start_for_length("params", n_params),
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
-					j_T      = j_T,
+					smart_start = private$smart_default,
 					estimate_only    = estimate_only,
 					optimization_alg = private$optimization_alg
 				),
 				error = function(e) NULL
 			)
+
 			if (is.null(fit) || !isTRUE(fit$converged)) {
 				# Rcpp failed; fall back to glmmTMB
 				return(super$shared(estimate_only = estimate_only))
@@ -130,6 +131,8 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 						y = y,
 						group_id = group_id,
 						start_par = start %||% private$get_fit_warm_start_for_length("params", length(ctx$start)) %||% ctx$start,
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(length(ctx$start)),
+						smart_start = private$smart_default,
 						j_T = j_treat - 1L,
 						estimate_only = FALSE,
 						n_gh = 20L,

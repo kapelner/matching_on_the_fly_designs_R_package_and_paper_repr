@@ -485,7 +485,7 @@ List fast_clayton_weibull_aft_optim_cpp(
     const Eigen::VectorXd& dead,
     const Eigen::MatrixXi& pair_idx,
     const Eigen::VectorXi& singleton_rows,
-    const Eigen::VectorXd& start_params,
+    const Eigen::VectorXd& warm_start_params,
     bool estimate_only = false,
     int maxit = 2000,
     double reltol = 1e-9,
@@ -495,7 +495,7 @@ List fast_clayton_weibull_aft_optim_cpp(
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
     ClaytonWeibullLikelihood fun(y, dead, X, pair_idx, singleton_rows);
-    Eigen::VectorXd params = start_params;
+    Eigen::VectorXd params = warm_start_params;
     FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
     params = apply_fixed_values(params, fixed_spec);
     
@@ -570,7 +570,8 @@ List fast_dep_cens_transform_optim_cpp(
     const Eigen::MatrixXd& X,
     const Eigen::VectorXd& y,
     const Eigen::VectorXd& dead,
-    const Eigen::VectorXd& start_params,
+    Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
+    bool smart_start = true,
     bool estimate_only = false,
     int maxit = 2000,
     double reltol = 1e-9,
@@ -579,9 +580,27 @@ List fast_dep_cens_transform_optim_cpp(
     std::string optimization_alg = "lbfgs",
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
+    int p = X.cols();
+    int total = 2 * p + 3;
+    Eigen::VectorXd params(total);
+    if (warm_start_params.isNotNull()) {
+        params = as<Eigen::VectorXd>(Rcpp::NumericVector(warm_start_params));
+    } else if (smart_start) {
+        params.setZero();
+        Eigen::VectorXd log_y = (y.array() + 1e-8).log().matrix();
+        Eigen::VectorXd b_ols = safe_ols_solve(X, log_y);
+        params.head(p) = b_ols; // beta_event
+        params.segment(p, p) = b_ols; // beta_cens
+        params[2 * p] = 0.0; // log_sigma_event
+        params[2 * p + 1] = 0.0; // log_sigma_cens
+        params[2 * p + 2] = 0.0; // log_theta
+    } else {
+        params.setZero();
+    }
+    
     DepCensTransformLikelihood fun(y, dead, X);
-    Eigen::VectorXd params = start_params;
-    FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
+    params = apply_fixed_values(params, fixed_spec);
     
     Eigen::MatrixXd H_start;
     const Eigen::MatrixXd* h_ptr = nullptr;

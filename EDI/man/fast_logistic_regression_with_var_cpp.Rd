@@ -8,7 +8,7 @@ fast_logistic_regression_with_var_cpp(
   X,
   y,
   j = 2L,
-  start_beta = NULL,
+  warm_start_beta = NULL,
   fixed_idx = NULL,
   fixed_values = NULL,
   optimization_alg = "irls",
@@ -23,7 +23,7 @@ fast_logistic_regression_with_var_cpp(
 
 \item{j}{The 1-based index of the parameter for which to return specific variance.}
 
-\item{start_beta}{Optional starting values for coefficients.}
+\item{warm_start_beta}{Optional starting values for coefficients.}
 
 \item{fixed_idx}{Optional indices of fixed parameters.}
 

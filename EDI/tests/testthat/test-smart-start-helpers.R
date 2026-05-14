@@ -7,12 +7,12 @@ test_that("OLS smart-start helpers match the expected transformed regressions", 
 	y_count <- rpois(nrow(X), lambda = exp(X %*% c(0.2, 0.1, -0.15)))
 
 	expect_equal(
-		as.numeric(EDI:::test_ols_start_beta_cpp(X, y_cont)),
+		as.numeric(EDI:::test_ols_warm_start_beta_cpp(X, y_cont)),
 		as.numeric(coef(lm(y_cont ~ X - 1))),
 		tolerance = 1e-8
 	)
 	expect_equal(
-		as.numeric(EDI:::test_ols_start_beta_on_log1p_cpp(X, y_count)),
+		as.numeric(EDI:::test_ols_warm_start_beta_on_log1p_cpp(X, y_count)),
 		as.numeric(coef(lm(log1p(y_count) ~ X - 1))),
 		tolerance = 1e-8
 	)
@@ -21,7 +21,7 @@ test_that("OLS smart-start helpers match the expected transformed regressions", 
 test_that("start finalization falls back cleanly and preserves fixed values", {
 	smart_bad <- c(NA_real_, 2, 3)
 	legacy <- c(0, 0, 0)
-	out <- EDI:::test_finalize_start_beta_cpp(
+	out <- EDI:::test_finalize_warm_start_beta_cpp(
 		smart_bad,
 		legacy,
 		use_smart = TRUE,

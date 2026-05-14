@@ -206,7 +206,8 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 					estimate_only = estimate_only,
 					start      = start,
 					eps_g      = 1e-3,
-					warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len)
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len),
+					optimization_alg = private$optimization_alg
 				),
 				error = function(e) NULL
 			)
@@ -223,6 +224,7 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 			private$cached_mod = fit
 			full_params = as.numeric(c(fit$alpha, fit$b, fit$log_sigma))
 			private$set_fit_warm_start(full_params, "params", fisher = fit$fisher_information)
+
 			private$cached_values$likelihood_test_context = list(
 				X = X_fit,
 				y = y,
@@ -273,6 +275,7 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
 					run_fit = function(s){
+						n_params = length(ctx$start)
 						tryCatch(
 							fast_ordinal_glmm_cpp(
 								X = X_fit,
@@ -286,6 +289,7 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 								maxit = 300L,
 								eps_g = 1e-3,
 								start = s,
+								warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
 								optimization_alg = private$optimization_alg %||% "lbfgs",
 								fixed_idx = j_treat,
 								fixed_values = delta
@@ -314,13 +318,13 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 					as.numeric(get_ordinal_glmm_score_cpp(X_fit, y, group_id, as.numeric(c(fit$alpha, fit$b, fit$log_sigma)), K, n_gh = n_gh))
 				},
 				observed_information = function(fit){
-					as.matrix(get_ordinal_glmm_hessian_cpp(X_fit, y, group_id, as.numeric(c(fit$alpha, fit$b, fit$log_sigma)), K, n_gh = n_gh))
+					as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% get_ordinal_glmm_hessian_cpp(X_fit, y, group_id, as.numeric(c(fit$alpha, fit$b, fit$log_sigma)), K, n_gh = n_gh))
 				},
 				fisher_information = function(fit){
-					as.matrix(get_ordinal_glmm_hessian_cpp(X_fit, y, group_id, as.numeric(c(fit$alpha, fit$b, fit$log_sigma)), K, n_gh = n_gh))
+					as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% get_ordinal_glmm_hessian_cpp(X_fit, y, group_id, as.numeric(c(fit$alpha, fit$b, fit$log_sigma)), K, n_gh = n_gh))
 				},
 				information = function(fit){
-					as.matrix(get_ordinal_glmm_hessian_cpp(X_fit, y, group_id, as.numeric(c(fit$alpha, fit$b, fit$log_sigma)), K, n_gh = n_gh))
+					as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% get_ordinal_glmm_hessian_cpp(X_fit, y, group_id, as.numeric(c(fit$alpha, fit$b, fit$log_sigma)), K, n_gh = n_gh))
 				},
 				neg_loglik = function(fit){
 					as.numeric(fit$neg_loglik %||% fit$neg_ll)

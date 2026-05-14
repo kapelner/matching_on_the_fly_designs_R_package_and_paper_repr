@@ -69,10 +69,10 @@ matrix-based.
 Recommended helpers:
 
 ```cpp
-Eigen::VectorXd ols_start_beta(const Eigen::MatrixXd& X,
+Eigen::VectorXd ols_warm_start_beta(const Eigen::MatrixXd& X,
                                const Eigen::VectorXd& y);
 
-Eigen::VectorXd ols_start_beta_on_log1p(const Eigen::MatrixXd& X,
+Eigen::VectorXd ols_warm_start_beta_on_log1p(const Eigen::MatrixXd& X,
                                         const Eigen::VectorXd& y);
 
 struct WeibullStart {
@@ -102,7 +102,7 @@ Behavior rules:
 - If there are too few usable rows for the special start, fall back to the
   current default.
 
-The low-level fitters should still accept explicit `start_beta` or
+The low-level fitters should still accept explicit `warm_start_beta` or
 `start_params` where useful, but the user-facing choice between smart and
 legacy defaults should be stored on the R inference object and translated into
 the appropriate internal start vector before calling Rcpp.
@@ -114,7 +114,7 @@ of the implementation plan should follow these rules without revisiting them
 unless there is a later explicit design change:
 
 - `smart_default` lives on the R inference initializer
-- low-level fitters still accept explicit `start_beta` or `start_params`
+- low-level fitters still accept explicit `warm_start_beta` or `start_params`
 - explicit starts override `smart_default`
 - low-level fitters compute smart defaults only when no explicit start is
   supplied and the caller has chosen the smart-start policy
@@ -135,7 +135,7 @@ This gives a clean split of responsibilities:
 
 There should be no ambiguity in precedence:
 
-1. if a caller passes `start_beta` or `start_params`, use it
+1. if a caller passes `warm_start_beta` or `start_params`, use it
 2. otherwise consult the inference object's `smart_default`
 3. if `smart_default = TRUE`, build the model-specific smart default
 4. if `smart_default = FALSE`, use the legacy default
@@ -153,7 +153,7 @@ The current implementation now supports the following framework pieces:
 - `smart_default` is stored on the R inference object initializer and is
   threaded into the low-level fitter calls for the core logistic, Poisson,
   negative-binomial, Weibull, and ordinal cumulative-link inference classes.
-- low-level fitters accept explicit `start_beta` or `start_params`, and those
+- low-level fitters accept explicit `warm_start_beta` or `start_params`, and those
   explicit starts override both `smart_default` and any internally generated
   smart start.
 - low-level start construction is performed on the final post-QR fit matrix
@@ -259,7 +259,7 @@ accept explicit starting values.
 
 That means:
 
-- coefficient-only models should accept `start_beta`
+- coefficient-only models should accept `warm_start_beta`
 - full-parameter models should accept `start_params`
 - R-level `fit_null(delta)` closures should be able to pass those values
   through to the fitter
@@ -267,7 +267,7 @@ That means:
 The key distinction is:
 
 - `smart_default` chooses how a fit starts when no explicit start is supplied
-- `start_beta` or `start_params` lets the caller override that and warm-start
+- `warm_start_beta` or `start_params` lets the caller override that and warm-start
   from a previous solution
 
 So explicit starts are not just optional API polish. They are required for the
@@ -320,7 +320,7 @@ Warm starts and `smart_default` are compatible.
 
 Recommended precedence:
 
-1. if an explicit `start_beta` or `start_params` is supplied, use it
+1. if an explicit `warm_start_beta` or `start_params` is supplied, use it
 2. otherwise, if `smart_default = TRUE`, use the smart default
 3. otherwise use the legacy default
 
@@ -402,8 +402,8 @@ Target fitters:
 
 Implementation:
 
-- Add an optional `start_beta` argument.
-- Default it to `ols_start_beta(X, y)`.
+- Add an optional `warm_start_beta` argument.
+- Default it to `ols_warm_start_beta(X, y)`.
 - At the R inference level, if `smart_default = FALSE`, use the current zero
   start instead.
 - For fixed-parameter fits, apply the fixed values after the OLS start is built.
@@ -423,8 +423,8 @@ Target fitters:
 
 Implementation:
 
-- Add an optional `start_beta` argument.
-- Default it to `ols_start_beta_on_log1p(X, y)`.
+- Add an optional `warm_start_beta` argument.
+- Default it to `ols_warm_start_beta_on_log1p(X, y)`.
 - At the R inference level, if `smart_default = FALSE`, preserve the current
   legacy start behavior.
 - Use the same start for IRLS, Newton, and LBFGS branches.
@@ -554,7 +554,7 @@ fitting paths.
 The exported Rcpp wrappers in `EDI/R/RcppExports.R` do not need a user-facing
 `smart_default` flag.
 
-They may still gain explicit `start_beta` or `start_params` arguments where
+They may still gain explicit `warm_start_beta` or `start_params` arguments where
 needed for internal reuse, testing, composite-model fitting, and null-fit
 warm-starting during CI inversion or bootstrap refitting, but that is a
 separate concern from the user-facing API.

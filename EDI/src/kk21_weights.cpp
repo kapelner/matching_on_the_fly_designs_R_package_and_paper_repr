@@ -275,7 +275,7 @@ NumericVector kk21_stepwise_continuous_weights_cpp(const NumericMatrix& X,
 }
 
 // Helper: fit logistic regression on reduced design matrix XS via IRLS.
-// beta is used as warm start and updated in place. Returns false on failure.
+// beta is used as warm warm_start_params and updated in place. Returns false on failure.
 static bool logistic_reduced_fit_for_score_test(
 	const Eigen::MatrixXd& XS,
 	const Eigen::VectorXd& y,
@@ -319,7 +319,7 @@ static bool logistic_reduced_fit_for_score_test(
 
 // Optimized using score test (LM test) from the reduced model.
 // At each step k, instead of fitting (p-k) logistic regressions of size n x (k+3), we:
-//   1. Fit ONE logistic regression on the reduced model [1, X_sel, w] (with warm start)
+//   1. Fit ONE logistic regression on the reduced model [1, X_sel, w] (with warm warm_start_params)
 //   2. For each candidate x_j compute the score test statistic:
 //      stat_j = |x_j' (y - p_hat)| / sqrt(I_jj.S)
 //      where I_jj.S = x_j' W x_j - (X_S' W x_j)' (X_S' W X_S)^{-1} (X_S' W x_j)
@@ -390,14 +390,14 @@ NumericVector kk21_stepwise_logistic_weights_cpp(const NumericMatrix& X,
 	weights[best_j] = best_stat;
 	used[best_j] = true;
 
-	// Update X_S: append x_{best_j}, refit with warm start
+	// Update X_S: append x_{best_j}, refit with warm warm_start_params
 	Eigen::MatrixXd XS_new(n, m + 1);
 	XS_new.leftCols(m) = XS;
 	XS_new.col(m) = X_map.col(best_j);
 	XS = XS_new;
 	m++;
 
-	// Warm start: extend beta with 0 for the newly added covariate
+	// Warm warm_start_params: extend beta with 0 for the newly added covariate
 	Eigen::VectorXd beta_new(m);
 	beta_new.head(m - 1) = beta;
 	beta_new[m - 1] = 0.0;

@@ -90,17 +90,21 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 				ctx = private$cached_values$likelihood_test_context
 				if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
 				j_treat = as.integer(ctx$j_treat)
+				start_len = length(ctx$start)
 				list(
 					j = j_treat,
 					full_fit = private$cached_mod,
-					fit_null = function(delta){
+					fit_null = function(delta, start = NULL){
+						start_par = start %||% private$get_fit_warm_start_for_length("params", start_len) %||% as.numeric(ctx$start)
+						warm_fisher = private$get_fit_warm_start_fisher(start_len)
 						fast_clogit_plus_glmm_cpp(
 							X_disc = ctx$X_disc,
 							y_disc = ctx$y_disc,
 							X_conc = ctx$X_conc,
 							y_conc = ctx$y_conc,
 							group_conc = ctx$group_conc,
-							start = as.numeric(ctx$start),
+							start = start_par,
+							warm_start_fisher_info = warm_fisher,
 							has_discordant = ctx$has_discordant,
 							has_concordant = ctx$has_concordant,
 							estimate_only = FALSE,
@@ -119,20 +123,28 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 						)
 					},
 					observed_information = function(fit){
-						-get_clogit_plus_glmm_hessian_cpp(
+						as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% get_clogit_plus_glmm_hessian_cpp(
 							ctx$X_disc, ctx$y_disc, ctx$X_conc, ctx$y_conc, ctx$group_conc,
 							as.numeric(fit$params %||% fit$b),
 							ctx$has_discordant, ctx$has_concordant,
 							private$max_abs_log_sigma
-						)
+						))
+					},
+					fisher_information = function(fit){
+						as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% get_clogit_plus_glmm_hessian_cpp(
+							ctx$X_disc, ctx$y_disc, ctx$X_conc, ctx$y_conc, ctx$group_conc,
+							as.numeric(fit$params %||% fit$b),
+							ctx$has_discordant, ctx$has_concordant,
+							private$max_abs_log_sigma
+						))
 					},
 					information = function(fit){
-						-get_clogit_plus_glmm_hessian_cpp(
+						as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% get_clogit_plus_glmm_hessian_cpp(
 							ctx$X_disc, ctx$y_disc, ctx$X_conc, ctx$y_conc, ctx$group_conc,
 							as.numeric(fit$params %||% fit$b),
 							ctx$has_discordant, ctx$has_concordant,
 							private$max_abs_log_sigma
-						)
+						))
 					},
 					neg_loglik = function(fit){
 						as.numeric(fit$neg_loglik %||% fit$neg_ll)
@@ -162,6 +174,7 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 				if (private$combine_reservoir_into_glmm() && !is.null(fit$mod)) {
 					j_treat = if (isTRUE(data_parts$has_concordant)) 2L else 1L
 					private$cached_mod = fit$mod
+					private$set_fit_warm_start(as.numeric(fit$mod$b), "params", fisher = fit$mod$fisher_information)
 					private$cached_values$likelihood_test_context = list(
 						X_disc = as.matrix(data_parts$X_disc),
 						y_disc = as.numeric(data_parts$y_disc),
@@ -286,7 +299,13 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 			)
 		},
 		fit_clogit_plus_glmm = function(data_parts, estimate_only = FALSE){
-			start = private$get_clogit_plus_glmm_start(data_parts)
+			n_params = if (isTRUE(data_parts$has_concordant)) {
+				ncol(data_parts$X_conc) + 1L
+			} else {
+				ncol(data_parts$X_disc)
+			}
+			start = private$get_fit_warm_start_for_length("params", n_params) %||% private$get_clogit_plus_glmm_start(data_parts)
+			warm_fisher = private$get_fit_warm_start_fisher(n_params)
 			
 			res = tryCatch(
 				fast_clogit_plus_glmm_cpp(
@@ -296,6 +315,7 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 					y_conc          = as.numeric(data_parts$y_conc),
 					group_conc      = as.integer(data_parts$group_conc),
 					start           = as.numeric(start),
+					warm_start_fisher_info = warm_fisher,
 					has_discordant  = data_parts$has_discordant,
 					has_concordant  = data_parts$has_concordant,
 					estimate_only   = estimate_only,

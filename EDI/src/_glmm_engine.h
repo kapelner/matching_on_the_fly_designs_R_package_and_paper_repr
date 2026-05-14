@@ -122,15 +122,15 @@ public:
 
         double total_ll = 0.0;
         for (int gi = 0; gi < dat.G; ++gi) {
-            const int start = dat.grp_start[gi];
+            const int warm_start_params = dat.grp_start[gi];
             const int sz = dat.grp_size[gi];
-            const Eigen::VectorXd eta0 = dat.X_s.middleRows(start, sz) * beta;
+            const Eigen::VectorXd eta0 = dat.X_s.middleRows(warm_start_params, sz) * beta;
 
             Eigen::VectorXd log_terms(nn);
             for (int k = 0; k < nn; ++k) {
                 double ll = dat.gh.log_norm_weights[k];
                 for (int r = 0; r < sz; ++r) {
-                    ll += model.log_prob(dat.y_s[start + r], eta0[r] + b_vals[k], par);
+                    ll += model.log_prob(dat.y_s[warm_start_params + r], eta0[r] + b_vals[k], par);
                 }
                 log_terms[k] = ll;
             }
@@ -156,9 +156,9 @@ public:
         grad[nm + dat.p] += sigma_penalty_grad(log_sigma);
 
         for (int gi = 0; gi < dat.G; ++gi) {
-            const int start = dat.grp_start[gi];
+            const int warm_start_params = dat.grp_start[gi];
             const int sz = dat.grp_size[gi];
-            const auto Xg = dat.X_s.middleRows(start, sz);
+            const auto Xg = dat.X_s.middleRows(warm_start_params, sz);
             const Eigen::VectorXd eta0 = Xg * beta;
 
             Eigen::VectorXd log_terms(nn);
@@ -170,7 +170,7 @@ public:
                 double ll = dat.gh.log_norm_weights[k];
                 for (int r = 0; r < sz; ++r) {
                     double de;
-                    double lp = model.log_prob_derivs(dat.y_s[start + r], eta0[r] + b_vals[k], par, de, dp);
+                    double lp = model.log_prob_derivs(dat.y_s[warm_start_params + r], eta0[r] + b_vals[k], par, de, dp);
                     ll += lp;
                     dL_dp_sum_nodes.col(k).noalias() += dp;
                     dL_de_nodes(r, k) = de;

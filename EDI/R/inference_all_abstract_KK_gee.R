@@ -288,7 +288,7 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 					y = as.numeric(fit_data$y_sorted),
 					group_id = as.integer(fit_data$id_sorted),
 					family_str = family_str,
-					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_rcpp)),
+					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_rcpp)),
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_rcpp))
 				)
 			}, error = function(e) NULL)
@@ -333,7 +333,7 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 						y = as.numeric(fit_data$y_sorted),
 						group_id = as.integer(fit_data$id_sorted),
 						family_str = private$gee_family_str(),
-						start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_rcpp)),
+						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_rcpp)),
 						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_rcpp))
 					)
 				}, error = function(e) NULL)
@@ -344,7 +344,7 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			tryCatch({
 				dat_geepack = data.frame(y = fit_data$y_sorted, fit_data$dat)
 				X_geepack = cbind(`(Intercept)` = 1, as.matrix(fit_data$dat))
-				start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_geepack))
+				warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_geepack))
 				
 				utils::capture.output(mod <- suppressMessages(suppressWarnings(
 					geepack::geeglm(
@@ -354,7 +354,7 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 						id     = fit_data$id_sorted,
 						corstr = "exchangeable",
 						std.err = std_err_arg,
-						start  = start_beta
+						start  = warm_start_beta
 					)
 				)))
 				mod

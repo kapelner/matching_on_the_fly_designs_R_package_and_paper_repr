@@ -8,7 +8,7 @@ fast_logistic_regression_weighted_cpp(
   X,
   y,
   weights,
-  start_beta = NULL,
+  warm_start_beta = NULL,
   maxit = 100L,
   tol = 1e-08,
   fixed_idx = NULL,
@@ -25,7 +25,7 @@ fast_logistic_regression_weighted_cpp(
 
 \item{weights}{A numeric vector of weights.}
 
-\item{start_beta}{Optional starting values for coefficients.}
+\item{warm_start_beta}{Optional starting values for coefficients.}
 
 \item{maxit}{Maximum number of iterations.}
 

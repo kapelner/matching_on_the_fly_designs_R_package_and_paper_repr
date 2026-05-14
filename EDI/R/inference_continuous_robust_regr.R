@@ -38,14 +38,14 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 		#' @param method The estimation method.. Default "MM".
 		#' @param use_rcpp Whether to use C++ speedup.. Default TRUE.
 		#' @param verbose Whether to print progress messages.. Default FALSE.
-		initialize = function(des_obj, model_formula = NULL, method = "MM", use_rcpp = TRUE, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, method = "MM", use_rcpp = TRUE, verbose = FALSE, smart_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
 				assertChoice(method, c("M", "MM"))
 				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(use_rcpp)
 			}
-			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_default = smart_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -158,17 +158,26 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 			)
 		},
 		fit_rlm_model = function(X_fit, estimate_only = FALSE, warm_start = FALSE){
-			start_beta = if (warm_start) private$get_fit_warm_start_for_length("beta", ncol(X_fit)) else NULL
+			warm_start_beta = if (warm_start) private$get_fit_warm_start_for_length("beta", ncol(X_fit)) else NULL
 			warm_fisher = if (warm_start) private$get_fit_warm_start_fisher(ncol(X_fit)) else NULL
-			
+
 			if (private$use_rcpp) {
 				tryCatch(
-					fast_robust_regression_cpp(X = X_fit, y = as.numeric(private$y), start_beta = start_beta, warm_start_fisher_info = warm_fisher, method = private$rlm_method, j = 2L),
+					fast_robust_regression_cpp(
+						X = X_fit,
+						y = as.numeric(private$y),
+						warm_start_beta = warm_start_beta,
+						smart_start = private$smart_default,
+						warm_start_fisher_info = warm_fisher,
+						method = private$rlm_method,
+						j = 2L
+					),
 					error = function(e) NULL
 				)
 			} else {
+
 				tryCatch(
-					suppressWarnings(MASS::rlm(x = X_fit, y = as.numeric(private$y), method = private$rlm_method, init = start_beta)),
+					suppressWarnings(MASS::rlm(x = X_fit, y = as.numeric(private$y), method = private$rlm_method, init = warm_start_beta)),
 					error = function(e) NULL
 				)
 			}

@@ -8,7 +8,7 @@ fast_poisson_regression_weighted_cpp(
   X,
   y,
   weights,
-  start_beta = NULL,
+  warm_start_beta = NULL,
   smart_start = TRUE,
   maxit = 100L,
   tol = 1e-08,
@@ -26,7 +26,7 @@ fast_poisson_regression_weighted_cpp(
 
 \item{weights}{A numeric vector of weights.}
 
-\item{start_beta}{Optional starting values for coefficients.}
+\item{warm_start_beta}{Optional starting values for coefficients.}
 
 \item{smart_start}{Logical. If TRUE, use an initial OLS-based guess.}
 

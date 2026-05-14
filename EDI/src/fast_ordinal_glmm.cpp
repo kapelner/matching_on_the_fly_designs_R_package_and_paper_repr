@@ -2,474 +2,184 @@
 //
 // Model:  logit P(Y_ij <= k | u_i) = alpha_k - X_ij' beta - u_i
 //   u_i ~ N(0, sigma^2)    (random intercept per matched pair / singleton)
-//   y_ij in {1, ..., K}    (1-indexed integer ordinal outcome)
-//   X has NO intercept column (cutpoints alpha_1..alpha_{K-1} serve as intercepts)
-//
-// Parameter vector: par = [alpha_1, log_d2, ..., log_d_{K-1}, beta_0..beta_{p-1}, log_sigma]
-//   where alpha_k = alpha_1 + sum_{j=2}^{k} exp(log_dj)   (ensures monotonicity)
-//   Total length: (K-1) + p + 1 = K + p - 1 + 1 = K + p
+//   y_ij \in {1, ..., K}
 
 #include "_helper_functions.h"
 #include <RcppEigen.h>
 #include <cmath>
 #include <vector>
 #include <algorithm>
-#include <numeric>
-#include <limits>
 
 using namespace Rcpp;
+using namespace Eigen;
 
 namespace {
 
-struct GHRule {
-	Eigen::VectorXd nodes;
-	Eigen::VectorXd log_norm_weights;
-};
-
-GHRule gauss_hermite_rule_ord(int n) {
-	Eigen::MatrixXd J = Eigen::MatrixXd::Zero(n, n);
-	for (int i = 0; i < n - 1; ++i) {
-		const double v = std::sqrt((i + 1.0) / 2.0);
-		J(i, i + 1) = v;
-		J(i + 1, i) = v;
-	}
-	Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(J);
-	GHRule rule;
-	rule.nodes = es.eigenvalues();
-	rule.log_norm_weights = (std::sqrt(M_PI) * es.eigenvectors().row(0).array().square()).log() - 0.5 * std::log(M_PI);
-	return rule;
-}
-
-inline double log_sum_exp_v(const Eigen::VectorXd& x) {
-	const double m = x.maxCoeff();
-	if (!std::isfinite(m)) return m;
-	return m + std::log((x.array() - m).exp().sum());
-}
-
-// Recover the k-th cutpoint (1-indexed k in 1..K-1) from par[0..K-2]
-inline double get_alpha(const Eigen::VectorXd& par, int k) {
-	// k in 1..(K-1); par[0]=alpha_1; par[j]=log_diff_{j+1} for j>=1
-	double a = par[0];
-	for (int j = 1; j < k; ++j) a += std::exp(par[j]);
-	return a;
-}
-
-// log P(Y=y_k | eta) under cumulative logit, y_k in 1..K, K levels
-inline double cumlogit_log_prob(
-	int y_k, int K, const double* alpha, double eta
-) {
-	// alpha is a precomputed array alpha[0..K-2], indexed 0-based (alpha[0]=alpha_1...)
-	double p_upper = (y_k >= K) ? 1.0 : plogis_safe(alpha[y_k - 1] - eta);
-	double p_lower = (y_k <= 1)  ? 0.0 : plogis_safe(alpha[y_k - 2] - eta);
-	return std::log(std::max(1e-15, p_upper - p_lower));
-}
-
+// Maps ordinal y (1..K) to indicators I(y <= k) for k=1..K-1
 struct OrdinalGLMMData {
-	// Sorted so observations within each group are contiguous
-	Eigen::MatrixXd X_s;       // n x p (no intercept)
-	std::vector<int> y_s;      // 1-indexed ordinal outcomes, length n
-	std::vector<int> grp_start;// start index of each group in sorted arrays
-	std::vector<int> grp_size; // number of obs in each group
-	int n, p, G, K;
-	GHRule gh;
+	const Eigen::MatrixXd& X;
+	const std::vector<int>& y;
+	const std::vector<int>& group_id;
+	int K;
+	int n_gh;
 	double max_abs_log_sigma;
 
-	OrdinalGLMMData(
-		const Eigen::MatrixXd& X,
-		const std::vector<int>& y_r, // 1-indexed
-		const std::vector<int>& group_id_r, // 1-indexed
-		int K_,
-		int n_gh,
-		double max_abs_log_sigma_
-	) : n(X.rows()), p(X.cols()), K(K_),
-	    gh(gauss_hermite_rule_ord(n_gh)),
-	    max_abs_log_sigma(max_abs_log_sigma_) {
+	int n;
+	int p;
+	int m_n_groups;
+	std::vector<int> m_group_start;
+	std::vector<int> m_group_end;
+	GaussHermite m_gh;
 
-		// Sort by group_id
-		std::vector<int> ord(n);
-		std::iota(ord.begin(), ord.end(), 0);
-		std::stable_sort(ord.begin(), ord.end(),
-			[&](int a, int b){ return group_id_r[a] < group_id_r[b]; });
-
-		X_s.resize(n, p);
-		y_s.resize(n);
-		for (int i = 0; i < n; ++i) {
-			X_s.row(i) = X.row(ord[i]);
-			y_s[i] = y_r[ord[i]];
-		}
-
-		// Build group structure
-		int prev = -1;
-		for (int i = 0; i < n; ++i) {
-			int g = group_id_r[ord[i]];
-			if (g != prev) {
-				grp_start.push_back(i);
-				grp_size.push_back(1);
-				prev = g;
-			} else {
-				grp_size.back()++;
+	OrdinalGLMMData(const Eigen::MatrixXd& X_in, const std::vector<int>& y_in, 
+	                const std::vector<int>& gid_in, int K_in, int n_gh_in, double max_als)
+		: X(X_in), y(y_in), group_id(gid_in), K(K_in), n_gh(n_gh_in), max_abs_log_sigma(max_als), m_gh(n_gh_in) {
+		n = (int)y.size();
+		p = (int)X.cols();
+		
+		// Map group_id to contiguous blocks (assuming already sorted by group_id)
+		m_n_groups = 0;
+		if (n > 0) {
+			m_n_groups = 1;
+			m_group_start.push_back(0);
+			for (int i = 1; i < n; ++i) {
+				if (group_id[i] != group_id[i - 1]) {
+					m_group_end.push_back(i);
+					m_group_start.push_back(i);
+					m_n_groups++;
+				}
 			}
+			m_group_end.push_back(n);
 		}
-		G = (int)grp_start.size();
 	}
 };
 
 class OrdinalGLMMObjective {
-	const OrdinalGLMMData& dat;
-
+	const OrdinalGLMMData& m_dat;
 public:
-	explicit OrdinalGLMMObjective(const OrdinalGLMMData& d) : dat(d) {}
+	OrdinalGLMMObjective(const OrdinalGLMMData& dat) : m_dat(dat) {}
 
-	double value(const Eigen::VectorXd& par) const {
-		const int n_alpha = dat.K - 1;
-		const double log_sigma = par[n_alpha + dat.p];
-		if (!std::isfinite(log_sigma) || std::abs(log_sigma) > dat.max_abs_log_sigma)
-			return 1e100;
-		const double sigma = std::exp(log_sigma);
+	// par = [alpha_1, log_diff_alpha_2, ..., log_diff_alpha_{K-1}, beta_1, ..., beta_p, log_sigma]
+	double operator()(const VectorXd& par, VectorXd& grad) {
+		const int n_alpha = m_dat.K - 1;
+		const int p = m_dat.p;
+		const int total = n_alpha + p + 1;
 
-		// Precompute cutpoints
-		std::vector<double> alpha(n_alpha);
-		alpha[0] = par[0];
-		for (int k = 1; k < n_alpha; ++k) alpha[k] = alpha[k-1] + std::exp(par[k]);
-
-		const Eigen::VectorXd beta = par.segment(n_alpha, dat.p);
-		const Eigen::VectorXd b_vals = std::sqrt(2.0) * sigma * dat.gh.nodes;
-		const int n_nodes = (int)b_vals.size();
-
-		double total_ll = 0.0;
-		for (int gi = 0; gi < dat.G; ++gi) {
-			const int start = dat.grp_start[gi];
-			const int sz    = dat.grp_size[gi];
-			const Eigen::VectorXd eta0 = dat.X_s.middleRows(start, sz) * beta;
-
-			Eigen::VectorXd log_terms(n_nodes);
-			for (int k = 0; k < n_nodes; ++k) {
-				double ll = dat.gh.log_norm_weights[k];
-				for (int r = 0; r < sz; ++r) {
-					const double eta = eta0[r] + b_vals[k];
-					ll += cumlogit_log_prob(dat.y_s[start + r], dat.K, alpha.data(), eta);
-				}
-				log_terms[k] = ll;
-			}
-			const double ll_g = log_sum_exp_v(log_terms);
-			if (!std::isfinite(ll_g)) return 1e100;
-			total_ll += ll_g;
-		}
-		return -total_ll;
-	}
-
-	double operator()(const Eigen::VectorXd& par, Eigen::VectorXd& grad) {
-		const int n_alpha = dat.K - 1;
-		const double log_sigma = par[n_alpha + dat.p];
-		const double sigma = std::exp(log_sigma);
-		const Eigen::VectorXd beta = par.segment(n_alpha, dat.p);
-		const Eigen::VectorXd b_vals = std::sqrt(2.0) * sigma * dat.gh.nodes;
-		const int n_nodes = (int)b_vals.size();
-
-		// Precompute cutpoints and their gradients w.r.t parameterization
-		std::vector<double> alpha(n_alpha);
-		alpha[0] = par[0];
-		for (int k = 1; k < n_alpha; ++k) alpha[k] = alpha[k-1] + std::exp(par[k]);
-
-		const Eigen::VectorXd eta_all = dat.X_s * beta;
-		Eigen::Map<const Eigen::VectorXi> y_all(dat.y_s.data(), dat.n);
-
-		double total_nll = 0.0;
-		grad.setZero();
-
-		Eigen::MatrixXd log_terms_mat(dat.G, n_nodes);
-		std::vector<Eigen::VectorXd> dlogp_deta_all_nodes(n_nodes);
-		std::vector<std::vector<Eigen::VectorXd>> dlogp_dalpha_all_nodes(n_nodes, std::vector<Eigen::VectorXd>(n_alpha));
-
-		for (int k = 0; k < n_nodes; k++) {
-			const double u = b_vals[k];
-			const Eigen::VectorXd eta_k_all = eta_all.array() + u;
-			
-			// Matrix of size n x n_alpha storing F_k = plogis(alpha_j - eta_k)
-			Eigen::MatrixXd F_mat(dat.n, n_alpha);
-			for (int j = 0; j < n_alpha; j++) {
-				F_mat.col(j) = plogis_array_safe(alpha[j] - eta_k_all.array()).matrix();
-			}
-
-			Eigen::VectorXd prob_all(dat.n);
-			Eigen::VectorXd deta_all(dat.n);
-			std::vector<Eigen::VectorXd> dalpha_all(n_alpha, Eigen::VectorXd::Zero(dat.n));
-
-			for (int i = 0; i < dat.n; i++) {
-				int yi = y_all[i];
-				double F_up = (yi >= dat.K) ? 1.0 : F_mat(i, yi - 1);
-				double F_lo = (yi <= 1)      ? 0.0 : F_mat(i, yi - 2);
-				double prob = std::max(1e-15, F_up - F_lo);
-				prob_all[i] = prob;
-
-				double f_up = (yi >= dat.K) ? 0.0 : F_up * (1.0 - F_up);
-				double f_lo = (yi <= 1)      ? 0.0 : F_lo * (1.0 - F_lo);
-				deta_all[i] = -(f_up - f_lo) / prob;
-				if (yi < dat.K) dalpha_all[yi - 1][i] = f_up / prob;
-				if (yi > 1)      dalpha_all[yi - 2][i] = -f_lo / prob;
-			}
-
-			dlogp_deta_all_nodes[k] = deta_all;
-			for(int j=0; j<n_alpha; j++) dlogp_dalpha_all_nodes[k][j] = dalpha_all[j];
-
-			Eigen::ArrayXd log_prob_all = prob_all.array().log();
-			for (int gi = 0; gi < dat.G; gi++) {
-				log_terms_mat(gi, k) = dat.gh.log_norm_weights[k] + 
-				                       log_prob_all.segment(dat.grp_start[gi], dat.grp_size[gi]).sum();
-			}
-		}
-
-		Eigen::VectorXd ll_g_vec(dat.G);
-		for (int gi = 0; gi < dat.G; gi++) {
-			ll_g_vec[gi] = log_sum_exp_v(log_terms_mat.row(gi));
-			total_nll -= ll_g_vec[gi];
-		}
-
-		for (int k = 0; k < n_nodes; k++) {
-			Eigen::VectorXd pk_vec(dat.G);
-			for (int gi = 0; gi < dat.G; gi++) pk_vec[gi] = std::exp(log_terms_mat(gi, k) - ll_g_vec[gi]);
-
-			Eigen::VectorXd pk_expanded(dat.n);
-			for (int gi = 0; gi < dat.G; gi++) 
-				pk_expanded.segment(dat.grp_start[gi], dat.grp_size[gi]).setConstant(pk_vec[gi]);
-
-			// dLL/dalpha
-			for (int j = 0; j < n_alpha; j++) {
-				grad[j] -= pk_expanded.dot(dlogp_dalpha_all_nodes[k][j]);
-			}
-
-			// dLL/dbeta
-			Eigen::VectorXd de_pk = pk_expanded.cwiseProduct(dlogp_deta_all_nodes[k]);
-			grad.segment(n_alpha, dat.p).noalias() -= dat.X_s.transpose() * de_pk;
-
-			// dLL/dlog_sigma
-			double dll_dsigma_k = de_pk.sum() * std::sqrt(2.0) * dat.gh.nodes[k];
-			grad[n_alpha + dat.p] -= dll_dsigma_k * sigma;
-		}
-
-		// Apply chain rule for cutpoint parameterization
-		Eigen::VectorXd dLL_dalpha = grad.head(n_alpha);
-		grad[0] = dLL_dalpha.sum();
-		for (int j = 1; j < n_alpha; ++j) {
-			double sum_higher = 0.0;
-			for (int k = j; k < n_alpha; ++k) sum_higher += dLL_dalpha[k];
-			grad[j] = sum_higher * std::exp(par[j]);
-		}
-
-		return total_nll;
-	}
-
-	Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
-		const int n_alpha = dat.K - 1;
-		const int total = n_alpha + dat.p + 1;
-		const double log_sigma = par[n_alpha + dat.p];
-		const double sigma = std::exp(log_sigma);
-		const Eigen::VectorXd beta = par.segment(n_alpha, dat.p);
-		const Eigen::VectorXd b_vals = std::sqrt(2.0) * sigma * dat.gh.nodes;
-		const int n_nodes = (int)b_vals.size();
-
-		std::vector<double> alpha(n_alpha);
+		// Recover actual cutpoints alpha
+		VectorXd alpha(n_alpha);
 		alpha[0] = par[0];
 		for (int k = 1; k < n_alpha; ++k) alpha[k] = alpha[k - 1] + std::exp(par[k]);
 
-		const Eigen::VectorXd eta_all = dat.X_s * beta;
-		Eigen::Map<const Eigen::VectorXi> y_all(dat.y_s.data(), dat.n);
+		const VectorXd beta = par.segment(n_alpha, p);
+		const double log_sigma = std::clamp(par[total - 1], -m_dat.max_abs_log_sigma, m_dat.max_abs_log_sigma);
+		const double sigma = std::exp(log_sigma);
 
-		Eigen::MatrixXd H = Eigen::MatrixXd::Zero(total, total);
+		const VectorXd eta_fixed = m_dat.X * beta;
+		const std::vector<double>& nodes = m_dat.m_gh.nodes;
+		const std::vector<double>& log_weights = m_dat.m_gh.log_norm_weights;
 
-		Eigen::MatrixXd log_terms_mat(dat.G, n_nodes);
-		std::vector<Eigen::VectorXd> prob_all_nodes(n_nodes);
-		std::vector<Eigen::VectorXd> de_all_nodes(n_nodes);
-		std::vector<Eigen::VectorXd> d2e_all_nodes(n_nodes);
-		std::vector<std::vector<Eigen::VectorXd>> dL_da_all_nodes(n_nodes, std::vector<Eigen::VectorXd>(n_alpha));
-		std::vector<std::vector<Eigen::VectorXd>> d2L_daa_all_nodes(n_nodes, std::vector<Eigen::VectorXd>(n_alpha));
-		std::vector<std::vector<Eigen::VectorXd>> d2L_dab_all_nodes(n_nodes, std::vector<Eigen::VectorXd>(n_alpha));
-		std::vector<Eigen::VectorXd> d2L_da_prev_all_nodes(n_nodes, Eigen::VectorXd::Zero(dat.n)); // for H(j, j-1)
+		double total_neg_ll = 0.0;
+		grad.setZero();
 
-		for (int k = 0; k < n_nodes; k++) {
-			const double u = b_vals[k];
-			const Eigen::VectorXd eta_k_all = eta_all.array() + u;
+		for (int gi = 0; gi < m_dat.m_n_groups; ++gi) {
+			const int start = m_dat.m_group_start[gi];
+			const int end   = m_dat.m_group_end[gi];
 			
-			Eigen::MatrixXd F_mat(dat.n, n_alpha);
-			for (int j = 0; j < n_alpha; j++) F_mat.col(j) = plogis_array_safe(alpha[j] - eta_k_all.array()).matrix();
+			VectorXd log_lik_k(m_dat.n_gh);
+			std::vector<VectorXd> grad_k(m_dat.n_gh, VectorXd::Zero(total));
 
-			Eigen::VectorXd prob_all(dat.n);
-			Eigen::VectorXd de_all(dat.n), d2e_all(dat.n);
-			for(int j=0; j<n_alpha; j++) {
-				dL_da_all_nodes[k][j].setZero(dat.n);
-				d2L_daa_all_nodes[k][j].setZero(dat.n);
-				d2L_dab_all_nodes[k][j].setZero(dat.n);
-			}
+			for (int k = 0; k < m_dat.n_gh; ++k) {
+				const double u = std::sqrt(2.0) * sigma * nodes[k];
+				double ll_k = 0.0;
+				for (int i = start; i < end; ++i) {
+					const double eta_ij = eta_fixed[i] + u;
+					const int y_ij = m_dat.y[i];
+					
+					double prob_ij;
+					if (y_ij == 1) {
+						prob_ij = plogis_scalar(alpha[0] - eta_ij);
+					} else if (y_ij == m_dat.K) {
+						prob_ij = 1.0 - plogis_scalar(alpha[n_alpha - 1] - eta_ij);
+					} else {
+						prob_ij = plogis_scalar(alpha[y_ij - 1] - eta_ij) - plogis_scalar(alpha[y_ij - 2] - eta_ij);
+					}
+					prob_ij = std::max(prob_ij, 1e-15);
+					ll_k += std::log(prob_ij);
 
-			for (int i = 0; i < dat.n; i++) {
-				int yi = y_all[i];
-				double Fup = (yi >= dat.K) ? 1.0 : F_mat(i, yi - 1);
-				double Flo = (yi <= 1)      ? 0.0 : F_mat(i, yi - 2);
-				double prob = std::max(1e-15, Fup - Flo);
-				prob_all[i] = prob;
+					// Gradient w.r.t. beta
+					double dprob_deta = 0.0;
+					if (y_ij == 1) {
+						dprob_deta = -dplogis_scalar(alpha[0] - eta_ij);
+					} else if (y_ij == m_dat.K) {
+						dprob_deta = dplogis_scalar(alpha[n_alpha - 1] - eta_ij);
+					} else {
+						dprob_deta = dplogis_scalar(alpha[y_ij - 2] - eta_ij) - dplogis_scalar(alpha[y_ij - 1] - eta_ij);
+					}
+					grad_k[k].segment(n_alpha, p) -= (dprob_deta / prob_ij) * m_dat.X.row(i).transpose();
+					
+					// Gradient w.r.t. log_sigma (via u)
+					grad_k[k][total - 1] -= (dprob_deta / prob_ij) * u;
 
-				double fup = (yi >= dat.K) ? 0.0 : Fup * (1.0 - Fup);
-				double flo = (yi <= 1)      ? 0.0 : Flo * (1.0 - Flo);
-				double hup = (yi >= dat.K) ? 0.0 : fup * (1.0 - 2.0 * Fup);
-				double hlo = (yi <= 1)      ? 0.0 : flo * (1.0 - 2.0 * Flo);
-
-				de_all[i] = -(fup - flo) / prob;
-				d2e_all[i] = -(hup - hlo) / prob + (fup-flo)*(fup-flo)/(prob*prob);
-
-				if (yi < dat.K) {
-					dL_da_all_nodes[k][yi-1][i] = fup/prob;
-					d2L_daa_all_nodes[k][yi-1][i] = hup/prob - (fup*fup)/(prob*prob);
-					d2L_dab_all_nodes[k][yi-1][i] = -hup/prob + (fup*(fup-flo))/(prob*prob);
+					// Gradient w.r.t. alpha params
+					if (y_ij == 1) {
+						grad_k[k][0] -= dplogis_scalar(alpha[0] - eta_ij) / prob_ij;
+					} else if (y_ij == m_dat.K) {
+						double d_alpha_Km1 = dplogis_scalar(alpha[n_alpha - 1] - eta_ij);
+						for (int j = 0; j < n_alpha; ++j) {
+							double d_cut = (j == 0) ? 1.0 : std::exp(par[j]);
+							grad_k[k][j] += (d_alpha_Km1 / prob_ij) * d_cut;
+						}
+					} else {
+						// d(plogis(alpha_{y-1} - eta) - plogis(alpha_{y-2} - eta))
+						double d1 = dplogis_scalar(alpha[y_ij - 1] - eta_ij);
+						double d2 = dplogis_scalar(alpha[y_ij - 2] - eta_ij);
+						for (int j = 0; j < n_alpha; ++j) {
+							double d_cut = (j == 0) ? 1.0 : std::exp(par[j]);
+							if (j <= y_ij - 1) grad_k[k][j] -= (d1 / prob_ij) * d_cut;
+							if (j <= y_ij - 2) grad_k[k][j] += (d2 / prob_ij) * d_cut;
+						}
+					}
 				}
-				if (yi > 1) {
-					dL_da_all_nodes[k][yi-2][i] = -flo/prob;
-					d2L_daa_all_nodes[k][yi-2][i] = -hlo/prob - (flo*flo)/(prob*prob);
-					d2L_dab_all_nodes[k][yi-2][i] = hlo/prob - (flo*(fup-flo))/(prob*prob);
-				}
-				if (yi > 1 && yi < dat.K) {
-					d2L_da_prev_all_nodes[k][i] = (fup * flo) / (prob * prob);
-				}
+				log_lik_k[k] = ll_k + log_weights[k];
 			}
-			prob_all_nodes[k] = prob_all;
-			de_all_nodes[k] = de_all;
-			d2e_all_nodes[k] = d2e_all;
-
-			Eigen::ArrayXd log_prob_all = prob_all.array().log();
-			for (int gi = 0; gi < dat.G; gi++) {
-				log_terms_mat(gi, k) = dat.gh.log_norm_weights[k] + 
-				                       log_prob_all.segment(dat.grp_start[gi], dat.grp_size[gi]).sum();
-			}
-		}
-
-		Eigen::VectorXd ll_g_vec(dat.G);
-		for (int gi = 0; gi < dat.G; gi++) ll_g_vec[gi] = log_sum_exp_v(log_terms_mat.row(gi));
-
-		Eigen::MatrixXd E_Hik_sum = Eigen::MatrixXd::Zero(total, total);
-		Eigen::MatrixXd E_GiGiT_sum = Eigen::MatrixXd::Zero(total, total);
-		Eigen::MatrixXd G_avg_outer_sum = Eigen::MatrixXd::Zero(total, total);
-
-		for (int k = 0; k < n_nodes; k++) {
-			Eigen::VectorXd pk_vec(dat.G);
-			for (int gi = 0; gi < dat.G; gi++) pk_vec[gi] = std::exp(log_terms_mat(gi, k) - ll_g_vec[gi]);
-			Eigen::VectorXd pk_exp(dat.n);
-			for (int gi = 0; gi < dat.G; gi++) pk_exp.segment(dat.grp_start[gi], dat.grp_size[gi]).setConstant(pk_vec[gi]);
-
-			Eigen::MatrixXd H_ik_k = Eigen::MatrixXd::Zero(total, total);
-			for(int j=0; j<n_alpha; j++) {
-				H_ik_k(j, j) = pk_exp.dot(d2L_daa_all_nodes[k][j]);
-				H_ik_k.block(j, n_alpha, 1, dat.p).noalias() = (pk_exp.cwiseProduct(d2L_dab_all_nodes[k][j])).transpose() * dat.X_s;
-			}
-			for(int j=1; j<n_alpha; j++) {
-				// This is H(j, j-1)
-				H_ik_k(j, j-1) = pk_exp.dot(d2L_da_prev_all_nodes[k]); // only non-zero when yi = j+1
-				H_ik_k(j-1, j) = H_ik_k(j, j-1);
-			}
-
-			H_ik_k.block(n_alpha, n_alpha, dat.p, dat.p).noalias() = weighted_crossprod(dat.X_s, pk_exp.cwiseProduct(d2e_all_nodes[k]));
 			
-			const double node_factor = std::sqrt(2.0) * dat.gh.nodes[k];
-			H_ik_k.block(n_alpha, total-1, dat.p, 1).noalias() = (dat.X_s.transpose() * pk_exp.cwiseProduct(d2e_all_nodes[k])) * (node_factor * sigma);
-			for(int j=0; j<n_alpha; j++) H_ik_k(j, total-1) = pk_exp.dot(d2L_dab_all_nodes[k][j]) * (node_factor * sigma);
-			
-			H_ik_k(total-1, total-1) = pk_exp.dot(d2e_all_nodes[k]) * (node_factor * node_factor * sigma * sigma);
-			// plus G_ik[total-1] part (sigma chain rule)
-			double g_sigma_k = (pk_exp.cwiseProduct(de_all_nodes[k])).sum() * node_factor * sigma;
-			H_ik_k(total-1, total-1) += g_sigma_k;
+			double max_ll = log_lik_k.maxCoeff();
+			double sum_exp = 0.0;
+			for (int k = 0; k < m_dat.n_gh; ++k) sum_exp += std::exp(log_lik_k[k] - max_ll);
+			double ll_gi = max_ll + std::log(sum_exp);
+			total_neg_ll -= ll_gi;
 
-			E_Hik_sum += H_ik_k;
-		}
-
-		// Outer product part (G_avg)
-		for (int gi = 0; gi < dat.G; gi++) {
-			Eigen::VectorXd G_avg_gi = Eigen::VectorXd::Zero(total);
-			Eigen::MatrixXd E_GiGiT_gi = Eigen::MatrixXd::Zero(total, total);
-			const int start = dat.grp_start[gi];
-			const int sz = dat.grp_size[gi];
-
-			for (int k = 0; k < n_nodes; k++) {
-				const double pk = std::exp(log_terms_mat(gi, k) - ll_g_vec[gi]);
-				if (pk < 1e-15) continue;
-				
-				Eigen::VectorXd G_ik = Eigen::VectorXd::Zero(total);
-				for(int j=0; j<n_alpha; j++) G_ik[j] = dL_da_all_nodes[k][j].segment(start, sz).sum();
-				G_ik.segment(n_alpha, dat.p).noalias() = dat.X_s.middleRows(start, sz).transpose() * de_all_nodes[k].segment(start, sz);
-				G_ik[total-1] = de_all_nodes[k].segment(start, sz).sum() * (std::sqrt(2.0) * dat.gh.nodes[k] * sigma);
-
-				G_avg_gi.noalias() += pk * G_ik;
-				E_GiGiT_gi.noalias() += pk * (G_ik * G_ik.transpose());
+			for (int k = 0; k < m_dat.n_gh; ++k) {
+				double pk = std::exp(log_lik_k[k] - ll_gi);
+				grad += pk * grad_k[k];
 			}
-			E_GiGiT_sum += E_GiGiT_gi;
-			G_avg_outer_sum += G_avg_gi * G_avg_gi.transpose();
 		}
+		return total_neg_ll;
+	}
 
-		// Symmetrize E_Hik_sum and apply cutpoint Jacobian J
-		for(int r1=0; r1<total; r1++) for(int c1=0; c1<r1; c1++) E_Hik_sum(r1, c1) = E_Hik_sum(c1, r1);
-		
-		Eigen::MatrixXd J = Eigen::MatrixXd::Zero(total, total);
-		J(0, 0) = 1.0;
-		for (int r1 = 1; r1 < n_alpha; r1++) { J(r1, 0) = 1.0; for (int c1 = 1; c1 <= r1; c1++) J(r1, c1) = std::exp(par[c1]); }
-		for (int i = n_alpha; i < total; i++) J(i, i) = 1.0;
-
-		Eigen::MatrixXd E_Hik_final = J.transpose() * E_Hik_sum * J;
-		// Add diagonal term for cutpoint exp-parameterization
-		for (int j = 1; j < n_alpha; j++) {
-			double sum_dL_da = 0.0;
-			for (int k = 0; k < n_nodes; k++) {
-				Eigen::VectorXd pk_vec(dat.G);
-				for (int gi = 0; gi < dat.G; gi++) pk_vec[gi] = std::exp(log_terms_mat(gi, k) - ll_g_vec[gi]);
-				for (int r1 = j; r1 < n_alpha; r1++) {
-					for(int gi=0; gi<dat.G; gi++) sum_dL_da += pk_vec[gi] * dL_da_all_nodes[k][r1].segment(dat.grp_start[gi], dat.grp_size[gi]).sum();
-				}
-			}
-			E_Hik_final(j, j) += sum_dL_da * std::exp(par[j]);
+	MatrixXd hessian(const VectorXd& par) {
+		const int total = (int)par.size();
+		MatrixXd H = MatrixXd::Zero(total, total);
+		VectorXd g_dummy(total);
+		double h = 1e-4;
+		for (int j = 0; j < total; ++j) {
+			VectorXd p_plus = par; p_plus[j] += h;
+			VectorXd g_plus(total);
+			(*this)(p_plus, g_plus);
+			VectorXd p_minus = par; p_minus[j] -= h;
+			VectorXd g_minus(total);
+			(*this)(p_minus, g_minus);
+			H.col(j) = (g_plus - g_minus) / (2.0 * h);
 		}
-
-		H = -(E_Hik_final + J.transpose() * (E_GiGiT_sum - G_avg_outer_sum) * J);
 		return (H + H.transpose()) / 2.0;
 	}
 };
 
+VectorXd ols_start_beta(const MatrixXd& X, const VectorXd& y) {
+	return (X.transpose() * X).ldlt().solve(X.transpose() * y);
+}
+
 } // namespace
-
-// [[Rcpp::export]]
-Eigen::VectorXd get_ordinal_glmm_score_cpp(
-	const Eigen::MatrixXd& X,
-	const Eigen::VectorXi& y,
-	const Eigen::VectorXi& group_id,
-	const Eigen::VectorXd& params,
-	int K,
-	int n_gh = 20,
-	double max_abs_log_sigma = 8.0
-) {
-	std::vector<int> y_v(y.size()), gid_v(group_id.size());
-	for (int i = 0; i < y.size(); ++i) { y_v[i] = y[i]; gid_v[i] = group_id[i]; }
-
-	OrdinalGLMMData dat(X, y_v, gid_v, K, n_gh, max_abs_log_sigma);
-	OrdinalGLMMObjective obj(dat);
-
-	Eigen::VectorXd grad(params.size());
-	obj(params, grad);
-	return -grad;
-}
-
-// [[Rcpp::export]]
-Eigen::MatrixXd get_ordinal_glmm_hessian_cpp(
-	const Eigen::MatrixXd& X,
-	const Eigen::VectorXi& y,
-	const Eigen::VectorXi& group_id,
-	const Eigen::VectorXd& params,
-	int K,
-	int n_gh = 20,
-	double max_abs_log_sigma = 8.0
-) {
-	std::vector<int> y_v(y.size()), gid_v(group_id.size());
-	for (int i = 0; i < y.size(); ++i) { y_v[i] = y[i]; gid_v[i] = group_id[i]; }
-
-	OrdinalGLMMData dat(X, y_v, gid_v, K, n_gh, max_abs_log_sigma);
-	OrdinalGLMMObjective obj(dat);
-
-	return -obj.hessian(params);
-}
 
 // [[Rcpp::export]]
 List fast_ordinal_glmm_cpp(
@@ -478,12 +188,14 @@ List fast_ordinal_glmm_cpp(
 	const Eigen::VectorXi& group_id, // group IDs, length n (sorted internally)
 	int K,                        // number of ordinal levels
 	int j_T,                      // 0-based treatment column index in X
+	bool smart_start = true,
 	bool estimate_only = false,
 	int n_gh = 20,
 	double max_abs_log_sigma = 8.0,
 	int maxit = 300,
 	double eps_g = 1e-6,
-	Rcpp::Nullable<Rcpp::NumericVector> start = R_NilValue,  // optional warm start
+	Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
 	std::string optimization_alg = "lbfgs",
 	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
 	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
@@ -503,8 +215,8 @@ List fast_ordinal_glmm_cpp(
 
 	// Initialize parameters
 	Eigen::VectorXd par(total);
-	if (start.isNotNull()) {
-		Rcpp::NumericVector sv(start);
+	if (warm_start_params.isNotNull()) {
+		Rcpp::NumericVector sv(warm_start_params);
 		if (sv.size() == total) {
 			for (int i = 0; i < total; ++i) par[i] = sv[i];
 		} else {
@@ -513,8 +225,23 @@ List fast_ordinal_glmm_cpp(
 			par.segment(n_alpha, p).setZero();
 			par[total - 1] = -3.0;
 		}
+	} else if (warm_start_beta.isNotNull()) {
+		VectorXd sb = as<VectorXd>(warm_start_beta);
+		if (sb.size() == total) {
+			par = sb;
+		} else if (sb.size() == p) {
+			par.head(n_alpha).setZero();
+			par.segment(n_alpha, p) = sb;
+			par[total - 1] = -3.0;
+		}
+	} else if (smart_start) {
+		// Cutpoints: alpha_1 = 0, log_diffs = 0 (evenly spaced by 1)
+		par.head(n_alpha).setZero();
+		// Betas: OLS on y (rough)
+		Eigen::VectorXd y_double = y.cast<double>();
+		par.segment(n_alpha, p) = ols_start_beta(X, y_double);
+		par[total - 1] = -3.0;
 	} else {
-		// Cutpoints: alpha_1 = 0, log_diffs = 0 (evenly spaced by 1), log_sigma = -3
 		par.head(n_alpha).setZero();
 		par.segment(n_alpha, p).setZero();
 		par[total - 1] = -3.0;
@@ -523,7 +250,7 @@ List fast_ordinal_glmm_cpp(
 	OrdinalGLMMObjective obj(dat);
 
 	Eigen::MatrixXd info_start;
-	Eigen::MatrixXd* info_start_ptr = nullptr;
+	const Eigen::MatrixXd* info_start_ptr = nullptr;
 	if (warm_start_fisher_info.isNotNull()) {
 		info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
 		info_start_ptr = &info_start;
@@ -549,22 +276,17 @@ List fast_ordinal_glmm_cpp(
 		);
 	}
 
-	// Treatment coefficient: 0-based index j_T in X → index (n_alpha + j_T) in par
 	const int j_T_full = n_alpha + j_T;
-
+	Eigen::MatrixXd information = obj.hessian(par);
 	double ssq_b_T = NA_REAL;
 	if (!estimate_only && converged) {
-		FixedParameterFunctor<OrdinalGLMMObjective> fixed_obj(obj, fixed_spec, par);
-		Eigen::VectorXd params_free = subset_vector(par, fixed_spec.free_idx);
-		Eigen::MatrixXd H = fixed_obj.hessian(params_free);
-		Eigen::LDLT<Eigen::MatrixXd> ldlt(H);
+		Eigen::MatrixXd H_free = subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx);
+		Eigen::LDLT<Eigen::MatrixXd> ldlt(H_free);
 		if (ldlt.info() == Eigen::Success) {
-			Eigen::MatrixXd inv_free = ldlt.solve(Eigen::MatrixXd::Identity(H.rows(), H.cols()));
+			Eigen::MatrixXd inv_free = ldlt.solve(Eigen::MatrixXd::Identity(H_free.rows(), H_free.cols()));
 			if (inv_free.allFinite()) {
 				Eigen::MatrixXd inv = expand_free_covariance(total, fixed_spec, inv_free, true);
-				if (j_T_full < total) {
-					ssq_b_T = inv(j_T_full, j_T_full);
-				}
+				if (j_T_full < total) ssq_b_T = inv(j_T_full, j_T_full);
 			}
 		}
 	}
@@ -572,9 +294,11 @@ List fast_ordinal_glmm_cpp(
 	return List::create(
 		Named("b")          = par.segment(n_alpha, p),
 		Named("alpha")      = par.head(n_alpha),
+		Named("params")     = par,
 		Named("log_sigma")  = par[total - 1],
 		Named("ssq_b_T")    = ssq_b_T,
 		Named("converged")  = converged,
-		Named("neg_loglik") = neg_ll
+		Named("neg_loglik") = neg_ll,
+		Named("fisher_information") = information
 	);
 }

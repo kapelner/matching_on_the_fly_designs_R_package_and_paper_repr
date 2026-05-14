@@ -24,7 +24,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		#' @param use_rcpp Whether to use Rcpp speedup.
 		#' @param verbose Whether to print progress messages.
 		#' @param optimization_alg  Optimization algorithm to use. Default is dispatched via policy.
-		initialize = function(des_obj, model_formula = NULL, model_formula_zero = ~ ., use_rcpp = TRUE, verbose = FALSE, optimization_alg = NULL){
+		initialize = function(des_obj, model_formula = NULL, model_formula_zero = ~ ., use_rcpp = TRUE, verbose = FALSE, smart_default = TRUE, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 				assertFormula(model_formula, null.ok = TRUE)
@@ -32,7 +32,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				assertFlag(use_rcpp)
 			}
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -180,8 +180,10 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 						X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit,
 						start_params = start_params,
 						warm_start_fisher_info = warm_fisher,
+						smart_start = private$smart_default,
 						estimate_only = estimate_only, optimization_alg = private$optimization_alg
-					),
+					)
+,
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) return(NA_real_)
@@ -198,8 +200,10 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 						is_hurdle = is_hurdle,
 						start_params = start_params,
 						warm_start_fisher_info = warm_fisher,
+						smart_start = private$smart_default,
 						estimate_only = estimate_only, optimization_alg = private$optimization_alg
-					),
+					)
+,
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) return(NA_real_)
@@ -251,6 +255,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 							Xzi = Xzi_fit,
 							start_params = start_params,
 							warm_start_fisher_info = warm_fisher,
+							smart_start = private$smart_default,
 							estimate_only = FALSE,
 							optimization_alg = private$optimization_alg,
 							fixed_idx = j_treat,
@@ -264,6 +269,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 							is_hurdle = is_hurdle,
 							start_params = start_params,
 							warm_start_fisher_info = warm_fisher,
+							smart_start = private$smart_default,
 							estimate_only = FALSE,
 							optimization_alg = private$optimization_alg,
 							fixed_idx = j_treat,
@@ -385,8 +391,10 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 						X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit,
 						start_params = start_params,
 						warm_start_fisher_info = warm_fisher,
+						smart_start = private$smart_default,
 						estimate_only = estimate_only, optimization_alg = private$optimization_alg
-					),
+					)
+,
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) {
@@ -417,8 +425,10 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 						is_hurdle = is_hurdle,
 						start_params = start_params,
 						warm_start_fisher_info = warm_fisher,
+						smart_start = private$smart_default,
 						estimate_only = estimate_only, optimization_alg = private$optimization_alg
-					),
+					)
+,
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) {

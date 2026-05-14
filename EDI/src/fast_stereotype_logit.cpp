@@ -626,10 +626,13 @@ Eigen::MatrixXd get_stereotype_logit_hessian_cpp(const Eigen::MatrixXd& X,
 //' @keywords internal
 // [[Rcpp::export]]
 List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
+                                bool smart_start = true,
                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                 std::string optimization_alg = "newton_raphson",
-                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
+                                Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue) {
     StereotypeLogitRegression model(X, y);
     if (model.num_categories() < 2) {
         stop("Stereotype logistic regression requires at least two observed outcome categories.");
@@ -637,6 +640,23 @@ List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
 
     VectorXd params = model.initialize_params();
     int n_par = params.size();
+    int n_alpha = model.num_alpha();
+    int p = X.cols();
+    
+    if (warm_start_params.isNotNull()) {
+        params = as<VectorXd>(warm_start_params);
+        if (params.size() != n_par) stop("warm_start_params size mismatch");
+    } else if (warm_start_beta.isNotNull()) {
+        VectorXd sb = as<VectorXd>(warm_start_beta);
+        if (sb.size() == p) {
+            params.segment(n_alpha, p) = sb;
+        }
+    } else if (smart_start) {
+        // Smart warm_start_params for Stereotype: OLS on y (or simplified representation)
+        // Here we use a basic OLS warm_start_params for the beta part
+        params.segment(n_alpha, p) = ols_warm_start_beta(X, y);
+    }
+    
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
     StereotypeObjective obj(model);
 
@@ -673,22 +693,41 @@ List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
 //' @param fixed_values Optional values for fixed parameters.
 //' @param optimization_alg Optimization algorithm.
 //' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
+//' @param warm_start_params Optional starting values for all parameters.
+//' @param warm_start_beta Optional starting values for coefficients.
 //' @return A list containing coefficients, variance estimates, vcov, and convergence status.
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
 List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
+                                         bool smart_start = true,
                                          Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                          Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                          std::string optimization_alg = "newton_raphson",
-                                         Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+                                         Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                         Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
+                                         Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue) {
     StereotypeLogitRegression model(X, y);
     if (model.num_categories() < 2) {
         stop("Stereotype logistic regression requires at least two observed outcome categories.");
     }
 
-    VectorXd params_init = model.initialize_params();
-    int n_par = params_init.size();
+    VectorXd params = model.initialize_params();
+    int n_par = params.size();
+    
+    if (warm_start_params.isNotNull()) {
+        params = as<VectorXd>(warm_start_params);
+        if (params.size() != n_par) stop("warm_start_params size mismatch");
+    } else if (warm_start_beta.isNotNull()) {
+        VectorXd sb = as<VectorXd>(warm_start_beta);
+        if (sb.size() == X.cols()) {
+            params.segment(model.num_alpha(), X.cols()) = sb;
+        }
+    } else if (smart_start) {
+        // Smart warm_start_params: OLS on y
+        params.segment(model.num_alpha(), X.cols()) = ols_warm_start_beta(X, y);
+    }
+
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
     StereotypeObjective obj(model);
 
@@ -699,8 +738,8 @@ List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::V
         info_start_ptr = &info_start;
     }
 
-    LikelihoodFitResult fit = optimize_fixed_likelihood(obj, params_init, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, info_start_ptr);
-    VectorXd params = fit.params;
+    LikelihoodFitResult fit = optimize_fixed_likelihood(obj, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, info_start_ptr);
+    params = fit.params;
     MatrixXd H = model.loglik_hessian(params);
     MatrixXd info = -H;
 
@@ -736,7 +775,10 @@ List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::V
 
     return List::create(
         Named("b") = params.segment(n_alpha, p),
+        Named("alpha") = params.head(n_alpha),
+        Named("params") = params,
         Named("ssq_b_1") = ssq_b_1,
+        Named("ssq_b_j") = ssq_b_1,
         Named("vcov") = vcov,
         Named("converged") = fit.converged,
         Named("fisher_information") = info

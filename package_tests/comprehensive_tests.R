@@ -443,6 +443,11 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 		"InferenceCountUnivKKHurdlePoissonOneLik"
 	)) || (response_type != "continuous" && (is(seq_des_inf, "InferenceAllSimpleMeanDiff") || is(seq_des_inf, "InferenceAllKKMeanDiffIVWC")))
 	skip_ci_rand_custom = FALSE
+	supports_jackknife = is(seq_des_inf, "InferenceJackknife") ||
+		(
+			"compute_jackknife_wald_two_sided_pval" %in% names(seq_des_inf) &&
+			"compute_jackknife_wald_confidence_interval" %in% names(seq_des_inf)
+		)
 	
 	skip_ci = beta_T == 1 && (
 		is(seq_des_inf, "InferenceIncidLogRegr") ||
@@ -778,6 +783,13 @@ if (inherits(result, "edi_skip_direct")) return(invisible(NULL))
 	}
 	if (!skip_slow && !skip_bootstrap){
 		safe_call("compute_bootstrap_two_sided_pval", seq_des_inf$compute_bootstrap_two_sided_pval(B = r, na.rm = TRUE))
+	}
+	if (!skip_slow && supports_jackknife){
+		safe_call("compute_jackknife_estimate", seq_des_inf$compute_jackknife_estimate())
+		safe_call("compute_jackknife_wald_two_sided_pval", seq_des_inf$compute_jackknife_wald_two_sided_pval())
+	}
+	if (!skip_slow && supports_jackknife){
+		safe_call("compute_jackknife_wald_confidence_interval", seq_des_inf$compute_jackknife_wald_confidence_interval())
 	}
 	if (!skip_slow && !skip_rand && !skip_rand_pval && response_type %in% c("continuous", "survival", "proportion")){
 		safe_call_debug("approximate_randomization_distribution_beta_hat_T_debug",

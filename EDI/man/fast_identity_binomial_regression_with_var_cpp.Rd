@@ -12,7 +12,7 @@ fast_identity_binomial_regression_with_var_cpp(
   tol = 1e-08,
   fixed_idx = NULL,
   fixed_values = NULL,
-  start_beta = NULL,
+  warm_start_beta = NULL,
   warm_start_weights = NULL,
   warm_start_fisher_info = NULL
 )
@@ -32,7 +32,7 @@ fast_identity_binomial_regression_with_var_cpp(
 
 \item{fixed_values}{Optional values for fixed parameters.}
 
-\item{start_beta}{Optional starting values for coefficients.}
+\item{warm_start_beta}{Optional starting values for coefficients.}
 
 \item{warm_start_weights}{Optional initial working weights for the first IRLS iteration.}
 

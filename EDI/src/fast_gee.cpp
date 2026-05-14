@@ -10,7 +10,7 @@ using namespace Eigen;
 ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen, 
                                               const Eigen::VectorXd& y_eigen, 
                                               const Eigen::VectorXd& weights_eigen = Eigen::VectorXd(),
-                                              Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                              Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                               int maxit = 100, 
                                               double tol = 1e-8,
                                               Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -21,7 +21,7 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
 ModelResult fast_poisson_regression_internal(const Eigen::MatrixXd& X,
                                              const Eigen::VectorXd& y,
                                              const Eigen::VectorXd& weights = Eigen::VectorXd(),
-                                             Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                             Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                              bool smart_start = true,
                                              int maxit = 100,
                                              double tol = 1e-8,
@@ -88,11 +88,11 @@ inline double gee_estimate_exchangeable_alpha(const VectorXd& resid, const Vecto
     double num = 0.0, den = 0.0;
     for (int gi = 0; gi < grp_start.size(); ++gi) {
         if (grp_size[gi] < 2) continue;
-        int start = grp_start[gi];
+        int warm_start_params = grp_start[gi];
         for (int a = 0; a < grp_size[gi]; ++a) {
             for (int b = a + 1; b < grp_size[gi]; ++b) {
-                int i = start + a;
-                int j = start + b;
+                int i = warm_start_params + a;
+                int j = warm_start_params + b;
                 double ri = resid[i] / std::sqrt(gee_variance(mu[i], family));
                 double rj = resid[j] / std::sqrt(gee_variance(mu[j], family));
                 num += ri * rj;
@@ -121,7 +121,7 @@ GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y,
                                         const std::vector<int>& grp_start, 
                                         const std::vector<int>& grp_size, 
                                         GEEFamily family, 
-                                        Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                        Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                         Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
                                         int maxit = 100, double tol = 1e-8) {
     const int n = X.rows(), p = X.cols(), G = grp_start.size();
@@ -130,8 +130,8 @@ GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y,
     }
     VectorXd beta = VectorXd::Zero(p);
     bool use_warm_start = false;
-    if (start_beta.isNotNull()) {
-        NumericVector sb(start_beta);
+    if (warm_start_beta.isNotNull()) {
+        NumericVector sb(warm_start_beta);
         if (sb.size() == p) {
             beta = as<VectorXd>(sb);
             use_warm_start = true;
@@ -166,19 +166,19 @@ GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y,
         bool bread_is_zero = Bread.isZero();
 
         for (int gi = 0; gi < G; ++gi) {
-            int sz = grp_size[gi], start = grp_start[gi];
+            int sz = grp_size[gi], warm_start_params = grp_start[gi];
             if (sz == 1) {
-                double mui = mu[start], vi = gee_variance(mui, family), di = gee_dmu_deta(mui, family);
+                double mui = mu[warm_start_params], vi = gee_variance(mui, family), di = gee_dmu_deta(mui, family);
                 double vi_inv = 1.0 / vi;
                 double w = di * di * vi_inv;
                 if (bread_is_zero) {
                     for(int r=0; r<p; r++) {
-                        for(int c=0; c<=r; c++) Bread(r, c) += w * X(start, r) * X(start, c);
+                        for(int c=0; c<=r; c++) Bread(r, c) += w * X(warm_start_params, r) * X(warm_start_params, c);
                     }
                 }
-                for(int r=0; r<p; r++) Score[r] += (di * vi_inv) * resid[start] * X(start, r);
+                for(int r=0; r<p; r++) Score[r] += (di * vi_inv) * resid[warm_start_params] * X(warm_start_params, r);
             } else {
-                int i1 = start, i2 = start + 1;
+                int i1 = warm_start_params, i2 = warm_start_params + 1;
                 double m1 = mu[i1], m2 = mu[i2], v1 = gee_variance(m1, family), v2 = gee_variance(m2, family);
                 double d1 = gee_dmu_deta(m1, family), d2 = gee_dmu_deta(m2, family);
                 double s1 = std::sqrt(v1), s2 = std::sqrt(v2), detV = v1 * v2 * (1.0 - alpha * alpha);
@@ -213,21 +213,21 @@ GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y,
     alpha = gee_estimate_exchangeable_alpha(resid, mu, grp_start, grp_size, family);
 
     for (int gi = 0; gi < G; ++gi) {
-        int sz = grp_size[gi], start = grp_start[gi];
+        int sz = grp_size[gi], warm_start_params = grp_start[gi];
         if (sz == 1) {
-            double mui = mu[start], vi = gee_variance(mui, family), di = gee_dmu_deta(mui, family);
+            double mui = mu[warm_start_params], vi = gee_variance(mui, family), di = gee_dmu_deta(mui, family);
             double Vi_inv = 1.0 / vi, w = di * di * Vi_inv;
-            double si_val = di * Vi_inv * resid[start];
+            double si_val = di * Vi_inv * resid[warm_start_params];
             for(int r=0; r<p; r++) {
-                double sir = si_val * X(start, r);
+                double sir = si_val * X(warm_start_params, r);
                 ScoreFinal[r] += sir;
                 for(int c=0; c<=r; c++) {
-                    Bread(r, c) += w * X(start, r) * X(start, c);
-                    Meat(r, c) += sir * si_val * X(start, c);
+                    Bread(r, c) += w * X(warm_start_params, r) * X(warm_start_params, c);
+                    Meat(r, c) += sir * si_val * X(warm_start_params, c);
                 }
             }
         } else {
-            int i1 = start, i2 = start + 1;
+            int i1 = warm_start_params, i2 = warm_start_params + 1;
             double v1 = gee_variance(mu[i1], family), v2 = gee_variance(mu[i2], family), d1 = gee_dmu_deta(mu[i1], family), d2 = gee_dmu_deta(mu[i2], family);
             double s1 = std::sqrt(v1), s2 = std::sqrt(v2), detV = v1 * v2 * (1.0 - alpha * alpha);
             double V11 = v2/detV, V22 = v1/detV, V12 = -(alpha*s1*s2)/detV, r1 = resid[i1], r2 = resid[i2];
@@ -249,7 +249,7 @@ GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y,
 
 // [[Rcpp::export]]
 List gee_pairs_singletons_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, std::string family_str, 
-                               Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                               Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
                                int maxit = 100, double tol = 1e-8) {
     GEEFamily family = GEEFamily::GAUSSIAN;
@@ -265,7 +265,7 @@ List gee_pairs_singletons_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y
         if (g != prev) { grp_start.push_back(i); grp_size.push_back(1); prev = g; }
         else grp_size.back()++;
     }
-    GEEResult res = gee_pairs_singletons_cpp_impl(X_s, y_s, grp_start, grp_size, family, start_beta, warm_start_fisher_info, maxit, tol);
+    GEEResult res = gee_pairs_singletons_cpp_impl(X_s, y_s, grp_start, grp_size, family, warm_start_beta, warm_start_fisher_info, maxit, tol);
     return List::create(
         Named("beta")=res.beta, 
         Named("alpha")=res.alpha, 

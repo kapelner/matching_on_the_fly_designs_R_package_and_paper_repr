@@ -47,10 +47,10 @@ ModelResult fast_logrank_internal(const Eigen::VectorXd& time,
   int risk_all = n;
   int risk_treat = n_treat;
 
-  int start = 0;
-  while (start < n) {
-    const double curr_time = recs[start].time;
-    int end = start;
+  int warm_start_params = 0;
+  while (warm_start_params < n) {
+    const double curr_time = recs[warm_start_params].time;
+    int end = warm_start_params;
     int d_all = 0;
     int d_treat = 0;
     int remove_treat = 0;
@@ -75,10 +75,10 @@ ModelResult fast_logrank_internal(const Eigen::VectorXd& time,
       cum_hazard += static_cast<double>(d_all) / static_cast<double>(risk_all);
     }
 
-    for (int i = start; i < end; ++i) martingale[i] = static_cast<double>(recs[i].dead) - cum_hazard;
-    risk_all -= (end - start);
+    for (int i = warm_start_params; i < end; ++i) martingale[i] = static_cast<double>(recs[i].dead) - cum_hazard;
+    risk_all -= (end - warm_start_params);
     risk_treat -= remove_treat;
-    start = end;
+    warm_start_params = end;
   }
 
   double mean_treat = 0.0, mean_control = 0.0;

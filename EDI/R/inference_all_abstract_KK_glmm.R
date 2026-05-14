@@ -146,18 +146,23 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 				j_treat = as.integer(ctx$j_treat)
 				j_T = as.integer(ctx$j_T)
 				n_gh = as.integer(ctx$n_gh %||% 20L)
+				start_len = length(ctx$start)
 				list(
 					X = X_fit,
 					y = y,
 					group_id = group_id,
 					j = j_treat,
 					full_fit = private$cached_mod,
-					fit_null = function(delta){
+					fit_null = function(delta, start = NULL){
+						start_par = start %||% private$get_fit_warm_start_for_length("params", start_len) %||% ctx$start
+						warm_fisher = private$get_fit_warm_start_fisher(start_len)
 						fast_logistic_glmm_cpp(
 							X = X_fit,
 							y = y,
 							group_id = group_id,
 							j_T = j_T,
+							start_par = start_par,
+							warm_start_fisher_info = warm_fisher,
 							estimate_only = FALSE,
 							n_gh = n_gh,
 							optimization_alg = private$optimization_alg,
@@ -165,17 +170,23 @@ InferenceAbstractKKGLMM = R6::R6Class("InferenceAbstractKKGLMM",
 							fixed_values = delta
 						)
 					},
+					extract_start = function(fit){
+						as.numeric(fit$params %||% c(fit$b, fit$log_sigma))
+					},
 					score = function(fit){
-						as.numeric(fit$score %||% get_logistic_glmm_score_cpp(X_fit, y, group_id, as.numeric(fit$params), n_gh = n_gh))
+						as.numeric(fit$score %||% get_logistic_glmm_score_cpp(X_fit, y, group_id, as.numeric(fit$params %||% c(fit$b, fit$log_sigma)), n_gh = n_gh))
 					},
 					observed_information = function(fit){
-						as.matrix(fit$information)
+						as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% get_logistic_glmm_hessian_cpp(X_fit, y, group_id, as.numeric(fit$params %||% c(fit$b, fit$log_sigma)), n_gh = n_gh))
+					},
+					fisher_information = function(fit){
+						as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% get_logistic_glmm_hessian_cpp(X_fit, y, group_id, as.numeric(fit$params %||% c(fit$b, fit$log_sigma)), n_gh = n_gh))
 					},
 					information = function(fit){
-						as.matrix(fit$information)
+						as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% get_logistic_glmm_hessian_cpp(X_fit, y, group_id, as.numeric(fit$params %||% c(fit$b, fit$log_sigma)), n_gh = n_gh))
 					},
 					neg_loglik = function(fit){
-						as.numeric(fit$neg_loglik %||% fit$neg_ll %||% get_logistic_glmm_neg_loglik_cpp(X_fit, y, group_id, as.numeric(fit$params), n_gh = n_gh))
+						as.numeric(fit$neg_loglik %||% fit$neg_ll %||% get_logistic_glmm_neg_loglik_cpp(X_fit, y, group_id, as.numeric(fit$params %||% c(fit$b, fit$log_sigma)), n_gh = n_gh))
 					}
 				)
 			},

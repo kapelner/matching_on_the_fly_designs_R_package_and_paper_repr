@@ -68,7 +68,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 						tryCatch({
 							if (!is.null(worker_state)) {
 								boot_draw = private$bootstrap_sample_indices(private$n, bootstrap_type)
-								private$load_bootstrap_sample_into_worker(worker_state, boot_draw$i_b)
+								private$load_bootstrap_sample_into_worker(worker_state, boot_draw)
 								private$compute_bootstrap_worker_estimate(worker_state)
 							} else {
 								run_one_boot_iter(worker_des, worker_inf)
@@ -167,7 +167,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 					function() {
 						worker_state = private$create_bootstrap_worker_state()
 						boot_draw = private$bootstrap_sample_indices(private$n, bootstrap_type)
-						private$load_bootstrap_sample_into_worker(worker_state, boot_draw$i_b)
+						private$load_bootstrap_sample_into_worker(worker_state, boot_draw)
 						tryCatch(private$compute_bootstrap_worker_estimate(worker_state), error = function(e) NA_real_)
 					}
 				} else {
@@ -455,6 +455,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 	private = list(
 		# Cache for bootstrap distributions
 		boot_distr_cache = list(),
+		jack_distr_cache = list(),
 		assert_valid_bootstrap_type = function(bootstrap_type){
 			if (is.null(bootstrap_type)) return(invisible(NULL))
 			if (should_run_asserts()) {
@@ -516,6 +517,12 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			stop("Reusable bootstrap workers are not implemented for this class.")
 		},
 		load_bootstrap_sample_into_design_backed_worker = function(worker_state, indices){
+			if (is.list(indices)) {
+				m_vec_override = indices$m_vec_b
+				indices = indices$i_b
+			} else {
+				m_vec_override = NULL
+			}
 			indices = as.integer(indices)
 			w_priv = worker_state$worker_priv
 			w_priv$X = if (!is.null(worker_state$base_X)) {
@@ -528,7 +535,9 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			w_priv$dead = if (!is.null(worker_state$base_dead)) as.numeric(worker_state$base_dead[indices]) else NULL
 			w_priv$any_censoring = !is.null(w_priv$dead) && any(w_priv$dead == 0)
 			w_priv$y_temp = w_priv$y
-			if (!is.null(worker_state$base_m)) w_priv$m = worker_state$base_m[indices]
+			if (!is.null(worker_state$base_m)) {
+				w_priv$m = if (!is.null(m_vec_override)) as.integer(m_vec_override) else worker_state$base_m[indices]
+			}
 			w_priv$n = length(indices)
 			w_priv$cached_values = list()
 			w_priv$likelihood_null_warm_cache = list()
@@ -549,6 +558,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				if (!is.null(worker_state$base_m)) des_priv$m = w_priv$m
 				des_priv$all_subject_data_cache = list()
 				des_priv$lin_centered_covariates = NULL
+				if (is.function(des_priv$reset_matching_caches)) des_priv$reset_matching_caches()
 			}
 		},
 		compute_bootstrap_worker_estimate = function(worker_state){
@@ -572,7 +582,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				for (k in seq_along(idxs)) {
 					boot_draw = private$bootstrap_sample_indices(private$n, bootstrap_type)
 					out[k] = tryCatch({
-						private$load_bootstrap_sample_into_worker(worker_state, boot_draw$i_b)
+						private$load_bootstrap_sample_into_worker(worker_state, boot_draw)
 						private$compute_bootstrap_worker_estimate(worker_state)
 					}, error = function(e) NA_real_)
 				}
@@ -589,11 +599,149 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				show_progress = show_progress
 			), use.names = FALSE))
 		},
+		compute_jackknife_distribution_with_reused_workers = function(deletion_draws, actual_cores, show_progress = FALSE){
+			n_draws = length(deletion_draws)
+			chunk_n = max(1L, min(as.integer(actual_cores), as.integer(n_draws)))
+			chunk_id = ceiling(seq_len(n_draws) / ceiling(n_draws / chunk_n))
+			chunks = split(seq_len(n_draws), chunk_id)
+			run_chunk = function(idxs) {
+				worker_state = private$create_bootstrap_worker_state()
+				out = numeric(length(idxs))
+				for (k in seq_along(idxs)) {
+					out[k] = tryCatch({
+						private$load_bootstrap_sample_into_worker(worker_state, deletion_draws[[idxs[k]]])
+						private$compute_bootstrap_worker_estimate(worker_state)
+					}, error = function(e) NA_real_)
+				}
+				out
+			}
+			if (actual_cores <= 1L) {
+				return(as.numeric(run_chunk(seq_len(n_draws))))
+			}
+			as.numeric(unlist(private$par_lapply(
+				chunks,
+				run_chunk,
+				n_cores = actual_cores,
+				budget = 1L,
+				show_progress = show_progress
+			), use.names = FALSE))
+		},
 		bootstrap_sample_indices = function(n, bootstrap_type = NULL){
 			if (!is.null(private$des_obj)){
 				return(private$des_obj_priv_int$draw_bootstrap_indices(bootstrap_type))
 			}
 			list(i_b = sample.int(n, n, replace = TRUE), m_vec_b = NULL)
+		},
+		renumber_match_ids = function(m_vec){
+			if (is.null(m_vec)) return(NULL)
+			m_vec = as.integer(m_vec)
+			m_vec[is.na(m_vec)] = 0L
+			pos = sort(unique(m_vec[m_vec > 0L]))
+			if (!length(pos)) return(m_vec)
+			map = seq_along(pos)
+			names(map) = as.character(pos)
+			out = integer(length(m_vec))
+			is_match = m_vec > 0L
+			out[is_match] = unname(map[as.character(m_vec[is_match])])
+			out
+		},
+		get_cluster_jackknife_ids = function(design_obj){
+			des_priv = private$des_obj_priv_int
+			if (is(design_obj, "DesignFixedBlockedCluster") || is(design_obj, "DesignFixedCluster")) {
+				cluster_col = des_priv$cluster_col
+				Xraw = des_priv$Xraw
+				n = private$des_obj$get_n()
+				if (!is.null(cluster_col) && !is.null(Xraw) && cluster_col %in% names(Xraw)) {
+					return(as.character(Xraw[seq_len(n), ][[cluster_col]]))
+				}
+			}
+			NULL
+		},
+		build_jackknife_deletion_draws = function(unit = "auto"){
+			unit = private$normalize_jackknife_unit(unit)
+			n = private$des_obj$get_n()
+			all_idx = seq_len(n)
+			design_obj = private$des_obj
+			is_blocking_design = is(design_obj, "DesignBlocking") &&
+				isTRUE(tryCatch(design_obj$is_blocking_design(), error = function(e) FALSE))
+			is_matching_design = is(design_obj, "DesignMatching") &&
+				isTRUE(tryCatch(design_obj$is_matching_design(), error = function(e) FALSE))
+			is_cluster_design = is(design_obj, "DesignFixedCluster") || is(design_obj, "DesignFixedBlockedCluster")
+			if (unit == "auto") {
+				unit = if (is_matching_design) {
+					if (isTRUE(private$is_KK)) "matched_set" else "pair"
+				} else if (is_cluster_design) {
+					"cluster"
+				} else if (is_blocking_design) {
+					"block"
+				} else {
+					"observation"
+				}
+			}
+			private$assert_jackknife_supported(unit = unit)
+			if (unit == "cluster") {
+				cluster_ids = private$get_cluster_jackknife_ids(design_obj)
+				if (!is.null(cluster_ids)) {
+					unique_clusters = unique(cluster_ids[!is.na(cluster_ids)])
+					if (length(unique_clusters) > 0L) {
+						return(lapply(unique_clusters, function(cluster_id) {
+							keep_idx = all_idx[cluster_ids != cluster_id]
+							list(i_b = keep_idx, m_vec_b = NULL)
+						}))
+					}
+				}
+			}
+			if (unit == "block") {
+				block_ids = tryCatch(design_obj$get_block_ids(), error = function(e) NULL)
+				if (!is.null(block_ids)) {
+					block_ids = as.integer(block_ids)
+					unique_blocks = sort(unique(block_ids[is.finite(block_ids) & block_ids > 0L]))
+					if (length(unique_blocks) > 0L) {
+						return(lapply(unique_blocks, function(block_id) {
+							keep_idx = all_idx[block_ids != block_id]
+							list(i_b = keep_idx, m_vec_b = NULL)
+						}))
+					}
+				}
+			}
+			if (unit == "observation") {
+				return(lapply(all_idx, function(i) all_idx[all_idx != i]))
+			}
+			if (unit %in% c("pair", "matched_set") && !is_matching_design) {
+				return(lapply(all_idx, function(i) all_idx[all_idx != i]))
+			}
+			des_priv = private$des_obj_priv_int
+			des_priv$init_matching_bootstrap_structure()
+			pair_rows = des_priv$boot_pair_rows
+			i_reservoir = des_priv$boot_i_reservoir
+			m_vec_full = if (!is.null(private$m)) private$m else des_priv$m
+			if (is.null(m_vec_full)) {
+				return(lapply(all_idx, function(i) all_idx[all_idx != i]))
+			}
+			deletion_draws = list()
+			if (isTRUE(private$is_KK) && length(i_reservoir) > 0L) {
+				for (i in seq_along(i_reservoir)) {
+					keep_idx = all_idx[all_idx != i_reservoir[i]]
+					deletion_draws[[length(deletion_draws) + 1L]] = list(
+						i_b = keep_idx,
+						m_vec_b = private$renumber_match_ids(m_vec_full[keep_idx])
+					)
+				}
+			}
+			if (!is.null(pair_rows) && nrow(pair_rows) > 0L) {
+				for (pair_idx in seq_len(nrow(pair_rows))) {
+					drop_idx = as.integer(pair_rows[pair_idx, ])
+					keep_idx = all_idx[!(all_idx %in% drop_idx)]
+					deletion_draws[[length(deletion_draws) + 1L]] = list(
+						i_b = keep_idx,
+						m_vec_b = private$renumber_match_ids(m_vec_full[keep_idx])
+					)
+				}
+			}
+			if (!length(deletion_draws)) {
+				return(lapply(all_idx, function(i) all_idx[all_idx != i]))
+			}
+			deletion_draws
 		},
 		bootstrap_subset_inference = function(boot_draw, smooth = FALSE){
 			# boot_draw is list(i_b, m_vec_b) from des_obj$draw_bootstrap_indices()
@@ -627,6 +775,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			if (!is.null(orig_des_priv$m)) {
 				sub_des_priv$m = if (!is.null(m_vec_b)) as.integer(m_vec_b) else as.integer(orig_des_priv$m[indices])
 			}
+			if (is.function(sub_des_priv$reset_matching_caches)) sub_des_priv$reset_matching_caches()
 			if (!is.null(orig_des_priv$y_i_t_i)) sub_des_priv$y_i_t_i = orig_des_priv$y_i_t_i[indices]
 			sub_des_priv$all_subject_data_cache = list()
 			sub_des_priv$p_raw_t = if (!is.null(sub_des_priv$Xraw)) ncol(sub_des_priv$Xraw) else NULL
@@ -720,19 +869,34 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			}
 			list(theta = stats_mat[, 1L], se = stats_mat[, 2L])
 		},
-		approximate_jackknife_distribution_beta_hat_T = function(){
-			n = private$des_obj$get_n()
-			if (n <= 1L) return(numeric(0))
+		approximate_jackknife_distribution_beta_hat_T_private = function(unit = "auto"){
+			unit = private$normalize_jackknife_unit(unit)
+			deletion_draws = private$build_jackknife_deletion_draws(unit = unit)
+			n_draws = length(deletion_draws)
+			if (n_draws <= 1L) return(numeric(0))
 			actual_cores = private$effective_parallel_cores("jackknife", self$num_cores)
-			jack = unlist(private$par_lapply(seq_len(n), function(i) {
-				idx = seq_len(n)[-i]
-				sub_inf = private$bootstrap_subset_inference(idx, smooth = FALSE)
-				if (is.null(sub_inf)) return(NA_real_)
-				tryCatch({
-					theta = as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
-					if (is.finite(theta)) theta else NA_real_
-				}, error = function(e) NA_real_)
-			}, n_cores = actual_cores, show_progress = FALSE), use.names = FALSE)
+			cache_key = paste0(unit, "::", as.character(n_draws))
+			if (!is.null(private$cached_values$jack_distr_cache[[cache_key]])) {
+				return(private$cached_values$jack_distr_cache[[cache_key]])
+			}
+			jack = if (isTRUE(private$use_reusable_bootstrap_worker())) {
+				private$compute_jackknife_distribution_with_reused_workers(
+					deletion_draws = deletion_draws,
+					actual_cores = actual_cores,
+					show_progress = FALSE
+				)
+			} else {
+				unlist(private$par_lapply(seq_len(n_draws), function(i) {
+					sub_inf = private$bootstrap_subset_inference(deletion_draws[[i]], smooth = FALSE)
+					if (is.null(sub_inf)) return(NA_real_)
+					tryCatch({
+						theta = as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
+						if (is.finite(theta)) theta else NA_real_
+					}, error = function(e) NA_real_)
+				}, n_cores = actual_cores, show_progress = FALSE), use.names = FALSE)
+			}
+			jack = as.numeric(jack)
+			private$cached_values$jack_distr_cache[[cache_key]] = jack
 			as.numeric(jack)
 		},
 		ci_from_boot_distribution = function(boot_distr, alpha, type, est = NULL){
@@ -774,7 +938,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			c(est - q[1L] * se_hat, est + q[1L] * se_hat)
 		},
 		ci_bca = function(boot_distr, alpha, est){
-			jack = private$approximate_jackknife_distribution_beta_hat_T()
+			jack = private$approximate_jackknife_distribution_beta_hat_T_private(unit = "auto")
 			jack = jack[is.finite(jack)]
 			if (should_run_asserts()) {
 				if (length(jack) < 2L) stop("BCa interval requires jackknife estimates.")
@@ -860,7 +1024,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 		#   z_delta = Phi^{-1}(F_boot(delta_0)),   s = z_delta - z0,
 		#   adj_z   = s / (1 + a*s) - z0.
 		pval_bca = function(boot_distr, est, delta){
-			jack = private$approximate_jackknife_distribution_beta_hat_T()
+			jack = private$approximate_jackknife_distribution_beta_hat_T_private(unit = "auto")
 			jack = jack[is.finite(jack)]
 			if (should_run_asserts()) {
 				if (length(jack) < 2L) stop("BCa p-value requires jackknife estimates.")

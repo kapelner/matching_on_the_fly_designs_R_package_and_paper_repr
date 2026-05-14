@@ -68,59 +68,59 @@ Why these should stay real superclasses:
 
 These are the current classes most naturally interpreted as reusable behavior bundles rather than true ontological categories.
 
-### 1. `InferenceAsympLikStdModCache`
+   ### 1. `InferenceAsympLikStdModCache`
 
-This is the strongest MixIn candidate.
+   This is the strongest MixIn candidate.
 
-Today it mainly contributes:
+   Today it mainly contributes:
 
-- the standardized `generate_mod()` contract
-- `shared()` caching of `beta_hat_T`, `s_beta_hat_T`, `df`, and `cached_mod`
-- bootstrap worker plumbing for design-backed refits
-- default score / gradient / LR dispatch through `get_likelihood_test_spec()`
+   - the standardized `generate_mod()` contract
+   - `shared()` caching of `beta_hat_T`, `s_beta_hat_T`, `df`, and `cached_mod`
+   - bootstrap worker plumbing for design-backed refits
+   - default score / gradient / LR dispatch through `get_likelihood_test_spec()`
 
-That is a reusable implementation bundle, not a natural semantic type.
+   That is a reusable implementation bundle, not a natural semantic type.
 
-If converted to a MixIn, it would likely become something like:
+   If converted to a MixIn, it would likely become something like:
 
-- `StdModelCacheMixin`
-- `DesignBackedLikFitMixin`
+   - `StdModelCacheMixin`
+   - `DesignBackedLikFitMixin`
 
-### 2. `InferenceAbstractKKGEE`
+   ### 2. `InferenceAbstractKKGEE`
 
-This class is also a good MixIn candidate.
+   This class is also a good MixIn candidate.
 
-It packages together:
+   It packages together:
 
-- KK design eligibility checks
-- GEE model generation
-- extraction of coefficient / variance structures
-- GEE-specific helper methods and fallback logic
+   - KK design eligibility checks
+   - GEE model generation
+   - extraction of coefficient / variance structures
+   - GEE-specific helper methods and fallback logic
 
-Conceptually this is closer to a `KKGEEEngineMixin` than to a true family in the semantic inheritance tree.
+   Conceptually this is closer to a `KKGEEEngineMixin` than to a true family in the semantic inheritance tree.
 
-### 3. `InferenceAbstractKKGLMM`
+   ### 3. `InferenceAbstractKKGLMM`
 
-Same reasoning as GEE:
+   Same reasoning as GEE:
 
-- KK design restrictions
-- GLMM backend setup
-- family-specific abstract hooks such as `glmm_response_type()` and `glmm_family()`
-- shared extraction / fit logic
+   - KK design restrictions
+   - GLMM backend setup
+   - family-specific abstract hooks such as `glmm_response_type()` and `glmm_family()`
+   - shared extraction / fit logic
 
-This looks more like a reusable engine bundle than a semantic superclass.
+   This looks more like a reusable engine bundle than a semantic superclass.
 
-### 4. `InferenceKKPassThrough`
+   ### 4. `InferenceKKPassThrough`
 
-This is a borderline MixIn candidate.
+   This is a borderline MixIn candidate.
 
-It currently bundles:
+   It currently bundles:
 
-- KK design validation
-- a “pass through to downstream model/test implementation” style
-- one-likelihood / IVWC helper infrastructure
+   - KK design validation
+   - a “pass through to downstream model/test implementation” style
+   - one-likelihood / IVWC helper infrastructure
 
-The reason it is only borderline is that the package currently treats `InferenceKKPassThrough` as a meaningful category in several places. If it became a MixIn, we would need an explicit replacement for that capability detection.
+   The reason it is only borderline is that the package currently treats `InferenceKKPassThrough` as a meaningful category in several places. If it became a MixIn, we would need an explicit replacement for that capability detection.
 
 ### 5. `InferenceKKPassThroughCompound`
 

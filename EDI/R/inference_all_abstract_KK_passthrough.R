@@ -429,6 +429,20 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				private$cache_nonestimable_estimate("kk_design_required")
 				return(invisible(NULL))
 			}
+			m_vec = private$m
+			if (is.null(m_vec) && !is.null(private$des_obj_priv_int) &&
+			    is.function(private$des_obj_priv_int$ensure_matching_structure_computed)) {
+				private$des_obj_priv_int$ensure_matching_structure_computed()
+				m_vec = private$des_obj_priv_int$m
+			}
+			if (is.null(m_vec) && !is.null(private$des_obj_priv_int)) {
+				m_vec = private$des_obj_priv_int$m
+			}
+			if (is.null(m_vec)) {
+				private$cache_nonestimable_estimate("kk_match_structure_unavailable")
+				return(invisible(NULL))
+			}
+			private$m = m_vec
 			private$cached_values$KKstats = .compute_kk_basic_match_data_cached(
 				private_env = private,
 				des_priv     = private$des_obj_priv_int,
@@ -436,7 +450,7 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 				n = private$n,
 				y = private$y,
 				w = private$w,
-				m_vec = private$m
+				m_vec = m_vec
 			)
 		},
 		compute_concordant_and_discordant_match_statistics = function(){

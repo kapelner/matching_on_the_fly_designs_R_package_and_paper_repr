@@ -42,29 +42,33 @@ NumericMatrix compute_pair_averages_cpp(const NumericMatrix& X,
 
 // [[Rcpp::export]]
 NumericMatrix compute_pair_distance_matrix_cpp(const NumericMatrix& pair_avg,
-												 const NumericVector& weights) {
+                                                 const NumericVector& weights) {
 	int m = pair_avg.nrow();
 	int p = pair_avg.ncol();
 	bool use_weights = weights.size() == p;
 
 	NumericMatrix dist_mat(m, m);
 	double inf = std::numeric_limits<double>::infinity();
+	const double* pair_ptr = pair_avg.begin();
+	const double* weight_ptr = use_weights ? weights.begin() : nullptr;
+	double* dist_ptr = dist_mat.begin();
 
 	for (int i = 0; i < m; ++i) {
-	dist_mat(i, i) = inf;
+		dist_ptr[i + static_cast<size_t>(m) * i] = inf;
 	}
 
 	for (int i = 0; i < m; ++i) {
-	for (int j = i + 1; j < m; ++j) {
-		double sum = 0.0;
-		for (int k = 0; k < p; ++k) {
-		double diff = pair_avg(i, k) - pair_avg(j, k);
-		double w = use_weights ? weights[k] : 1.0;
-		sum += w * diff * diff;
+		for (int j = i + 1; j < m; ++j) {
+			double sum = 0.0;
+			for (int k = 0; k < p; ++k) {
+				const size_t col_off = static_cast<size_t>(m) * k;
+				const double diff = pair_ptr[col_off + i] - pair_ptr[col_off + j];
+				const double w = use_weights ? weight_ptr[k] : 1.0;
+				sum += w * diff * diff;
+			}
+			dist_ptr[i + static_cast<size_t>(m) * j] = sum;
+			dist_ptr[j + static_cast<size_t>(m) * i] = sum;
 		}
-		dist_mat(i, j) = sum;
-		dist_mat(j, i) = sum;
-	}
 	}
 
 	return dist_mat;

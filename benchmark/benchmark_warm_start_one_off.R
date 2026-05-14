@@ -9,10 +9,10 @@ library(data.table)
 
 set.seed(42)
 
-# Helper to generate data
-generate_data = function(n = 1000, p = 10, family = "logistic", n_groups = 50) {
+# Helper to generate data (Smaller for demo)
+generate_data = function(n = 250, p = 3, family = "logistic", n_groups = 10) {
     X = matrix(rnorm(n * p), n, p)
-    X[, 1] = 1 # Intercept
+    X[, 1] = 1 
     beta = rnorm(p) * 0.5
     eta = X %*% beta
     group_id = rep(1:n_groups, length.out = n)
@@ -23,211 +23,119 @@ generate_data = function(n = 1000, p = 10, family = "logistic", n_groups = 50) {
     } else if (family == "poisson") {
         mu = exp(eta)
         y = rpois(n, mu)
-    } else if (family == "beta") {
-        mu = 1 / (1 + exp(-eta))
-        phi = 10
-        y = rbeta(n, mu * phi, (1 - mu) * phi)
-        y = pmax(pmin(y, 1 - 1e-6), 1e-6)
-    } else if (family == "cox" || family == "weibull") {
-        mu = exp(eta)
-        y = rexp(n, mu)
-        dead = rbinom(n, 1, 0.8)
-        return(list(X = X, y = y, dead = dead, group_id = group_id))
-    } else if (family == "negbin") {
-        mu = exp(eta)
-        y = rnbinom(n, size = 2, mu = mu)
-    } else if (family == "ordinal") {
-        # 3 levels
-        p1 = 1 / (1 + exp(eta - 1))
-        p2 = 1 / (1 + exp(eta + 1)) - p1
-        p3 = 1 - p1 - p2
-        probs = cbind(p1, p2, p3)
-        probs = t(apply(probs, 1, function(x) pmax(x, 1e-6)))
-        probs = probs / rowSums(probs)
-        y = apply(probs, 1, function(p) sample(1:3, 1, prob = p))
-    } else if (family == "lmm") {
-        re = rnorm(n_groups)[group_id]
-        y = eta + re + rnorm(n, 0, 0.5)
     } else if (family == "glmm_logistic") {
         re = rnorm(n_groups)[group_id]
         mu = 1 / (1 + exp(-(eta + re)))
         y = rbinom(n, 1, mu)
-    } else if (family == "glmm_poisson") {
-        re = rnorm(n_groups, 0, 0.2)[group_id]
-        mu = exp(eta + re)
-        y = rpois(n, mu)
+    } else if (family == "negbin") {
+        mu = exp(eta)
+        y = rnbinom(n, size = 2, mu = mu)
+    } else if (family == "weibull") {
+        mu = exp(eta)
+        y = rexp(n, 1/mu) 
+        dead = rbinom(n, 1, 0.8)
+        return(list(X = X, y = y, dead = dead, group_id = group_id))
     }
     
     list(X = X, y = y, group_id = group_id)
 }
 
-# Final results storage
+# Heuristic starts
+get_reasonable_starts = function(data, family_name) {
+    X = data$X
+    y = data$y
+    n = nrow(X)
+    p = ncol(X)
+    
+    b_ols = NULL; w = NULL; info = NULL
+    
+    if (family_name == "Logistic (IRLS)" || family_name == "LogisticGLMM") {
+        p_avg = mean(y)
+        mu = rep(p_avg, n)
+        w = mu * (1 - mu)
+        mu_init = (y + 0.5) / 2
+        eta_init = qlogis(mu_init)
+        b_ols = fast_ols_cpp(X, eta_init)$coefficients
+        info = t(X) %*% (X * w)
+        if (family_name == "LogisticGLMM") b_ols = c(b_ols, 0) 
+    } else if (family_name == "Poisson (IRLS)") {
+        mu = y + 0.1
+        eta = log(mu)
+        b_ols = fast_ols_cpp(X, eta)$coefficients
+        w = mu
+        info = t(X) %*% (X * w)
+    } else if (family_name == "NegBin") {
+        mu = y + 0.1; eta = log(mu); theta = 1.0 
+        b_ols = c(fast_ols_cpp(X, eta)$coefficients, log(theta))
+        w = mu / (1 + mu / theta); info = t(X) %*% (X * w)
+    } else if (family_name == "Weibull (AFT)") {
+        idx = which(data$dead == 1)
+        if (length(idx) > p) {
+            X_f = X[idx, ]; y_f_log = log(y[idx] + 0.1)
+            b_ols = c(fast_ols_cpp(X_f, y_f_log)$coefficients, log(sd(y_f_log) * sqrt(6)/pi))
+        } else {
+            b_ols = c(fast_ols_cpp(X, log(y + 0.1))$coefficients, 0)
+        }
+        info = diag(length(b_ols)) 
+    }
+    list(b = b_ols, w = w, info = info)
+}
+
 all_results = list()
 
 run_comprehensive_warm_benchmark = function(family_name, fit_fun, data, alg = NULL, extra_args = list()) {
     cat(sprintf("\n--- Benchmarking Family: %s ---\n", family_name))
-    
-    # Base arguments
     args_base = list(X = data$X, y = data$y)
-    if (tolower(family_name) %in% c("cox", "weibull", "weibull (aft)")) {
-        args_base$dead = data$dead
-    }
-    if (grepl("glmm", tolower(family_name)) || tolower(family_name) == "lmm") {
-        args_base$group_id = data$group_id
-        if (family_name != "LMM") args_base$j_T = 2L
-    }
+    if ("dead" %in% names(formals(fit_fun))) args_base$dead = data$dead
+    if ("group_id" %in% names(formals(fit_fun))) args_base$group_id = data$group_id
+    if ("j_T" %in% names(formals(fit_fun))) args_base$j_T = 2L
     if (!is.null(alg)) args_base$optimization_alg = alg
     args_base = c(args_base, extra_args)
     
-    # 1. Obtain "Truth" (MLE) for this dataset
-    cat("Fitting to obtain MLE...\n")
-    mle_fit = tryCatch(do.call(fit_fun, args_base), error = function(e) {
-        cat("MLE fit failed:", conditionMessage(e), "\n")
-        return(NULL)
-    })
-    
-    if (is.null(mle_fit)) return(NULL)
-    
-    # Extract warm start components
-    b = mle_fit$params %||% mle_fit$coefficients %||% mle_fit$b %||% mle_fit$beta
-    if (family_name == "Beta" && is.null(mle_fit$params)) b = c(mle_fit$coefficients, log(mle_fit$phi))
-    if (family_name == "NegBin" && is.null(mle_fit$params)) b = c(mle_fit$b, log(mle_fit$theta_hat))
-    if (family_name == "Weibull (AFT)" && is.null(mle_fit$params)) b = c(mle_fit$coefficients, mle_fit$log_sigma)
-    
-    w = mle_fit$w %||% mle_fit$mu
-    info = mle_fit$fisher_information %||% mle_fit$observed_information %||% mle_fit$information %||% mle_fit$XtWX %||% mle_fit$hess_fisher_info_matrix
-    
-    # Function to prepare arguments for a specific combination
-    prep_args = function(use_beta = FALSE, use_weights = FALSE, use_info = FALSE) {
+    fit_warm = function() {
+        starts = get_reasonable_starts(data, family_name)
         a = args_base
-        if (use_beta) {
-            if ("start_beta" %in% names(formals(fit_fun))) {
-                # Some functions want just beta, others want full params
-                if (family_name %in% c("Beta", "NegBin", "Weibull (AFT)")) {
-                    a$start_beta = mle_fit$b %||% mle_fit$coefficients
-                } else {
-                    a$start_beta = b
-                }
-            }
-            if ("start_params" %in% names(formals(fit_fun))) a$start_params = b
-            if ("start_par" %in% names(formals(fit_fun))) a$start_par = b
-            if ("start" %in% names(formals(fit_fun))) a$start = b
+        if (family_name == "Logistic (IRLS)") {
+            a$warm_start_weights = starts$w
+        } else {
+            if ("start_params" %in% names(formals(fit_fun))) a$start_params = starts$b
+            else if ("warm_start_beta" %in% names(formals(fit_fun))) a$warm_start_beta = starts$b
+            else if ("start_par" %in% names(formals(fit_fun))) a$start_par = starts$b
+            else if ("start" %in% names(formals(fit_fun))) a$start = starts$b
+            if (!is.null(starts$w) && "warm_start_weights" %in% names(formals(fit_fun))) a$warm_start_weights = starts$w
+            if (!is.null(starts$info) && "warm_start_fisher_info" %in% names(formals(fit_fun))) a$warm_start_fisher_info = starts$info
         }
-        if (use_weights && "warm_start_weights" %in% names(formals(fit_fun))) {
-            a$warm_start_weights = w
-        }
-        if (use_info && "warm_start_fisher_info" %in% names(formals(fit_fun))) {
-            a$warm_start_fisher_info = info
-        }
-        a
+        do.call(fit_fun, a)
     }
     
-    # Define the 8 combinations
-    combos = list(
-        "Cold"          = prep_args(F, F, F),
-        "Beta"          = prep_args(T, F, F),
-        "Weights"       = prep_args(F, T, F),
-        "Info"          = prep_args(F, F, T),
-        "Beta+Weights"  = prep_args(T, T, F),
-        "Beta+Info"     = prep_args(T, F, T),
-        "Weights+Info"  = prep_args(F, T, T),
-        "Full"          = prep_args(T, T, T)
+    bm_res = microbenchmark(
+        Cold   = do.call(fit_fun, args_base),
+        Warm_Flow = fit_warm(),
+        times = 3
     )
-    
-    # Filter combos that actually differ from Cold (e.g. if function doesn't support weights)
-    valid_combos = list()
-    for (n in names(combos)) {
-        if (n == "Cold" || length(setdiff(names(combos[[n]]), names(args_base))) > 0) {
-            valid_combos[[n]] = combos[[n]]
-        }
-    }
-    
-    # Iteration counts
-    cat("Checking iteration counts...\n")
-    its = sapply(valid_combos, function(a) {
-        res = tryCatch(do.call(fit_fun, a), error = function(e) NULL)
-        if (is.null(res)) return(NA)
-        res$iterations %||% res$niter %||% 1 # If already converged, might be 0 or 1
-    })
-    
-    # Microbenchmark
-    cat("Microbenchmarking...\n")
-    bm_calls = lapply(names(valid_combos), function(n) {
-        substitute(do.call(fit_fun, valid_combos[[n]]), list(n = n))
-    })
-    names(bm_calls) = names(valid_combos)
-    
-    # Using microbenchmark on the calls
-    bm_res = microbenchmark(list = bm_calls, times = 20)
-    
     print(bm_res)
-    
-    # Summary for this family
     summ = as.data.table(bm_res)
     summ = summ[, .(time_ms = mean(time) / 1e6), by = expr]
-    summ[, iterations := its[as.character(expr)]]
     summ[, family := family_name]
-    
     all_results[[family_name]] <<- summ
-}
 
 # Run across families
 families = list(
-    list(name = "Logistic", fun = fast_logistic_regression_with_var_cpp, family = "logistic"),
-    list(name = "Poisson", fun = fast_poisson_regression_with_var_cpp, family = "poisson", alg = "irls"),
-    list(name = "Cox", fun = fast_coxph_regression_cpp, family = "cox", alg = "newton_raphson"),
-    list(name = "Beta", fun = fast_beta_regression_with_var_cpp, family = "beta", alg = "newton_raphson"),
-    list(name = "NegBin", fun = fast_neg_bin_with_var_cpp, family = "negbin", alg = "newton_raphson"),
-    list(name = "LogisticGLMM", fun = fast_logistic_glmm_cpp, family = "glmm_logistic"),
-    list(name = "PoissonGLMM", fun = fast_poisson_glmm_cpp, family = "glmm_poisson"),
-    list(name = "Weibull (AFT)", fun = fast_weibull_regression_cpp, family = "weibull"),
-    list(name = "Ordinal", fun = fast_ordinal_regression_with_var_cpp, family = "ordinal")
+    list(name = "Logistic (IRLS)", fun = fast_logistic_regression_with_var_cpp, family = "logistic", alg = "irls"),
+    list(name = "Poisson (IRLS)", fun = fast_poisson_regression_with_var_cpp, family = "poisson", alg = "irls"),
+    list(name = "NegBin", fun = fast_neg_bin_with_var_cpp, family = "negbin"),
+    list(name = "Weibull (AFT)", fun = fast_weibull_regression_cpp, family = "weibull")
 )
 
 for (f in families) {
+    cat(sprintf("\n--- Starting %s ---\n", f$name))
     data = generate_data(family = f$family)
     run_comprehensive_warm_benchmark(f$name, f$fun, data, alg = f$alg)
 }
 
-# Combine and show final table
+
 final_tab = rbindlist(all_results)
-cat("\n\n### COMPREHENSIVE ONE-OFF WARM START BENEFIT SUMMARY ###\n")
-cat("Values are mean time in ms. Iterations in parentheses.\n\n")
-
-# Pivot table for better viewing
-pivoted = dcast(final_tab, family ~ expr, value.var = c("time_ms", "iterations"))
-
-# Sort columns for logical flow: Cold -> Beta -> Weights -> Info -> ... -> Full
-col_order = c("family", 
-              "time_ms_Cold", "iterations_Cold",
-              "time_ms_Beta", "iterations_Beta",
-              "time_ms_Weights", "iterations_Weights",
-              "time_ms_Info", "iterations_Info",
-              "time_ms_Beta+Weights", "iterations_Beta+Weights",
-              "time_ms_Beta+Info", "iterations_Beta+Info",
-              "time_ms_Weights+Info", "iterations_Weights+Info",
-              "time_ms_Full", "iterations_Full")
-
-# Subset only columns that exist
-existing_cols = intersect(col_order, names(pivoted))
-pivoted = pivoted[, ..existing_cols]
-
-print(pivoted)
-
-# Pretty Markdown-ish table for console
-cat("\n| Family | Cold | Beta | Weights | Info | Full |\n")
-cat("| :--- | :---: | :---: | :---: | :---: | :---: |\n")
-for (i in 1:nrow(pivoted)) {
-    r = pivoted[i]
-    fmt = function(prefix) {
-        t_col = paste0("time_ms_", prefix)
-        i_col = paste0("iterations_", prefix)
-        if (t_col %in% names(r) && !is.na(r[[t_col]])) {
-            sprintf("%.2f (%d)", r[[t_col]], r[[i_col]])
-        } else {
-            "-"
-        }
-    }
-    cat(sprintf("| %s | %s | %s | %s | %s | %s |\n",
-                r$family, fmt("Cold"), fmt("Beta"), fmt("Weights"), fmt("Info"), fmt("Full")))
-}
+cat("\n\n### END-TO-END WARM START BENEFIT SUMMARY (Heuristic: fast_ols_cpp) ###\n")
+pivoted = dcast(final_tab, family ~ expr, value.var = "time_ms")
+pivoted[, speedup := (Cold - Warm_Flow) / Cold * 100]
+print(pivoted[order(-speedup)])

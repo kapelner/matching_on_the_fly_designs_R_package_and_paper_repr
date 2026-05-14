@@ -193,10 +193,14 @@ Eigen::MatrixXd get_adjacent_category_logit_hessian_cpp(const Eigen::MatrixXd& X
 
 // [[Rcpp::export]]
 List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
+                                        bool smart_start = true,
                                         Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                         Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                         std::string optimization_alg = "newton_raphson",
-                                        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {    std::vector<double> levels = get_levels(y);
+                                        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                        Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
+                                        Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue) {
+    std::vector<double> levels = get_levels(y);
     int K = levels.size();
     if (K < 2) {
         stop("Adjacent-category logits require at least two observed outcome categories.");
@@ -204,8 +208,26 @@ List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::Vec
     std::vector<int> y_mapped = map_y_to_1K(y, levels);
     AdjacentCategoryLogitNegLogLik fun(X, y_mapped, K);
     
-    int n_par = (K - 1) + X.cols();
+    int n_alpha = K - 1;
+    int p = X.cols();
+    int n_par = n_alpha + p;
     VectorXd params = VectorXd::Zero(n_par);
+    
+    if (warm_start_params.isNotNull()) {
+        params = as<VectorXd>(warm_start_params);
+        if (params.size() != n_par) stop("warm_start_params size mismatch");
+    } else if (warm_start_beta.isNotNull()) {
+        VectorXd sb = as<VectorXd>(warm_start_beta);
+        if (sb.size() == p) {
+            params.tail(p) = sb;
+        }
+    } else if (smart_start) {
+        // Smart warm_start_params: OLS on y_mapped
+        Eigen::VectorXd y_double(y_mapped.size());
+        for(size_t i=0; i<y_mapped.size(); ++i) y_double[i] = (double)y_mapped[i];
+        params.tail(p) = ols_warm_start_beta(X, y_double);
+    }
+    
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
     
     Eigen::MatrixXd info_start;
@@ -227,10 +249,13 @@ List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::Vec
 
 // [[Rcpp::export]]
 List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
+                                                bool smart_start = true,
                                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                                 std::string optimization_alg = "newton_raphson",
-                                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+                                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                                Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
+                                                Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue) {
     std::vector<double> levels = get_levels(y);
     int K = levels.size();
     if (K < 2) {
@@ -239,8 +264,26 @@ List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const E
     std::vector<int> y_mapped = map_y_to_1K(y, levels);
     AdjacentCategoryLogitNegLogLik fun(X, y_mapped, K);
     
-    int n_par = (K - 1) + X.cols();
+    int n_alpha = K - 1;
+    int p = X.cols();
+    int n_par = n_alpha + p;
     VectorXd params = VectorXd::Zero(n_par);
+
+    if (warm_start_params.isNotNull()) {
+        params = as<VectorXd>(warm_start_params);
+        if (params.size() != n_par) stop("warm_start_params size mismatch");
+    } else if (warm_start_beta.isNotNull()) {
+        VectorXd sb = as<VectorXd>(warm_start_beta);
+        if (sb.size() == p) {
+            params.tail(p) = sb;
+        }
+    } else if (smart_start) {
+        // Smart warm_start_params: OLS on y_mapped
+        Eigen::VectorXd y_double(y_mapped.size());
+        for(size_t i=0; i<y_mapped.size(); ++i) y_double[i] = (double)y_mapped[i];
+        params.tail(p) = ols_warm_start_beta(X, y_double);
+    }
+
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
     
     Eigen::MatrixXd info_start;
@@ -272,9 +315,11 @@ List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const E
     return List::create(
         Named("b") = fit.params.tail(X.cols()),
         Named("alpha") = fit.params.head(K - 1),
+        Named("params") = fit.params,
         Named("ssq_b_1") = ssq_b_1,
         Named("ssq_b_j") = ssq_b_1,
         Named("vcov") = cov,
+        Named("fisher_information") = info,
         Named("converged") = fit.converged
     );
 }

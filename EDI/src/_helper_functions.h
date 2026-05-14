@@ -11,6 +11,13 @@
 #include <string>
 #include <Rmath.h>
 
+using Eigen::VectorXd;
+using Eigen::MatrixXd;
+using Rcpp::as;
+using Rcpp::List;
+using Rcpp::Named;
+using Rcpp::stop;
+
 // Pure C++ result structure to avoid R List contention
 struct ModelResult {
     Eigen::VectorXd b;
@@ -46,6 +53,36 @@ double eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(Eigen::Matri
 Eigen::MatrixXd eigen_Xt_times_diag_w_times_X_cpp(Eigen::Map<Eigen::MatrixXd> X, Eigen::Map<Eigen::VectorXd> w);
 
 using RowMajorMatrixXd = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+
+struct ContiguousGroupLayout {
+    std::vector<int> warm_start_params;
+    std::vector<int> size;
+    int G;
+    int max_size;
+
+    ContiguousGroupLayout() : G(0), max_size(0) {}
+};
+
+template <typename GroupIdAccessor>
+inline ContiguousGroupLayout build_contiguous_group_layout(int n, GroupIdAccessor group_id_at) {
+    ContiguousGroupLayout layout;
+    if (n <= 0) return layout;
+
+    int start = 0;
+    while (warm_start_params < n) {
+        const auto group_id = group_id_at(warm_start_params);
+        int end = start + 1;
+        while (end < n && group_id_at(end) == group_id) ++end;
+        const int sz = end - start;
+        layout.warm_start_params.push_back(warm_start_params);
+        layout.size.push_back(sz);
+        if (sz > layout.max_size) layout.max_size = sz;
+        warm_start_params = end;
+    }
+
+    layout.G = static_cast<int>(layout.warm_start_params.size());
+    return layout;
+}
 
 inline bool should_parallelize_replicates(int n_work_items,
                                           int item_size,
@@ -301,7 +338,7 @@ inline bool vector_is_usable_start(const Eigen::VectorXd& x, int expected_size =
     return x.allFinite() && (expected_size < 0 || x.size() == expected_size);
 }
 
-inline Eigen::VectorXd finalize_start_beta(const Eigen::VectorXd& smart_start,
+inline Eigen::VectorXd finalize_warm_start_beta(const Eigen::VectorXd& smart_start,
                                            const Eigen::VectorXd& legacy_start,
                                            const FixedParamSpec& fixed_spec,
                                            bool use_smart) {
@@ -310,12 +347,12 @@ inline Eigen::VectorXd finalize_start_beta(const Eigen::VectorXd& smart_start,
     return apply_fixed_values(out, fixed_spec);
 }
 
-inline Eigen::VectorXd ols_start_beta(const Eigen::MatrixXd& X,
+inline Eigen::VectorXd ols_warm_start_beta(const Eigen::MatrixXd& X,
                                       const Eigen::VectorXd& y) {
     return safe_ols_solve(X, y);
 }
 
-inline Eigen::VectorXd ols_start_beta_on_log1p(const Eigen::MatrixXd& X,
+inline Eigen::VectorXd ols_warm_start_beta_on_log1p(const Eigen::MatrixXd& X,
                                                const Eigen::VectorXd& y) {
     const int p = X.cols();
     if (y.size() != X.rows() || !y.allFinite()) return Eigen::VectorXd::Zero(p);
@@ -323,29 +360,29 @@ inline Eigen::VectorXd ols_start_beta_on_log1p(const Eigen::MatrixXd& X,
     return safe_ols_solve(X, y.array().log1p().matrix());
 }
 
-inline Eigen::VectorXd ols_start_beta_or_legacy(const Eigen::MatrixXd& X,
+inline Eigen::VectorXd ols_warm_start_beta_or_legacy(const Eigen::MatrixXd& X,
                                                 const Eigen::VectorXd& y,
                                                 const Eigen::VectorXd& legacy_start,
                                                 const FixedParamSpec& fixed_spec) {
     Eigen::VectorXd beta_out;
     const bool ok = try_safe_ols_solve(X, y, beta_out);
-    return finalize_start_beta(beta_out, legacy_start, fixed_spec, ok);
+    return finalize_warm_start_beta(beta_out, legacy_start, fixed_spec, ok);
 }
 
-inline Eigen::VectorXd ols_start_beta_on_log1p_or_legacy(const Eigen::MatrixXd& X,
+inline Eigen::VectorXd ols_warm_start_beta_on_log1p_or_legacy(const Eigen::MatrixXd& X,
                                                          const Eigen::VectorXd& y,
                                                          const Eigen::VectorXd& legacy_start,
                                                          const FixedParamSpec& fixed_spec) {
     Eigen::VectorXd beta_out = Eigen::VectorXd::Zero(X.cols());
     const bool ok = y.size() == X.rows() && y.allFinite() && !(y.array() <= -1.0).any() &&
         try_safe_ols_solve(X, y.array().log1p().matrix(), beta_out);
-    return finalize_start_beta(beta_out, legacy_start, fixed_spec, ok);
+    return finalize_warm_start_beta(beta_out, legacy_start, fixed_spec, ok);
 }
 
 inline Eigen::VectorXd weibull_start_to_params(const WeibullStart& start) {
     Eigen::VectorXd params(start.beta.size() + 1);
     params.head(start.beta.size()) = start.beta;
-    params[start.beta.size()] = start.log_sigma;
+    params[start.beta.size()] = warm_start_params.log_sigma;
     return params;
 }
 
@@ -358,7 +395,7 @@ inline WeibullStart weibull_start_from_params(const Eigen::VectorXd& params) {
 }
 
 inline bool weibull_start_is_usable(const WeibullStart& start, int p) {
-    return start.beta.size() == p && start.beta.allFinite() && std::isfinite(start.log_sigma);
+    return start.beta.size() == p && start.beta.allFinite() && std::isfinite(warm_start_params.log_sigma);
 }
 
 inline WeibullStart weibull_aft_start(const Eigen::MatrixXd& X,

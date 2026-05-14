@@ -243,7 +243,8 @@ List fast_zinb_cpp(
     const Eigen::MatrixXd& X,
     const Eigen::VectorXd& y,
     const Eigen::MatrixXd& Xzi,
-    Nullable<NumericVector> start_params = R_NilValue,
+    Nullable<NumericVector> warm_start_params = R_NilValue,
+    bool smart_start = true,
     bool estimate_only = false,
     int maxit = 1000,
     double tol = 1e-6,
@@ -257,8 +258,16 @@ List fast_zinb_cpp(
     const int total = pc + pz + 1;
 
     Eigen::VectorXd par(total);
-    if (start_params.isNotNull()) {
-        par = as<Eigen::VectorXd>(NumericVector(start_params));
+    if (warm_start_params.isNotNull()) {
+        par = as<Eigen::VectorXd>(NumericVector(warm_start_params));
+    } else if (smart_start) {
+        // Condition component: OLS on log1p(y)
+        par.head(pc) = ols_warm_start_beta_on_log1p(X, y);
+        // ZI component: OLS on (y == 0)
+        Eigen::VectorXd y_is_zero = (y.array() == 0.0).cast<double>();
+        par.segment(pc, pz) = ols_warm_start_beta(Xzi, y_is_zero);
+        // log_theta = 0 (theta=1)
+        par[pc + pz] = 0.0;
     } else {
         par.setZero();
         // Init cond intercept from mean of positive observations; zi starts at 0;

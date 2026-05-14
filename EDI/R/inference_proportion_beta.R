@@ -27,13 +27,13 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 		#' @param verbose Whether to print progress messages.
 		#' @param optimization_alg Character scalar specifying the optimization algorithm. 
 		#'   Default is dispatched via policy.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, optimization_alg = NULL){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_default = TRUE, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "proportion")
 				assertFormula(model_formula, null.ok = TRUE)
 			}
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -59,10 +59,12 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 			n_params = ncol(X) + 1L
 			res = fast_beta_regression_cpp(
 				X = X, y = as.numeric(private$y),
-				start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
+				warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
+				smart_start = private$smart_default,
 				warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
 				optimization_alg = private$optimization_alg
 			)
+
 			if (is.null(res) || !is.finite(res$coefficients[2])){
 				return(NA_real_)
 			}
@@ -89,7 +91,8 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 					res = fast_beta_regression_cpp(
 						X_fit, y,
 						fixed_idx = j_treat, fixed_values = delta,
-						start_beta = start[1:ncol(X_fit)],
+						warm_start_beta = start[1:ncol(X_fit)],
+						smart_start = private$smart_default,
 						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit) + 1L),
 						optimization_alg = private$optimization_alg
 					)
@@ -125,12 +128,13 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 				required_cols = 2L,
 				fit_fun = function(X_fit){
 					n_params = ncol(X_fit) + 1L
-					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit))
+					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit))
 					warm_fisher = private$get_fit_warm_start_fisher(n_params)
 					if (estimate_only) {
 						res = fast_beta_regression_cpp(
 							X_fit, private$y,
-							start_beta = start_beta,
+							warm_start_beta = warm_start_beta,
+							smart_start = private$smart_default,
 							warm_start_fisher_info = warm_fisher,
 							optimization_alg = private$optimization_alg
 						)
@@ -139,7 +143,8 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 					} else {
 						res = fast_beta_regression_with_var_cpp(
 							X_fit, private$y,
-							start_beta = start_beta,
+							warm_start_beta = warm_start_beta,
+							smart_start = private$smart_default,
 							warm_start_fisher_info = warm_fisher,
 							optimization_alg = private$optimization_alg
 						)
@@ -149,6 +154,7 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 						     phi = res$phi, neg_loglik = res$neg_loglik, fisher_information = res$fisher_information)
 					}
 				},
+
 				fit_ok = function(mod, X_fit, keep){
 					if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
 					if (estimate_only) return(TRUE)

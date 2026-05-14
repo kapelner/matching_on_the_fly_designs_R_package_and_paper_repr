@@ -664,29 +664,29 @@ NULL
 
 .extract_survreg_start = function(y, dead, X){
 	full_names = c("(Intercept)", colnames(X))
-	start_beta = stats::setNames(rep(0, length(full_names)), full_names)
+	warm_start_beta = stats::setNames(rep(0, length(full_names)), full_names)
 	start_log_sigma = 0
 
 	mod_fast = tryCatch(fast_weibull_regression(y, dead, X), error = function(e) NULL)
 	if (!is.null(mod_fast) && !is.null(mod_fast$coefficients)){
-		common = intersect(names(start_beta), names(mod_fast$coefficients))
-		start_beta[common] = mod_fast$coefficients[common]
+		common = intersect(names(warm_start_beta), names(mod_fast$coefficients))
+		warm_start_beta[common] = mod_fast$coefficients[common]
 		if (!is.null(mod_fast$log_sigma) && is.finite(mod_fast$log_sigma)){
 			start_log_sigma = mod_fast$log_sigma
 		}
-		return(list(beta = start_beta, log_sigma = start_log_sigma))
+		return(list(beta = warm_start_beta, log_sigma = start_log_sigma))
 	}
 
 	mod = robust_survreg_with_surv_object(survival::Surv(y, dead), X)
-	if (is.null(mod)) return(list(beta = start_beta, log_sigma = start_log_sigma))
+	if (is.null(mod)) return(list(beta = warm_start_beta, log_sigma = start_log_sigma))
 
 	mod_coef = c(mod$coefficients, "log(scale)" = log(mod$scale))
-	common = intersect(names(start_beta), names(mod_coef))
-	start_beta[common] = mod_coef[common]
+	common = intersect(names(warm_start_beta), names(mod_coef))
+	warm_start_beta[common] = mod_coef[common]
 	if (is.finite(mod_coef["log(scale)"])){
 		start_log_sigma = mod_coef["log(scale)"]
 	}
-	list(beta = start_beta, log_sigma = start_log_sigma)
+	list(beta = warm_start_beta, log_sigma = start_log_sigma)
 }
 
 .fit_standard_weibull_aft_from_matrix = function(y, dead, X, estimate_only = FALSE, starts = NULL, warm_start_fisher_info = NULL){
@@ -729,7 +729,7 @@ NULL
 
 .extract_lognormal_start = function(y, dead, X, event_indicator){
 	full_names = c("(Intercept)", colnames(X))
-	start_beta = stats::setNames(rep(0, length(full_names)), full_names)
+	warm_start_beta = stats::setNames(rep(0, length(full_names)), full_names)
 	start_log_sigma = 0
 
 	mod = robust_survreg_with_surv_object(
@@ -737,15 +737,15 @@ NULL
 		X,
 		dist = "lognormal"
 	)
-	if (is.null(mod)) return(list(beta = start_beta, log_sigma = start_log_sigma))
+	if (is.null(mod)) return(list(beta = warm_start_beta, log_sigma = start_log_sigma))
 
 	mod_coef = c(mod$coefficients, "log(scale)" = log(mod$scale))
-	common = intersect(names(start_beta), names(mod_coef))
-	start_beta[common] = mod_coef[common]
+	common = intersect(names(warm_start_beta), names(mod_coef))
+	warm_start_beta[common] = mod_coef[common]
 	if (is.finite(mod_coef["log(scale)"])){
 		start_log_sigma = mod_coef["log(scale)"]
 	}
-	list(beta = start_beta, log_sigma = start_log_sigma)
+	list(beta = warm_start_beta, log_sigma = start_log_sigma)
 }
 
 .fit_dep_cens_transform_model = function(y, dead, X, estimate_only = FALSE, optimization_alg = "lbfgs"){

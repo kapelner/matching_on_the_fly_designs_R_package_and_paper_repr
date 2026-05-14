@@ -7,7 +7,7 @@
 fast_poisson_regression_cpp(
   X,
   y,
-  start_beta = NULL,
+  warm_start_beta = NULL,
   smart_start = TRUE,
   maxit = 100L,
   tol = 1e-08,
@@ -23,7 +23,7 @@ fast_poisson_regression_cpp(
 
 \item{y}{A numeric vector of responses (counts).}
 
-\item{start_beta}{Optional starting values for coefficients.}
+\item{warm_start_beta}{Optional starting values for coefficients.}
 
 \item{smart_start}{Logical. If TRUE, use an initial OLS-based guess.}
 

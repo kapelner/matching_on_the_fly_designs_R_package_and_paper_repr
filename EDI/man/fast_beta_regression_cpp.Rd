@@ -7,7 +7,7 @@
 fast_beta_regression_cpp(
   X,
   y,
-  start_beta = NULL,
+  warm_start_beta = NULL,
   start_phi = 10,
   compute_std_errs = FALSE,
   fixed_idx = NULL,
@@ -21,7 +21,7 @@ fast_beta_regression_cpp(
 
 \item{y}{A numeric vector of responses (in (0, 1)).}
 
-\item{start_beta}{Optional starting values for coefficients.}
+\item{warm_start_beta}{Optional starting values for coefficients.}
 
 \item{start_phi}{Optional starting value for precision parameter phi.}
 

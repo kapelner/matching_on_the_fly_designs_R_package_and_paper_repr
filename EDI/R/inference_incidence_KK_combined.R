@@ -122,12 +122,15 @@ InferenceIncidKKGLMM = R6::R6Class("InferenceIncidKKGLMM",
 			if (length(finite_y) == 0L || any(finite_y < 0) || any(finite_y > 1)) {
 				return(super$shared(estimate_only = estimate_only))
 			}
+			n_params = ncol(X_fit) + 1L
 			fit = tryCatch(
 				fast_logistic_glmm_cpp(
 					X        = X_fit,
 					y        = y_vals,
 					group_id = as.integer(group_id),
 					j_T      = j_T,
+					start_par = private$get_fit_warm_start_for_length("params", n_params),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
 					estimate_only    = estimate_only,
 					eps_g            = 1e-4,
 					optimization_alg = private$optimization_alg
@@ -143,13 +146,15 @@ InferenceIncidKKGLMM = R6::R6Class("InferenceIncidKKGLMM",
 					return(super$shared(estimate_only = estimate_only))
 				}
 				private$cached_mod = fit
+				private$set_fit_warm_start(as.numeric(fit$params), "params", fisher = fit$fisher_information)
 				private$cached_values$likelihood_test_context = list(
 					X = X_fit,
 					y = as.numeric(private$y),
 					group_id = as.integer(group_id),
 					j_T = j_T,
 					j_treat = j_T + 1L,
-					n_gh = 20L
+					n_gh = 20L,
+					start = as.numeric(fit$params)
 				)
 				private$cached_values$beta_hat_T = beta_hat_T
 			private$cached_values$df   = Inf

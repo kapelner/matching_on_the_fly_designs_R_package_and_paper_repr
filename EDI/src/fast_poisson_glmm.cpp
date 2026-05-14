@@ -223,7 +223,7 @@ public:
 		for (int k = 0; k < n_nodes; k++) {
 			Eigen::VectorXd pk_vec(dat.G);
 			for (int gi = 0; gi < dat.G; gi++) pk_vec[gi] = std::exp(log_terms_mat(gi, k) - ll_g_vec[gi]);
-			
+
 			Eigen::VectorXd pk_expanded(dat.n);
 			for (int gi = 0; gi < dat.G; gi++) pk_expanded.segment(dat.grp_start[gi], dat.grp_size[gi]).setConstant(pk_vec[gi]);
 
@@ -231,7 +231,6 @@ public:
 			// Beta-Beta block: sum_gi pk_gi * (-Xg^T * diag(mu_k_gi) * Xg) = -X_s^T * diag(pk_expanded * mu_all_k) * X_s
 			Eigen::VectorXd w_Hik_beta = pk_expanded.cwiseProduct(mu_all_k_vec[k]);
 			E_Hik_sum.topLeftCorner(dat.p, dat.p).noalias() -= weighted_crossprod(dat.X_s, w_Hik_beta);
-
 			// Sigma-Sigma block: sum_gi pk_gi * H_ik(p,p)
 			const double node_factor = std::sqrt(2.0) * dat.gh.nodes[k];
 			for (int gi = 0; gi < dat.G; gi++) {
@@ -287,7 +286,8 @@ List fast_poisson_glmm_cpp(
 	const Eigen::VectorXd& y,
 	const Eigen::VectorXi& group_id,
 	int j_T,
-	Nullable<NumericVector> start_par = R_NilValue,
+	Nullable<NumericVector> warm_start_params = R_NilValue,
+	bool smart_start = true,
 	bool estimate_only = false,
 	int n_gh = 20,
 	int maxit = 300,
@@ -306,19 +306,22 @@ List fast_poisson_glmm_cpp(
 
 	PoissonGLMMData dat(X, y, gid_v, n_gh);
 
-	// Init: beta via OLS on log(y+0.5), log_sigma = -3
+	// Initialize
 	Eigen::VectorXd par(total);
-	{
-		Eigen::VectorXd log_y_safe = (y.array() + 0.5).log().matrix();
-		Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X);
-		par.head(p) = cod.solve(log_y_safe);
-	}
-	par[total - 1] = -3.0;
-	if (start_par.isNotNull()) {
-		NumericVector sp(start_par);
+	if (warm_start_params.isNotNull()) {
+		NumericVector sp(warm_start_params);
 		if (sp.size() == total) {
 			for (int i = 0; i < total; ++i) par[i] = sp[i];
 		}
+	} else if (smart_start) {
+		// Init: beta via OLS on log(y+0.5), log_sigma = -3
+		Eigen::VectorXd log_y_safe = (y.array() + 0.5).log().matrix();
+		Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X);
+		par.head(p) = cod.solve(log_y_safe);
+		par[total - 1] = -3.0;
+	} else {
+		par.head(p).setZero();
+		par[total - 1] = -3.0;
 	}
 
 	PoissonGLMMObjective obj(dat);
@@ -348,15 +351,26 @@ List fast_poisson_glmm_cpp(
 		);
 	}
 
-	const double pen = soft_barrier(par[total - 1]);
-	const double true_neg_ll = neg_ll - pen;
+		const double pen = soft_barrier(par[total - 1]);
+		const double true_neg_ll = neg_ll - pen;
+		if (estimate_only) {
+			return List::create(
+				Named("b")          = par.head(p),
+				Named("log_sigma")  = par[total - 1],
+				Named("ssq_b_T")    = NA_REAL,
+				Named("vcov")       = R_NilValue,
+				Named("converged")  = converged,
+				Named("neg_loglik") = true_neg_ll,
+				Named("fisher_information") = R_NilValue
+			);
+		}
 
-	Eigen::MatrixXd information = obj.hessian(par);
-	information(total - 1, total - 1) -= soft_barrier_hessian(par[total - 1]);
+		Eigen::MatrixXd information = obj.hessian(par);
+		information(total - 1, total - 1) -= soft_barrier_hessian(par[total - 1]);
 
 	double ssq_b_T = NA_REAL;
 	Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(total, total, NA_REAL);
-	if (!estimate_only && converged) {
+		if (converged) {
 		Eigen::MatrixXd H_free = subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx);
 		Eigen::LDLT<Eigen::MatrixXd> ldlt(H_free);
 		if (ldlt.info() == Eigen::Success) {

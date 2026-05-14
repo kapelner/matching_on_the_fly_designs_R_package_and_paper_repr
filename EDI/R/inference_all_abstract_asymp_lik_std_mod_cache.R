@@ -107,6 +107,15 @@ InferenceAsympLikStdModCache = R6::R6Class("InferenceAsympLikStdModCache",
 				return(invisible(NULL))
 			}
 			private$cached_values$beta_hat_T = model_output$b[2]
+			
+			if (!is.null(model_output$b)) {
+				private$set_fit_warm_start(
+					as.numeric(model_output$params %||% model_output$b),
+					type = if (!is.null(model_output$params)) "params" else "beta",
+					fisher = model_output$fisher_information
+				)
+			}
+
 			if (estimate_only) return(invisible(NULL))
 			ssq = model_output$ssq_b_2
 			if (!is.null(ssq) && !is.na(ssq) && ssq > 0) {

@@ -13,23 +13,16 @@ Abstract class for asymptotic inference.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{InferenceAsymp}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{InferenceAsymp}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceAsymp-compute_asymp_confidence_interval}{\code{InferenceAsymp$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAsymp-compute_asymp_two_sided_pval}{\code{InferenceAsymp$compute_asymp_two_sided_pval()}}
-\item \href{#method-InferenceAsymp-set_testing_type}{\code{InferenceAsymp$set_testing_type()}}
-\item \href{#method-InferenceAsymp-set_information_preference}{\code{InferenceAsymp$set_information_preference()}}
-\item \href{#method-InferenceAsymp-get_testing_type}{\code{InferenceAsymp$get_testing_type()}}
-\item \href{#method-InferenceAsymp-get_information_preference}{\code{InferenceAsymp$get_information_preference()}}
-\item \href{#method-InferenceAsymp-get_information_source_used}{\code{InferenceAsymp$get_information_source_used()}}
 \item \href{#method-InferenceAsymp-get_supported_testing_types}{\code{InferenceAsymp$get_supported_testing_types()}}
-\item \href{#method-InferenceAsymp-get_supported_information_preferences}{\code{InferenceAsymp$get_supported_information_preferences()}}
 \item \href{#method-InferenceAsymp-compute_wald_two_sided_pval}{\code{InferenceAsymp$compute_wald_two_sided_pval()}}
 \item \href{#method-InferenceAsymp-compute_wald_confidence_interval}{\code{InferenceAsymp$compute_wald_confidence_interval()}}
-\item \href{#method-InferenceAsymp-compute_score_two_sided_pval}{\code{InferenceAsymp$compute_score_two_sided_pval()}}
 \item \href{#method-InferenceAsymp-compute_estimate}{\code{InferenceAsymp$compute_estimate()}}
 \item \href{#method-InferenceAsymp-get_mod}{\code{InferenceAsymp$get_mod()}}
 \item \href{#method-InferenceAsymp-get_summary}{\code{InferenceAsymp$get_summary()}}
@@ -62,6 +55,10 @@ Abstract class for asymptotic inference.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_estimate'><code>EDI::InferenceJackknife$compute_jackknife_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_std_error"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_std_error'><code>EDI::InferenceJackknife$compute_jackknife_std_error()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_wald_confidence_interval"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_confidence_interval'><code>EDI::InferenceJackknife$compute_jackknife_wald_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_wald_two_sided_pval"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_two_sided_pval'><code>EDI::InferenceJackknife$compute_jackknife_wald_two_sided_pval()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -106,96 +103,12 @@ The asymptotic p-value.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAsymp-set_testing_type"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAsymp-set_testing_type}{}}}
-\subsection{Method \code{set_testing_type()}}{
-Sets the asymptotic testing method used by p-values and CIs.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$set_testing_type(
-  testing_type = c("wald", "score", "gradient", "lik_ratio")
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{testing_type}}{One of \code{"wald"}, \code{"score"}, \code{"gradient"}, or \code{"lik_ratio"}.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The inference object, invisibly.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAsymp-set_information_preference"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAsymp-set_information_preference}{}}}
-\subsection{Method \code{set_information_preference()}}{
-Sets the information matrix preference used by score-test dispatch.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$set_information_preference(
-  information_preference = c("auto", "fisher", "observed")
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{information_preference}}{One of \code{"auto"}, \code{"fisher"}, or \code{"observed"}.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The inference object, invisibly.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAsymp-get_testing_type"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAsymp-get_testing_type}{}}}
-\subsection{Method \code{get_testing_type()}}{
-Gets the asymptotic testing method used by p-values and CIs.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$get_testing_type()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAsymp-get_information_preference"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAsymp-get_information_preference}{}}}
-\subsection{Method \code{get_information_preference()}}{
-Gets the score-test information matrix preference.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$get_information_preference()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAsymp-get_information_source_used"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAsymp-get_information_source_used}{}}}
-\subsection{Method \code{get_information_source_used()}}{
-Gets the actual information source used by the most recent information-backed computation.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$get_information_source_used()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-get_supported_testing_types"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsymp-get_supported_testing_types}{}}}
 \subsection{Method \code{get_supported_testing_types()}}{
 Gets the asymptotic testing methods supported by this inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$get_supported_testing_types()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAsymp-get_supported_information_preferences"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAsymp-get_supported_information_preferences}{}}}
-\subsection{Method \code{get_supported_information_preferences()}}{
-Gets the score-test information matrix preferences supported by this inference object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$get_supported_information_preferences()}\if{html}{\out{</div>}}
 }
 
 }
@@ -229,23 +142,6 @@ Computes the Wald confidence interval regardless of configured testing type.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{alpha}}{Significance level. Default 0.05.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAsymp-compute_score_two_sided_pval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_score_two_sided_pval}{}}}
-\subsection{Method \code{compute_score_two_sided_pval()}}{
-Computes the score two-sided p-value regardless of configured testing type.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_score_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{Null treatment effect.}
 }
 \if{html}{\out{</div>}}
 }

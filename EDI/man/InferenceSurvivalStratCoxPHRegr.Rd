@@ -25,12 +25,16 @@ inf$compute_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{\link[EDI:InferenceAsympLikStdModCache]{EDI::InferenceAsympLikStdModCache}} -> \code{EDI::InferenceSurvivalStratCoxPHAbstract} -> \code{InferenceSurvivalStratCoxPHRegr}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{\link[EDI:InferenceAsympLikStdModCache]{EDI::InferenceAsympLikStdModCache}} -> \code{InferenceSurvivalStratCoxPHRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceSurvivalStratCoxPHRegr-new}{\code{InferenceSurvivalStratCoxPHRegr$new()}}
+\item \href{#method-InferenceSurvivalStratCoxPHRegr-compute_estimate}{\code{InferenceSurvivalStratCoxPHRegr$compute_estimate()}}
+\item \href{#method-InferenceSurvivalStratCoxPHRegr-compute_asymp_confidence_interval}{\code{InferenceSurvivalStratCoxPHRegr$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceSurvivalStratCoxPHRegr-compute_asymp_two_sided_pval}{\code{InferenceSurvivalStratCoxPHRegr$compute_asymp_two_sided_pval()}}
+\item \href{#method-InferenceSurvivalStratCoxPHRegr-compute_rand_confidence_interval}{\code{InferenceSurvivalStratCoxPHRegr$compute_rand_confidence_interval()}}
 \item \href{#method-InferenceSurvivalStratCoxPHRegr-clone}{\code{InferenceSurvivalStratCoxPHRegr$clone()}}
 }
 }
@@ -77,13 +81,91 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_score_two_sided_pval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_score_two_sided_pval'><code>EDI::InferenceAsympLik$compute_score_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_supported_testing_types"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_supported_testing_types'><code>EDI::InferenceAsympLik$get_supported_testing_types()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="supports_lik_ratio_param_bootstrap"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-supports_lik_ratio_param_bootstrap'><code>EDI::InferenceParamBootstrap$supports_lik_ratio_param_bootstrap()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceSurvivalStratCoxPHAbstract" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceSurvivalStratCoxPHAbstract.html#method-InferenceSurvivalStratCoxPHAbstract-compute_asymp_confidence_interval'><code>EDI::InferenceSurvivalStratCoxPHAbstract$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceSurvivalStratCoxPHAbstract" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceSurvivalStratCoxPHAbstract.html#method-InferenceSurvivalStratCoxPHAbstract-compute_asymp_two_sided_pval'><code>EDI::InferenceSurvivalStratCoxPHAbstract$compute_asymp_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceSurvivalStratCoxPHAbstract" data-id="compute_estimate"><a href='../../EDI/html/InferenceSurvivalStratCoxPHAbstract.html#method-InferenceSurvivalStratCoxPHAbstract-compute_estimate'><code>EDI::InferenceSurvivalStratCoxPHAbstract$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceSurvivalStratCoxPHAbstract" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceSurvivalStratCoxPHAbstract.html#method-InferenceSurvivalStratCoxPHAbstract-compute_rand_confidence_interval'><code>EDI::InferenceSurvivalStratCoxPHAbstract$compute_rand_confidence_interval()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalStratCoxPHRegr-compute_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalStratCoxPHRegr-compute_estimate}{}}}
+\subsection{Method \code{compute_estimate()}}{
+Compute treatment estimate
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalStratCoxPHRegr$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalStratCoxPHRegr-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalStratCoxPHRegr-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Compute asymp confidence interval
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalStratCoxPHRegr$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The significance level (default 0.05).}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalStratCoxPHRegr-compute_asymp_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalStratCoxPHRegr-compute_asymp_two_sided_pval}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Compute asymp two sided pval for treatment effect
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalStratCoxPHRegr$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null treatment effect (default 0).}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalStratCoxPHRegr-compute_rand_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalStratCoxPHRegr-compute_rand_confidence_interval}{}}}
+\subsection{Method \code{compute_rand_confidence_interval()}}{
+Compute confidence interval rand
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalStratCoxPHRegr$compute_rand_confidence_interval(
+  alpha = 0.05,
+  r = 501,
+  pval_epsilon = 0.005,
+  show_progress = TRUE,
+  ci_search_control = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The significance level (default 0.05).}
+
+\item{\code{r}}{Number of vectors to draw.}
+
+\item{\code{pval_epsilon}}{The bisection convergence tolerance.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{ci_search_control}}{Unused.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalStratCoxPHRegr-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalStratCoxPHRegr-new}{}}}

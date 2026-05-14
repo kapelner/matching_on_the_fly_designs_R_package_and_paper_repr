@@ -4,15 +4,16 @@ if (!requireNamespace("pkgload", quietly = TRUE)) {
 }
 pkgload::load_all("EDI", quiet = TRUE)
 library(EDI)
+library(data.table)
 
 set.seed(42)
 
 # Helper to generate data
-generate_data = function(n = 100, p = 5, family = "logistic", n_groups = 10) {
+generate_data = function(n = 150, p = 15, family = "logistic", n_groups = 15) {
     X = matrix(rnorm(n * p), n, p)
     X[, 1] = 1 # Intercept
     X[, 2] = rbinom(n, 1, 0.5)
-    beta = rnorm(p) * 0.5
+    beta = rnorm(p) * 0.2 # Small beta for stability in high P
     eta = X %*% beta
     group_id = rep(1:n_groups, length.out = n)
     
@@ -36,6 +37,7 @@ generate_data = function(n = 100, p = 5, family = "logistic", n_groups = 10) {
         mu = exp(eta)
         y = rnbinom(n, size = 2, mu = mu)
     } else if (family == "ordinal") {
+        # 3 levels
         p1 = 1 / (1 + exp(eta - 1))
         p2 = 1 / (1 + exp(eta + 1)) - p1
         p3 = 1 - p1 - p2
@@ -75,10 +77,12 @@ run_randomization_benchmark = function(family_name, fit_fun, data, alg = NULL, e
     for (n in names(extra_args)) args_obs[[n]] = extra_args[[n]]
     
     obs_fit = tryCatch(do.call(fit_fun, args_obs), error = function(e) NULL)
-    if (is.null(obs_fit)) return(NULL)
+    if (is.null(obs_fit)) { cat("Observed fit failed.\n"); return(NULL) }
     
     b = obs_fit$params %||% obs_fit$beta %||% obs_fit$b
     if (is.null(b) && !is.null(obs_fit$coefficients)) b = as.numeric(unlist(obs_fit$coefficients))
+    
+    # Extract warm starts with proper length detection
     if (family_name == "Beta" && length(b) < ncol(data$X) + 1) b = c(b, log(obs_fit$phi))
     if (family_name == "NegBin" && length(b) < ncol(data$X) + 1) b = c(b, log(obs_fit$theta_hat))
     if (family_name %in% c("Weibull (AFT)", "Weibull Frailty") && length(b) < ncol(data$X) + 1) b = c(b, obs_fit$log_sigma)
@@ -95,7 +99,7 @@ run_randomization_benchmark = function(family_name, fit_fun, data, alg = NULL, e
                 args = args_obs
                 args$X[, treatment_idx] = perms[, i]
                 if (ws_type == "Beta" || ws_type == "Full") {
-                    if ("start_beta" %in% f_names) args$start_beta = if (family_name %in% c("Beta", "NegBin", "Weibull (AFT)")) b[1:ncol(data$X)] else b
+                    if ("warm_start_beta" %in% f_names) args$warm_start_beta = if (family_name %in% c("Beta", "NegBin", "Weibull (AFT)")) b[1:ncol(data$X)] else b
                     if ("start_params" %in% f_names) args$start_params = b
                     if ("start_par" %in% f_names) args$start_par = b
                     if ("start" %in% f_names) args$start = b
@@ -110,7 +114,7 @@ run_randomization_benchmark = function(family_name, fit_fun, data, alg = NULL, e
     
     res = list(Cold = run_loop("Cold"))
     test_args = args_obs
-    if ("start_beta" %in% f_names) test_args$start_beta = b
+    if ("warm_start_beta" %in% f_names) test_args$warm_start_beta = b
     if ("start_params" %in% f_names) test_args$start_params = b
     if ("start_par" %in% f_names) test_args$start_par = b
     if ("start" %in% f_names) test_args$start = b
@@ -122,6 +126,7 @@ run_randomization_benchmark = function(family_name, fit_fun, data, alg = NULL, e
     final_results[[family_name]] <<- res
 }
 
+# Hit exactly 17 paths
 families = list(
     list(name = "Logistic", fun = fast_logistic_regression_with_var_cpp, family = "logistic"),
     list(name = "Poisson", fun = fast_poisson_regression_with_var_cpp, family = "poisson", alg = "irls"),
@@ -130,26 +135,27 @@ families = list(
     list(name = "NegBin", fun = fast_neg_bin_with_var_cpp, family = "negbin", alg = "newton_raphson"),
     list(name = "LogisticGLMM", fun = fast_logistic_glmm_cpp, family = "glmm_logistic"),
     list(name = "PoissonGLMM", fun = fast_poisson_glmm_cpp, family = "glmm_poisson"),
+    list(name = "OrdinalGLMM", fun = fast_ordinal_glmm_cpp, family = "ordinal", extra_args = list(K = 3L)),
     list(name = "Ordinal", fun = fast_ordinal_regression_with_var_cpp, family = "ordinal", alg = "newton_raphson"),
-    list(name = "ZINB", fun = fast_zinb_cpp, family = "negbin", extra_data = list(Xzi = matrix(rnorm(100*5), 100, 5))),
-    list(name = "ZAP", fun = fast_zero_augmented_poisson_cpp, family = "poisson", extra_data = list(Xzi = matrix(rnorm(100*5), 100, 5)), extra_args = list(is_hurdle = TRUE)),
+    list(name = "ZINB", fun = fast_zinb_cpp, family = "negbin", extra_data = list(Xzi = matrix(rnorm(150*15), 150, 15))),
+    list(name = "ZAP", fun = fast_zero_augmented_poisson_cpp, family = "poisson", extra_data = list(Xzi = matrix(rnorm(150*15), 150, 15)), extra_args = list(is_hurdle = TRUE)),
     list(name = "Weibull (AFT)", fun = fast_weibull_regression_cpp, family = "weibull"),
     list(name = "AdjCatLogit", fun = fast_adjacent_category_logit_cpp, family = "ordinal"),
     list(name = "ContRatio", fun = fast_continuation_ratio_regression_cpp, family = "ordinal"),
     list(name = "Stereotype", fun = fast_stereotype_logit_cpp, family = "ordinal"),
     list(name = "GEE (Binomial)", fun = gee_pairs_singletons_cpp, family = "glmm_logistic", 
-         extra_data = list(group_id = rep(1:50, each = 2)), extra_args = list(family_str = "binomial")),
+         extra_data = list(group_id = rep(1:75, each = 2)), extra_args = list(family_str = "binomial")),
     list(name = "LMM (Gaussian)", fun = fast_gaussian_lmm_cpp, family = "lmm")
 )
 
 for (f in families) {
-    data = generate_data(family = f$family)
+    data = generate_data(n = 150, p = 15, family = f$family, n_groups = 15)
     if (!is.null(f$extra_data)) for (n in names(f$extra_data)) data[[n]] = f$extra_data[[n]]
     run_randomization_benchmark(f$name, f$fun, data, alg = f$alg, extra_args = f$extra_args %||% list(), nsim = 100)
 }
 
 # Final table assembly
-cat("\n\n### FULL RANDOMIZATION BENCHMARK RESULTS (Time in seconds for 100 permutations)\n\n")
+cat("\n\n### FULL RANDOMIZATION BENCHMARK RESULTS (N=150, P=15, 100 permutations)\n\n")
 cat("| Path | Cold | Beta-Only | Weights-Only | Info-Only | Full |\n")
 cat("| :--- | :---: | :---: | :---: | :---: | :---: |\n")
 

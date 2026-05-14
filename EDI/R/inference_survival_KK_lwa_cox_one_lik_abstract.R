@@ -91,13 +91,13 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 				j = j_treat,
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
-					start_beta = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit))
+					warm_start_beta = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit))
 					fast_coxph_regression_cpp(
 						X = X_fit,
 						y = y,
 						dead = dead,
 						cluster = group_id,
-						start_beta = start_beta,
+						warm_start_beta = warm_start_beta,
 						estimate_only = FALSE,
 						optimization_alg = private$optimization_alg,
 						fixed_idx = j_treat,

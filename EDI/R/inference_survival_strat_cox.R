@@ -1,33 +1,42 @@
 #' Stratified Cox PH Inference for Survival Responses
 #'
-#' Internal base class for all-subject non-KK stratified Cox proportional hazards
-#' regression. Stratification variables are chosen automatically from the recorded
-#' low-cardinality covariates. If no suitable stratification covariates are found,
-#' the fit falls back to the corresponding standard Cox PH model.
+#' Fits an auto-stratified Cox PH regression. Stratification variables are chosen
+#' automatically from the recorded low-cardinality covariates. If no suitable
+#' stratification covariates are found, the fit falls back to the corresponding
+#' standard Cox PH model.
 #'
-#' @keywords internal
-#' @noRd
-InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAbstract",
+#' @examples
+#' \dontrun{
+#' \donttest{
+#' seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'survival')
+#' for (i in 1:10) {
+#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+#' }
+#' seq_des$add_all_subject_responses(runif(10))
+#' inf = InferenceSurvivalStratCoxPHRegr$new(seq_des)
+#' inf$compute_estimate()
+#' }
+#' }
+#' @export
+InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLikStdModCache,
 	public = list(
 		#' @description Initialize
-	#' @param des_obj A completed \code{Design} object.
-	#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
-	#'   the formula from the design object is used and its pre-computed design matrix is
-	#'   reused. If a formula is provided, a new design matrix is constructed from the
-	#'   design's imputed covariates.
-	#' @param use_rcpp Logical. If \code{TRUE} (default), use internal Rcpp Cox PH
-	#'   optimiser. If \code{FALSE}, use \pkg{survival::coxph}.
-	#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
-	#' @param verbose Whether to print progress messages.
-	initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE) {
+		#' @param des_obj A completed \code{Design} object with a survival response.
+		#' @param model_formula Optional formula for covariate adjustment. If \code{NULL} (default),
+		#'   covariates from the design object are included. Use \code{~ 1} for univariate.
+		#' @param use_rcpp Logical. If \code{TRUE} (default), use internal Rcpp Cox PH optimiser.
+		#'   If \code{FALSE}, use \pkg{survival::coxph}.
+		#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
+		#' @param verbose Whether to print progress messages.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = "newton_raphson", verbose = FALSE, smart_default = TRUE) {
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 				assertFlag(use_rcpp)
 			}
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
 			private$use_rcpp = use_rcpp
 		},
 		#' @description Compute treatment estimate
@@ -97,14 +106,14 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 				j = j_treat,
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
-					start_beta = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit))
+					warm_start_beta = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit))
 					if (stratified) {
 						fast_stratified_coxph_regression_cpp(
 							X = X_fit,
 							y = y,
 							dead = dead,
 							strata = strata,
-							start_beta = start_beta,
+							warm_start_beta = warm_start_beta,
 							estimate_only = FALSE,
 							optimization_alg = private$optimization_alg,
 							fixed_idx = j_treat,
@@ -115,7 +124,7 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 							X = X_fit,
 							y = y,
 							dead = dead,
-							start_beta = start_beta,
+							warm_start_beta = warm_start_beta,
 							estimate_only = FALSE,
 							optimization_alg = private$optimization_alg,
 							fixed_idx = j_treat,
@@ -250,7 +259,8 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 					y             = inp$y,
 					dead          = inp$dead,
 					strata        = strata_sub,
-					start_beta    = private$get_fit_warm_start_for_length("params", ncol(inp$X)),
+					warm_start_beta    = private$get_fit_warm_start_for_length("params", ncol(inp$X)),
+					smart_start   = private$smart_default,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(inp$X)),
 					estimate_only = FALSE,
 					optimization_alg = private$optimization_alg
@@ -260,6 +270,7 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			if (is.null(fit)) return(NULL)
 			list(fit = fit, X = inp$X, y = inp$y, dead = inp$dead, strata = strata_sub, stratified = TRUE)
 		},
+
 		fit_rcpp_unstratified = function(rows, X_linear){
 			inp = private$build_rcpp_inputs(rows, X_linear)
 			fit = tryCatch(
@@ -267,7 +278,8 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 					X             = inp$X,
 					y             = inp$y,
 					dead          = inp$dead,
-					start_beta    = private$get_fit_warm_start_for_length("params", ncol(inp$X)),
+					warm_start_beta    = private$get_fit_warm_start_for_length("params", ncol(inp$X)),
+					smart_start   = private$smart_default,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(inp$X)),
 					estimate_only = FALSE,
 					optimization_alg = private$optimization_alg
@@ -277,6 +289,7 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			if (is.null(fit)) return(NULL)
 			list(fit = fit, X = inp$X, y = inp$y, dead = inp$dead, strata = NULL, stratified = FALSE)
 		},
+
 		format_rcpp_output = function(fit){
 			if (is.null(fit) || !isTRUE(fit$converged)) return(list(b = c(NA_real_, NA_real_), ssq_b_2 = NA_real_))
 			beta_w  = as.numeric(fit$coefficients[1])
@@ -411,40 +424,6 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 				return(private$format_mod_output(mod))
 			}
 			list(b = c(NA_real_, NA_real_), ssq_b_2 = NA_real_)
-		}
-	)
-)
-#' Stratified Cox PH Inference for Survival Responses
-#'
-#' Fits an auto-stratified Cox PH regression.
-#'
-#' @examples
-#' \dontrun{
-#' \donttest{
-#' seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'survival')
-#' for (i in 1:10) {
-#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
-#' }
-#' seq_des$add_all_subject_responses(runif(10))
-#' inf = InferenceSurvivalStratCoxPHRegr$new(seq_des)
-#' inf$compute_estimate()
-#' }
-#' }
-#' @export
-InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
-	lock_objects = FALSE,
-	inherit = InferenceSurvivalStratCoxPHAbstract,
-	public = list(
-		#' @description Initialize
-		#' @param des_obj A completed \code{Design} object with a survival response.
-		#' @param model_formula Optional formula for covariate adjustment. If \code{NULL} (default), 
-		#'   covariates from the design object are included. Use \code{~ 1} for univariate.
-		#' @param use_rcpp Logical. If \code{TRUE} (default), use internal Rcpp Cox PH optimiser. 
-		#'   If \code{FALSE}, use \pkg{survival::coxph}.
-		#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = "newton_raphson", verbose = FALSE){
-			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, optimization_alg = optimization_alg, verbose = verbose)
 		}
 	)
 )

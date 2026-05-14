@@ -27,13 +27,14 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 		#'   design's imputed covariates.
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use internal Rcpp.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
+		#' @param smart_default Whether to use smart optimizer start values by default.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(use_rcpp)
 			}
-			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_default = smart_default)
 			
 			
 			private$use_rcpp = use_rcpp
@@ -65,10 +66,11 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 					res = tryCatch(
 						fast_coxph_regression_cpp(
 							X, y, dead,
-							start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X)),
+							warm_start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X)),
 							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X)),
 							fixed_idx = 1L,
 							fixed_values = delta,
+							smart_start = private$smart_default,
 							estimate_only = TRUE
 						),
 						error = function(e) NULL
@@ -107,8 +109,9 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 						X_fit, private$y, private$dead, 
 						use_rcpp = TRUE, 
 						estimate_only = estimate_only,
-						start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
-						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
+						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
+						smart_start = private$smart_default
 					),
 					error = function(e) NULL
 				)

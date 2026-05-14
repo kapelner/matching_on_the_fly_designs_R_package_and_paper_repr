@@ -188,7 +188,8 @@ List fast_zero_augmented_poisson_cpp(const Eigen::MatrixXd& X,
                                      const Eigen::VectorXd& y,
                                      const Eigen::MatrixXd& Xzi,
                                      bool is_hurdle,
-                                     Nullable<NumericVector> start_params = R_NilValue,
+                                     Nullable<NumericVector> warm_start_params = R_NilValue,
+                                     bool smart_start = true,
                                      bool estimate_only = false,
                                      int maxit = 1000,
                                      double tol = 1e-6,
@@ -201,11 +202,17 @@ List fast_zero_augmented_poisson_cpp(const Eigen::MatrixXd& X,
     int total_p = p_cond + p_zi;
 
     Eigen::VectorXd params(total_p);
-    if (start_params.isNotNull()) {
-        params = as<Eigen::VectorXd>(NumericVector(start_params));
+    if (warm_start_params.isNotNull()) {
+        params = as<Eigen::VectorXd>(NumericVector(warm_start_params));
+    } else if (smart_start) {
+        // Condition component: OLS on log1p(y)
+        params.head(p_cond) = ols_warm_start_beta_on_log1p(X, y);
+        // ZI component: OLS on (y == 0)
+        Eigen::VectorXd y_is_zero = (y.array() == 0.0).cast<double>();
+        params.tail(p_zi) = ols_warm_start_beta(Xzi, y_is_zero);
     } else {
         params.setZero();
-        // Naive start for intercept
+        // Naive warm_start_params for intercept
         double mean_y = y.mean();
         if (mean_y > 0) params[0] = std::log(mean_y);
 

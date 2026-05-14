@@ -89,7 +89,7 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 				fast_poisson_regression_cpp(
 					X = X_fit, 
 					y = as.numeric(private$y),
-					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
 				),
 				error = function(e) NULL
@@ -180,7 +180,7 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 						X = X_fit,
 						y = y,
 						j = j_treat,
-						start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
 						fixed_idx = j_treat,
 						fixed_values = delta,
 						smart_start = private$smart_default

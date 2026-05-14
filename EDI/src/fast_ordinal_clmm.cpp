@@ -159,7 +159,7 @@ List fast_ordinal_clmm_cpp(
     double max_abs_log_sigma = 8.0,
     int maxit = 300,
     double eps_g = 1e-6,
-    Rcpp::Nullable<Rcpp::NumericVector> start = R_NilValue,
+    Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
     std::string optimization_alg = "lbfgs",
     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
     Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
@@ -181,8 +181,8 @@ List fast_ordinal_clmm_cpp(
     FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
 
     Eigen::VectorXd start_full(total);
-    if (start.isNotNull()) {
-        Rcpp::NumericVector sv(start);
+    if (warm_start_params.isNotNull()) {
+        Rcpp::NumericVector sv(warm_start_params);
         if (sv.size() == total) {
             for (int i = 0; i < total; ++i) start_full[i] = sv[i];
         } else {

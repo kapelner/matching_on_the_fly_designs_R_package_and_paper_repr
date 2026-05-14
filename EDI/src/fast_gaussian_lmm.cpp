@@ -25,7 +25,7 @@ namespace {
 // ── Pre-computed, design-fixed quantities per group ─────────────────────────
 struct GroupInfo {
     int    size;       // m_i  (1 or 2)
-    int    start;      // index into sorted-obs arrays
+    int    warm_start_params;      // index into sorted-obs arrays
 };
 
 // ── Core data object (passed by const-ref to all functions) ──────────────────
@@ -62,7 +62,7 @@ struct LMMData {
             int g = gid[ord[i]];
             if (g != prev) {
                 GroupInfo info;
-                info.start = i;
+                info.warm_start_params = i;
                 info.size  = 1;
                 grps.push_back(info);
                 prev = g;
@@ -124,7 +124,7 @@ double neg_ll_and_grad(const LMMData& dat,
     for (int gi = 0; gi < dat.G; ++gi) {
         const GroupInfo& g = dat.grps[gi];
         const int m = g.size;
-        const int s = g.start;
+        const int s = g.warm_start_params;
         const double a = v_e + m * v_b;
 
         double S = 0.0, Q = 0.0;
@@ -190,7 +190,7 @@ Eigen::MatrixXd lmm_analytic_hessian(const LMMData& dat,
     for (int gi = 0; gi < dat.G; ++gi) {
         const GroupInfo& g = dat.grps[gi];
         const int m = g.size;
-        const int s = g.start;
+        const int s = g.warm_start_params;
         const Eigen::MatrixXd Xg = dat.X_s.middleRows(s, m);
         const Eigen::VectorXd rg = r_all.segment(s, m);
 
@@ -285,11 +285,11 @@ Eigen::VectorXd make_start(const LMMData& dat)
     double sigma2_e = res.squaredNorm() / std::max(dat.n - p, 1);
     double sigma_e  = std::sqrt(std::max(sigma2_e, 1e-8));
 
-    Eigen::VectorXd start(p + 2);
-    start.head(p)   = beta;
-    start[p]     = std::log(sigma_e);        // log σ_e
-    start[p + 1] = std::log(sigma_e * 0.5);  // log σ_b ≈ σ_e/2
-    return start;
+    Eigen::VectorXd warm_start_params(p + 2);
+    warm_start_params.head(p)   = beta;
+    warm_start_params[p]     = std::log(sigma_e);        // log σ_e
+    warm_start_params[p + 1] = std::log(sigma_e * 0.5);  // log σ_b ≈ σ_e/2
+    return warm_start_params;
 }
 
 } // anonymous namespace
@@ -300,7 +300,8 @@ List fast_gaussian_lmm_cpp(
     const Eigen::MatrixXd& X,       // n × p, intercept in col 0, treatment in col 1
     const Eigen::VectorXd& y,
     const Eigen::VectorXi& group_id, // 1-based group IDs (length n)
-    Nullable<NumericVector> start_par = R_NilValue,
+    Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
+    Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
     bool  estimate_only = false,
     int   maxit  = 300,
     double eps_g = 1e-6,
@@ -328,10 +329,17 @@ List fast_gaussian_lmm_cpp(
 
     // Starting point
     Eigen::VectorXd par = make_start(dat);
-    if (start_par.isNotNull()) {
-        NumericVector sp(start_par);
+    if (warm_start_params.isNotNull()) {
+        NumericVector sp(warm_start_params);
         if (sp.size() == p + 2)
             for (int i = 0; i < p + 2; ++i) par[i] = sp[i];
+    } else if (warm_start_beta.isNotNull()) {
+        VectorXd sb = as<VectorXd>(warm_start_beta);
+        if (sb.size() == p + 2) {
+            par = sb;
+        } else if (sb.size() == p) {
+            par.head(p) = sb;
+        }
     }
     FixedParamSpec fixed_spec = make_fixed_param_spec(p + 2, fixed_idx, fixed_values);
 
@@ -396,11 +404,13 @@ List fast_gaussian_lmm_cpp(
 
     return List::create(
         Named("b")         = b_r,
+        Named("params")    = b_r,
         Named("ssq_b_T")   = ssq_b_T,
         Named("vcov")      = vcov_r,
         Named("neg_loglik")= neg_ll,
         Named("converged") = converged,
-        Named("niter")     = niter
+        Named("niter")     = niter,
+        Named("fisher_information") = H
     );
 }
 

@@ -15,7 +15,7 @@ test_that("fast_logistic_regression_cpp supports warm_start_weights", {
   expect_true(fit1$iterations > 1)
   
   # 2. Warm-start with converged weights and beta
-  fit2 <- fast_logistic_regression_cpp(X, y, start_beta = fit1$b, warm_start_weights = fit1$w)
+  fit2 <- fast_logistic_regression_cpp(X, y, warm_start_beta = fit1$b, warm_start_weights = fit1$w)
   
   # Should converge very quickly
   expect_true(fit2$iterations <= 2)
@@ -34,7 +34,7 @@ test_that("fast_poisson_regression_cpp supports warm_start_weights", {
   expect_true(fit1$iterations > 1)
   
   # In Poisson IRLS, w = mu (or mu * weights).
-  fit2 <- fast_poisson_regression_cpp(X, y, start_beta = fit1$b, warm_start_weights = fit1$mu, optimization_alg = "irls")
+  fit2 <- fast_poisson_regression_cpp(X, y, warm_start_beta = fit1$b, warm_start_weights = fit1$mu, optimization_alg = "irls")
   
   expect_true(fit2$iterations <= 2)
   expect_equal(fit1$b, fit2$b, tolerance = 1e-7)
@@ -52,7 +52,7 @@ test_that("fast_log_binomial_regression_cpp supports warm_start_weights", {
   # 1. Initial fit
   fit1 <- fast_log_binomial_regression_cpp(X, y)
   
-  fit2 <- fast_log_binomial_regression_cpp(X, y, start_beta = fit1$b, warm_start_weights = fit1$working_weights)
+  fit2 <- fast_log_binomial_regression_cpp(X, y, warm_start_beta = fit1$b, warm_start_weights = fit1$working_weights)
   
   expect_true(fit2$iterations <= 2)
   expect_equal(fit1$b, fit2$b, tolerance = 1e-7)
@@ -69,9 +69,9 @@ test_that("fast_robust_regression_cpp supports warm_start_weights", {
   # 1. Initial fit
   fit1 <- fast_robust_regression_cpp(X, y)
   
-  fit2 <- fast_robust_regression_cpp(X, y, start_beta = fit1$b, warm_start_weights = fit1$w)
+  fit2 <- fast_robust_regression_cpp(X, y, warm_start_beta = fit1$b, warm_start_weights = fit1$w)
   
-  # Robust might take more iterations because the scale is recomputed from the new start_beta residuals.
+  # Robust might take more iterations because the scale is recomputed from the new warm_start_beta residuals.
   # But it should still converge to the same result.
   expect_equal(fit1$b, fit2$b, tolerance = 1e-7)
 })

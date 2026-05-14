@@ -132,7 +132,8 @@ public:
 
 ModelResult fast_beta_regression_internal(const Eigen::MatrixXd& X,
                                         const Eigen::VectorXd& y,
-                                        const Eigen::VectorXd* start_beta = nullptr,
+                                        const Eigen::VectorXd* warm_start_beta = nullptr,
+                                        bool smart_start = true,
                                         double start_phi = 10.0,
                                         Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                         Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
@@ -140,9 +141,23 @@ ModelResult fast_beta_regression_internal(const Eigen::MatrixXd& X,
                                         Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     int p = X.cols();
     ModelResult res;
-    Eigen::VectorXd params(p + 1);
-    if (start_beta) params.head(p) = *start_beta;
-    else params.head(p).setZero();
+    Eigen::VectorXd params = Eigen::VectorXd::Zero(p + 1);
+    if (warm_start_beta) {
+        params.head(p) = *warm_start_beta;
+    } else if (smart_start) {
+        // Smart warm_start_params: OLS on logit(y)
+        Eigen::VectorXd y_logit = (y.array() / (1.0 - y.array())).log().matrix();
+        // Handle potential INF/NA from 0/1 in y if any (though beta regr assumes (0,1))
+        for(int i=0; i<y_logit.size(); ++i) {
+            if (!std::isfinite(y_logit[i])) {
+                double yi = std::max(1e-4, std::min(1.0 - 1e-4, y[i]));
+                y_logit[i] = std::log(yi / (1.0 - yi));
+            }
+        }
+        params.head(p) = safe_ols_solve(X, y_logit);
+    } else {
+        params.head(p).setZero();
+    }
     params[p] = std::log(start_phi);
     FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
 
@@ -205,7 +220,7 @@ Eigen::MatrixXd get_beta_regression_hessian_cpp(const Eigen::MatrixXd& X,
 //' @description High-performance beta regression fitting using Newton-Raphson or L-BFGS.
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (in (0, 1)).
-//' @param start_beta Optional starting values for coefficients.
+//' @param warm_start_beta Optional starting values for coefficients.
 //' @param start_phi Optional starting value for precision parameter phi.
 //' @param compute_std_errs Deprecated.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -222,7 +237,8 @@ Eigen::MatrixXd get_beta_regression_hessian_cpp(const Eigen::MatrixXd& X,
 // [[Rcpp::export]]
 List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
 								const NumericVector& y,
-								Nullable<NumericVector> start_beta = R_NilValue,
+								Nullable<NumericVector> warm_start_beta = R_NilValue,
+								bool smart_start = true,
 								double start_phi = 10.0,
                                 bool compute_std_errs = false,
                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -233,12 +249,12 @@ List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
 	Eigen::VectorXd y_eigen = as<Eigen::VectorXd>(y);
     Eigen::VectorXd sb;
     Eigen::VectorXd* sb_ptr = nullptr;
-    if (start_beta.isNotNull()) {
-        sb = as<Eigen::VectorXd>(start_beta);
+    if (warm_start_beta.isNotNull()) {
+        sb = as<Eigen::VectorXd>(warm_start_beta);
         sb_ptr = &sb;
     }
 
-    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
+    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, smart_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
 
     Eigen::VectorXd params_full(fit.b.size() + 1);
     params_full.head(fit.b.size()) = fit.b;
@@ -260,7 +276,7 @@ List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
 //' @description Beta regression with full variance-covariance matrix and standard error estimation.
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (in (0, 1)).
-//' @param start_beta Optional starting values for coefficients.
+//' @param warm_start_beta Optional starting values for coefficients.
 //' @param start_phi Optional starting value for precision parameter phi.
 //' @param compute_std_errs Deprecated.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -275,9 +291,11 @@ List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
 //' fast_beta_regression_with_var_cpp(X, y)
 // [[Rcpp::export]]
 List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
-                                         const NumericVector& y,
-                                         Nullable<NumericVector> start_beta = R_NilValue,
-                                         double start_phi = 10.0,
+									 const NumericVector& y,
+									 Nullable<NumericVector> warm_start_beta = R_NilValue,
+									 bool smart_start = true,
+									 double start_phi = 10.0,
+
                                      bool compute_std_errs = true,
                                      Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                      Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
@@ -287,12 +305,12 @@ List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
 	Eigen::VectorXd y_eigen = as<Eigen::VectorXd>(y);
     Eigen::VectorXd sb;
     Eigen::VectorXd* sb_ptr = nullptr;
-    if (start_beta.isNotNull()) {
-        sb = as<Eigen::VectorXd>(start_beta);
+    if (warm_start_beta.isNotNull()) {
+        sb = as<Eigen::VectorXd>(warm_start_beta);
         sb_ptr = &sb;
     }
 
-    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
+    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, smart_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols() + 1, fixed_idx, fixed_values);
     Eigen::MatrixXd H_free = subset_matrix(fit.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
 	Eigen::MatrixXd cov_free = H_free.inverse();
@@ -319,7 +337,7 @@ List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
 
 List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
                                        const NumericVector& y,
-                                       Nullable<NumericVector> start_beta,
+                                       Nullable<NumericVector> warm_start_beta,
                                        double start_phi,
                                        bool compute_std_errs,
                                        Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx,
@@ -328,7 +346,7 @@ List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
     return fast_beta_regression_with_var_cpp(
         X,
         y,
-        start_beta,
+        warm_start_beta,
         start_phi,
         compute_std_errs,
         fixed_idx,

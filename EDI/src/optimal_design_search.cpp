@@ -9,7 +9,9 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 IntegerMatrix d_optimal_search_cpp(const Eigen::MatrixXd& P, int nsim, int n_T) {
-    int n = P.rows();
+    const int n = P.rows();
+    const double* p_ptr = P.data();
+    const Eigen::VectorXd p_diag = P.diagonal();
     IntegerMatrix w_mat(n, nsim);
     
     std::vector<int> indices(n);
@@ -34,8 +36,6 @@ IntegerMatrix d_optimal_search_cpp(const Eigen::MatrixXd& P, int nsim, int n_T) 
         }
 
         Eigen::VectorXd Pw = P * w;
-        double obj_curr = w.dot(Pw);
-
         bool improved = true;
         while (improved) {
             improved = false;
@@ -45,13 +45,13 @@ IntegerMatrix d_optimal_search_cpp(const Eigen::MatrixXd& P, int nsim, int n_T) 
             int best_t_pos = -1;
             int best_c_pos = -1;
 
+            const double* pw_ptr = Pw.data();
             for (int ti = 0; ti < (int)t_idxs.size(); ++ti) {
-                int i = t_idxs[ti];
+                const int i = t_idxs[ti];
                 for (int cj = 0; cj < (int)c_idxs.size(); ++cj) {
-                    int j = c_idxs[cj];
-                    
-                    // Delta = - 2 * Pw[i] + 2 * Pw[j] + P(i,i) + P(j,j) - 2 * P(i,j)
-                    double delta = - 2.0 * Pw(i) + 2.0 * Pw(j) + P(i, i) + P(j, j) - 2.0 * P(i, j);
+                    const int j = c_idxs[cj];
+                    const double delta = -2.0 * pw_ptr[i] + 2.0 * pw_ptr[j] +
+                        p_diag[i] + p_diag[j] - 2.0 * p_ptr[static_cast<size_t>(j) * n + i];
                     
                     if (delta < best_delta) {
                         best_delta = delta;
@@ -65,8 +65,6 @@ IntegerMatrix d_optimal_search_cpp(const Eigen::MatrixXd& P, int nsim, int n_T) 
             }
 
             if (improved) {
-                obj_curr += best_delta;
-                // Update Pw: P * (w - ei + ej) = Pw - P.col(i) + P.col(j)
                 Pw -= P.col(best_i);
                 Pw += P.col(best_j);
                 
@@ -88,7 +86,11 @@ IntegerMatrix d_optimal_search_cpp(const Eigen::MatrixXd& P, int nsim, int n_T) 
 
 // [[Rcpp::export]]
 IntegerMatrix a_optimal_search_cpp(const Eigen::MatrixXd& P, const Eigen::MatrixXd& H, int nsim, int n_T) {
-    int n = P.rows();
+    const int n = P.rows();
+    const double* p_ptr = P.data();
+    const double* h_ptr = H.data();
+    const Eigen::VectorXd p_diag = P.diagonal();
+    const Eigen::VectorXd h_diag = H.diagonal();
     IntegerMatrix w_mat(n, nsim);
     
     std::vector<int> indices(n);
@@ -130,14 +132,18 @@ IntegerMatrix a_optimal_search_cpp(const Eigen::MatrixXd& P, const Eigen::Matrix
             int best_c_pos = -1;
             double best_wPw = wPw;
             double best_wHw = wHw;
+            const double* pw_ptr = Pw.data();
+            const double* hw_ptr = Hw.data();
 
             for (int ti = 0; ti < (int)t_idxs.size(); ++ti) {
-                int i = t_idxs[ti];
+                const int i = t_idxs[ti];
                 for (int cj = 0; cj < (int)c_idxs.size(); ++cj) {
-                    int j = c_idxs[cj];
+                    const int j = c_idxs[cj];
                     
-                    double delta_wPw = - 2.0 * Pw(i) + 2.0 * Pw(j) + P(i, i) + P(j, j) - 2.0 * P(i, j);
-                    double delta_wHw = - 2.0 * Hw(i) + 2.0 * Hw(j) + H(i, i) + H(j, j) - 2.0 * H(i, j);
+                    const double delta_wPw = -2.0 * pw_ptr[i] + 2.0 * pw_ptr[j] +
+                        p_diag[i] + p_diag[j] - 2.0 * p_ptr[static_cast<size_t>(j) * n + i];
+                    const double delta_wHw = -2.0 * hw_ptr[i] + 2.0 * hw_ptr[j] +
+                        h_diag[i] + h_diag[j] - 2.0 * h_ptr[static_cast<size_t>(j) * n + i];
                     
                     double next_wPw = wPw + delta_wPw;
                     double next_wHw = wHw + delta_wHw;

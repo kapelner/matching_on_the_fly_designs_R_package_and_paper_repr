@@ -8,7 +8,7 @@ mechanism for likelihood paths.
 The proposed idea is:
 
 - instead of warm-starting the optimizer with a previous parameter vector such
-  as `start_beta` or `start_params`
+  as `warm_start_beta` or `start_params`
 - initialize the optimizer using a previous set of **IRLS working weights**
 - where these are the algorithmic weights from the iterative solver, not
   externally supplied observation weights
@@ -35,7 +35,7 @@ Why:
 So a `warm_start_weights` feature is:
 
 - potentially useful for a few GLM-style paths
-- not a package-wide substitute for `start_beta` / `start_params`
+- not a package-wide substitute for `warm_start_beta` / `start_params`
 - best viewed as an optional solver optimization for the IRLS-capable families,
   not as a general abstraction for all likelihood inference
 
@@ -61,7 +61,7 @@ Examples:
 
 - `set_fit_warm_start(...)` and `get_fit_warm_start_for_length(...)` in
   [inference_all_abstract.R](/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI/R/inference_all_abstract.R:348)
-- logistic paths passing `start_beta`; see
+- logistic paths passing `warm_start_beta`; see
   [inference_incidence_logit.R](/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI/R/inference_incidence_logit.R:139)
 - negative-binomial paths passing `start_params`; see
   [inference_count_negbin.R](/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI/R/inference_count_negbin.R:138)
@@ -88,9 +88,9 @@ The table below separates:
 
 | Path / family | IRLS working weights in optimizer? | Feasibility of `warm_start_weights` | Why |
 |---|---|---|---|
-| `InferenceIncidLogRegr` | Yes | Moderate | Logistic IRLS weights exist and are cheap to cache, but `start_beta` already determines the initial `mu` and therefore the initial weights. |
+| `InferenceIncidLogRegr` | Yes | Moderate | Logistic IRLS weights exist and are cheap to cache, but `warm_start_beta` already determines the initial `mu` and therefore the initial weights. |
 | `InferenceCountPoisson` | Yes | Moderate | Same comment; Poisson IRLS weights are derived from `mu`. |
-| `InferenceIncidModifiedPoisson` | Yes | Moderate | Same Poisson fitter underneath, so technically feasible but probably incremental relative to `start_beta`. |
+| `InferenceIncidModifiedPoisson` | Yes | Moderate | Same Poisson fitter underneath, so technically feasible but probably incremental relative to `warm_start_beta`. |
 | `InferenceCountQuasiPoisson` | Yes for point-estimate fit | Moderate | Point estimate uses Poisson-style GLM fitting, but variance path is quasi-specific. |
 | `InferenceCountRobustPoisson` | Yes for point-estimate fit | Moderate | Feasible for the fit, though robust variance still depends on post-fit quantities. |
 | `InferencePropFractionalLogit` | Yes | Moderate | Uses logistic fitting, so working-weight initialization is available in principle. |
@@ -106,14 +106,14 @@ The table below separates:
 | Weibull / frailty / copula / GLMM paths | No | Low | Custom optimization or quadrature-heavy paths, not IRLS-weight driven. |
 | Combined / IVWC KK likelihood paths | Usually no | Low | Multiple sub-fits or pooled estimators make a single `warm_start_weights` abstraction weak. |
 
-## Why `warm_start_weights` Is Usually Redundant With `start_beta`
+## Why `warm_start_weights` Is Usually Redundant With `warm_start_beta`
 
 For the standard GLM-style IRLS families:
 
 - the working weights are determined by the current fitted mean
 - the fitted mean is determined by the current parameter vector
 
-So if you already have a good `start_beta`, you automatically get:
+So if you already have a good `warm_start_beta`, you automatically get:
 
 - good initial `eta`
 - good initial `mu`
@@ -122,7 +122,7 @@ So if you already have a good `start_beta`, you automatically get:
 In other words, for logistic and Poisson regression:
 
 ```text
-start_beta  ->  eta^(0)  ->  mu^(0)  ->  working_weights^(0)
+warm_start_beta  ->  eta^(0)  ->  mu^(0)  ->  working_weights^(0)
 ```
 
 That makes `warm_start_weights` somewhat redundant unless one of the following
@@ -148,7 +148,7 @@ Conceptually:
 ```r
 fast_logistic_regression_cpp(
   X, y,
-  start_beta = NULL,
+  warm_start_beta = NULL,
   warm_start_weights = NULL,
   ...
 )
@@ -180,7 +180,7 @@ For logistic or Poisson regression, working weights alone do not determine the
 current linear predictor. Two different coefficient vectors can produce similar
 working weights.
 
-So if `warm_start_weights` is provided without a matching `start_beta`, the
+So if `warm_start_weights` is provided without a matching `warm_start_beta`, the
 solver still needs some coherent way to recover or guess:
 
 - initial `eta`
@@ -193,7 +193,7 @@ That makes a pure weight-only warm start weak.
 
 Today the fitters mostly accept:
 
-- `start_beta`
+- `warm_start_beta`
 - `start_params`
 - `smart_start`
 
@@ -201,7 +201,7 @@ Adding `warm_start_weights` means:
 
 - more branching inside the solver
 - more validation logic
-- decisions about precedence when both `start_beta` and `warm_start_weights`
+- decisions about precedence when both `warm_start_beta` and `warm_start_weights`
   are given
 
 ### 3. Limited reuse outside GLM-style paths
@@ -245,7 +245,7 @@ If this feature is attempted, it should be narrow.
 
 ### Recommendation 1
 
-Do **not** replace `start_beta` / `start_params` with `warm_start_weights`.
+Do **not** replace `warm_start_beta` / `start_params` with `warm_start_weights`.
 
 ### Recommendation 2
 
@@ -299,7 +299,7 @@ It is:
 
 So the practical recommendation is:
 
-1. keep `start_beta` / `start_params` as the primary warm-start mechanism
+1. keep `warm_start_beta` / `start_params` as the primary warm-start mechanism
 2. if needed, add a richer cached IRLS-state warm start for the small set of
    IRLS-capable GLM families
 3. do not design the broader likelihood framework around `warm_start_weights`

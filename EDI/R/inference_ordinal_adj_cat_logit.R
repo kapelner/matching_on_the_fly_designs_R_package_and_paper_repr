@@ -56,14 +56,37 @@ InferenceOrdinalAdjCatLogitRegr = R6::R6Class("InferenceOrdinalAdjCatLogitRegr",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(treatment = private$w, X_cov)
 			}
-			res = fast_adjacent_category_logit_cpp(X = X, y = as.numeric(private$y))
+
+			n_params = ncol(X) + length(sort(unique(private$y))) - 1L
+			res = fast_adjacent_category_logit_cpp(
+				X = X, y = as.numeric(private$y),
+				warm_start_params = private$get_fit_warm_start_for_length("params", n_params),
+				warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params)
+			)
 			if (is.null(res) || length(res$b) < 1L || !is.finite(res$b[length(res$b)])){
 				return(NA_real_)
 			}
+			private$set_fit_warm_start(res$params, "params")
 			as.numeric(res$b[length(res$b)])
 		},
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
+		},
+		get_bootstrap_worker_spec = function(){
+			private$shared(estimate_only = FALSE)
+			list(
+				X_full = private$build_design_matrix(),
+				best_X_cols = private$best_Xmm_colnames,
+				fit_fun = function(X_fit, keep){
+					n_params = ncol(X_fit) + length(sort(unique(private$y))) - 1L
+					res = fast_adjacent_category_logit_cpp(
+						X_fit, private$y,
+						warm_start_params = private$get_fit_warm_start_for_length("params", n_params),
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params)
+					)
+					list(b = res$b, ssq_b_j = NA_real_, params = res$params)
+				}
+			)
 		},
 		generate_mod = function(estimate_only = FALSE){
 			X_full = private$build_design_matrix()
@@ -71,12 +94,23 @@ InferenceOrdinalAdjCatLogitRegr = R6::R6Class("InferenceOrdinalAdjCatLogitRegr",
 				X_full = X_full,
 				required_cols = 1L,
 				fit_fun = function(X_fit){
+					n_params = ncol(X_fit) + length(sort(unique(private$y))) - 1L
+					warm_start_params = private$get_fit_warm_start_for_length("params", n_params)
+					warm_fisher = private$get_fit_warm_start_fisher(n_params)
 					if (estimate_only) {
-						res = fast_adjacent_category_logit_cpp(X_fit, private$y)
-						list(b = res$b, ssq_b_j = NA_real_)
+						res = fast_adjacent_category_logit_cpp(
+							X_fit, private$y,
+							warm_start_params = warm_start_params,
+							warm_start_fisher_info = warm_fisher
+						)
+						list(b = res$b, ssq_b_j = NA_real_, params = res$params)
 					} else {
-						res = fast_adjacent_category_logit_with_var_cpp(X_fit, private$y)
-						list(b = res$b, ssq_b_j = res$ssq_b_1)
+						res = fast_adjacent_category_logit_with_var_cpp(
+							X_fit, private$y,
+							warm_start_params = warm_start_params,
+							warm_start_fisher_info = warm_fisher
+						)
+						list(b = res$b, ssq_b_j = res$ssq_b_1, params = res$params, fisher_information = res$fisher_information)
 					}
 				},
 				fit_ok = function(mod, X_fit, keep){
@@ -86,6 +120,7 @@ InferenceOrdinalAdjCatLogitRegr = R6::R6Class("InferenceOrdinalAdjCatLogitRegr",
 				}
 			)
 			if (!is.null(attempt$fit)){
+				private$set_fit_warm_start(attempt$fit$params, "params", fisher = attempt$fit$fisher_information)
 				private$best_Xmm_colnames = setdiff(colnames(attempt$X), "treatment")
 				list(b = c(0, attempt$fit$b[1]), ssq_b_2 = attempt$fit$ssq_b_j)
 			} else {

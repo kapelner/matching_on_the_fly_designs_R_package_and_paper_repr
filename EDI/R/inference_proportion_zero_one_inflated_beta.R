@@ -36,12 +36,12 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 		#' @param model_formula_zero_one Formula for the zero/one inflation submodels.
 		#'   Defaults to \code{~ .}, meaning treatment plus all available covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, model_formula_zero_one = ~ ., verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, model_formula_zero_one = ~ ., verbose = FALSE, smart_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "proportion")
 				assertFormula(model_formula_zero_one, null.ok = FALSE)
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -93,6 +93,7 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 				fast_zero_one_inflated_beta_cpp(
 					X, X_zero_one, private$y, 
 					init = private$get_fit_warm_start_for_length("params", start_len) %||% rep(0, start_len),
+					smart_start = private$smart_default,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len)
 				),
 				error = function(e) NULL
@@ -129,6 +130,7 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 							X_zero_one,
 							y,
 							init = init,
+							smart_start = private$smart_default,
 							warm_start_fisher_info = warm_fisher,
 							fixed_idx = j_treat,
 							fixed_values = delta
@@ -179,6 +181,7 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 						fast_zero_one_inflated_beta_cpp(
 							X_fit, X_zero_one, private$y, 
 							init = init,
+							smart_start = private$smart_default,
 							warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len)
 						),
 						error = function(e) NULL

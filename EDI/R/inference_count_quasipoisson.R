@@ -128,7 +128,7 @@ InferenceCountQuasiPoisson = R6::R6Class("InferenceCountQuasiPoisson",
 					X = X_fit,
 					y = y,
 					j = j_treat,
-					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
 					smart_start = private$smart_default
 				),
 				error = function(e) NULL
@@ -144,7 +144,7 @@ InferenceCountQuasiPoisson = R6::R6Class("InferenceCountQuasiPoisson",
 						X = X_fit,
 						y = y,
 						j = j_treat,
-						start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
 						fixed_idx = j_treat,
 						fixed_values = delta,
 						smart_start = private$smart_default

@@ -39,7 +39,7 @@ NULL
 #' @param  y Survival times.
 #' @param  dead Event indicator (1 = event, 0 = censored).
 #' @param  X A numeric matrix of predictor variables.
-#' @param start_beta Optional starting values for the coefficients.
+#' @param warm_start_beta Optional starting values for the coefficients.
 #' @param estimate_only Logical. If \code{TRUE}, skip variance-covariance
 #'   matrix calculation for speed.
 #' @param maxit Maximum number of iterations.
@@ -342,16 +342,16 @@ NULL
 #' y = rbinom(100, 1, 0.5)
 #' fast_logistic_regression(X, y)
 #' @export
-fast_logistic_regression = function(X, y, optimization_alg = "lbfgs", start_beta = NULL, warm_start_fisher_info = NULL){
+fast_logistic_regression = function(X, y, optimization_alg = "lbfgs", warm_start_beta = NULL, warm_start_fisher_info = NULL){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = TRUE, default = "lbfgs")
 	na_b = function() list(b = rep(NA_real_, ncol(X)))
 	fit_cpp = function(cpp_alg = optimization_alg){
 		tryCatch({
-			res = fast_logistic_regression_cpp(X = X, y = as.numeric(y), optimization_alg = cpp_alg, start_beta = start_beta, warm_start_fisher_info = warm_start_fisher_info)
+			res = fast_logistic_regression_cpp(X = X, y = as.numeric(y), optimization_alg = cpp_alg, warm_start_beta = warm_start_beta, warm_start_fisher_info = warm_start_fisher_info)
 			list(b = as.vector(res$b))
 		}, error = function(e) na_b())
 	}
-	if (!(optimization_alg %in% c("irls", "lbfgs")) || !is.null(start_beta) || !is.null(warm_start_fisher_info)) return(fit_cpp())
+	if (!(optimization_alg %in% c("irls", "lbfgs")) || !is.null(warm_start_beta) || !is.null(warm_start_fisher_info)) return(fit_cpp())
 	tryCatch({
 	mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
 		X = X,
@@ -389,7 +389,7 @@ fast_logistic_regression = function(X, y, optimization_alg = "lbfgs", start_beta
 #' y = rbinom(10, 1, 0.5)
 #' fast_logistic_regression_with_var(X, y)
 #' @export
-fast_logistic_regression_with_var = function(X, y, j = 2, optimization_alg = "lbfgs", start_beta = NULL, warm_start_fisher_info = NULL){
+fast_logistic_regression_with_var = function(X, y, j = 2, optimization_alg = "lbfgs", warm_start_beta = NULL, warm_start_fisher_info = NULL){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = TRUE, default = "lbfgs")
 	# Logistic regression coefficients beyond this magnitude indicate complete/quasi-complete
 	# separation: the MLE does not exist and the IWLS optimizer has diverged to a large
@@ -401,13 +401,13 @@ fast_logistic_regression_with_var = function(X, y, j = 2, optimization_alg = "lb
 	try_fit = function(X){
 	fit_cpp = function(cpp_alg = optimization_alg){
 		tryCatch({
-			mod = fast_logistic_regression_with_var_cpp(X, as.numeric(y), j = j, optimization_alg = cpp_alg, start_beta = start_beta, warm_start_fisher_info = warm_start_fisher_info)
+			mod = fast_logistic_regression_with_var_cpp(X, as.numeric(y), j = j, optimization_alg = cpp_alg, warm_start_beta = warm_start_beta, warm_start_fisher_info = warm_start_fisher_info)
 			list(b = as.vector(mod$b), ssq_b_j = mod$ssq_b_j, ssq_b_2 = mod$ssq_b_2, converged = is.null(mod$converged) || isTRUE(mod$converged))
 		}, error = function(e) {
 			list(b = rep(NA_real_, ncol(X)), ssq_b_j = NA_real_, ssq_b_2 = NA_real_, converged = FALSE)
 		})
 	}
-	if (!(optimization_alg %in% c("irls", "lbfgs")) || !is.null(start_beta) || !is.null(warm_start_fisher_info)) return(fit_cpp())
+	if (!(optimization_alg %in% c("irls", "lbfgs")) || !is.null(warm_start_beta) || !is.null(warm_start_fisher_info)) return(fit_cpp())
 	tryCatch({
 		mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
 			X = X,
@@ -607,7 +607,7 @@ sanitize_beta_response = function(y){
 #' @param  start_phi A numeric value, the starting value for the precision parameter phi.
 #'   Defaults to 10.
 #' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
-#' @param start_beta Optional starting values for coefficients.
+#' @param warm_start_beta Optional starting values for coefficients.
 #' @param warm_start_fisher_info Optional initial Fisher Information matrix.
 #'
 #' @return  A list containing the following component:
@@ -625,11 +625,11 @@ sanitize_beta_response = function(y){
 #' y = runif(100)
 #' fast_beta_regression(X, y)
 #' @export
-fast_beta_regression = function(X, y, start_phi = 10, optimization_alg = "newton_raphson", start_beta = NULL, warm_start_fisher_info = NULL){
+fast_beta_regression = function(X, y, start_phi = 10, optimization_alg = "newton_raphson", warm_start_beta = NULL, warm_start_fisher_info = NULL){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 	y = sanitize_beta_response(y)
 	tryCatch({
-	res = fast_beta_regression_cpp(X, y, start_phi = start_phi, optimization_alg = optimization_alg, start_beta = start_beta, warm_start_fisher_info = warm_start_fisher_info)
+	res = fast_beta_regression_cpp(X, y, start_phi = start_phi, optimization_alg = optimization_alg, warm_start_beta = warm_start_beta, warm_start_fisher_info = warm_start_fisher_info)
 	list(b = res$coefficients, phi = res$phi, fisher_information = res$fisher_information)
 	}, error = function(e) {
 	warning("fast_beta_regression_cpp failed, falling back to betareg. Error: ", e$message)
@@ -669,7 +669,7 @@ fast_beta_regression = function(X, y, start_phi = 10, optimization_alg = "newton
 #'   Defaults to 10.
 #' @param  j The index of the coefficient to compute the variance for. Defaults to 2.
 #' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
-#' @param start_beta Optional starting values for coefficients.
+#' @param warm_start_beta Optional starting values for coefficients.
 #' @param warm_start_fisher_info Optional initial Fisher Information matrix.
 #'
 #' @return  A list containing the following components:
@@ -691,11 +691,11 @@ fast_beta_regression = function(X, y, start_phi = 10, optimization_alg = "newton
 #' y = runif(10)
 #' fast_beta_regression_with_var(X, y)
 #' @export
-fast_beta_regression_with_var = function(X, y, start_phi = 10, j = 2, optimization_alg = "newton_raphson", start_beta = NULL, warm_start_fisher_info = NULL){
+fast_beta_regression_with_var = function(X, y, start_phi = 10, j = 2, optimization_alg = "newton_raphson", warm_start_beta = NULL, warm_start_fisher_info = NULL){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 	y = sanitize_beta_response(y)
 	tryCatch({
-	mod = fast_beta_regression_with_var_cpp(X, y, start_phi = start_phi, optimization_alg = optimization_alg, start_beta = start_beta)
+	mod = fast_beta_regression_with_var_cpp(X, y, start_phi = start_phi, optimization_alg = optimization_alg, warm_start_beta = warm_start_beta)
 	list(b = mod$coefficients, phi = mod$phi, ssq_b_j = mod$vcov[j, j], ssq_b_2 = if (nrow(mod$vcov) >= 2) mod$vcov[2, 2] else NA_real_, fisher_information = mod$fisher_information)
 	}, error = function(e) {
 	warning("fast_beta_regression_with_var_cpp failed, falling back to betareg. Error: ", e$message)
@@ -740,8 +740,9 @@ fast_beta_regression_with_var = function(X, y, start_phi = 10, j = 2, optimizati
 #' @param estimate_only Logical. If \code{TRUE}, skip variance-covariance
 #'   matrix calculation for speed.
 #' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
-#' @param start_beta Optional starting values for coefficients.
+#' @param warm_start_beta Optional starting values for coefficients.
 #' @param warm_start_fisher_info Optional initial Fisher Information matrix.
+#' @param smart_start Logical. If \code{TRUE} (default), use an initial OLS-based guess.
 #'
 #' @return  A list containing the following components:
 #' \describe{
@@ -759,16 +760,17 @@ fast_beta_regression_with_var = function(X, y, start_phi = 10, j = 2, optimizati
 #' dead = rbinom(100, 1, 0.5)
 #' fast_coxph_regression(y, dead, X)
 #' @export
-fast_coxph_regression = function(X, y, dead, use_rcpp = TRUE, estimate_only = FALSE, optimization_alg = "newton_raphson", start_beta = NULL, warm_start_fisher_info = NULL){
+fast_coxph_regression = function(X, y, dead, use_rcpp = TRUE, estimate_only = FALSE, optimization_alg = "newton_raphson", warm_start_beta = NULL, warm_start_fisher_info = NULL, smart_start = TRUE){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 	if (use_rcpp) {
 		X = as.matrix(X)
 		res = tryCatch(
-			fast_coxph_regression_cpp(X = X, y = as.numeric(y), dead = as.numeric(dead), 
-			                          estimate_only = estimate_only, 
+			fast_coxph_regression_cpp(X = X, y = as.numeric(y), dead = as.numeric(dead),
+			                          estimate_only = estimate_only,
 			                          optimization_alg = optimization_alg,
-			                          start_beta = start_beta,
-			                          warm_start_fisher_info = warm_start_fisher_info),
+			                          warm_start_beta = warm_start_beta,
+			                          warm_start_fisher_info = warm_start_fisher_info,
+			                          smart_start = smart_start),
 			error = function(e) stop("Cox PH regression (Rcpp) failed to converge: ", e$message)
 		)
 		if (is.null(res) || !isTRUE(res$converged)) {
@@ -1085,10 +1087,10 @@ fast_negbin_regression_with_var <- function(X, y, j = 2, optimization_alg = "new
 
 # fast_beta_regression_mle_r <- function(X, y, start_phi = 10) {
 #   # Get starting values for beta from a quick logistic regression
-#   start_beta <- fast_logistic_regression(X, y)$b
+#   warm_start_beta <- fast_logistic_regression(X, y)$b
 
 #   # Call the full MLE in C++ without computing standard errors
-#   mod_cpp = fast_beta_regression_mle(y, X, start_beta = start_beta, start_phi = start_phi, compute_std_errs = FALSE)
+#   mod_cpp = fast_beta_regression_mle(y, X, warm_start_beta = warm_start_beta, start_phi = start_phi, compute_std_errs = FALSE)
 
 #   out <- list(
 #     b = mod_cpp$coefficients,
@@ -1099,10 +1101,10 @@ fast_negbin_regression_with_var <- function(X, y, j = 2, optimization_alg = "new
 
 # fast_beta_regression_mle_r_with_var <- function(X, y, start_phi = 10) {
 #   # Get starting values for beta from a quick logistic regression
-#   start_beta <- fast_logistic_regression(X, y)$b
+#   warm_start_beta <- fast_logistic_regression(X, y)$b
 
 #   # Call the full MLE in C++ and compute standard errors
-#   mod_cpp = fast_beta_regression_mle(y, X, start_beta = start_beta, start_phi = start_phi, compute_std_errs = TRUE)
+#   mod_cpp = fast_beta_regression_mle(y, X, warm_start_beta = warm_start_beta, start_phi = start_phi, compute_std_errs = TRUE)
 
 #   out <- list(
 #     b = mod_cpp$coefficients,

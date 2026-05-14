@@ -7,7 +7,7 @@
 fast_logistic_regression_cpp(
   X,
   y,
-  start_beta = NULL,
+  warm_start_beta = NULL,
   maxit = 100L,
   tol = 1e-08,
   fixed_idx = NULL,
@@ -22,7 +22,7 @@ fast_logistic_regression_cpp(
 
 \item{y}{A binary numeric vector of responses.}
 
-\item{start_beta}{Optional starting values for coefficients.}
+\item{warm_start_beta}{Optional starting values for coefficients.}
 
 \item{maxit}{Maximum number of iterations.}
 

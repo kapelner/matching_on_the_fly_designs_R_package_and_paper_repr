@@ -108,7 +108,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 				fast_logistic_regression_cpp(
 					X = X, 
 					y = as.numeric(private$y),
-					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
+					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X))
 				),
 				error = function(e) NULL
@@ -209,7 +209,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 					fast_logistic_regression_cpp(
 						X = X_fit, 
 						y = as.numeric(private$y),
-						start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
 						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
 					),
 					error = function(e) NULL

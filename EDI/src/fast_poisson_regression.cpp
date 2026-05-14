@@ -56,7 +56,7 @@ public:
 ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
 							 const Eigen::VectorXd& y,
                              const Eigen::VectorXd& weights = Eigen::VectorXd(),
-                             Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                             Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                              bool smart_start = true,
 							 int maxit = 100,
 							 double tol = 1e-8,
@@ -71,11 +71,11 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
     std::string alg = normalize_optimizer_algorithm(optimization_alg, "lbfgs", true);
     VectorXd beta_start = VectorXd::Zero(p);
-    if (start_beta.isNotNull()) {
-        beta_start = as<Eigen::VectorXd>(Rcpp::NumericVector(start_beta));
-        if (beta_start.size() != p) Rcpp::stop("start_beta must have length equal to ncol(X)");
+    if (warm_start_beta.isNotNull()) {
+        beta_start = as<Eigen::VectorXd>(Rcpp::NumericVector(warm_start_beta));
+        if (beta_start.size() != p) Rcpp::stop("warm_start_beta must have length equal to ncol(X)");
     } else if (smart_start) {
-        beta_start = ols_start_beta_on_log1p_or_legacy(X, y, VectorXd::Zero(p), fixed_spec);
+        beta_start = ols_warm_start_beta_on_log1p_or_legacy(X, y, VectorXd::Zero(p), fixed_spec);
     }
     beta_start = apply_fixed_values(beta_start, fixed_spec);
 
@@ -190,7 +190,7 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
 ModelResult fast_poisson_regression_internal(const Eigen::MatrixXd& X,
                                              const Eigen::VectorXd& y,
                                              const Eigen::VectorXd& weights = Eigen::VectorXd(),
-                                             Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                             Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                              bool smart_start = true,
                                              int maxit = 100,
                                              double tol = 1e-8,
@@ -199,7 +199,7 @@ ModelResult fast_poisson_regression_internal(const Eigen::MatrixXd& X,
                                              std::string optimization_alg = "lbfgs",
                                              Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
                                              Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-    return fast_poisson_internal(X, y, weights, start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
+    return fast_poisson_internal(X, y, weights, warm_start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
 }
 
 //' @title Compute Poisson Regression Score
@@ -272,7 +272,7 @@ Eigen::MatrixXd get_poisson_regression_weighted_hessian_cpp(const Eigen::MatrixX
 //' @description High-performance Poisson regression fitting using IRLS or L-BFGS.
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (counts).
-//' @param start_beta Optional starting values for coefficients.
+//' @param warm_start_beta Optional starting values for coefficients.
 //' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
@@ -290,7 +290,7 @@ Eigen::MatrixXd get_poisson_regression_weighted_hessian_cpp(const Eigen::MatrixX
 //' fast_poisson_regression_cpp(X, y)
 // [[Rcpp::export]]
 List fast_poisson_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y,
-                                     Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                     Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                      bool smart_start = true,
 									 int maxit = 100,
 									 double tol = 1e-8,
@@ -299,7 +299,7 @@ List fast_poisson_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
                                      std::string optimization_alg = "lbfgs",
                                      Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
                                      Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
+	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), warm_start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
 	return List::create(
 		Named("b") = res.b,
 		Named("mu") = res.mu,
@@ -314,7 +314,7 @@ List fast_poisson_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (counts).
 //' @param weights A numeric vector of weights.
-//' @param start_beta Optional starting values for coefficients.
+//' @param warm_start_beta Optional starting values for coefficients.
 //' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
@@ -330,7 +330,7 @@ List fast_poisson_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X,
                                           const Eigen::VectorXd& y,
                                           const Eigen::VectorXd& weights,
-                                          Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                          Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                           bool smart_start = true,
                                           int maxit = 100,
                                           double tol = 1e-8,
@@ -339,7 +339,7 @@ List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X,
                                           std::string optimization_alg = "irls",
                                           Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
                                           Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-	ModelResult res = fast_poisson_internal(X, y, weights, start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
+	ModelResult res = fast_poisson_internal(X, y, weights, warm_start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
 	return List::create(
 		Named("b") = res.b,
 		Named("mu") = res.mu,
@@ -354,7 +354,7 @@ List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X,
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (counts).
 //' @param j 1-based index of the parameter for which to return specific variance.
-//' @param start_beta Optional starting values for coefficients.
+//' @param warm_start_beta Optional starting values for coefficients.
 //' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
@@ -372,7 +372,7 @@ List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X,
 //' fast_poisson_regression_with_var_cpp(X, y)
 // [[Rcpp::export]]
 List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j = 2,
-                                              Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                              Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                               bool smart_start = true,
 											  int maxit = 100,
 											  double tol = 1e-8,
@@ -381,7 +381,7 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
                                               std::string optimization_alg = "lbfgs",
                                               Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
                                               Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
+	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), warm_start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
     MatrixXd cov_free = info_free.inverse();
@@ -419,7 +419,7 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (counts).
 //' @param j 1-based index of the parameter for which to return specific variance.
-//' @param start_beta Optional starting values for coefficients.
+//' @param warm_start_beta Optional starting values for coefficients.
 //' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
@@ -435,7 +435,7 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
 List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& X,
 												   const Eigen::VectorXd& y,
 												   int j = 2,
-                                                   Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                                   Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                                    bool smart_start = true,
 												   int maxit = 100,
 												   double tol = 1e-8,
@@ -444,7 +444,7 @@ List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& X,
                                                    std::string optimization_alg = "lbfgs",
                                                    Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
                                                    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
+	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), warm_start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
     MatrixXd cov_free = info_free.inverse();

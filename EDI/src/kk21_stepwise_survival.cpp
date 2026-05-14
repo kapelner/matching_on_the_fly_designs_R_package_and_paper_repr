@@ -87,7 +87,7 @@ static bool weibull_reduced_fit_for_score_test(
 
 // Optimized stepwise Weibull AFT using the score test (LM test) from the reduced model.
 // At each step k, instead of fitting (p-k) full Weibull AFT regressions of size n x (k+3), we:
-//   1. Fit ONE Weibull AFT on the reduced model XS = [1, X_sel, w] (with warm start)
+//   1. Fit ONE Weibull AFT on the reduced model XS = [1, X_sel, w] (with warm warm_start_params)
 //   2. For each candidate x_j compute the Weibull score test statistic:
 //        stat_j = |x_j' r| / sqrt(I_jj.S)
 //      where r_i = delta_i - W_hat_i,  W_hat_i = exp(z_hat_i),  z_hat_i = (log(t_i) - XS*beta_hat) / sigma_hat
@@ -145,7 +145,7 @@ NumericVector kk21_stepwise_survival_weights_cpp(
 	bool fit_ok = weibull_reduced_fit_for_score_test(
 		XS, log_y, delta_v, beta, scale, W_diag, resid, XtWX_ldlt);
 
-	// ---- FWL OLS on log(y) fallback state (lazy init) ----
+	// ---- FWL OLS on log(y) fallback state (lazy warm_start_params) ----
 	const double eps = std::numeric_limits<double>::epsilon();
 	Eigen::MatrixXd Q(n, p + 2);
 	int qm = 0;
@@ -207,7 +207,7 @@ NumericVector kk21_stepwise_survival_weights_cpp(
 		} else {
 			// ---- FWL OLS on log(y) fallback ----
 
-			// Lazy init: build orthonormal basis from [1, w, already-selected covariates]
+			// Lazy warm_start_params: build orthonormal basis from [1, w, already-selected covariates]
 			if (!fwl_initialized) {
 				Q.col(0).setConstant(1.0 / std::sqrt(static_cast<double>(n)));
 				qm = 1;

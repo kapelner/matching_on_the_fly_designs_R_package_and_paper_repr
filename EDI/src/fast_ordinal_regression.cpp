@@ -93,7 +93,7 @@ Eigen::MatrixXd get_ordinal_regression_hessian_cpp(const Eigen::MatrixXd& X, con
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> start_params = R_NilValue, bool smart_start = true, int maxit = 100, double tol = 1e-6,
+List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params = R_NilValue, bool smart_start = true, int maxit = 100, double tol = 1e-6,
                                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                   std::string optimization_alg = "newton_raphson",
@@ -106,9 +106,9 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 
     VectorXd params(n_params);
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
-    if (start_params.isNotNull()) {
-        params = as<Eigen::VectorXd>(NumericVector(start_params));
-        if (params.size() != n_params) stop("start_params must have length equal to the number of model parameters");
+    if (warm_start_params.isNotNull()) {
+        params = as<Eigen::VectorXd>(NumericVector(warm_start_params));
+        if (params.size() != n_params) stop("warm_start_params must have length equal to the number of model parameters");
     } else {
         OrdinalStart legacy_start;
         legacy_start.alpha = VectorXd(n_alpha);
@@ -158,14 +158,14 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 //' @keywords internal
 // [[Rcpp::export]]
 List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y,
-                                           Nullable<NumericVector> start_params = R_NilValue,
+                                           Nullable<NumericVector> warm_start_params = R_NilValue,
                                            bool smart_start = true,
                                            int maxit = 100, double tol = 1e-6,
                                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                            Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                            std::string optimization_alg = "newton_raphson",
                                            Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-    List res = fast_ordinal_regression_cpp(X, y, start_params, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
+    List res = fast_ordinal_regression_cpp(X, y, warm_start_params, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
     VectorXd params = res["params"];
     bool converged = res["converged"];
     OrdinalRegression model(X, y);

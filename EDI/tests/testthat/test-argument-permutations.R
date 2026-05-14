@@ -12,7 +12,7 @@ test_that("fast_beta_regression_cpp argument permutations", {
 
 	# Test with and without starting values
 	res1 <- EDI:::fast_beta_regression_cpp(X, y)
-	res2 <- EDI:::fast_beta_regression_cpp(X, y, start_beta = c(0, 0), start_phi = 5)
+	res2 <- EDI:::fast_beta_regression_cpp(X, y, warm_start_beta = c(0, 0), start_phi = 5)
 	expect_equal(as.numeric(res1$coefficients), as.numeric(res2$coefficients), tolerance = 1e-4)
 
 	# Test with and without standard error computation (in _with_var)

@@ -181,12 +181,12 @@ public:
 		if (d > 0.0) grad[dat.p] += 2.0 * scale * d * (log_sigma > 0 ? 1.0 : -1.0);
 
 		for (int gi = 0; gi < dat.G; ++gi) {
-			const int start = dat.grp_start[gi];
+			const int warm_start_params = dat.grp_start[gi];
 			const int sz    = dat.grp_size[gi];
-			const Eigen::MatrixXd Xg   = dat.X_s.middleRows(start, sz);
+			const Eigen::MatrixXd Xg   = dat.X_s.middleRows(warm_start_params, sz);
 			const Eigen::VectorXd eta0 = Xg * beta;
-			const Eigen::ArrayXd y_g = dat.y_s.segment(start, sz).array();
-			const Eigen::ArrayXd log_fact_g = dat.log_fact_y.segment(start, sz).array();
+			const Eigen::ArrayXd y_g = dat.y_s.segment(warm_start_params, sz).array();
+			const Eigen::ArrayXd log_fact_g = dat.log_fact_y.segment(warm_start_params, sz).array();
 
 			Eigen::VectorXd log_terms(n_nodes);
 			std::vector<Eigen::VectorXd> lambda_nodes(n_nodes);  // lambda = exp(eta) per node
@@ -229,12 +229,12 @@ public:
 		H(dat.p, dat.p) = soft_barrier_hp_hessian(log_sigma);
 
 		for (int gi = 0; gi < dat.G; gi++) {
-			const int start = dat.grp_start[gi];
+			const int warm_start_params = dat.grp_start[gi];
 			const int sz    = dat.grp_size[gi];
-			const Eigen::MatrixXd Xg = dat.X_s.middleRows(start, sz);
+			const Eigen::MatrixXd Xg = dat.X_s.middleRows(warm_start_params, sz);
 			const Eigen::VectorXd eta0 = Xg * beta;
-			const Eigen::ArrayXd y_g = dat.y_s.segment(start, sz).array();
-			const Eigen::ArrayXd log_fact_g = dat.log_fact_y.segment(start, sz).array();
+			const Eigen::ArrayXd y_g = dat.y_s.segment(warm_start_params, sz).array();
+			const Eigen::ArrayXd log_fact_g = dat.log_fact_y.segment(warm_start_params, sz).array();
 
 			Eigen::VectorXd log_terms(n_nodes);
 			std::vector<Eigen::VectorXd> lambda_nodes(n_nodes);
@@ -381,7 +381,8 @@ List fast_hurdle_poisson_glmm_cpp(
 	const Eigen::VectorXd& y,
 	const Eigen::VectorXi& group_id,
 	int j_T,
-	Nullable<NumericVector> start_params = R_NilValue,
+	Nullable<NumericVector> warm_start_params = R_NilValue,
+	bool smart_start = true,
 	bool estimate_only = false,
 	int n_gh = 7,
 	int maxit = 300,
@@ -427,15 +428,18 @@ List fast_hurdle_poisson_glmm_cpp(
 	HurdlePoissonGLMMData dat(X_pos, y_pos, gid_pos, n_gh);
 
 	Eigen::VectorXd par(total);
-	if (start_params.isNotNull()) {
-		par = as<Eigen::VectorXd>(NumericVector(start_params));
-	} else {
+	if (warm_start_params.isNotNull()) {
+		par = as<Eigen::VectorXd>(NumericVector(warm_start_params));
+	} else if (smart_start) {
 		par.setZero();
 		Eigen::VectorXd log_y = y_pos.array().log().matrix();
 		Eigen::VectorXd legacy_beta = Eigen::VectorXd::Zero(p);
 		if (try_safe_ols_solve(X_pos, log_y, legacy_beta)) {
 			par.head(p) = legacy_beta;
 		}
+		par[total - 1] = -3.0;
+	} else {
+		par.head(p).setZero();
 		par[total - 1] = -3.0;
 	}
 

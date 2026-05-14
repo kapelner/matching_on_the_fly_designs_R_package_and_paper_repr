@@ -101,11 +101,11 @@ run_benchmark_family = function(family_name, fit_fun, data, alg = NULL, extra_ar
     args_cold = args_base
     
     args_beta = args_base
-    if ("start_beta" %in% names(formals(fit_fun))) {
+    if ("warm_start_beta" %in% names(formals(fit_fun))) {
         if (family_name %in% c("Beta", "NegBin", "Weibull")) {
-            args_beta$start_beta = initial_fit$b %||% initial_fit$coefficients
+            args_beta$warm_start_beta = initial_fit$b %||% initial_fit$coefficients
         } else {
-            args_beta$start_beta = b
+            args_beta$warm_start_beta = b
         }
     }
     if ("start_params" %in% names(formals(fit_fun))) args_beta$start_params = b
@@ -132,7 +132,7 @@ run_benchmark_family = function(family_name, fit_fun, data, alg = NULL, extra_ar
     
     # Only run microbenchmark for supported combinations
     bm_list = list(Cold = quote(do.call(fit_fun, args_cold)))
-    if (!is.null(args_beta$start_beta) || !is.null(args_beta$start_params) || !is.null(args_beta$start_par) || !is.null(args_beta$start)) 
+    if (!is.null(args_beta$warm_start_beta) || !is.null(args_beta$start_params) || !is.null(args_beta$start_par) || !is.null(args_beta$start)) 
         bm_list$Beta = quote(do.call(fit_fun, args_beta))
     if (!is.null(args_weights$warm_start_weights)) 
         bm_list$Weights = quote(do.call(fit_fun, args_weights))

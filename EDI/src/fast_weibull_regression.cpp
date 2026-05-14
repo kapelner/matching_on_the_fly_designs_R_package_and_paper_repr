@@ -109,7 +109,7 @@ Eigen::MatrixXd get_weibull_regression_hessian_cpp(const Eigen::MatrixXd& X,
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of survival times.
 //' @param dead A numeric vector of event indicators.
-//' @param start_params Optional starting values for [beta, log_sigma].
+//' @param warm_start_params Optional starting values for [beta, log_sigma].
 //' @param estimate_only If TRUE, only return coefficients and likelihood.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
@@ -140,8 +140,8 @@ List fast_weibull_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
     FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
     
     if (start_params.isNotNull()) {
-        params = as<Eigen::VectorXd>(NumericVector(start_params));
-        if (params.size() != p + 1) stop("start_params must have length equal to the number of model parameters");
+        params = as<Eigen::VectorXd>(NumericVector(warm_start_params));
+        if (params.size() != p + 1) stop("warm_start_params must have length equal to the number of model parameters");
     } else {
         Eigen::VectorXd log_y = y.array().log().matrix();
         WeibullStart legacy_start;
