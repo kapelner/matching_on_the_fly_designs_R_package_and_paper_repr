@@ -55,6 +55,9 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 			
 			fixed_terms = setdiff(colnames(dat), c("y", "group_id"))
 			formula_gee = stats::as.formula(paste("y ~", paste(fixed_terms, collapse = " + ")))
+			
+			bstart = private$get_fit_warm_start_for_length("beta", length(fixed_terms) + nlevels(dat$y) - 1L)
+			
 			mod = tryCatch({
 				utils::capture.output(m <- suppressMessages(suppressWarnings(
 					multgee::ordLORgee(
@@ -62,7 +65,8 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 						data   = dat,
 						id     = id_sorted,
 						LORstr = "uniform",
-						link   = "logit"
+						link   = "logit",
+						bstart = bstart
 					)
 				)))
 				m
@@ -72,6 +76,8 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 				return(invisible(NULL))
 			}
 			beta = stats::coef(mod)
+			private$set_fit_warm_start(beta, "beta")
+			
 			j_treat = private$gee_treatment_index(beta)
 			private$cached_values$beta_hat_T = as.numeric(beta[j_treat])
 			if (estimate_only) return(invisible(NULL))
@@ -169,8 +175,12 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 			n_alpha = K - 1L
 			# Treatment is always the first column of X_fit (j_T = 0, 0-based)
 			j_T = 0L
-			# Warm start from fixed-effects ordinal MLE to avoid divergence
-			start = tryCatch({
+			
+			start_len = n_alpha + ncol(X_fit) + 1L
+			warm_start = private$get_fit_warm_start_for_length("params", start_len)
+			
+			# Warm start from fixed-effects ordinal MLE to avoid divergence if no cache
+			start = if (!is.null(warm_start)) warm_start else tryCatch({
 				nore = fast_ordinal_regression_cpp(X_fit, as.numeric(y) - 1L)
 				alpha_direct = as.numeric(nore$alpha)  # K-1 direct cutpoints
 				beta_nore    = as.numeric(nore$b)      # p betas
@@ -185,6 +195,7 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 				}
 				c(alpha_par, beta_nore, -3.0)  # log_sigma = -3 (small random effect)
 			}, error = function(e) NULL)
+			
 			fit = tryCatch(
 				fast_ordinal_glmm_cpp(
 					X          = X_fit,
@@ -194,7 +205,8 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 					j_T        = j_T,
 					estimate_only = estimate_only,
 					start      = start,
-					eps_g      = 1e-3
+					eps_g      = 1e-3,
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len)
 				),
 				error = function(e) NULL
 			)
@@ -210,7 +222,7 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 			}
 			private$cached_mod = fit
 			full_params = as.numeric(c(fit$alpha, fit$b, fit$log_sigma))
-			private$set_fit_warm_start(full_params, "params")
+			private$set_fit_warm_start(full_params, "params", fisher = fit$fisher_information)
 			private$cached_values$likelihood_test_context = list(
 				X = X_fit,
 				y = y,

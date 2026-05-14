@@ -281,6 +281,7 @@ List fast_neg_bin_cpp(Eigen::MatrixXd X,
         Named("theta_hat") = res.dispersion,
         Named("logLik") = res.sigma2_hat,
         Named("converged") = res.converged,
-        Named("iterations") = res.iterations
+        Named("iterations") = res.iterations,
+        Named("fisher_information") = res.XtWX
     );
 }

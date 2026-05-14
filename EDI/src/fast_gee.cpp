@@ -38,6 +38,8 @@ struct GEEResult {
     double alpha;
     MatrixXd vcov;
     double quasi_loglik;
+    VectorXd score;
+    MatrixXd bread;
     bool converged;
     int niter;
 };
@@ -115,18 +117,35 @@ inline VectorXd gee_fit_independence_glm(const MatrixXd& X, const VectorXd& y, G
     return beta;
 }
 
-GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y, const std::vector<int>& grp_start, const std::vector<int>& grp_size, GEEFamily family, int maxit = 100, double tol = 1e-8) {
+GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y, 
+                                        const std::vector<int>& grp_start, 
+                                        const std::vector<int>& grp_size, 
+                                        GEEFamily family, 
+                                        Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                                        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                        int maxit = 100, double tol = 1e-8) {
     const int n = X.rows(), p = X.cols(), G = grp_start.size();
     for (int gi = 0; gi < G; ++gi) {
         if (grp_size[gi] > 2) stop("gee_pairs_singletons_cpp: cluster %d has size %d (only singletons and pairs are supported)", gi, grp_size[gi]);
     }
     VectorXd beta = VectorXd::Zero(p);
-    if (family == GEEFamily::GAUSSIAN) {
-        MatrixXd XtX = X.transpose() * X;
-        VectorXd Xty = X.transpose() * y;
-        beta = gee_solve_system(XtX, Xty);
-    } else {
-        beta = gee_fit_independence_glm(X, y, family);
+    bool use_warm_start = false;
+    if (start_beta.isNotNull()) {
+        NumericVector sb(start_beta);
+        if (sb.size() == p) {
+            beta = as<VectorXd>(sb);
+            use_warm_start = true;
+        }
+    }
+    
+    if (!use_warm_start) {
+        if (family == GEEFamily::GAUSSIAN) {
+            MatrixXd XtX = X.transpose() * X;
+            VectorXd Xty = X.transpose() * y;
+            beta = gee_solve_system(XtX, Xty);
+        } else {
+            beta = gee_fit_independence_glm(X, y, family);
+        }
     }
 
     double alpha = 0.0; bool converged = false; int iter = 0;
@@ -136,15 +155,28 @@ GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y, co
         alpha = gee_estimate_exchangeable_alpha(resid, mu, grp_start, grp_size, family);
 
         MatrixXd Bread = MatrixXd::Zero(p, p); VectorXd Score = VectorXd::Zero(p);
+        
+        if (iter == 0 && warm_start_fisher_info.isNotNull()) {
+            NumericMatrix wf(warm_start_fisher_info);
+            if (wf.rows() == p && wf.cols() == p) {
+                Bread = as<MatrixXd>(wf);
+            }
+        }
+        
+        bool bread_is_zero = Bread.isZero();
+
         for (int gi = 0; gi < G; ++gi) {
             int sz = grp_size[gi], start = grp_start[gi];
             if (sz == 1) {
                 double mui = mu[start], vi = gee_variance(mui, family), di = gee_dmu_deta(mui, family);
-                double w = di * di / vi;
-                for(int r=0; r<p; r++) {
-                    for(int c=0; c<=r; c++) Bread(r, c) += w * X(start, r) * X(start, c);
-                    Score[r] += (di / vi) * resid[start] * X(start, r);
+                double vi_inv = 1.0 / vi;
+                double w = di * di * vi_inv;
+                if (bread_is_zero) {
+                    for(int r=0; r<p; r++) {
+                        for(int c=0; c<=r; c++) Bread(r, c) += w * X(start, r) * X(start, c);
+                    }
                 }
+                for(int r=0; r<p; r++) Score[r] += (di * vi_inv) * resid[start] * X(start, r);
             } else {
                 int i1 = start, i2 = start + 1;
                 double m1 = mu[i1], m2 = mu[i2], v1 = gee_variance(m1, family), v2 = gee_variance(m2, family);
@@ -154,22 +186,28 @@ GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y, co
                 double r1 = resid[i1], r2 = resid[i2];
                 for(int r=0; r<p; r++) {
                     double d1xr = d1 * X(i1, r), d2xr = d2 * X(i2, r);
-                    for(int c=0; c<=r; c++) {
-                        double d1xc = d1 * X(i1, c), d2xc = d2 * X(i2, c);
-                        Bread(r, c) += V11*d1xr*d1xc + V22*d2xr*d2xc + V12*(d1xr*d2xc + d2xr*d1xc);
+                    if (bread_is_zero) {
+                        for(int c=0; c<=r; c++) {
+                            double d1xc = d1 * X(i1, c), d2xc = d2 * X(i2, c);
+                            Bread(r, c) += V11*d1xr*d1xc + V22*d2xr*d2xc + V12*(d1xr*d2xc + d2xr*d1xc);
+                        }
                     }
                     Score[r] += d1xr*(V11*r1 + V12*r2) + d2xr*(V12*r1 + V22*r2);
                 }
             }
         }
-        for(int r=0; r<p; r++) for(int c=0; c<r; c++) Bread(c, r) = Bread(r, c);
+        if (bread_is_zero) {
+            for(int r=0; r<p; r++) for(int c=0; c<r; c++) Bread(c, r) = Bread(r, c);
+        }
         VectorXd delta = gee_solve_system(Bread, Score);
         if (!delta.allFinite()) break;
         beta += delta;
         if (delta.norm() < tol) { converged = true; break; }
+        bread_is_zero = true; // Compute Bread in subsequent iterations
     }
 
     MatrixXd Bread = MatrixXd::Zero(p, p), Meat = MatrixXd::Zero(p, p);
+    VectorXd ScoreFinal = VectorXd::Zero(p);
     double quasi_loglik = 0.0; VectorXd mu(n), resid(n);
     for (int i = 0; i < n; ++i) { mu[i] = gee_link_inv(X.row(i).dot(beta), family); resid[i] = y[i] - mu[i]; quasi_loglik += gee_quasi_loglik_contrib(y[i], mu[i], family); }
     alpha = gee_estimate_exchangeable_alpha(resid, mu, grp_start, grp_size, family);
@@ -179,11 +217,13 @@ GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y, co
         if (sz == 1) {
             double mui = mu[start], vi = gee_variance(mui, family), di = gee_dmu_deta(mui, family);
             double Vi_inv = 1.0 / vi, w = di * di * Vi_inv;
+            double si_val = di * Vi_inv * resid[start];
             for(int r=0; r<p; r++) {
-                double sir = (di * Vi_inv * resid[start]) * X(start, r);
+                double sir = si_val * X(start, r);
+                ScoreFinal[r] += sir;
                 for(int c=0; c<=r; c++) {
                     Bread(r, c) += w * X(start, r) * X(start, c);
-                    Meat(r, c) += sir * (di * Vi_inv * resid[start]) * X(start, c);
+                    Meat(r, c) += sir * si_val * X(start, c);
                 }
             }
         } else {
@@ -193,6 +233,7 @@ GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y, co
             double V11 = v2/detV, V22 = v1/detV, V12 = -(alpha*s1*s2)/detV, r1 = resid[i1], r2 = resid[i2];
             for(int r=0; r<p; r++) {
                 double d1xr = d1 * X(i1, r), d2xr = d2 * X(i2, r), sir = d1xr*(V11*r1 + V12*r2) + d2xr*(V12*r1 + V22*r2);
+                ScoreFinal[r] += sir;
                 for(int c=0; c<=r; c++) {
                     double d1xc = d1 * X(i1, c), d2xc = d2 * X(i2, c), sic = d1xc*(V11*r1 + V12*r2) + d2xc*(V12*r1 + V22*r2);
                     Bread(r, c) += V11*d1xr*d1xc + V22*d2xr*d2xc + V12*(d1xr*d2xc + d2xr*d1xc);
@@ -203,11 +244,14 @@ GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y, co
     }
     for(int r=0; r<p; r++) for(int c=0; c<r; c++) { Bread(c, r) = Bread(r, c); Meat(c, r) = Meat(r, c); }
     MatrixXd BI = gee_inverse_system(Bread);
-    return {beta, alpha, BI * Meat * BI, quasi_loglik, converged, iter};
+    return {beta, alpha, BI * Meat * BI, quasi_loglik, ScoreFinal, Bread, converged, iter};
 }
 
 // [[Rcpp::export]]
-List gee_pairs_singletons_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, std::string family_str, int maxit = 100, double tol = 1e-8) {
+List gee_pairs_singletons_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, std::string family_str, 
+                               Rcpp::Nullable<Rcpp::NumericVector> start_beta = R_NilValue,
+                               Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                               int maxit = 100, double tol = 1e-8) {
     GEEFamily family = GEEFamily::GAUSSIAN;
     if (family_str == "binomial") family = GEEFamily::BINOMIAL;
     else if (family_str == "poisson") family = GEEFamily::POISSON;
@@ -221,6 +265,15 @@ List gee_pairs_singletons_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y
         if (g != prev) { grp_start.push_back(i); grp_size.push_back(1); prev = g; }
         else grp_size.back()++;
     }
-    GEEResult res = gee_pairs_singletons_cpp_impl(X_s, y_s, grp_start, grp_size, family, maxit, tol);
-    return List::create(Named("beta")=res.beta, Named("alpha")=res.alpha, Named("vcov")=res.vcov, Named("quasi_loglik")=res.quasi_loglik, Named("converged")=res.converged, Named("niter")=res.niter);
+    GEEResult res = gee_pairs_singletons_cpp_impl(X_s, y_s, grp_start, grp_size, family, start_beta, warm_start_fisher_info, maxit, tol);
+    return List::create(
+        Named("beta")=res.beta, 
+        Named("alpha")=res.alpha, 
+        Named("vcov")=res.vcov, 
+        Named("quasi_loglik")=res.quasi_loglik, 
+        Named("score")=res.score,
+        Named("fisher_information")=res.bread,
+        Named("converged")=res.converged, 
+        Named("niter")=res.niter
+    );
 }

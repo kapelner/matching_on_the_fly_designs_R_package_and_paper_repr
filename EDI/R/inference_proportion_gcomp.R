@@ -416,7 +416,12 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 					return(NULL)
 				}
 				mod = tryCatch(
-					fast_logistic_regression_cpp(X = X_fit, y = as.numeric(private$y)),
+					fast_logistic_regression_cpp(
+						X = X_fit, 
+						y = as.numeric(private$y),
+						start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
+					),
 					error = function(e) NULL
 				)
 				if (is.null(mod)){
@@ -431,6 +436,8 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 					X_curr = X_curr[, -drop_col, drop = FALSE]
 					next
 				}
+				private$set_fit_warm_start(coef_hat, "beta", fisher = mod$fisher_information)
+				
 				if (estimate_only){
 					private$gcomp_design_colnames = colnames(X_fit)
 					private$gcomp_design_j_treat = j_treat
@@ -712,7 +719,12 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 						return(NULL)
 					}
 					mod = tryCatch(
-						fast_logistic_regression_cpp(X = X_fit, y = as.numeric(y_b)),
+						fast_logistic_regression_cpp(
+							X = X_fit, 
+							y = as.numeric(y_b),
+							start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
+						),
 						error = function(e) NULL
 					)
 					if (is.null(mod)){
@@ -720,6 +732,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 					}
 					coef_hat = as.numeric(mod$b)
 					if (all(is.finite(coef_hat))){
+						private$set_fit_warm_start(coef_hat, "beta", fisher = mod$fisher_information)
 						coef_names = colnames(X_fit)
 						names(coef_hat) = coef_names
 						return(list(X = X_fit, j_treat = j_treat, coefficients = coef_hat))

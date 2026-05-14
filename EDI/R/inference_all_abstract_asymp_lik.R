@@ -10,98 +10,6 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-		#' @description Computes an asymptotic confidence interval using the configured test.
-		#' @param alpha The significance level (default 0.05).
-		compute_asymp_confidence_interval = function(alpha = 0.05){
-			if (should_run_asserts()) {
-				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			}
-			switch(
-				private$testing_type,
-				wald = private$compute_wald_confidence_interval_impl(alpha),
-				score = private$invert_test_pval_confidence_interval(alpha),
-				gradient = private$invert_gradient_ci_uniroot(alpha),
-				lik_ratio = private$invert_lik_ratio_ci_newton(alpha),
-				stop("Unsupported testing_type: ", private$testing_type)
-			)
-		},
-
-		#' @description Computes an asymptotic two-sided p-value for the treatment effect.
-		#' @param delta The null treatment effect (default 0).
-		compute_asymp_two_sided_pval = function(delta = 0){
-			if (should_run_asserts()) {
-				assertNumeric(delta)
-			}
-			switch(
-				private$testing_type,
-				wald = private$compute_wald_two_sided_pval_impl(delta),
-				score = private$compute_score_two_sided_pval_impl(delta),
-				gradient = private$compute_gradient_two_sided_pval_impl(delta),
-				lik_ratio = private$compute_lik_ratio_two_sided_pval_impl(delta),
-				stop("Unsupported testing_type: ", private$testing_type)
-			)
-		},
-
-		#' @description Computes the score confidence interval regardless of configured testing type.
-		#' @param alpha The significance level (default 0.05).
-		compute_score_confidence_interval = function(alpha = 0.05){
-			if (should_run_asserts()) {
-				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			}
-			if (!"score" %in% private$get_supported_testing_types_impl()) {
-				stop(class(self)[1], " does not support score confidence intervals.", call. = FALSE)
-			}
-			private$invert_test_pval_confidence_interval(alpha)
-		},
-
-		#' @description Computes the score two-sided p-value regardless of configured testing type.
-		#' @param delta The null treatment effect (default 0).
-		compute_score_two_sided_pval = function(delta = 0){
-			private$compute_score_two_sided_pval_impl(delta)
-		},
-
-		#' @description Computes the likelihood-ratio confidence interval regardless of configured testing type.
-		#' @param alpha The significance level (default 0.05).
-		compute_lik_ratio_confidence_interval = function(alpha = 0.05){
-			if (should_run_asserts()) {
-				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			}
-			if (!"lik_ratio" %in% private$get_supported_testing_types_impl()) {
-				stop(class(self)[1], " does not support likelihood-ratio confidence intervals.", call. = FALSE)
-			}
-			private$invert_lik_ratio_ci_newton(alpha)
-		},
-
-		#' @description Computes the likelihood-ratio two-sided p-value regardless of configured testing type.
-		#' @param delta The null treatment effect (default 0).
-		compute_lik_ratio_two_sided_pval = function(delta = 0){
-			private$compute_lik_ratio_two_sided_pval_impl(delta)
-		},
-
-		#' @description Computes the gradient confidence interval regardless of configured testing type.
-		#' @param alpha The significance level (default 0.05).
-		compute_gradient_confidence_interval = function(alpha = 0.05){
-			if (should_run_asserts()) {
-				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			}
-			if (!"gradient" %in% private$get_supported_testing_types_impl()) {
-				stop(class(self)[1], " does not support gradient confidence intervals.", call. = FALSE)
-			}
-			private$invert_gradient_ci_uniroot(alpha)
-		},
-
-		#' @description Computes the gradient two-sided p-value regardless of configured testing type.
-		#' @param delta The null treatment effect (default 0).
-		compute_gradient_two_sided_pval = function(delta = 0){
-			private$compute_gradient_two_sided_pval_impl(delta)
-		},
-
-		#' @description Computes the likelihood-ratio two-sided p-value regardless of configured testing type.
-		#' @param delta The null treatment effect (default 0).
-		compute_likelihood_ratio_two_sided_pval = function(delta = 0){
-			private$compute_lik_ratio_two_sided_pval_impl(delta)
-		},
-
 		#' @description Gets the asymptotic testing methods supported by this inference object.
 		get_supported_testing_types = function(){
 			private$get_supported_testing_types_impl()
@@ -231,14 +139,22 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 		compute_score_two_sided_pval_impl = function(delta){
 			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "score")
 		},
-
+		compute_score_confidence_interval_impl = function(alpha){
+			private$invert_test_pval_confidence_interval(alpha)
+		},
 		compute_gradient_two_sided_pval_impl = function(delta){
 			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "gradient")
 		},
-
+		compute_gradient_confidence_interval_impl = function(alpha){
+			private$invert_gradient_ci_uniroot(alpha)
+		},
 		compute_lik_ratio_two_sided_pval_impl = function(delta){
 			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "lik_ratio")
 		},
+		compute_lik_ratio_confidence_interval_impl = function(alpha){
+			private$invert_lik_ratio_ci_newton(alpha)
+		},
+
 
 		get_likelihood_test_spec = function(){
 			NULL
@@ -601,11 +517,11 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 		},
 
 		supports_information_preference = function(){
-			TRUE
+			isTRUE(private$supports_likelihood_tests())
 		},
 
 		supports_observed_information = function(){
-			TRUE
+			isTRUE(private$supports_information_preference())
 		},
 
 		supports_fisher_information = function(){
@@ -613,11 +529,19 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 		},
 
 		get_supported_testing_types_impl = function(){
-			c("wald", "score", "gradient", "lik_ratio")
+			if (isTRUE(private$supports_likelihood_tests())) {
+				c("wald", "score", "gradient", "lik_ratio")
+			} else {
+				"wald"
+			}
 		},
 
 		get_supported_information_preferences_impl = function(){
-			c("auto", "observed")
+			if (isTRUE(private$supports_information_preference())) {
+				c("auto", "observed")
+			} else {
+				"auto"
+			}
 		},
 
 		get_default_information_source = function(){

@@ -80,6 +80,7 @@ struct LogisticGLMMData {
 	std::vector<double> y_s;    // responses in [0,1], length n
 	std::vector<int> grp_start; // start index of each group
 	std::vector<int> grp_size;  // size of each group
+	Eigen::VectorXd grp_y_sum;  // sum of responses in each group
 	int n, p, G;
 	GHRule gh;
 
@@ -114,10 +115,16 @@ struct LogisticGLMMData {
 			} else {
 				grp_size.back()++;
 			}
+			}
+			G = (int)grp_start.size();
+			grp_y_sum.resize(G);
+			for (int gi = 0; gi < G; ++gi) {
+				double sum_y = 0.0;
+				for (int r = 0; r < grp_size[gi]; ++r) sum_y += y_s[grp_start[gi] + r];
+				grp_y_sum[gi] = sum_y;
+			}
 		}
-		G = (int)grp_start.size();
-	}
-};
+	};
 
 class LogisticGLMMObjective {
 	const LogisticGLMMData& dat;
@@ -165,18 +172,28 @@ public:
 
 		const Eigen::VectorXd eta_all = dat.X_s * beta;
 		const Eigen::Map<const Eigen::VectorXd> y_all(dat.y_s.data(), dat.n);
+		Eigen::VectorXd group_y_eta0(dat.G);
+		for (int gi = 0; gi < dat.G; ++gi) {
+			group_y_eta0[gi] = y_all.segment(dat.grp_start[gi], dat.grp_size[gi]).dot(
+				eta_all.segment(dat.grp_start[gi], dat.grp_size[gi])
+			);
+		}
 
 		Eigen::MatrixXd log_terms_mat(dat.G, n_nodes);
 		std::vector<Eigen::VectorXd> mu_all_k_vec(n_nodes);
 
 		for (int k = 0; k < n_nodes; ++k) {
-			const Eigen::ArrayXd eta_all_k = eta_all.array() + b_vals[k];
-			mu_all_k_vec[k] = plogis_array_safe(eta_all_k).matrix();
-			const Eigen::ArrayXd term_all_k = y_all.array() * eta_all_k - log1pexp_array_safe(eta_all_k);
-
+			mu_all_k_vec[k].resize(dat.n);
 			for (int gi = 0; gi < dat.G; ++gi) {
-				log_terms_mat(gi, k) = dat.gh.log_norm_weights[k] +
-				                       term_all_k.segment(dat.grp_start[gi], dat.grp_size[gi]).sum();
+				const int start = dat.grp_start[gi];
+				const int sz = dat.grp_size[gi];
+				const Eigen::ArrayXd eta_g_k = eta_all.segment(start, sz).array() + b_vals[k];
+				const Eigen::ArrayXd mu_g_k = plogis_array_safe(eta_g_k);
+				mu_all_k_vec[k].segment(start, sz) = mu_g_k.matrix();
+				log_terms_mat(gi, k) = dat.gh.log_norm_weights[k]
+					+ group_y_eta0[gi]
+					+ b_vals[k] * dat.grp_y_sum[gi]
+					- log1pexp_array_safe(eta_g_k).sum();
 			}
 		}
 
@@ -196,26 +213,22 @@ public:
 		Eigen::VectorXd grad_beta = Eigen::VectorXd::Zero(dat.p);
 		double grad_log_sigma = 0.0;
 
-		for (int k = 0; k < n_nodes; ++k) {
-			Eigen::VectorXd post_k_expanded(dat.n);
-			double dLL_dlog_sigma_k = 0.0;
+		for (int gi = 0; gi < dat.G; ++gi) {
+			const int start = dat.grp_start[gi];
+			const int sz = dat.grp_size[gi];
+			Eigen::VectorXd weighted_res = Eigen::VectorXd::Zero(sz);
 
-			for (int gi = 0; gi < dat.G; ++gi) {
+			for (int k = 0; k < n_nodes; ++k) {
 				const double pk = std::exp(log_terms_mat(gi, k) - ll_g_vec[gi]);
-				if (pk < 1e-15) {
-					post_k_expanded.segment(dat.grp_start[gi], dat.grp_size[gi]).setZero();
-					continue;
-				}
-				post_k_expanded.segment(dat.grp_start[gi], dat.grp_size[gi]).setConstant(pk);
+				if (pk < 1e-15) continue;
 
-				const double res_sum_k_gi = (y_all.array().segment(dat.grp_start[gi], dat.grp_size[gi]) -
-				                             mu_all_k_vec[k].array().segment(dat.grp_start[gi], dat.grp_size[gi])).sum();
-				dLL_dlog_sigma_k += pk * res_sum_k_gi * b_vals[k];
+				const Eigen::VectorXd res_k_gi =
+					y_all.segment(start, sz) - mu_all_k_vec[k].segment(start, sz);
+				weighted_res.noalias() += pk * res_k_gi;
+				grad_log_sigma -= pk * res_k_gi.sum() * b_vals[k];
 			}
 
-			Eigen::VectorXd res_all_k = y_all.matrix() - mu_all_k_vec[k];
-			grad_beta.noalias() -= dat.X_s.transpose() * (post_k_expanded.cwiseProduct(res_all_k));
-			grad_log_sigma -= dLL_dlog_sigma_k;
+			grad_beta.noalias() -= dat.X_s.middleRows(start, sz).transpose() * weighted_res;
 		}
 
 		grad.head(dat.p) = grad_beta;

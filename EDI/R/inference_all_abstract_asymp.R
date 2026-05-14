@@ -11,14 +11,20 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 		#'
 		#' @param alpha  				Significance level 1 - \code{alpha}. Default 0.05.
 		#'
-		#' @return 	A Wald-type confidence interval.
+		#' @return 	A confidence interval.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
-			private$compute_wald_confidence_interval_impl(alpha)
+			switch(
+				private$testing_type,
+				wald = private$compute_wald_confidence_interval_impl(alpha),
+				score = private$compute_score_confidence_interval_impl(alpha),
+				gradient = private$compute_gradient_confidence_interval_impl(alpha),
+				lik_ratio = private$compute_lik_ratio_confidence_interval_impl(alpha)
+			)
 		},
-		#' @description Computes an asymptotic two-sided p-value for the treatment effect.
+		#' @description Computes an asymptotic two-sided p-value using the configured test.
 		#'
 		#' @param delta  				Null treatment effect to test against. Default 0.
 		#'
@@ -27,7 +33,13 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
-			private$compute_wald_two_sided_pval_impl(delta)
+			switch(
+				private$testing_type,
+				wald = private$compute_wald_two_sided_pval_impl(delta),
+				score = private$compute_score_two_sided_pval_impl(delta),
+				gradient = private$compute_gradient_two_sided_pval_impl(delta),
+				lik_ratio = private$compute_lik_ratio_two_sided_pval_impl(delta)
+			)
 		},
 		#' @description Sets the asymptotic testing method used by p-values and CIs.
 		#'
@@ -105,6 +117,44 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 		compute_score_two_sided_pval = function(delta = 0){
 			private$compute_score_two_sided_pval_impl(delta)
 		},
+		#' @description Computes the score confidence interval regardless of configured testing type.
+		#' @param alpha Significance level. Default 0.05.
+		compute_score_confidence_interval = function(alpha = 0.05){
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
+			private$compute_score_confidence_interval_impl(alpha)
+		},
+
+		#' @description Computes the likelihood-ratio two-sided p-value regardless of configured testing type.
+		#' @param delta Null treatment effect.
+		compute_lik_ratio_two_sided_pval = function(delta = 0){
+			private$compute_lik_ratio_two_sided_pval_impl(delta)
+		},
+
+		#' @description Computes the likelihood-ratio confidence interval regardless of configured testing type.
+		#' @param alpha Significance level. Default 0.05.
+		compute_lik_ratio_confidence_interval = function(alpha = 0.05){
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
+			private$compute_lik_ratio_confidence_interval_impl(alpha)
+		},
+
+		#' @description Computes the gradient two-sided p-value regardless of configured testing type.
+		#' @param delta Null treatment effect.
+		compute_gradient_two_sided_pval = function(delta = 0){
+			private$compute_gradient_two_sided_pval_impl(delta)
+		},
+
+		#' @description Computes the gradient confidence interval regardless of configured testing type.
+		#' @param alpha Significance level. Default 0.05.
+		compute_gradient_confidence_interval = function(alpha = 0.05){
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
+			private$compute_gradient_confidence_interval_impl(alpha)
+		},
 		#' @description Abstract method to compute the treatment estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		#' @return 	A scalar treatment estimate.
@@ -144,10 +194,16 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 		testing_type = "wald",
 		information_preference = "auto",
 		information_source_used = NULL,
-		get_standard_error = function() stop("Must be implemented by concrete class or shared helper."),
+		get_standard_error = function() stop(class(self)[1], " must implement get_standard_error() to support Wald-type inference."),
 		get_degrees_of_freedom = function() NA_real_,
+		compute_score_two_sided_pval_impl = function(delta) stop(class(self)[1], " does not implement score tests."),
+		compute_score_confidence_interval_impl = function(alpha) stop(class(self)[1], " does not implement score confidence intervals."),
+		compute_gradient_two_sided_pval_impl = function(delta) stop(class(self)[1], " does not implement gradient tests."),
+		compute_gradient_confidence_interval_impl = function(alpha) stop(class(self)[1], " does not implement gradient confidence intervals."),
+		compute_lik_ratio_two_sided_pval_impl = function(delta) stop(class(self)[1], " does not implement likelihood-ratio tests."),
+		compute_lik_ratio_confidence_interval_impl = function(alpha) stop(class(self)[1], " does not implement likelihood-ratio confidence intervals."),
 		get_supported_testing_types_impl = function(){
-			if (isTRUE(private$supports_likelihood_tests())) c("wald", "score", "gradient", "lik_ratio") else "wald"
+			c("wald", "score", "gradient", "lik_ratio")
 		},
 		get_supported_information_preferences_impl = function(){
 			supported = "auto"

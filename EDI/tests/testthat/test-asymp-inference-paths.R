@@ -151,6 +151,26 @@ test_that("KK Design Asymp paths", {
 	test_all_asymp_paths(inf, "KK OLS OneLik")
 })
 
+test_that("KK Bai-adjusted inference only advertises Wald support", {
+	set.seed(108)
+	n <- 40
+	des <- DesignSeqOneByOneKK14$new(n = n, response_type = "continuous", verbose = FALSE)
+	for (i in seq_len(n)) {
+		x_row <- data.frame(x1 = rnorm(1), x2 = rnorm(1))
+		w_i <- des$add_one_subject_to_experiment_and_assign(x_row)
+		y_i <- 0.4 * w_i + 0.2 * x_row$x1 + rnorm(1)
+		des$add_one_subject_response(i, y_i, 1)
+	}
+
+	inf <- InferenceBaiAdjustedTKK21$new(des, verbose = FALSE)
+	expect_identical(inf$get_supported_testing_types(), "wald")
+	expect_true(is.finite(inf$compute_asymp_two_sided_pval()))
+	expect_error(
+		inf$set_testing_type("score"),
+		"does not support testing_type"
+	)
+})
+
 test_that("KK Design continuous GLMM Asymp paths", {
 	set.seed(10)
 	n <- 60

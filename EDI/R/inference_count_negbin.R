@@ -60,6 +60,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 				fast_neg_bin_cpp(
 					X = X, y = as.integer(private$y),
 					start_params = private$get_fit_warm_start_for_length("params", ncol(X) + 1L),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X) + 1L),
 					smart_start = private$smart_default,
 					optimization_alg = private$optimization_alg
 				),
@@ -68,7 +69,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
-			private$set_fit_warm_start(c(as.numeric(res$b), log(as.numeric(res$theta_hat))), "params")
+			private$set_fit_warm_start(c(as.numeric(res$b), log(as.numeric(res$theta_hat))), "params", fisher = res$fisher_information)
 			as.numeric(res$b[2])
 		},
 		supports_reusable_bootstrap_worker = function(){
@@ -92,6 +93,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 						fast_neg_bin_cpp(
 							X = X_fit, y = y,
 							start_params = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L),
+							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit) + 1L),
 							fixed_idx = j_treat, fixed_values = delta,
 							smart_start = private$smart_default,
 							optimization_alg = private$optimization_alg
@@ -99,7 +101,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 						error = function(e) NULL
 					)
 					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
-					list(b = as.numeric(res$b), theta_hat = res$theta_hat, neg_loglik = -as.numeric(res$logLik))
+					list(b = as.numeric(res$b), theta_hat = res$theta_hat, neg_loglik = -as.numeric(res$logLik), fisher_information = res$fisher_information)
 				},
 				extract_start = function(fit){
 					c(as.numeric(fit$b), log(as.numeric(fit$theta_hat)))
@@ -136,11 +138,13 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
 					start_params = private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L)
+					warm_fisher = private$get_fit_warm_start_fisher(ncol(X_fit) + 1L)
 					if (estimate_only) {
 						res = tryCatch(
 							fast_neg_bin_cpp(
 								X = X_fit, y = as.integer(private$y),
 								start_params = start_params,
+								warm_start_fisher_info = warm_fisher,
 								smart_start = private$smart_default,
 								optimization_alg = private$optimization_alg
 							),
@@ -148,12 +152,14 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 						)
 						if (is.null(res) || !isTRUE(res$converged)) return(NULL)
 						list(b = as.numeric(res$b), ssq_b_j = NA_real_, j_treat = j_treat,
-						     theta_hat = res$theta_hat, neg_loglik = -as.numeric(res$logLik))
+						     theta_hat = res$theta_hat, neg_loglik = -as.numeric(res$logLik),
+						     fisher_information = res$fisher_information)
 					} else {
 						res = tryCatch(
 							fast_neg_bin_with_var_cpp(
 								X = X_fit, y = as.integer(private$y),
 								start_params = start_params,
+								warm_start_fisher_info = warm_fisher,
 								smart_start = private$smart_default,
 								optimization_alg = private$optimization_alg
 							),
@@ -164,7 +170,8 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 						vcov = tryCatch(solve(hess), error = function(e) matrix(NA_real_, nrow(hess), ncol(hess)))
 						ssq_b_j = if (j_treat <= ncol(X_fit)) as.numeric(vcov[j_treat, j_treat]) else NA_real_
 						list(b = as.numeric(res$b), ssq_b_j = ssq_b_j, j_treat = j_treat,
-						     theta_hat = res$theta_hat, neg_loglik = -as.numeric(res$logLik))
+						     theta_hat = res$theta_hat, neg_loglik = -as.numeric(res$logLik),
+						     fisher_information = res$hess_fisher_info_matrix)
 					}
 				},
 				fit_ok = function(mod, X_fit, keep){
@@ -175,7 +182,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 				}
 			)
 			if (!is.null(attempt$fit)){
-				private$set_fit_warm_start(c(as.numeric(attempt$fit$b), log(as.numeric(attempt$fit$theta_hat))), "params")
+				private$set_fit_warm_start(c(as.numeric(attempt$fit$b), log(as.numeric(attempt$fit$theta_hat))), "params", fisher = attempt$fit$fisher_information)
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(
 					X = attempt$X,

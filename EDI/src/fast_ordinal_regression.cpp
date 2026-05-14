@@ -140,7 +140,8 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
         Named("params") = params,
         Named("neg_loglik") = fit.value,
         Named("converged") = fit.converged,
-        Named("iterations") = fit.niter
+        Named("iterations") = fit.niter,
+        Named("fisher_information") = model.hessian(params)
     );
 }
 
@@ -181,7 +182,8 @@ List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
         Named("params") = params,
         Named("neg_loglik") = res["neg_loglik"],
         Named("converged") = converged,
-        Named("iterations") = res["iterations"]
+        Named("iterations") = res["iterations"],
+        Named("fisher_information") = H
     );
     if (!lu.isInvertible()) {
         output["ssq_b_j"] = NA_REAL;

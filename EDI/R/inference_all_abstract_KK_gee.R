@@ -242,16 +242,26 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 				return(invisible(NULL))
 			}
 			private$cached_values$df   = Inf
-			if (estimate_only) return(invisible(NULL))
+			if (estimate_only) {
+				if (!inherits(mod, "geeglm")) {
+					private$set_fit_warm_start(mod$beta, "beta", fisher = mod$fisher_information)
+				} else {
+					private$set_fit_warm_start(stats::coef(mod), "beta")
+				}
+				return(invisible(NULL))
+			}
 			if (inherits(mod, "geeglm")) {
 				coef_table = tryCatch(summary(mod)$coefficients, error = function(e) NULL)
 				private$cached_values$s_beta_hat_T = private$extract_gee_treatment_se(mod, j_treat = j_treat, coef_table = coef_table)
+				private$set_fit_warm_start(stats::coef(mod), "beta")
 			} else {
 				# Rcpp result
 				vc = mod$vcov
 				private$cached_values$s_beta_hat_T = if (j_treat <= nrow(vc)) sqrt(as.numeric(vc[j_treat, j_treat])) else NA_real_
 				private$cached_values$quasi_loglik = mod$quasi_loglik
-				private$cached_values$score_stat   = mod$score_stat
+				private$cached_values$score        = mod$score
+				
+				private$set_fit_warm_start(mod$beta, "beta", fisher = mod$fisher_information)
 			}
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				private$cache_nonestimable_se("kk_gee_standard_error_unavailable")
@@ -277,7 +287,9 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 					X = X_rcpp,
 					y = as.numeric(fit_data$y_sorted),
 					group_id = as.integer(fit_data$id_sorted),
-					family_str = family_str
+					family_str = family_str,
+					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_rcpp)),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_rcpp))
 				)
 			}, error = function(e) NULL)
 		},
@@ -320,7 +332,9 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 						X = X_rcpp,
 						y = as.numeric(fit_data$y_sorted),
 						group_id = as.integer(fit_data$id_sorted),
-						family_str = private$gee_family_str()
+						family_str = private$gee_family_str(),
+						start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_rcpp)),
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_rcpp))
 					)
 				}, error = function(e) NULL)
 				if (!is.null(res) && isTRUE(res$converged)) return(res)
@@ -329,6 +343,9 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 			std_err_arg = if (is.character(std_err)) std_err[1] else "san.se"
 			tryCatch({
 				dat_geepack = data.frame(y = fit_data$y_sorted, fit_data$dat)
+				X_geepack = cbind(`(Intercept)` = 1, as.matrix(fit_data$dat))
+				start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_geepack))
+				
 				utils::capture.output(mod <- suppressMessages(suppressWarnings(
 					geepack::geeglm(
 						y ~ .,
@@ -336,7 +353,8 @@ InferenceAbstractKKGEE = R6::R6Class("InferenceAbstractKKGEE",
 						data   = dat_geepack,
 						id     = fit_data$id_sorted,
 						corstr = "exchangeable",
-						std.err = std_err_arg
+						std.err = std_err_arg,
+						start  = start_beta
 					)
 				)))
 				mod

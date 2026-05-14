@@ -109,7 +109,7 @@ X[beta_T == 1 &
 	response_type == "incidence" &
 	inference_class %in% c(
 		"InferenceAllSimpleMeanDiff",
-		"InferenceAllKKCompoundMeanDiff",
+		"InferenceAllKKMeanDiffIVWC",
 		"InferenceIncidExactZhang",
 		"InferenceIncidKKExactZhang",
 		"InferenceIncidRiskDiff",
@@ -171,7 +171,7 @@ beta := {
 X[beta_T == 1 & response_type == "proportion" &
 	inference_class %in% c(
 		"InferenceAllSimpleMeanDiff",
-		"InferenceAllKKCompoundMeanDiff",
+		"InferenceAllKKMeanDiffIVWC",
 		"InferencePropGCompMeanDiff",
 		"InferencePropGCompMeanDiff"
 	),
@@ -199,7 +199,7 @@ X[beta_T == 1 & response_type == "proportion" &
 
 # count — simple/KK mean diff: E[Y_C] * (e - 1)
 X[beta_T == 1 & response_type == "count" &
-	inference_class %in% c("InferenceAllSimpleMeanDiff", "InferenceAllKKCompoundMeanDiff"),
+	inference_class %in% c("InferenceAllSimpleMeanDiff", "InferenceAllKKMeanDiffIVWC"),
 	beta := {
 		y_c = datasets_and_response_models[[dataset]]$y_original$count
 		mean(y_c) * (e - 1)
@@ -251,7 +251,7 @@ X[beta_T == 1 & inference_class == "InferenceSurvivalRestrictedMeanDiff",
 
 # survival — KK compound mean diff: (e-1) * mean(Y_C)
 X[beta_T == 1 & response_type == "survival" &
-	inference_class == "InferenceAllKKCompoundMeanDiff",
+	inference_class == "InferenceAllKKMeanDiffIVWC",
 	beta := {
 		y_s = datasets_and_response_models[[dataset]]$y_original$survival
 		(e - 1) * mean(y_s)
@@ -261,7 +261,7 @@ X[beta_T == 1 & response_type == "survival" &
 X[beta_T == 1 & response_type == "ordinal" &
 	inference_class %in% c(
 		"InferenceAllSimpleMeanDiff",
-		"InferenceAllKKCompoundMeanDiff",
+		"InferenceAllKKMeanDiffIVWC",
 		"InferenceOrdinalGCompMeanDiff",
 		"InferenceOrdinalGCompMeanDiff"
 	),

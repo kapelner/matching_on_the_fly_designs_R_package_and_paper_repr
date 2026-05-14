@@ -56,10 +56,17 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
 			}
-			res = fast_beta_regression_cpp(X = X, y = as.numeric(private$y), optimization_alg = private$optimization_alg)
+			n_params = ncol(X) + 1L
+			res = fast_beta_regression_cpp(
+				X = X, y = as.numeric(private$y),
+				start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
+				warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
+				optimization_alg = private$optimization_alg
+			)
 			if (is.null(res) || !is.finite(res$coefficients[2])){
 				return(NA_real_)
 			}
+			private$set_fit_warm_start(c(as.numeric(res$coefficients), log(as.numeric(res$phi))), "params", fisher = res$fisher_information)
 			as.numeric(res$coefficients[2])
 		},
 		supports_reusable_bootstrap_worker = function(){
@@ -78,11 +85,19 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 			list(
 				X = X_fit, y = y, j = j_treat,
 				full_fit = private$cached_mod,
-				fit_null = function(delta){
-					res = fast_beta_regression_cpp(X_fit, y, fixed_idx = j_treat, fixed_values = delta,
-					                               optimization_alg = private$optimization_alg)
+				fit_null = function(delta, start = NULL){
+					res = fast_beta_regression_cpp(
+						X_fit, y,
+						fixed_idx = j_treat, fixed_values = delta,
+						start_beta = start[1:ncol(X_fit)],
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit) + 1L),
+						optimization_alg = private$optimization_alg
+					)
 					if (is.null(res)) return(NULL)
-					list(b = as.numeric(res$coefficients), phi = res$phi, neg_loglik = res$neg_loglik)
+					list(b = as.numeric(res$coefficients), phi = res$phi, neg_loglik = res$neg_loglik, fisher_information = res$fisher_information)
+				},
+				extract_start = function(fit){
+					c(as.numeric(fit$b), log(as.numeric(fit$phi)))
 				},
 				score = function(fit){
 					params = c(as.numeric(fit$b), log(as.numeric(fit$phi)))
@@ -109,16 +124,29 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 				X_full = X_full,
 				required_cols = 2L,
 				fit_fun = function(X_fit){
+					n_params = ncol(X_fit) + 1L
+					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit))
+					warm_fisher = private$get_fit_warm_start_fisher(n_params)
 					if (estimate_only) {
-						res = fast_beta_regression_cpp(X_fit, private$y, optimization_alg = private$optimization_alg)
+						res = fast_beta_regression_cpp(
+							X_fit, private$y,
+							start_beta = start_beta,
+							warm_start_fisher_info = warm_fisher,
+							optimization_alg = private$optimization_alg
+						)
 						if (is.null(res)) return(NULL)
-						list(b = res$coefficients, ssq_b_2 = NA_real_, phi = res$phi, neg_loglik = res$neg_loglik)
+						list(b = res$coefficients, ssq_b_2 = NA_real_, phi = res$phi, neg_loglik = res$neg_loglik, fisher_information = res$fisher_information)
 					} else {
-						res = fast_beta_regression_with_var_cpp(X_fit, private$y, optimization_alg = private$optimization_alg)
+						res = fast_beta_regression_with_var_cpp(
+							X_fit, private$y,
+							start_beta = start_beta,
+							warm_start_fisher_info = warm_fisher,
+							optimization_alg = private$optimization_alg
+						)
 						if (is.null(res)) return(NULL)
 						list(b = res$coefficients,
 						     ssq_b_2 = if (!is.null(res$vcov) && nrow(res$vcov) >= 2L) res$vcov[2L, 2L] else NA_real_,
-						     phi = res$phi, neg_loglik = res$neg_loglik)
+						     phi = res$phi, neg_loglik = res$neg_loglik, fisher_information = res$fisher_information)
 					}
 				},
 				fit_ok = function(mod, X_fit, keep){
@@ -129,6 +157,7 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 			)
 			if (!is.null(attempt$fit)){
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
+				private$set_fit_warm_start(c(as.numeric(attempt$fit$b), log(as.numeric(attempt$fit$phi))), "params", fisher = attempt$fit$fisher_information)
 				private$cached_values$likelihood_test_context = list(
 					X = attempt$X,
 					j_treat = which(attempt$keep == 2L)

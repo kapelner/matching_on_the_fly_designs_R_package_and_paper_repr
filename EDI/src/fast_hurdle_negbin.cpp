@@ -25,6 +25,194 @@ double clamp_exp_arg_hnb(double eta) {
 	return std::min(eta, 700.0);
 }
 
+class TruncatedNegBinCount;
+
+double smart_truncated_negbin_theta_start_from_beta(const MatrixXd& X,
+													const VectorXi& y,
+													const VectorXd& beta,
+													double legacy_theta_start) {
+	const int n = X.rows();
+	const int p = X.cols();
+	const int df = std::max(1, n - p);
+	if (beta.size() != p || !beta.allFinite()) return legacy_theta_start;
+
+	VectorXd eta = (X * beta).array().min(700.0).matrix();
+	VectorXd mu = eta.array().exp().max(1e-8).matrix();
+	double alpha_sum = 0.0;
+
+	for (int i = 0; i < n; ++i) {
+		const double yi = static_cast<double>(y[i]);
+		const double mui = mu[i];
+		alpha_sum += ((yi - mui) * (yi - mui) - mui) / (mui * mui);
+	}
+
+	const double alpha_hat = alpha_sum / static_cast<double>(df);
+	if (!std::isfinite(alpha_hat) || alpha_hat <= 0.0) return legacy_theta_start;
+
+	const double theta_hat = 1.0 / alpha_hat;
+	if (!std::isfinite(theta_hat) || theta_hat <= 0.0) return legacy_theta_start;
+	return std::max(0.1, theta_hat);
+}
+
+VectorXd make_truncated_negbin_start(const MatrixXd& X_pos, const VectorXi& y_pos) {
+	const int p = X_pos.cols();
+	const VectorXd y_double = y_pos.cast<double>();
+	const double mean_y = y_double.mean();
+	const double var_y = (y_double.array() - mean_y).square().sum() /
+		static_cast<double>(std::max(1, static_cast<int>(y_pos.size()) - 1));
+	const double theta_start = (var_y > mean_y && mean_y > 0.0) ?
+		std::max(0.1, mean_y * mean_y / (var_y - mean_y)) : 10.0;
+
+	VectorXd legacy_beta = VectorXd::Zero(p);
+	if (p > 0 && X_pos.col(0).array().isApprox(ArrayXd::Ones(X_pos.rows()), 1e-12)) {
+		legacy_beta[0] = std::log(std::max(mean_y, 1e-8));
+	}
+	VectorXd beta_smart = ols_start_beta_on_log1p(X_pos, y_double);
+	VectorXd beta_start = vector_is_usable_start(beta_smart, p) ? beta_smart : legacy_beta;
+	VectorXd params = VectorXd::Zero(p + 1);
+	params.head(p) = beta_start;
+	params[p] = std::log(smart_truncated_negbin_theta_start_from_beta(X_pos, y_pos, beta_start, theta_start));
+	return params;
+}
+
+std::vector<VectorXd> make_truncated_negbin_candidate_starts(const MatrixXd& X_pos, const VectorXi& y_pos) {
+	const int p = X_pos.cols();
+	const VectorXd y_double = y_pos.cast<double>();
+	const double mean_y = y_double.mean();
+	const double var_y = (y_double.array() - mean_y).square().sum() /
+		static_cast<double>(std::max(1, static_cast<int>(y_pos.size()) - 1));
+	const double theta_moment = (var_y > mean_y && mean_y > 0.0) ?
+		std::max(0.1, mean_y * mean_y / (var_y - mean_y)) : 10.0;
+
+	VectorXd legacy_beta = VectorXd::Zero(p);
+	if (p > 0 && X_pos.col(0).array().isApprox(ArrayXd::Ones(X_pos.rows()), 1e-12)) {
+		legacy_beta[0] = std::log(std::max(mean_y, 1e-8));
+	}
+
+	std::vector<VectorXd> beta_candidates;
+	beta_candidates.push_back(legacy_beta);
+
+	VectorXd beta_log1p = ols_start_beta_on_log1p(X_pos, y_double);
+	if (vector_is_usable_start(beta_log1p, p)) beta_candidates.push_back(beta_log1p);
+
+	VectorXd beta_log = safe_ols_solve(X_pos, y_double.array().max(1.0).log().matrix());
+	if (vector_is_usable_start(beta_log, p)) beta_candidates.push_back(beta_log);
+
+	std::vector<VectorXd> starts;
+	auto add_start = [&](const VectorXd& beta, double theta_hint) {
+		if (!vector_is_usable_start(beta, p) || !std::isfinite(theta_hint) || theta_hint <= 0.0) return;
+		VectorXd candidate(p + 1);
+		candidate.head(p) = beta;
+		candidate[p] = std::log(theta_hint);
+		for (const auto& existing : starts) {
+			if (existing.size() == candidate.size() && existing.isApprox(candidate, 1e-8)) return;
+		}
+		starts.push_back(candidate);
+	};
+
+	for (const VectorXd& beta : beta_candidates) {
+		const double theta_smart = smart_truncated_negbin_theta_start_from_beta(X_pos, y_pos, beta, theta_moment);
+		add_start(beta, theta_smart);
+		add_start(beta, theta_moment);
+		add_start(beta, 10.0);
+		add_start(beta, 25.0);
+	}
+
+	if (starts.empty()) {
+		starts.push_back(make_truncated_negbin_start(X_pos, y_pos));
+	}
+	return starts;
+}
+
+LikelihoodFitResult fit_truncated_negbin_with_fallback(TruncatedNegBinCount& fun,
+														VectorXd params,
+														const FixedParamSpec& fixed_spec,
+														int maxit,
+														double tol,
+														const std::string& optimization_alg,
+														const Eigen::MatrixXd* info_start_ptr = nullptr,
+														const VectorXd* fallback_start = nullptr,
+														const std::vector<VectorXd>* extra_starts = nullptr,
+														std::string* failure_message = nullptr) {
+	LikelihoodFitResult best;
+	best.params = params;
+	best.value = std::numeric_limits<double>::infinity();
+	std::string last_error;
+
+	auto maybe_keep = [&](const LikelihoodFitResult& candidate) {
+		if (candidate.params.size() == 0 || !candidate.params.allFinite()) return;
+		if (candidate.converged && !best.converged) {
+			best = candidate;
+			return;
+		}
+		if (candidate.converged == best.converged &&
+			std::isfinite(candidate.value) &&
+			(!std::isfinite(best.value) || candidate.value < best.value)) {
+			best = candidate;
+		}
+	};
+
+	auto try_alg = [&](const std::string& alg_try,
+					   const VectorXd& start_try,
+					   const Eigen::MatrixXd* warm_info_try = nullptr) -> bool {
+		try {
+			LikelihoodFitResult fit = optimize_fixed_likelihood(
+				fun,
+				start_try,
+				fixed_spec,
+				maxit,
+				tol,
+				alg_try,
+				"lbfgs",
+				0,
+				warm_info_try
+			);
+			maybe_keep(fit);
+			return fit.converged;
+		} catch (const std::exception& e) {
+			last_error = e.what();
+			return false;
+		}
+	};
+
+	const bool has_distinct_fallback_start =
+		fallback_start != nullptr &&
+		fallback_start->size() == params.size() &&
+		!fallback_start->isApprox(params, 1e-8);
+
+	auto try_extra_starts = [&]() -> bool {
+		if (extra_starts == nullptr) return false;
+		for (const auto& start_try : *extra_starts) {
+			if (start_try.size() != params.size()) continue;
+			if (start_try.isApprox(params, 1e-8)) continue;
+			if (has_distinct_fallback_start && start_try.isApprox(*fallback_start, 1e-8)) continue;
+			if (try_alg("newton_raphson", start_try, nullptr)) return true;
+			if (try_alg("lbfgs", start_try, nullptr)) return true;
+		}
+		return false;
+	};
+
+	if (optimization_alg == "lbfgs") {
+		if (try_alg("lbfgs", params, info_start_ptr)) return best;
+		VectorXd retry_start = best.params.size() == params.size() && best.params.allFinite() ? best.params : params;
+		if (try_alg("newton_raphson", retry_start, info_start_ptr)) return best;
+		if (has_distinct_fallback_start) {
+			if (try_alg("newton_raphson", *fallback_start, nullptr)) return best;
+			if (try_alg("lbfgs", *fallback_start, nullptr)) return best;
+		}
+		if (try_extra_starts()) return best;
+	} else {
+		if (try_alg("newton_raphson", params, info_start_ptr)) return best;
+		if (has_distinct_fallback_start && try_alg("newton_raphson", *fallback_start, nullptr)) return best;
+		if (try_extra_starts()) return best;
+	}
+
+	if (failure_message != nullptr) {
+		*failure_message = last_error;
+	}
+	return best;
+}
+
 class TruncatedNegBinCount {
 private:
 	const MatrixXd m_X;
@@ -238,8 +426,8 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 		y_pos[k] = static_cast<int>(y[i]);
 	}
 
-	VectorXd params = VectorXd::Zero(p + 1);
-	params[0] = std::log(std::max(1.0, y_pos.cast<double>().mean()));
+	std::vector<VectorXd> start_candidates = make_truncated_negbin_candidate_starts(X_pos, y_pos);
+	VectorXd params = start_candidates.front();
 
 	TruncatedNegBinCount fun(X_pos, y_pos);
 	double neg_ll = NA_REAL;
@@ -252,13 +440,24 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 		info_start_ptr = &info_start;
 	}
 
-	try {
-		LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, count_fixed_spec, maxit, tol, alg, "lbfgs", 0, info_start_ptr);
-		params = fit.params;
-		neg_ll = fit.value;
-        converged = fit.converged;
-	} catch (const std::exception& e) {
-		Rcpp::warning(e.what());
+	std::string failure_message;
+	LikelihoodFitResult fit = fit_truncated_negbin_with_fallback(
+		fun,
+		params,
+		count_fixed_spec,
+		maxit,
+		tol,
+		alg,
+		info_start_ptr,
+		nullptr,
+		&start_candidates,
+		&failure_message
+	);
+	params = fit.params;
+	neg_ll = fit.value;
+	converged = fit.converged;
+	if (!converged && !failure_message.empty()) {
+		Rcpp::warning(failure_message);
 	}
 
 	VectorXd beta = params.head(p);
@@ -269,7 +468,8 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 		Named("theta_hat") = theta_hat,
 		Named("converged") = converged,
 		Named("hurdle_b") = hurdle_b,
-		Named("hurdle_converged") = hurdle_converged
+		Named("hurdle_converged") = hurdle_converged,
+		Named("fisher_information") = fun.hessian(params)
 	);
 }
 
@@ -371,12 +571,11 @@ List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X,
                 );
         }
 
-        VectorXd params(p + 1);
+        std::vector<VectorXd> start_candidates = make_truncated_negbin_candidate_starts(X_pos, y_pos);
+        VectorXd heuristic_start = start_candidates.front();
+        VectorXd params = heuristic_start;
         if (start_params.isNotNull()) {
                 params = as<VectorXd>(NumericVector(start_params));
-        } else {
-                params.setZero();
-                params[0] = std::log(std::max(1.0, y_pos.cast<double>().mean()));
         }
 
         FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
@@ -389,11 +588,28 @@ List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X,
             info_start_ptr = &info_start;
         }
 
-        LikelihoodFitResult fit;
-        try {
-                fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_start_ptr);
-        } catch (const std::exception& e) {
-                Rcpp::warning(e.what());
+        std::string failure_message;
+        LikelihoodFitResult fit = fit_truncated_negbin_with_fallback(
+                fun,
+                params,
+                fixed_spec,
+                maxit,
+                tol,
+                optimization_alg,
+                info_start_ptr,
+                &heuristic_start,
+                &start_candidates,
+                &failure_message
+        );
+        if (!fit.converged && fit.params.size() == params.size()) {
+                if (!fit.params.allFinite()) {
+                        fit.params = params;
+                }
+        }
+        if (!fit.converged && !failure_message.empty()) {
+                Rcpp::warning(failure_message);
+        }
+        if (fit.params.size() != p + 1 || !fit.params.allFinite()) {
                 return List::create(
                         Named("b") = NumericVector(p, NA_REAL),
                         Named("params") = NumericVector(p + 1, NA_REAL),
@@ -408,7 +624,8 @@ List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X,
                 Named("b") = beta,
                 Named("params") = params,
                 Named("converged") = fit.converged,
-                Named("neg_ll") = fit.value
+                Named("neg_ll") = fit.value,
+                Named("fisher_information") = fun.hessian(params)
         );
         if (estimate_only || !fit.converged){
                 return out;

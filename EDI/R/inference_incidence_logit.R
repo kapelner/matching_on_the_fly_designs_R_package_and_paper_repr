@@ -65,12 +65,13 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 			res = fast_logistic_regression_cpp(
 				X = X, y = as.numeric(private$y),
 				start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
+				warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X)),
 				optimization_alg = private$optimization_alg
 			)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
-			private$set_fit_warm_start(res$b, "beta")
+			private$set_fit_warm_start(res$b, "beta", fisher = res$fisher_information)
 			as.numeric(res$b[2])
 		},
 		supports_reusable_bootstrap_worker = function(){
@@ -100,6 +101,7 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 						y = y,
 						j = j_treat,
 						start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
 						fixed_idx = j_treat,
 						fixed_values = delta,
 						optimization_alg = private$optimization_alg
@@ -135,17 +137,20 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 				required_cols = 2L, # intercept and treatment
 				fit_fun = function(X_fit){
 					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit))
+					warm_fisher = private$get_fit_warm_start_fisher(ncol(X_fit))
 					if (estimate_only) {
 						res = fast_logistic_regression_cpp(
 							X_fit, private$y,
 							start_beta = start_beta,
+							warm_start_fisher_info = warm_fisher,
 							optimization_alg = private$optimization_alg
 						)
-						list(b = res$b, ssq_b_2 = NA_real_)
+						list(b = res$b, fisher_information = res$fisher_information, ssq_b_2 = NA_real_)
 					} else {
 						fast_logistic_regression_with_var_cpp(
 							X_fit, private$y,
 							start_beta = start_beta,
+							warm_start_fisher_info = warm_fisher,
 							optimization_alg = private$optimization_alg
 						)
 					}
@@ -157,7 +162,7 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 				}
 			)
 			if (!is.null(attempt$fit)){
-				private$set_fit_warm_start(attempt$fit$b, "beta")
+				private$set_fit_warm_start(attempt$fit$b, "beta", fisher = attempt$fit$fisher_information)
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(
 					X = attempt$X,

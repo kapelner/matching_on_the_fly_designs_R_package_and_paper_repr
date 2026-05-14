@@ -62,10 +62,18 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(1, treatment = private$w, X_cov)
 			}
-			res = tryCatch(fast_poisson_regression_cpp(X = X, y = as.numeric(private$y)), error = function(e) NULL)
+			res = tryCatch(
+				fast_poisson_regression_cpp(
+					X = X, y = as.numeric(private$y),
+					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X))
+				),
+				error = function(e) NULL
+			)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
+			private$set_fit_warm_start(res$b, "beta", fisher = res$XtWX)
 			as.numeric(res$b[2])
 		},
 		supports_reusable_bootstrap_worker = function(){
@@ -82,7 +90,11 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat))
 			}
 			mod = tryCatch(
-				fast_poisson_regression_cpp(X = X_fit, y = as.numeric(private$y)),
+				fast_poisson_regression_cpp(
+					X = X_fit, y = as.numeric(private$y),
+					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
+				),
 				error = function(e) NULL
 			)
 			if (is.null(mod)){
@@ -92,15 +104,16 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat))){
 				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat))
 			}
+			private$set_fit_warm_start(coef_hat, "beta", fisher = mod$XtWX)
 			if (estimate_only){
 				b_full = rep(NA_real_, ncol(X))
 				b_full[reduced$keep] = coef_hat
 				names(b_full) = colnames(X)
-				return(list(b = b_full, ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat))
+				return(list(b = b_full, ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod))
 			}
 			mu_hat = as.numeric(exp(X_fit %*% coef_hat))
 			if (length(mu_hat) != nrow(X_fit) || any(!is.finite(mu_hat)) || any(mu_hat <= 0)){
-				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat))
+				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod))
 			}
 			bread = NULL
 			var_keep = seq_len(ncol(X_fit))
@@ -118,7 +131,7 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				reduced_weighted = private$reduce_design_matrix_preserving_treatment(X_weighted)
 				keep_sub = as.integer(reduced_weighted$keep)
 				if (length(keep_sub) == 0L) {
-					return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat))
+					return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod))
 				}
 				X_var_candidate = as.matrix(X_fit[, keep_sub, drop = FALSE])
 				cross_mat = tryCatch(
@@ -134,7 +147,7 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				}
 			}
 			if (is.null(bread)){
-				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat))
+				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod))
 			}
 			resid = as.numeric(private$y) - mu_hat
 			meat = crossprod(X_var, X_var * (resid^2))
@@ -180,6 +193,7 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 						y = y,
 						j = j_treat,
 						start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
 						fixed_idx = j_treat,
 						fixed_values = delta,
 						smart_start = private$smart_default,

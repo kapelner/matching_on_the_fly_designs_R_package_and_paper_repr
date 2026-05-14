@@ -207,7 +207,8 @@ List fast_weibull_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
             Named("log_sigma") = params[p],
             Named("converged") = fit.converged,
             Named("iterations") = fit.niter,
-            Named("neg_ll") = fit.value
+            Named("neg_ll") = fit.value,
+            Named("fisher_information") = fun.hessian(params)
         );
     }
 
@@ -222,6 +223,7 @@ List fast_weibull_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
         Named("vcov") = vcov,
         Named("converged") = fit.converged,
         Named("iterations") = fit.niter,
-        Named("neg_ll") = fit.value
+        Named("neg_ll") = fit.value,
+        Named("fisher_information") = H
     );
 }

@@ -65,7 +65,8 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 					res = tryCatch(
 						fast_coxph_regression_cpp(
 							X, y, dead,
-							start_beta = start,
+							start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X)),
+							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X)),
 							fixed_idx = 1L,
 							fixed_values = delta,
 							estimate_only = TRUE
@@ -73,7 +74,7 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 						error = function(e) NULL
 					)
 					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
-					list(b = as.numeric(res$coefficients), neg_loglik = as.numeric(res$neg_ll))
+					list(b = as.numeric(res$coefficients), neg_loglik = as.numeric(res$neg_ll), fisher_information = res$fisher_information)
 				},
 				extract_start = function(fit){
 					as.numeric(fit$b)
@@ -102,13 +103,20 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 			}
 			if (private$use_rcpp) {
 				fit = tryCatch(
-					fast_coxph_regression(X_fit, private$y, private$dead, use_rcpp = TRUE, estimate_only = estimate_only),
+					fast_coxph_regression(
+						X_fit, private$y, private$dead, 
+						use_rcpp = TRUE, 
+						estimate_only = estimate_only,
+						start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
+					),
 					error = function(e) NULL
 				)
 				if (is.null(fit)) {
 					private$cached_values$likelihood_test_context = NULL
 					return(list(b = rep(NA_real_, ncol(X_fit)), vcov = matrix(NA_real_, ncol(X_fit), ncol(X_fit))))
 				}
+				private$set_fit_warm_start(as.numeric(fit$b), "beta", fisher = fit$fisher_information)
 				private$cached_values$likelihood_test_context = list(
 					X = X_fit,
 					full_neg_loglik = fit$neg_log_lik

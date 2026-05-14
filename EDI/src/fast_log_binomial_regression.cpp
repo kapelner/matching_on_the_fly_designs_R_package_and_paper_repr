@@ -197,7 +197,8 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
     _["mu_hat"] = mu,
     _["working_weights"] = w,
     _["iterations"] = iterations,
-    _["converged"] = converged && all_finite_vec(beta) && all_finite_vec(mu) && all_finite_vec(w)
+    _["converged"] = converged && all_finite_vec(beta) && all_finite_vec(mu) && all_finite_vec(w),
+    _["fisher_information"] = weighted_crossprod(X, w)
   );
 }
 
@@ -230,8 +231,8 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& X,
   FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
   Eigen::MatrixXd X_free(X.rows(), fixed_spec.free_idx.size());
   for (int col = 0; col < fixed_spec.free_idx.size(); ++col) X_free.col(col) = X.col(fixed_spec.free_idx[col]);
-  Eigen::MatrixXd XtWX = weighted_crossprod(X_free, w);
-  Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
+  Eigen::MatrixXd XtWX_free = weighted_crossprod(X_free, w);
+  Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX_free);
   if (ldlt.info() != Eigen::Success) {
     return List::create(
       _["b"] = beta,
@@ -273,7 +274,8 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& X,
     _["std_err"] = std_err,
     _["z_vals"] = z_vals,
     _["ssq_b_j"] = ssq_b_j,
-    _["converged"] = true
+    _["converged"] = true,
+    _["fisher_information"] = weighted_crossprod(X, w)
   );
 }
 

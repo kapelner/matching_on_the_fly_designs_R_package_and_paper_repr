@@ -51,13 +51,15 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
 			}
-			start_params = private$get_fit_warm_start_for_length("params", 2 * ncol(X) + 3L)
-			if (is.null(start_params)) start_params = rep(0, 2 * ncol(X) + 3L)
-			res = fast_dep_cens_transform_optim_cpp(y = private$y, dead = private$dead, X = X, start_params = start_params)
+			n_params = 2 * ncol(X) + 3L
+			start_params = private$get_fit_warm_start_for_length("params", n_params)
+			if (is.null(start_params)) start_params = rep(0, n_params)
+			warm_fisher = private$get_fit_warm_start_fisher(n_params)
+			res = fast_dep_cens_transform_optim_cpp(y = private$y, dead = private$dead, X = X, start_params = start_params, warm_start_fisher_info = warm_fisher)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
-			private$set_fit_warm_start(res$b, "params")
+			private$set_fit_warm_start(res$b, "params", fisher = res$fisher_information)
 			as.numeric(res$b[2])
 		},
 		supports_reusable_bootstrap_worker = function(){
@@ -81,8 +83,10 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 				fit_null = function(delta, start = NULL){
 					start_params = start %||% private$get_fit_warm_start_for_length("params", n_params)
 					if (is.null(start_params)) start_params = rep(0, n_params)
+					warm_fisher = private$get_fit_warm_start_fisher(n_params)
 					tryCatch(fast_dep_cens_transform_optim_cpp(
 						y = y, dead = dead, X = X_fit, start_params = start_params,
+						warm_start_fisher_info = warm_fisher,
 						fixed_idx = j_treat, fixed_values = delta
 					), error = function(e) NULL)
 				},
@@ -110,15 +114,19 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 				X_full = X_full,
 				required_cols = 2L,
 				fit_fun = function(X_fit){
-					start_params = private$get_fit_warm_start_for_length("params", 2 * ncol(X_fit) + 3L)
-					if (is.null(start_params)) start_params = rep(0, 2 * ncol(X_fit) + 3L)
+					n_params = 2 * ncol(X_fit) + 3L
+					start_params = private$get_fit_warm_start_for_length("params", n_params)
+					if (is.null(start_params)) start_params = rep(0, n_params)
+					warm_fisher = private$get_fit_warm_start_fisher(n_params)
 					res = tryCatch(fast_dep_cens_transform_optim_cpp(
-						y = private$y, dead = private$dead, X = X_fit, start_params = start_params
+						y = private$y, dead = private$dead, X = X_fit, start_params = start_params,
+						warm_start_fisher_info = warm_fisher
 					), error = function(e) NULL)
 					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
 					list(
 						b = as.numeric(res$b),
 						neg_loglik = as.numeric(res$neg_loglik),
+						fisher_information = res$fisher_information,
 						ssq_b_2 = if (estimate_only || is.null(res$vcov) || nrow(res$vcov) < 2L) NA_real_
 						          else as.numeric(res$vcov[2L, 2L])
 					)
@@ -130,7 +138,7 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 				}
 			)
 			if (!is.null(attempt$fit)){
-				private$set_fit_warm_start(attempt$fit$b, "params")
+				private$set_fit_warm_start(attempt$fit$b, "params", fisher = attempt$fit$fisher_information)
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(X = attempt$X)
 			} else {

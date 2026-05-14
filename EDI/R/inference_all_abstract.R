@@ -307,6 +307,7 @@ Inference = R6::R6Class("Inference",
 		reusable_bootstrap_worker_enabled = TRUE,
 		fit_warm_start = NULL,
 		fit_warm_start_type = NULL,
+		fit_warm_start_fisher = NULL,
 		likelihood_null_warm_cache = NULL,
 		reduced_design_keep_cache = NULL,
 		fixed_covariate_keep_cache = NULL,
@@ -343,9 +344,10 @@ Inference = R6::R6Class("Inference",
 		clear_fit_warm_start = function(){
 			private$fit_warm_start = NULL
 			private$fit_warm_start_type = NULL
+			private$fit_warm_start_fisher = NULL
 			invisible(NULL)
 		},
-		set_fit_warm_start = function(start, type = c("beta", "params")){
+		set_fit_warm_start = function(start, type = c("beta", "params"), fisher = NULL){
 			if (!isTRUE(private$fit_warm_start_enabled)) {
 				private$clear_fit_warm_start()
 				return(invisible(NULL))
@@ -362,6 +364,17 @@ Inference = R6::R6Class("Inference",
 			}
 			private$fit_warm_start = start
 			private$fit_warm_start_type = type
+			
+			if (!is.null(fisher) && is.matrix(fisher)) {
+				fisher = as.matrix(fisher)
+				if (nrow(fisher) == length(start) && ncol(fisher) == length(start) && all(is.finite(fisher))) {
+					private$fit_warm_start_fisher = fisher
+				} else {
+					private$fit_warm_start_fisher = NULL
+				}
+			} else {
+				private$fit_warm_start_fisher = NULL
+			}
 			invisible(NULL)
 		},
 		get_fit_warm_start = function(type = c("beta", "params")){
@@ -379,6 +392,16 @@ Inference = R6::R6Class("Inference",
 			if (!is.finite(expected_length) || expected_length < 1L) return(NULL)
 			if (length(start) != expected_length) return(NULL)
 			start
+		},
+		get_fit_warm_start_fisher = function(expected_dim = NULL){
+			if (!isTRUE(private$fit_warm_start_enabled)) return(NULL)
+			fisher = private$fit_warm_start_fisher
+			if (is.null(fisher)) return(NULL)
+			if (!is.null(expected_dim)) {
+				expected_dim = as.integer(expected_dim)[1L]
+				if (nrow(fisher) != expected_dim || ncol(fisher) != expected_dim) return(NULL)
+			}
+			fisher
 		},
 		clear_likelihood_null_warm_cache = function(){
 			private$likelihood_null_warm_cache = list()

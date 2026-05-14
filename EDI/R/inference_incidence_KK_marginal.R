@@ -86,7 +86,12 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 		},
 		fit_modified_poisson = function(X_fit, j_treat, estimate_only = FALSE){
 			mod = tryCatch(
-				fast_poisson_regression_cpp(X = X_fit, y = as.numeric(private$y)),
+				fast_poisson_regression_cpp(
+					X = X_fit, 
+					y = as.numeric(private$y),
+					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
+				),
 				error = function(e) NULL
 			)
 			if (is.null(mod)){
@@ -236,6 +241,9 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 				return(invisible(NULL))
 			}
 			private$cached_mod = fit$mod %||% fit
+			# Save warm start
+			private$set_fit_warm_start(private$cached_mod$b, "beta", fisher = private$cached_mod$fisher_information)
+			
 			private$cached_values$likelihood_test_context = list(
 				X = X_fit,
 				j_treat = j_treat

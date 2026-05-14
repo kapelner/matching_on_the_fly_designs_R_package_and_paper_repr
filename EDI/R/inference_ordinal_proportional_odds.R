@@ -58,12 +58,13 @@ InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 			res = fast_ordinal_regression_cpp(
 				X = X, y = as.numeric(private$y),
 				start_params = private$get_fit_warm_start_for_length("params", ncol(X) + length(sort(unique(private$y))) - 1L),
+				warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X) + length(sort(unique(private$y))) - 1L),
 				smart_start = private$smart_default
 			)
 			if (is.null(res) || length(res$b) < 1L || !is.finite(res$b[length(res$b)])){
 				return(NA_real_)
 			}
-			private$set_fit_warm_start(res$params, "params")
+			private$set_fit_warm_start(res$params, "params", fisher = res$fisher_information)
 			as.numeric(res$b[length(res$b)])
 		},
 		supports_reusable_bootstrap_worker = function(){
@@ -88,13 +89,14 @@ InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 						fast_ordinal_regression_cpp(
 							X_fit, y,
 							start_params = start %||% private$get_fit_warm_start_for_length("params", length(ctx$full_params)),
+							warm_start_fisher_info = private$get_fit_warm_start_fisher(length(ctx$full_params)),
 							fixed_idx = j_treat, fixed_values = delta,
 							smart_start = private$smart_default
 						),
 						error = function(e) NULL
 					)
 					if (is.null(res) || length(res) == 0) return(NULL)
-					list(params = as.numeric(res$params), neg_loglik = as.numeric(res$neg_loglik))
+					list(params = as.numeric(res$params), neg_loglik = as.numeric(res$neg_loglik), fisher_information = res$fisher_information)
 				},
 				extract_start = function(fit){
 					as.numeric(fit$params)
@@ -120,21 +122,25 @@ InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 				X_full = X_full,
 				required_cols = 1L,
 				fit_fun = function(X_fit){
-					start_params = private$get_fit_warm_start_for_length("params", ncol(X_fit) + length(sort(unique(private$y))) - 1L)
+					n_params = ncol(X_fit) + length(sort(unique(private$y))) - 1L
+					start_params = private$get_fit_warm_start_for_length("params", n_params)
+					warm_fisher = private$get_fit_warm_start_fisher(n_params)
 					if (estimate_only) {
 						res = fast_ordinal_regression_cpp(
 							X_fit, private$y,
 							start_params = start_params,
+							warm_start_fisher_info = warm_fisher,
 							smart_start = private$smart_default
 						)
-						list(b = res$b, ssq_b_j = NA_real_, params = res$params, neg_loglik = res$neg_loglik)
+						list(b = res$b, ssq_b_j = NA_real_, params = res$params, neg_loglik = res$neg_loglik, fisher_information = res$fisher_information)
 					} else {
 						res = fast_ordinal_regression_with_var_cpp(
 							X_fit, private$y,
 							start_params = start_params,
+							warm_start_fisher_info = warm_fisher,
 							smart_start = private$smart_default
 						)
-						list(b = res$b, ssq_b_j = res$ssq_b_j, params = res$params, neg_loglik = res$neg_loglik)
+						list(b = res$b, ssq_b_j = res$ssq_b_j, params = res$params, neg_loglik = res$neg_loglik, fisher_information = res$fisher_information)
 					}
 				},
 				fit_ok = function(mod, X_fit, keep){
@@ -145,7 +151,7 @@ InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 				}
 			)
 			if (!is.null(attempt$fit)){
-				private$set_fit_warm_start(attempt$fit$params, "params")
+				private$set_fit_warm_start(attempt$fit$params, "params", fisher = attempt$fit$fisher_information)
 				private$best_X_colnames = setdiff(colnames(attempt$X), "treatment")
 				n_alpha = length(attempt$fit$params) - ncol(attempt$X)
 				private$cached_values$likelihood_test_context = list(

@@ -12,8 +12,15 @@ InferenceKKPassThroughCompound = R6::R6Class("InferenceKKPassThroughCompound",
 	),
 	private = list(
 		compute_estimate_from_matched_and_reservoir = function(run_matched, run_reservoir){
+			if (!isTRUE(private$has_match_structure)) {
+				private$cache_nonestimable_estimate("kk_design_required")
+				return(invisible(NULL))
+			}
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
+			}
+			if (is.null(private$cached_values$KKstats)) {
+				return(invisible(NULL))
 			}
 			if (private$only_matches()){
 				run_matched()

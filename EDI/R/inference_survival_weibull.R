@@ -55,16 +55,18 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
 			}
+			n_params = ncol(X) + 1L
 			res = fast_weibull_regression_cpp(
 				y = private$y, dead = private$dead, X = X,
-				start_params = private$get_fit_warm_start_for_length("params", ncol(X) + 1L),
+				start_params = private$get_fit_warm_start_for_length("params", n_params),
+				warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
 				smart_start = private$smart_default,
 				estimate_only = TRUE, optimization_alg = private$optimization_alg
 			)
 			if (is.null(res) || !isTRUE(res$converged) || !is.finite(res$coefficients[2])){
 				return(NA_real_)
 			}
-			private$set_fit_warm_start(c(as.numeric(res$coefficients), as.numeric(res$log_sigma)), "params")
+			private$set_fit_warm_start(c(as.numeric(res$coefficients), as.numeric(res$log_sigma)), "params", fisher = res$fisher_information)
 			as.numeric(res$coefficients[2])
 		},
 		supports_reusable_bootstrap_worker = function(){
@@ -89,6 +91,7 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 						fast_weibull_regression_cpp(
 							y = y, dead = dead, X = X_fit,
 							start_params = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L),
+							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit) + 1L),
 							fixed_idx = j_treat, fixed_values = delta,
 							smart_start = private$smart_default,
 							optimization_alg = private$optimization_alg
@@ -96,7 +99,7 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 						error = function(e) NULL
 					)
 					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
-					list(b = as.numeric(res$coefficients), log_sigma = res$log_sigma, neg_loglik = as.numeric(res$neg_ll))
+					list(b = as.numeric(res$coefficients), log_sigma = res$log_sigma, neg_loglik = as.numeric(res$neg_ll), fisher_information = res$fisher_information)
 				},
 				extract_start = function(fit){
 					c(as.numeric(fit$b), as.numeric(fit$log_sigma))
@@ -126,10 +129,13 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 				X_full = X_full,
 				required_cols = 2L,
 				fit_fun = function(X_fit){
-					start_params = private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L)
+					n_params = ncol(X_fit) + 1L
+					start_params = private$get_fit_warm_start_for_length("params", n_params)
+					warm_fisher = private$get_fit_warm_start_fisher(n_params)
 					res = fast_weibull_regression_cpp(
 						y = private$y, dead = private$dead, X = X_fit,
 						start_params = start_params,
+						warm_start_fisher_info = warm_fisher,
 						smart_start = private$smart_default,
 						estimate_only = estimate_only, optimization_alg = private$optimization_alg
 					)
@@ -138,6 +144,7 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 						b = as.numeric(res$coefficients),
 						log_sigma = as.numeric(res$log_sigma),
 						neg_loglik = as.numeric(res$neg_ll),
+						fisher_information = res$fisher_information,
 						ssq_b_2 = if (estimate_only || is.null(res$vcov)) NA_real_ else {
 							if (nrow(res$vcov) >= 2L) res$vcov[2L, 2L] else NA_real_
 						}
@@ -150,7 +157,7 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 				}
 			)
 			if (!is.null(attempt$fit)){
-				private$set_fit_warm_start(c(as.numeric(attempt$fit$b), as.numeric(attempt$fit$log_sigma)), "params")
+				private$set_fit_warm_start(c(as.numeric(attempt$fit$b), as.numeric(attempt$fit$log_sigma)), "params", fisher = attempt$fit$fisher_information)
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(
 					X = attempt$X,

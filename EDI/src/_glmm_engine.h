@@ -158,22 +158,22 @@ public:
         for (int gi = 0; gi < dat.G; ++gi) {
             const int start = dat.grp_start[gi];
             const int sz = dat.grp_size[gi];
-            const Eigen::MatrixXd Xg = dat.X_s.middleRows(start, sz);
+            const auto Xg = dat.X_s.middleRows(start, sz);
             const Eigen::VectorXd eta0 = Xg * beta;
 
             Eigen::VectorXd log_terms(nn);
-            std::vector<Eigen::VectorXd> dL_dp_sum_nodes(nn, Eigen::VectorXd::Zero(nm));
-            std::vector<Eigen::VectorXd> dL_de_nodes(nn, Eigen::VectorXd::Zero(sz));
+            Eigen::MatrixXd dL_dp_sum_nodes = Eigen::MatrixXd::Zero(nm, nn);
+            Eigen::MatrixXd dL_de_nodes(sz, nn);
+            Eigen::VectorXd dp(nm);
 
             for (int k = 0; k < nn; ++k) {
                 double ll = dat.gh.log_norm_weights[k];
                 for (int r = 0; r < sz; ++r) {
                     double de;
-                    Eigen::VectorXd dp(nm);
                     double lp = model.log_prob_derivs(dat.y_s[start + r], eta0[r] + b_vals[k], par, de, dp);
                     ll += lp;
-                    dL_dp_sum_nodes[k] += dp;
-                    dL_de_nodes[k][r] = de;
+                    dL_dp_sum_nodes.col(k).noalias() += dp;
+                    dL_de_nodes(r, k) = de;
                 }
                 log_terms[k] = ll;
             }
@@ -185,10 +185,10 @@ public:
                 double pk = std::exp(log_terms[k] - ll_g);
                 if (pk < 1e-15) continue;
 
-                const Eigen::VectorXd dLi_db = Xg.transpose() * dL_de_nodes[k];
-                grad.head(nm) -= pk * dL_dp_sum_nodes[k];
+                const Eigen::VectorXd dLi_db = Xg.transpose() * dL_de_nodes.col(k);
+                grad.head(nm) -= pk * dL_dp_sum_nodes.col(k);
                 grad.segment(nm, dat.p) -= pk * dLi_db;
-                grad[nm + dat.p] -= pk * dL_de_nodes[k].sum() * std::sqrt(2.0) * dat.gh.nodes[k] * sigma;
+                grad[nm + dat.p] -= pk * dL_de_nodes.col(k).sum() * std::sqrt(2.0) * dat.gh.nodes[k] * sigma;
             }
         }
         return total_nll;

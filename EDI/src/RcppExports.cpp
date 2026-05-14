@@ -609,8 +609,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_beta_regression_with_var_cpp
-List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X, const NumericVector& y, Nullable<NumericVector> start_beta, double start_phi, bool compute_std_errs, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg);
-RcppExport SEXP _EDI_fast_beta_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP start_betaSEXP, SEXP start_phiSEXP, SEXP compute_std_errsSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP) {
+List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X, const NumericVector& y, Nullable<NumericVector> start_beta, double start_phi, bool compute_std_errs, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_beta_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP start_betaSEXP, SEXP start_phiSEXP, SEXP compute_std_errsSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -622,7 +622,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_beta_regression_with_var_cpp(X, y, start_beta, start_phi, compute_std_errs, fixed_idx, fixed_values, optimization_alg));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_beta_regression_with_var_cpp(X, y, start_beta, start_phi, compute_std_errs, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -960,8 +961,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // gee_pairs_singletons_cpp
-List gee_pairs_singletons_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, std::string family_str, int maxit, double tol);
-RcppExport SEXP _EDI_gee_pairs_singletons_cpp(SEXP XSEXP, SEXP ySEXP, SEXP group_idSEXP, SEXP family_strSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
+List gee_pairs_singletons_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, std::string family_str, Rcpp::Nullable<Rcpp::NumericVector> start_beta, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info, int maxit, double tol);
+RcppExport SEXP _EDI_gee_pairs_singletons_cpp(SEXP XSEXP, SEXP ySEXP, SEXP group_idSEXP, SEXP family_strSEXP, SEXP start_betaSEXP, SEXP warm_start_fisher_infoSEXP, SEXP maxitSEXP, SEXP tolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -969,9 +970,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type group_id(group_idSEXP);
     Rcpp::traits::input_parameter< std::string >::type family_str(family_strSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type start_beta(start_betaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
-    rcpp_result_gen = Rcpp::wrap(gee_pairs_singletons_cpp(X, y, group_id, family_str, maxit, tol));
+    rcpp_result_gen = Rcpp::wrap(gee_pairs_singletons_cpp(X, y, group_id, family_str, start_beta, warm_start_fisher_info, maxit, tol));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -4323,7 +4326,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_get_beta_regression_score_cpp", (DL_FUNC) &_EDI_get_beta_regression_score_cpp, 3},
     {"_EDI_get_beta_regression_hessian_cpp", (DL_FUNC) &_EDI_get_beta_regression_hessian_cpp, 3},
     {"_EDI_fast_beta_regression_cpp", (DL_FUNC) &_EDI_fast_beta_regression_cpp, 9},
-    {"_EDI_fast_beta_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_beta_regression_with_var_cpp, 8},
+    {"_EDI_fast_beta_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_beta_regression_with_var_cpp, 9},
     {"_EDI_get_clogit_plus_glmm_score_cpp", (DL_FUNC) &_EDI_get_clogit_plus_glmm_score_cpp, 9},
     {"_EDI_get_clogit_plus_glmm_hessian_cpp", (DL_FUNC) &_EDI_get_clogit_plus_glmm_hessian_cpp, 9},
     {"_EDI_fast_clogit_plus_glmm_cpp", (DL_FUNC) &_EDI_fast_clogit_plus_glmm_cpp, 16},
@@ -4343,7 +4346,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_fast_gaussian_lmm_cpp", (DL_FUNC) &_EDI_fast_gaussian_lmm_cpp, 11},
     {"_EDI_get_gaussian_lmm_score_cpp", (DL_FUNC) &_EDI_get_gaussian_lmm_score_cpp, 4},
     {"_EDI_get_gaussian_lmm_fisher_cpp", (DL_FUNC) &_EDI_get_gaussian_lmm_fisher_cpp, 5},
-    {"_EDI_gee_pairs_singletons_cpp", (DL_FUNC) &_EDI_gee_pairs_singletons_cpp, 6},
+    {"_EDI_gee_pairs_singletons_cpp", (DL_FUNC) &_EDI_gee_pairs_singletons_cpp, 8},
     {"_EDI_get_hurdle_negbin_count_score_cpp", (DL_FUNC) &_EDI_get_hurdle_negbin_count_score_cpp, 3},
     {"_EDI_get_hurdle_negbin_count_hessian_cpp", (DL_FUNC) &_EDI_get_hurdle_negbin_count_hessian_cpp, 3},
     {"_EDI_fast_hurdle_negbin_cpp", (DL_FUNC) &_EDI_fast_hurdle_negbin_cpp, 10},

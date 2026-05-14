@@ -351,11 +351,13 @@ List fast_poisson_glmm_cpp(
 	const double pen = soft_barrier(par[total - 1]);
 	const double true_neg_ll = neg_ll - pen;
 
+	Eigen::MatrixXd information = obj.hessian(par);
+	information(total - 1, total - 1) -= soft_barrier_hessian(par[total - 1]);
+
 	double ssq_b_T = NA_REAL;
 	Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(total, total, NA_REAL);
 	if (!estimate_only && converged) {
-		Eigen::MatrixXd H = obj.hessian(par);
-		Eigen::MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
+		Eigen::MatrixXd H_free = subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx);
 		Eigen::LDLT<Eigen::MatrixXd> ldlt(H_free);
 		if (ldlt.info() == Eigen::Success) {
 			Eigen::MatrixXd inv_free = ldlt.solve(Eigen::MatrixXd::Identity(H_free.rows(), H_free.cols()));
@@ -370,7 +372,8 @@ List fast_poisson_glmm_cpp(
 		Named("ssq_b_T")    = ssq_b_T,
 		Named("vcov")       = vcov,
 		Named("converged")  = converged,
-		Named("neg_loglik") = true_neg_ll
+		Named("neg_loglik") = true_neg_ll,
+		Named("fisher_information") = information
 	);
 }
 

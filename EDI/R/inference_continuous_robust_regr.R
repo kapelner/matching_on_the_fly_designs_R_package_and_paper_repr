@@ -83,8 +83,6 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 	private = list(
 		rlm_method = NULL,
 		use_rcpp = TRUE,
-		fit_warm_coefficients = NULL,
-		fit_warm_keep = NULL,
 		best_X_colnames = NULL,
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design from the original data
@@ -160,12 +158,12 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 			)
 		},
 		fit_rlm_model = function(X_fit, estimate_only = FALSE, warm_start = FALSE){
-			start_beta = if (warm_start && !is.null(private$fit_warm_coefficients) && 
-							 length(private$fit_warm_coefficients) == ncol(X_fit)) private$fit_warm_coefficients else NULL
+			start_beta = if (warm_start) private$get_fit_warm_start_for_length("beta", ncol(X_fit)) else NULL
+			warm_fisher = if (warm_start) private$get_fit_warm_start_fisher(ncol(X_fit)) else NULL
 			
 			if (private$use_rcpp) {
 				tryCatch(
-					fast_robust_regression_cpp(X = X_fit, y = as.numeric(private$y), start_beta = start_beta, method = private$rlm_method, j = 2L),
+					fast_robust_regression_cpp(X = X_fit, y = as.numeric(private$y), start_beta = start_beta, warm_start_fisher_info = warm_fisher, method = private$rlm_method, j = 2L),
 					error = function(e) NULL
 				)
 			} else {
@@ -216,7 +214,11 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 				X_fit = attempt$X
 				j_treat = fit$j_treat
 				private$best_X_colnames = setdiff(colnames(X_fit), c("(Intercept)", "treatment"))
-				private$fit_warm_coefficients = as.numeric(if (private$use_rcpp) fit$coefficients else stats::coef(fit))
+				private$set_fit_warm_start(
+					as.numeric(if (private$use_rcpp) fit$coefficients else stats::coef(fit)),
+					"beta",
+					fisher = if (private$use_rcpp) fit$fisher_information else NULL
+				)
 			} else {
 				# Reuse structure
 				X_data = private$get_X()
@@ -233,6 +235,11 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 					private$set_failed_fit_cache()
 					return(invisible(NULL))
 				}
+				private$set_fit_warm_start(
+					as.numeric(if (private$use_rcpp) fit$coefficients else stats::coef(fit)),
+					"beta",
+					fisher = if (private$use_rcpp) fit$fisher_information else NULL
+				)
 			}
 			beta_hat = as.numeric(if (private$use_rcpp) fit$coefficients else stats::coef(fit))
 			private$cached_values$beta_hat_T = beta_hat[j_treat]

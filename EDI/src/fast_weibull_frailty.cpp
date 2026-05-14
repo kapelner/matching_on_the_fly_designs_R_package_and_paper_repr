@@ -57,6 +57,8 @@ private:
 
 	std::vector<int> m_group_start;
 	std::vector<int> m_group_end;
+	Eigen::VectorXd m_group_dead_sum;
+	Eigen::VectorXd m_group_dead_log_y_sum;
 	int m_n_groups;
 
 	void build_group_structure(const Eigen::VectorXi& group_id) {
@@ -82,19 +84,28 @@ private:
 		Eigen::VectorXi sorted_gid(m_n);
 		for (int i = 0; i < m_n; ++i) sorted_gid[i] = group_id[order[i]];
 
-		m_group_start.clear();
-		m_group_end.clear();
-		int i = 0;
-		while (i < m_n) {
+			m_group_start.clear();
+			m_group_end.clear();
+			int i = 0;
+			while (i < m_n) {
 			const int g = sorted_gid[i];
 			m_group_start.push_back(i);
 			int j = i + 1;
 			while (j < m_n && sorted_gid[j] == g) ++j;
 			m_group_end.push_back(j);
 			i = j;
+			}
+			m_n_groups = (int)m_group_start.size();
+			m_group_dead_sum.resize(m_n_groups);
+			m_group_dead_log_y_sum.resize(m_n_groups);
+			for (int gi = 0; gi < m_n_groups; ++gi) {
+				const int start = m_group_start[gi];
+				const int sz = m_group_end[gi] - start;
+				const auto dead_seg = m_dead.segment(start, sz);
+				m_group_dead_sum[gi] = dead_seg.sum();
+				m_group_dead_log_y_sum[gi] = (dead_seg.array() * m_log_y.segment(start, sz).array()).sum();
+			}
 		}
-		m_n_groups = (int)m_group_start.size();
-	}
 
 public:
 	WeibullFrailtyLikelihood(
@@ -140,19 +151,24 @@ public:
 		std::vector<Eigen::VectorXd> r_all_k_vec(n_nodes);
 		std::vector<Eigen::VectorXd> w_all_k_vec(n_nodes);
 
-		for (int k = 0; k < n_nodes; ++k) {
-			const Eigen::ArrayXd wik = clamp_weibull_wf((log_y_all - eta_all.array() - u_vals[k]) / sigma_eps);
-			const Eigen::ArrayXd ewik = wik.exp();
-			w_all_k_vec[k] = wik.matrix();
-			r_all_k_vec[k] = (ewik - dead_all).matrix();
-
-			const Eigen::ArrayXd term_all_k = (dead_all > 0.5).select(wik - log_sigma_eps - log_y_all - ewik, -ewik);
-			
-			for (int gi = 0; gi < m_n_groups; ++gi) {
-				log_terms_mat(gi, k) = m_gh.log_norm_weights[k] + 
-				                       term_all_k.segment(m_group_start[gi], m_group_end[gi] - m_group_start[gi]).sum();
+			for (int k = 0; k < n_nodes; ++k) {
+				const Eigen::ArrayXd wik = clamp_weibull_wf((log_y_all - eta_all.array() - u_vals[k]) / sigma_eps);
+				const Eigen::ArrayXd ewik = wik.exp();
+				w_all_k_vec[k] = wik.matrix();
+				r_all_k_vec[k] = (ewik - dead_all).matrix();
+				
+				for (int gi = 0; gi < m_n_groups; ++gi) {
+					const int start = m_group_start[gi];
+					const int sz = m_group_end[gi] - start;
+					const double sum_dead_wik = (dead_all.segment(start, sz) * wik.segment(start, sz)).sum();
+					const double sum_ewik = ewik.segment(start, sz).sum();
+					log_terms_mat(gi, k) = m_gh.log_norm_weights[k]
+						+ sum_dead_wik
+						- m_group_dead_sum[gi] * log_sigma_eps
+						- m_group_dead_log_y_sum[gi]
+						- sum_ewik;
+				}
 			}
-		}
 
 		Eigen::VectorXd ll_g_vec(m_n_groups);
 		double total_nll = 0.0;
@@ -162,40 +178,35 @@ public:
 			total_nll -= ll_g_vec[gi];
 		}
 
-		Eigen::VectorXd grad_beta = Eigen::VectorXd::Zero(m_p);
-		double grad_log_sigma_eps = 0.0;
-		double grad_log_sigma_u = 0.0;
-
-		for (int k = 0; k < n_nodes; ++k) {
-			Eigen::VectorXd post_k_expanded(m_n);
-			double dLL_dlog_sigma_u_k = 0.0;
-			double dLL_dlog_sigma_eps_k = 0.0;
+			Eigen::VectorXd grad_beta = Eigen::VectorXd::Zero(m_p);
+			double grad_log_sigma_eps = 0.0;
+			double grad_log_sigma_u = 0.0;
+			const double inv_sigma_eps = 1.0 / sigma_eps;
 
 			for (int gi = 0; gi < m_n_groups; ++gi) {
-				const double pk = std::exp(log_terms_mat(gi, k) - ll_g_vec[gi]);
-				if (pk < 1e-15) {
-					post_k_expanded.segment(m_group_start[gi], m_group_end[gi] - m_group_start[gi]).setZero();
-					continue;
-				}
 				const int start = m_group_start[gi];
 				const int sz = m_group_end[gi] - start;
-				post_k_expanded.segment(start, sz).setConstant(pk);
+				Eigen::VectorXd weighted_r = Eigen::VectorXd::Zero(sz);
 
-				const double r_k_sum_gi = r_all_k_vec[k].segment(start, sz).sum();
-				const double dll_dlse_gi = (w_all_k_vec[k].array().segment(start, sz) * 
-				                            (r_all_k_vec[k].array().segment(start, sz) + dead_all.segment(start, sz)) - 
-				                            dead_all.segment(start, sz)).sum();
-				
-				dLL_dlog_sigma_u_k += pk * (u_vals[k] / sigma_eps) * r_k_sum_gi;
-				dLL_dlog_sigma_eps_k += pk * dll_dlse_gi;
+				for (int k = 0; k < n_nodes; ++k) {
+					const double pk = std::exp(log_terms_mat(gi, k) - ll_g_vec[gi]);
+					if (pk < 1e-15) continue;
+					const auto r_seg = r_all_k_vec[k].segment(start, sz);
+					const auto w_seg = w_all_k_vec[k].segment(start, sz);
+					const auto dead_seg = dead_all.segment(start, sz);
+
+					const double r_k_sum_gi = r_seg.sum();
+					const double dll_dlse_gi = (w_seg.array() * (r_seg.array() + dead_seg) - dead_seg).sum();
+					
+					weighted_r.noalias() += pk * r_seg;
+					grad_log_sigma_u -= pk * (u_vals[k] * inv_sigma_eps) * r_k_sum_gi;
+					grad_log_sigma_eps -= pk * dll_dlse_gi;
+				}
+
+				grad_beta.noalias() -= inv_sigma_eps * m_X.middleRows(start, sz).transpose() * weighted_r;
 			}
-			
-			grad_beta.noalias() -= (post_k_expanded.asDiagonal() * r_all_k_vec[k]).transpose() * m_X / sigma_eps;
-			grad_log_sigma_eps -= dLL_dlog_sigma_eps_k;
-			grad_log_sigma_u -= dLL_dlog_sigma_u_k;
-		}
 		
-		grad.head(m_p) = grad_beta;
+			grad.head(m_p) = grad_beta;
 		grad[m_p] = grad_log_sigma_eps;
 		grad[m_p + 1] = grad_log_sigma_u;
 

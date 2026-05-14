@@ -168,17 +168,20 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			if (delta != 0) return(NULL)
 			n = length(y)
-			w_mat = permutations$w_mat
+			w_mat = as.matrix(permutations$w_mat)
+			storage.mode(w_mat) = "integer"
 			m_mat = permutations$m_mat
 			if (is.null(m_mat)) {
 				m_mat = matrix(0L, nrow = n, ncol = ncol(w_mat))
 			} else {
+				m_mat = as.matrix(m_mat)
 				m_mat[is.na(m_mat)] = 0L
+				storage.mode(m_mat) = "integer"
 			}
 			res = compute_matching_compound_distr_parallel_cpp(
+				as.numeric(y),
 				w_mat,
 				m_mat,
-				as.numeric(y),
 				private$n_cpp_threads(ncol(w_mat))
 			)
 			return(res)
@@ -225,3 +228,6 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 		}
 	)
 )
+
+#' @export
+InferenceAllKKCompoundMeanDiff = InferenceAllKKMeanDiffIVWC

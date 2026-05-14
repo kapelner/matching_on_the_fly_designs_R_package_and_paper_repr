@@ -250,6 +250,8 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 					y             = inp$y,
 					dead          = inp$dead,
 					strata        = strata_sub,
+					start_beta    = private$get_fit_warm_start_for_length("params", ncol(inp$X)),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(inp$X)),
 					estimate_only = FALSE,
 					optimization_alg = private$optimization_alg
 				),
@@ -265,6 +267,8 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 					X             = inp$X,
 					y             = inp$y,
 					dead          = inp$dead,
+					start_beta    = private$get_fit_warm_start_for_length("params", ncol(inp$X)),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(inp$X)),
 					estimate_only = FALSE,
 					optimization_alg = private$optimization_alg
 				),
@@ -278,7 +282,7 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 			beta_w  = as.numeric(fit$coefficients[1])
 			ssq_w   = if (!is.null(fit$vcov) && nrow(fit$vcov) >= 1L && is.finite(fit$vcov[1, 1]) && fit$vcov[1, 1] > 0)
 				fit$vcov[1, 1] else NA_real_
-			list(b = c(0, beta_w), ssq_b_2 = ssq_w)
+			list(b = c(0, beta_w), ssq_b_2 = ssq_w, fisher_information = fit$fisher_information)
 		},
 		generate_mod = function(estimate_only = FALSE){
 			X_full      = private$X
@@ -299,6 +303,7 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 					res = private$fit_rcpp_stratified(informative_rows, X_linear, strata_info$strata_id)
 					if (!is.null(res) && isTRUE(res$fit$converged)){
 						private$cached_mod = res$fit
+						private$set_fit_warm_start(as.numeric(res$fit$coefficients), "params", fisher = res$fit$fisher_information)
 						private$cached_values$likelihood_test_context = list(
 							X = res$X,
 							y = res$y,
@@ -312,6 +317,7 @@ InferenceSurvivalStratCoxPHAbstract = R6::R6Class("InferenceSurvivalStratCoxPHAb
 					res = private$fit_rcpp_unstratified(informative_rows, X_linear)
 					if (!is.null(res) && isTRUE(res$fit$converged)){
 						private$cached_mod = res$fit
+						private$set_fit_warm_start(as.numeric(res$fit$coefficients), "params", fisher = res$fit$fisher_information)
 						private$cached_values$likelihood_test_context = list(
 							X = res$X,
 							y = res$y,

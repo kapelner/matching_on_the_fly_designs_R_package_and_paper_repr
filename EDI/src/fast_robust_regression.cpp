@@ -244,6 +244,7 @@ List fast_robust_regression_cpp(
         Named("scale") = res.scale,
         Named("converged") = res.converged,
         Named("iterations") = res.iterations,
-        Named("ssq_b_j") = ssq_j
+        Named("ssq_b_j") = ssq_j,
+        Named("fisher_information") = res.XtWX
     );
 }

@@ -172,23 +172,38 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			X_fit = private$build_component_matrix(private$model_formula, private$best_X_colnames, treatment_name = "treatment")
 			Xzi_fit = private$build_component_matrix(private$model_formula_zero, private$best_Xzi_colnames, treatment_name = "treatment")
 			if (private$use_rcpp && identical(private$za_description(), "Zero-Inflated Negative Binomial")) {
-				start_params = private$get_fit_warm_start_for_length("params", ncol(X_fit) + ncol(Xzi_fit) + 1L)
+				n_params = ncol(X_fit) + ncol(Xzi_fit) + 1L
+				start_params = private$get_fit_warm_start_for_length("params", n_params)
+				warm_fisher = private$get_fit_warm_start_fisher(n_params)
 				fit = tryCatch(
-					fast_zinb_cpp(X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit, start_params = start_params, estimate_only = estimate_only, optimization_alg = private$optimization_alg),
+					fast_zinb_cpp(
+						X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit,
+						start_params = start_params,
+						warm_start_fisher_info = warm_fisher,
+						estimate_only = estimate_only, optimization_alg = private$optimization_alg
+					),
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) return(NA_real_)
-				private$set_fit_warm_start(as.numeric(fit$params), "params")
+				private$set_fit_warm_start(as.numeric(fit$params), "params", fisher = fit$fisher_information)
 				return(as.numeric(fit$coefficients$cond[2]))
 			} else if (private$use_rcpp && !grepl("Negative Binomial", private$za_description())) {
 				is_hurdle = identical(private$za_description(), "Hurdle Poisson")
-				start_params = private$get_fit_warm_start_for_length("params", ncol(X_fit) + ncol(Xzi_fit))
+				n_params = ncol(X_fit) + ncol(Xzi_fit)
+				start_params = private$get_fit_warm_start_for_length("params", n_params)
+				warm_fisher = private$get_fit_warm_start_fisher(n_params)
 				fit = tryCatch(
-					fast_zero_augmented_poisson_cpp(X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit, is_hurdle = is_hurdle, start_params = start_params, estimate_only = estimate_only, optimization_alg = private$optimization_alg),
+					fast_zero_augmented_poisson_cpp(
+						X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit,
+						is_hurdle = is_hurdle,
+						start_params = start_params,
+						warm_start_fisher_info = warm_fisher,
+						estimate_only = estimate_only, optimization_alg = private$optimization_alg
+					),
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) return(NA_real_)
-				private$set_fit_warm_start(as.numeric(c(fit$coefficients$cond, fit$coefficients$zi)), "params")
+				private$set_fit_warm_start(as.numeric(c(fit$coefficients$cond, fit$coefficients$zi)), "params", fisher = fit$fisher_information)
 				return(as.numeric(fit$coefficients$cond[2]))
 			} else {
 				dat = private$build_component_frame(X_fit, Xzi_fit)
@@ -228,12 +243,14 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
 					start_params = start %||% private$get_fit_warm_start_for_length("params", start_len)
+					warm_fisher = private$get_fit_warm_start_fisher(start_len)
 					fit = if (is_zinb) {
 						fast_zinb_cpp(
 							X = X_fit,
 							y = y,
 							Xzi = Xzi_fit,
 							start_params = start_params,
+							warm_start_fisher_info = warm_fisher,
 							estimate_only = FALSE,
 							optimization_alg = private$optimization_alg,
 							fixed_idx = j_treat,
@@ -246,6 +263,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 							Xzi = Xzi_fit,
 							is_hurdle = is_hurdle,
 							start_params = start_params,
+							warm_start_fisher_info = warm_fisher,
 							estimate_only = FALSE,
 							optimization_alg = private$optimization_alg,
 							fixed_idx = j_treat,
@@ -269,18 +287,12 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					}
 				},
 				observed_information = function(fit){
-					mat = fit$information %||% fit$observed_information
-					if (!is.null(mat)) return(as.matrix(mat))
 					params = as.numeric(fit$params %||% c(as.numeric(fit$coefficients$cond), as.numeric(fit$coefficients$zi)))
-					if (is_zinb) NULL
-					else as.matrix(-get_zero_augmented_poisson_hessian_cpp(X = X_fit, y = y, Xzi = Xzi_fit, params = params, is_hurdle = is_hurdle))
+					as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% (if (is_zinb) -get_zinb_hessian_cpp(X_fit, y, Xzi_fit, params) else -get_zero_augmented_poisson_hessian_cpp(X_fit, y, Xzi_fit, params, is_hurdle)))
 				},
 				information = function(fit){
-					mat = fit$information %||% fit$observed_information
-					if (!is.null(mat)) return(as.matrix(mat))
 					params = as.numeric(fit$params %||% c(as.numeric(fit$coefficients$cond), as.numeric(fit$coefficients$zi)))
-					if (is_zinb) NULL
-					else as.matrix(-get_zero_augmented_poisson_hessian_cpp(X = X_fit, y = y, Xzi = Xzi_fit, params = params, is_hurdle = is_hurdle))
+					as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% (if (is_zinb) -get_zinb_hessian_cpp(X_fit, y, Xzi_fit, params) else -get_zero_augmented_poisson_hessian_cpp(X_fit, y, Xzi_fit, params, is_hurdle)))
 				},
 				neg_loglik = function(fit){
 					params = as.numeric(fit$params %||% c(as.numeric(fit$coefficients$cond), as.numeric(fit$coefficients$zi)))
@@ -365,16 +377,23 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				Xzi_fit = private$build_component_matrix(private$model_formula_zero, private$best_Xzi_colnames, treatment_name = "w")
 			}
 			if (private$use_rcpp && identical(private$za_description(), "Zero-Inflated Negative Binomial")) {
-				start_params = private$get_fit_warm_start_for_length("params", ncol(X_fit) + ncol(Xzi_fit) + 1L)
+				n_params = ncol(X_fit) + ncol(Xzi_fit) + 1L
+				start_params = private$get_fit_warm_start_for_length("params", n_params)
+				warm_fisher = private$get_fit_warm_start_fisher(n_params)
 				fit = tryCatch(
-					fast_zinb_cpp(X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit, start_params = start_params, estimate_only = estimate_only, optimization_alg = private$optimization_alg),
+					fast_zinb_cpp(
+						X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit,
+						start_params = start_params,
+						warm_start_fisher_info = warm_fisher,
+						estimate_only = estimate_only, optimization_alg = private$optimization_alg
+					),
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) {
 					private$cache_nonestimable_estimate("zinb_fit_unavailable")
 					return(invisible(NULL))
 				}
-				private$set_fit_warm_start(as.numeric(fit$params), "params")
+				private$set_fit_warm_start(as.numeric(fit$params), "params", fisher = fit$fisher_information)
 				private$cached_mod = fit
 				private$cached_values$likelihood_test_context = list(
 					X = X_fit,
@@ -389,16 +408,24 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				}
 			} else if (private$use_rcpp && !grepl("Negative Binomial", private$za_description())) {
 				is_hurdle = identical(private$za_description(), "Hurdle Poisson")
-				start_params = private$get_fit_warm_start_for_length("params", ncol(X_fit) + ncol(Xzi_fit))
+				n_params = ncol(X_fit) + ncol(Xzi_fit)
+				start_params = private$get_fit_warm_start_for_length("params", n_params)
+				warm_fisher = private$get_fit_warm_start_fisher(n_params)
 				fit = tryCatch(
-					fast_zero_augmented_poisson_cpp(X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit, is_hurdle = is_hurdle, start_params = start_params, estimate_only = estimate_only, optimization_alg = private$optimization_alg),
+					fast_zero_augmented_poisson_cpp(
+						X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit,
+						is_hurdle = is_hurdle,
+						start_params = start_params,
+						warm_start_fisher_info = warm_fisher,
+						estimate_only = estimate_only, optimization_alg = private$optimization_alg
+					),
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) {
 					private$cache_nonestimable_estimate("zero_augmented_poisson_fit_unavailable")
 					return(invisible(NULL))
 				}
-				private$set_fit_warm_start(as.numeric(c(fit$coefficients$cond, fit$coefficients$zi)), "params")
+				private$set_fit_warm_start(as.numeric(c(fit$coefficients$cond, fit$coefficients$zi)), "params", fisher = fit$fisher_information)
 				private$cached_mod = fit
 				private$cached_values$likelihood_test_context = list(
 					X = X_fit,

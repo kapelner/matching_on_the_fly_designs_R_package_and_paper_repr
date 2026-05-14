@@ -250,7 +250,8 @@ List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorX
     return List::create(
         Named("b") = res.b,
         Named("w") = weights_vec,
-        Named("iterations") = res.iterations
+        Named("iterations") = res.iterations,
+        Named("fisher_information") = res.XtWX
     );
 }
 

@@ -105,12 +105,19 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 				X = cbind("(Intercept)" = 1, treatment = private$w, X_cov)
 			}
 			fit = tryCatch(
-				fast_logistic_regression_cpp(X = X, y = as.numeric(private$y)),
+				fast_logistic_regression_cpp(
+					X = X, 
+					y = as.numeric(private$y),
+					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X))
+				),
 				error = function(e) NULL
 			)
 			if (is.null(fit) || !private$coefficients_are_usable(as.numeric(fit$b))){
 				return(NA_real_)
 			}
+			private$set_fit_warm_start(fit$b, "beta", fisher = fit$fisher_information)
+			
 			# Standardized effect
 			coef_hat = as.numeric(fit$b)
 			X1 = X
@@ -199,7 +206,12 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 					return(NULL)
 				}
 				mod = tryCatch(
-					fast_logistic_regression_cpp(X = X_fit, y = as.numeric(private$y)),
+					fast_logistic_regression_cpp(
+						X = X_fit, 
+						y = as.numeric(private$y),
+						start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
+					),
 					error = function(e) NULL
 				)
 				if (is.null(mod)){
@@ -214,6 +226,8 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 					X_curr = X_curr[, -drop_col, drop = FALSE]
 					next
 				}
+				private$set_fit_warm_start(coef_hat, "beta", fisher = mod$fisher_information)
+				
 				if (estimate_only){
 					return(list(
 						X = X_fit,

@@ -341,6 +341,7 @@ List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
 		Named("zero_one_b1") = params.tail(p_zero_one),
 		Named("params") = params,
 		Named("vcov") = vcov_mat,
-		Named("neg_loglik") = fit.value
+		Named("neg_loglik") = fit.value,
+		Named("fisher_information") = H
 	);
 }

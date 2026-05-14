@@ -546,7 +546,8 @@ List fast_clayton_weibull_aft_optim_cpp(
         Named("neg_ll") = fit.value,
         Named("loglik") = R_finite(fit.value) ? -fit.value : NA_REAL,
         Named("niter") = fit.niter,
-        Named("converged") = fit.converged
+        Named("converged") = fit.converged,
+        Named("fisher_information") = fun.hessian(params)
     );
 
     if (!estimate_only && fit.converged) {
@@ -609,7 +610,8 @@ List fast_dep_cens_transform_optim_cpp(
         Named("neg_ll") = fit.value,
         Named("loglik") = R_finite(fit.value) ? -fit.value : NA_REAL,
         Named("niter") = fit.niter,
-        Named("converged") = fit.converged
+        Named("converged") = fit.converged,
+        Named("fisher_information") = fun.hessian(params)
     );
 
     if (!estimate_only && fit.converged) {

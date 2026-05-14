@@ -12,8 +12,13 @@ script_dir = dirname(script_path)
 repo_root = normalizePath(file.path(script_dir, ".."), mustWork = TRUE)
 repo_path = function(...) file.path(repo_root, ...)
 
-pacman::p_load(doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table, profvis)
-suppressPackageStartupMessages(library(EDI))
+pacman::p_load(doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table, profvis, devtools)
+if (dir.exists(repo_path("EDI"))) {
+	devtools::load_all(repo_path("EDI"))
+} else {
+	suppressPackageStartupMessages(library(EDI))
+}
+
 source(repo_path("EDI", "tests", "testthat", "helper-likelihood-method-smoke.R"))
 
 max_n_dataset = 148 #needs to be divisible by 4 for some blocking designs
@@ -436,7 +441,7 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 		"InferenceCountMultiKKHurdlePoissonOneLik",
 		"InferenceCountUnivKKHurdlePoissonIVWC",
 		"InferenceCountUnivKKHurdlePoissonOneLik"
-	)) || (response_type != "continuous" && (is(seq_des_inf, "InferenceAllSimpleMeanDiff") || is(seq_des_inf, "InferenceAllKKCompoundMeanDiff")))
+	)) || (response_type != "continuous" && (is(seq_des_inf, "InferenceAllSimpleMeanDiff") || is(seq_des_inf, "InferenceAllKKMeanDiffIVWC")))
 	skip_ci_rand_custom = FALSE
 	
 	skip_ci = beta_T == 1 && (
@@ -675,7 +680,8 @@ call_direct_asymp = function(method_name, testing_type, ...){
 		error = function(e){
 			msg = if (length(e$message) == 0L) "" else e$message
 			if (grepl("Must be implemented by concrete class or shared helper.", msg, fixed = TRUE) ||
-			    grepl("not implemented", msg, ignore.case = TRUE) ||
+			    grepl("does not expose a likelihood-test specification", msg, fixed = TRUE) ||
+			    grepl("not implement", msg, ignore.case = TRUE) ||
 			    grepl("must implement", msg, ignore.case = TRUE)) {
 				message("          Skipping ", method_name, " (not implemented)")
 				return(structure(list(skipped = TRUE), class = "edi_skip_direct"))
@@ -863,8 +869,10 @@ run_exhaustive_remaining_inference_classes = function(des_obj, response_type, de
 			FALSE
 		)
 	}
+	is_kk_design_type = design_type %in% c("KK21", "KK21stepwise", "KK14", "FixedBinaryMatch")
 	for (class_name in sort(unique(gen_names))){
 		if (is_response_family_mismatch(class_name, response_type)) next
+		if (!is_kk_design_type && grepl("KK", class_name, fixed = TRUE)) next
 		class_gen = get(class_name, envir = ns)
 		inf_obj = instantiate_inference_generator(class_gen, des_obj, model_formula = model_formula)
 		if (is.null(inf_obj)) next
@@ -1042,8 +1050,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 				inference_banner("InferenceBaiAdjustedTKK21")
 				run_inference_checks(InferenceBaiAdjustedTKK21$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 			}
-			inference_banner("InferenceAllKKCompoundMeanDiff")
-			run_inference_checks(InferenceAllKKCompoundMeanDiff$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+			inference_banner("InferenceAllKKMeanDiffIVWC")
+			run_inference_checks(InferenceAllKKMeanDiffIVWC$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 			inference_banner("InferenceAllKKWilcoxIVWC")
 			run_inference_checks(InferenceAllKKWilcoxIVWC$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 			run_inference_checks_both_paths(InferenceContinKKRobustRegrIVWC, "InferenceContinKKRobustRegrIVWC", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
@@ -1063,8 +1071,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 		inference_banner("InferenceAllSimpleMeanDiff")
 		run_inference_checks(InferenceAllSimpleMeanDiff$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 		if (is_kk_design){
-			inference_banner("InferenceAllKKCompoundMeanDiff")
-			run_inference_checks(InferenceAllKKCompoundMeanDiff$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+			inference_banner("InferenceAllKKMeanDiffIVWC")
+			run_inference_checks(InferenceAllKKMeanDiffIVWC$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 			run_inference_checks_both_paths(InferenceIncidKKClogitOneLik, "InferenceIncidKKClogitOneLik", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
 			run_inference_checks_both_paths(InferenceIncidKKClogitIVWC, "InferenceIncidKKClogitIVWC", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
 			run_inference_checks_both_paths(InferenceIncidKKGEE, "InferenceIncidKKGEE", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
@@ -1096,8 +1104,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 		inference_banner("InferenceAllSimpleWilcox")
 		run_inference_checks(InferenceAllSimpleWilcox$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 		if (is_kk_design){
-			inference_banner("InferenceAllKKCompoundMeanDiff")
-			run_inference_checks(InferenceAllKKCompoundMeanDiff$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+			inference_banner("InferenceAllKKMeanDiffIVWC")
+			run_inference_checks(InferenceAllKKMeanDiffIVWC$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 			inference_banner("InferenceAllKKWilcoxIVWC")
 			run_inference_checks(InferenceAllKKWilcoxIVWC$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 			run_inference_checks_both_paths(InferencePropKKGEE, "InferencePropKKGEE", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
@@ -1119,8 +1127,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 		inference_banner("InferenceAllSimpleWilcox")
 		run_inference_checks(InferenceAllSimpleWilcox$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 		if (is_kk_design){
-			inference_banner("InferenceAllKKCompoundMeanDiff")
-			run_inference_checks(InferenceAllKKCompoundMeanDiff$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+			inference_banner("InferenceAllKKMeanDiffIVWC")
+			run_inference_checks(InferenceAllKKMeanDiffIVWC$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 			inference_banner("InferenceAllKKWilcoxIVWC")
 			run_inference_checks(InferenceAllKKWilcoxIVWC$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 			run_inference_checks_both_paths(InferenceCountKKHurdlePoissonOneLik, "InferenceCountKKHurdlePoissonOneLik", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
@@ -1147,7 +1155,7 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 				grepl("does not currently support censored", msg, fixed = TRUE) ||
 				grepl("does not support censored", msg, fixed = TRUE)
 			}
-			for (kk_surv_class in list(InferenceAllKKCompoundMeanDiff, InferenceAllKKWilcoxIVWC, InferenceAllKKWilcoxRegrUnivIVWC, InferenceAllKKWilcoxRegrMultiIVWC)){
+			for (kk_surv_class in list(InferenceAllKKMeanDiffIVWC, InferenceAllKKWilcoxIVWC, InferenceAllKKWilcoxRegrUnivIVWC, InferenceAllKKWilcoxRegrMultiIVWC)){
 				class_name = kk_surv_class$classname
 				inference_banner(class_name)
 				err_msg = tryCatch({
@@ -1224,8 +1232,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 		inference_banner("InferenceAllSimpleWilcox")
 		run_inference_checks(InferenceAllSimpleWilcox$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 		if (is_kk_design){
-			inference_banner("InferenceAllKKCompoundMeanDiff")
-			run_inference_checks(InferenceAllKKCompoundMeanDiff$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+			inference_banner("InferenceAllKKMeanDiffIVWC")
+			run_inference_checks(InferenceAllKKMeanDiffIVWC$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 			inference_banner("InferenceAllKKWilcoxIVWC")
 			run_inference_checks(InferenceAllKKWilcoxIVWC$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 			inference_banner("InferenceAllKKWilcoxRegrUnivIVWC")

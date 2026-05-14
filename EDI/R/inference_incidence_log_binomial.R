@@ -53,10 +53,18 @@ InferenceIncidLogBinomial = R6::R6Class("InferenceIncidLogBinomial",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(1, treatment = private$w, X_cov)
 			}
-			res = tryCatch(fast_log_binomial_regression_cpp(X = X, y = as.numeric(private$y)), error = function(e) NULL)
+			res = tryCatch(
+				fast_log_binomial_regression_cpp(
+					X = X, y = as.numeric(private$y),
+					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X))
+				),
+				error = function(e) NULL
+			)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
+			private$set_fit_warm_start(res$b, "beta", fisher = res$fisher_information)
 			as.numeric(res$b[2])
 		},
 		supports_reusable_bootstrap_worker = function(){
@@ -75,11 +83,21 @@ InferenceIncidLogBinomial = R6::R6Class("InferenceIncidLogBinomial",
 			list(
 				X = X_fit, y = y, j = j_treat,
 				full_fit = private$cached_mod,
-				fit_null = function(delta){
-					res = tryCatch(fast_log_binomial_regression_cpp(X = X_fit, y = y,
-					               fixed_idx = j_treat, fixed_values = delta), error = function(e) NULL)
+				fit_null = function(delta, start = NULL){
+					res = tryCatch(
+						fast_log_binomial_regression_cpp(
+							X = X_fit, y = y,
+							start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
+							fixed_idx = j_treat, fixed_values = delta
+						),
+						error = function(e) NULL
+					)
 					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
 					res
+				},
+				extract_start = function(fit){
+					as.numeric(fit$b)
 				},
 				score = function(fit){
 					get_log_binomial_regression_score_cpp(X_fit, y, as.numeric(fit$b))
@@ -112,13 +130,28 @@ InferenceIncidLogBinomial = R6::R6Class("InferenceIncidLogBinomial",
 				required_cols = 2L,
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
+					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit))
+					warm_fisher = private$get_fit_warm_start_fisher(ncol(X_fit))
 					if (estimate_only) {
-						res = tryCatch(fast_log_binomial_regression_cpp(X = X_fit, y = private$y),
-						               error = function(e) NULL)
+						res = tryCatch(
+							fast_log_binomial_regression_cpp(
+								X = X_fit, y = private$y,
+								start_beta = start_beta,
+								warm_start_fisher_info = warm_fisher
+							),
+							error = function(e) NULL
+						)
 						if (is.null(res)) return(NULL)
-						list(b = res$b, ssq_b_j = NA_real_, j_treat = j_treat)
+						list(b = res$b, ssq_b_j = NA_real_, j_treat = j_treat, fisher_information = res$fisher_information)
 					} else {
-						res = tryCatch(fast_log_binomial_regression_with_var_cpp(X = X_fit, y = private$y, j = j_treat),						               error = function(e) NULL)
+						res = tryCatch(
+							fast_log_binomial_regression_with_var_cpp(
+								X = X_fit, y = private$y, j = j_treat,
+								start_beta = start_beta,
+								warm_start_fisher_info = warm_fisher
+							),
+							error = function(e) NULL
+						)
 						if (is.null(res)) return(NULL)
 						res$j_treat = j_treat
 						res
@@ -132,6 +165,7 @@ InferenceIncidLogBinomial = R6::R6Class("InferenceIncidLogBinomial",
 				}
 			)
 			if (!is.null(attempt$fit)){
+				private$set_fit_warm_start(attempt$fit$b, "beta", fisher = attempt$fit$fisher_information)
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(
 					X = attempt$X,

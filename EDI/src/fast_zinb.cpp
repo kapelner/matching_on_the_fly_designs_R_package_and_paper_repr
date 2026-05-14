@@ -302,7 +302,8 @@ List fast_zinb_cpp(
             Named("converged") = fit.converged,
             Named("neg_ll")    = fit.value,
             Named("neg_loglik") = fit.value,
-            Named("loglik") = R_finite(fit.value) ? -fit.value : NA_REAL
+            Named("loglik") = R_finite(fit.value) ? -fit.value : NA_REAL,
+            Named("fisher_information") = information
         );
     }
 
@@ -323,6 +324,7 @@ List fast_zinb_cpp(
         Named("converged") = fit.converged,
         Named("neg_ll")    = fit.value,
         Named("neg_loglik") = fit.value,
-        Named("loglik") = R_finite(fit.value) ? -fit.value : NA_REAL
+        Named("loglik") = R_finite(fit.value) ? -fit.value : NA_REAL,
+        Named("fisher_information") = information
     );
 }

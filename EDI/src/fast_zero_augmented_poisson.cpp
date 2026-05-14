@@ -239,7 +239,8 @@ List fast_zero_augmented_poisson_cpp(const Eigen::MatrixXd& X,
                 Named("zi") = params.tail(p_zi)
             ),
             Named("converged") = fit.converged,
-            Named("neg_ll") = fit.value
+            Named("neg_ll") = fit.value,
+            Named("fisher_information") = fun.hessian(params)
         );
     }
 
@@ -255,6 +256,7 @@ List fast_zero_augmented_poisson_cpp(const Eigen::MatrixXd& X,
         ),
         Named("vcov") = vcov,
         Named("converged") = fit.converged,
-        Named("neg_ll") = fit.value
+        Named("neg_ll") = fit.value,
+        Named("fisher_information") = H
     );
 }

@@ -689,9 +689,17 @@ NULL
 	list(beta = start_beta, log_sigma = start_log_sigma)
 }
 
-.fit_standard_weibull_aft_from_matrix = function(y, dead, X, estimate_only = FALSE){
+.fit_standard_weibull_aft_from_matrix = function(y, dead, X, estimate_only = FALSE, starts = NULL, warm_start_fisher_info = NULL){
 	if (length(y) == 0L || sum(dead) == 0L) return(NULL)
-	mod_fast = tryCatch(fast_weibull_regression(y, dead, X), error = function(e) NULL)
+	mod_fast = tryCatch(
+		fast_weibull_regression(
+			y, dead, X,
+			start_params = if (length(starts) > 0) starts[[1]] else NULL,
+			warm_start_fisher_info = warm_start_fisher_info,
+			estimate_only = estimate_only
+		),
+		error = function(e) NULL
+	)
 	if (!is.null(mod_fast) &&
 	    !is.null(mod_fast$coefficients) &&
 	    (isTRUE(estimate_only) || !is.null(mod_fast$vcov)) &&
@@ -1047,7 +1055,7 @@ NULL
 	)
 }
 
-.fit_clayton_weibull_aft = function(y, dead, X, pair_id, include_singletons = FALSE, starts = NULL, estimate_only = FALSE, optimization_alg = "lbfgs"){
+.fit_clayton_weibull_aft = function(y, dead, X, pair_id, include_singletons = FALSE, starts = NULL, estimate_only = FALSE, optimization_alg = "lbfgs", warm_start_fisher_info = NULL){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	y = as.numeric(y)
 	dead = as.integer(dead > 0)
@@ -1156,7 +1164,8 @@ NULL
 				singleton_rows = if (has_singletons) singleton_rows - 1L else integer(0),
 				start_params = start_par,
 				maxit = 2000, reltol = 1e-9,
-				optimization_alg = optimization_alg
+				optimization_alg = optimization_alg,
+				warm_start_fisher_info = warm_start_fisher_info
 			),
 			error = function(e) NULL
 		)

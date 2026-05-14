@@ -87,11 +87,18 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 			}
 			X = private$build_component_matrix(private$model_formula, private$best_X_colnames)
 			X_zero_one = private$build_component_matrix(private$model_formula_zero_one, private$best_X_zero_one_colnames)
+			
+			start_len = ncol(X) + 1L + 2L * ncol(X_zero_one)
 			res = tryCatch(
-				fast_zero_one_inflated_beta_cpp(X, X_zero_one, private$y, init = rep(0, ncol(X) + 1L + 2L * ncol(X_zero_one))),
+				fast_zero_one_inflated_beta_cpp(
+					X, X_zero_one, private$y, 
+					init = private$get_fit_warm_start_for_length("params", start_len) %||% rep(0, start_len),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len)
+				),
 				error = function(e) NULL
 			)
 			if (is.null(res) || length(res$b) < 2 || !is.finite(res$b[2])) return(NA_real_)
+			private$set_fit_warm_start(as.numeric(res$params), "params", fisher = res$fisher_information)
 			as.numeric(res$b[2])
 		},
 		supports_reusable_bootstrap_worker = function(){
@@ -109,17 +116,20 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 			y = as.numeric(private$y)
 			j_treat = as.integer(ctx$j_treat)
 			full_params = ctx$full_params
+			start_len = ncol(X_fit) + 1L + 2L * ncol(X_zero_one)
 			list(
 				X = X_fit, X_zero_one = X_zero_one, y = y, j = j_treat,
 				full_fit = private$cached_mod,
-				fit_null = function(delta){
-					init = if (!is.null(full_params)) as.numeric(full_params) else rep(0, ncol(X_fit) + 1L + 2L * ncol(X_zero_one))
+				fit_null = function(delta, start = NULL){
+					init = start %||% private$get_fit_warm_start_for_length("params", start_len) %||% (if (!is.null(full_params)) as.numeric(full_params) else rep(0, start_len))
+					warm_fisher = private$get_fit_warm_start_fisher(start_len)
 					res = tryCatch(
 						fast_zero_one_inflated_beta_cpp(
 							X_fit,
 							X_zero_one,
 							y,
 							init = init,
+							warm_start_fisher_info = warm_fisher,
 							fixed_idx = j_treat,
 							fixed_values = delta
 						),
@@ -128,17 +138,20 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 					if (is.null(res)) return(NULL)
 					res
 				},
+				extract_start = function(fit){
+					as.numeric(fit$params)
+				},
 				score = function(fit){
 					get_zero_one_inflated_beta_score_cpp(X_fit, X_zero_one, y, as.numeric(fit$params))
 				},
 				observed_information = function(fit){
-					-get_zero_one_inflated_beta_hessian_cpp(X_fit, X_zero_one, y, as.numeric(fit$params))
+					as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% -get_zero_one_inflated_beta_hessian_cpp(X_fit, X_zero_one, y, as.numeric(fit$params)))
 				},
 				fisher_information = function(fit){
-					-get_zero_one_inflated_beta_hessian_cpp(X_fit, X_zero_one, y, as.numeric(fit$params))
+					as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% -get_zero_one_inflated_beta_hessian_cpp(X_fit, X_zero_one, y, as.numeric(fit$params)))
 				},
 				information = function(fit){
-					-get_zero_one_inflated_beta_hessian_cpp(X_fit, X_zero_one, y, as.numeric(fit$params))
+					as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% -get_zero_one_inflated_beta_hessian_cpp(X_fit, X_zero_one, y, as.numeric(fit$params)))
 				},
 				neg_loglik = function(fit){ as.numeric(fit$neg_loglik) }
 			)
@@ -159,12 +172,20 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 					} else {
 						X_zero_one = private$build_component_matrix(private$model_formula_zero_one, private$best_X_zero_one_colnames)
 					}
-					init = rep(0, ncol(X_fit) + 1L + 2L * ncol(X_zero_one))
+					
+					start_len = ncol(X_fit) + 1L + 2L * ncol(X_zero_one)
+					init = private$get_fit_warm_start_for_length("params", start_len) %||% rep(0, start_len)
 					res = tryCatch(
-						fast_zero_one_inflated_beta_cpp(X_fit, X_zero_one, private$y, init = init),
+						fast_zero_one_inflated_beta_cpp(
+							X_fit, X_zero_one, private$y, 
+							init = init,
+							warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len)
+						),
 						error = function(e) NULL
 					)
 					if (is.null(res)) return(NULL)
+					private$set_fit_warm_start(as.numeric(res$params), "params", fisher = res$fisher_information)
+					
 					ssq_b_j = if (!is.null(res$vcov) && nrow(res$vcov) >= j_treat) {
 						as.numeric(res$vcov[j_treat, j_treat])
 					} else {

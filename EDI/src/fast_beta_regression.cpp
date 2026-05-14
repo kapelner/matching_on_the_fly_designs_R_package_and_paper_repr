@@ -251,7 +251,8 @@ List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
 		Named("coefficients") = fit.b,
 		Named("phi") = fit.dispersion,
 		Named("neg_loglik") = neg_loglik,
-		Named("converged") = fit.converged
+		Named("converged") = fit.converged,
+		Named("fisher_information") = fit.XtWX
 	);
 }
 
@@ -274,13 +275,14 @@ List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
 //' fast_beta_regression_with_var_cpp(X, y)
 // [[Rcpp::export]]
 List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
-									 const NumericVector& y,
-									 Nullable<NumericVector> start_beta = R_NilValue,
-									 double start_phi = 10.0,
+                                         const NumericVector& y,
+                                         Nullable<NumericVector> start_beta = R_NilValue,
+                                         double start_phi = 10.0,
                                      bool compute_std_errs = true,
                                      Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                      Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                     std::string optimization_alg = "newton_raphson") {
+                                     std::string optimization_alg = "newton_raphson",
+                                     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
 
 	Eigen::VectorXd y_eigen = as<Eigen::VectorXd>(y);
     Eigen::VectorXd sb;
@@ -290,7 +292,7 @@ List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
         sb_ptr = &sb;
     }
 
-    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, start_phi, fixed_idx, fixed_values, optimization_alg);
+    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols() + 1, fixed_idx, fixed_values);
     Eigen::MatrixXd H_free = subset_matrix(fit.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
 	Eigen::MatrixXd cov_free = H_free.inverse();
@@ -310,6 +312,28 @@ List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
 		Named("neg_loglik") = neg_loglik,
 		Named("vcov") = cov_mat,
 		Named("std_errs") = se,
-        Named("converged") = fit.converged
-	);
+        Named("converged") = fit.converged,
+        Named("fisher_information") = fit.XtWX
+		);
+	}
+
+List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
+                                       const NumericVector& y,
+                                       Nullable<NumericVector> start_beta,
+                                       double start_phi,
+                                       bool compute_std_errs,
+                                       Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx,
+                                       Rcpp::Nullable<Rcpp::NumericVector> fixed_values,
+                                       std::string optimization_alg) {
+    return fast_beta_regression_with_var_cpp(
+        X,
+        y,
+        start_beta,
+        start_phi,
+        compute_std_errs,
+        fixed_idx,
+        fixed_values,
+        optimization_alg,
+        R_NilValue
+    );
 }

@@ -128,7 +128,8 @@ List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X,
         Named("params") = params,
         Named("neg_loglik") = fit.value,
         Named("converged") = fit.converged,
-        Named("iterations") = fit.niter
+        Named("iterations") = fit.niter,
+        Named("fisher_information") = model.hessian(params)
     );
 }
 
@@ -150,6 +151,7 @@ List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X,
     
     MatrixXd cov_mat = MatrixXd::Constant(n_params, n_params, NA_REAL);
     double ssq_b_2 = NA_REAL;
+    MatrixXd H = model.hessian(params);
     if (converged) {
         FixedParameterFunctor<OrdinalProbitRegression> fixed_obj(model, fixed_spec, params);
         VectorXd params_free = subset_vector(params, fixed_spec.free_idx);
@@ -180,6 +182,7 @@ List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X,
         Named("vcov") = cov_mat,
         Named("ssq_b_j") = ssq_b_2,
         Named("converged") = converged,
-        Named("iterations") = res["iterations"]
+        Named("iterations") = res["iterations"],
+        Named("fisher_information") = H
     );
 }

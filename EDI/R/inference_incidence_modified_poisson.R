@@ -65,10 +65,18 @@ InferenceIncidModifiedPoisson = R6::R6Class("InferenceIncidModifiedPoisson",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(1, treatment = private$w, X_cov)
 			}
-			res = tryCatch(fast_poisson_regression_cpp(X = X, y = as.numeric(private$y)), error = function(e) NULL)
+			res = tryCatch(
+				fast_poisson_regression_cpp(
+					X = X, y = as.numeric(private$y),
+					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X))
+				),
+				error = function(e) NULL
+			)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
+			private$set_fit_warm_start(res$b, "beta", fisher = res$XtWX)
 			as.numeric(res$b[2])
 		},
 		supports_reusable_bootstrap_worker = function(){
@@ -96,6 +104,7 @@ InferenceIncidModifiedPoisson = R6::R6Class("InferenceIncidModifiedPoisson",
 						y = y,
 						j = j_treat,
 						start_beta = start_beta,
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
 						fixed_idx = j_treat,
 						fixed_values = delta,
 						smart_start = TRUE
@@ -128,11 +137,21 @@ InferenceIncidModifiedPoisson = R6::R6Class("InferenceIncidModifiedPoisson",
 				X_full = private$build_design_matrix(),
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
+					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit))
+					warm_fisher = private$get_fit_warm_start_fisher(ncol(X_fit))
 					if (estimate_only) {
-						res = fast_poisson_regression_cpp(X = X_fit, y = private$y)
-						list(b = res$b, ssq_b_j = NA_real_, j_treat = j_treat, mod = res)
+						res = fast_poisson_regression_cpp(
+							X = X_fit, y = private$y,
+							start_beta = start_beta,
+							warm_start_fisher_info = warm_fisher
+						)
+						list(b = res$b, ssq_b_j = NA_real_, j_treat = j_treat, mod = res, XtWX = res$XtWX)
 					} else {
-						res = fast_poisson_regression_with_var_cpp(X = X_fit, y = private$y, j = j_treat)
+						res = fast_poisson_regression_with_var_cpp(
+							X = X_fit, y = private$y, j = j_treat,
+							start_beta = start_beta,
+							warm_start_fisher_info = warm_fisher
+						)
 						res$j_treat = j_treat
 						res
 					}
@@ -149,7 +168,7 @@ InferenceIncidModifiedPoisson = R6::R6Class("InferenceIncidModifiedPoisson",
 					private$cached_mod = attempt$fit$mod %||% attempt$fit
 					private$cached_values$likelihood_test_context = list(X = attempt$X, j_treat = which(attempt$keep == 2L))
 					if (!is.null(attempt$fit$b)) {
-						private$set_fit_warm_start(attempt$fit$b, "beta")
+						private$set_fit_warm_start(attempt$fit$b, "beta", fisher = attempt$fit$XtWX %||% attempt$fit$fisher_information)
 					}
 				}
 				attempt$fit

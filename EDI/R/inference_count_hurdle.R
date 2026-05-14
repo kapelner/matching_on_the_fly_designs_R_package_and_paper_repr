@@ -149,11 +149,22 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 			data.frame(w = private$w)
 		},
 		try_hurdle_negbin_fit = function(X_f, X_hurdle, j_t, estimate_only = FALSE){
+			n_params = ncol(X_f) + 1L
+			start_params = private$get_fit_warm_start_for_length("params", n_params)
+			warm_fisher = private$get_fit_warm_start_fisher(n_params)
 			mod = tryCatch(
 				if (estimate_only) {
-					fast_hurdle_negbin_cpp(X_f, private$y, X_hurdle = X_hurdle)
+					fast_hurdle_negbin_cpp(
+						X_f, private$y, X_hurdle = X_hurdle,
+						start_params = start_params,
+						warm_start_fisher_info = warm_fisher
+					)
 				} else {
-					fast_hurdle_negbin_with_var_cpp(X_f, private$y, X_hurdle = X_hurdle, j = j_t)
+					fast_hurdle_negbin_with_var_cpp(
+						X_f, private$y, X_hurdle = X_hurdle, j = j_t,
+						start_params = start_params,
+						warm_start_fisher_info = warm_fisher
+					)
 				},
 				error = function(e) NULL
 			)
@@ -176,11 +187,13 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 			y = as.numeric(private$y)
 			j_treat = as.integer(ctx$j_treat)
 			opt_alg = private$optimization_alg %||% "lbfgs"
+			n_params = ncol(X_fit) + 1L
 			full_fit = tryCatch(
 				fast_truncated_negbin_count_cpp(
 					X = X_fit,
 					y = y,
-					start_params = private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L),
+					start_params = private$get_fit_warm_start_for_length("params", n_params),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
 					estimate_only = FALSE,
 					optimization_alg = opt_alg
 				),
@@ -194,11 +207,13 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 					j = j_treat,
 					full_fit = full_fit,
 				fit_null = function(delta, start = NULL){
-					start_params = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L)
+					start_params = start %||% private$get_fit_warm_start_for_length("params", n_params)
+					warm_fisher = private$get_fit_warm_start_fisher(n_params)
 					fast_truncated_negbin_count_cpp(
 						X = X_fit,
 						y = y,
 						start_params = start_params,
+						warm_start_fisher_info = warm_fisher,
 						estimate_only = FALSE,
 						optimization_alg = opt_alg,
 						fixed_idx = j_treat,
@@ -213,13 +228,13 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 					as.numeric(fit$score %||% get_hurdle_negbin_count_score_cpp(X_fit, y, params))
 				},
 				observed_information = function(fit){
-					as.matrix(fit$information %||% fit$observed_information)
+					as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% -get_hurdle_negbin_count_hessian_cpp(X_fit, y, as.numeric(fit$params %||% c(as.numeric(fit$b), log(as.numeric(fit$theta_hat))))))
 				},
 				fisher_information = function(fit){
-					as.matrix(fit$information %||% fit$observed_information)
+					as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% -get_hurdle_negbin_count_hessian_cpp(X_fit, y, as.numeric(fit$params %||% c(as.numeric(fit$b), log(as.numeric(fit$theta_hat))))))
 				},
 				information = function(fit){
-					as.matrix(fit$information %||% fit$observed_information)
+					as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% -get_hurdle_negbin_count_hessian_cpp(X_fit, y, as.numeric(fit$params %||% c(as.numeric(fit$b), log(as.numeric(fit$theta_hat))))))
 				},
 				neg_loglik = function(fit){
 					as.numeric(fit$neg_loglik %||% fit$neg_ll)
@@ -264,7 +279,7 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 			}
 			private$cached_mod = fit$mod
 			private$cached_values$count_likelihood_context = list(X = fit$X, X_hurdle = fit$X_hurdle, j_treat = fit$j)
-			private$set_fit_warm_start(c(as.numeric(fit$b), log(as.numeric(fit$mod$theta_hat))), "params")
+			private$set_fit_warm_start(c(as.numeric(fit$b), log(as.numeric(fit$mod$theta_hat))), "params", fisher = fit$mod$fisher_information)
 			b_full = rep(NA_real_, ncol(X_full))
 			b_full[reduced$keep] = fit$b
 			names(b_full) = colnames(X_full)

@@ -499,6 +499,7 @@ List fast_hurdle_poisson_glmm_cpp(
 		Named("converged")  = converged,
 		Named("neg_loglik") = true_neg_ll,
 		Named("neg_ll")     = true_neg_ll,
-		Named("loglik")     = R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL
+		Named("loglik")     = R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL,
+		Named("fisher_information") = information
 	);
 }

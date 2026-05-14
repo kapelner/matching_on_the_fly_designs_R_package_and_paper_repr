@@ -264,17 +264,21 @@ InferenceOrdinalPartialProportionalOddsRegr = R6::R6Class(
 				X_fit = matrix(X_fit, ncol = 1)
 				colnames(X_fit) = "treatment"
 			}
-
+			
+			start_len = ncol(X_fit) + nlevels(ordered(private$y)) - 1L
 			res = tryCatch(
 				fast_ordinal_regression_with_var_cpp(
 					X = X_fit,
-					y = as.numeric(private$y)
+					y = as.numeric(private$y),
+					start_params = private$get_fit_warm_start_for_length("params", start_len),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len)
 				),
 				error = function(e) NULL
 			)
 			if (is.null(res) || length(res$b) < 1 || !is.finite(res$b[1]) || (isTRUE(private$harden) && !is.null(res$converged) && !res$converged)){
 				return(NULL)
 			}
+			private$set_fit_warm_start(as.numeric(res$params), "params", fisher = res$fisher_information)
 
 			se_beta = if (is.finite(res$ssq_b_2) && res$ssq_b_2 > 0) {
 				sqrt(res$ssq_b_2)

@@ -72,12 +72,14 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 			}
 			X_fit = as.matrix(X_fit)
 			j_T = 1L  # 0-based index of treatment column
+			n_params = ncol(X_fit) + 1L
 			fit = tryCatch(
 				fast_poisson_glmm_cpp(
 					X        = X_fit,
 					y        = as.numeric(private$y),
 					group_id = as.integer(group_id),
-					start_par = private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L),
+					start_par = private$get_fit_warm_start_for_length("params", n_params),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
 					j_T      = j_T,
 					estimate_only    = estimate_only,
 					optimization_alg = private$optimization_alg
@@ -93,7 +95,7 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 				return(super$shared(estimate_only = estimate_only))
 			}
 			private$cached_mod = fit
-			private$set_fit_warm_start(as.numeric(c(fit$b, fit$log_sigma)), "params")
+			private$set_fit_warm_start(as.numeric(c(fit$b, fit$log_sigma)), "params", fisher = fit$fisher_information)
 			private$cached_values$likelihood_test_context = list(
 				X = X_fit,
 				y = as.numeric(private$y),

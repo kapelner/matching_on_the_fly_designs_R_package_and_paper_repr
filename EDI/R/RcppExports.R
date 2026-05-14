@@ -266,8 +266,8 @@ fast_beta_regression_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, 
 #' X = matrix(rnorm(100), 10, 10)
 #' y = runif(10)
 #' fast_beta_regression_with_var_cpp(X, y)
-fast_beta_regression_with_var_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, compute_std_errs = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson") {
-    .Call(`_EDI_fast_beta_regression_with_var_cpp`, X, y, start_beta, start_phi, compute_std_errs, fixed_idx, fixed_values, optimization_alg)
+fast_beta_regression_with_var_cpp <- function(X, y, start_beta = NULL, start_phi = 10.0, compute_std_errs = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson", warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_beta_regression_with_var_cpp`, X, y, start_beta, start_phi, compute_std_errs, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
 get_clogit_plus_glmm_score_cpp <- function(X_disc, y_disc, X_conc, y_conc, group_conc, params, has_discordant, has_concordant, max_abs_log_sigma = 8.0) {
@@ -466,8 +466,8 @@ get_gaussian_lmm_fisher_cpp <- function(X, y, group_id, par, h_rel = 1e-4) {
     .Call(`_EDI_get_gaussian_lmm_fisher_cpp`, X, y, group_id, par, h_rel)
 }
 
-gee_pairs_singletons_cpp <- function(X, y, group_id, family_str, maxit = 100L, tol = 1e-8) {
-    .Call(`_EDI_gee_pairs_singletons_cpp`, X, y, group_id, family_str, maxit, tol)
+gee_pairs_singletons_cpp <- function(X, y, group_id, family_str, start_beta = NULL, warm_start_fisher_info = NULL, maxit = 100L, tol = 1e-8) {
+    .Call(`_EDI_gee_pairs_singletons_cpp`, X, y, group_id, family_str, start_beta, warm_start_fisher_info, maxit, tol)
 }
 
 get_hurdle_negbin_count_score_cpp <- function(X, y, params) {
@@ -1299,6 +1299,7 @@ fast_stereotype_logit_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fixed_idx 
 #' @param fixed_idx Optional indices of fixed parameters.
 #' @param fixed_values Optional values for fixed parameters.
 #' @param optimization_alg Optimization algorithm.
+#' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
 #' @return A list containing coefficients, variance estimates, vcov, and convergence status.
 #' @export
 #' @keywords internal

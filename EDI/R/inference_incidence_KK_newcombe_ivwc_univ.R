@@ -95,8 +95,13 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 			}
 		},
 		shared_combined = function(){
+			if (!isTRUE(private$has_match_structure)) {
+				private$cache_nonestimable_estimate("kk_design_required")
+				return(invisible(NULL))
+			}
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
+			if (is.null(private$cached_values$KKstats)) return(invisible(NULL))
 			
 			KKstats = private$cached_values$KKstats
 			m = KKstats$m

@@ -65,6 +65,7 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 				fast_poisson_regression_cpp(
 					X = X, y = as.numeric(private$y),
 					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X)),
 					smart_start = private$smart_default
 				),
 				error = function(e) NULL
@@ -72,7 +73,7 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
-			private$set_fit_warm_start(res$b, "beta")
+			private$set_fit_warm_start(res$b, "beta", fisher = res$XtWX)
 			as.numeric(res$b[2])
 		},
 		supports_reusable_bootstrap_worker = function(){
@@ -102,6 +103,7 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 						y = y,
 						j = j_treat,
 						start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
 						fixed_idx = j_treat,
 						fixed_values = delta,
 						smart_start = private$smart_default
@@ -142,17 +144,20 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
 					start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit))
+					warm_fisher = private$get_fit_warm_start_fisher(ncol(X_fit))
 					if (estimate_only) {
 						res = fast_poisson_regression_cpp(
 							X = X_fit, y = private$y,
 							start_beta = start_beta,
+							warm_start_fisher_info = warm_fisher,
 							smart_start = private$smart_default
 						)
-						list(b = res$b, ssq_b_j = NA_real_, j_treat = j_treat)
+						list(b = res$b, XtWX = res$XtWX, ssq_b_j = NA_real_, j_treat = j_treat)
 					} else {
 						res = fast_poisson_regression_with_var_cpp(
 							X = X_fit, y = private$y, j = j_treat,
 							start_beta = start_beta,
+							warm_start_fisher_info = warm_fisher,
 							smart_start = private$smart_default
 						)
 						res$j_treat = j_treat
@@ -168,7 +173,7 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 				}
 			)
 			if (!is.null(attempt$fit)){
-				private$set_fit_warm_start(attempt$fit$b, "beta")
+				private$set_fit_warm_start(attempt$fit$b, "beta", fisher = attempt$fit$XtWX %||% attempt$fit$fisher_information)
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(
 					X = attempt$X,

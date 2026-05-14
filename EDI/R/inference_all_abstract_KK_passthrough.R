@@ -281,6 +281,18 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 		supports_likelihood_tests = function(){
 			FALSE
 		},
+		supports_information_preference = function(){
+			FALSE
+		},
+		supports_observed_information = function(){
+			FALSE
+		},
+		get_supported_testing_types_impl = function(){
+			"wald"
+		},
+		get_supported_information_preferences_impl = function(){
+			"auto"
+		},
 		use_reusable_kk_bootstrap_worker = function(){
 			TRUE
 		},
@@ -413,6 +425,10 @@ InferenceKKPassThrough = R6::R6Class("InferenceKKPassThrough",
 			), use.names = FALSE))
 		},
 		compute_basic_match_data = function(){
+			if (!isTRUE(private$has_match_structure)) {
+				private$cache_nonestimable_estimate("kk_design_required")
+				return(invisible(NULL))
+			}
 			private$cached_values$KKstats = .compute_kk_basic_match_data_cached(
 				private_env = private,
 				des_priv     = private$des_obj_priv_int,

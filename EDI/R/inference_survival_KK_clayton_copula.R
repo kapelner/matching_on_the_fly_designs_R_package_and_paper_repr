@@ -196,14 +196,19 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 			if (length(i_matched) == 0L) return(invisible(NULL))
 			X_data = private$get_X()
 			X_matched = X_data[i_matched, , drop = FALSE]
+			X_fit = cbind(w = private$w[i_matched], X_matched)
+			n_params = ncol(X_fit) + 2L
 			# Fit using optimized helper
 			fit = .fit_clayton_weibull_aft(
 				y = private$y[i_matched],
 				dead = private$dead[i_matched],
-				X = cbind(w = private$w[i_matched], X_matched),
+				X = X_fit,
 				pair_id = m_vec[i_matched],
 				estimate_only = estimate_only,
-				optimization_alg = private$optimization_alg
+				optimization_alg = private$optimization_alg,
+				starts = if (!is.null(private$get_fit_warm_start_for_length("params", n_params))) 
+				             list(private$get_fit_warm_start_for_length("params", n_params)) else NULL,
+				warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params)
 			)
 			
 			if (!is.null(fit) && is.finite(fit$beta)){
@@ -245,11 +250,15 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 				}
 			}
 			for (Xcand in candidates){
+				n_params = ncol(Xcand) + 1L
 				fit = .fit_standard_weibull_aft_from_matrix(
 					y = y_r,
 					dead = dead_r,
 					X = Xcand,
-					estimate_only = estimate_only
+					estimate_only = estimate_only,
+					starts = if (!is.null(private$get_fit_warm_start_for_length("params", n_params))) 
+					             list(private$get_fit_warm_start_for_length("params", n_params)) else NULL,
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params)
 				)
 				if (!is.null(fit) && is.finite(fit$beta) && (estimate_only || (is.finite(fit$ssq) && fit$ssq > 0))){
 					private$cached_values$beta_T_reservoir = fit$beta
@@ -372,6 +381,7 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 				fit_null = function(delta, start = NULL){
 					start_par = start %||% private$get_fit_warm_start_for_length("params", start_len)
 					if (length(start_par) == 0L) start_par = ctx$start
+					warm_fisher = private$get_fit_warm_start_fisher(start_len)
 					fast_clayton_weibull_aft_optim_cpp(
 						X = X,
 						y = y,
@@ -379,6 +389,7 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 						pair_idx = pair_idx,
 						singleton_rows = singleton_rows,
 						start_params = start_par,
+						warm_start_fisher_info = warm_fisher,
 						estimate_only = FALSE,
 						optimization_alg = private$optimization_alg,
 						fixed_idx = j_treat,
@@ -477,13 +488,17 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 				candidates[[length(candidates) + 1L]] = w_only
 			}
 			for (X in candidates){
+				n_params = ncol(X) + 2L
 				fit = .fit_clayton_weibull_aft(
 					y = private$y,
 					dead = private$dead,
 					X = X,
 					pair_id = m_vec,
 					include_singletons = TRUE,
-					estimate_only = estimate_only
+					estimate_only = estimate_only,
+					starts = if (!is.null(private$get_fit_warm_start_for_length("params", n_params))) 
+					             list(private$get_fit_warm_start_for_length("params", n_params)) else NULL,
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params)
 				)
 				if (!is.null(fit) && is.finite(fit$beta) && (isTRUE(estimate_only) || (is.finite(fit$ssq) && fit$ssq > 0))){
 					private$cached_values$beta_hat_T = fit$beta
@@ -492,6 +507,7 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 					private$best_par = fit$best_par
 					private$best_X_colnames = colnames(X)
 					private$cached_mod = fit
+					private$set_fit_warm_start(fit$best_par, "params", fisher = fit$fisher_information)
 					pair_idx = .complete_pair_index_matrix(m_vec) - 1L
 					singleton_rows = if (length(pair_idx) > 0L) setdiff(seq_len(length(private$y)), sort(unique(as.vector(pair_idx + 1L)))) - 1L else seq_len(length(private$y)) - 1L
 					private$cached_values$likelihood_test_context = list(

@@ -658,7 +658,8 @@ List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
         Named("alpha") = params.head(n_alpha),
         Named("scores_raw") = (model.num_gamma() > 0) ? params.tail(model.num_gamma()) : VectorXd(0),
         Named("params") = params,
-        Named("converged") = fit.converged
+        Named("converged") = fit.converged,
+        Named("fisher_information") = -model.loglik_hessian(params)
     );
 }
 
@@ -671,6 +672,7 @@ List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
 //' @param optimization_alg Optimization algorithm.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
 //' @return A list containing coefficients, variance estimates, vcov, and convergence status.
 //' @export
 //' @keywords internal
@@ -736,7 +738,8 @@ List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::V
         Named("b") = params.segment(n_alpha, p),
         Named("ssq_b_1") = ssq_b_1,
         Named("vcov") = vcov,
-        Named("converged") = fit.converged
+        Named("converged") = fit.converged,
+        Named("fisher_information") = info
     );
 }
 

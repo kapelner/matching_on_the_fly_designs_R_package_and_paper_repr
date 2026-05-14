@@ -278,19 +278,10 @@ CoxFitResult cox_newton_raphson(
     res.neg_ll = old_ll;
     res.converged = (iter < maxit);
     res.iterations = iter;
+    res.hess_mat = Eigen::Map<const Eigen::MatrixXd>(hess_vec.data(), p, p);
 
     if (!estimate_only) {
-        std::fill(hess_vec.begin(), hess_vec.end(), 0.0);
-        std::vector<double> beta_vec(p);
-        for (int q = 0; q < p; ++q) beta_vec[q] = beta[q];
-        for (std::size_t s = 0; s < strata_data.size(); ++s) {
-            const CoxData& sd = strata_data[s];
-            CoxWorkspace& ws = workspaces[s];
-            compute_cox_ll_grad_hess_fast(sd, beta_vec, ws.grad, ws.hess, false, ws);
-            for (int qq = 0; qq < p * p; ++qq) hess_vec[qq] += ws.hess[qq];
-        }
-        Eigen::MatrixXd H_final = Eigen::Map<const Eigen::MatrixXd>(hess_vec.data(), p, p);
-        res.hess_mat = H_final;
+        Eigen::MatrixXd H_final = res.hess_mat;
         Eigen::MatrixXd H_free = subset_matrix(H_final, fixed_spec.free_idx, fixed_spec.free_idx);
         Eigen::FullPivLU<Eigen::MatrixXd> lu(H_free);
         if (lu.isInvertible()) {
@@ -591,7 +582,8 @@ List fast_coxph_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
             Named("coefficients") = coef_r,
             Named("converged") = fit.converged,
             Named("neg_ll") = fit.neg_ll,
-            Named("iterations") = fit.iterations
+            Named("iterations") = fit.iterations,
+            Named("fisher_information") = fit.hess_mat
         );
     }
 
@@ -610,7 +602,8 @@ List fast_coxph_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
         Named("vcov") = vcov_mat,
         Named("converged") = fit.converged,
         Named("neg_ll") = fit.neg_ll,
-        Named("iterations") = fit.iterations
+        Named("iterations") = fit.iterations,
+        Named("fisher_information") = fit.hess_mat
     );
 }
 
@@ -688,7 +681,8 @@ List fast_stratified_coxph_regression_cpp(
             Named("coefficients") = coef_r,
             Named("converged") = fit.converged,
             Named("neg_ll") = fit.neg_ll,
-            Named("iterations") = fit.iterations
+            Named("iterations") = fit.iterations,
+            Named("fisher_information") = fit.hess_mat
         );
     }
 
@@ -697,7 +691,8 @@ List fast_stratified_coxph_regression_cpp(
         Named("vcov") = fit.vcov,
         Named("converged") = fit.converged,
         Named("neg_ll") = fit.neg_ll,
-        Named("iterations") = fit.iterations
+        Named("iterations") = fit.iterations,
+        Named("fisher_information") = fit.hess_mat
     );
 }
 

@@ -89,15 +89,21 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 			# Treatment column index (1-based in R, 0-based in C++ is handled via ssq_b_T)
 			j_T_r = which(colnames(X_fit) == "w")
 			if (length(j_T_r) == 0L) j_T_r = 2L   # fallback: second column
+			
+			start_len = ncol(X_fit) + 2L # beta + log_sigma + log_tau
+			start_par = private$get_fit_warm_start_for_length("params", start_len)
+			
 			fit = tryCatch(
 				fast_gaussian_lmm_cpp(
 					X             = X_fit,
 					y             = as.numeric(private$y),
 					group_id      = as.integer(group_id),
+					start_par     = start_par,
 					estimate_only = estimate_only,
 					maxit         = 300L,
 					eps_g         = 1e-6,
-					optimization_alg = private$optimization_alg
+					optimization_alg = private$optimization_alg,
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len)
 				),
 				error = function(e) NULL
 			)
@@ -109,7 +115,8 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 				return(super$shared(estimate_only = estimate_only))
 			}
 			private$cached_mod = fit
-			private$set_fit_warm_start(as.numeric(fit$b), "params")
+			full_params = as.numeric(c(fit$b, fit$log_sigma, fit$log_tau))
+			private$set_fit_warm_start(full_params, "params", fisher = fit$fisher_information)
 			private$cached_values$likelihood_test_context = list(
 				X = X_fit,
 				y = as.numeric(private$y),
