@@ -17,8 +17,8 @@
 #' @export
 InferenceOrdinalKKCondAdjCatLogitRegr = R6::R6Class("InferenceOrdinalKKCondAdjCatLogitRegr",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThrough,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKPassThrough$public, list(
 		#' @description Initialize the inference object.
 		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object.
 		#' @param model_formula   Optional formula for covariate adjustment.
@@ -27,6 +27,7 @@ InferenceOrdinalKKCondAdjCatLogitRegr = R6::R6Class("InferenceOrdinalKKCondAdjCa
 		#' @param harden Whether to apply robustness measures.
 		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_default = TRUE){
 			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_default = smart_default)
+			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Returns the treatment effect estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -48,8 +49,10 @@ InferenceOrdinalKKCondAdjCatLogitRegr = R6::R6Class("InferenceOrdinalKKCondAdjCa
 			ordinal_cond_clogit_assert_finite_se(private, class(self)[1])
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKPassThrough$private, list(
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
+		supports_likelihood_tests = function() FALSE,
 		shared = function(estimate_only = FALSE){
 			ordinal_cond_clogit_shared_multi(private, expand_adjacent_category_data_cpp, function(y_i, n_alpha) {
 				trials = integer(0)
@@ -58,5 +61,5 @@ InferenceOrdinalKKCondAdjCatLogitRegr = R6::R6Class("InferenceOrdinalKKCondAdjCa
 				sort(unique(trials))
 			})
 		}
-	)
+	))
 )

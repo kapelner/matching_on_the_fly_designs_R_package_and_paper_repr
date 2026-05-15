@@ -5,6 +5,7 @@
 //   y_ij \in {1, ..., K}
 
 #include "_helper_functions.h"
+#include "_glmm_engine.h"
 #include <RcppEigen.h>
 #include <cmath>
 #include <vector>
@@ -29,11 +30,11 @@ struct OrdinalGLMMData {
 	int m_n_groups;
 	std::vector<int> m_group_start;
 	std::vector<int> m_group_end;
-	GaussHermite m_gh;
+	glmm::GHRule m_gh;
 
 	OrdinalGLMMData(const Eigen::MatrixXd& X_in, const std::vector<int>& y_in, 
 	                const std::vector<int>& gid_in, int K_in, int n_gh_in, double max_als)
-		: X(X_in), y(y_in), group_id(gid_in), K(K_in), n_gh(n_gh_in), max_abs_log_sigma(max_als), m_gh(n_gh_in) {
+		: X(X_in), y(y_in), group_id(gid_in), K(K_in), n_gh(n_gh_in), max_abs_log_sigma(max_als), m_gh(glmm::gauss_hermite_rule(n_gh_in)) {
 		n = (int)y.size();
 		p = (int)X.cols();
 		
@@ -75,8 +76,8 @@ public:
 		const double sigma = std::exp(log_sigma);
 
 		const VectorXd eta_fixed = m_dat.X * beta;
-		const std::vector<double>& nodes = m_dat.m_gh.nodes;
-		const std::vector<double>& log_weights = m_dat.m_gh.log_norm_weights;
+		const std::vector<double> nodes(m_dat.m_gh.nodes.data(), m_dat.m_gh.nodes.data() + m_dat.m_gh.nodes.size());
+		const std::vector<double> log_weights(m_dat.m_gh.log_norm_weights.data(), m_dat.m_gh.log_norm_weights.data() + m_dat.m_gh.log_norm_weights.size());
 
 		double total_neg_ll = 0.0;
 		grad.setZero();
@@ -97,11 +98,11 @@ public:
 					
 					double prob_ij;
 					if (y_ij == 1) {
-						prob_ij = plogis_scalar(alpha[0] - eta_ij);
+						prob_ij = plogis_safe(alpha[0] - eta_ij);
 					} else if (y_ij == m_dat.K) {
-						prob_ij = 1.0 - plogis_scalar(alpha[n_alpha - 1] - eta_ij);
+						prob_ij = 1.0 - plogis_safe(alpha[n_alpha - 1] - eta_ij);
 					} else {
-						prob_ij = plogis_scalar(alpha[y_ij - 1] - eta_ij) - plogis_scalar(alpha[y_ij - 2] - eta_ij);
+						prob_ij = plogis_safe(alpha[y_ij - 1] - eta_ij) - plogis_safe(alpha[y_ij - 2] - eta_ij);
 					}
 					prob_ij = std::max(prob_ij, 1e-15);
 					ll_k += std::log(prob_ij);
@@ -109,11 +110,11 @@ public:
 					// Gradient w.r.t. beta
 					double dprob_deta = 0.0;
 					if (y_ij == 1) {
-						dprob_deta = -dplogis_scalar(alpha[0] - eta_ij);
+						dprob_deta = -dplogis_safe(alpha[0] - eta_ij);
 					} else if (y_ij == m_dat.K) {
-						dprob_deta = dplogis_scalar(alpha[n_alpha - 1] - eta_ij);
+						dprob_deta = dplogis_safe(alpha[n_alpha - 1] - eta_ij);
 					} else {
-						dprob_deta = dplogis_scalar(alpha[y_ij - 2] - eta_ij) - dplogis_scalar(alpha[y_ij - 1] - eta_ij);
+						dprob_deta = dplogis_safe(alpha[y_ij - 2] - eta_ij) - dplogis_safe(alpha[y_ij - 1] - eta_ij);
 					}
 					grad_k[k].segment(n_alpha, p) -= (dprob_deta / prob_ij) * m_dat.X.row(i).transpose();
 					
@@ -122,17 +123,17 @@ public:
 
 					// Gradient w.r.t. alpha params
 					if (y_ij == 1) {
-						grad_k[k][0] -= dplogis_scalar(alpha[0] - eta_ij) / prob_ij;
+						grad_k[k][0] -= dplogis_safe(alpha[0] - eta_ij) / prob_ij;
 					} else if (y_ij == m_dat.K) {
-						double d_alpha_Km1 = dplogis_scalar(alpha[n_alpha - 1] - eta_ij);
+						double d_alpha_Km1 = dplogis_safe(alpha[n_alpha - 1] - eta_ij);
 						for (int j = 0; j < n_alpha; ++j) {
 							double d_cut = (j == 0) ? 1.0 : std::exp(par[j]);
 							grad_k[k][j] += (d_alpha_Km1 / prob_ij) * d_cut;
 						}
 					} else {
 						// d(plogis(alpha_{y-1} - eta) - plogis(alpha_{y-2} - eta))
-						double d1 = dplogis_scalar(alpha[y_ij - 1] - eta_ij);
-						double d2 = dplogis_scalar(alpha[y_ij - 2] - eta_ij);
+						double d1 = dplogis_safe(alpha[y_ij - 1] - eta_ij);
+						double d2 = dplogis_safe(alpha[y_ij - 2] - eta_ij);
 						for (int j = 0; j < n_alpha; ++j) {
 							double d_cut = (j == 0) ? 1.0 : std::exp(par[j]);
 							if (j <= y_ij - 1) grad_k[k][j] -= (d1 / prob_ij) * d_cut;
@@ -181,6 +182,28 @@ VectorXd ols_start_beta(const MatrixXd& X, const VectorXd& y) {
 
 } // namespace
 
+//' @title Fast Ordinal GLMM (C++)
+//' @description High-performance ordinal cumulative-logit GLMM fitting using Gauss-Hermite quadrature and L-BFGS.
+//' @param X A numeric matrix of predictors (no intercept).
+//' @param y A numeric vector of ordinal responses (1, 2, ...).
+//' @param group_id A numeric vector of group identifiers.
+//' @param K Number of ordinal levels.
+//' @param j_T 0-based index of the treatment effect in the beta vector.
+//' @param warm_start_params Optional starting values for all parameters [alpha, beta, log_sigma]. If provided, \code{smart_cold_start} is ignored.
+//' @param warm_start_beta Optional starting values for coefficients. If provided (and \code{warm_start_params} is not), \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no warm starts are provided.
+//' @param estimate_only If TRUE, skip variance component calculations.
+//' @param n_gh Number of Gauss-Hermite nodes.
+//' @param max_abs_log_sigma Maximum allowed value for log(sigma).
+//' @param maxit Maximum number of iterations.
+//' @param eps_g Convergence tolerance.
+//' @param optimization_alg Optimization algorithm.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first iteration.
+//' @return A list containing coefficients, thresholds, log_sigma, and convergence status.
+//' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_ordinal_glmm_cpp(
 	const Eigen::MatrixXd& X,     // n x p, NO intercept column; treatment at column j_T (0-based)
@@ -188,7 +211,7 @@ List fast_ordinal_glmm_cpp(
 	const Eigen::VectorXi& group_id, // group IDs, length n (sorted internally)
 	int K,                        // number of ordinal levels
 	int j_T,                      // 0-based treatment column index in X
-	bool smart_start = true,
+	bool smart_cold_start = true,
 	bool estimate_only = false,
 	int n_gh = 20,
 	double max_abs_log_sigma = 8.0,
@@ -233,8 +256,12 @@ List fast_ordinal_glmm_cpp(
 			par.head(n_alpha).setZero();
 			par.segment(n_alpha, p) = sb;
 			par[total - 1] = -3.0;
-		}
-	} else if (smart_start) {
+		} else {
+            par.head(n_alpha).setZero();
+			par.segment(n_alpha, p).setZero();
+			par[total - 1] = -3.0;
+        }
+	} else if (smart_cold_start) {
 		// Cutpoints: alpha_1 = 0, log_diffs = 0 (evenly spaced by 1)
 		par.head(n_alpha).setZero();
 		// Betas: OLS on y (rough)

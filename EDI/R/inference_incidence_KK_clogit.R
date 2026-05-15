@@ -21,8 +21,8 @@
 #' @keywords internal
 InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThrough,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKPassThrough$public, list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -34,15 +34,11 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
-			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
-					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
-				}
-			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Returns the combined-likelihood estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -80,8 +76,9 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKPassThrough$private, list(
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 			max_abs_reasonable_coef = 1e4,
 			get_standard_error = function(){
 				private$shared_combined_likelihood(estimate_only = FALSE)
@@ -262,7 +259,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 				private$cached_values$df           = NA_real_
 				invisible(NULL)
 			}
-	)
+	))
 )
 #' Abstract class for Conditional Logistic Compound Inference for KK Designs
 #'
@@ -279,8 +276,8 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 #' @keywords internal
 InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThrough,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKPassThrough$public, list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -292,15 +289,11 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
-			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
-					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
-				}
-			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Returns the estimated treatment effect (log-odds ratio).
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -340,8 +333,10 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			inf_obj = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
 			inf_obj
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKPassThrough$private, list(
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
+		supports_likelihood_tests = function() FALSE,
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design and parameters from the original data
 			if (is.null(private$best_X_colnames_matched) && is.null(private$best_X_colnames_reservoir)){
@@ -530,7 +525,7 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 				return(invisible(NULL))
 			}
 		}
-	)
+	))
 )
 #' Conditional-Logistic Inference for KK Designs with IVWC
 #'

@@ -8,8 +8,8 @@
 #' @keywords internal
 InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCopulaIVWC",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThrough,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKPassThrough$public, list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -21,12 +21,8 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
-			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
-					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
-				}
-			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Returns the estimated treatment effect (log-time ratio).
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -66,8 +62,10 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 			inf_obj = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
 			inf_obj
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKPassThrough$private, list(
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
+		supports_likelihood_tests = function() FALSE,
 		max_abs_reasonable_coef = 1e4,
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Re-read design variables which might have been transformed during randomization
@@ -267,7 +265,7 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 				}
 			}
 		}
-	)
+	))
 )
 #' Abstract class for Clayton Copula Combined-Likelihood Inference
 #'
@@ -279,8 +277,8 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 #' @keywords internal
 InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClaytonCopulaOneLik",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThrough,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKPassThrough$public, list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -292,12 +290,8 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
-			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
-					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
-				}
-			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Returns the estimated treatment effect (log-time ratio).
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -331,8 +325,9 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 			inf_obj = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
 			inf_obj
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKPassThrough$private, list(
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		best_X_colnames = NULL,
 		best_par = NULL,
 		optimization_alg = "lbfgs",
@@ -379,8 +374,8 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 				j = j_treat,
 				full_fit = private$cached_mod$best_fit %||% private$cached_mod,
 				fit_null = function(delta, start = NULL){
-					start_par = start %||% private$get_fit_warm_start_for_length("params", start_len)
-					if (length(start_par) == 0L) start_par = ctx$start
+					warm_start_params = start %||% private$get_fit_warm_start_for_length("params", start_len)
+					if (length(warm_start_params) == 0L) warm_start_params = ctx$start
 					warm_fisher = private$get_fit_warm_start_fisher(start_len)
 					fast_clayton_weibull_aft_optim_cpp(
 						X = X,
@@ -388,7 +383,7 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 						dead = dead,
 						pair_idx = pair_idx,
 						singleton_rows = singleton_rows,
-						start_params = start_par,
+						warm_start_params = warm_start_params,
 						warm_start_fisher_info = warm_fisher,
 						estimate_only = FALSE,
 						optimization_alg = private$optimization_alg,
@@ -525,7 +520,7 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 			private$cached_values$beta_hat_T = NA_real_
 			private$cached_values$s_beta_hat_T = NA_real_
 		}
-	)
+	))
 )
 #' Clayton Copula IVWC Compound Inference for KK Designs
 #'

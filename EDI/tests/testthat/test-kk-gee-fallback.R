@@ -1,9 +1,7 @@
 MockKKGEEFallback <- R6::R6Class(
 	"MockKKGEEFallback",
-	inherit = InferenceAbstractKKGEE,
+	inherit = InferenceIncidKKGEE,
 	private = list(
-		gee_response_type = function() "incidence",
-		gee_family = function() binomial(link = "logit"),
 		gee_predictors_df = function() data.frame(w = private$w),
 		fit_gee_on_data = function(fit_data, std_err = TRUE, estimate_only = FALSE) {
 			cluster_sizes = table(fit_data$id_sorted)

@@ -9,7 +9,9 @@ fast_beta_regression_with_var(
   y,
   start_phi = 10,
   j = 2,
-  optimization_alg = "newton_raphson"
+  optimization_alg = "newton_raphson",
+  warm_start_beta = NULL,
+  warm_start_fisher_info = NULL
 )
 }
 \arguments{
@@ -24,6 +26,10 @@ Defaults to 10.}
 \item{j}{The index of the coefficient to compute the variance for. Defaults to 2.}
 
 \item{optimization_alg}{Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.}
+
+\item{warm_start_beta}{Optional starting values for coefficients.}
+
+\item{warm_start_fisher_info}{Optional initial Fisher Information matrix.}
 }
 \value{
 A list containing the following components:

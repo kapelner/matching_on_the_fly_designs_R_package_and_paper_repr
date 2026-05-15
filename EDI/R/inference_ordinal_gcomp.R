@@ -42,6 +42,16 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$md
 		},
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			md = private$weighted_gcomp_md_from_row_weights(row_weights)
+			private$cached_values$md = as.numeric(md)[1L]
+			private$cached_values$beta_hat_T = private$cached_values$md
+			private$cached_values$se_md = NA_real_
+			private$cached_values$mean1 = NA_real_
+			private$cached_values$mean0 = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes a 1 - \code{alpha} confidence interval for the G-Comp mean difference.
 		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -196,6 +206,44 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 					j_treat = j_treat
 				)$md
 			)
+		},
+		weighted_gcomp_md_from_row_weights = function(row_weights){
+			X_full = private$build_design_matrix()
+			reduced = private$reduce_design_matrix_preserving_treatment(X_full)
+			if (is.null(reduced$X) || !is.finite(reduced$j_treat)) return(NA_real_)
+			X_fit = reduced$X[, -1, drop = FALSE]
+			j_treat = reduced$j_treat - 1L
+			ok = is.finite(row_weights) & row_weights > 0 & is.finite(private$y)
+			if (sum(ok) <= ncol(X_fit)) return(NA_real_)
+			dat = data.frame(y = factor(private$y[ok], ordered = TRUE), X_fit[ok, , drop = FALSE], check.names = FALSE)
+			mod = tryCatch(
+				suppressWarnings(
+					MASS::polr(
+						y ~ .,
+						data = dat,
+						weights = as.numeric(row_weights[ok]),
+						method = "logistic",
+						Hess = FALSE
+					)
+				),
+				error = function(e) NULL
+			)
+			if (is.null(mod)) return(NA_real_)
+			coef_hat = as.numeric(stats::coef(mod))
+			alpha_hat = as.numeric(mod$zeta)
+			if (!length(coef_hat) || !length(alpha_hat) || j_treat < 1L || j_treat > length(coef_hat)) return(NA_real_)
+			private$best_X_colnames = setdiff(colnames(X_fit), "treatment")
+			res = tryCatch(
+				gcomp_ordinal_proportional_odds_post_fit_cpp(
+					X_fit = X_fit,
+					coef_hat = coef_hat,
+					alpha_hat = alpha_hat,
+					j_treat = j_treat
+				),
+				error = function(e) NULL
+			)
+			if (is.null(res)) return(NA_real_)
+			as.numeric(res$md)
 		},
 		has_finite_md_se = function(){
 			se = private$cached_values$se_md

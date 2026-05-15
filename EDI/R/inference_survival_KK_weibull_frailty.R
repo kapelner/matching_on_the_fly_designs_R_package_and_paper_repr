@@ -21,8 +21,8 @@
 #' @keywords internal
 InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullFrailtyIVWC",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThrough,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKPassThrough$public, list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -34,12 +34,8 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
-			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
-					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
-				}
-			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Returns the estimated treatment effect (log-time ratio).
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -79,8 +75,10 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			inf_obj = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
 			inf_obj
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKPassThrough$private, list(
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
+		supports_likelihood_tests = function() FALSE,
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design and parameters from the original data
 			if (is.null(private$best_X_colnames_matched) && is.null(private$best_X_colnames_reservoir)){
@@ -298,7 +296,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 				return(invisible(NULL))
 			}
 		}
-	)
+	))
 )
 #' Abstract class for Weibull Frailty Combined-Likelihood Inference
 #'
@@ -310,8 +308,8 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 #' @keywords internal
 InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibullFrailtyOneLik",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThrough,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKPassThrough$public, list(
 		#' @description Initialize the inference object.
 		#' @param des_obj A completed KK design object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -325,14 +323,10 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
-			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
-					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
-				}
-			}
 			private$use_rcpp = use_rcpp
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Returns the combined-likelihood estimate of the treatment effect.
 		#' @param estimate_only Whether to skip standard-error calculations.
@@ -370,8 +364,9 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKPassThrough$private, list(
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 			use_rcpp = TRUE,
 			get_standard_error = function(){
 				private$shared_combined_likelihood(estimate_only = FALSE)
@@ -404,7 +399,7 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 							dead = dead,
 							X = X_fit,
 							group_id = group_id,
-							start = start %||% private$get_fit_warm_start_for_length("params", length(ctx$start)) %||% as.numeric(ctx$start),
+							warm_start_params = start %||% private$get_fit_warm_start_for_length("params", length(ctx$start)) %||% as.numeric(ctx$start),
 							estimate_only = FALSE,
 							n_gh = n_gh,
 							max_abs_log_sigma = max_abs_log_sigma,
@@ -474,7 +469,7 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 					dead            = as.numeric(private$dead),
 					X               = X_full,
 					group_id        = as.integer(cluster_id),
-					start           = private$get_fit_warm_start("params"),
+					warm_start_params = private$get_fit_warm_start("params"),
 					estimate_only   = estimate_only,
 					n_gh            = 20L,
 					max_abs_log_sigma = 8.0,
@@ -574,7 +569,7 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 				return(invisible(NULL))
 			}
 		}
-	)
+	))
 )
 #' Weibull Frailty IVWC Inference for KK Designs
 #'

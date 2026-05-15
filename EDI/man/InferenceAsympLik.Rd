@@ -10,7 +10,7 @@ to Wald inference.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceAsympLik}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceAsympLik}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -24,12 +24,12 @@ to Wald inference.
 \item \href{#method-InferenceAsympLik-get_information_source_used}{\code{InferenceAsympLik$get_information_source_used()}}
 \item \href{#method-InferenceAsympLik-get_supported_testing_types}{\code{InferenceAsympLik$get_supported_testing_types()}}
 \item \href{#method-InferenceAsympLik-get_supported_information_preferences}{\code{InferenceAsympLik$get_supported_information_preferences()}}
-\item \href{#method-InferenceAsympLik-compute_score_confidence_interval}{\code{InferenceAsympLik$compute_score_confidence_interval()}}
 \item \href{#method-InferenceAsympLik-compute_score_two_sided_pval}{\code{InferenceAsympLik$compute_score_two_sided_pval()}}
-\item \href{#method-InferenceAsympLik-compute_lik_ratio_confidence_interval}{\code{InferenceAsympLik$compute_lik_ratio_confidence_interval()}}
+\item \href{#method-InferenceAsympLik-compute_score_confidence_interval}{\code{InferenceAsympLik$compute_score_confidence_interval()}}
 \item \href{#method-InferenceAsympLik-compute_lik_ratio_two_sided_pval}{\code{InferenceAsympLik$compute_lik_ratio_two_sided_pval()}}
-\item \href{#method-InferenceAsympLik-compute_gradient_confidence_interval}{\code{InferenceAsympLik$compute_gradient_confidence_interval()}}
+\item \href{#method-InferenceAsympLik-compute_lik_ratio_confidence_interval}{\code{InferenceAsympLik$compute_lik_ratio_confidence_interval()}}
 \item \href{#method-InferenceAsympLik-compute_gradient_two_sided_pval}{\code{InferenceAsympLik$compute_gradient_two_sided_pval()}}
+\item \href{#method-InferenceAsympLik-compute_gradient_confidence_interval}{\code{InferenceAsympLik$compute_gradient_confidence_interval()}}
 \item \href{#method-InferenceAsympLik-clone}{\code{InferenceAsympLik$clone()}}
 }
 }
@@ -59,6 +59,18 @@ to Wald inference.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_estimate_with_bootstrap_weights"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_estimate_with_bootstrap_weights'><code>EDI::InferenceBayesianBootstrap$compute_estimate_with_bootstrap_weights()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="approximate_jackknife_distribution_beta_hat_T"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>EDI::InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_bias_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>EDI::InferenceJackknife$compute_jackknife_bias_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_corrected_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_corrected_estimate'><code>EDI::InferenceJackknife$compute_jackknife_corrected_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_estimate'><code>EDI::InferenceJackknife$compute_jackknife_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_standard_error"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_standard_error'><code>EDI::InferenceJackknife$compute_jackknife_standard_error()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_std_error"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_std_error'><code>EDI::InferenceJackknife$compute_jackknife_std_error()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_wald_confidence_interval"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_confidence_interval'><code>EDI::InferenceJackknife$compute_jackknife_wald_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_wald_two_sided_pval"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_two_sided_pval'><code>EDI::InferenceJackknife$compute_jackknife_wald_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_estimate"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_estimate'><code>EDI::InferenceAsymp$compute_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_confidence_interval'><code>EDI::InferenceAsymp$compute_wald_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_two_sided_pval'><code>EDI::InferenceAsymp$compute_wald_two_sided_pval()</code></a></span></li>
@@ -79,16 +91,19 @@ Computes an asymptotic confidence interval using the configured test.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The significance level (default 0.05).}
+\item{\code{alpha}}{Significance level 1 - \code{alpha}. Default 0.05.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A confidence interval.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsympLik-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsympLik-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
-Computes an asymptotic two-sided p-value for the treatment effect.
+Computes an asymptotic two-sided p-value using the configured test.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAsympLik$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
@@ -96,9 +111,12 @@ Computes an asymptotic two-sided p-value for the treatment effect.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{The null treatment effect (default 0).}
+\item{\code{delta}}{Null treatment effect to test against. Default 0.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The asymptotic p-value.
 }
 }
 \if{html}{\out{<hr>}}
@@ -196,23 +214,6 @@ Gets the score-test information matrix preferences supported by this inference o
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAsympLik-compute_score_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAsympLik-compute_score_confidence_interval}{}}}
-\subsection{Method \code{compute_score_confidence_interval()}}{
-Computes the score confidence interval regardless of configured testing type.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAsympLik$compute_score_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The significance level (default 0.05).}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsympLik-compute_score_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsympLik-compute_score_two_sided_pval}{}}}
 \subsection{Method \code{compute_score_two_sided_pval()}}{
@@ -224,24 +225,24 @@ Computes the score two-sided p-value regardless of configured testing type.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{The null treatment effect (default 0).}
+\item{\code{delta}}{Null treatment effect.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAsympLik-compute_lik_ratio_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAsympLik-compute_lik_ratio_confidence_interval}{}}}
-\subsection{Method \code{compute_lik_ratio_confidence_interval()}}{
-Computes the likelihood-ratio confidence interval regardless of configured testing type.
+\if{html}{\out{<a id="method-InferenceAsympLik-compute_score_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAsympLik-compute_score_confidence_interval}{}}}
+\subsection{Method \code{compute_score_confidence_interval()}}{
+Computes the score confidence interval regardless of configured testing type.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAsympLik$compute_lik_ratio_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsympLik$compute_score_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The significance level (default 0.05).}
+\item{\code{alpha}}{Significance level. Default 0.05.}
 }
 \if{html}{\out{</div>}}
 }
@@ -258,24 +259,24 @@ Computes the likelihood-ratio two-sided p-value regardless of configured testing
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{The null treatment effect (default 0).}
+\item{\code{delta}}{Null treatment effect.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAsympLik-compute_gradient_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAsympLik-compute_gradient_confidence_interval}{}}}
-\subsection{Method \code{compute_gradient_confidence_interval()}}{
-Computes the gradient confidence interval regardless of configured testing type.
+\if{html}{\out{<a id="method-InferenceAsympLik-compute_lik_ratio_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAsympLik-compute_lik_ratio_confidence_interval}{}}}
+\subsection{Method \code{compute_lik_ratio_confidence_interval()}}{
+Computes the likelihood-ratio confidence interval regardless of configured testing type.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAsympLik$compute_gradient_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsympLik$compute_lik_ratio_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The significance level (default 0.05).}
+\item{\code{alpha}}{Significance level. Default 0.05.}
 }
 \if{html}{\out{</div>}}
 }
@@ -292,7 +293,24 @@ Computes the gradient two-sided p-value regardless of configured testing type.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{The null treatment effect (default 0).}
+\item{\code{delta}}{Null treatment effect.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAsympLik-compute_gradient_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAsympLik-compute_gradient_confidence_interval}{}}}
+\subsection{Method \code{compute_gradient_confidence_interval()}}{
+Computes the gradient confidence interval regardless of configured testing type.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAsympLik$compute_gradient_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level. Default 0.05.}
 }
 \if{html}{\out{</div>}}
 }

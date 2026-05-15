@@ -13,6 +13,7 @@ fast_identity_binomial_regression_with_var_cpp(
   fixed_idx = NULL,
   fixed_values = NULL,
   warm_start_beta = NULL,
+  smart_start = TRUE,
   warm_start_weights = NULL,
   warm_start_fisher_info = NULL
 )

@@ -10,7 +10,10 @@ fast_coxph_regression(
   dead,
   use_rcpp = TRUE,
   estimate_only = FALSE,
-  optimization_alg = "newton_raphson"
+  optimization_alg = "newton_raphson",
+  warm_start_beta = NULL,
+  warm_start_fisher_info = NULL,
+  smart_start = TRUE
 )
 }
 \arguments{
@@ -28,6 +31,12 @@ implementation. If \code{FALSE}, use \pkg{glmnet}.}
 matrix calculation for speed.}
 
 \item{optimization_alg}{Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.}
+
+\item{warm_start_beta}{Optional starting values for coefficients.}
+
+\item{warm_start_fisher_info}{Optional initial Fisher Information matrix.}
+
+\item{smart_start}{Logical. If \code{TRUE} (default), use an initial OLS-based guess.}
 }
 \value{
 A list containing the following components:
@@ -42,7 +51,7 @@ This function performs Cox proportional hazards regression using either
 It is designed to efficiently estimate regression coefficients for time-to-event data.
 }
 \details{
-When \code{use_rcpp = FALSE}, this function requires the \pkg{glmnet} package, 
+When \code{use_rcpp = FALSE}, this function requires the \pkg{glmnet} package,
 which is listed in Suggests and is not installed automatically with \pkg{EDI}.
 }
 \examples{

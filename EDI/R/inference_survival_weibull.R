@@ -58,7 +58,7 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 			n_params = ncol(X) + 1L
 			res = fast_weibull_regression_cpp(
 				y = private$y, dead = private$dead, X = X,
-				start_params = private$get_fit_warm_start_for_length("params", n_params),
+				warm_start_params = private$get_fit_warm_start_for_length("params", n_params),
 				warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
 				smart_start = private$smart_default,
 				estimate_only = TRUE, optimization_alg = private$optimization_alg
@@ -90,7 +90,7 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 					res = tryCatch(
 						fast_weibull_regression_cpp(
 							y = y, dead = dead, X = X_fit,
-							start_params = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L),
+							warm_start_params = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L),
 							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit) + 1L),
 							fixed_idx = j_treat, fixed_values = delta,
 							smart_start = private$smart_default,
@@ -130,11 +130,11 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 				required_cols = 2L,
 				fit_fun = function(X_fit){
 					n_params = ncol(X_fit) + 1L
-					start_params = private$get_fit_warm_start_for_length("params", n_params)
+					warm_start_params = private$get_fit_warm_start_for_length("params", n_params)
 					warm_fisher = private$get_fit_warm_start_fisher(n_params)
 					res = fast_weibull_regression_cpp(
 						y = private$y, dead = private$dead, X = X_fit,
-						start_params = start_params,
+						warm_start_params = warm_start_params,
 						warm_start_fisher_info = warm_fisher,
 						smart_start = private$smart_default,
 						estimate_only = estimate_only, optimization_alg = private$optimization_alg

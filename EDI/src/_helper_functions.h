@@ -55,7 +55,7 @@ Eigen::MatrixXd eigen_Xt_times_diag_w_times_X_cpp(Eigen::Map<Eigen::MatrixXd> X,
 using RowMajorMatrixXd = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 struct ContiguousGroupLayout {
-    std::vector<int> warm_start_params;
+    std::vector<int> start;
     std::vector<int> size;
     int G;
     int max_size;
@@ -69,18 +69,18 @@ inline ContiguousGroupLayout build_contiguous_group_layout(int n, GroupIdAccesso
     if (n <= 0) return layout;
 
     int start = 0;
-    while (warm_start_params < n) {
-        const auto group_id = group_id_at(warm_start_params);
+    while (start < n) {
+        const auto group_id = group_id_at(start);
         int end = start + 1;
         while (end < n && group_id_at(end) == group_id) ++end;
         const int sz = end - start;
-        layout.warm_start_params.push_back(warm_start_params);
+        layout.start.push_back(start);
         layout.size.push_back(sz);
         if (sz > layout.max_size) layout.max_size = sz;
-        warm_start_params = end;
+        start = end;
     }
 
-    layout.G = static_cast<int>(layout.warm_start_params.size());
+    layout.G = static_cast<int>(layout.start.size());
     return layout;
 }
 
@@ -289,6 +289,11 @@ inline double plogis_safe(double x) {
     const double z = std::exp(x); return z / (1.0 + z);
 }
 
+inline double dplogis_safe(double x) {
+    const double p = plogis_safe(x);
+    return p * (1.0 - p);
+}
+
 inline Eigen::ArrayXd plogis_array_safe(const Eigen::ArrayXd& x) {
     const Eigen::Array<bool, Eigen::Dynamic, 1> nonnegative = (x >= 0.0);
     const Eigen::ArrayXd pos = 1.0 / (1.0 + (-x).exp());
@@ -382,7 +387,7 @@ inline Eigen::VectorXd ols_warm_start_beta_on_log1p_or_legacy(const Eigen::Matri
 inline Eigen::VectorXd weibull_start_to_params(const WeibullStart& start) {
     Eigen::VectorXd params(start.beta.size() + 1);
     params.head(start.beta.size()) = start.beta;
-    params[start.beta.size()] = warm_start_params.log_sigma;
+    params[start.beta.size()] = start.log_sigma;
     return params;
 }
 
@@ -395,7 +400,7 @@ inline WeibullStart weibull_start_from_params(const Eigen::VectorXd& params) {
 }
 
 inline bool weibull_start_is_usable(const WeibullStart& start, int p) {
-    return start.beta.size() == p && start.beta.allFinite() && std::isfinite(warm_start_params.log_sigma);
+    return start.beta.size() == p && start.beta.allFinite() && std::isfinite(start.log_sigma);
 }
 
 inline WeibullStart weibull_aft_start(const Eigen::MatrixXd& X,

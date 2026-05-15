@@ -335,23 +335,3 @@ List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
 		);
 	}
 
-List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
-                                       const NumericVector& y,
-                                       Nullable<NumericVector> warm_start_beta,
-                                       double start_phi,
-                                       bool compute_std_errs,
-                                       Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx,
-                                       Rcpp::Nullable<Rcpp::NumericVector> fixed_values,
-                                       std::string optimization_alg) {
-    return fast_beta_regression_with_var_cpp(
-        X,
-        y,
-        warm_start_beta,
-        start_phi,
-        compute_std_errs,
-        fixed_idx,
-        fixed_values,
-        optimization_alg,
-        R_NilValue
-    );
-}

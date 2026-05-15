@@ -83,6 +83,8 @@ Eigen::MatrixXd get_ordinal_regression_hessian_cpp(const Eigen::MatrixXd& X, con
 //' @description High-performance ordinal regression fitting using Newton-Raphson.
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses.
+//' @param warm_start_params Optional starting values for [alpha, beta]. If provided, \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -93,7 +95,7 @@ Eigen::MatrixXd get_ordinal_regression_hessian_cpp(const Eigen::MatrixXd& X, con
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params = R_NilValue, bool smart_start = true, int maxit = 100, double tol = 1e-6,
+List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params = R_NilValue, bool smart_cold_start = true, int maxit = 100, double tol = 1e-6,
                                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                   std::string optimization_alg = "newton_raphson",
@@ -117,7 +119,7 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
         }
         legacy_start.beta = VectorXd::Zero(p);
         params = ordinal_start_to_params(
-            smart_start ? ordinal_start_from_ols_or_legacy(X, y, edi_ordinal::Link::Logit, legacy_start, fixed_spec)
+            smart_cold_start ? ordinal_start_from_ols_or_legacy(X, y, edi_ordinal::Link::Logit, legacy_start, fixed_spec)
                         : legacy_start
         );
     }
@@ -149,6 +151,10 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 //' @description Ordinal regression fitting with full variance-covariance matrix.
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses.
+//' @param warm_start_params Optional starting values for [alpha, beta]. If provided, \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
 //' @param optimization_alg Optimization algorithm.
@@ -159,13 +165,13 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 // [[Rcpp::export]]
 List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y,
                                            Nullable<NumericVector> warm_start_params = R_NilValue,
-                                           bool smart_start = true,
+                                           bool smart_cold_start = true,
                                            int maxit = 100, double tol = 1e-6,
                                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                            Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                            std::string optimization_alg = "newton_raphson",
                                            Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-    List res = fast_ordinal_regression_cpp(X, y, warm_start_params, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
+    List res = fast_ordinal_regression_cpp(X, y, warm_start_params, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
     VectorXd params = res["params"];
     bool converged = res["converged"];
     OrdinalRegression model(X, y);

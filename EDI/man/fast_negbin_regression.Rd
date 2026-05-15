@@ -4,7 +4,13 @@
 \alias{fast_negbin_regression}
 \title{Fast Negative Binomial Regression (R Wrapper)}
 \usage{
-fast_negbin_regression(X, y, optimization_alg = "newton_raphson")
+fast_negbin_regression(
+  X,
+  y,
+  optimization_alg = "newton_raphson",
+  warm_start_params = NULL,
+  warm_start_fisher_info = NULL
+)
 }
 \arguments{
 \item{X}{A numeric matrix of predictor variables. It is assumed that an intercept column
@@ -13,6 +19,10 @@ fast_negbin_regression(X, y, optimization_alg = "newton_raphson")
 \item{y}{A numeric vector of the response variable, representing count data.}
 
 \item{optimization_alg}{Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.}
+
+\item{warm_start_params}{Optional starting values for coefficients and log_theta.}
+
+\item{warm_start_fisher_info}{Optional initial Fisher Information matrix.}
 }
 \value{
 A list containing the following component:

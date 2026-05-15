@@ -108,10 +108,10 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			if (should_run_asserts()) {
 				private$assert_no_incidence_only_randomization_args(resp_type, type, args_for_type)
 			}
-			is_glm = inherits(self, "InferenceAsympLikStdModCache") || 
-			         inherits(self, "InferenceAbstractKKGEE") || 
-			         inherits(self, "InferenceAbstractKKGLMM") ||
-			         inherits(self, "InferenceKKPassThrough") ||
+			is_glm = inherits(self, "InferenceAsympLikStdModCache") ||
+			         isTRUE(private$kk_gee_engine) ||
+			         isTRUE(private$kk_glmm_engine) ||
+			         isTRUE(private$kk_passthrough) ||
 			         inherits(self, "InferencePropUniFractionalLogit") ||
 			         inherits(self, "InferencePropZeroOneInflatedBetaRegr") ||
 			         inherits(self, "InferencePropGCompAbstract") ||

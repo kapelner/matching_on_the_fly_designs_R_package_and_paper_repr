@@ -10,12 +10,14 @@ fast_stratified_coxph_regression_cpp(
   dead,
   strata,
   warm_start_beta = NULL,
+  smart_start = TRUE,
   estimate_only = FALSE,
   maxit = 20L,
   tol = 1e-09,
   fixed_idx = NULL,
   fixed_values = NULL,
-  optimization_alg = "newton_raphson"
+  optimization_alg = "newton_raphson",
+  warm_start_fisher_info = NULL
 )
 }
 \arguments{

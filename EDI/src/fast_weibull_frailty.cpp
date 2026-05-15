@@ -89,25 +89,25 @@ private:
 		m_log_y = log_y_s;
 		m_X     = X_s;
 
-		Eigen::VectorXi sorted_gid(m_n);
-		for (int i = 0; i < m_n; ++i) sorted_gid[i] = group_id[order[i]];
+			Eigen::VectorXi sorted_gid(m_n);
+			for (int i = 0; i < m_n; ++i) sorted_gid[i] = group_id[order[i]];
 
-			auto layout = build_contiguous_group_layout(m_n, [&](int idx) { return sorted_gid[idx]; });
-			m_group_start = layout.warm_start_params;
+			auto layout = build_contiguous_group_layout(m_n, [&](int i) { return sorted_gid[i]; });
+			m_group_start = layout.start;
 			m_group_end.resize(layout.G);
 			for (int gi = 0; gi < layout.G; ++gi) {
-				m_group_end[gi] = layout.warm_start_params[gi] + layout.size[gi];
+				m_group_end[gi] = layout.start[gi] + layout.size[gi];
 			}
 			m_n_groups = layout.G;
 			m_max_group_size = layout.max_size;
 			m_group_dead_sum.resize(m_n_groups);
 			m_group_dead_log_y_sum.resize(m_n_groups);
 			for (int gi = 0; gi < m_n_groups; ++gi) {
-				const int warm_start_params = m_group_start[gi];
-				const int sz = m_group_end[gi] - warm_start_params;
-				const auto dead_seg = m_dead.segment(warm_start_params, sz);
+				const int group_start = m_group_start[gi];
+				const int sz = m_group_end[gi] - group_start;
+				const auto dead_seg = m_dead.segment(group_start, sz);
 				m_group_dead_sum[gi] = dead_seg.sum();
-				m_group_dead_log_y_sum[gi] = (dead_seg.array() * m_log_y.segment(warm_start_params, sz).array()).sum();
+				m_group_dead_log_y_sum[gi] = (dead_seg.array() * m_log_y.segment(group_start, sz).array()).sum();
 			}
 		}
 

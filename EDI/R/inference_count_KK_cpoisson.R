@@ -368,8 +368,8 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 #' @noRd
 InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdlePoissonOneLik",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThrough,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKPassThrough$public, list(
 		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object.
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use our internal Rcpp
@@ -385,17 +385,8 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 				assertResponseType(des_obj$get_response_type(), "count")
 				assertFlag(use_rcpp)
 			}
-			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
-					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or DesignFixedBinaryMatch.")
-				}
-			}
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
-			if (inherits(des_obj, "DesignFixedBinaryMatch")){
-				des_obj$.__enclos_env__$private$ensure_matching_structure_computed()
-			}
-			private$m = des_obj$.__enclos_env__$private$m
 			private$use_rcpp = use_rcpp
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
@@ -405,6 +396,7 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 					stop("Package 'glmmTMB' is required for ", class(self)[1], " when use_rcpp = FALSE. Please install it.")
 				}
 			}
+			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Compute treatment estimate
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -442,8 +434,9 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKPassThrough$private, list(
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		use_rcpp = TRUE,
 			max_abs_reasonable_coef = 1e4,
 			warn_bootstrap_fallback_once = function(){
@@ -490,14 +483,14 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 					j = j_treat,
 					full_fit = private$cached_mod,
 					fit_null = function(delta, start = NULL){
-						start_params = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L)
+						warm_start_params = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L)
 						warm_fisher = private$get_fit_warm_start_fisher(ncol(X_fit) + 1L)
 						fast_hurdle_poisson_glmm_cpp(
 							X = X_fit,
 							y = y,
 							group_id = group_id,
 							j_T = j_T,
-							start_params = start_params,
+							warm_start_params = warm_start_params,
 							warm_start_fisher_info = warm_fisher,
 							smart_start = private$smart_default,
 							estimate_only = FALSE,
@@ -560,7 +553,8 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 					y             = as.numeric(private$y),
 					group_id      = as.integer(group_id),
 					j_T           = j_T,
-					start_params  = private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L),
+					warm_start_params = private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit) + 1L),
 					estimate_only = estimate_only,
 					optimization_alg = private$optimization_alg
 				),
@@ -574,7 +568,7 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 					return(private$shared_glmm_tmb(estimate_only = estimate_only))
 				}
 				private$cached_mod = fit
-				private$set_fit_warm_start(as.numeric(fit$params), "params")
+				private$set_fit_warm_start(as.numeric(fit$params), "params", fisher = fit$fisher_information)
 				private$cached_values$likelihood_test_context = list(
 					X = X_fit,
 					y = as.numeric(private$y),
@@ -695,7 +689,7 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 				error = function(e) NULL
 			)
 		}
-	)
+	))
 )
 #' Abstract class for Conditional Poisson / Negative Binomial Compound Inference
 #'
@@ -708,8 +702,8 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 #' @keywords internal
 InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoissonCPoissonIVWC",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThrough,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKPassThrough$public, list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -721,15 +715,11 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 			}
-			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
-					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
-				}
-			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Returns the estimated treatment effect (log-rate ratio).
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -769,8 +759,10 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			inf_obj = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
 			inf_obj
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKPassThrough$private, list(
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
+		supports_likelihood_tests = function() FALSE,
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Use the same joint-likelihood logic for the point estimate
 			private$shared(estimate_only = estimate_only)
@@ -897,7 +889,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 		best_X_colnames_matched = NULL,
 		best_X_colnames_reservoir = NULL,
 		best_X_j_treat_reservoir = 2L
-	)
+	))
 )
 #' Abstract class for Conditional Poisson Combined-Likelihood Compound Inference
 #'
@@ -909,8 +901,8 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 #' @keywords internal
 InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoissonCPoissonOneLik",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThrough,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKPassThrough$public, list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -922,15 +914,11 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 			}
-			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
-					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
-				}
-			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Compute the treatment estimate.
 		#' @param estimate_only Whether to skip standard-error calculations.
@@ -976,19 +964,20 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 			inf_obj = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
 			inf_obj
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKPassThrough$private, list(
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Re-read design variables which might have been transformed during randomization
 			private$w = private$des_obj_priv_int$w
 			private$y = private$des_obj_priv_int$y
-			
+
 			# Recompute basic match data for the new w/y
 			private$compute_basic_match_data()
-			
+
 			# Clear combined_cov_keep to allow re-reduction if needed
 			private$cached_values$combined_cov_keep = NULL
-			
+
 			# Use the same joint-likelihood logic for the point estimate
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
@@ -1029,7 +1018,8 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 				list(
 					j = 2L,
 					full_fit = private$cached_mod,
-					fit_null = function(delta){
+					fit_null = function(delta, start = NULL){
+						n_params = ncol(X_diff_v) + 2L
 						fast_cpoisson_combined_with_var_cpp(
 							yT_v = yT_v,
 							n_k_v = n_k_v,
@@ -1038,7 +1028,9 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 							w_r = w_r_v,
 							X_r = X_r_v,
 							fixed_idx = 2L,
-							fixed_values = delta
+							fixed_values = delta,
+							warm_start_params = start %||% private$get_fit_warm_start_for_length("params", n_params),
+							warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params)
 						)
 					},
 					score = function(fit){
@@ -1105,23 +1097,28 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 		},
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 			try_combined_fit = function(estimate_only, yT_v, n_k_v, X_diff_v, y_r_v, w_r_v, X_r_v){
+				n_params = ncol(X_diff_v) + 2L
 				mod = tryCatch(
-				fast_cpoisson_combined_with_var_cpp(
-					yT_v = as.numeric(yT_v),
-					n_k_v = as.numeric(n_k_v),
-					X_diff_v = as.matrix(X_diff_v),
-					y_r = as.numeric(y_r_v),
-					w_r = as.numeric(w_r_v),
-					X_r = as.matrix(X_r_v)
-				),
-				error = function(e) NULL
-			)
+					fast_cpoisson_combined_with_var_cpp(
+						yT_v = as.numeric(yT_v),
+						n_k_v = as.numeric(n_k_v),
+						X_diff_v = as.matrix(X_diff_v),
+						y_r = as.numeric(y_r_v),
+						w_r = as.numeric(w_r_v),
+						X_r = as.matrix(X_r_v),
+						warm_start_params = private$get_fit_warm_start_for_length("params", n_params),
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params)
+					),
+					error = function(e) NULL
+				)
 				if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
 				if (!estimate_only){
-				ssq = mod$ssq_b_j
-				if (is.null(ssq) || !is.finite(ssq) || ssq < 0) return(FALSE)
-			}
+					ssq = mod$ssq_b_j
+					if (is.null(ssq) || !is.finite(ssq) || ssq < 0) return(FALSE)
+				}
 				private$cached_mod = mod
+				private$set_fit_warm_start(as.numeric(mod$params), "params", fisher = mod$fisher_information)
+				
 				private$cached_values$likelihood_test_context = list(
 					yT_v = as.numeric(yT_v),
 					n_k_v = as.numeric(n_k_v),
@@ -1265,7 +1262,7 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 			}
 			invisible(NULL)
 		}
-	)
+	))
 )
 #' KK Hurdle Poisson IVWC Inference for Count Responses
 #'

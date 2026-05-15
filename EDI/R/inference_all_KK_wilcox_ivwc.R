@@ -8,8 +8,16 @@
 #' @keywords internal
 InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIVWC",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThrough,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKPassThrough$public, list(
+		#' @description Initialize the abstract base.
+		#' @param des_obj A DesignSeqOneByOne object (must be a KK design).
+		#' @param model_formula Optional formula for covariate adjustment.
+		#' @param verbose Whether to print progress messages.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			private$init_kk_passthrough(des_obj)
+		},
 		#' @description Override to avoid O(n^2) per-resample HL computation during the bootstrap warm-start
 		#' inside compute_rand_confidence_interval. The asymptotic MLE CI is a perfectly
 		#' adequate starting bound for the bisection and is computed in O(1).
@@ -18,8 +26,10 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 		compute_bootstrap_confidence_interval = function(alpha = 0.05, ...){
 			self$compute_asymp_confidence_interval(alpha)
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKPassThrough$private, list(
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
+		supports_likelihood_tests = function() FALSE,
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			# Optimization: w_mat and m_mat are already pre-computed matrices
@@ -115,7 +125,7 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 			}
 			if (n_components == 0L) NA_real_ else stat
 		}
-	)
+	))
 )
 #' Non-parametric Wilcoxon-based Compound Inference for KK Designs
 #'

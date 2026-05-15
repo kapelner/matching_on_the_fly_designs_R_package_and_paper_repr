@@ -1,0 +1,41 @@
+#' Pattern-1 mixin: quantile randomization confidence interval (Zhang combined)
+#'
+#' Provides \code{compute_rand_confidence_interval()} via Zhang's combined
+#' test-inversion method for both Bernoulli (\eqn{m = 0}) and KK
+#' matching-on-the-fly designs (\eqn{m > 0}).
+#'
+#' Splice into a daughter class via
+#' \code{public = c(InferenceMixinQuantileRandCI$public, list(...))}.
+#' The capability flag \code{private$quantile_rand_ci} is set to \code{TRUE}.
+#'
+#' @keywords internal
+InferenceMixinQuantileRandCI = list(
+	public = list(
+		#' @description Computes a randomization-based confidence interval via Zhang's combined test.
+		#'
+		#' @param alpha  				The confidence level is 1 - \code{alpha}.
+		#' @param r  	Number of random sign-flips / permutations.
+		#' @param pval_epsilon  		Bisection convergence tolerance.
+		#' @param show_progress  		Ignored.
+		#' @param ci_search_control Ignored for this Zhang-based CI implementation.
+		#' @return 	A length-2 numeric vector giving the lower and upper CI boundary.
+		compute_rand_confidence_interval = function(alpha = 0.05, r = 499, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
+			if (should_run_asserts()) {
+				if (!is.null(private[["custom_randomization_statistic_function"]])){
+					stop("Custom randomization statistic functions are not supported for the Zhang combined CI method used by ", class(self)[1], ". The method uses its own fixed QR-based test statistics.")
+				}
+			}
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+				assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
+				assertCount(r, positive = TRUE)
+			}
+			private$nsim_rand = as.integer(r)
+			private$ci_exact_zhang_combined(alpha, pval_epsilon)
+		}
+	),
+	private = list(
+		quantile_rand_ci = TRUE,
+		nsim_rand = 499L
+	)
+)

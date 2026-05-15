@@ -270,7 +270,7 @@ InferenceOrdinalPartialProportionalOddsRegr = R6::R6Class(
 				fast_ordinal_regression_with_var_cpp(
 					X = X_fit,
 					y = as.numeric(private$y),
-					start_params = private$get_fit_warm_start_for_length("params", start_len),
+					warm_start_params = private$get_fit_warm_start_for_length("params", start_len),
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len)
 				),
 				error = function(e) NULL

@@ -8,11 +8,13 @@ fast_beta_regression_with_var_cpp(
   X,
   y,
   warm_start_beta = NULL,
+  smart_start = TRUE,
   start_phi = 10,
   compute_std_errs = TRUE,
   fixed_idx = NULL,
   fixed_values = NULL,
-  optimization_alg = "newton_raphson"
+  optimization_alg = "newton_raphson",
+  warm_start_fisher_info = NULL
 )
 }
 \arguments{

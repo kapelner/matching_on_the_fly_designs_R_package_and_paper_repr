@@ -19,8 +19,8 @@
 #' @export
 InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 	lock_objects = FALSE,
-	inherit = InferenceAbstractKKGLMM,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKGLMMShared$public, list(
 		#' @description Initialize a KK Poisson GLMM inference object.
 		#' @param des_obj A completed \code{Design} object with a count response.
 		#' @param model_formula Optional formula for covariate adjustment.
@@ -35,10 +35,11 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 			if (use_rcpp) private$skip_glmm_pkg_check = TRUE
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
+			private$init_kk_glmm_shared(des_obj)
 			private$use_rcpp = use_rcpp
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKGLMMShared$private, list(
 		use_rcpp = TRUE,
 		glmm_response_type = function() "count",
 		glmm_family        = function() stats::poisson(link = "log"),
@@ -49,7 +50,7 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 			if (private$use_rcpp) {
 				private$shared_rcpp(estimate_only)
 			} else {
-				super$shared(estimate_only)
+				private$shared_glmm_tmb(estimate_only)
 			}
 		},
 		shared_rcpp = function(estimate_only = FALSE){
@@ -78,7 +79,7 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 					y        = as.numeric(private$y),
 					group_id = as.integer(group_id),
 					j_T      = j_T,
-					start_par = private$get_fit_warm_start_for_length("params", n_params),
+					warm_start_params = private$get_fit_warm_start_for_length("params", n_params),
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
 					smart_start = private$smart_default,
 					estimate_only    = estimate_only,
@@ -89,11 +90,11 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 
 			if (is.null(fit) || !isTRUE(fit$converged)) {
 				# Rcpp failed; fall back to glmmTMB
-				return(super$shared(estimate_only = estimate_only))
+				return(private$shared_glmm_tmb(estimate_only = estimate_only))
 			}
 			beta_hat_T = as.numeric(fit$b[j_T + 1L])
 			if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
-				return(super$shared(estimate_only = estimate_only))
+				return(private$shared_glmm_tmb(estimate_only = estimate_only))
 			}
 			private$cached_mod = fit
 			private$set_fit_warm_start(as.numeric(c(fit$b, fit$log_sigma)), "params", fisher = fit$fisher_information)
@@ -130,7 +131,7 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 						X = X_fit,
 						y = y,
 						group_id = group_id,
-						start_par = start %||% private$get_fit_warm_start_for_length("params", length(ctx$start)) %||% ctx$start,
+						warm_start_params = start %||% private$get_fit_warm_start_for_length("params", length(ctx$start)) %||% ctx$start,
 						warm_start_fisher_info = private$get_fit_warm_start_fisher(length(ctx$start)),
 						smart_start = private$smart_default,
 						j_T = j_treat - 1L,
@@ -167,7 +168,7 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 				}
 			)
 		}
-	)
+	))
 )
 #' KK Hurdle Poisson Combined-Likelihood Inference for Count Responses
 #'

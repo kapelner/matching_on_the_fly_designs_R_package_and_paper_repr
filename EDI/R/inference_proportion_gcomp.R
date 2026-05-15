@@ -109,6 +109,24 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$md
 		},
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			effects = private$weighted_gcomp_effects_from_row_weights(row_weights)
+			if (is.null(effects) || !private$effects_are_usable(effects, estimate_only = TRUE)) {
+				private$set_failed_fit_cache()
+				private$cached_values$beta_hat_T = NA_real_
+				return(NA_real_)
+			}
+			private$cached_values$mean1 = effects$mean1
+			private$cached_values$mean0 = effects$mean0
+			private$cached_values$md = effects$md
+			private$cached_values$se_md = NA_real_
+			private$cached_values$summary_table = NULL
+			private$cached_values$full_coefficients = effects$full_coefficients
+			private$cached_values$full_vcov = NULL
+			private$cached_values$beta_hat_T = effects$md
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes a 1 - \code{alpha} confidence interval.
 		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -695,7 +713,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			colnames(fit$vcov) = rownames(fit$vcov) = names(coef_hat)
 			private$compute_standardized_effects_r(fit)
 		},
-			bootstrap_sample_is_usable = function(w_b, y_b, boundary_tol = 0.02, max_boundary_mass = 0.95, sep_tol = 0.02, min_group_n = 5L){
+		bootstrap_sample_is_usable = function(w_b, y_b, boundary_tol = 0.02, max_boundary_mass = 0.95, sep_tol = 0.02, min_group_n = 5L){
 				if (length(w_b) != length(y_b) || length(y_b) == 0L) return(FALSE)
 				if (any(!is.finite(y_b))) return(FALSE)
 				if (!any(w_b == 1, na.rm = TRUE) || !any(w_b == 0, na.rm = TRUE)) return(FALSE)
@@ -708,6 +726,52 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				sep_lo = min(y0, na.rm = TRUE) >= max(y1, na.rm = TRUE) + sep_tol
 				if (isTRUE(sep_hi) || isTRUE(sep_lo)) return(FALSE)
 				TRUE
+			},
+			weighted_gcomp_fit = function(X_full, row_weights){
+				X_curr = X_full
+				repeat {
+					reduced = private$reduce_design_matrix_preserving_treatment(X_curr)
+					X_fit = reduced$X
+					j_treat = reduced$j_treat
+					if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
+						return(NULL)
+					}
+					ok = is.finite(row_weights) & row_weights > 0 & is.finite(private$y)
+					if (sum(ok) <= ncol(X_fit)) return(NULL)
+					mod = tryCatch(
+						fast_logistic_regression_weighted_cpp(
+							X = X_fit[ok, , drop = FALSE],
+							y = as.numeric(private$y[ok]),
+							weights = as.numeric(row_weights[ok]),
+							warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
+						),
+						error = function(e) NULL
+					)
+					if (is.null(mod)) return(NULL)
+					coef_hat = as.numeric(mod$b)
+					if (all(is.finite(coef_hat))) {
+						private$set_fit_warm_start(coef_hat, "beta", fisher = mod$fisher_information)
+						coef_names = colnames(X_fit)
+						names(coef_hat) = coef_names
+						return(list(X = X_fit, j_treat = j_treat, coefficients = coef_hat, estimate_only = TRUE))
+					}
+					if (ncol(X_curr) <= 2L) return(NULL)
+					drop_col = private$select_covariate_to_drop(X_curr, coef_hat)
+					if (!is.finite(drop_col)) return(NULL)
+					X_curr = X_curr[, -drop_col, drop = FALSE]
+				}
+			},
+			weighted_gcomp_effects_from_row_weights = function(row_weights){
+				X_full = private$build_named_design_matrix()
+				fit = private$weighted_gcomp_fit(X_full, row_weights)
+				if (is.null(fit) && private$harden && ncol(X_full) > 2L) {
+					fit = private$weighted_gcomp_fit(X_full[, 1:2, drop = FALSE], row_weights)
+				}
+				if (is.null(fit)) return(NULL)
+				effects = private$compute_standardized_effects_r(fit)
+				if (!private$effects_are_usable(effects, estimate_only = TRUE)) return(NULL)
+				effects
 			},
 			bootstrap_fit_from_sample = function(X_b_full, y_b){
 				X_curr = X_b_full

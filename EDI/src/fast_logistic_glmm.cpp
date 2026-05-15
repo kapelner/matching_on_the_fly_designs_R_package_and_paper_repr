@@ -105,7 +105,7 @@ struct LogisticGLMMData {
 		}
 
 		auto layout = build_contiguous_group_layout(n, [&](int i) { return group_id[ord[i]]; });
-		grp_start = layout.warm_start_params;
+		grp_start = layout.start;
 		grp_size = layout.size;
 		G = layout.G;
 		max_group_size = layout.max_size;

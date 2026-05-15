@@ -17,8 +17,8 @@
 #' @export
 InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 	lock_objects = FALSE,
-	inherit = InferenceAbstractKKGEE,
-	public = list(
+	inherit = InferenceAsymp,
+	public = utils::modifyList(InferenceMixinKKGEEShared$public, list(
 		#' @description Initialize the inference object.
 		#' @param des_obj A completed \code{Design} object with an ordinal response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -26,19 +26,54 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_default = TRUE){
 			if (should_run_asserts()) {
 				if (!check_package_installed("multgee")){
 					stop("Package 'multgee' is required for ", class(self)[1], ". Please install it.")
 				}
 			}
-			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
+			private$init_kk_gee_shared(des_obj, use_rcpp = FALSE)
+		},
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			pred_df = private$gee_predictors_df()
+			ok = is.finite(row_weights) & row_weights > 0 & is.finite(private$y)
+			if (!any(ok)) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				return(NA_real_)
+			}
+			dat = data.frame(
+				y = factor(private$y[ok], ordered = TRUE),
+				pred_df[ok, , drop = FALSE],
+				check.names = FALSE
+			)
+			mod = tryCatch(
+				suppressWarnings(
+					MASS::polr(
+						y ~ .,
+						data = dat,
+						weights = as.numeric(row_weights[ok]),
+						method = "logistic",
+						Hess = FALSE
+					)
+				),
+				error = function(e) NULL
+			)
+			beta_hat_T = if (is.null(mod)) NA_real_ else as.numeric(stats::coef(mod)[["w"]] %||% NA_real_)
+			private$cached_values$beta_hat_T = beta_hat_T
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = Inf
+			private$cached_values$summary_table = NULL
+			beta_hat_T
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKGEEShared$private, list(
 		gee_response_type = function() "ordinal",
-		# Override: ordinal response requires ordLORgee, not geeglm.
-		shared = function(estimate_only = FALSE){
+		gee_family        = function() stats::binomial(link = "logit"),
+		# Ordinal response requires ordLORgee, not geeglm.
+		shared_gee_dispatch = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 			m_vec = private$m
@@ -90,7 +125,7 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 			private$cached_values$df = Inf
 			private$cached_values$summary_table = summary(mod)$coefficients
 		}
-	)
+	))
 )
 #' GLMM Inference for KK Designs with Ordinal Response
 #'
@@ -115,8 +150,8 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 #' @export
 InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 	lock_objects = FALSE,
-	inherit = InferenceAbstractKKGLMM,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKGLMMShared$public, list(
 		#' @description Initialize the inference object.
 		#' @param des_obj A completed \code{Design} object with an ordinal response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -125,17 +160,18 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 		#'   design's imputed covariates.
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use internal Rcpp.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_default = TRUE){
 			if (should_run_asserts()) {
 				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(use_rcpp)
 			}
 			if (use_rcpp) private$skip_glmm_pkg_check = TRUE
-			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_default = smart_default)
+			private$init_kk_glmm_shared(des_obj)
 			private$use_rcpp = use_rcpp
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKGLMMShared$private, list(
 		use_rcpp = TRUE,
 		glmm_response_type  = function() "ordinal",
 		glmm_family         = function() glmmTMB::cumulative(link = "logit"),
@@ -146,7 +182,7 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 			if (private$use_rcpp) {
 				private$shared_rcpp(estimate_only)
 			} else {
-				super$shared(estimate_only)
+				private$shared_glmm_tmb(estimate_only)
 			}
 		},
 		shared_rcpp = function(estimate_only = FALSE){
@@ -203,8 +239,9 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 					group_id   = as.integer(group_id),
 					K          = K,
 					j_T        = j_T,
+					smart_start = private$smart_default,
 					estimate_only = estimate_only,
-					start      = start,
+					warm_start_params = start,
 					eps_g      = 1e-3,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len),
 					optimization_alg = private$optimization_alg
@@ -283,12 +320,13 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 								group_id = group_id,
 								K = K,
 								j_T = 0L,
+								smart_start = private$smart_default,
 								estimate_only = FALSE,
 								n_gh = n_gh,
 								max_abs_log_sigma = 8.0,
 								maxit = 300L,
 								eps_g = 1e-3,
-								start = s,
+								warm_start_params = s,
 								warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
 								optimization_alg = private$optimization_alg %||% "lbfgs",
 								fixed_idx = j_treat,
@@ -331,5 +369,5 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 				}
 			)
 		}
-	)
+	))
 )

@@ -73,11 +73,26 @@ Eigen::MatrixXd get_ordinal_probit_regression_hessian_cpp(const Eigen::MatrixXd&
 	return -model.hessian(par);
 }
 
+//' @title Fast Ordinal Probit Regression (C++)
+//' @description High-performance ordinal probit regression fitting using Newton-Raphson.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param warm_start_params Optional starting values for [alpha, beta]. If provided, \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param optimization_alg Optimization algorithm.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
+//' @return A list containing coefficients, thresholds, and convergence status.
+//' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X, 
                                          const Eigen::VectorXd& y, 
                                          Nullable<NumericVector> warm_start_params = R_NilValue,
-                                         bool smart_start = true,
+                                         bool smart_cold_start = true,
                                          int maxit = 100, 
                                          double tol = 1e-6, 
                                          std::string optimization_alg = "newton_raphson",
@@ -104,7 +119,7 @@ List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X,
         }
         legacy_start.beta = VectorXd::Zero(p);
         params = ordinal_start_to_params(
-            smart_start ? ordinal_start_from_ols_or_legacy(X, y, edi_ordinal::Link::Probit, legacy_start, fixed_spec)
+            smart_cold_start ? ordinal_start_from_ols_or_legacy(X, y, edi_ordinal::Link::Probit, legacy_start, fixed_spec)
                         : legacy_start
         );
     }
@@ -133,16 +148,29 @@ List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X,
     );
 }
 
+//' @title Fast Ordinal Probit Regression with Variance (C++)
+//' @description Ordinal probit regression fitting with full variance-covariance matrix.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param warm_start_params Optional starting values for [alpha, beta]. If provided, \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param optimization_alg Optimization algorithm.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
+//' @return A list containing coefficients, thresholds, vcov, and convergence status.
+//' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X, 
                                                   const Eigen::VectorXd& y, 
                                                   Nullable<NumericVector> warm_start_params = R_NilValue,
-                                                  bool smart_start = true,
+                                                  bool smart_cold_start = true,
                                                   std::string optimization_alg = "newton_raphson",
                                                   Nullable<IntegerVector> fixed_idx = R_NilValue,
                                                   Nullable<NumericVector> fixed_values = R_NilValue,
                                                   Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-    List res = fast_ordinal_probit_regression_cpp(X, y, warm_start_params, smart_start, 100, 1e-6, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info);
+    List res = fast_ordinal_probit_regression_cpp(X, y, warm_start_params, smart_cold_start, 100, 1e-6, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info);
     VectorXd params = res["params"];
     bool converged = res["converged"];
     OrdinalProbitRegression model(X, y);

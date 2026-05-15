@@ -238,13 +238,30 @@ double get_zinb_neg_loglik_cpp(const Eigen::MatrixXd& X,
     return likelihood_value(fun, params);
 }
 
+//' @title Fast Zero-Inflated Negative Binomial Regression (C++)
+//' @description High-performance ZINB regression fitting using Newton-Raphson or L-BFGS.
+//' @param X Matrix of predictors for the conditional component.
+//' @param y Vector of responses.
+//' @param Xzi Matrix of predictors for the zero-inflation component.
+//' @param warm_start_params Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param estimate_only If TRUE, skip variance component calculations.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param optimization_alg Optimization algorithm.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first iteration.
+//' @return A list containing coefficients, vcov, and convergence status.
+//' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_zinb_cpp(
     const Eigen::MatrixXd& X,
     const Eigen::VectorXd& y,
     const Eigen::MatrixXd& Xzi,
     Nullable<NumericVector> warm_start_params = R_NilValue,
-    bool smart_start = true,
+    bool smart_cold_start = true,
     bool estimate_only = false,
     int maxit = 1000,
     double tol = 1e-6,
@@ -260,7 +277,7 @@ List fast_zinb_cpp(
     Eigen::VectorXd par(total);
     if (warm_start_params.isNotNull()) {
         par = as<Eigen::VectorXd>(NumericVector(warm_start_params));
-    } else if (smart_start) {
+    } else if (smart_cold_start) {
         // Condition component: OLS on log1p(y)
         par.head(pc) = ols_warm_start_beta_on_log1p(X, y);
         // ZI component: OLS on (y == 0)

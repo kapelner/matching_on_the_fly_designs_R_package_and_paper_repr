@@ -183,13 +183,31 @@ Eigen::MatrixXd get_zero_augmented_poisson_hessian_cpp(const Eigen::MatrixXd& X,
 	return -fun.hessian(params);
 }
 
+//' @title Fast Zero-Augmented Poisson Regression (C++)
+//' @description High-performance ZIP or hurdle Poisson regression fitting using Newton-Raphson or L-BFGS.
+//' @param X Matrix of predictors for the conditional component.
+//' @param y Vector of responses.
+//' @param Xzi Matrix of predictors for the zero-inflation/hurdle component.
+//' @param is_hurdle If TRUE, fit a hurdle model; if FALSE, fit a zero-inflated model.
+//' @param warm_start_params Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param estimate_only If TRUE, skip variance component calculations.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first iteration.
+//' @return A list containing coefficients, vcov, and convergence status.
+//' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_zero_augmented_poisson_cpp(const Eigen::MatrixXd& X,
                                      const Eigen::VectorXd& y,
                                      const Eigen::MatrixXd& Xzi,
                                      bool is_hurdle,
                                      Nullable<NumericVector> warm_start_params = R_NilValue,
-                                     bool smart_start = true,
+                                     bool smart_cold_start = true,
                                      bool estimate_only = false,
                                      int maxit = 1000,
                                      double tol = 1e-6,
@@ -204,7 +222,7 @@ List fast_zero_augmented_poisson_cpp(const Eigen::MatrixXd& X,
     Eigen::VectorXd params(total_p);
     if (warm_start_params.isNotNull()) {
         params = as<Eigen::VectorXd>(NumericVector(warm_start_params));
-    } else if (smart_start) {
+    } else if (smart_cold_start) {
         // Condition component: OLS on log1p(y)
         params.head(p_cond) = ols_warm_start_beta_on_log1p(X, y);
         // ZI component: OLS on (y == 0)

@@ -50,6 +50,27 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 			private$shared(estimate_only = estimate_only)
 			private$get_effect_estimate()
 		},
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			effects = private$weighted_gcomp_effects_from_row_weights(row_weights)
+			if (is.null(effects) || !private$effects_are_usable(effects, estimate_only = TRUE)) {
+				private$set_failed_fit_cache()
+				private$cached_values$beta_hat_T = NA_real_
+				return(NA_real_)
+			}
+			private$cached_values$risk1 = effects$risk1
+			private$cached_values$risk0 = effects$risk0
+			private$cached_values$rd = effects$rd
+			private$cached_values$se_rd = NA_real_
+			private$cached_values$log_rr = effects$log_rr
+			private$cached_values$rr = effects$rr
+			private$cached_values$se_log_rr = NA_real_
+			private$cached_values$summary_table = NULL
+			private$cached_values$full_coefficients = effects$full_coefficients
+			private$cached_values$full_vcov = NULL
+			private$cached_values$beta_hat_T = if (identical(private$get_estimand_type(), "RD")) effects$rd else effects$rr
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes a 1 - \code{alpha} confidence interval.
 		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -190,6 +211,57 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 				return(tail(covariate_cols, 1L))
 			}
 			covariate_cols[which.max(replace(coef_mags, !is.finite(coef_mags), -Inf))]
+		},
+		weighted_gcomp_fit = function(X_full, row_weights){
+			X_curr = X_full
+			repeat {
+				reduced = private$reduce_design_matrix_preserving_treatment(X_curr)
+				X_fit = reduced$X
+				j_treat = reduced$j_treat
+				if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
+					return(NULL)
+				}
+				ok = is.finite(row_weights) & row_weights > 0 & is.finite(private$y)
+				if (sum(ok) <= ncol(X_fit)) return(NULL)
+				mod = tryCatch(
+					fast_logistic_regression_weighted_cpp(
+						X = X_fit[ok, , drop = FALSE],
+						y = as.numeric(private$y[ok]),
+						weights = as.numeric(row_weights[ok]),
+						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
+					),
+					error = function(e) NULL
+				)
+				if (is.null(mod)) return(NULL)
+				coef_hat = as.numeric(mod$b)
+				if (private$coefficients_are_usable(coef_hat)) {
+					private$set_fit_warm_start(coef_hat, "beta", fisher = mod$fisher_information)
+					names(coef_hat) = colnames(X_fit)
+					return(list(X = X_fit, j_treat = j_treat, coefficients = coef_hat, estimate_only = TRUE))
+				}
+				if (ncol(X_curr) <= 2L) return(NULL)
+				drop_col = private$select_covariate_to_drop(X_curr, coef_hat)
+				if (!is.finite(drop_col)) return(NULL)
+				X_curr = X_curr[, -drop_col, drop = FALSE]
+			}
+		},
+		weighted_gcomp_effects_from_row_weights = function(row_weights){
+			X_full = private$build_design_matrix()
+			if (is.null(dim(X_full))){
+				X_full = matrix(X_full, ncol = 2L)
+			}
+			if (is.null(colnames(X_full))) {
+				colnames(X_full) = c("(Intercept)", "treatment", if (ncol(X_full) > 2L) private$get_covariate_names() else NULL)
+			}
+			fit = private$weighted_gcomp_fit(X_full, row_weights)
+			if (is.null(fit) && private$harden && ncol(X_full) > 2L) {
+				fit = private$weighted_gcomp_fit(X_full[, 1:2, drop = FALSE], row_weights)
+			}
+			if (is.null(fit)) return(NULL)
+			effects = private$compute_standardized_effects_r(fit)
+			if (!private$effects_are_usable(effects, estimate_only = TRUE)) return(NULL)
+			effects
 		},
 		coefficients_are_usable = function(coef_hat){
 			length(coef_hat) > 0L &&

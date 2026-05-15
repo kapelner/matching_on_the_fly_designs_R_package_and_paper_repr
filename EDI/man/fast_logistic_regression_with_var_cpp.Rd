@@ -9,6 +9,7 @@ fast_logistic_regression_with_var_cpp(
   y,
   j = 2L,
   warm_start_beta = NULL,
+  smart_cold_start = TRUE,
   fixed_idx = NULL,
   fixed_values = NULL,
   optimization_alg = "irls",
@@ -23,7 +24,9 @@ fast_logistic_regression_with_var_cpp(
 
 \item{j}{The 1-based index of the parameter for which to return specific variance.}
 
-\item{warm_start_beta}{Optional starting values for coefficients.}
+\item{warm_start_beta}{Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.}
+
+\item{smart_cold_start}{Whether to use a "smart" OLS-based cold start when no \code{warm_start_beta} is provided.}
 
 \item{fixed_idx}{Optional indices of fixed parameters.}
 

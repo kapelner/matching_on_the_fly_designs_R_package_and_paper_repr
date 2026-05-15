@@ -8,6 +8,7 @@ fast_beta_regression_cpp(
   X,
   y,
   warm_start_beta = NULL,
+  smart_start = TRUE,
   start_phi = 10,
   compute_std_errs = FALSE,
   fixed_idx = NULL,

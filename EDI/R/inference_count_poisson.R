@@ -16,7 +16,7 @@
 #' @export
 InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLikStdModCache,
+	inherit = InferenceCountLikelihood,
 	public = list(
 				
 		#' @description Initialize a Poisson regression inference object.
@@ -35,12 +35,6 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-		},
-		#' @description Computes the Poisson-regression estimate of the treatment effect.
-		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_estimate = function(estimate_only = FALSE){
-			private$shared(estimate_only = estimate_only)
-			private$cached_values$beta_hat_T
 		},
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
 			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
@@ -216,7 +210,6 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 				}
 			)
 			if (!is.null(attempt$fit)){
-				private$set_fit_warm_start(attempt$fit$b, "beta", fisher = attempt$fit$XtWX %||% attempt$fit$fisher_information)
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(
 					X = attempt$X,

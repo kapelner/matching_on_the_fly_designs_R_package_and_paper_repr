@@ -103,7 +103,7 @@ public:
 ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X,
                                   const Eigen::VectorXi& y,
                                   Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
-                                  bool smart_start = true,
+                                  bool smart_cold_start = true,
                                   int maxit = 1000,
                                   double eps_g = 1e-5,
                                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -128,7 +128,7 @@ ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X,
     if (warm_start_params.isNotNull()) {
         params = as<Eigen::VectorXd>(NumericVector(warm_start_params));
         if (params.size() != p + 1) stop("warm_start_params must have length equal to the number of model parameters");
-    } else if (smart_start) {
+    } else if (smart_cold_start) {
         Eigen::VectorXd beta_smart = ols_warm_start_beta_on_log1p(X, y_double);
         Eigen::VectorXd beta_start = vector_is_usable_start(beta_smart, p) ? beta_smart : legacy_params.head(p);
         params.head(p) = beta_start;
@@ -199,8 +199,8 @@ Eigen::MatrixXd get_negbin_regression_hessian_cpp(const Eigen::MatrixXd& X,
 //' @description Negative binomial regression fitting with full variance-covariance matrix.
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (non-negative integers).
-//' @param warm_start_params Optional starting values for coefficients and dispersion.
-//' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
+//' @param warm_start_params Optional starting values for coefficients and dispersion. If provided, \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
 //' @param maxit Maximum number of iterations.
 //' @param eps_f Convergence tolerance for function value.
 //' @param eps_g Convergence tolerance for gradient.
@@ -219,7 +219,7 @@ Eigen::MatrixXd get_negbin_regression_hessian_cpp(const Eigen::MatrixXd& X,
 List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
                                 Eigen::VectorXi y,
                                 Nullable<NumericVector> warm_start_params = R_NilValue,
-                                bool smart_start = false,
+                                bool smart_cold_start = false,
                                 int maxit = 1000,
                                 double eps_f = 1e-8,
                                 double eps_g = 1e-5,
@@ -227,7 +227,7 @@ List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
                                 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                 std::string optimization_alg = "newton_raphson",
                                 Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-    ModelResult res = fast_neg_bin_internal(X, y, warm_start_params, smart_start, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
+    ModelResult res = fast_neg_bin_internal(X, y, warm_start_params, smart_cold_start, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols() + 1, fixed_idx, fixed_values);
     Eigen::MatrixXd H_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
     Eigen::MatrixXd cov_free = H_free.inverse();
@@ -247,8 +247,8 @@ List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
 //' @description High-performance negative binomial regression fitting.
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses.
-//' @param warm_start_params Optional starting values for coefficients and dispersion.
-//' @param smart_start Logical. If TRUE, use an initial OLS-based guess.
+//' @param warm_start_params Optional starting values for coefficients and dispersion. If provided, \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
 //' @param maxit Maximum number of iterations.
 //' @param eps_f Convergence tolerance for function value.
 //' @param eps_g Convergence tolerance for gradient.
@@ -267,7 +267,7 @@ List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
 List fast_neg_bin_cpp(Eigen::MatrixXd X,
                         Eigen::VectorXi y,
                         Nullable<NumericVector> warm_start_params = R_NilValue,
-                        bool smart_start = false,
+                        bool smart_cold_start = false,
                         int maxit = 1000,
                         double eps_f = 1e-8,
                         double eps_g = 1e-5,
@@ -275,7 +275,7 @@ List fast_neg_bin_cpp(Eigen::MatrixXd X,
                         Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                         std::string optimization_alg = "newton_raphson",
                         Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-    ModelResult res = fast_neg_bin_internal(X, y, warm_start_params, smart_start, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
+    ModelResult res = fast_neg_bin_internal(X, y, warm_start_params, smart_cold_start, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
     return List::create(
         Named("b") = res.b,
         Named("theta_hat") = res.dispersion,

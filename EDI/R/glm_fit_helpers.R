@@ -452,7 +452,7 @@ fast_logistic_regression_with_var = function(X, y, j = 2, optimization_alg = "lb
 #' @param estimate_only Logical. If \code{TRUE}, skip variance-covariance
 #'   matrix calculation for speed.
 #' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
-#' @param start_params Optional starting values for [beta, log_sigma].
+#' @param warm_start_params Optional starting values for [beta, log_sigma].
 #' @param warm_start_fisher_info Optional initial Fisher Information matrix.
 #' @return  A list containing the following components:
 #' \describe{
@@ -467,7 +467,7 @@ fast_logistic_regression_with_var = function(X, y, j = 2, optimization_alg = "lb
 #' dead = rbinom(100, 1, 0.5)
 #' fast_weibull_regression(y, dead, X)
 #' @export
-fast_weibull_regression = function(y, dead, X, use_rcpp = TRUE, estimate_only = FALSE, optimization_alg = "newton_raphson", start_params = NULL, warm_start_fisher_info = NULL){
+fast_weibull_regression = function(y, dead, X, use_rcpp = TRUE, estimate_only = FALSE, optimization_alg = "newton_raphson", warm_start_params = NULL, warm_start_fisher_info = NULL){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 	X = as.matrix(X)
 	
@@ -479,7 +479,7 @@ fast_weibull_regression = function(y, dead, X, use_rcpp = TRUE, estimate_only = 
 		
 		res = tryCatch(
 			fast_weibull_regression_cpp(X = X, y = as.numeric(y), dead = as.numeric(dead), 
-			                            start_params = start_params,
+			                            warm_start_params = warm_start_params,
 			                            smart_start = FALSE, 
 			                            estimate_only = estimate_only, 
 			                            optimization_alg = optimization_alg,
@@ -805,7 +805,7 @@ fast_coxph_regression = function(X, y, dead, use_rcpp = TRUE, estimate_only = FA
 #'   (e.g., a column of ones) is already included in \code{X} if desired.
 #' @param  y A numeric vector of the response variable, representing count data.
 #' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
-#' @param start_params Optional starting values for coefficients and log_theta.
+#' @param warm_start_params Optional starting values for coefficients and log_theta.
 #' @param warm_start_fisher_info Optional initial Fisher Information matrix.
 #'
 #' @return  A list containing the following component:
@@ -818,14 +818,14 @@ fast_coxph_regression = function(X, y, dead, use_rcpp = TRUE, estimate_only = FA
 #' y = rpois(10, 2)
 #' fast_negbin_regression(X, y)
 #' @export
-fast_negbin_regression <- function(X, y, optimization_alg = "newton_raphson", start_params = NULL, warm_start_fisher_info = NULL) {
+fast_negbin_regression <- function(X, y, optimization_alg = "newton_raphson", warm_start_params = NULL, warm_start_fisher_info = NULL) {
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 	X_full = as.matrix(X)
 	X_fit = X_full
 	
 	# If warm start is provided, we use the full matrix and don't attempt QR dropping initially
-	if (!is.null(start_params)) {
-		res = tryCatch(fast_neg_bin_cpp(X = X_fit, y = as.integer(y), start_params = start_params, smart_start = FALSE, optimization_alg = optimization_alg, warm_start_fisher_info = warm_start_fisher_info), error = function(e) NULL)
+	if (!is.null(warm_start_params)) {
+		res = tryCatch(fast_neg_bin_cpp(X = X_fit, y = as.integer(y), warm_start_params = warm_start_params, smart_start = FALSE, optimization_alg = optimization_alg, warm_start_fisher_info = warm_start_fisher_info), error = function(e) NULL)
 		if (!is.null(res)) return(list(b = as.numeric(res$b), fisher_information = res$fisher_information))
 	}
 

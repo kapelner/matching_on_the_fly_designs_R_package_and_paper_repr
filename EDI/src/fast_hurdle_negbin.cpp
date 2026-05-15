@@ -11,6 +11,7 @@ ModelResult fast_logistic_regression_internal(
 	const Eigen::VectorXd& y,
 	const Eigen::VectorXd& weights = Eigen::VectorXd(),
 	Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
+	bool smart_cold_start = true,
 	int maxit = 100,
 	double tol = 1e-8,
 	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -380,6 +381,8 @@ Eigen::MatrixXd get_hurdle_negbin_count_hessian_cpp(const Eigen::MatrixXd& X,
 List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 						   const Eigen::VectorXd& y,
 						   const Eigen::MatrixXd& X_hurdle,
+						   Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
+						   bool smart_cold_start = true,
 						   int maxit = 1000,
 						   double tol = 1e-8,
 						   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -398,7 +401,7 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 	bool hurdle_converged = false;
     
 	if (y_pos_ind.minCoeff() < y_pos_ind.maxCoeff()) {
-        ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, 100, 1e-8, R_NilValue, R_NilValue, alg, R_NilValue, warm_start_hurdle_fisher_info);
+        ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, R_NilValue, R_NilValue, alg, R_NilValue, warm_start_hurdle_fisher_info);
 		hurdle_b = hurdle_res.b;
 		hurdle_converged = hurdle_res.converged;
 	}
@@ -428,6 +431,12 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 
 	std::vector<VectorXd> start_candidates = make_truncated_negbin_candidate_starts(X_pos, y_pos);
 	VectorXd params = start_candidates.front();
+	if (warm_start_params.isNotNull()) {
+		params = as<VectorXd>(NumericVector(warm_start_params));
+	} else if (!smart_cold_start) {
+		params.setZero();
+		params[p] = std::log(1.0);
+	}
 
 	TruncatedNegBinCount fun(X_pos, y_pos);
 	double neg_ll = NA_REAL;
@@ -473,17 +482,39 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 	);
 }
 
+//' @title Fast Hurdle Negative Binomial Regression with Variance (C++)
+//' @description Hurdle NB regression with full variance-covariance matrix.
+//' @param X Matrix of predictors for the count component.
+//' @param y Vector of responses.
+//' @param X_hurdle Matrix of predictors for the hurdle component.
+//' @param j 1-based index of the parameter for which to return specific variance.
+//' @param warm_start_params Optional starting values for count parameters. If provided, \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first iteration.
+//' @param warm_start_hurdle_fisher_info Optional initial Fisher Information matrix for the hurdle iteration.
+//' @return A list containing coefficients, vcov, and convergence status.
+//' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X,
 									 const Eigen::VectorXd& y,
 									 const Eigen::MatrixXd& X_hurdle,
 									 int j = 2,
+									 Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
+									 bool smart_cold_start = true,
 									 int maxit = 1000,
 									 double tol = 1e-8,
 									 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
 									 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-									 std::string optimization_alg = "lbfgs") {
-	List fit = fast_hurdle_negbin_cpp(X, y, X_hurdle, maxit, tol, fixed_idx, fixed_values, optimization_alg);
+									 std::string optimization_alg = "lbfgs",
+									 Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+									 Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_hurdle_fisher_info = R_NilValue) {
+	List fit = fast_hurdle_negbin_cpp(X, y, X_hurdle, warm_start_params, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, warm_start_hurdle_fisher_info);
 	SEXP b_sexp = fit["b"];
 	NumericVector b_nv(b_sexp);
 	const int p = b_nv.size();
@@ -493,7 +524,7 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X,
 	if (fit.containsElementNamed("hurdle_b")) {
 		VectorXd y_pos_ind = (y.array() > 0.0).cast<double>();
 		if (y_pos_ind.minCoeff() < y_pos_ind.maxCoeff()) {
-			ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, 100, 1e-8, R_NilValue, R_NilValue, optimization_alg, R_NilValue, R_NilValue);
+			ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, R_NilValue, R_NilValue, optimization_alg, R_NilValue, R_NilValue);
 			FixedParamSpec hurdle_spec = make_fixed_param_spec(X_hurdle.cols(), R_NilValue, R_NilValue);
 			MatrixXd info_free = subset_matrix(hurdle_res.XtWX, hurdle_spec.free_idx, hurdle_spec.free_idx);
 			MatrixXd vcov = expand_free_covariance(X_hurdle.cols(), hurdle_spec, info_free.inverse(), true);
@@ -545,10 +576,27 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X,
 	return fit;
 }
 
+//' @title Fast Truncated Negative Binomial Regression (C++)
+//' @description High-performance zero-truncated negative binomial regression fitting.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses (must be positive integers).
+//' @param warm_start_params Optional starting values for [beta, log_theta]. If provided, \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param estimate_only If TRUE, only return coefficients and likelihood.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first iteration.
+//' @return A list containing coefficients, vcov, and convergence status.
+//' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X,
                                                                          const Eigen::VectorXd& y,
                                                                          Nullable<NumericVector> warm_start_params = R_NilValue,
+                                                                         bool smart_cold_start = true,
                                                                          bool estimate_only = false,
                                                                          int maxit = 1000,
                                                                          double tol = 1e-8,
@@ -576,6 +624,9 @@ List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X,
         VectorXd params = heuristic_start;
         if (warm_start_params.isNotNull()) {
                 params = as<VectorXd>(NumericVector(warm_start_params));
+        } else if (!smart_start) {
+                params.setZero();
+                params[p] = std::log(1.0);
         }
 
         FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);

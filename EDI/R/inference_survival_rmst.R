@@ -50,6 +50,15 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 			}
 			private$cached_values$beta_hat_T
 		},
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			private$cached_values$beta_hat_T = private$weighted_survival_stat_diff(
+				row_weights,
+				requested_stat = "restricted_mean"
+			)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes a 1-alpha level frequentist confidence interval
 		#' differently for all response types, estimate types, and
 		#' test types.
@@ -117,6 +126,53 @@ InferenceSurvivalRestrictedMeanDiff = R6::R6Class("InferenceSurvivalRestrictedMe
 		}
 	),
 	private = list(
+		weighted_survival_stat_for_group = function(y, dead, row_weights, requested_stat = c("median", "restricted_mean")){
+			requested_stat = match.arg(requested_stat)
+			keep = is.finite(y) & is.finite(dead) & is.finite(row_weights) & row_weights > 0
+			if (!any(keep)) return(NA_real_)
+			y = y[keep]
+			dead = dead[keep]
+			row_weights = as.numeric(row_weights[keep])
+			fit = tryCatch(
+				survival::survfit(
+					survival::Surv(y, dead) ~ 1,
+					weights = row_weights
+				),
+				error = function(e) NULL
+			)
+			if (is.null(fit)) return(NA_real_)
+			if (requested_stat == "median") {
+				q = tryCatch(stats::quantile(fit, probs = 0.5), error = function(e) NULL)
+				med = if (!is.null(q)) as.numeric(q$quantile) else NA_real_
+				return(if (length(med)) med[1L] else NA_real_)
+			}
+			tau = max(y)
+			times = c(0, fit$time)
+			surv_vals = c(1, fit$surv)
+			if (!length(times) || !length(surv_vals)) return(NA_real_)
+			area = 0
+			for (i in seq_len(length(times) - 1L)) {
+				area = area + surv_vals[i] * (times[i + 1L] - times[i])
+			}
+			if (length(times) >= 1L) {
+				area = area + surv_vals[length(surv_vals)] * (tau - times[length(times)])
+			}
+			as.numeric(area)
+		},
+		weighted_survival_stat_diff = function(row_weights, requested_stat = c("median", "restricted_mean")){
+			requested_stat = match.arg(requested_stat)
+			idx_t = private$w == 1
+			idx_c = private$w == 0
+			if (!any(idx_t) || !any(idx_c)) return(NA_real_)
+			stat_t = private$weighted_survival_stat_for_group(
+				private$y[idx_t], private$dead[idx_t], row_weights[idx_t], requested_stat = requested_stat
+			)
+			stat_c = private$weighted_survival_stat_for_group(
+				private$y[idx_c], private$dead[idx_c], row_weights[idx_c], requested_stat = requested_stat
+			)
+			if (!is.finite(stat_t) || !is.finite(stat_c)) return(NA_real_)
+			as.numeric(stat_t - stat_c)
+		},
 		compute_s_beta_hat_T = function(){
 			se_val = get_restricted_mean_se_diff(
 				private$y,

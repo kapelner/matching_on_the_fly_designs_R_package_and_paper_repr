@@ -670,16 +670,13 @@ List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
     LikelihoodFitResult fit = optimize_fixed_likelihood(obj, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, info_start_ptr);
     params = fit.params;
 
-    int n_alpha = model.num_alpha();
-    int p = X.cols();
-
     return List::create(
         Named("b") = params.segment(n_alpha, p),
         Named("alpha") = params.head(n_alpha),
         Named("scores_raw") = (model.num_gamma() > 0) ? params.tail(model.num_gamma()) : VectorXd(0),
         Named("params") = params,
         Named("converged") = fit.converged,
-        Named("fisher_information") = -model.loglik_hessian(params)
+        Named("fisher_information") = (-model.loglik_hessian(params))
     );
 }
 

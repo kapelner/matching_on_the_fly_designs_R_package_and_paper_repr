@@ -9,9 +9,13 @@ fast_stereotype_logit_with_var_cpp(
   y,
   maxit = 100L,
   tol = 1e-08,
+  smart_start = TRUE,
   fixed_idx = NULL,
   fixed_values = NULL,
-  optimization_alg = "newton_raphson"
+  optimization_alg = "newton_raphson",
+  warm_start_fisher_info = NULL,
+  warm_start_params = NULL,
+  warm_start_beta = NULL
 )
 }
 \arguments{
@@ -28,6 +32,12 @@ fast_stereotype_logit_with_var_cpp(
 \item{fixed_values}{Optional values for fixed parameters.}
 
 \item{optimization_alg}{Optimization algorithm.}
+
+\item{warm_start_fisher_info}{Optional initial Fisher Information matrix for the first IRLS iteration.}
+
+\item{warm_start_params}{Optional starting values for all parameters.}
+
+\item{warm_start_beta}{Optional starting values for coefficients.}
 }
 \value{
 A list containing coefficients, variance estimates, vcov, and convergence status.

@@ -54,7 +54,7 @@ InferenceCountHurdlePoisson = R6::R6Class("InferenceCountHurdlePoisson",
 #' @export
 InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLikStdModCache,
+	inherit = InferenceCountLikelihood,
 	public = list(
 		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object.
@@ -72,12 +72,6 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 				assertNoCensoring(private$any_censoring)
 			}
 			private$model_formula_hurdle = model_formula_hurdle
-		},
-		#' @description Compute treatment estimate
-		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_estimate = function(estimate_only = FALSE){
-			private$shared(estimate_only = estimate_only)
-			private$cached_values$beta_hat_T
 		},
 		#' @description Compute asymp confidence interval
 		#' @param alpha The significance level (default 0.05).
@@ -106,12 +100,12 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 		#' @description Compute gradient / likelihood-based alternatives
 		#' @param delta The null treatment effect (default 0).
 		compute_gradient_two_sided_pval = function(delta = 0){
-			self$compute_asymp_two_sided_pval(delta = delta)
+			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "gradient")
 		},
 		#' @description Compute likelihood-based confidence interval
 		#' @param alpha The significance level (default 0.05).
 		compute_gradient_confidence_interval = function(alpha = 0.05){
-			self$compute_asymp_confidence_interval(alpha = alpha)
+			private$invert_test_pval_confidence_interval(alpha)
 		}
 	),
 	private = list(
@@ -150,20 +144,20 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 		},
 		try_hurdle_negbin_fit = function(X_f, X_hurdle, j_t, estimate_only = FALSE){
 			n_params = ncol(X_f) + 1L
-			start_params = private$get_fit_warm_start_for_length("params", n_params)
+			warm_start_params = private$get_fit_warm_start_for_length("params", n_params)
 			warm_fisher = private$get_fit_warm_start_fisher(n_params)
 			mod = tryCatch(
 				if (estimate_only) {
 					fast_hurdle_negbin_cpp(
 						X_f, private$y, X_hurdle = X_hurdle,
-						start_params = start_params,
+						warm_start_params = warm_start_params,
 						smart_start = private$smart_default,
 						warm_start_fisher_info = warm_fisher
 					)
 				} else {
 					fast_hurdle_negbin_with_var_cpp(
 						X_f, private$y, X_hurdle = X_hurdle, j = j_t,
-						start_params = start_params,
+						warm_start_params = warm_start_params,
 						smart_start = private$smart_default,
 						warm_start_fisher_info = warm_fisher
 					)
@@ -194,7 +188,7 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 				fast_truncated_negbin_count_cpp(
 					X = X_fit,
 					y = y,
-					start_params = private$get_fit_warm_start_for_length("params", n_params),
+					warm_start_params = private$get_fit_warm_start_for_length("params", n_params),
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
 					estimate_only = FALSE,
 					optimization_alg = opt_alg
@@ -209,12 +203,12 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 					j = j_treat,
 					full_fit = full_fit,
 				fit_null = function(delta, start = NULL){
-					start_params = start %||% private$get_fit_warm_start_for_length("params", n_params)
+					warm_start_params = start %||% private$get_fit_warm_start_for_length("params", n_params)
 					warm_fisher = private$get_fit_warm_start_fisher(n_params)
 					fast_truncated_negbin_count_cpp(
 						X = X_fit,
 						y = y,
-						start_params = start_params,
+						warm_start_params = warm_start_params,
 						warm_start_fisher_info = warm_fisher,
 						smart_start = private$smart_default,
 						estimate_only = FALSE,
@@ -244,16 +238,14 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 				}
 			)
 		},
-		shared = function(estimate_only = FALSE){
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+		generate_mod = function(estimate_only = FALSE){
 			X_full = private$build_component_matrix(private$model_formula, treatment_name = "treatment")
 			reduced = private$reduce_design_matrix_preserving_treatment(X_full)
 			X_fit = reduced$X
 			j_treat = reduced$j_treat
 			if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
 				private$cache_nonestimable_estimate("hurdle_negbin_design_unusable")
-				return(invisible(NULL))
+				return(NULL)
 			}
 			colnames(X_fit) = colnames(X_full)[reduced$keep]
 			if (is.null(private$best_hurdle_X_colnames)) {
@@ -262,7 +254,7 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 				X_hurdle = reduced_hurdle$X
 				if (is.null(X_hurdle)) {
 					private$cache_nonestimable_estimate("hurdle_negbin_aux_design_unusable")
-					return(invisible(NULL))
+					return(NULL)
 				}
 				colnames(X_hurdle) = colnames(X_hurdle_full)[reduced_hurdle$keep]
 				private$best_hurdle_X_colnames = setdiff(colnames(X_hurdle), c("(Intercept)", "treatment"))
@@ -278,19 +270,28 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 			}
 			if (is.null(fit)){
 				private$cache_nonestimable_estimate("hurdle_negbin_fit_unavailable")
-				return(invisible(NULL))
+				return(NULL)
 			}
-			private$cached_mod = fit$mod
+			
 			private$cached_values$count_likelihood_context = list(X = fit$X, X_hurdle = fit$X_hurdle, j_treat = fit$j)
-			private$set_fit_warm_start(c(as.numeric(fit$b), log(as.numeric(fit$mod$theta_hat))), "params", fisher = fit$mod$fisher_information)
+			
+			out = list(
+				mod = fit$mod,
+				beta_hat_T = fit$b[fit$j],
+				ssq_b_j = fit$ssq,
+				params = c(as.numeric(fit$b), log(as.numeric(fit$mod$theta_hat))),
+				fisher_information = fit$mod$fisher_information
+			)
+			
+			# Cache extra values for this specific class
 			b_full = rep(NA_real_, ncol(X_full))
 			b_full[reduced$keep] = fit$b
 			names(b_full) = colnames(X_full)
-			private$cached_values$beta_hat_T = fit$b[fit$j]
-			if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(fit$ssq)
 			private$cached_values$full_coefficients = b_full
 			private$cached_values$theta_hat = as.numeric(fit$mod$theta_hat)
 			private$cached_values$hurdle_coefficients = fit$mod$hurdle_b
+			
+			out
 		},
 		get_standard_error = function(){
 			private$shared()

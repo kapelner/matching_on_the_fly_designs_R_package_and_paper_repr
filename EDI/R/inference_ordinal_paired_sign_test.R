@@ -24,8 +24,8 @@
 #'
 InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThrough,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKPassThrough$public, list(
 		#' @description Initialize the inference object.
 		#' @param  des_obj  	A completed KK matching-on-the-fly design object.
 		#' @param  verbose  		Whether to print progress messages.
@@ -37,12 +37,8 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
 			}
-			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
-					stop(class(self)[1], " requires a KK matching-on-the-fly design with matched pairs.")
-				}
-			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Returns the estimated treatment effect (proportion of pairs where T > C).
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -66,8 +62,10 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 			private$shared()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKPassThrough$private, list(
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
+		supports_likelihood_tests = function() FALSE,
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
@@ -104,5 +102,5 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 			
 			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
 		}
-	)
+	))
 )

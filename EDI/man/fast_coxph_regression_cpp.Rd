@@ -9,6 +9,7 @@ fast_coxph_regression_cpp(
   y,
   dead,
   warm_start_beta = NULL,
+  smart_start = TRUE,
   estimate_only = FALSE,
   maxit = 20L,
   tol = 1e-09,

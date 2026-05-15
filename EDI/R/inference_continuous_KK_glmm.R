@@ -21,8 +21,8 @@
 #' @export
 InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 	lock_objects = FALSE,
-	inherit = InferenceAbstractKKGLMM,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKGLMMShared$public, list(
 		#' @description Initialize a KK GLMM inference object.
 		#' @param des_obj A completed \code{Design} object with a continuous response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -43,26 +43,23 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 			if (use_rcpp) private$skip_glmm_pkg_check = TRUE
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
 			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
+			private$init_kk_glmm_shared(des_obj)
 			private$use_rcpp = use_rcpp
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKGLMMShared$private, list(
 		use_rcpp = TRUE,
 		glmm_response_type = function() "continuous",
 		glmm_family        = function() stats::gaussian(link = "identity"),
 		supports_likelihood_tests = function(){
 			isTRUE(private$use_rcpp)
 		},
-		# glmmTMB path: univariate → treatment only
-		glmm_predictors_df = function(){
-			super$glmm_predictors_df()
-		},
 		# ── Dispatch ─────────────────────────────────────────────────────────
 		shared = function(estimate_only = FALSE){
 			if (private$use_rcpp) {
 				private$shared_rcpp(estimate_only)
 			} else {
-				super$shared(estimate_only)
+				private$shared_glmm_tmb(estimate_only)
 			}
 		},
 		# ── Rcpp Gaussian LMM path ────────────────────────────────────────────
@@ -91,14 +88,14 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 			if (length(j_T_r) == 0L) j_T_r = 2L   # fallback: second column
 			
 			start_len = ncol(X_fit) + 2L # beta + log_sigma + log_tau
-			start_par = private$get_fit_warm_start_for_length("params", start_len)
+			warm_start_params = private$get_fit_warm_start_for_length("params", start_len)
 			
 			fit = tryCatch(
 				fast_gaussian_lmm_cpp(
 					X             = X_fit,
 					y             = as.numeric(private$y),
 					group_id      = as.integer(group_id),
-					start_par     = start_par,
+					warm_start_params = warm_start_params,
 					estimate_only = estimate_only,
 					maxit         = 300L,
 					eps_g         = 1e-6,
@@ -108,11 +105,11 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 				error = function(e) NULL
 			)
 			if (is.null(fit) || !isTRUE(fit$converged)) {
-				return(super$shared(estimate_only = estimate_only))
+				return(private$shared_glmm_tmb(estimate_only = estimate_only))
 			}
 			beta_hat_T = as.numeric(fit$b[j_T_r])
 			if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
-				return(super$shared(estimate_only = estimate_only))
+				return(private$shared_glmm_tmb(estimate_only = estimate_only))
 			}
 			private$cached_mod = fit
 			full_params = as.numeric(c(fit$b, fit$log_sigma, fit$log_tau))
@@ -147,12 +144,12 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 				j = j_treat,
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
-					start_par = start %||% private$get_fit_warm_start_for_length("params", length(ctx$start)) %||% ctx$start
+					warm_start_params = start %||% private$get_fit_warm_start_for_length("params", length(ctx$start)) %||% ctx$start
 					fast_gaussian_lmm_cpp(
 						X = X_fit,
 						y = y,
 						group_id = group_id,
-						start_par = start_par,
+						warm_start_params = warm_start_params,
 						estimate_only = FALSE,
 						maxit = 300L,
 						eps_g = 1e-6,
@@ -181,5 +178,5 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 				}
 			)
 		}
-	)
+	))
 )

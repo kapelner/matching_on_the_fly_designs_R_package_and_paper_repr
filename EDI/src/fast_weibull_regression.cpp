@@ -109,7 +109,8 @@ Eigen::MatrixXd get_weibull_regression_hessian_cpp(const Eigen::MatrixXd& X,
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of survival times.
 //' @param dead A numeric vector of event indicators.
-//' @param warm_start_params Optional starting values for [beta, log_sigma].
+//' @param warm_start_params Optional starting values for [beta, log_sigma]. If provided, \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
 //' @param estimate_only If TRUE, only return coefficients and likelihood.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
@@ -126,8 +127,8 @@ Eigen::MatrixXd get_weibull_regression_hessian_cpp(const Eigen::MatrixXd& X,
 //' fast_weibull_regression_cpp(X, y, dead)
 // [[Rcpp::export]]
 List fast_weibull_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead, 
-                                 Nullable<NumericVector> start_params = R_NilValue,
-                                 bool smart_start = false,
+                                 Nullable<NumericVector> warm_start_params = R_NilValue,
+                                 bool smart_cold_start = false,
                                  bool estimate_only = false,
                                  int maxit = 1000, 
                                  double tol = 1e-6,
@@ -139,7 +140,7 @@ List fast_weibull_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
     Eigen::VectorXd params(p + 1);
     FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
     
-    if (start_params.isNotNull()) {
+    if (warm_start_params.isNotNull()) {
         params = as<Eigen::VectorXd>(NumericVector(warm_start_params));
         if (params.size() != p + 1) stop("warm_start_params must have length equal to the number of model parameters");
     } else {
@@ -149,16 +150,16 @@ List fast_weibull_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
         if (!legacy_start.beta.allFinite()) legacy_start.beta = Eigen::VectorXd::Zero(p);
         Eigen::VectorXd resid = log_y - X * legacy_start.beta;
         double std_resid = std::sqrt(resid.squaredNorm() / std::max(1, static_cast<int>(y.size()) - p));
-        if (!std::isfinite(std_resid) || std_resid <= 0.0) std_resid = 1.0;
+        if (!std_resid || !std::isfinite(std_resid)) std_resid = 1.0;
         legacy_start.log_sigma = std::log(std_resid * 0.7797);
-        if (smart_start) {
+        if (smart_cold_start) {
             Eigen::MatrixXd X_intercept = Eigen::MatrixXd::Ones(y.size(), 1);
             List intercept_fit = fast_weibull_regression_cpp(
                 X_intercept,
                 y,
                 dead,
                 R_NilValue,
-                false,
+                false, // smart_cold_start=false for intercept recursion
                 true,
                 maxit,
                 tol,

@@ -17,8 +17,8 @@
 #' @keywords internal
 InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurvivalRankRegrIVWC",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThrough,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKPassThrough$public, list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -36,17 +36,13 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			if (should_run_asserts()) {
 				assertResponseType(res_type, "survival")
 			}
-			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
-					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
-				}
-			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				if (!check_package_installed("aftgee")) {
 					stop("Package 'aftgee' is required for ", class(self)[1], ". Please install it.")
 				}
 			}
+			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Returns the estimated treatment effect (log-time ratio).
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -87,8 +83,10 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 				NA_real_
 			}
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKPassThrough$private, list(
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
+		supports_likelihood_tests = function() FALSE,
 		max_abs_reasonable_coef = 1e4,
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		extract_term_estimate = function(mod, term_name = "w"){
@@ -269,5 +267,5 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			private$cached_values$beta_T_reservoir     = if (is.finite(beta) && abs(beta) <= private$max_abs_reasonable_coef) beta else NA_real_
 			private$cached_values$ssq_beta_T_reservoir = if (!estimate_only && is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef) se^2 else NA_real_
 		}
-	)
+	))
 )

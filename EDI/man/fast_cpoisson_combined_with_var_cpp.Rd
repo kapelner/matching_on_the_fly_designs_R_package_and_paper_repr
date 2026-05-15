@@ -14,7 +14,10 @@ fast_cpoisson_combined_with_var_cpp(
   maxit = 100L,
   tol = 1e-08,
   fixed_idx = NULL,
-  fixed_values = NULL
+  fixed_values = NULL,
+  warm_start_fisher_info = NULL,
+  warm_start_params = NULL,
+  warm_start_beta = NULL
 )
 }
 \arguments{

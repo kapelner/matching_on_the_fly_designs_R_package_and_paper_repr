@@ -4,13 +4,7 @@
 \alias{fast_ols_cpp}
 \title{Fast Ordinary Least Squares (OLS) Regression (C++ Backend)}
 \usage{
-fast_ols_cpp(
-  X,
-  y,
-  fixed_idx = NULL,
-  fixed_values = NULL,
-  warm_start_fisher_info = NULL
-)
+fast_ols_cpp(X, y, fixed_idx = NULL, fixed_values = NULL)
 }
 \arguments{
 \item{X}{A numeric matrix of predictors.}

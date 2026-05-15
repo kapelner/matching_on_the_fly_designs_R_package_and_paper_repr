@@ -35,6 +35,40 @@ InferenceIncidRiskDiff = R6::R6Class("InferenceIncidRiskDiff",
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+		},
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			X_full = private$build_design_matrix()
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				fit_fun = function(X_fit, keep){
+					w_fit = row_weights
+					ok = is.finite(w_fit) & w_fit > 0 & is.finite(private$y)
+					if (sum(ok) <= ncol(X_fit)) return(NULL)
+					stats::lm.wfit(
+						x = X_fit[ok, , drop = FALSE],
+						y = as.numeric(private$y[ok]),
+						w = as.numeric(w_fit[ok])
+					)
+				},
+				fit_ok = function(mod, X_fit, keep){
+					j_treat = which(keep == 2L)
+					!is.null(mod) &&
+						is.finite(j_treat) &&
+						length(mod$coefficients) >= j_treat &&
+						is.finite(mod$coefficients[j_treat])
+				}
+			)
+			if (is.null(attempt$fit)) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				return(NA_real_)
+			}
+			j_treat = which(attempt$keep == 2L)
+			private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
+			private$cached_values$beta_hat_T = as.numeric(attempt$fit$coefficients[j_treat])
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$beta_hat_T
 		}
 	),
 	private = list(

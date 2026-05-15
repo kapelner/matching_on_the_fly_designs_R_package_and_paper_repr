@@ -16,7 +16,7 @@
 #' @export
 InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLikStdModCache,
+	inherit = InferenceCountLikelihood,
 	public = list(
 				
 		#' @description Initialize a negative binomial regression inference object.
@@ -59,7 +59,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 			res = tryCatch(
 				fast_neg_bin_cpp(
 					X = X, y = as.integer(private$y),
-					start_params = private$get_fit_warm_start_for_length("params", ncol(X) + 1L),
+					warm_start_params = private$get_fit_warm_start_for_length("params", ncol(X) + 1L),
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X) + 1L),
 					smart_start = private$smart_default,
 					optimization_alg = private$optimization_alg
@@ -92,7 +92,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 					res = tryCatch(
 						fast_neg_bin_cpp(
 							X = X_fit, y = y,
-							start_params = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L),
+							warm_start_params = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L),
 							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit) + 1L),
 							fixed_idx = j_treat, fixed_values = delta,
 							smart_start = private$smart_default,
@@ -137,13 +137,13 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 				required_cols = 2L,
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
-					start_params = private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L)
+					warm_start_params = private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L)
 					warm_fisher = private$get_fit_warm_start_fisher(ncol(X_fit) + 1L)
 					if (estimate_only) {
 						res = tryCatch(
 							fast_neg_bin_cpp(
 								X = X_fit, y = as.integer(private$y),
-								start_params = start_params,
+								warm_start_params = warm_start_params,
 								warm_start_fisher_info = warm_fisher,
 								smart_start = private$smart_default,
 								optimization_alg = private$optimization_alg
@@ -158,7 +158,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 						res = tryCatch(
 							fast_neg_bin_with_var_cpp(
 								X = X_fit, y = as.integer(private$y),
-								start_params = start_params,
+								warm_start_params = warm_start_params,
 								warm_start_fisher_info = warm_fisher,
 								smart_start = private$smart_default,
 								optimization_alg = private$optimization_alg
@@ -182,12 +182,13 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 				}
 			)
 			if (!is.null(attempt$fit)){
-				private$set_fit_warm_start(c(as.numeric(attempt$fit$b), log(as.numeric(attempt$fit$theta_hat))), "params", fisher = attempt$fit$fisher_information)
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(
 					X = attempt$X,
 					j_treat = attempt$fit$j_treat
 				)
+				# Important: pack parameters for the base class shared logic
+				attempt$fit$params = c(as.numeric(attempt$fit$b), log(as.numeric(attempt$fit$theta_hat)))
 			} else {
 				private$cached_values$likelihood_test_context = NULL
 			}

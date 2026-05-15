@@ -18,26 +18,23 @@
 #' @export
 InferenceCountPoissonKKGEE = R6::R6Class("InferenceCountPoissonKKGEE",
 	lock_objects = FALSE,
-	inherit = InferenceAbstractKKGEE,
-	public = list(
+	inherit = InferenceAsymp,
+	public = c(InferenceMixinKKGEEShared$public, list(
 		#' @description Initialize the inference object.
 		#' @param des_obj A completed \code{Design} object with a count response.
 		#' @param model_formula   Optional formula for covariate adjustment.
 		#' @param use_rcpp Whether to use the internal Rcpp solver.
 		#' @param verbose Whether to print progress messages.
 		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
-			if (should_run_asserts() && !use_rcpp) {
-				if (!check_package_installed("geepack")){
-					stop("Package 'geepack' is required for ", class(self)[1], ". Please install it.")
-				}
-			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, use_rcpp = use_rcpp)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			private$init_kk_gee_shared(des_obj, use_rcpp = use_rcpp, model_formula = model_formula)
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKGEEShared$private, list(
 		gee_response_type = function() "count",
-		gee_family        = function() stats::poisson(link = "log")
-	)
+		gee_family        = function() stats::poisson(link = "log"),
+		shared_gee_dispatch = function(estimate_only = FALSE) private$shared_gee_default(estimate_only)
+	))
 )
 #' Univariate GEE Inference for KK Designs with Count Response
 #'

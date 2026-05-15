@@ -9,29 +9,25 @@
 #' @keywords internal
 InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGLMM",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThrough,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKPassThrough$public, list(
 		#' @description Initialize the inference object.
 		#' @param des_obj A completed KK design object.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param max_abs_reasonable_coef Cap for coefficient magnitudes.
 		#' @param max_abs_log_sigma Cap for log-random-effect-SD.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, max_abs_reasonable_coef = 1e4, max_abs_log_sigma = 8, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, max_abs_reasonable_coef = 1e4, max_abs_log_sigma = 8, verbose = FALSE, smart_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
-			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
-					stop(class(self)[1], " requires a KK matching-on-the-fly design.")
-				}
-			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
 			private$max_abs_reasonable_coef = max_abs_reasonable_coef
 			private$max_abs_log_sigma = max_abs_log_sigma
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Returns the combined-likelihood estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -69,8 +65,8 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKPassThrough$private, list(
 			max_abs_reasonable_coef = 1e4,
 			max_abs_log_sigma = 8,
 			get_standard_error = function(){
@@ -95,7 +91,7 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 					j = j_treat,
 					full_fit = private$cached_mod,
 					fit_null = function(delta, start = NULL){
-						start_par = start %||% private$get_fit_warm_start_for_length("params", start_len) %||% as.numeric(ctx$start)
+						warm_start_params = start %||% private$get_fit_warm_start_for_length("params", start_len) %||% as.numeric(ctx$start)
 						warm_fisher = private$get_fit_warm_start_fisher(start_len)
 						fast_clogit_plus_glmm_cpp(
 							X_disc = ctx$X_disc,
@@ -103,7 +99,7 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 							X_conc = ctx$X_conc,
 							y_conc = ctx$y_conc,
 							group_conc = ctx$group_conc,
-							start = start_par,
+							warm_start_params = warm_start_params,
 							warm_start_fisher_info = warm_fisher,
 							has_discordant = ctx$has_discordant,
 							has_concordant = ctx$has_concordant,
@@ -314,7 +310,7 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 					X_conc          = as.matrix(data_parts$X_conc),
 					y_conc          = as.numeric(data_parts$y_conc),
 					group_conc      = as.integer(data_parts$group_conc),
-					start           = as.numeric(start),
+					warm_start_params = as.numeric(start),
 					warm_start_fisher_info = warm_fisher,
 					has_discordant  = data_parts$has_discordant,
 					has_concordant  = data_parts$has_concordant,
@@ -426,5 +422,5 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 		log1pexp = function(x){
 			ifelse(x > 0, x + log1p(exp(-x)), log1p(exp(x)))
 		}
-	)
+	))
 )

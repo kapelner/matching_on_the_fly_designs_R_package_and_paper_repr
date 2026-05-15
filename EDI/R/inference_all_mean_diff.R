@@ -66,6 +66,34 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 			}
 			private$cached_values$beta_hat_T
 		},
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			keep = is.finite(row_weights) & row_weights > 0 & is.finite(private$y)
+			if (!any(keep)) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				return(NA_real_)
+			}
+			y = private$y[keep]
+			w = private$w[keep]
+			row_weights = as.numeric(row_weights[keep])
+			w_t = row_weights[w == 1]
+			w_c = row_weights[w == 0]
+			y_t = y[w == 1]
+			y_c = y[w == 0]
+			if (!length(y_t) || !length(y_c) || sum(w_t) <= 0 || sum(w_c) <= 0) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				return(NA_real_)
+			}
+			private$cached_values$yTs = y_t
+			private$cached_values$yCs = y_c
+			private$cached_values$beta_hat_T =
+				sum(w_t * y_t) / sum(w_t) - sum(w_c * y_c) / sum(w_c)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes a 1-alpha level frequentist confidence interval for the randomization test
 		#'
 		#' @param alpha The confidence level in the computed confidence

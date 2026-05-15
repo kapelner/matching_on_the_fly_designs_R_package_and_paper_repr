@@ -93,7 +93,7 @@ public:
 		group_conc(group_conc_), q(has_discordant_ ? (int)X_disc_.cols() : (int)X_conc_.cols()), has_discordant(has_discordant_),
 		has_concordant(has_concordant_), gh(gauss_hermite_rule(n_gh)),
 		max_abs_log_sigma(max_abs_log_sigma_),
-		m_grp_start_conc(build_concordant_layout(group_conc_).warm_start_params),
+			m_grp_start_conc(build_concordant_layout(group_conc_).start),
 		m_grp_size_conc(build_concordant_layout(group_conc_).size),
 		m_G_conc(static_cast<int>(m_grp_start_conc.size())),
 		m_max_group_size_conc(build_concordant_layout(group_conc_).max_size),

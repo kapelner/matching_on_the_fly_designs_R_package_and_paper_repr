@@ -4,7 +4,13 @@
 \alias{fast_logistic_regression}
 \title{Fast Logistic Regression (R Wrapper)}
 \usage{
-fast_logistic_regression(X, y, optimization_alg = "lbfgs")
+fast_logistic_regression(
+  X,
+  y,
+  optimization_alg = "lbfgs",
+  warm_start_beta = NULL,
+  warm_start_fisher_info = NULL
+)
 }
 \arguments{
 \item{X}{A numeric matrix of predictor variables. It is assumed that an intercept column

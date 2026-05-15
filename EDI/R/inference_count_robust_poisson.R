@@ -35,17 +35,10 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-		},
-		#' @description Computes the robust Poisson estimate of the treatment effect.
-		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_estimate = function(estimate_only = FALSE){
-			private$shared(estimate_only = estimate_only)
-			private$cached_values$beta_hat_T
 		}
 	),
 	private = list(
 		best_X_colnames = NULL,
-		cached_mod = NULL,
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -64,10 +57,10 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			}
 			res = tryCatch(
 				fast_poisson_regression_cpp(
-					X = X_fit, y = as.numeric(private$y),
-					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+					X = X, y = as.numeric(private$y),
+					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
 					smart_start = private$smart_default,
-					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X))
 				),
 				error = function(e) NULL
 			)
@@ -108,16 +101,16 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			if (length(coef_hat) != ncol(X_fit) || any(!is.finite(coef_hat))){
 				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat))
 			}
-			private$set_fit_warm_start(coef_hat, "beta", fisher = mod$XtWX)
+			
 			if (estimate_only){
 				b_full = rep(NA_real_, ncol(X))
 				b_full[reduced$keep] = coef_hat
 				names(b_full) = colnames(X)
-				return(list(b = b_full, ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod))
+				return(list(b = b_full, ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod, XtWX = mod$XtWX))
 			}
 			mu_hat = as.numeric(exp(X_fit %*% coef_hat))
 			if (length(mu_hat) != nrow(X_fit) || any(!is.finite(mu_hat)) || any(mu_hat <= 0)){
-				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod))
+				return(list(b = b_full, ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod, XtWX = mod$XtWX))
 			}
 			bread = NULL
 			var_keep = seq_len(ncol(X_fit))
@@ -135,7 +128,7 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				reduced_weighted = private$reduce_design_matrix_preserving_treatment(X_weighted)
 				keep_sub = as.integer(reduced_weighted$keep)
 				if (length(keep_sub) == 0L) {
-					return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod))
+					return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod, XtWX = mod$XtWX))
 				}
 				X_var_candidate = as.matrix(X_fit[, keep_sub, drop = FALSE])
 				cross_mat = tryCatch(
@@ -151,7 +144,7 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				}
 			}
 			if (is.null(bread)){
-				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod))
+				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod, XtWX = mod$XtWX))
 			}
 			resid = as.numeric(private$y) - mu_hat
 			meat = crossprod(X_var, X_var * (resid^2))
@@ -174,91 +167,20 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			b_full = rep(NA_real_, ncol(X))
 			b_full[reduced$keep] = coef_hat
 			names(b_full) = colnames(X)
-			list(b = b_full, ssq_b_2 = ssq_b_j, mod = mod, X_fit = X_fit, j_treat = j_treat)
-		},
-		supports_likelihood_tests = function(){
-			TRUE
-		},
-		get_likelihood_test_spec = function(){
-			private$shared(estimate_only = FALSE)
-			ctx = private$cached_values$likelihood_test_context
-			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
-			X_fit = ctx$X
-			y = as.numeric(private$y)
-			j_treat = as.integer(ctx$j_treat)
-			list(
-				X = X_fit,
-				y = y,
-				j = j_treat,
-				full_fit = private$cached_mod,
-				fit_null = function(delta, start = NULL){
-					fast_poisson_regression_with_var_cpp(
-						X = X_fit,
-						y = y,
-						j = j_treat,
-						warm_start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
-						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
-						fixed_idx = j_treat,
-						fixed_values = delta,
-						smart_start = private$smart_default,
-						optimization_alg = private$optimization_alg %||% private$optimization_alg_default %||% "lbfgs"
-					)
-				},
-				extract_start = function(fit){
-					as.numeric(fit$b)
-				},
-				score = function(fit){
-					as.numeric(fit$score %||% get_poisson_regression_score_cpp(X_fit, y, as.numeric(fit$b)))
-				},
-				observed_information = function(fit){
-					-get_poisson_regression_hessian_cpp(X_fit, as.numeric(fit$b))
-				},
-				fisher_information = function(fit){
-					-get_poisson_regression_hessian_cpp(X_fit, as.numeric(fit$b))
-				},
-				information = function(fit){
-					-get_poisson_regression_hessian_cpp(X_fit, as.numeric(fit$b))
-				},
-				neg_loglik = function(fit){
-					eta = as.numeric(X_fit %*% as.numeric(fit$b))
-					-sum(y * eta - exp(eta) - lgamma(y + 1))
-				}
-			)
+			list(b = b_full, ssq_b_2 = ssq_b_j, mod = mod, XtWX = mod$XtWX, X_fit = X_fit, j_treat = j_treat)
 		},
 		generate_mod = function(estimate_only = FALSE){
 			model_output = private$fit_count_model_with_var(private$build_design_matrix(), estimate_only = estimate_only)
-			if (!is.null(model_output$mod)) {
-				private$cached_mod = model_output$mod
-			} else {
-				private$cached_mod = NULL
-			}
 			if (!is.null(model_output$b)) {
 				private$cached_values$likelihood_test_context = list(
 					X = model_output$X_fit %||% private$build_design_matrix(),
 					j_treat = model_output$j_treat %||% 2L
 				)
+				private$best_X_colnames = setdiff(colnames(model_output$X_fit), c("(Intercept)", "treatment"))
 			} else {
 				private$cached_values$likelihood_test_context = NULL
 			}
 			model_output
-		},
-		shared = function(estimate_only = FALSE){
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			has_cached_se = !is.null(private$cached_values$s_beta_hat_T) &&
-				length(private$cached_values$s_beta_hat_T) == 1L &&
-				is.finite(private$cached_values$s_beta_hat_T)
-			if (estimate_only || has_cached_se) return(invisible(NULL))
-			model_output = private$generate_mod(estimate_only = estimate_only)
-			private$cached_values$beta_hat_T = model_output$b[2]
-			if (estimate_only) return(invisible(NULL))
-			ssq = model_output$ssq_b_2
-			if (!is.null(ssq) && !is.na(ssq) && ssq > 0) {
-				private$cached_values$s_beta_hat_T = sqrt(ssq)
-			} else {
-				private$cached_values$s_beta_hat_T = NA_real_
-			}
-			private$cached_values$df = Inf
 		}
 	)
 )

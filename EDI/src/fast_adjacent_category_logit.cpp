@@ -309,7 +309,6 @@ List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const E
 
     MatrixXd cov_free = lu.inverse();
     MatrixXd cov = expand_free_covariance(n_par, fixed_spec, cov_free, true);
-    int n_alpha = K - 1;
     double ssq_b_1 = (X.cols() >= 1) ? cov(n_alpha, n_alpha) : NA_REAL;
 
     return List::create(

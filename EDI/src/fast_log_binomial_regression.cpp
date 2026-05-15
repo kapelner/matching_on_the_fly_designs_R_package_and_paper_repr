@@ -100,7 +100,8 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
     } else {
       beta = ols_warm_start_beta_or_legacy(X, y, Eigen::VectorXd::Zero(p), fixed_spec);
     }
-  } else {    const double y_mean = std::min(std::max(y.mean(), kMinMu), kMaxMu);
+  } else {
+    const double y_mean = std::min(std::max(y.mean(), kMinMu), kMaxMu);
     beta[0] = (link_type == BinomialConstrainedLink::kLog) ? std::log(y_mean) : y_mean;
   }
   beta = apply_fixed_values(beta, fixed_spec);

@@ -92,7 +92,7 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 			res = tryCatch(
 				fast_zero_one_inflated_beta_cpp(
 					X, X_zero_one, private$y, 
-					init = private$get_fit_warm_start_for_length("params", start_len) %||% rep(0, start_len),
+					warm_start_params = private$get_fit_warm_start_for_length("params", start_len) %||% rep(0, start_len),
 					smart_start = private$smart_default,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len)
 				),
@@ -122,14 +122,14 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 				X = X_fit, X_zero_one = X_zero_one, y = y, j = j_treat,
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
-					init = start %||% private$get_fit_warm_start_for_length("params", start_len) %||% (if (!is.null(full_params)) as.numeric(full_params) else rep(0, start_len))
+					warm_start_params = start %||% private$get_fit_warm_start_for_length("params", start_len) %||% (if (!is.null(full_params)) as.numeric(full_params) else rep(0, start_len))
 					warm_fisher = private$get_fit_warm_start_fisher(start_len)
 					res = tryCatch(
 						fast_zero_one_inflated_beta_cpp(
 							X_fit,
 							X_zero_one,
 							y,
-							init = init,
+							warm_start_params = warm_start_params,
 							smart_start = private$smart_default,
 							warm_start_fisher_info = warm_fisher,
 							fixed_idx = j_treat,
@@ -176,11 +176,11 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 					}
 					
 					start_len = ncol(X_fit) + 1L + 2L * ncol(X_zero_one)
-					init = private$get_fit_warm_start_for_length("params", start_len) %||% rep(0, start_len)
+					warm_start_params = private$get_fit_warm_start_for_length("params", start_len) %||% rep(0, start_len)
 					res = tryCatch(
 						fast_zero_one_inflated_beta_cpp(
 							X_fit, X_zero_one, private$y, 
-							init = init,
+							warm_start_params = warm_start_params,
 							smart_start = private$smart_default,
 							warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len)
 						),

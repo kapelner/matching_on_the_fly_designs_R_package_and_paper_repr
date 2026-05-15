@@ -9,7 +9,7 @@
 #' @noRd
 InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugmentedPoissonAbstract",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLikStdModCache,
+	inherit = InferenceCountLikelihood,
 	public = list(
 				
 		#' @description Initialize
@@ -45,12 +45,6 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			
 			private$use_rcpp = use_rcpp
 			private$model_formula_zero = model_formula_zero
-		},
-		#' @description Compute treatment estimate
-		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_estimate = function(estimate_only = FALSE){
-			private$shared(estimate_only = estimate_only)
-			private$cached_values$beta_hat_T
 		},
 		#' @description Compute asymp confidence interval
 		#' @param alpha The significance level (default 0.05).
@@ -173,12 +167,12 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			Xzi_fit = private$build_component_matrix(private$model_formula_zero, private$best_Xzi_colnames, treatment_name = "treatment")
 			if (private$use_rcpp && identical(private$za_description(), "Zero-Inflated Negative Binomial")) {
 				n_params = ncol(X_fit) + ncol(Xzi_fit) + 1L
-				start_params = private$get_fit_warm_start_for_length("params", n_params)
+				warm_start_params = private$get_fit_warm_start_for_length("params", n_params)
 				warm_fisher = private$get_fit_warm_start_fisher(n_params)
 				fit = tryCatch(
 					fast_zinb_cpp(
 						X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit,
-						start_params = start_params,
+						warm_start_params = warm_start_params,
 						warm_start_fisher_info = warm_fisher,
 						smart_start = private$smart_default,
 						estimate_only = estimate_only, optimization_alg = private$optimization_alg
@@ -192,13 +186,13 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			} else if (private$use_rcpp && !grepl("Negative Binomial", private$za_description())) {
 				is_hurdle = identical(private$za_description(), "Hurdle Poisson")
 				n_params = ncol(X_fit) + ncol(Xzi_fit)
-				start_params = private$get_fit_warm_start_for_length("params", n_params)
+				warm_start_params = private$get_fit_warm_start_for_length("params", n_params)
 				warm_fisher = private$get_fit_warm_start_fisher(n_params)
 				fit = tryCatch(
 					fast_zero_augmented_poisson_cpp(
 						X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit,
 						is_hurdle = is_hurdle,
-						start_params = start_params,
+						warm_start_params = warm_start_params,
 						warm_start_fisher_info = warm_fisher,
 						smart_start = private$smart_default,
 						estimate_only = estimate_only, optimization_alg = private$optimization_alg
@@ -246,14 +240,14 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				j = j_treat,
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
-					start_params = start %||% private$get_fit_warm_start_for_length("params", start_len)
+					warm_start_params = start %||% private$get_fit_warm_start_for_length("params", start_len)
 					warm_fisher = private$get_fit_warm_start_fisher(start_len)
 					fit = if (is_zinb) {
 						fast_zinb_cpp(
 							X = X_fit,
 							y = y,
 							Xzi = Xzi_fit,
-							start_params = start_params,
+							warm_start_params = warm_start_params,
 							warm_start_fisher_info = warm_fisher,
 							smart_start = private$smart_default,
 							estimate_only = FALSE,
@@ -267,7 +261,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 							y = y,
 							Xzi = Xzi_fit,
 							is_hurdle = is_hurdle,
-							start_params = start_params,
+							warm_start_params = warm_start_params,
 							warm_start_fisher_info = warm_fisher,
 							smart_start = private$smart_default,
 							estimate_only = FALSE,
@@ -352,9 +346,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				error = function(e) NULL
 			)
 		},
-		shared = function(estimate_only = FALSE){
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+		generate_mod = function(estimate_only = FALSE){
 			private$cached_values$likelihood_test_context = NULL
 			if (is.null(private$best_X_colnames)) {
 				X_full = private$build_component_matrix(private$model_formula, treatment_name = "w")
@@ -362,7 +354,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				X_fit = res_reduced$X
 				if (is.null(X_fit)){
 					private$cache_nonestimable_estimate("zero_augmented_poisson_design_unusable")
-					return(invisible(NULL))
+					return(NULL)
 				}
 				colnames(X_fit) = colnames(X_full)[res_reduced$keep]
 				private$best_X_colnames = setdiff(colnames(X_fit), c("(Intercept)", "w"))
@@ -375,100 +367,106 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				Xzi_fit = res_zi$X
 				if (is.null(Xzi_fit)){
 					private$cache_nonestimable_estimate("zero_augmented_poisson_aux_design_unusable")
-					return(invisible(NULL))
+					return(NULL)
 				}
 				colnames(Xzi_fit) = colnames(Xzi_full)[res_zi$keep]
 				private$best_Xzi_colnames = setdiff(colnames(Xzi_fit), c("(Intercept)", "w"))
 			} else {
 				Xzi_fit = private$build_component_matrix(private$model_formula_zero, private$best_Xzi_colnames, treatment_name = "w")
 			}
+			
+			out = list()
 			if (private$use_rcpp && identical(private$za_description(), "Zero-Inflated Negative Binomial")) {
 				n_params = ncol(X_fit) + ncol(Xzi_fit) + 1L
-				start_params = private$get_fit_warm_start_for_length("params", n_params)
+				warm_start_params = private$get_fit_warm_start_for_length("params", n_params)
 				warm_fisher = private$get_fit_warm_start_fisher(n_params)
 				fit = tryCatch(
 					fast_zinb_cpp(
 						X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit,
-						start_params = start_params,
+						warm_start_params = warm_start_params,
 						warm_start_fisher_info = warm_fisher,
 						smart_start = private$smart_default,
 						estimate_only = estimate_only, optimization_alg = private$optimization_alg
-					)
-,
+					),
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) {
 					private$cache_nonestimable_estimate("zinb_fit_unavailable")
-					return(invisible(NULL))
+					return(NULL)
 				}
-				private$set_fit_warm_start(as.numeric(fit$params), "params", fisher = fit$fisher_information)
-				private$cached_mod = fit
+				
 				private$cached_values$likelihood_test_context = list(
 					X = X_fit,
 					Xzi = Xzi_fit,
 					j_treat = 2L,
 					is_hurdle = FALSE
 				)
-				private$cached_values$beta_hat_T = as.numeric(fit$coefficients$cond[2])
+				out$beta_hat_T = as.numeric(fit$coefficients$cond[2])
 				if (!estimate_only) {
 					se = tryCatch(sqrt(fit$vcov[2, 2]), error = function(e) NA_real_)
-					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+					out$ssq_b_j = if (is.finite(se) && se > 0) se^2 else NA_real_
 				}
+				out$params = as.numeric(fit$params)
+				out$fisher_information = fit$fisher_information
+				out$mod = fit
 			} else if (private$use_rcpp && !grepl("Negative Binomial", private$za_description())) {
 				is_hurdle = identical(private$za_description(), "Hurdle Poisson")
 				n_params = ncol(X_fit) + ncol(Xzi_fit)
-				start_params = private$get_fit_warm_start_for_length("params", n_params)
+				warm_start_params = private$get_fit_warm_start_for_length("params", n_params)
 				warm_fisher = private$get_fit_warm_start_fisher(n_params)
 				fit = tryCatch(
 					fast_zero_augmented_poisson_cpp(
 						X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit,
 						is_hurdle = is_hurdle,
-						start_params = start_params,
+						warm_start_params = warm_start_params,
 						warm_start_fisher_info = warm_fisher,
 						smart_start = private$smart_default,
 						estimate_only = estimate_only, optimization_alg = private$optimization_alg
-					)
-,
+					),
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) {
 					private$cache_nonestimable_estimate("zero_augmented_poisson_fit_unavailable")
-					return(invisible(NULL))
+					return(NULL)
 				}
-				private$set_fit_warm_start(as.numeric(c(fit$coefficients$cond, fit$coefficients$zi)), "params", fisher = fit$fisher_information)
-				private$cached_mod = fit
+				
 				private$cached_values$likelihood_test_context = list(
 					X = X_fit,
 					Xzi = Xzi_fit,
 					j_treat = 2L,
 					is_hurdle = is_hurdle
 				)
-				private$cached_values$beta_hat_T = as.numeric(fit$coefficients$cond[2])
+				out$beta_hat_T = as.numeric(fit$coefficients$cond[2])
 				if (!estimate_only) {
 					se = tryCatch(sqrt(fit$vcov[2, 2]), error = function(e) NA_real_)
-					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+					out$ssq_b_j = if (is.finite(se) && se > 0) se^2 else NA_real_
 				}
+				out$params = as.numeric(c(fit$coefficients$cond, fit$coefficients$zi))
+				out$fisher_information = fit$fisher_information
+				out$mod = fit
 			} else {
 				dat = private$build_component_frame(X_fit, Xzi_fit)
 				mod = private$fit_zero_augmented_model(dat, X_fit, Xzi_fit)
 				if (is.null(mod)){
 					private$cache_nonestimable_estimate("zero_augmented_poisson_fit_unavailable")
-					return(invisible(NULL))
+					return(NULL)
 				}
-					private$cached_mod = mod
-					private$cached_values$likelihood_test_context = NULL
-					cond_coef = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
+				
+				private$cached_values$likelihood_test_context = NULL
+				cond_coef = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
 				if (is.null(cond_coef) || !("w" %in% names(cond_coef))){
 					private$cache_nonestimable_estimate("zero_augmented_poisson_treatment_missing")
-					return(invisible(NULL))
+					return(NULL)
 				}
-				private$cached_values$beta_hat_T = as.numeric(cond_coef["w"])
+				out$beta_hat_T = as.numeric(cond_coef["w"])
 				if (!estimate_only) {
 					coef_table = tryCatch(summary(mod)$coefficients$cond, error = function(e) NULL)
 					se = if (!is.null(coef_table) && ("w" %in% rownames(coef_table))) as.numeric(coef_table["w", "Std. Error"]) else NA_real_
-					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+					out$ssq_b_j = if (is.finite(se) && se > 0) se^2 else NA_real_
 				}
+				out$mod = mod
 			}
+			out
 		},
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){

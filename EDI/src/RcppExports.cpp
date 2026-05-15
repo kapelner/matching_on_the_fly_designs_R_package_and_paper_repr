@@ -1021,14 +1021,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_hurdle_negbin_cpp
-List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::MatrixXd& X_hurdle, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_hurdle_fisher_info);
-RcppExport SEXP _EDI_fast_hurdle_negbin_cpp(SEXP XSEXP, SEXP ySEXP, SEXP X_hurdleSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP, SEXP warm_start_hurdle_fisher_infoSEXP) {
+List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::MatrixXd& X_hurdle, Rcpp::Nullable<Rcpp::NumericVector> warm_start_params, bool smart_cold_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_hurdle_fisher_info);
+RcppExport SEXP _EDI_fast_hurdle_negbin_cpp(SEXP XSEXP, SEXP ySEXP, SEXP X_hurdleSEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP, SEXP warm_start_hurdle_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_hurdle(X_hurdleSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_params(warm_start_paramsSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
@@ -1036,13 +1038,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_hurdle_fisher_info(warm_start_hurdle_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_hurdle_negbin_cpp(X, y, X_hurdle, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, warm_start_hurdle_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_hurdle_negbin_cpp(X, y, X_hurdle, warm_start_params, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, warm_start_hurdle_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_hurdle_negbin_with_var_cpp
-List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::MatrixXd& X_hurdle, int j, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg);
-RcppExport SEXP _EDI_fast_hurdle_negbin_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP X_hurdleSEXP, SEXP jSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP) {
+List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::MatrixXd& X_hurdle, int j, Rcpp::Nullable<Rcpp::NumericVector> warm_start_params, bool smart_cold_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_hurdle_fisher_info);
+RcppExport SEXP _EDI_fast_hurdle_negbin_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP X_hurdleSEXP, SEXP jSEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP, SEXP warm_start_hurdle_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1050,24 +1052,29 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X_hurdle(X_hurdleSEXP);
     Rcpp::traits::input_parameter< int >::type j(jSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_params(warm_start_paramsSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_hurdle_negbin_with_var_cpp(X, y, X_hurdle, j, maxit, tol, fixed_idx, fixed_values, optimization_alg));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_hurdle_fisher_info(warm_start_hurdle_fisher_infoSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_hurdle_negbin_with_var_cpp(X, y, X_hurdle, j, warm_start_params, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, warm_start_hurdle_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_truncated_negbin_count_cpp
-List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool estimate_only, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_truncated_negbin_count_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool smart_cold_start, bool estimate_only, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_truncated_negbin_count_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type warm_start_params(warm_start_paramsSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< bool >::type estimate_only(estimate_onlySEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
@@ -1075,7 +1082,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_truncated_negbin_count_cpp(X, y, warm_start_params, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_truncated_negbin_count_cpp(X, y, warm_start_params, smart_cold_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1434,15 +1441,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_logistic_regression_cpp
-List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, bool smart_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_logistic_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_betaSEXP, SEXP smart_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_weightsSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, bool smart_cold_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_logistic_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_betaSEXP, SEXP smart_cold_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_weightsSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_beta(warm_start_betaSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
@@ -1450,13 +1457,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_weights(warm_start_weightsSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_logistic_regression_cpp(X, y, warm_start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_logistic_regression_cpp(X, y, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_logistic_regression_weighted_cpp
-List fast_logistic_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, bool smart_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_logistic_regression_weighted_cpp(SEXP XSEXP, SEXP ySEXP, SEXP weightsSEXP, SEXP warm_start_betaSEXP, SEXP smart_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_weightsSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_logistic_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, bool smart_cold_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_logistic_regression_weighted_cpp(SEXP XSEXP, SEXP ySEXP, SEXP weightsSEXP, SEXP warm_start_betaSEXP, SEXP smart_cold_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_weightsSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1464,7 +1471,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type weights(weightsSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_beta(warm_start_betaSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
@@ -1472,13 +1479,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_weights(warm_start_weightsSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_logistic_regression_weighted_cpp(X, y, weights, warm_start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_logistic_regression_weighted_cpp(X, y, weights, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_logistic_regression_with_var_cpp
-List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_logistic_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP jSEXP, SEXP warm_start_betaSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_weightsSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, bool smart_cold_start, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_logistic_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP jSEXP, SEXP warm_start_betaSEXP, SEXP smart_cold_startSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_weightsSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1486,12 +1493,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< int >::type j(jSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_beta(warm_start_betaSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_weights(warm_start_weightsSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_logistic_regression_with_var_cpp(X, y, j, warm_start_beta, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_logistic_regression_with_var_cpp(X, y, j, warm_start_beta, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1547,15 +1555,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_neg_bin_with_var_cpp
-List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X, Eigen::VectorXi y, Nullable<NumericVector> warm_start_params, bool smart_start, int maxit, double eps_f, double eps_g, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_neg_bin_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_startSEXP, SEXP maxitSEXP, SEXP eps_fSEXP, SEXP eps_gSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X, Eigen::VectorXi y, Nullable<NumericVector> warm_start_params, bool smart_cold_start, int maxit, double eps_f, double eps_g, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_neg_bin_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP maxitSEXP, SEXP eps_fSEXP, SEXP eps_gSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type X(XSEXP);
     Rcpp::traits::input_parameter< Eigen::VectorXi >::type y(ySEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type warm_start_params(warm_start_paramsSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type eps_f(eps_fSEXP);
     Rcpp::traits::input_parameter< double >::type eps_g(eps_gSEXP);
@@ -1563,20 +1571,20 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_neg_bin_with_var_cpp(X, y, warm_start_params, smart_start, maxit, eps_f, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_neg_bin_with_var_cpp(X, y, warm_start_params, smart_cold_start, maxit, eps_f, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_neg_bin_cpp
-List fast_neg_bin_cpp(Eigen::MatrixXd X, Eigen::VectorXi y, Nullable<NumericVector> warm_start_params, bool smart_start, int maxit, double eps_f, double eps_g, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_neg_bin_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_startSEXP, SEXP maxitSEXP, SEXP eps_fSEXP, SEXP eps_gSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_neg_bin_cpp(Eigen::MatrixXd X, Eigen::VectorXi y, Nullable<NumericVector> warm_start_params, bool smart_cold_start, int maxit, double eps_f, double eps_g, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_neg_bin_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP maxitSEXP, SEXP eps_fSEXP, SEXP eps_gSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type X(XSEXP);
     Rcpp::traits::input_parameter< Eigen::VectorXi >::type y(ySEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type warm_start_params(warm_start_paramsSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type eps_f(eps_fSEXP);
     Rcpp::traits::input_parameter< double >::type eps_g(eps_gSEXP);
@@ -1584,7 +1592,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_neg_bin_cpp(X, y, warm_start_params, smart_start, maxit, eps_f, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_neg_bin_cpp(X, y, warm_start_params, smart_cold_start, maxit, eps_f, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1648,40 +1656,40 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_ordinal_cauchit_regression_cpp
-List fast_ordinal_cauchit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool smart_start, int maxit, double tol, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_ordinal_cauchit_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_ordinal_cauchit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool smart_cold_start, int maxit, double tol, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_ordinal_cauchit_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type warm_start_params(warm_start_paramsSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cauchit_regression_cpp(X, y, warm_start_params, smart_start, maxit, tol, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cauchit_regression_cpp(X, y, warm_start_params, smart_cold_start, maxit, tol, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_ordinal_cauchit_regression_with_var_cpp
-List fast_ordinal_cauchit_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool smart_start, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_ordinal_cauchit_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_startSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_ordinal_cauchit_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool smart_cold_start, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_ordinal_cauchit_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type warm_start_params(warm_start_paramsSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cauchit_regression_with_var_cpp(X, y, warm_start_params, smart_start, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cauchit_regression_with_var_cpp(X, y, warm_start_params, smart_cold_start, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1742,46 +1750,46 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_ordinal_cloglog_regression_cpp
-List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool smart_start, int maxit, double tol, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_ordinal_cloglog_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool smart_cold_start, int maxit, double tol, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_ordinal_cloglog_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type warm_start_params(warm_start_paramsSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cloglog_regression_cpp(X, y, warm_start_params, smart_start, maxit, tol, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cloglog_regression_cpp(X, y, warm_start_params, smart_cold_start, maxit, tol, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_ordinal_cloglog_regression_with_var_cpp
-List fast_ordinal_cloglog_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool smart_start, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_ordinal_cloglog_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_startSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_ordinal_cloglog_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool smart_cold_start, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_ordinal_cloglog_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type warm_start_params(warm_start_paramsSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cloglog_regression_with_var_cpp(X, y, warm_start_params, smart_start, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_cloglog_regression_with_var_cpp(X, y, warm_start_params, smart_cold_start, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_ordinal_glmm_cpp
-List fast_ordinal_glmm_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXi& y, const Eigen::VectorXi& group_id, int K, int j_T, bool smart_start, bool estimate_only, int n_gh, double max_abs_log_sigma, int maxit, double eps_g, Rcpp::Nullable<Rcpp::NumericVector> warm_start_params, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, std::string optimization_alg, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_ordinal_glmm_cpp(SEXP XSEXP, SEXP ySEXP, SEXP group_idSEXP, SEXP KSEXP, SEXP j_TSEXP, SEXP smart_startSEXP, SEXP estimate_onlySEXP, SEXP n_ghSEXP, SEXP max_abs_log_sigmaSEXP, SEXP maxitSEXP, SEXP eps_gSEXP, SEXP warm_start_paramsSEXP, SEXP warm_start_betaSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_ordinal_glmm_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXi& y, const Eigen::VectorXi& group_id, int K, int j_T, bool smart_cold_start, bool estimate_only, int n_gh, double max_abs_log_sigma, int maxit, double eps_g, Rcpp::Nullable<Rcpp::NumericVector> warm_start_params, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, std::string optimization_alg, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_ordinal_glmm_cpp(SEXP XSEXP, SEXP ySEXP, SEXP group_idSEXP, SEXP KSEXP, SEXP j_TSEXP, SEXP smart_cold_startSEXP, SEXP estimate_onlySEXP, SEXP n_ghSEXP, SEXP max_abs_log_sigmaSEXP, SEXP maxitSEXP, SEXP eps_gSEXP, SEXP warm_start_paramsSEXP, SEXP warm_start_betaSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1790,7 +1798,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type group_id(group_idSEXP);
     Rcpp::traits::input_parameter< int >::type K(KSEXP);
     Rcpp::traits::input_parameter< int >::type j_T(j_TSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< bool >::type estimate_only(estimate_onlySEXP);
     Rcpp::traits::input_parameter< int >::type n_gh(n_ghSEXP);
     Rcpp::traits::input_parameter< double >::type max_abs_log_sigma(max_abs_log_sigmaSEXP);
@@ -1802,7 +1810,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_glmm_cpp(X, y, group_id, K, j_T, smart_start, estimate_only, n_gh, max_abs_log_sigma, maxit, eps_g, warm_start_params, warm_start_beta, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_glmm_cpp(X, y, group_id, K, j_T, smart_cold_start, estimate_only, n_gh, max_abs_log_sigma, maxit, eps_g, warm_start_params, warm_start_beta, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1837,40 +1845,40 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_ordinal_probit_regression_cpp
-List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool smart_start, int maxit, double tol, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_ordinal_probit_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool smart_cold_start, int maxit, double tol, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_ordinal_probit_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type warm_start_params(warm_start_paramsSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_probit_regression_cpp(X, y, warm_start_params, smart_start, maxit, tol, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_probit_regression_cpp(X, y, warm_start_params, smart_cold_start, maxit, tol, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_ordinal_probit_regression_with_var_cpp
-List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool smart_start, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_ordinal_probit_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_startSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool smart_cold_start, std::string optimization_alg, Nullable<IntegerVector> fixed_idx, Nullable<NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_ordinal_probit_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type warm_start_params(warm_start_paramsSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Nullable<IntegerVector> >::type fixed_idx(fixed_idxSEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_probit_regression_with_var_cpp(X, y, warm_start_params, smart_start, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_probit_regression_with_var_cpp(X, y, warm_start_params, smart_cold_start, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1901,42 +1909,42 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_ordinal_regression_cpp
-List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool smart_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_ordinal_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool smart_cold_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_ordinal_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type warm_start_params(warm_start_paramsSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_regression_cpp(X, y, warm_start_params, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_regression_cpp(X, y, warm_start_params, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_ordinal_regression_with_var_cpp
-List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool smart_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_ordinal_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params, bool smart_cold_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_ordinal_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type warm_start_params(warm_start_paramsSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ordinal_regression_with_var_cpp(X, y, warm_start_params, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_ordinal_regression_with_var_cpp(X, y, warm_start_params, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2090,15 +2098,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_poisson_regression_cpp
-List fast_poisson_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, bool smart_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_poisson_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_betaSEXP, SEXP smart_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_weightsSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_poisson_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, bool smart_cold_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_poisson_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP warm_start_betaSEXP, SEXP smart_cold_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_weightsSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_beta(warm_start_betaSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
@@ -2106,13 +2114,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_weights(warm_start_weightsSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_poisson_regression_cpp(X, y, warm_start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_poisson_regression_cpp(X, y, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_poisson_regression_weighted_cpp
-List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, bool smart_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_poisson_regression_weighted_cpp(SEXP XSEXP, SEXP ySEXP, SEXP weightsSEXP, SEXP warm_start_betaSEXP, SEXP smart_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_weightsSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, bool smart_cold_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_poisson_regression_weighted_cpp(SEXP XSEXP, SEXP ySEXP, SEXP weightsSEXP, SEXP warm_start_betaSEXP, SEXP smart_cold_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_weightsSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2120,7 +2128,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type weights(weightsSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_beta(warm_start_betaSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
@@ -2128,13 +2136,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_weights(warm_start_weightsSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_poisson_regression_weighted_cpp(X, y, weights, warm_start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_poisson_regression_weighted_cpp(X, y, weights, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_poisson_regression_with_var_cpp
-List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, bool smart_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_poisson_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP jSEXP, SEXP warm_start_betaSEXP, SEXP smart_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_weightsSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, bool smart_cold_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_poisson_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP jSEXP, SEXP warm_start_betaSEXP, SEXP smart_cold_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_weightsSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2142,7 +2150,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< int >::type j(jSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_beta(warm_start_betaSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
@@ -2150,13 +2158,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_weights(warm_start_weightsSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_poisson_regression_with_var_cpp(X, y, j, warm_start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_poisson_regression_with_var_cpp(X, y, j, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
 // fast_quasipoisson_regression_with_var_cpp
-List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, bool smart_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_quasipoisson_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP jSEXP, SEXP warm_start_betaSEXP, SEXP smart_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_weightsSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, bool smart_cold_start, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_quasipoisson_regression_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP jSEXP, SEXP warm_start_betaSEXP, SEXP smart_cold_startSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_weightsSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2164,7 +2172,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< int >::type j(jSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_beta(warm_start_betaSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
@@ -2172,7 +2180,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_weights(warm_start_weightsSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_quasipoisson_regression_with_var_cpp(X, y, j, warm_start_beta, smart_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_quasipoisson_regression_with_var_cpp(X, y, j, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2646,16 +2654,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_weibull_regression_cpp
-List fast_weibull_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead, Nullable<NumericVector> start_params, bool smart_start, bool estimate_only, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_weibull_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP deadSEXP, SEXP start_paramsSEXP, SEXP smart_startSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_weibull_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead, Nullable<NumericVector> warm_start_params, bool smart_cold_start, bool estimate_only, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_weibull_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP deadSEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type dead(deadSEXP);
-    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type start_params(start_paramsSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type warm_start_params(warm_start_paramsSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< bool >::type estimate_only(estimate_onlySEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
@@ -2663,7 +2671,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_weibull_regression_cpp(X, y, dead, start_params, smart_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_weibull_regression_cpp(X, y, dead, warm_start_params, smart_cold_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2795,8 +2803,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_zero_augmented_poisson_cpp
-List fast_zero_augmented_poisson_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::MatrixXd& Xzi, bool is_hurdle, Nullable<NumericVector> warm_start_params, bool smart_start, bool estimate_only, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_zero_augmented_poisson_cpp(SEXP XSEXP, SEXP ySEXP, SEXP XziSEXP, SEXP is_hurdleSEXP, SEXP warm_start_paramsSEXP, SEXP smart_startSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_zero_augmented_poisson_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::MatrixXd& Xzi, bool is_hurdle, Nullable<NumericVector> warm_start_params, bool smart_cold_start, bool estimate_only, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_zero_augmented_poisson_cpp(SEXP XSEXP, SEXP ySEXP, SEXP XziSEXP, SEXP is_hurdleSEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2805,7 +2813,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Xzi(XziSEXP);
     Rcpp::traits::input_parameter< bool >::type is_hurdle(is_hurdleSEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type warm_start_params(warm_start_paramsSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< bool >::type estimate_only(estimate_onlySEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
@@ -2813,7 +2821,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_zero_augmented_poisson_cpp(X, y, Xzi, is_hurdle, warm_start_params, smart_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_zero_augmented_poisson_cpp(X, y, Xzi, is_hurdle, warm_start_params, smart_cold_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2846,8 +2854,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_zero_one_inflated_beta_cpp
-List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X, Eigen::MatrixXd X_zero_one, NumericVector y, Nullable<NumericVector> warm_start_params, bool smart_start, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_zero_one_inflated_beta_cpp(SEXP XSEXP, SEXP X_zero_oneSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_startSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X, Eigen::MatrixXd X_zero_one, NumericVector y, Nullable<NumericVector> warm_start_params, bool smart_cold_start, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_zero_one_inflated_beta_cpp(SEXP XSEXP, SEXP X_zero_oneSEXP, SEXP ySEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2855,12 +2863,12 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type X_zero_one(X_zero_oneSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type warm_start_params(warm_start_paramsSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_zero_one_inflated_beta_cpp(X, X_zero_one, y, warm_start_params, smart_start, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_zero_one_inflated_beta_cpp(X, X_zero_one, y, warm_start_params, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -2907,8 +2915,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_zinb_cpp
-List fast_zinb_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::MatrixXd& Xzi, Nullable<NumericVector> warm_start_params, bool smart_start, bool estimate_only, int maxit, double tol, std::string optimization_alg, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_zinb_cpp(SEXP XSEXP, SEXP ySEXP, SEXP XziSEXP, SEXP warm_start_paramsSEXP, SEXP smart_startSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_fisher_infoSEXP) {
+List fast_zinb_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::MatrixXd& Xzi, Nullable<NumericVector> warm_start_params, bool smart_cold_start, bool estimate_only, int maxit, double tol, std::string optimization_alg, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_zinb_cpp(SEXP XSEXP, SEXP ySEXP, SEXP XziSEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP estimate_onlySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP optimization_algSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_fisher_infoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2916,7 +2924,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Xzi(XziSEXP);
     Rcpp::traits::input_parameter< Nullable<NumericVector> >::type warm_start_params(warm_start_paramsSEXP);
-    Rcpp::traits::input_parameter< bool >::type smart_start(smart_startSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
     Rcpp::traits::input_parameter< bool >::type estimate_only(estimate_onlySEXP);
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
@@ -2924,7 +2932,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_zinb_cpp(X, y, Xzi, warm_start_params, smart_start, estimate_only, maxit, tol, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info));
+    rcpp_result_gen = Rcpp::wrap(fast_zinb_cpp(X, y, Xzi, warm_start_params, smart_cold_start, estimate_only, maxit, tol, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -4354,9 +4362,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_gee_pairs_singletons_cpp", (DL_FUNC) &_EDI_gee_pairs_singletons_cpp, 8},
     {"_EDI_get_hurdle_negbin_count_score_cpp", (DL_FUNC) &_EDI_get_hurdle_negbin_count_score_cpp, 3},
     {"_EDI_get_hurdle_negbin_count_hessian_cpp", (DL_FUNC) &_EDI_get_hurdle_negbin_count_hessian_cpp, 3},
-    {"_EDI_fast_hurdle_negbin_cpp", (DL_FUNC) &_EDI_fast_hurdle_negbin_cpp, 10},
-    {"_EDI_fast_hurdle_negbin_with_var_cpp", (DL_FUNC) &_EDI_fast_hurdle_negbin_with_var_cpp, 9},
-    {"_EDI_fast_truncated_negbin_count_cpp", (DL_FUNC) &_EDI_fast_truncated_negbin_count_cpp, 10},
+    {"_EDI_fast_hurdle_negbin_cpp", (DL_FUNC) &_EDI_fast_hurdle_negbin_cpp, 12},
+    {"_EDI_fast_hurdle_negbin_with_var_cpp", (DL_FUNC) &_EDI_fast_hurdle_negbin_with_var_cpp, 13},
+    {"_EDI_fast_truncated_negbin_count_cpp", (DL_FUNC) &_EDI_fast_truncated_negbin_count_cpp, 11},
     {"_EDI_get_hurdle_poisson_glmm_score_cpp", (DL_FUNC) &_EDI_get_hurdle_poisson_glmm_score_cpp, 5},
     {"_EDI_get_hurdle_poisson_glmm_hessian_cpp", (DL_FUNC) &_EDI_get_hurdle_poisson_glmm_hessian_cpp, 5},
     {"_EDI_get_hurdle_poisson_glmm_neg_loglik_cpp", (DL_FUNC) &_EDI_get_hurdle_poisson_glmm_neg_loglik_cpp, 5},
@@ -4381,7 +4389,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_get_logistic_regression_weighted_hessian_cpp", (DL_FUNC) &_EDI_get_logistic_regression_weighted_hessian_cpp, 3},
     {"_EDI_fast_logistic_regression_cpp", (DL_FUNC) &_EDI_fast_logistic_regression_cpp, 11},
     {"_EDI_fast_logistic_regression_weighted_cpp", (DL_FUNC) &_EDI_fast_logistic_regression_weighted_cpp, 12},
-    {"_EDI_fast_logistic_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_logistic_regression_with_var_cpp, 9},
+    {"_EDI_fast_logistic_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_logistic_regression_with_var_cpp, 10},
     {"_EDI_fast_logrank_stats_cpp", (DL_FUNC) &_EDI_fast_logrank_stats_cpp, 3},
     {"_EDI_matrix_rank_cpp", (DL_FUNC) &_EDI_matrix_rank_cpp, 2},
     {"_EDI_get_negbin_regression_score_cpp", (DL_FUNC) &_EDI_get_negbin_regression_score_cpp, 3},

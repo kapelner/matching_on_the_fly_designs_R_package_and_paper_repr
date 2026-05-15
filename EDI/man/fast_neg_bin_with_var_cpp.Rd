@@ -7,8 +7,8 @@
 fast_neg_bin_with_var_cpp(
   X,
   y,
-  start_params = NULL,
-  smart_start = FALSE,
+  warm_start_params = NULL,
+  smart_cold_start = FALSE,
   maxit = 1000L,
   eps_f = 1e-08,
   eps_g = 1e-05,
@@ -23,9 +23,9 @@ fast_neg_bin_with_var_cpp(
 
 \item{y}{A numeric vector of responses (non-negative integers).}
 
-\item{start_params}{Optional starting values for coefficients and dispersion.}
+\item{warm_start_params}{Optional starting values for coefficients and dispersion. If provided, \code{smart_cold_start} is ignored.}
 
-\item{smart_start}{Logical. If TRUE, use an initial OLS-based guess.}
+\item{smart_cold_start}{Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.}
 
 \item{maxit}{Maximum number of iterations.}
 

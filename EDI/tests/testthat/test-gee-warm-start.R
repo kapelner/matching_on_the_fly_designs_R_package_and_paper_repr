@@ -34,7 +34,7 @@ test_that("GEE Rcpp solver utilizes warm starts correctly", {
 	expect_equal(as.numeric(fit3$beta), as.numeric(fit1$beta), tolerance = 1e-6)
 })
 
-test_that("InferenceAbstractKKGEE class handles warm starts", {
+test_that("KK GEE classes handle warm starts", {
 	set.seed(20260513)
 	n <- 100
 	X <- data.frame(x1 = rnorm(n))

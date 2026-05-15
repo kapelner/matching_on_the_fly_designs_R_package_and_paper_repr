@@ -104,7 +104,7 @@ InferenceSuite = R6::R6Class("InferenceSuite",
 			"InferenceAsymp", "InferenceJackknife", "InferenceNonParamBootstrap", "InferenceBayesianBootstrap", "InferenceRand",
 			"InferenceRandCI", "InferenceExact",
 			"InferenceAsympLik", "InferenceParamBootstrap",
-			"InferenceKKPassThrough", "InferenceKKPassThroughCompound",
+			"InferenceKKPassThroughCompound",
 			"InferenceAsympLikStdModCache", "InferenceMLEorKMSummaryTable"
 		),
 		# Error patterns that signal a genuine incompatibility

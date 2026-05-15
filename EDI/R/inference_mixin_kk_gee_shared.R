@@ -20,6 +20,25 @@ InferenceMixinKKGEEShared = list(
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			if (!requireNamespace("geepack", quietly = TRUE)) {
+				stop(
+					"Package 'geepack' is required for weighted Bayesian-bootstrap estimation in ",
+					class(self)[1], ".",
+					call. = FALSE
+				)
+			}
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			beta_hat_T = private$fit_weighted_gee_with_fallback(row_weights)
+			private$cached_values$beta_hat_T = as.numeric(beta_hat_T)[1L]
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = Inf
+			private$cached_values$summary_table = NULL
+			private$cached_values$nonestimable = !is.finite(private$cached_values$beta_hat_T)
+			private$cached_values$nonestimable_reason = if (is.finite(private$cached_values$beta_hat_T)) NULL else "weighted_gee_estimate_unavailable"
+			private$cached_values$nonestimable_stage = if (is.finite(private$cached_values$beta_hat_T)) NULL else "estimate"
+			private$cached_values$beta_hat_T
+		},
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -282,7 +301,7 @@ InferenceMixinKKGEEShared = list(
 				)
 			}, error = function(e) NULL)
 		},
-		build_gee_fit_data = function(include_reservoir = TRUE, predictors_df = NULL){
+		build_gee_fit_data = function(include_reservoir = TRUE, predictors_df = NULL, row_weights = NULL){
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
@@ -300,13 +319,21 @@ InferenceMixinKKGEEShared = list(
 			if (!is.data.frame(pred_df)) pred_df = as.data.frame(pred_df)
 
 			y_keep = private$y[keep]
+			wt_keep = if (is.null(row_weights)) NULL else as.numeric(row_weights[keep])
 			dat = data.frame(y = y_keep, pred_df[keep, , drop = FALSE], group_id = group_id)
+			if (!is.null(wt_keep)) {
+				dat$.bootstrap_weight = wt_keep
+			}
 			dat = dat[order(dat$group_id), , drop = FALSE]
 			id_sorted = dat$group_id
 			y_sorted = dat$y
+			weights_sorted = if (".bootstrap_weight" %in% colnames(dat)) as.numeric(dat$.bootstrap_weight) else NULL
 			dat$group_id = NULL
 			dat$y = NULL
-			list(dat = dat, id_sorted = id_sorted, y_sorted = y_sorted)
+			if (".bootstrap_weight" %in% colnames(dat)) {
+				dat$.bootstrap_weight = NULL
+			}
+			list(dat = dat, id_sorted = id_sorted, y_sorted = y_sorted, weights_sorted = weights_sorted)
 		},
 		fit_gee_on_data = function(fit_data, std_err = TRUE, estimate_only = FALSE){
 			if (private$use_rcpp) {
@@ -348,6 +375,68 @@ InferenceMixinKKGEEShared = list(
 			fit_data = private$build_gee_fit_data(include_reservoir = include_reservoir, predictors_df = predictors_df)
 			if (is.null(fit_data)) return(NULL)
 			private$fit_gee_on_data(fit_data, std_err = std_err, estimate_only = estimate_only)
+		},
+		fit_weighted_gee_on_data = function(fit_data){
+			if (is.null(fit_data) || is.null(fit_data$weights_sorted)) return(NULL)
+			weights_sorted = as.numeric(fit_data$weights_sorted)
+			keep = is.finite(weights_sorted) & weights_sorted > 0
+			if (!any(keep)) return(NULL)
+			dat_geepack = data.frame(y = fit_data$y_sorted, fit_data$dat, check.names = FALSE)
+			dat_geepack = dat_geepack[keep, , drop = FALSE]
+			weights_kept = weights_sorted[keep]
+			id_sorted = fit_data$id_sorted[keep]
+			if (length(unique(id_sorted)) < 1L) return(NULL)
+			X_geepack = cbind(`(Intercept)` = 1, as.matrix(dat_geepack[, setdiff(colnames(dat_geepack), "y"), drop = FALSE]))
+			warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_geepack))
+			tryCatch({
+				utils::capture.output(mod <- suppressMessages(suppressWarnings(
+					geepack::geeglm(
+						y ~ .,
+						family = private$gee_family(),
+						data   = dat_geepack,
+						weights = weights_kept,
+						id     = id_sorted,
+						corstr = "exchangeable",
+						std.err = "none",
+						start  = warm_start_beta
+					)
+				)))
+				mod
+			}, error = function(e) NULL)
+		},
+		fit_weighted_gee_with_fallback = function(row_weights){
+			gee_fit_ok = function(mod){
+				if (is.null(mod)) return(FALSE)
+				beta = tryCatch(stats::coef(mod), error = function(e) NULL)
+				if (is.null(beta) || !private$gee_coefficients_are_usable(beta)) return(FALSE)
+				beta_hat = private$extract_gee_treatment_estimate(mod)
+				is.finite(beta_hat)
+			}
+			for (predictors_df in private$gee_predictors_df_candidates()) {
+				fit_data = private$build_gee_fit_data(
+					include_reservoir = TRUE,
+					predictors_df = predictors_df,
+					row_weights = row_weights
+				)
+				mod = private$fit_weighted_gee_on_data(fit_data)
+				if (gee_fit_ok(mod)) {
+					private$set_fit_warm_start(stats::coef(mod), "beta")
+					return(private$extract_gee_treatment_estimate(mod))
+				}
+				if (private$gee_has_reservoir()) {
+					fit_data_fb = private$build_gee_fit_data(
+						include_reservoir = FALSE,
+						predictors_df = predictors_df,
+						row_weights = row_weights
+					)
+					mod_fb = private$fit_weighted_gee_on_data(fit_data_fb)
+					if (gee_fit_ok(mod_fb)) {
+						private$set_fit_warm_start(stats::coef(mod_fb), "beta")
+						return(private$extract_gee_treatment_estimate(mod_fb))
+					}
+				}
+			}
+			NA_real_
 		},
 		fit_gee_with_fallback = function(std_err = TRUE, estimate_only = FALSE){
 			gee_fit_ok = function(mod){

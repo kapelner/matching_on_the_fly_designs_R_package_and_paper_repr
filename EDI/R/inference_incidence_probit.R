@@ -57,11 +57,11 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(treatment = private$w, X_cov)
 			}
-			start_params = private$get_fit_warm_start_for_length("params", ncol(X) + 1L)
+			warm_start_params = private$get_fit_warm_start_for_length("params", ncol(X) + 1L)
 			res = fast_ordinal_probit_regression_cpp(
 				X = X,
 				y = as.numeric(private$y),
-				start_params = start_params,
+				warm_start_params = warm_start_params,
 				smart_start = private$smart_default,
 				optimization_alg = private$optimization_alg
 			)
@@ -98,7 +98,7 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 						fast_ordinal_probit_regression_cpp(
 							X_fit,
 							y,
-							start_params = start,
+							warm_start_params = start %||% private$get_fit_warm_start_for_length("params", length(ctx$full_params)),
 							smart_start = private$smart_default,
 							optimization_alg = private$optimization_alg,
 							fixed_idx = j_treat,
@@ -136,12 +136,12 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 				required_cols = 1L,
 				fit_fun = function(X_fit, keep){
 					j_treat = match(1L, keep)
-					start_params = private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L)
+					warm_start_params = private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L)
 					if (estimate_only) {
 						res = fast_ordinal_probit_regression_cpp(
 							X = X_fit,
 							y = as.numeric(private$y),
-							start_params = start_params,
+							warm_start_params = warm_start_params,
 							smart_start = private$smart_default,
 							optimization_alg = private$optimization_alg
 						)
@@ -157,7 +157,7 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 						res = fast_ordinal_probit_regression_with_var_cpp(
 							X = X_fit,
 							y = as.numeric(private$y),
-							start_params = start_params,
+							warm_start_params = warm_start_params,
 							smart_start = private$smart_default,
 							optimization_alg = private$optimization_alg
 						)

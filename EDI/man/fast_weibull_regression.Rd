@@ -10,7 +10,9 @@ fast_weibull_regression(
   X,
   use_rcpp = TRUE,
   estimate_only = FALSE,
-  optimization_alg = "newton_raphson"
+  optimization_alg = "newton_raphson",
+  warm_start_params = NULL,
+  warm_start_fisher_info = NULL
 )
 }
 \arguments{
@@ -28,6 +30,10 @@ implementation. If \code{FALSE}, use \pkg{survival::survreg}.}
 matrix calculation for speed.}
 
 \item{optimization_alg}{Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.}
+
+\item{warm_start_params}{Optional starting values for [beta, log_sigma].}
+
+\item{warm_start_fisher_info}{Optional initial Fisher Information matrix.}
 }
 \value{
 A list containing the following components:

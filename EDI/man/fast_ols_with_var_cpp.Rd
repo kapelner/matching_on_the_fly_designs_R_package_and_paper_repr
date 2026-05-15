@@ -4,14 +4,7 @@
 \alias{fast_ols_with_var_cpp}
 \title{Fast Ordinary Least Squares (OLS) Regression with Variance (C++ Backend)}
 \usage{
-fast_ols_with_var_cpp(
-  X,
-  y,
-  j = 2L,
-  fixed_idx = NULL,
-  fixed_values = NULL,
-  warm_start_fisher_info = NULL
-)
+fast_ols_with_var_cpp(X, y, j = 2L, fixed_idx = NULL, fixed_values = NULL)
 }
 \arguments{
 \item{X}{A numeric matrix of predictors.}
@@ -23,8 +16,6 @@ fast_ols_with_var_cpp(
 \item{fixed_idx}{Optional indices of fixed parameters.}
 
 \item{fixed_values}{Optional values for fixed parameters.}
-
-\item{warm_start_fisher_info}{Optional initial Fisher Information matrix (XtX) for the first IRLS iteration.}
 }
 \value{
 A list containing the following components:

@@ -694,7 +694,7 @@ NULL
 	mod_fast = tryCatch(
 		fast_weibull_regression(
 			y, dead, X,
-			start_params = if (length(starts) > 0) starts[[1]] else NULL,
+			warm_start_params = if (length(starts) > 0) starts[[1]] else NULL,
 			warm_start_fisher_info = warm_start_fisher_info,
 			estimate_only = estimate_only
 		),
@@ -827,7 +827,7 @@ NULL
 	for (start_par in starts) {
 		fit = tryCatch(
 			fast_dep_cens_transform_optim_cpp(
-				y = y, dead = dead, X = X, start_params = start_par,
+				y = y, dead = dead, X = X, warm_start_params = start_par,
 				maxit = 2000, reltol = if (isTRUE(estimate_only)) 1e-7 else 1e-9,
 				optimization_alg = optimization_alg
 			),
@@ -1006,7 +1006,7 @@ NULL
 	best_val = Inf
 	for (start_par in starts){
 		fit = tryCatch(
-			fast_zero_one_inflated_beta_cpp(X, X_zero_one, y, start_par, optimization_alg = optimization_alg),
+			fast_zero_one_inflated_beta_cpp(X, X_zero_one, y, warm_start_params = start_par, optimization_alg = optimization_alg),
 			error = function(e) NULL
 		)
 		if (is.null(fit) || !is.finite(fit$neg_loglik)) next
@@ -1162,7 +1162,7 @@ NULL
 				y = y, dead = dead, X = X, 
 				pair_idx = if (has_pairs) pair_idx - 1L else matrix(0L, 0, 2), 
 				singleton_rows = if (has_singletons) singleton_rows - 1L else integer(0),
-				start_params = start_par,
+				warm_start_params = start_par,
 				maxit = 2000, reltol = 1e-9,
 				optimization_alg = optimization_alg,
 				warm_start_fisher_info = warm_start_fisher_info

@@ -8,6 +8,7 @@ fast_robust_regression_cpp(
   X,
   y,
   warm_start_beta = NULL,
+  smart_start = TRUE,
   method = "MM",
   j = 2L,
   c = 1.345,

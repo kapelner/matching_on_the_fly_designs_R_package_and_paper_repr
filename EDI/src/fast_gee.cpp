@@ -11,6 +11,7 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
                                               const Eigen::VectorXd& y_eigen, 
                                               const Eigen::VectorXd& weights_eigen = Eigen::VectorXd(),
                                               Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
+                                              bool smart_start = true,
                                               int maxit = 100, 
                                               double tol = 1e-8,
                                               Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -106,7 +107,7 @@ inline double gee_estimate_exchangeable_alpha(const VectorXd& resid, const Vecto
 
 inline VectorXd gee_fit_independence_glm(const MatrixXd& X, const VectorXd& y, GEEFamily family, int maxit = 100, double tol = 1e-8) {
     ModelResult fit = (family == GEEFamily::BINOMIAL) ?
-        fast_logistic_regression_internal(X, y, Eigen::VectorXd(), R_NilValue, maxit, tol, R_NilValue, R_NilValue, "irls", R_NilValue, R_NilValue) :
+        fast_logistic_regression_internal(X, y, Eigen::VectorXd(), R_NilValue, true, maxit, tol, R_NilValue, R_NilValue, "irls", R_NilValue, R_NilValue) :
         fast_poisson_regression_internal(X, y, Eigen::VectorXd(), R_NilValue, true, maxit, tol, R_NilValue, R_NilValue, "irls", R_NilValue, R_NilValue);
     if (fit.b.size() == X.cols() && fit.b.allFinite()) {
         return fit.b;

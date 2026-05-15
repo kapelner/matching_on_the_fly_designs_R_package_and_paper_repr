@@ -281,12 +281,26 @@ Eigen::MatrixXd get_zero_one_inflated_beta_hessian_cpp(Eigen::MatrixXd X,
 	return -fun.hessian(par);
 }
 
+//' @title Fast Zero/One-Inflated Beta Regression (C++)
+//' @description High-performance zero/one-inflated beta regression fitting using Newton-Raphson or L-BFGS.
+//' @param X Matrix of predictors for the beta component.
+//' @param X_zero_one Matrix of predictors for the zero and one inflation components.
+//' @param y Vector of responses in [0, 1].
+//' @param warm_start_params Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first iteration.
+//' @return A list containing coefficients, vcov, and convergence status.
+//' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
 									 Eigen::MatrixXd X_zero_one,
 									 NumericVector y,
 									 Nullable<NumericVector> warm_start_params = R_NilValue,
-									 bool smart_start = true,
+									 bool smart_cold_start = true,
 									 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
 									 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
 									 std::string optimization_alg = "lbfgs",
@@ -299,7 +313,7 @@ List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
 	
 	if (warm_start_params.isNotNull()) {
 		params = Rcpp::as<Eigen::VectorXd>(warm_start_params);
-	} else if (smart_start) {
+	} else if (smart_cold_start) {
 		// Beta component: OLS on logit(y) for entries in (0, 1)
 		std::vector<int> idx_mid;
 		for(int i=0; i<y_eigen.size(); ++i) if(y_eigen[i] > 0 && y_eigen[i] < 1) idx_mid.push_back(i);
@@ -366,7 +380,6 @@ List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
 		}
 	}
 
-	int p = X.cols();
 	int p_zero_one = X_zero_one.cols();
 	return List::create(
 		Named("b") = params.head(p),

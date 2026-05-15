@@ -3,8 +3,8 @@
 #' @keywords internal
 InferenceAbstractKKMarginalIncid = R6::R6Class("InferenceAbstractKKMarginalIncid",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThrough,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKPassThrough$public, list(
 		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -16,18 +16,16 @@ InferenceAbstractKKMarginalIncid = R6::R6Class("InferenceAbstractKKMarginalIncid
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
-			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
-					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
-				}
-			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+			private$init_kk_passthrough(des_obj)
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKPassThrough$private, list(
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
+		supports_likelihood_tests = function() FALSE,
 		get_covariate_names = function(){
 			X = private$get_X()
 			p = ncol(X)
@@ -68,5 +66,5 @@ InferenceAbstractKKMarginalIncid = R6::R6Class("InferenceAbstractKKMarginalIncid
 			}
 			cluster_id
 		}
-	)
+	))
 )

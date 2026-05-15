@@ -8,14 +8,15 @@ fast_weibull_regression_cpp(
   X,
   y,
   dead,
-  start_params = NULL,
-  smart_start = FALSE,
+  warm_start_params = NULL,
+  smart_cold_start = FALSE,
   estimate_only = FALSE,
   maxit = 1000L,
   tol = 1e-06,
   fixed_idx = NULL,
   fixed_values = NULL,
-  optimization_alg = "newton_raphson"
+  optimization_alg = "newton_raphson",
+  warm_start_fisher_info = NULL
 )
 }
 \arguments{
@@ -25,7 +26,9 @@ fast_weibull_regression_cpp(
 
 \item{dead}{A numeric vector of event indicators.}
 
-\item{start_params}{Optional starting values for [beta, log_sigma].}
+\item{warm_start_params}{Optional starting values for [beta, log_sigma]. If provided, \code{smart_cold_start} is ignored.}
+
+\item{smart_cold_start}{Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.}
 
 \item{estimate_only}{If TRUE, only return coefficients and likelihood.}
 

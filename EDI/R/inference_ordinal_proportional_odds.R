@@ -57,7 +57,7 @@ InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 			}
 			res = fast_ordinal_regression_cpp(
 				X = X, y = as.numeric(private$y),
-				start_params = private$get_fit_warm_start_for_length("params", ncol(X) + length(sort(unique(private$y))) - 1L),
+				warm_start_params = private$get_fit_warm_start_for_length("params", ncol(X) + length(sort(unique(private$y))) - 1L),
 				warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X) + length(sort(unique(private$y))) - 1L),
 				smart_start = private$smart_default
 			)
@@ -88,7 +88,7 @@ InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 					res = tryCatch(
 						fast_ordinal_regression_cpp(
 							X_fit, y,
-							start_params = start %||% private$get_fit_warm_start_for_length("params", length(ctx$full_params)),
+							warm_start_params = start %||% private$get_fit_warm_start_for_length("params", length(ctx$full_params)),
 							warm_start_fisher_info = private$get_fit_warm_start_fisher(length(ctx$full_params)),
 							fixed_idx = j_treat, fixed_values = delta,
 							smart_start = private$smart_default
@@ -123,12 +123,12 @@ InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 				required_cols = 1L,
 				fit_fun = function(X_fit){
 					n_params = ncol(X_fit) + length(sort(unique(private$y))) - 1L
-					start_params = private$get_fit_warm_start_for_length("params", n_params)
+					warm_start_params = private$get_fit_warm_start_for_length("params", n_params)
 					warm_fisher = private$get_fit_warm_start_fisher(n_params)
 					if (estimate_only) {
 						res = fast_ordinal_regression_cpp(
 							X_fit, private$y,
-							start_params = start_params,
+							warm_start_params = warm_start_params,
 							warm_start_fisher_info = warm_fisher,
 							smart_start = private$smart_default
 						)
@@ -136,7 +136,7 @@ InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 					} else {
 						res = fast_ordinal_regression_with_var_cpp(
 							X_fit, private$y,
-							start_params = start_params,
+							warm_start_params = warm_start_params,
 							warm_start_fisher_info = warm_fisher,
 							smart_start = private$smart_default
 						)

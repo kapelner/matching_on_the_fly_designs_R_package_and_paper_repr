@@ -3,8 +3,8 @@
 #' @keywords internal
 InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThrough,
-	public = list(
+	inherit = InferenceAsympLik,
+	public = c(InferenceMixinKKPassThrough$public, list(
 		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula   Optional formula for covariate adjustment.
@@ -17,11 +17,6 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
 			}
-			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
-					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
-				}
-			}
 			if (!use_rcpp && should_run_asserts()) {
 				if (!check_package_installed("ordinal")){
 					stop("Package 'ordinal' is required for ", class(self)[1], ". Please install it.")
@@ -32,6 +27,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 				assertNoCensoring(private$any_censoring)
 			}
 			private$use_rcpp = use_rcpp
+			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Compute treatment estimate
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -70,8 +66,10 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 				NA_real_
 			}
 		}
-	),
-	private = list(
+	)),
+	private = c(InferenceMixinKKPassThrough$private, list(
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
+		supports_likelihood_tests = function() FALSE,
 		use_rcpp = TRUE,
 		max_abs_reasonable_coef = 1e4,
 		best_X_colnames = NULL,
@@ -206,7 +204,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 					j_T           = j_T,
 					link          = private$clmm_link(),
 					estimate_only = estimate_only,
-					start         = start,
+					warm_start_params = start,
 					eps_g         = 1e-3
 				),
 				error = function(e) NULL
@@ -310,7 +308,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 				mod
 			}, error = function(e) NULL)
 		}
-	)
+	))
 )
 #' Ordinal KK CLMM (Proportional Odds / logit link)
 #'

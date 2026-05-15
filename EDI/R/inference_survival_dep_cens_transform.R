@@ -52,12 +52,12 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
 			}
 			n_params = 2 * ncol(X) + 3L
-			start_params = private$get_fit_warm_start_for_length("params", n_params)
-			if (is.null(start_params)) start_params = rep(0, n_params)
+			warm_start_params = private$get_fit_warm_start_for_length("params", n_params)
+			if (is.null(warm_start_params)) warm_start_params = rep(0, n_params)
 			warm_fisher = private$get_fit_warm_start_fisher(n_params)
 			res = fast_dep_cens_transform_optim_cpp(
 				y = private$y, dead = private$dead, X = X,
-				start_params = private$get_fit_warm_start_for_length("params", n_params),
+				warm_start_params = private$get_fit_warm_start_for_length("params", n_params),
 				warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
 				smart_start = private$smart_default
 			)
@@ -86,10 +86,10 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 				X = X_fit, y = y, j = j_treat,
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
-					start_params = start %||% private$get_fit_warm_start_for_length("params", n_params)
+					warm_start_params = start %||% private$get_fit_warm_start_for_length("params", n_params)
 					warm_fisher = private$get_fit_warm_start_fisher(n_params)
 					tryCatch(fast_dep_cens_transform_optim_cpp(
-						y = y, dead = dead, X = X_fit, start_params = start_params,
+						y = y, dead = dead, X = X_fit, warm_start_params = warm_start_params,
 						warm_start_fisher_info = warm_fisher,
 						smart_start = private$smart_default,
 						fixed_idx = j_treat, fixed_values = delta
@@ -120,10 +120,10 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 				required_cols = 2L,
 				fit_fun = function(X_fit){
 					n_params = 2 * ncol(X_fit) + 3L
-					start_params = private$get_fit_warm_start_for_length("params", n_params)
+					warm_start_params = private$get_fit_warm_start_for_length("params", n_params)
 					warm_fisher = private$get_fit_warm_start_fisher(n_params)
 					res = tryCatch(fast_dep_cens_transform_optim_cpp(
-						y = private$y, dead = private$dead, X = X_fit, start_params = start_params,
+						y = private$y, dead = private$dead, X = X_fit, warm_start_params = warm_start_params,
 						warm_start_fisher_info = warm_fisher,
 						smart_start = private$smart_default
 					), error = function(e) NULL)

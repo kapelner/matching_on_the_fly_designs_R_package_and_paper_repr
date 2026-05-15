@@ -9,9 +9,13 @@ fast_stereotype_logit_cpp(
   y,
   maxit = 100L,
   tol = 1e-08,
+  smart_start = TRUE,
   fixed_idx = NULL,
   fixed_values = NULL,
-  optimization_alg = "newton_raphson"
+  optimization_alg = "newton_raphson",
+  warm_start_fisher_info = NULL,
+  warm_start_params = NULL,
+  warm_start_beta = NULL
 )
 }
 \arguments{
