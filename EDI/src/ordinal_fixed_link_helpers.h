@@ -98,12 +98,18 @@ class FixedOrdinalRegression {
 private:
     const Eigen::MatrixXd m_X;
     const Eigen::VectorXd m_y;
+    const Eigen::VectorXd m_weights;
     const std::vector<double> m_levels;
     const int m_n;
     const int m_p;
     const int m_K;
     const Link m_link;
     const double m_eta_sign;
+    const bool m_use_weights;
+
+    inline double obs_weight(int i) const {
+        return m_use_weights ? std::max(m_weights[i], 0.0) : 1.0;
+    }
 
     bool validate_params(const Eigen::VectorXd& params) const {
         const int n_alpha = m_K - 1;
@@ -147,9 +153,10 @@ public:
     FixedOrdinalRegression(const Eigen::MatrixXd& X,
                            const Eigen::VectorXd& y,
                            Link link,
-                           double eta_sign) :
-        m_X(X), m_y(y), m_levels(init_levels(y)), m_n(X.rows()), m_p(X.cols()),
-        m_K(m_levels.size()), m_link(link), m_eta_sign(eta_sign) {}
+                           double eta_sign,
+                           const Eigen::VectorXd& weights = Eigen::VectorXd()) :
+        m_X(X), m_y(y), m_weights(weights), m_levels(init_levels(y)), m_n(X.rows()), m_p(X.cols()),
+        m_K(m_levels.size()), m_link(link), m_eta_sign(eta_sign), m_use_weights(weights.size() == X.rows()) {}
 
     static std::vector<double> init_levels_static(const Eigen::VectorXd& y) {
         return init_levels(y);
@@ -169,7 +176,7 @@ public:
             const double p_upper = (yi_idx == m_K - 1) ? 1.0 : cdf(m_link, alpha[yi_idx] + m_eta_sign * eta[i]);
             const double p_lower = (yi_idx == 0) ? 0.0 : cdf(m_link, alpha[yi_idx - 1] + m_eta_sign * eta[i]);
             const double prob = std::max(1e-12, p_upper - p_lower);
-            nll -= std::log(prob);
+            nll -= obs_weight(i) * std::log(prob);
         }
         return nll;
     }
@@ -193,6 +200,7 @@ public:
             const double p_lower = (yi_idx == 0) ? 0.0 : cdf(m_link, alpha[yi_idx - 1] + m_eta_sign * eta[i]);
             const double prob = std::max(1e-12, p_upper - p_lower);
             Eigen::VectorXd dq = Eigen::VectorXd::Zero(n_params);
+            const double wi = obs_weight(i);
 
             if (yi_idx < m_K - 1) {
                 add_endpoint_gradient(yi_idx, alpha[yi_idx] + m_eta_sign * eta[i], 1.0, m_X.row(i), dq);
@@ -200,8 +208,8 @@ public:
             if (yi_idx > 0) {
                 add_endpoint_gradient(yi_idx - 1, alpha[yi_idx - 1] + m_eta_sign * eta[i], -1.0, m_X.row(i), dq);
             }
-            nll -= std::log(prob);
-            grad.noalias() -= dq / prob;
+            nll -= wi * std::log(prob);
+            grad.noalias() -= wi * dq / prob;
         }
         return nll;
     }
@@ -228,6 +236,7 @@ public:
             const double prob = std::max(1e-12, p_upper - p_lower);
             Eigen::VectorXd dq = Eigen::VectorXd::Zero(n_params);
             Eigen::MatrixXd d2q = Eigen::MatrixXd::Zero(n_params, n_params);
+            const double wi = obs_weight(i);
 
             if (yi_idx < m_K - 1) {
                 add_endpoint_derivatives(yi_idx, alpha[yi_idx] + m_eta_sign * eta[i], 1.0, m_X.row(i), dq, d2q);
@@ -235,7 +244,7 @@ public:
             if (yi_idx > 0) {
                 add_endpoint_derivatives(yi_idx - 1, alpha[yi_idx - 1] + m_eta_sign * eta[i], -1.0, m_X.row(i), dq, d2q);
             }
-            H.noalias() += (dq * dq.transpose()) / (prob * prob) - d2q / prob;
+            H.noalias() += wi * ((dq * dq.transpose()) / (prob * prob) - d2q / prob);
         }
         return 0.5 * (H + H.transpose());
     }

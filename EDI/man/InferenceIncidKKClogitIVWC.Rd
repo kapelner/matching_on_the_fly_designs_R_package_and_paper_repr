@@ -2,35 +2,16 @@
 % Please edit documentation in R/inference_incidence_KK_clogit.R
 \name{InferenceIncidKKClogitIVWC}
 \alias{InferenceIncidKKClogitIVWC}
-\title{Conditional-Logistic Inference for KK Designs with IVWC}
+\title{Conditional Logistic IVWC Inference for KK Designs with Binary Responses}
 \description{
-Conditional-Logistic Inference for KK Designs with IVWC
-
-Conditional-Logistic Inference for KK Designs with IVWC
-}
-\details{
-Fits a conditional-logistic regression for binary (incidence) responses under
-a KK matching-on-the-fly design using the Independent-Variables-as-Working-Covariates
-(IVWC) approach.
-}
-\examples{
-\donttest{
-seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'incidence')
-for (i in 1:10) {
-  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
-}
-seq_des$add_all_subject_responses(rbinom(10, 1, 0.5))
-inf = InferenceIncidKKClogitIVWC$new(seq_des)
-inf$compute_estimate()
-}
+Concrete exported wrapper around the IVWC clogit implementation.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceAbstractKKClogitIVWC]{EDI::InferenceAbstractKKClogitIVWC}} -> \code{InferenceIncidKKClogitIVWC}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceAbstractKKClogitIVWC]{EDI::InferenceAbstractKKClogitIVWC}} -> \code{InferenceIncidKKClogitIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceIncidKKClogitIVWC-new}{\code{InferenceIncidKKClogitIVWC$new()}}
 \item \href{#method-InferenceIncidKKClogitIVWC-clone}{\code{InferenceIncidKKClogitIVWC$clone()}}
 }
 }
@@ -39,6 +20,7 @@ inf$compute_estimate()
 <ul>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_analysis_data"><a href='../../EDI/html/Inference.html#method-Inference-get_analysis_data'><code>EDI::Inference$get_analysis_data()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_covariates"><a href='../../EDI/html/Inference.html#method-Inference-get_covariates'><code>EDI::Inference$get_covariates()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_design_object"><a href='../../EDI/html/Inference.html#method-Inference-get_design_object'><code>EDI::Inference$get_design_object()</code></a></span></li>
@@ -90,34 +72,10 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClogitIVWC" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKClogitIVWC.html#method-InferenceAbstractKKClogitIVWC-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKClogitIVWC$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClogitIVWC" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAbstractKKClogitIVWC.html#method-InferenceAbstractKKClogitIVWC-compute_asymp_two_sided_pval'><code>EDI::InferenceAbstractKKClogitIVWC$compute_asymp_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClogitIVWC" data-id="compute_estimate"><a href='../../EDI/html/InferenceAbstractKKClogitIVWC.html#method-InferenceAbstractKKClogitIVWC-compute_estimate'><code>EDI::InferenceAbstractKKClogitIVWC$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClogitIVWC" data-id="duplicate"><a href='../../EDI/html/InferenceAbstractKKClogitIVWC.html#method-InferenceAbstractKKClogitIVWC-duplicate'><code>EDI::InferenceAbstractKKClogitIVWC$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClogitIVWC" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKClogitIVWC.html#method-InferenceAbstractKKClogitIVWC-initialize'><code>EDI::InferenceAbstractKKClogitIVWC$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidKKClogitIVWC-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidKKClogitIVWC-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize the inference object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKClogitIVWC$new(des_obj, model_formula = NULL, verbose = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed \code{DesignSeqOneByOneKK14} object.}
-
-\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
-the formula from the design object is used and its pre-computed design matrix is
-reused. If a formula is provided, a new design matrix is constructed from the
-design's imputed covariates.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidKKClogitIVWC-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidKKClogitIVWC-clone}{}}}

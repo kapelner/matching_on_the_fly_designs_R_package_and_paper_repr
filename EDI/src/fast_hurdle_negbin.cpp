@@ -68,7 +68,7 @@ VectorXd make_truncated_negbin_start(const MatrixXd& X_pos, const VectorXi& y_po
 	if (p > 0 && X_pos.col(0).array().isApprox(ArrayXd::Ones(X_pos.rows()), 1e-12)) {
 		legacy_beta[0] = std::log(std::max(mean_y, 1e-8));
 	}
-	VectorXd beta_smart = ols_warm_start_beta_on_log1p(X_pos, y_double);
+	VectorXd beta_smart = ols_smart_cold_start_beta_on_log1p(X_pos, y_double);
 	VectorXd beta_start = vector_is_usable_start(beta_smart, p) ? beta_smart : legacy_beta;
 	VectorXd params = VectorXd::Zero(p + 1);
 	params.head(p) = beta_start;
@@ -93,7 +93,7 @@ std::vector<VectorXd> make_truncated_negbin_candidate_starts(const MatrixXd& X_p
 	std::vector<VectorXd> beta_candidates;
 	beta_candidates.push_back(legacy_beta);
 
-	VectorXd beta_log1p = ols_warm_start_beta_on_log1p(X_pos, y_double);
+	VectorXd beta_log1p = ols_smart_cold_start_beta_on_log1p(X_pos, y_double);
 	if (vector_is_usable_start(beta_log1p, p)) beta_candidates.push_back(beta_log1p);
 
 	VectorXd beta_log = safe_ols_solve(X_pos, y_double.array().max(1.0).log().matrix());
@@ -489,7 +489,7 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 //' @param X_hurdle Matrix of predictors for the hurdle component.
 //' @param j 1-based index of the parameter for which to return specific variance.
 //' @param warm_start_params Optional starting values for count parameters. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -581,7 +581,7 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X,
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (must be positive integers).
 //' @param warm_start_params Optional starting values for [beta, log_theta]. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param estimate_only If TRUE, only return coefficients and likelihood.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
@@ -624,7 +624,7 @@ List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X,
         VectorXd params = heuristic_start;
         if (warm_start_params.isNotNull()) {
                 params = as<VectorXd>(NumericVector(warm_start_params));
-        } else if (!smart_start) {
+        } else if (!smart_cold_start) {
                 params.setZero();
                 params[p] = std::log(1.0);
         }

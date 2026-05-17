@@ -27,19 +27,19 @@ Inference = R6::R6Class("Inference",
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		#' @param smart_default Whether to use smart optimizer start values by default for
+		#' @param smart_cold_start_default Whether to use smart cold start values by default for
 		#'   likelihood-based models. Explicit starts always override this object-level policy.
-		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_default = TRUE){
+		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertClass(des_obj, "Design")
 				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(verbose)
 				assertFlag(harden)
-				assertFlag(smart_default)
+				assertFlag(smart_cold_start_default)
 				des_obj$assert_all_responses_recorded()
 			}
 			private$harden = harden
-			private$smart_default = smart_default
+			private$smart_cold_start_default = smart_cold_start_default
 			private$cached_values = list()
 			private$any_censoring = des_obj$any_censoring()
 			private$des_obj = des_obj
@@ -298,7 +298,7 @@ Inference = R6::R6Class("Inference",
 		y_temp = NULL,
 		X = NULL,
 		model_formula = NULL,
-		smart_default = TRUE,
+		smart_cold_start_default = TRUE,
 		optimization_alg = NULL,
 		optimization_alg_allow_irls = FALSE,
 		optimization_alg_default = "lbfgs",
@@ -308,6 +308,7 @@ Inference = R6::R6Class("Inference",
 		fit_warm_start = NULL,
 		fit_warm_start_type = NULL,
 		fit_warm_start_fisher = NULL,
+		fit_warm_start_weights = NULL,
 		likelihood_null_warm_cache = NULL,
 		reduced_design_keep_cache = NULL,
 		fixed_covariate_keep_cache = NULL,
@@ -345,9 +346,10 @@ Inference = R6::R6Class("Inference",
 			private$fit_warm_start = NULL
 			private$fit_warm_start_type = NULL
 			private$fit_warm_start_fisher = NULL
+			private$fit_warm_start_weights = NULL
 			invisible(NULL)
 		},
-		set_fit_warm_start = function(start, type = c("beta", "params"), fisher = NULL){
+		set_fit_warm_start = function(start, type = c("beta", "params"), fisher = NULL, weights = NULL){
 			if (!isTRUE(private$fit_warm_start_enabled)) {
 				private$clear_fit_warm_start()
 				return(invisible(NULL))
@@ -374,6 +376,17 @@ Inference = R6::R6Class("Inference",
 				}
 			} else {
 				private$fit_warm_start_fisher = NULL
+			}
+			
+			if (!is.null(weights)) {
+				weights = as.numeric(weights)
+				if (length(weights) > 0 && all(is.finite(weights))) {
+					private$fit_warm_start_weights = weights
+				} else {
+					private$fit_warm_start_weights = NULL
+				}
+			} else {
+				private$fit_warm_start_weights = NULL
 			}
 			invisible(NULL)
 		},
@@ -402,6 +415,16 @@ Inference = R6::R6Class("Inference",
 				if (nrow(fisher) != expected_dim || ncol(fisher) != expected_dim) return(NULL)
 			}
 			fisher
+		},
+		get_fit_warm_start_weights = function(expected_n = NULL){
+			if (!isTRUE(private$fit_warm_start_enabled)) return(NULL)
+			w = private$fit_warm_start_weights
+			if (is.null(w)) return(NULL)
+			if (!is.null(expected_n)) {
+				expected_n = as.integer(expected_n)[1L]
+				if (length(w) != expected_n) return(NULL)
+			}
+			w
 		},
 		clear_likelihood_null_warm_cache = function(){
 			private$likelihood_null_warm_cache = list()
@@ -516,17 +539,16 @@ Inference = R6::R6Class("Inference",
 						flatten_chunk_results(parallel::parLapply(worker_cl, chunks, RUN_CHUNK))
 					}, error = function(e) {
 					# If the persistent cluster has been killed externally (for example by a
-					# timeout watchdog), clear it and fall back to a one-shot Unix fork apply.
+					# timeout watchdog), replace it with a fresh one and retry once.
 					# This prevents stale socket connections from poisoning subsequent calls.
 					msg = conditionMessage(e)
 						if (.Platform$OS.type == "unix" &&
 							grepl("connection|serialize|unserialize|postNode|sendData|recvData", msg, ignore.case = TRUE)) {
-							edi_env$global_fork_cluster = NULL
 							try(parallel::stopCluster(global_cl), silent = TRUE)
-							if (isTRUE(show_progress) && check_package_installed("pbmcapply")) {
-								return(flatten_chunk_results(pbmcapply::pbmclapply(chunks, RUN_CHUNK, mc.cores = n_cores)))
-							}
-							return(flatten_chunk_results(parallel::mclapply(chunks, RUN_CHUNK, mc.cores = n_cores)))
+							fresh_cl = make_configured_fork_cluster(n_cores)
+							edi_env$global_fork_cluster = fresh_cl
+							fresh_worker_cl = fresh_cl[seq_len(min(n_cores, length(fresh_cl)))]
+							return(flatten_chunk_results(parallel::parLapply(fresh_worker_cl, chunks, RUN_CHUNK)))
 						}
 							stop(e)
 					})
@@ -543,11 +565,12 @@ Inference = R6::R6Class("Inference",
 					}
 					RUN_CHUNK(X)
 				} else {
-					if (isTRUE(show_progress) && check_package_installed("pbmcapply")){
-						flatten_chunk_results(pbmcapply::pbmclapply(chunks, RUN_CHUNK, mc.cores = n_cores))
-					} else {
-						flatten_chunk_results(parallel::mclapply(chunks, RUN_CHUNK, mc.cores = n_cores))
-					}
+					# Unix with no pre-existing cluster: create one lazily and cache it for
+					# subsequent calls, giving the same persistent-cluster performance path.
+					lazy_cl = make_configured_fork_cluster(n_cores)
+					edi_env$global_fork_cluster = lazy_cl
+					lazy_worker_cl = lazy_cl[seq_len(min(n_cores, length(lazy_cl)))]
+					flatten_chunk_results(parallel::parLapply(lazy_worker_cl, chunks, RUN_CHUNK))
 				}
 			},
 		ensure_mirai_daemons = function(n){

@@ -20,26 +20,45 @@
 InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = c(InferenceMixinKKGLMMShared$public, list(
+	public = utils::modifyList(as.list(InferenceMixinKKGLMMShared$public), list(
 		#' @description Initialize a KK Poisson GLMM inference object.
 		#' @param des_obj A completed \code{Design} object with a count response.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use the internal Rcpp Poisson GLMM.
 		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE, smart_default = TRUE){
+		#' @param smart_cold_start_default   Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(use_rcpp)
 			}
 			if (use_rcpp) private$skip_glmm_pkg_check = TRUE
-			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
+			self$set_optimization_alg(optimization_alg, allow_irls = TRUE)
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 			private$init_kk_glmm_shared(des_obj)
 			private$use_rcpp = use_rcpp
+		},
+		#' @description Compute the treatment effect estimate.
+		#' @param estimate_only If TRUE, skip variance component calculations.
+		compute_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
+		},
+		#' @description Computes an approximate confidence interval.
+		#' @param alpha Confidence level.
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			private$shared(estimate_only = FALSE)
+			private$compute_z_or_t_ci_from_s_and_df(alpha)
+		},
+		#' @description Computes an approximate two-sided p-value.
+		#' @param delta Null treatment effect value.
+		compute_asymp_two_sided_pval = function(delta = 0){
+			private$shared(estimate_only = FALSE)
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	)),
-	private = c(InferenceMixinKKGLMMShared$private, list(
+	private = utils::modifyList(as.list(InferenceMixinKKGLMMShared$private), list(
 		use_rcpp = TRUE,
 		glmm_response_type = function() "count",
 		glmm_family        = function() stats::poisson(link = "log"),
@@ -73,6 +92,8 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 			}
 			X_fit = as.matrix(X_fit)
 			j_T = 1L  # 0-based index of treatment column
+			
+			n_params = ncol(X_fit) + 1L
 			fit = tryCatch(
 				fast_poisson_glmm_cpp(
 					X        = X_fit,
@@ -81,7 +102,7 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 					j_T      = j_T,
 					warm_start_params = private$get_fit_warm_start_for_length("params", n_params),
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
-					smart_start = private$smart_default,
+					smart_cold_start = private$smart_cold_start_default,
 					estimate_only    = estimate_only,
 					optimization_alg = private$optimization_alg
 				),
@@ -133,7 +154,7 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 						group_id = group_id,
 						warm_start_params = start %||% private$get_fit_warm_start_for_length("params", length(ctx$start)) %||% ctx$start,
 						warm_start_fisher_info = private$get_fit_warm_start_fisher(length(ctx$start)),
-						smart_start = private$smart_default,
+						smart_cold_start = private$smart_cold_start_default,
 						j_T = j_treat - 1L,
 						estimate_only = FALSE,
 						n_gh = 20L,
@@ -170,6 +191,7 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 		}
 	))
 )
+
 #' KK Hurdle Poisson Combined-Likelihood Inference for Count Responses
 #'
 #' Fits a compound estimator for KK matching-on-the-fly designs with count
@@ -189,6 +211,20 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 InferenceCountKKHurdlePoissonOneLik = R6::R6Class("InferenceCountKKHurdlePoissonOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKHurdlePoissonOneLik,
-	public = list(
-	)
+	public = list()
 )
+
+#' KK Hurdle Poisson IVWC Inference for Count Responses
+#'
+#' Historical public alias. This wrapper preserves the exported class binding
+#' @name InferenceCountKKHurdlePoissonIVWC
+#' @description concrete class.
+#' under the IVWC name.
+#'
+#' @export
+if (!exists("InferenceCountKKHurdlePoissonIVWC", inherits = FALSE)) {
+	InferenceCountKKHurdlePoissonIVWC = R6::R6Class("InferenceCountKKHurdlePoissonIVWC",
+		lock_objects = FALSE,
+		inherit = InferenceCountKKHurdlePoissonOneLik
+	)
+}

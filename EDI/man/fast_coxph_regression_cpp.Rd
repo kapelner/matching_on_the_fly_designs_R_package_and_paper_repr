@@ -9,7 +9,7 @@ fast_coxph_regression_cpp(
   y,
   dead,
   warm_start_beta = NULL,
-  smart_start = TRUE,
+  smart_cold_start = TRUE,
   estimate_only = FALSE,
   maxit = 20L,
   tol = 1e-09,
@@ -27,7 +27,7 @@ fast_coxph_regression_cpp(
 
 \item{dead}{A numeric vector of event indicators (1=event, 0=censored).}
 
-\item{warm_start_beta}{Optional starting values for coefficients.}
+\item{warm_start_beta}{Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.}
 
 \item{estimate_only}{If TRUE, only return coefficients and likelihood.}
 

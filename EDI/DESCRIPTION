@@ -28,7 +28,6 @@ Imports:
     methods,
     MASS,
     RhpcBLASctl,
-    pbmcapply,
     randomizr
 Suggests:
     anticlust,
@@ -179,6 +178,7 @@ Collate:
     'inference_ordinal_partial_proportional_odds.R'
     'inference_ordinal_proportional_odds.R'
     'inference_ordinal_ridit.R'
+    'inference_ordinal_stereotype_logit.R'
     'inference_proportion_beta.R'
     'inference_proportion_fractional_logit.R'
     'inference_proportion_gcomp.R'

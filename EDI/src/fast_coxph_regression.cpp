@@ -207,7 +207,7 @@ struct CoxFitResult {
 CoxFitResult cox_newton_raphson(
     const std::vector<CoxData>& strata_data,
     Nullable<NumericVector> warm_start_beta,
-    bool smart_start,
+    bool smart_cold_start,
     const FixedParamSpec& fixed_spec,
     bool estimate_only,
     int maxit,
@@ -219,7 +219,7 @@ CoxFitResult cox_newton_raphson(
     if (warm_start_beta.isNotNull()) {
         NumericVector sb(warm_start_beta);
         for (int q = 0; q < p; ++q) beta[q] = sb[q];
-    } else if (smart_start) {
+    } else if (smart_cold_start) {
         // Smart warm_start_params for Cox: OLS on log(y)
         // Combine strata into one matrix for OLS
         int total_n = 0;
@@ -353,7 +353,7 @@ public:
 CoxFitResult cox_lbfgs(
     const std::vector<CoxData>& strata_data,
     Nullable<NumericVector> warm_start_beta,
-    bool smart_start,
+    bool smart_cold_start,
     const FixedParamSpec& fixed_spec,
     bool estimate_only,
     int maxit,
@@ -365,7 +365,7 @@ CoxFitResult cox_lbfgs(
     if (warm_start_beta.isNotNull()) {
         NumericVector sb(warm_start_beta);
         for (int q = 0; q < p; ++q) par[q] = sb[q];
-    } else if (smart_start) {
+    } else if (smart_cold_start) {
         // Smart warm_start_params for Cox: OLS on log(y)
         int total_n = 0;
         for (const auto& sd : strata_data) total_n += sd.n;
@@ -417,7 +417,7 @@ CoxFitResult cox_lbfgs(
 CoxFitResult cox_fit(
     const std::vector<CoxData>& strata_data,
     Nullable<NumericVector> warm_start_beta,
-    bool smart_start,
+    bool smart_cold_start,
     const FixedParamSpec& fixed_spec,
     bool estimate_only,
     int maxit,
@@ -426,8 +426,8 @@ CoxFitResult cox_fit(
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
 {
     if (optimization_alg == "lbfgs")
-        return cox_lbfgs(strata_data, warm_start_beta, smart_start, fixed_spec, estimate_only, maxit, tol);
-    return cox_newton_raphson(strata_data, warm_start_beta, smart_start, fixed_spec, estimate_only, maxit, tol, warm_start_fisher_info);
+        return cox_lbfgs(strata_data, warm_start_beta, smart_cold_start, fixed_spec, estimate_only, maxit, tol);
+    return cox_newton_raphson(strata_data, warm_start_beta, smart_cold_start, fixed_spec, estimate_only, maxit, tol, warm_start_fisher_info);
 }
 
 // Compute Lin-Wei-Amato sandwich vcov given converged beta and cluster IDs.
@@ -570,7 +570,7 @@ Eigen::MatrixXd compute_robust_vcov(
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of survival times.
 //' @param dead A numeric vector of event indicators (1=event, 0=censored).
-//' @param warm_start_beta Optional starting values for coefficients.
+//' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
 //' @param estimate_only If TRUE, only return coefficients and likelihood.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
@@ -589,7 +589,7 @@ Eigen::MatrixXd compute_robust_vcov(
 // [[Rcpp::export]]
 List fast_coxph_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead,
                                Nullable<NumericVector> warm_start_beta = R_NilValue,
-                               bool smart_start = true,
+                               bool smart_cold_start = true,
                                bool estimate_only = false,
                                int maxit = 20,
                                double tol = 1e-9,
@@ -604,7 +604,7 @@ List fast_coxph_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
     std::vector<CoxData> strata_data;
     strata_data.emplace_back(y, dead, X);
 
-    CoxFitResult fit = cox_fit(strata_data, warm_start_beta, smart_start, fixed_spec, estimate_only, maxit, tol, optimization_alg, warm_start_fisher_info);
+    CoxFitResult fit = cox_fit(strata_data, warm_start_beta, smart_cold_start, fixed_spec, estimate_only, maxit, tol, optimization_alg, warm_start_fisher_info);
 
     NumericVector coef_r(p);
     for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];
@@ -645,7 +645,7 @@ List fast_coxph_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
 //' @param y A numeric vector of survival times.
 //' @param dead A numeric vector of event indicators.
 //' @param strata An integer vector of strata IDs.
-//' @param warm_start_beta Optional starting values for coefficients.
+//' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
 //' @param estimate_only If TRUE, only return coefficients and likelihood.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
@@ -668,7 +668,7 @@ List fast_stratified_coxph_regression_cpp(
     const Eigen::VectorXd& dead,
     const Rcpp::IntegerVector& strata,
     Nullable<NumericVector> warm_start_beta = R_NilValue,
-    bool smart_start = true,
+    bool smart_cold_start = true,
     bool estimate_only = false,
     int maxit = 20,
     double tol = 1e-9,
@@ -704,7 +704,7 @@ List fast_stratified_coxph_regression_cpp(
         strata_data.emplace_back(y_s, dead_s, X_s);
     }
 
-    CoxFitResult fit = cox_fit(strata_data, warm_start_beta, smart_start, fixed_spec, estimate_only, maxit, tol, optimization_alg, warm_start_fisher_info);
+    CoxFitResult fit = cox_fit(strata_data, warm_start_beta, smart_cold_start, fixed_spec, estimate_only, maxit, tol, optimization_alg, warm_start_fisher_info);
 
     NumericVector coef_r(p);
     for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];

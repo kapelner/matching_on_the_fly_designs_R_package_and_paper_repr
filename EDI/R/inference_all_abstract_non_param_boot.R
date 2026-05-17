@@ -54,24 +54,29 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			inf_template = self$duplicate()
 			des_template = private$des_obj$duplicate()
 			has_match_structure_local = private$has_match_structure
+			boot_draws = replicate(
+				as.integer(B),
+				private$bootstrap_sample_indices(private$n, bootstrap_type),
+				simplify = FALSE
+			)
 			run_one_boot_iter = function(worker_des, worker_inf) {
-				boot_draw = private$bootstrap_sample_indices(private$n, bootstrap_type)
+				boot_draw = boot_draws[[1L]]
 				sub_inf = private$bootstrap_subset_inference(boot_draw, smooth = FALSE)
 				if (is.null(sub_inf)) return(NA_real_)
 				as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
 			}
 			if (isTRUE(debug)) {
-				run_debug_boot_iter = function(worker_des = NULL, worker_inf = NULL, worker_state = NULL) {
+				run_debug_boot_iter = function(boot_draw, worker_des = NULL, worker_inf = NULL, worker_state = NULL) {
 					iter_warns = character(0)
 					iter_errs = character(0)
 					iter_val = withCallingHandlers(
 						tryCatch({
 							if (!is.null(worker_state)) {
-								boot_draw = private$bootstrap_sample_indices(private$n, bootstrap_type)
 								private$load_bootstrap_sample_into_worker(worker_state, boot_draw)
 								private$compute_bootstrap_worker_estimate(worker_state)
 							} else {
-								run_one_boot_iter(worker_des, worker_inf)
+								sub_inf = private$bootstrap_subset_inference(boot_draw, smooth = FALSE)
+								if (is.null(sub_inf)) NA_real_ else as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
 							}
 						}, error = function(e) { iter_errs <<- c(iter_errs, conditionMessage(e)); NA_real_ }),
 						warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
@@ -89,14 +94,14 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 					run_debug_chunk = if (isTRUE(private$use_reusable_bootstrap_worker())) {
 						function(idxs) {
 							worker_state = private$create_bootstrap_worker_state()
-							lapply(idxs, function(idx) run_debug_boot_iter(worker_state = worker_state))
+							lapply(idxs, function(idx) run_debug_boot_iter(boot_draw = boot_draws[[idx]], worker_state = worker_state))
 						}
 					} else {
 						function(idxs) {
 							lapply(idxs, function(idx) {
 								worker_des = des_template$duplicate()
 								worker_inf = inf_template$duplicate(make_fork_cluster = FALSE)
-								run_debug_boot_iter(worker_des = worker_des, worker_inf = worker_inf)
+								run_debug_boot_iter(boot_draw = boot_draws[[idx]], worker_des = worker_des, worker_inf = worker_inf)
 							})
 						}
 					}
@@ -166,15 +171,17 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				do_warmup_iter = if (isTRUE(private$use_reusable_bootstrap_worker())) {
 					function() {
 						worker_state = private$create_bootstrap_worker_state()
-						boot_draw = private$bootstrap_sample_indices(private$n, bootstrap_type)
+						boot_draw = boot_draws[[1L]]
 						private$load_bootstrap_sample_into_worker(worker_state, boot_draw)
 						tryCatch(private$compute_bootstrap_worker_estimate(worker_state), error = function(e) NA_real_)
 					}
 				} else {
 					function() {
-						w_des = des_template$duplicate()
-						w_inf = inf_template$duplicate(make_fork_cluster = FALSE)
-						tryCatch(run_one_boot_iter(w_des, w_inf), error = function(e) NA_real_)
+						boot_draw = boot_draws[[1L]]
+						tryCatch({
+							sub_inf = private$bootstrap_subset_inference(boot_draw, smooth = FALSE)
+							if (is.null(sub_inf)) NA_real_ else as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
+						}, error = function(e) NA_real_)
 					}
 				}
 				system.time(do_warmup_iter())  # First call: discarded (cold-start overhead)
@@ -188,23 +195,24 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			}
 			boot_distr = if (isTRUE(private$use_reusable_bootstrap_worker())) {
 				private$compute_bootstrap_distribution_with_reused_workers(
-					B = B,
+					boot_draws = boot_draws,
 					actual_cores = actual_cores,
 					show_progress = show_progress,
 					bootstrap_type = bootstrap_type
 				)
 			} else {
-				# Use private$par_lapply which handles both persistent fork clusters and other strategies.
-				unlist(private$par_lapply(1:B, function(idx) {
-					worker_des = des_template$duplicate()
-					worker_inf = inf_template$duplicate(make_fork_cluster = FALSE)
-					tryCatch(run_one_boot_iter(worker_des, worker_inf), error = function(e) NA_real_)
+				unlist(private$par_lapply(seq_along(boot_draws), function(idx) {
+					boot_draw = boot_draws[[idx]]
+					tryCatch({
+						sub_inf = private$bootstrap_subset_inference(boot_draw, smooth = FALSE)
+						if (is.null(sub_inf)) NA_real_ else as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
+					}, error = function(e) NA_real_)
 				}, n_cores = actual_cores, show_progress = show_progress,
 				export_list = list(
 					des_template = des_template,
 					inf_template = inf_template,
 					has_match_structure_local = has_match_structure_local,
-					run_one_boot_iter = run_one_boot_iter
+					boot_draws = boot_draws
 				)))
 			}
 			if (!is.numeric(boot_distr)) boot_distr = as.numeric(boot_distr)
@@ -503,6 +511,9 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				worker = worker,
 				worker_priv = worker_priv,
 				worker_des_priv = worker_des_priv,
+				base_fit_warm_start = private$fit_warm_start,
+				base_fit_warm_start_type = private$fit_warm_start_type,
+				base_fit_warm_start_fisher = private$fit_warm_start_fisher,
 				base_Xraw = if (!is.null(source_des_priv$Xraw)) source_des_priv$Xraw else NULL,
 				base_Ximp = if (!is.null(source_des_priv$Ximp)) source_des_priv$Ximp else NULL,
 				base_X = if (!is.null(private$X)) private$X else private$get_X(),
@@ -545,7 +556,9 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			w_priv$fixed_covariate_keep_cache = NULL
 			w_priv$best_X_colnames = NULL
 			w_priv$best_Xmm_colnames = NULL
-			w_priv$fit_warm_coefficients = NULL
+			w_priv$fit_warm_start = worker_state$base_fit_warm_start
+			w_priv$fit_warm_start_type = worker_state$base_fit_warm_start_type
+			w_priv$fit_warm_start_fisher = worker_state$base_fit_warm_start_fisher
 			w_priv$cached_mod = NULL
 			des_priv = worker_state$worker_des_priv
 			if (!is.null(des_priv)) {
@@ -572,7 +585,8 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			}
 			theta
 		},
-		compute_bootstrap_distribution_with_reused_workers = function(B, actual_cores, show_progress = FALSE, bootstrap_type = NULL){
+		compute_bootstrap_distribution_with_reused_workers = function(boot_draws, actual_cores, show_progress = FALSE, bootstrap_type = NULL){
+			B = length(boot_draws)
 			chunk_n = max(1L, min(as.integer(actual_cores), as.integer(B)))
 			chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
 			chunks = split(seq_len(B), chunk_id)
@@ -580,7 +594,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				worker_state = private$create_bootstrap_worker_state()
 				out = numeric(length(idxs))
 				for (k in seq_along(idxs)) {
-					boot_draw = private$bootstrap_sample_indices(private$n, bootstrap_type)
+					boot_draw = boot_draws[[idxs[[k]]]]
 					out[k] = tryCatch({
 						private$load_bootstrap_sample_into_worker(worker_state, boot_draw)
 						private$compute_bootstrap_worker_estimate(worker_state)

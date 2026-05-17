@@ -25,15 +25,15 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		#' @param smart_default Whether to use smart optimizer start values by default.
+		#' @param smart_cold_start_default Whether to use smart cold start values by default.
 		#' @param optimization_alg  Optimization algorithm to use. Default is dispatched via policy.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_default = TRUE, optimization_alg = NULL){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 				assertFormula(model_formula, null.ok = TRUE)
 			}
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
-			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_default = smart_default)
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -41,6 +41,7 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 	),
 	private = list(
 		best_X_colnames = NULL,
+		get_complexity_tier = function() "heavy",
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -57,25 +58,77 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(treatment = private$w, X_cov)
 			}
-			warm_start_params = private$get_fit_warm_start_for_length("params", ncol(X) + 1L)
+			n_params = ncol(X) + 1L
+			ws_args = private$get_backend_warm_start_args(n_params)
 			res = fast_ordinal_probit_regression_cpp(
 				X = X,
 				y = as.numeric(private$y),
-				warm_start_params = warm_start_params,
-				smart_start = private$smart_default,
+				warm_start_params = ws_args$start_params,
+				warm_start_fisher_info = ws_args$warm_start_fisher_info,
+				smart_cold_start = private$smart_cold_start_default,
 				optimization_alg = private$optimization_alg
 			)
 			if (is.null(res) || length(res$b) < 1L || !is.finite(res$b[1L])){
 				return(NA_real_)
 			}
-			private$set_fit_warm_start(as.numeric(res$params), "params")
+			private$set_fit_warm_start(as.numeric(res$params), "params", fisher = res$fisher_information)
 			as.numeric(res$b[1L])
 		},
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
+		supports_lik_ratio_param_bootstrap = function(){
+			TRUE
+		},
 		supports_likelihood_tests = function(){
 			TRUE
+		},
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			params_null = as.numeric(null_fit$params)
+			p_reg  = ncol(spec$X)
+			b_null = params_null[seq_len(p_reg)]
+			kappa  = params_null[p_reg + 1L]
+			eta    = as.numeric(spec$X %*% b_null)
+			mu     = pmin(pmax(pnorm(eta - kappa), 0), 1)
+			y_sim  = as.numeric(rbinom(length(mu), 1L, mu))
+			X_fit  = spec$X
+			j      = spec$j
+			
+			# Parametric bootstrap: use observed fit as anchor
+			ws_args = private$get_backend_warm_start_args(ncol(X_fit) + 1L)
+			full_b = tryCatch(
+				fast_ordinal_probit_regression_cpp(
+					X = X_fit, y = y_sim,
+					warm_start_params = ws_args$start_params,
+					warm_start_fisher_info = ws_args$warm_start_fisher_info,
+					smart_cold_start = TRUE,
+					optimization_alg = private$optimization_alg
+				),
+				error = function(e) NULL
+			)
+			if (is.null(full_b) || length(full_b) == 0L) return(NULL)
+			full_fit_boot = list(params = as.numeric(full_b$params), neg_loglik = as.numeric(full_b$neg_loglik))
+			if (!is.finite(full_fit_boot$neg_loglik)) return(NULL)
+			list(
+				full_fit = full_fit_boot,
+				fit_null = function(d, start = NULL){
+					ws_args_null = private$get_backend_warm_start_args(ncol(X_fit) + 1L)
+					res = tryCatch(
+						fast_ordinal_probit_regression_cpp(
+							X = X_fit, y = y_sim,
+							warm_start_params = start %||% full_fit_boot$params,
+							warm_start_fisher_info = ws_args_null$warm_start_fisher_info,
+							smart_cold_start = TRUE,
+							optimization_alg = private$optimization_alg,
+							fixed_idx = j, fixed_values = d
+						),
+						error = function(e) NULL
+					)
+					if (is.null(res) || length(res) == 0L) return(NULL)
+					list(params = as.numeric(res$params), neg_loglik = as.numeric(res$neg_loglik))
+				},
+				neg_loglik = function(fit) as.numeric(fit$neg_loglik)
+			)
 		},
 		supports_fisher_information = function(){
 			TRUE
@@ -94,12 +147,14 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 				j = j_treat,
 				full_fit = full_fit,
 				fit_null = function(delta, start = NULL){
+					ws_args = private$get_backend_warm_start_args(length(ctx$full_params))
 					res = tryCatch(
 						fast_ordinal_probit_regression_cpp(
 							X_fit,
 							y,
-							warm_start_params = start %||% private$get_fit_warm_start_for_length("params", length(ctx$full_params)),
-							smart_start = private$smart_default,
+							warm_start_params = start %||% ws_args$start_params,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default,
 							optimization_alg = private$optimization_alg,
 							fixed_idx = j_treat,
 							fixed_values = delta
@@ -107,7 +162,7 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 						error = function(e) NULL
 					)
 					if (is.null(res) || length(res) == 0L) return(NULL)
-					list(params = as.numeric(res$params), neg_loglik = as.numeric(res$neg_loglik))
+					list(params = as.numeric(res$params), neg_loglik = as.numeric(res$neg_loglik), fisher_information = res$fisher_information)
 				},
 				extract_start = function(fit){
 					as.numeric(fit$params)
@@ -136,13 +191,15 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 				required_cols = 1L,
 				fit_fun = function(X_fit, keep){
 					j_treat = match(1L, keep)
-					warm_start_params = private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L)
+					n_params = ncol(X_fit) + 1L
+					ws_args = private$get_backend_warm_start_args(n_params)
 					if (estimate_only) {
 						res = fast_ordinal_probit_regression_cpp(
 							X = X_fit,
 							y = as.numeric(private$y),
-							warm_start_params = warm_start_params,
-							smart_start = private$smart_default,
+							warm_start_params = ws_args$start_params,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default,
 							optimization_alg = private$optimization_alg
 						)
 						if (is.null(res) || length(res) == 0L) return(NULL)
@@ -151,14 +208,16 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 							ssq_b_j = NA_real_,
 							j_treat = j_treat,
 							params = as.numeric(res$params),
-							neg_loglik = as.numeric(res$neg_loglik)
+							neg_loglik = as.numeric(res$neg_loglik),
+							fisher_information = res$fisher_information
 						)
 					} else {
 						res = fast_ordinal_probit_regression_with_var_cpp(
 							X = X_fit,
 							y = as.numeric(private$y),
-							warm_start_params = warm_start_params,
-							smart_start = private$smart_default,
+							warm_start_params = ws_args$start_params,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default,
 							optimization_alg = private$optimization_alg
 						)
 						if (is.null(res) || length(res$b) == 0L || is.na(res$b[1L])) return(NULL)
@@ -167,7 +226,8 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 							ssq_b_j = as.numeric(res$ssq_b_j),
 							j_treat = j_treat,
 							params = as.numeric(res$params),
-							neg_loglik = as.numeric(res$neg_loglik)
+							neg_loglik = as.numeric(res$neg_loglik),
+							fisher_information = res$fisher_information
 						)
 					}
 				},

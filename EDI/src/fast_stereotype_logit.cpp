@@ -626,7 +626,7 @@ Eigen::MatrixXd get_stereotype_logit_hessian_cpp(const Eigen::MatrixXd& X,
 //' @keywords internal
 // [[Rcpp::export]]
 List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
-                                bool smart_start = true,
+                                bool smart_cold_start = true,
                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                 std::string optimization_alg = "newton_raphson",
@@ -651,10 +651,10 @@ List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
         if (sb.size() == p) {
             params.segment(n_alpha, p) = sb;
         }
-    } else if (smart_start) {
+    } else if (smart_cold_start) {
         // Smart warm_start_params for Stereotype: OLS on y (or simplified representation)
         // Here we use a basic OLS warm_start_params for the beta part
-        params.segment(n_alpha, p) = ols_warm_start_beta(X, y);
+        params.segment(n_alpha, p) = ols_smart_cold_start_beta(X, y);
     }
     
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
@@ -690,14 +690,14 @@ List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
 //' @param fixed_values Optional values for fixed parameters.
 //' @param optimization_alg Optimization algorithm.
 //' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
-//' @param warm_start_params Optional starting values for all parameters.
-//' @param warm_start_beta Optional starting values for coefficients.
+//' @param warm_start_params Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.
+//' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
 //' @return A list containing coefficients, variance estimates, vcov, and convergence status.
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
 List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
-                                         bool smart_start = true,
+                                         bool smart_cold_start = true,
                                          Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                          Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                          std::string optimization_alg = "newton_raphson",
@@ -720,9 +720,9 @@ List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::V
         if (sb.size() == X.cols()) {
             params.segment(model.num_alpha(), X.cols()) = sb;
         }
-    } else if (smart_start) {
+    } else if (smart_cold_start) {
         // Smart warm_start_params: OLS on y
-        params.segment(model.num_alpha(), X.cols()) = ols_warm_start_beta(X, y);
+        params.segment(model.num_alpha(), X.cols()) = ols_smart_cold_start_beta(X, y);
     }
 
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
@@ -798,18 +798,33 @@ double fast_stereotype_profile_loglik_cpp(
     const Eigen::VectorXd& y,
     double beta_fixed,
     int maxit = 100,
-    double tol = 1e-8
+    double tol = 1e-8,
+    Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
+    Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue
 ) {
     StereotypeLogitRegression model(X, y);
     if (model.num_categories() < 2) {
         stop("Stereotype logistic regression requires at least two observed outcome categories.");
     }
 
-    bool converged = false;
-    VectorXd params = stereotype_newton_fit(model, maxit, tol, &converged);
     int n_alpha = model.num_alpha();
     int p = X.cols();
     int n_gamma = model.num_gamma();
+    int total = n_alpha + p + n_gamma;
+
+    VectorXd params = model.initialize_params();
+    if (warm_start_params.isNotNull()) {
+        params = as<VectorXd>(warm_start_params);
+        if (params.size() != total) stop("warm_start_params size mismatch");
+    } else if (warm_start_beta.isNotNull()) {
+        VectorXd sb = as<VectorXd>(warm_start_beta);
+        if (sb.size() == total) {
+            params = sb;
+        } else if (sb.size() == p) {
+            params.segment(n_alpha, p) = sb;
+        }
+    }
+
     return profile_loglik_for_beta(model, params, beta_fixed, n_alpha, p, n_gamma, 0);
 }
 

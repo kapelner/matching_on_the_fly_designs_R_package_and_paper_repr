@@ -1290,18 +1290,20 @@ NULL
 	)
 }
 
-.fit_weibull_frailty = function(y, dead, X, pair_id, estimate_only = FALSE, optimization_alg = "lbfgs"){
+.fit_weibull_frailty = function(y, dead, X, pair_id, estimate_only = FALSE, optimization_alg = "lbfgs", warm_start_params = NULL, warm_start_fisher_info = NULL){
 	.fit_weibull_frailty_rcpp(
 		y = y,
 		dead = dead,
 		X = X,
 		pair_id = pair_id,
 		estimate_only = estimate_only,
-		optimization_alg = optimization_alg
+		optimization_alg = optimization_alg,
+		warm_start_params = warm_start_params,
+		warm_start_fisher_info = warm_start_fisher_info
 	)
 }
 
-.fit_weibull_frailty_rcpp = function(y, dead, X, pair_id, estimate_only = FALSE, optimization_alg = "lbfgs"){
+.fit_weibull_frailty_rcpp = function(y, dead, X, pair_id, estimate_only = FALSE, optimization_alg = "lbfgs", warm_start_params = NULL, warm_start_fisher_info = NULL){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	if (length(y) == 0L || sum(dead) == 0L) return(NULL)
 
@@ -1322,6 +1324,8 @@ NULL
 			dead = as.numeric(dead),
 			X = X,
 			group_id = group_id,
+			warm_start_params = warm_start_params,
+			warm_start_fisher_info = warm_start_fisher_info,
 			estimate_only = estimate_only,
 			optimization_alg = optimization_alg
 		),

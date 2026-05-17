@@ -480,7 +480,7 @@ fast_weibull_regression = function(y, dead, X, use_rcpp = TRUE, estimate_only = 
 		res = tryCatch(
 			fast_weibull_regression_cpp(X = X, y = as.numeric(y), dead = as.numeric(dead), 
 			                            warm_start_params = warm_start_params,
-			                            smart_start = FALSE, 
+			                            smart_cold_start = FALSE, 
 			                            estimate_only = estimate_only, 
 			                            optimization_alg = optimization_alg,
 			                            warm_start_fisher_info = warm_start_fisher_info),
@@ -696,7 +696,12 @@ fast_beta_regression_with_var = function(X, y, start_phi = 10, j = 2, optimizati
 	y = sanitize_beta_response(y)
 	tryCatch({
 	mod = fast_beta_regression_with_var_cpp(X, y, start_phi = start_phi, optimization_alg = optimization_alg, warm_start_beta = warm_start_beta)
-	list(b = mod$coefficients, phi = mod$phi, ssq_b_j = mod$vcov[j, j], ssq_b_2 = if (nrow(mod$vcov) >= 2) mod$vcov[2, 2] else NA_real_, fisher_information = mod$fisher_information)
+	list(
+		b = mod$coefficients,
+		phi = mod$phi,
+		ssq_b_j = mod$vcov[j, j],
+		ssq_b_2 = if (nrow(mod$vcov) >= 2) mod$vcov[2, 2] else NA_real_
+	)
 	}, error = function(e) {
 	warning("fast_beta_regression_with_var_cpp failed, falling back to betareg. Error: ", e$message)
 	if (!check_package_installed("betareg")) {
@@ -740,9 +745,9 @@ fast_beta_regression_with_var = function(X, y, start_phi = 10, j = 2, optimizati
 #' @param estimate_only Logical. If \code{TRUE}, skip variance-covariance
 #'   matrix calculation for speed.
 #' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
-#' @param warm_start_beta Optional starting values for coefficients.
+#' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
 #' @param warm_start_fisher_info Optional initial Fisher Information matrix.
-#' @param smart_start Logical. If \code{TRUE} (default), use an initial OLS-based guess.
+#' @param smart_cold_start Logical. If \code{TRUE} (default), use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if \code{warm_start_beta} is provided.
 #'
 #' @return  A list containing the following components:
 #' \describe{
@@ -760,7 +765,7 @@ fast_beta_regression_with_var = function(X, y, start_phi = 10, j = 2, optimizati
 #' dead = rbinom(100, 1, 0.5)
 #' fast_coxph_regression(y, dead, X)
 #' @export
-fast_coxph_regression = function(X, y, dead, use_rcpp = TRUE, estimate_only = FALSE, optimization_alg = "newton_raphson", warm_start_beta = NULL, warm_start_fisher_info = NULL, smart_start = TRUE){
+fast_coxph_regression = function(X, y, dead, use_rcpp = TRUE, estimate_only = FALSE, optimization_alg = "newton_raphson", warm_start_beta = NULL, warm_start_fisher_info = NULL, smart_cold_start = TRUE){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
 	if (use_rcpp) {
 		X = as.matrix(X)
@@ -770,7 +775,7 @@ fast_coxph_regression = function(X, y, dead, use_rcpp = TRUE, estimate_only = FA
 			                          optimization_alg = optimization_alg,
 			                          warm_start_beta = warm_start_beta,
 			                          warm_start_fisher_info = warm_start_fisher_info,
-			                          smart_start = smart_start),
+			                          smart_cold_start = smart_cold_start),
 			error = function(e) stop("Cox PH regression (Rcpp) failed to converge: ", e$message)
 		)
 		if (is.null(res) || !isTRUE(res$converged)) {
@@ -825,7 +830,7 @@ fast_negbin_regression <- function(X, y, optimization_alg = "newton_raphson", wa
 	
 	# If warm start is provided, we use the full matrix and don't attempt QR dropping initially
 	if (!is.null(warm_start_params)) {
-		res = tryCatch(fast_neg_bin_cpp(X = X_fit, y = as.integer(y), warm_start_params = warm_start_params, smart_start = FALSE, optimization_alg = optimization_alg, warm_start_fisher_info = warm_start_fisher_info), error = function(e) NULL)
+		res = tryCatch(fast_neg_bin_cpp(X = X_fit, y = as.integer(y), warm_start_params = warm_start_params, smart_cold_start = FALSE, optimization_alg = optimization_alg, warm_start_fisher_info = warm_start_fisher_info), error = function(e) NULL)
 		if (!is.null(res)) return(list(b = as.numeric(res$b), fisher_information = res$fisher_information))
 	}
 
@@ -844,7 +849,7 @@ fast_negbin_regression <- function(X, y, optimization_alg = "newton_raphson", wa
 			}
 		}
 	}
-	res = tryCatch(fast_neg_bin_cpp(X = X_fit, y = as.integer(y), smart_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
+	res = tryCatch(fast_neg_bin_cpp(X = X_fit, y = as.integer(y), smart_cold_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
 	if (!is.null(res)) return(list(b = as.numeric(res$b), fisher_information = res$fisher_information))
 	# Progressive QR-ordered column dropping: intercept (col 1) and treatment (col 2) are fixed;
 	# drop covariates one at a time in reverse QR-pivot order (most redundant first)
@@ -858,7 +863,7 @@ fast_negbin_regression <- function(X, y, optimization_alg = "newton_raphson", wa
 			} else {
 				X_fit[, 1:2, drop = FALSE]
 			}
-			res = tryCatch(fast_neg_bin_cpp(X = X_try, y = as.integer(y), smart_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
+			res = tryCatch(fast_neg_bin_cpp(X = X_try, y = as.integer(y), smart_cold_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
 			if (!is.null(res)) return(list(b = as.numeric(res$b), fisher_information = res$fisher_information))
 		}
 	}
@@ -912,7 +917,7 @@ fast_negbin_regression_with_var <- function(X, y, j = 2, optimization_alg = "new
 			}
 		}
 	}
-	res = tryCatch(fast_neg_bin_with_var_cpp(X = X_curr, y = as.integer(y), smart_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
+	res = tryCatch(fast_neg_bin_with_var_cpp(X = X_curr, y = as.integer(y), smart_cold_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
 	if (is.null(res)) {
 		# Progressive QR-ordered column dropping: intercept (col 1) and treatment (col 2) are fixed;
 		# drop covariates one at a time in reverse QR-pivot order (most redundant first)
@@ -926,7 +931,7 @@ fast_negbin_regression_with_var <- function(X, y, j = 2, optimization_alg = "new
 				} else {
 					X_curr[, 1:2, drop = FALSE]
 				}
-				res = tryCatch(fast_neg_bin_with_var_cpp(X = X_curr, y = as.integer(y), smart_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
+				res = tryCatch(fast_neg_bin_with_var_cpp(X = X_curr, y = as.integer(y), smart_cold_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
 			}
 		}
 		if (is.null(res))

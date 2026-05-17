@@ -27,14 +27,33 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_default = TRUE){
+		#' @param smart_cold_start_default Whether to use smart starting values for the optimizer.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+		},
+		#' @description Compute the treatment effect estimate.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
+		},
+		#' @description Computes an approximate confidence interval.
+		#' @param alpha Confidence level.
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			private$shared(estimate_only = FALSE)
+			private$compute_z_or_t_ci_from_s_and_df(alpha)
+		},
+		#' @description Computes an approximate two-sided p-value.
+		#' @param delta Null treatment effect value.
+		compute_asymp_two_sided_pval = function(delta = 0){
+			private$shared(estimate_only = FALSE)
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
 	private = list(
@@ -59,7 +78,7 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				fast_poisson_regression_cpp(
 					X = X, y = as.numeric(private$y),
 					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
-					smart_start = private$smart_default,
+					smart_cold_start = private$smart_cold_start_default,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X))
 				),
 				error = function(e) NULL
@@ -88,7 +107,7 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				fast_poisson_regression_cpp(
 					X = X_fit, y = as.numeric(private$y),
 					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
-					smart_start = private$smart_default,
+					smart_cold_start = private$smart_cold_start_default,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
 				),
 				error = function(e) NULL

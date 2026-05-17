@@ -676,6 +676,10 @@ InferenceRand = R6::R6Class("InferenceRand",
 			inf_priv$cached_values$s_beta_hat_T = NULL
 			inf_priv$likelihood_null_warm_cache = list()
 			
+			inf_priv$fit_warm_start = worker_state$base_fit_warm_start
+			inf_priv$fit_warm_start_type = worker_state$base_fit_warm_start_type
+			inf_priv$fit_warm_start_fisher = worker_state$base_fit_warm_start_fisher
+			
 			if (!is.null(inf_priv$compute_basic_match_data)) inf_priv$compute_basic_match_data()
 			invisible(NULL)
 		},

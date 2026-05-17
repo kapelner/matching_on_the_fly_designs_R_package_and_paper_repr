@@ -110,7 +110,7 @@ Eigen::MatrixXd get_weibull_regression_hessian_cpp(const Eigen::MatrixXd& X,
 //' @param y A numeric vector of survival times.
 //' @param dead A numeric vector of event indicators.
 //' @param warm_start_params Optional starting values for [beta, log_sigma]. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param estimate_only If TRUE, only return coefficients and likelihood.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
@@ -143,47 +143,11 @@ List fast_weibull_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
     if (warm_start_params.isNotNull()) {
         params = as<Eigen::VectorXd>(NumericVector(warm_start_params));
         if (params.size() != p + 1) stop("warm_start_params must have length equal to the number of model parameters");
+    } else if (smart_cold_start) {
+        params = edi_opt::weibull_smart_cold_start(X, y, dead);
     } else {
-        Eigen::VectorXd log_y = y.array().log().matrix();
-        WeibullStart legacy_start;
-        legacy_start.beta = safe_ols_solve(X, log_y);
-        if (!legacy_start.beta.allFinite()) legacy_start.beta = Eigen::VectorXd::Zero(p);
-        Eigen::VectorXd resid = log_y - X * legacy_start.beta;
-        double std_resid = std::sqrt(resid.squaredNorm() / std::max(1, static_cast<int>(y.size()) - p));
-        if (!std_resid || !std::isfinite(std_resid)) std_resid = 1.0;
-        legacy_start.log_sigma = std::log(std_resid * 0.7797);
-        if (smart_cold_start) {
-            Eigen::MatrixXd X_intercept = Eigen::MatrixXd::Ones(y.size(), 1);
-            List intercept_fit = fast_weibull_regression_cpp(
-                X_intercept,
-                y,
-                dead,
-                R_NilValue,
-                false, // smart_cold_start=false for intercept recursion
-                true,
-                maxit,
-                tol,
-                R_NilValue,
-                R_NilValue,
-                optimization_alg
-            );
-            bool use_intercept_fit =
-                intercept_fit.containsElementNamed("converged") &&
-                as<bool>(intercept_fit["converged"]) &&
-                intercept_fit.containsElementNamed("coefficients") &&
-                intercept_fit.containsElementNamed("log_sigma");
-            if (use_intercept_fit) {
-                NumericVector intercept_coef = intercept_fit["coefficients"];
-                double log_sigma = as<double>(intercept_fit["log_sigma"]);
-                params = Eigen::VectorXd::Zero(p + 1);
-                if (intercept_coef.size() >= 1L) params[0] = intercept_coef[0];
-                params[p] = log_sigma;
-            } else {
-                params = weibull_start_to_params(legacy_start);
-            }
-        } else {
-            params = weibull_start_to_params(legacy_start);
-        }
+        params.setZero();
+        params[0] = std::log(y.mean());
     }
     params = apply_fixed_values(params, fixed_spec);
 

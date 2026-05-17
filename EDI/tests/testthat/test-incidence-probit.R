@@ -15,7 +15,7 @@ test_that("InferenceIncidProbitRegr matches stats::glm on the treatment slope", 
 	des$overwrite_all_subject_assignments(w)
 	des$add_all_subject_responses(y)
 
-	inf <- InferenceIncidProbitRegr$new(des, verbose = FALSE, smart_default = TRUE)
+	inf <- InferenceIncidProbitRegr$new(des, verbose = FALSE, smart_cold_start_default = TRUE)
 	fit_ref <- stats::glm(y ~ w + x + z, family = stats::binomial(link = "probit"))
 
 	expect_equal(
@@ -38,7 +38,7 @@ test_that("InferenceIncidProbitRegr supports asymptotic and likelihood-based inf
 	des$overwrite_all_subject_assignments(w)
 	des$add_all_subject_responses(y)
 
-	inf <- InferenceIncidProbitRegr$new(des, verbose = FALSE, smart_default = TRUE)
+	inf <- InferenceIncidProbitRegr$new(des, verbose = FALSE, smart_cold_start_default = TRUE)
 	est <- inf$compute_estimate()
 	ci <- inf$compute_asymp_confidence_interval(alpha = 0.1)
 	p_asymp <- inf$compute_asymp_two_sided_pval()

@@ -190,8 +190,8 @@ VectorXd ols_start_beta(const MatrixXd& X, const VectorXd& y) {
 //' @param K Number of ordinal levels.
 //' @param j_T 0-based index of the treatment effect in the beta vector.
 //' @param warm_start_params Optional starting values for all parameters [alpha, beta, log_sigma]. If provided, \code{smart_cold_start} is ignored.
-//' @param warm_start_beta Optional starting values for coefficients. If provided (and \code{warm_start_params} is not), \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no warm starts are provided.
+//' @param warm_start_beta Optional starting values for coefficients. If provided (and \code{warm_start_params} is not), \code{smart_cold_start} is ignored. If provided, \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param estimate_only If TRUE, skip variance component calculations.
 //' @param n_gh Number of Gauss-Hermite nodes.
 //' @param max_abs_log_sigma Maximum allowed value for log(sigma).

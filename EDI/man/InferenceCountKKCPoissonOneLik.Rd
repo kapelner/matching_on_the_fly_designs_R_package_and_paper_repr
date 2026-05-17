@@ -24,7 +24,7 @@ inf$compute_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceAbstractKKPoissonCPoissonOneLik]{EDI::InferenceAbstractKKPoissonCPoissonOneLik}} -> \code{InferenceCountKKCPoissonOneLik}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceAbstractKKPoissonCPoissonOneLik]{EDI::InferenceAbstractKKPoissonCPoissonOneLik}} -> \code{InferenceCountKKCPoissonOneLik}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -59,7 +59,6 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_estimate_with_bootstrap_weights"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_estimate_with_bootstrap_weights'><code>EDI::InferenceBayesianBootstrap$compute_estimate_with_bootstrap_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="approximate_jackknife_distribution_beta_hat_T"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>EDI::InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_bias_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>EDI::InferenceJackknife$compute_jackknife_bias_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_corrected_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_corrected_estimate'><code>EDI::InferenceJackknife$compute_jackknife_corrected_estimate()</code></a></span></li>
@@ -89,6 +88,7 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKPoissonCPoissonOneLik" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKPoissonCPoissonOneLik.html#method-InferenceAbstractKKPoissonCPoissonOneLik-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKPoissonCPoissonOneLik$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKPoissonCPoissonOneLik" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAbstractKKPoissonCPoissonOneLik.html#method-InferenceAbstractKKPoissonCPoissonOneLik-compute_asymp_two_sided_pval'><code>EDI::InferenceAbstractKKPoissonCPoissonOneLik$compute_asymp_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKPoissonCPoissonOneLik" data-id="compute_estimate"><a href='../../EDI/html/InferenceAbstractKKPoissonCPoissonOneLik.html#method-InferenceAbstractKKPoissonCPoissonOneLik-compute_estimate'><code>EDI::InferenceAbstractKKPoissonCPoissonOneLik$compute_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKPoissonCPoissonOneLik" data-id="compute_estimate_with_bootstrap_weights"><a href='../../EDI/html/InferenceAbstractKKPoissonCPoissonOneLik.html#method-InferenceAbstractKKPoissonCPoissonOneLik-compute_estimate_with_bootstrap_weights'><code>EDI::InferenceAbstractKKPoissonCPoissonOneLik$compute_estimate_with_bootstrap_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKPoissonCPoissonOneLik" data-id="duplicate"><a href='../../EDI/html/InferenceAbstractKKPoissonCPoissonOneLik.html#method-InferenceAbstractKKPoissonCPoissonOneLik-duplicate'><code>EDI::InferenceAbstractKKPoissonCPoissonOneLik$duplicate()</code></a></span></li>
 </ul>
 </details>
@@ -102,7 +102,8 @@ Initialize the inference object.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountKKCPoissonOneLik$new(
   des_obj,
   model_formula = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  smart_cold_start_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -117,6 +118,8 @@ reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
 }
 \if{html}{\out{</div>}}
 }

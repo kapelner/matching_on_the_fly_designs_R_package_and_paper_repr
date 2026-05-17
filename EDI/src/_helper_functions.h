@@ -2,6 +2,7 @@
 #define EDI_HELPERS_H
 
 #include "ordinal_fixed_link_helpers.h"
+#include "optimization_starts.h"
 #include <RcppEigen.h>
 #include <optimization/LBFGS.h>
 #include <vector>
@@ -343,21 +344,21 @@ inline bool vector_is_usable_start(const Eigen::VectorXd& x, int expected_size =
     return x.allFinite() && (expected_size < 0 || x.size() == expected_size);
 }
 
-inline Eigen::VectorXd finalize_warm_start_beta(const Eigen::VectorXd& smart_start,
+inline Eigen::VectorXd finalize_warm_start_beta(const Eigen::VectorXd& smart_cold_start,
                                            const Eigen::VectorXd& legacy_start,
                                            const FixedParamSpec& fixed_spec,
                                            bool use_smart) {
-    Eigen::VectorXd out = use_smart && vector_is_usable_start(smart_start, legacy_start.size()) ?
-        smart_start : legacy_start;
+    Eigen::VectorXd out = use_smart && vector_is_usable_start(smart_cold_start, legacy_start.size()) ?
+        smart_cold_start : legacy_start;
     return apply_fixed_values(out, fixed_spec);
 }
 
-inline Eigen::VectorXd ols_warm_start_beta(const Eigen::MatrixXd& X,
+inline Eigen::VectorXd ols_smart_cold_start_beta(const Eigen::MatrixXd& X,
                                       const Eigen::VectorXd& y) {
     return safe_ols_solve(X, y);
 }
 
-inline Eigen::VectorXd ols_warm_start_beta_on_log1p(const Eigen::MatrixXd& X,
+inline Eigen::VectorXd ols_smart_cold_start_beta_on_log1p(const Eigen::MatrixXd& X,
                                                const Eigen::VectorXd& y) {
     const int p = X.cols();
     if (y.size() != X.rows() || !y.allFinite()) return Eigen::VectorXd::Zero(p);
@@ -365,7 +366,7 @@ inline Eigen::VectorXd ols_warm_start_beta_on_log1p(const Eigen::MatrixXd& X,
     return safe_ols_solve(X, y.array().log1p().matrix());
 }
 
-inline Eigen::VectorXd ols_warm_start_beta_or_legacy(const Eigen::MatrixXd& X,
+inline Eigen::VectorXd ols_smart_cold_start_beta_or_legacy(const Eigen::MatrixXd& X,
                                                 const Eigen::VectorXd& y,
                                                 const Eigen::VectorXd& legacy_start,
                                                 const FixedParamSpec& fixed_spec) {
@@ -374,7 +375,7 @@ inline Eigen::VectorXd ols_warm_start_beta_or_legacy(const Eigen::MatrixXd& X,
     return finalize_warm_start_beta(beta_out, legacy_start, fixed_spec, ok);
 }
 
-inline Eigen::VectorXd ols_warm_start_beta_on_log1p_or_legacy(const Eigen::MatrixXd& X,
+inline Eigen::VectorXd ols_smart_cold_start_beta_on_log1p_or_legacy(const Eigen::MatrixXd& X,
                                                          const Eigen::VectorXd& y,
                                                          const Eigen::VectorXd& legacy_start,
                                                          const FixedParamSpec& fixed_spec) {
@@ -438,18 +439,21 @@ inline WeibullStart weibull_aft_start(const Eigen::MatrixXd& X,
         log_y[i] = std::log(y[row]);
     }
 
-    out.beta = safe_ols_solve(X_sub, log_y);
+    // R survival package (survreg) uses Method of Moments on the log scale:
+    // mean(log_y) + 0.572 and var(log_y) / 1.64
+    // Here we apply this to the OLS fit on uncensored data.
+    Eigen::VectorXd log_y_adj = log_y.array() + 0.5722;
+    out.beta = safe_ols_solve(X_sub, log_y_adj);
     if (!out.beta.allFinite()) {
         out.beta = Eigen::VectorXd::Zero(p);
         return out;
     }
 
-    Eigen::VectorXd resid = log_y - X_sub * out.beta;
+    Eigen::VectorXd resid = log_y_adj - X_sub * out.beta;
     const double denom = std::max(1.0, static_cast<double>(rows_used.size() - p));
-    const double std_resid = std::sqrt(std::max(0.0, resid.squaredNorm() / denom));
-    if (std::isfinite(std_resid) && std_resid > 0.0) {
-        out.log_sigma = std::log(std_resid * 0.7797);
-    }
+    const double std_resid_sq = std::max(0.0, resid.squaredNorm() / denom);
+    // survreg uses var / 1.645 for the squared scale
+    out.log_sigma = 0.5 * std::log(std::max(1e-8, std_resid_sq / 1.6449));
     return out;
 }
 
@@ -511,7 +515,7 @@ inline bool ordinal_start_is_usable(const OrdinalStart& start, int p, int n_alph
     return true;
 }
 
-inline OrdinalStart ordinal_start_from_ols(const Eigen::MatrixXd& X,
+inline OrdinalStart ordinal_smart_cold_start(const Eigen::MatrixXd& X,
                                            const Eigen::VectorXd& y,
                                            edi_ordinal::Link link) {
     OrdinalStart out;
@@ -533,12 +537,19 @@ inline OrdinalStart ordinal_start_from_ols(const Eigen::MatrixXd& X,
     const double eta_location = (eta.size() > 0 && eta.allFinite()) ? eta.mean() : 0.0;
     const double eta_sign = ordinal_eta_sign(link);
 
-    for (int k = 0; k < n_alpha; ++k) {
-        int count = 0;
-        for (int i = 0; i < n; ++i) {
-            if (y[i] <= levels[k]) ++count;
+    std::vector<int> counts(K, 0);
+    for (int i = 0; i < n; ++i) {
+        for (int k = 0; k < K; ++k) {
+            if (y[i] <= levels[k]) {
+                counts[k]++;
+                break;
+            }
         }
-        const double p_k = static_cast<double>(count) / static_cast<double>(n);
+    }
+    int cumulative_count = 0;
+    for (int k = 0; k < n_alpha; ++k) {
+        cumulative_count += counts[k];
+        const double p_k = static_cast<double>(cumulative_count) / static_cast<double>(n);
         out.alpha[k] = ordinal_link_quantile(link, p_k) - eta_sign * eta_location;
     }
     for (int k = 1; k < n_alpha; ++k) {
@@ -549,13 +560,13 @@ inline OrdinalStart ordinal_start_from_ols(const Eigen::MatrixXd& X,
     return out;
 }
 
-inline OrdinalStart ordinal_start_from_ols_or_legacy(const Eigen::MatrixXd& X,
+inline OrdinalStart ordinal_smart_cold_start_or_legacy(const Eigen::MatrixXd& X,
                                                       const Eigen::VectorXd& y,
                                                       edi_ordinal::Link link,
                                                       const OrdinalStart& legacy_start,
                                                       const FixedParamSpec& fixed_spec) {
     const int n_alpha = legacy_start.alpha.size();
-    OrdinalStart smart = ordinal_start_from_ols(X, y, link);
+    OrdinalStart smart = ordinal_smart_cold_start(X, y, link);
     Eigen::VectorXd params = ordinal_start_to_params(
         ordinal_start_is_usable(smart, X.cols(), n_alpha) ? smart : legacy_start
     );

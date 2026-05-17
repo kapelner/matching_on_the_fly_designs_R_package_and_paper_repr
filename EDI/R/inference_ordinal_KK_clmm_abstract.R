@@ -4,7 +4,7 @@
 InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = c(InferenceMixinKKPassThrough$public, list(
+	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula   Optional formula for covariate adjustment.
@@ -13,7 +13,8 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 		#'   back to \pkg{ordinal::clmm}.
 		#' @param verbose A flag indicating whether messages should be displayed.
 		#' @param harden Whether to apply robustness measures.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, harden = TRUE){
+		#' @param smart_cold_start_default   Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, harden = TRUE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
 			}
@@ -22,7 +23,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 					stop("Package 'ordinal' is required for ", class(self)[1], ". Please install it.")
 				}
 			}
-			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -65,9 +66,18 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 				}
 				NA_real_
 			}
+		},
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		}
 	)),
-	private = c(InferenceMixinKKPassThrough$private, list(
+	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		supports_likelihood_tests = function() FALSE,
 		use_rcpp = TRUE,
@@ -205,6 +215,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 					link          = private$clmm_link(),
 					estimate_only = estimate_only,
 					warm_start_params = start,
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_alpha + ncol(X_fit) + 1L),
 					eps_g         = 1e-3
 				),
 				error = function(e) NULL
@@ -218,6 +229,8 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 				private$cache_nonestimable_estimate("kk_clmm_rcpp_nonestimable")
 				return(invisible(NULL))
 			}
+			private$cached_mod = fit
+			private$set_fit_warm_start(as.numeric(fit$params), "params", fisher = fit$fisher_information)
 			private$cached_values$beta_hat_T = beta_hat_T
 			private$cached_values$df         = Inf
 			if (estimate_only) return(invisible(NULL))
@@ -334,8 +347,9 @@ InferenceOrdinalKKCLMM = R6::R6Class("InferenceOrdinalKKCLMM",
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param use_rcpp Use internal Rcpp implementation (default \code{TRUE}).
 		#' @param verbose Print messages?
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
-			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose)
+		#' @param smart_cold_start_default Use smart cold start values?
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = TRUE){
+			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 		}
 	),
 	private = list(
@@ -365,8 +379,9 @@ InferenceOrdinalKKCLMMProbit = R6::R6Class("InferenceOrdinalKKCLMMProbit",
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param use_rcpp Use internal Rcpp implementation (default \code{TRUE}).
 		#' @param verbose Print messages?
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
-			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose)
+		#' @param smart_cold_start_default Use smart cold start values?
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = TRUE){
+			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 		}
 	)
 )
@@ -394,8 +409,9 @@ InferenceOrdinalKKCLMMCauchit = R6::R6Class("InferenceOrdinalKKCLMMCauchit",
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param use_rcpp Use internal Rcpp implementation (default \code{TRUE}).
 		#' @param verbose Print messages?
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
-			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose)
+		#' @param smart_cold_start_default Use smart cold start values?
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = TRUE){
+			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 		}
 	),
 	private = list(
@@ -425,8 +441,9 @@ InferenceOrdinalKKCLMMCloglog = R6::R6Class("InferenceOrdinalKKCLMMCloglog",
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param use_rcpp Use internal Rcpp implementation (default \code{TRUE}).
 		#' @param verbose Print messages?
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE){
-			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose)
+		#' @param smart_cold_start_default Use smart cold start values?
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = TRUE){
+			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 		}
 	),
 	private = list(

@@ -27,15 +27,37 @@ InferenceIncidRiskDiff = R6::R6Class("InferenceIncidRiskDiff",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+		#' @param smart_cold_start_default   Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
 		},
+		#' @description Compute the treatment effect estimate.
+		#' @param estimate_only If TRUE, skip variance component calculations.
+		compute_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
+		},
+		#' @description Computes an approximate confidence interval.
+		#' @param alpha Confidence level.
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			private$shared(estimate_only = FALSE)
+			private$compute_z_or_t_ci_from_s_and_df(alpha)
+		},
+		#' @description Computes an approximate two-sided p-value.
+		#' @param delta Null treatment effect value.
+		compute_asymp_two_sided_pval = function(delta = 0){
+			private$shared(estimate_only = FALSE)
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+		},
+		#' @description Computes the treatment effect estimate for a bootstrap sample.
+		#' @param subject_or_block_weights Row weights for the bootstrap sample.
+		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
 			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
 			X_full = private$build_design_matrix()

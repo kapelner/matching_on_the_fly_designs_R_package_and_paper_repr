@@ -22,7 +22,7 @@
 InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullFrailtyIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = c(InferenceMixinKKPassThrough$public, list(
+	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -30,11 +30,12 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+		#' @param smart_cold_start_default   Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Returns the estimated treatment effect (log-time ratio).
@@ -68,6 +69,15 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
+		},
 		#' @description Duplicates the object while preserving caches.
 		#' @param verbose Whether the duplicate should be verbose.
 		#' @param make_fork_cluster Whether the duplicate should be allowed to create a fork cluster.
@@ -76,7 +86,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			inf_obj
 		}
 	)),
-	private = c(InferenceMixinKKPassThrough$private, list(
+	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		supports_likelihood_tests = function() FALSE,
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
@@ -309,7 +319,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibullFrailtyOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = c(InferenceMixinKKPassThrough$public, list(
+	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj A completed KK design object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -319,13 +329,14 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 		#' @param use_rcpp Whether to use the custom Rcpp likelihood optimizer.
 		#' @param verbose Whether to print progress messages.
 		#' @param optimization_alg The optimization algorithm to use. Default is dispatched via policy.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = NULL){
+		#' @param smart_cold_start_default   Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = NULL, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
 			private$use_rcpp = use_rcpp
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Returns the combined-likelihood estimate of the treatment effect.
@@ -363,11 +374,20 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 				private$assert_finite_se()
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+		},
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		}
 	)),
-	private = c(InferenceMixinKKPassThrough$private, list(
+	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
-			use_rcpp = TRUE,
+		use_rcpp = TRUE,
 			get_standard_error = function(){
 				private$shared_combined_likelihood(estimate_only = FALSE)
 				se = private$compute_standard_error_from_information_matrix()
@@ -394,12 +414,14 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 					j = 1L,
 					full_fit = private$cached_mod,
 					fit_null = function(delta, start = NULL){
+						ws_args = private$get_optimal_warm_start_config(length(ctx$start))
 						fast_weibull_frailty_cpp(
 							y = y,
 							dead = dead,
 							X = X_fit,
 							group_id = group_id,
-							warm_start_params = start %||% private$get_fit_warm_start_for_length("params", length(ctx$start)) %||% as.numeric(ctx$start),
+							warm_start_params = start %||% ws_args$start_params,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
 							estimate_only = FALSE,
 							n_gh = n_gh,
 							max_abs_log_sigma = max_abs_log_sigma,
@@ -463,13 +485,16 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 				return(invisible(NULL))
 			}
 			X_full = private$build_design_matrix()
+			n_params = ncol(X_full) + 2L
+			ws_args = private$get_optimal_warm_start_config(n_params)
 			res = tryCatch(
 				fast_weibull_frailty_cpp(
 					y               = private$y,
 					dead            = as.numeric(private$dead),
 					X               = X_full,
 					group_id        = as.integer(cluster_id),
-					warm_start_params = private$get_fit_warm_start("params"),
+					warm_start_params = ws_args$start_params,
+					warm_start_fisher_info = ws_args$warm_start_fisher_info,
 					estimate_only   = estimate_only,
 					n_gh            = 20L,
 					max_abs_log_sigma = 8.0,

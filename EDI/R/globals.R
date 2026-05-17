@@ -36,8 +36,31 @@ toggle_asserts = function(on = TRUE) {
 }
 # private method
 should_run_asserts = .assert_manager$should_run
+# Creates a fork cluster and caps OMP/BLAS threads on each worker to 1.
+# Returns the cluster without storing it — callers decide where it lives.
+make_configured_fork_cluster = function(n_cores) {
+  cl = parallel::makeForkCluster(n_cores)
+  tryCatch(
+    parallel::clusterCall(cl, function() {
+      Sys.setenv(
+        OMP_NUM_THREADS        = 1L,
+        MKL_NUM_THREADS        = 1L,
+        OPENBLAS_NUM_THREADS   = 1L,
+        GOTO_NUM_THREADS       = 1L,
+        VECLIB_MAXIMUM_THREADS = 1L,
+        NUMEXPR_NUM_THREADS    = 1L
+      )
+      options(mc.cores = 1L)
+      if (requireNamespace("data.table", quietly = TRUE)) data.table::setDTthreads(1L)
+      if (requireNamespace("fixest", quietly = TRUE)) suppressWarnings(try(fixest::setFixest_nthreads(1L), silent = TRUE))
+      invisible(NULL)
+    }),
+    error = function(e) invisible(NULL)
+  )
+  cl
+}
 #' Set the number of cores for parallelization
-#' 
+#'
 #' This function initializes a persistent parallel cluster (either a fork cluster
 #' on Unix-like systems or a mirai cluster on others) to be used by all Design
 #' and Inference objects. This avoids the overhead of creating clusters
@@ -117,27 +140,7 @@ set_num_cores = function(num_cores, force_mirai = FALSE) {
       )
     }
     # Unix-like system, use forking
-    cl = parallel::makeForkCluster(num_cores)
-    # Workers inherited OMP_NUM_THREADS=N; cap them at 1 to prevent N×N oversubscription.
-    # Fork workers run R-level bootstrap code; main-process Rcpp OMP functions bypass
-    # this via explicit omp_set_num_threads() and are unaffected.
-    tryCatch(
-      parallel::clusterCall(cl, function() {
-        Sys.setenv(
-          OMP_NUM_THREADS        = 1L,
-          MKL_NUM_THREADS        = 1L,
-          OPENBLAS_NUM_THREADS   = 1L,
-          GOTO_NUM_THREADS       = 1L,
-          VECLIB_MAXIMUM_THREADS = 1L,
-          NUMEXPR_NUM_THREADS    = 1L
-        )
-        options(mc.cores = 1L)
-        if (check_package_installed("data.table")) data.table::setDTthreads(1L)
-        if (check_package_installed("fixest")) suppressWarnings(try(fixest::setFixest_nthreads(1L), silent = TRUE))
-        invisible(NULL)
-      }),
-      error = function(e) invisible(NULL)
-    )
+    cl = make_configured_fork_cluster(num_cores)
     edi_env$global_fork_cluster = cl
   }
   
@@ -167,6 +170,7 @@ unset_num_cores = function() {
       tryCatch(mirai::daemons(0), error = function(e) invisible(NULL)) # Stop daemons
     }
     edi_env$global_mirai_num_cores = NULL
+    edi_env$mirai_has_been_used = FALSE
   }
   
   # Reset package threads to 1

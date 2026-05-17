@@ -9,6 +9,15 @@ make_seq_design_for_bayes_boot = function(response_type, y){
 	des
 }
 
+make_survival_design_for_bayes_boot = function(y, dead){
+	des = DesignSeqOneByOneBernoulli$new(n = length(y), response_type = "survival")
+	for (i in seq_along(y)) {
+		des$add_one_subject_to_experiment_and_assign(data.frame(x1 = i / 10))
+	}
+	des$add_all_subject_responses(ys = y, deads = dead)
+	des
+}
+
 make_kk_design_for_weighted_bayes_boot = function(response_type, y, n_pairs = 3L, n_single = 2L){
 	n = 2L * n_pairs + n_single
 	des = DesignSeqOneByOneKK14$new(n = n, response_type = response_type, verbose = FALSE)
@@ -112,8 +121,96 @@ test_that("next-wave weighted hooks return finite estimates on simple and g-comp
 	expect_true(is.finite(as.numeric(inf_ord$compute_estimate_with_bootstrap_weights(rep(1, n_ord)))))
 })
 
+test_that("selected second-wave weighted hooks recover unweighted estimates under equal weights", {
+	des_ols = make_seq_design_for_bayes_boot("continuous", c(0, 1, 2, 3, 4, 5, 6, 7))
+	inf_ols = InferenceContinOLS$new(des_ols)
+	n_ols = des_ols$get_n()
+	inf_ols$.__enclos_env__$private$current_bayesian_bootstrap_context = list(
+		row_to_unit = seq_len(n_ols),
+		unit_group_id = rep(1L, n_ols),
+		n_units = n_ols
+	)
+	expect_equal(
+		as.numeric(inf_ols$compute_estimate_with_bootstrap_weights(rep(1, n_ols))),
+		as.numeric(inf_ols$compute_estimate()),
+		tolerance = 1e-8
+	)
+
+	des_lin = make_seq_design_for_bayes_boot("continuous", c(0, 1, 1.5, 2.5, 4, 5, 5.5, 7))
+	inf_lin = InferenceContinLin$new(des_lin)
+	n_lin = des_lin$get_n()
+	inf_lin$.__enclos_env__$private$current_bayesian_bootstrap_context = list(
+		row_to_unit = seq_len(n_lin),
+		unit_group_id = rep(1L, n_lin),
+		n_units = n_lin
+	)
+	expect_equal(
+		as.numeric(inf_lin$compute_estimate_with_bootstrap_weights(rep(1, n_lin))),
+		as.numeric(inf_lin$compute_estimate()),
+		tolerance = 1e-8
+	)
+
+	des_surv = make_survival_design_for_bayes_boot(
+		y = c(1.2, 2.4, 1.8, 3.1, 2.7, 4.0, 3.3, 4.5),
+		dead = c(1L, 1L, 0L, 1L, 0L, 1L, 1L, 0L)
+	)
+	n_surv = des_surv$get_n()
+	ctx_surv = list(
+		row_to_unit = seq_len(n_surv),
+		unit_group_id = rep(1L, n_surv),
+		n_units = n_surv
+	)
+
+	inf_logrank = InferenceSurvivalLogRank$new(des_surv)
+	inf_logrank$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_surv
+	expect_equal(
+		as.numeric(inf_logrank$compute_estimate_with_bootstrap_weights(rep(1, n_surv))),
+		as.numeric(inf_logrank$compute_estimate()),
+		tolerance = 1e-8
+	)
+
+	inf_gehan = InferenceSurvivalGehanWilcox$new(des_surv)
+	inf_gehan$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_surv
+	expect_equal(
+		as.numeric(inf_gehan$compute_estimate_with_bootstrap_weights(rep(1, n_surv))),
+		as.numeric(inf_gehan$compute_estimate()),
+		tolerance = 1e-8
+	)
+})
+
+test_that("selected ordinal and survival second-wave hooks return finite weighted estimates", {
+	des_ord = make_seq_design_for_bayes_boot("ordinal", c(1L, 2L, 1L, 3L, 2L, 1L, 3L, 2L))
+	inf_ord = InferenceOrdinalPropOddsRegr$new(des_ord)
+	n_ord = des_ord$get_n()
+	inf_ord$.__enclos_env__$private$current_bayesian_bootstrap_context = list(
+		row_to_unit = seq_len(n_ord),
+		unit_group_id = rep(1L, n_ord),
+		n_units = n_ord
+	)
+	expect_true(is.finite(as.numeric(inf_ord$compute_estimate_with_bootstrap_weights(rep(1, n_ord)))))
+
+	des_surv = make_survival_design_for_bayes_boot(
+		y = c(1.2, 2.4, 1.8, 3.1, 2.7, 4.0, 3.3, 4.5),
+		dead = c(1L, 1L, 0L, 1L, 0L, 1L, 1L, 0L)
+	)
+	n_surv = des_surv$get_n()
+	ctx_surv = list(
+		row_to_unit = seq_len(n_surv),
+		unit_group_id = rep(1L, n_surv),
+		n_units = n_surv
+	)
+
+	inf_logrank = InferenceSurvivalLogRank$new(des_surv)
+	inf_logrank$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_surv
+	expect_true(is.finite(as.numeric(inf_logrank$compute_estimate_with_bootstrap_weights(rep(1, n_surv)))))
+
+	inf_gehan = InferenceSurvivalGehanWilcox$new(des_surv)
+	inf_gehan$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_surv
+	expect_true(is.finite(as.numeric(inf_gehan$compute_estimate_with_bootstrap_weights(rep(1, n_surv)))))
+})
+
 test_that("next-wave weighted hooks return finite estimates on KK GEE paths", {
-	skip_if_not_installed("geepack")
+	skip_if_not_installed("multgee")
 
 	des_incid = make_kk_design_for_weighted_bayes_boot("incidence", c(0L, 1L, 0L, 1L, 1L, 0L, 1L, 0L))
 	inf_incid = InferenceIncidKKGEE$new(des_incid, use_rcpp = TRUE, verbose = FALSE)

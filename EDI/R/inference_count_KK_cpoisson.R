@@ -23,7 +23,8 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 		#'   design's imputed covariates.
 		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE, smart_default = TRUE){
+		#' @param smart_cold_start_default   Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 				assertFlag(use_rcpp)
@@ -34,7 +35,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 				}
 			}
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (inherits(des_obj, "DesignFixedBinaryMatch")){
 				des_obj$.__enclos_env__$private$ensure_matching_structure_computed()
 			}
@@ -85,6 +86,13 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 				}
 				NA_real_
 			}
+		},
+		#' @description Computes the treatment effect estimate for a bootstrap sample.
+		#' @param subject_or_block_weights Row weights for the bootstrap sample.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			private$shared_combined_bootstrap(subject_or_block_weights, estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
 		}
 	),
 	private = list(
@@ -369,7 +377,7 @@ InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoi
 InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdlePoissonOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = c(InferenceMixinKKPassThrough$public, list(
+	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object.
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use our internal Rcpp
@@ -380,13 +388,14 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 		#'   design's imputed covariates.
 		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
 		#' @param verbose A flag indicating whether messages should be displayed.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE, smart_default = TRUE){
+		#' @param smart_cold_start_default   Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 				assertFlag(use_rcpp)
 			}
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$use_rcpp = use_rcpp
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
@@ -433,13 +442,29 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 				return(private$fallback_bootstrap_pval(delta = delta))
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+		},
+		#' @description Computes the treatment effect estimate for a bootstrap sample.
+		#' @param subject_or_block_weights Row weights for the bootstrap sample.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			private$shared_combined_bootstrap(subject_or_block_weights, estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
+		},
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		}
 	)),
-	private = c(InferenceMixinKKPassThrough$private, list(
+	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		use_rcpp = TRUE,
-			max_abs_reasonable_coef = 1e4,
-			warn_bootstrap_fallback_once = function(){
+		max_abs_reasonable_coef = 1e4,
+		warn_bootstrap_fallback_once = function(){
 				if (!isTRUE(private$cached_values$warned_bootstrap_se_unavailable)) {
 					private$cached_values$warned_bootstrap_se_unavailable = TRUE
 					warning("KK hurdle-Poisson combined-likelihood: falling back to bootstrap because standard error is unavailable.")
@@ -492,7 +517,7 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 							j_T = j_T,
 							warm_start_params = warm_start_params,
 							warm_start_fisher_info = warm_fisher,
-							smart_start = private$smart_default,
+							smart_cold_start = private$smart_cold_start_default,
 							estimate_only = FALSE,
 							n_gh = n_gh,
 							optimization_alg = private$optimization_alg,
@@ -703,7 +728,7 @@ InferenceAbstractKKHurdlePoissonOneLik = R6::R6Class("InferenceAbstractKKHurdleP
 InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoissonCPoissonIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = c(InferenceMixinKKPassThrough$public, list(
+	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -711,11 +736,12 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
+		#' @param smart_cold_start_default   Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -752,6 +778,15 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
+		},
 		#' @description Duplicates the object while preserving caches.
 		#' @param verbose Whether the duplicate should be verbose.
 		#' @param make_fork_cluster Whether the duplicate should be allowed to create a fork cluster.
@@ -760,7 +795,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 			inf_obj
 		}
 	)),
-	private = c(InferenceMixinKKPassThrough$private, list(
+	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		supports_likelihood_tests = function() FALSE,
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
@@ -902,7 +937,7 @@ InferenceAbstractKKPoissonCPoissonIVWC = R6::R6Class("InferenceAbstractKKPoisson
 InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoissonCPoissonOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = c(InferenceMixinKKPassThrough$public, list(
+	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -910,11 +945,12 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
+		#' @param smart_cold_start_default   Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -957,6 +993,22 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
+		#' @description Computes the treatment effect estimate for a bootstrap sample.
+		#' @param subject_or_block_weights Row weights for the bootstrap sample.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			private$shared_combined_bootstrap(subject_or_block_weights, estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
+		},
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
+		},
 		#' @description Duplicates the object while preserving caches.
 		#' @param verbose Whether the duplicate should be verbose.
 		#' @param make_fork_cluster Whether the duplicate should be allowed to create a fork cluster.
@@ -965,7 +1017,7 @@ InferenceAbstractKKPoissonCPoissonOneLik = R6::R6Class("InferenceAbstractKKPoiss
 			inf_obj
 		}
 	)),
-	private = c(InferenceMixinKKPassThrough$private, list(
+	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Re-read design variables which might have been transformed during randomization
@@ -1297,8 +1349,16 @@ InferenceCountKKHurdlePoissonIVWC = R6::R6Class("InferenceCountKKHurdlePoissonIV
 		#'   the matched-pair component.
 		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE, smart_default = TRUE){
-			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, optimization_alg = optimization_alg, verbose = verbose, smart_default = smart_default)
+		#' @param smart_cold_start_default   Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
+			super$initialize(
+				des_obj,
+				model_formula = model_formula,
+				use_rcpp = use_rcpp,
+				optimization_alg = optimization_alg,
+				verbose = verbose,
+				smart_cold_start_default = smart_cold_start_default
+			)
 		}
 	)
 )
@@ -1329,8 +1389,9 @@ InferenceCountKKCPoissonIVWC = R6::R6Class("InferenceCountKKCPoissonIVWC",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
-			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
+		#' @param smart_cold_start_default   Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 		}
 	)
 )
@@ -1361,8 +1422,9 @@ InferenceCountKKCPoissonOneLik = R6::R6Class("InferenceCountKKCPoissonOneLik",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
-			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
+		#' @param smart_cold_start_default   Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 		}
 	)
 )

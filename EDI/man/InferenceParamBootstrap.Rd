@@ -10,28 +10,24 @@ Parametric-Bootstrap-Capable Likelihood Inference
 }
 \details{
 Intermediate abstract base for the subset of likelihood-backed inference
-families that are plausible future targets for parametric null-bootstrap
+families that are plausible targets for parametric null-bootstrap
 likelihood-ratio calibration.
 
-This class intentionally adds only a narrow abstraction layer today:
-
-- it keeps `InferenceAsympLik` as the universal likelihood base
-- it provides a distinct inheritance node for families that may support
-  likelihood-based parametric bootstrap
-- it leaves the actual null-simulation machinery abstract / unimplemented
-
-Families with highly bespoke partial-likelihood, quadrature, frailty, copula,
-or custom combined-likelihood geometry can remain direct children of
-`InferenceAsympLik`.
+This class sits between \code{InferenceAsympLik} and
+\code{InferenceAsympLikStdModCache} in the hierarchy.  Families with highly
+bespoke partial-likelihood, quadrature, frailty, copula, or custom
+combined-likelihood geometry remain direct children of
+\code{InferenceAsympLik} and do not pass through here.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceParamBootstrap}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceParamBootstrap}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceParamBootstrap-supports_lik_ratio_param_bootstrap}{\code{InferenceParamBootstrap$supports_lik_ratio_param_bootstrap()}}
+\item \href{#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_two_sided_pval}{\code{InferenceParamBootstrap$compute_lik_ratio_bootstrap_two_sided_pval()}}
+\item \href{#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_confidence_interval}{\code{InferenceParamBootstrap$compute_lik_ratio_bootstrap_confidence_interval()}}
 \item \href{#method-InferenceParamBootstrap-clone}{\code{InferenceParamBootstrap$clone()}}
 }
 }
@@ -97,14 +93,71 @@ or custom combined-likelihood geometry can remain direct children of
 </details>
 }}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceParamBootstrap-supports_lik_ratio_param_bootstrap"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceParamBootstrap-supports_lik_ratio_param_bootstrap}{}}}
-\subsection{Method \code{supports_lik_ratio_param_bootstrap()}}{
-Placeholder public capability query for future parametric-bootstrap LR support.
+\if{html}{\out{<a id="method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_two_sided_pval}{}}}
+\subsection{Method \code{compute_lik_ratio_bootstrap_two_sided_pval()}}{
+Bootstrap-calibrated likelihood-ratio two-sided p-value.
+
+Fits the null model at \code{delta}, simulates \code{B} datasets from
+that fitted null, refits unrestricted and null models on each, and
+returns the empirical tail probability of the observed LR statistic.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceParamBootstrap$supports_lik_ratio_param_bootstrap()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceParamBootstrap$compute_lik_ratio_bootstrap_two_sided_pval(
+  delta = 0,
+  B = 199
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect. Default 0.}
+
+\item{\code{B}}{Number of bootstrap replicates. Default 199.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A scalar p-value, or \code{NA_real_} if the computation fails.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_confidence_interval}{}}}
+\subsection{Method \code{compute_lik_ratio_bootstrap_confidence_interval()}}{
+Bootstrap-calibrated likelihood-ratio confidence interval.
+
+Inverts \code{compute_lik_ratio_bootstrap_two_sided_pval} via a
+bracket-and-bisect search seeded with the Wald interval.  Each p-value
+evaluation costs \code{B} bootstrap refits, so this method is
+substantially more expensive than the p-value alone.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceParamBootstrap$compute_lik_ratio_bootstrap_confidence_interval(
+  alpha = 0.05,
+  B = 199
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level. Default 0.05.}
+
+\item{\code{B}}{Bootstrap replicates per p-value evaluation. Default 199.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Named two-element numeric vector with the confidence-interval bounds.
+Simulate a bootstrap dataset under the fitted null likelihood and return
+a minimal spec list for refitting.
+
+Must be overridden by families that set supports_lik_ratio_param_bootstrap()
+to TRUE.  The returned list must contain at least:
+  - full_fit:  unrestricted fit on the simulated data
+  - fit_null:  function(delta, start) returning a constrained fit
+  - neg_loglik: function(fit) returning the neg-log-likelihood
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceParamBootstrap-clone"></a>}}

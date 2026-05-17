@@ -27,12 +27,13 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
+		#' @param smart_cold_start_default Whether to use smart cold start values by default.
 		#' @return A new \code{InferenceIncidenceExactBinomial} object.
-		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -48,6 +49,15 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 		#' @return The treatment estimate.
 		compute_estimate = function(estimate_only = FALSE){
 			private$get_exact_binomial_log_or_estimate()
+		},
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		}
 	),
 	private = list(

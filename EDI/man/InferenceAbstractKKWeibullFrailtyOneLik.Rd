@@ -16,16 +16,16 @@ covariate slopes beta_xs are shared across all subjects.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceAbstractKKWeibullFrailtyOneLik}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceAbstractKKWeibullFrailtyOneLik}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceAbstractKKWeibullFrailtyOneLik-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceAbstractKKWeibullFrailtyOneLik$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferenceAbstractKKWeibullFrailtyOneLik-new}{\code{InferenceAbstractKKWeibullFrailtyOneLik$new()}}
 \item \href{#method-InferenceAbstractKKWeibullFrailtyOneLik-compute_estimate}{\code{InferenceAbstractKKWeibullFrailtyOneLik$compute_estimate()}}
 \item \href{#method-InferenceAbstractKKWeibullFrailtyOneLik-compute_asymp_confidence_interval}{\code{InferenceAbstractKKWeibullFrailtyOneLik$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAbstractKKWeibullFrailtyOneLik-compute_asymp_two_sided_pval}{\code{InferenceAbstractKKWeibullFrailtyOneLik$compute_asymp_two_sided_pval()}}
+\item \href{#method-InferenceAbstractKKWeibullFrailtyOneLik-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceAbstractKKWeibullFrailtyOneLik$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferenceAbstractKKWeibullFrailtyOneLik-clone}{\code{InferenceAbstractKKWeibullFrailtyOneLik$clone()}}
 }
 }
@@ -86,20 +86,6 @@ covariate slopes beta_xs are shared across all subjects.
 </details>
 }}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyOneLik-approximate_bootstrap_distribution_beta_hat_T"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyOneLik-approximate_bootstrap_distribution_beta_hat_T}{}}}
-\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyOneLik$approximate_bootstrap_distribution_beta_hat_T(
-  B = 501,
-  show_progress = TRUE,
-  debug = FALSE,
-  bootstrap_type = NULL
-)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyOneLik-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyOneLik-new}{}}}
 \subsection{Method \code{new()}}{
@@ -110,7 +96,8 @@ Initialize the inference object.
   model_formula = NULL,
   use_rcpp = TRUE,
   verbose = FALSE,
-  optimization_alg = NULL
+  optimization_alg = NULL,
+  smart_cold_start_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -129,6 +116,8 @@ design's imputed covariates.}
 \item{\code{verbose}}{Whether to print progress messages.}
 
 \item{\code{optimization_alg}}{The optimization algorithm to use. Default is dispatched via policy.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
 }
 \if{html}{\out{</div>}}
 }
@@ -184,6 +173,37 @@ Returns a 2-sided p-value for H0: beta_T = delta.
 \item{\code{delta}}{Null treatment effect value.}
 }
 \if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyOneLik-approximate_bootstrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyOneLik-approximate_bootstrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyOneLik$approximate_bootstrap_distribution_beta_hat_T(
+  B = 501,
+  show_progress = TRUE,
+  debug = FALSE,
+  bootstrap_type = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
 }
 }
 \if{html}{\out{<hr>}}

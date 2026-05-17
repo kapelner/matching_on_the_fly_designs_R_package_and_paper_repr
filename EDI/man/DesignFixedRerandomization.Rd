@@ -90,6 +90,7 @@ Initialize a rerandomization fixed experimental design
   response_type,
   prob_T = 0.5,
   obj_val_cutoff = NULL,
+  prop_acceptable = NULL,
   objective = "mahal_dist",
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
@@ -106,7 +107,9 @@ Initialize a rerandomization fixed experimental design
 
 \item{\code{prob_T}}{The probability of the treatment assignment.}
 
-\item{\code{obj_val_cutoff}}{The maximum allowable objective value.}
+\item{\code{obj_val_cutoff}}{The maximum allowable objective value. Cannot be specified together with prop_acceptable.}
+
+\item{\code{prop_acceptable}}{The proportion of randomizations to accept (draws r/prop_acceptable total, returns r lowest). Cannot be specified together with obj_val_cutoff.}
 
 \item{\code{objective}}{The objective function to use. Default is "mahal_dist".}
 

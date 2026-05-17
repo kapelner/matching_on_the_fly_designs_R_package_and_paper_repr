@@ -2,26 +2,15 @@
 % Please edit documentation in R/inference_incidence_KK_clogit.R
 \name{InferenceAbstractKKClogitIVWC}
 \alias{InferenceAbstractKKClogitIVWC}
-\title{Abstract class for Conditional Logistic Compound Inference for KK Designs}
+\title{Abstract class for Inverse-Variance Weighted Combined Clogit Inference}
 \description{
-Abstract class for Conditional Logistic Compound Inference for KK Designs
+Abstract class for Inverse-Variance Weighted Combined Clogit Inference
 
-Abstract class for Conditional Logistic Compound Inference for KK Designs
-}
-\details{
-This class implements a compound estimator for KK matching-on-the-fly designs with
-binary (incidence) responses using conditional logistic regression for matched
-pairs and ordinary logistic regression for the reservoir. The two treatment-effect
-estimates (on the log-odds scale) are combined by inverse-variance weighting.
-
-
-The matched-pair component uses the conditional logistic likelihood, which
-implicitly accounts for pair-level effects. For the reservoir, standard logistic
-regression is used. Both are combined via inverse-variance combination (IVWC).
+Abstract class for Inverse-Variance Weighted Combined Clogit Inference
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceAbstractKKClogitIVWC}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceAbstractKKClogitIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -30,7 +19,6 @@ regression is used. Both are combined via inverse-variance combination (IVWC).
 \item \href{#method-InferenceAbstractKKClogitIVWC-compute_estimate}{\code{InferenceAbstractKKClogitIVWC$compute_estimate()}}
 \item \href{#method-InferenceAbstractKKClogitIVWC-compute_asymp_confidence_interval}{\code{InferenceAbstractKKClogitIVWC$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAbstractKKClogitIVWC-compute_asymp_two_sided_pval}{\code{InferenceAbstractKKClogitIVWC$compute_asymp_two_sided_pval()}}
-\item \href{#method-InferenceAbstractKKClogitIVWC-duplicate}{\code{InferenceAbstractKKClogitIVWC$duplicate()}}
 \item \href{#method-InferenceAbstractKKClogitIVWC-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceAbstractKKClogitIVWC$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferenceAbstractKKClogitIVWC-clone}{\code{InferenceAbstractKKClogitIVWC$clone()}}
 }
@@ -40,6 +28,7 @@ regression is used. Both are combined via inverse-variance combination (IVWC).
 <ul>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_analysis_data"><a href='../../EDI/html/Inference.html#method-Inference-get_analysis_data'><code>EDI::Inference$get_analysis_data()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_covariates"><a href='../../EDI/html/Inference.html#method-Inference-get_covariates'><code>EDI::Inference$get_covariates()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_design_object"><a href='../../EDI/html/Inference.html#method-Inference-get_design_object'><code>EDI::Inference$get_design_object()</code></a></span></li>
@@ -94,19 +83,20 @@ regression is used. Both are combined via inverse-variance combination (IVWC).
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClogitIVWC-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize the inference object.
+Initialize
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClogitIVWC$new(
   des_obj,
   model_formula = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  smart_cold_start_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+\item{\code{des_obj}}{A completed \code{Design} object.}
 
 \item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
 the formula from the design object is used and its pre-computed design matrix is
@@ -114,6 +104,8 @@ reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
 }
 \if{html}{\out{</div>}}
 }
@@ -122,7 +114,7 @@ design's imputed covariates.}
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitIVWC-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClogitIVWC-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
-Returns the estimated treatment effect (log-odds ratio).
+Compute the treatment effect estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClogitIVWC$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
@@ -139,7 +131,7 @@ Returns the estimated treatment effect (log-odds ratio).
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitIVWC-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClogitIVWC-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes the asymptotic confidence interval.
+Computes an approximate confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClogitIVWC$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
@@ -147,8 +139,7 @@ Computes the asymptotic confidence interval.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The confidence level in the computed
-confidence interval is 1 - \code{alpha}. The default is 0.05.}
+\item{\code{alpha}}{Confidence level.}
 }
 \if{html}{\out{</div>}}
 }
@@ -157,7 +148,7 @@ confidence interval is 1 - \code{alpha}. The default is 0.05.}
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitIVWC-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClogitIVWC-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
-Computes the asymptotic p-value.
+Computes an approximate two-sided p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClogitIVWC$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
@@ -165,29 +156,7 @@ Computes the asymptotic p-value.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{The null difference to test against. Default is 0.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractKKClogitIVWC-duplicate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractKKClogitIVWC-duplicate}{}}}
-\subsection{Method \code{duplicate()}}{
-Duplicates the object while preserving caches.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClogitIVWC$duplicate(
-  verbose = FALSE,
-  make_fork_cluster = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{verbose}}{Whether the duplicate should be verbose.}
-
-\item{\code{make_fork_cluster}}{Whether the duplicate should be allowed to create a fork cluster.}
+\item{\code{delta}}{Null treatment effect value.}
 }
 \if{html}{\out{</div>}}
 }
@@ -196,6 +165,7 @@ Duplicates the object while preserving caches.
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitIVWC-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClogitIVWC-approximate_bootstrap_distribution_beta_hat_T}{}}}
 \subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClogitIVWC$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
@@ -205,6 +175,22 @@ Duplicates the object while preserving caches.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitIVWC-clone"></a>}}

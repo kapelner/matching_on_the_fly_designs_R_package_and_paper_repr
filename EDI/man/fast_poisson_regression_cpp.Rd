@@ -25,7 +25,7 @@ fast_poisson_regression_cpp(
 
 \item{warm_start_beta}{Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.}
 
-\item{smart_cold_start}{Logical. If TRUE, use an initial OLS-based guess when no \code{warm_start_beta} is provided.}
+\item{smart_cold_start}{Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.}
 
 \item{maxit}{Maximum number of iterations.}
 

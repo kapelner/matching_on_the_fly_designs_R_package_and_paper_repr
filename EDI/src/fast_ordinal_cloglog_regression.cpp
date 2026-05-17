@@ -66,7 +66,7 @@ Eigen::MatrixXd get_ordinal_cloglog_regression_hessian_cpp(const Eigen::MatrixXd
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses.
 //' @param warm_start_params Optional starting values for [alpha, beta]. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param optimization_alg Optimization algorithm.
@@ -107,7 +107,7 @@ List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X,
         }
         legacy_start.beta = VectorXd::Zero(p);
         params = ordinal_start_to_params(
-            smart_cold_start ? ordinal_start_from_ols_or_legacy(X, y, edi_ordinal::Link::Cloglog, legacy_start, fixed_spec)
+            smart_cold_start ? ordinal_smart_cold_start_or_legacy(X, y, edi_ordinal::Link::Cloglog, legacy_start, fixed_spec)
                         : legacy_start
         );
     }
@@ -141,7 +141,7 @@ List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X,
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses.
 //' @param warm_start_params Optional starting values for [alpha, beta]. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param optimization_alg Optimization algorithm.
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.

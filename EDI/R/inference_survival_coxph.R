@@ -27,14 +27,14 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 		#'   design's imputed covariates.
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use internal Rcpp.
 		#' @param verbose Whether to print progress messages.
-		#' @param smart_default Whether to use smart optimizer start values by default.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_default = TRUE){
+		#' @param smart_cold_start_default Whether to use smart cold start values by default.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(use_rcpp)
 			}
-			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_default = smart_default)
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 			
 			
 			private$use_rcpp = use_rcpp
@@ -70,7 +70,7 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X)),
 							fixed_idx = 1L,
 							fixed_values = delta,
-							smart_start = private$smart_default,
+							smart_cold_start = private$smart_cold_start_default,
 							estimate_only = TRUE
 						),
 						error = function(e) NULL
@@ -111,7 +111,7 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 						estimate_only = estimate_only,
 						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
 						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
-						smart_start = private$smart_default
+						smart_cold_start = private$smart_cold_start_default
 					),
 					error = function(e) NULL
 				)

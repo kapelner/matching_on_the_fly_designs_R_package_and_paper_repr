@@ -2,17 +2,16 @@
 
 ## Scope
 
-This report covers the package’s **likelihood-backed inference paths**, meaning
+This report covers the package's **likelihood-backed inference paths**, meaning
 the concrete classes that participate in the `get_likelihood_test_spec()`
 surface used by `InferenceAsympLik` for likelihood-ratio tests and confidence
 interval inversion.
 
 The question is:
 
-> How hard would it be to implement a
-> `compute_lik_ratio_bootstrap_two_sided_pval(...)` method, and the
-> corresponding inverted confidence interval, across the likelihood-backed
-> inference paths?
+> How hard would it be to implement a parametric-bootstrap-calibrated LR test
+> and the corresponding inverted confidence interval across the
+> likelihood-backed inference paths?
 
 I use three labels:
 
@@ -28,30 +27,53 @@ This is an implementation audit, not a statement about theoretical possibility.
 
 ## Short Answer
 
-Bootstrap-calibrated LR is a promising idea for this repo, but the current
-bootstrap support only gets you part of the way there.
+Bootstrap-calibrated LR is a promising idea for this repo, and the class
+hierarchy now has the right structural home for it.
 
 What the package already has:
 
-- bootstrap infrastructure
-- reusable bootstrap workers
+- `InferenceParamBootstrap` as a dedicated intermediate class for families that
+  may support parametric bootstrap LR calibration
+- bootstrap infrastructure and reusable bootstrap workers
 - LR test plumbing via `get_likelihood_test_spec()`
-- constrained null refits
-- warm-start and memoization support
+- constrained null refits with warm-start and memoization support
 
 What it does **not** yet have:
 
+- actual null-simulation machinery in `InferenceParamBootstrap` (the current
+  stub just returns `FALSE` from `supports_lik_ratio_param_bootstrap()`)
 - a generic hook to **simulate new responses under the fitted null likelihood**
 - reusable worker support for **parametric null simulation**, not just
   resampling observed rows
-- a clear generative strategy for partial-likelihood and custom hybrid paths
 
 So:
 
-- implementing the **base framework** in `InferenceAsympLik` is **moderate**
+- the **structural foundation** in `InferenceParamBootstrap` is already in place
 - implementing it across the **simple generative likelihood families** is
-  realistic
-- implementing it across **all** current LR paths is **hard**
+  realistic, since they all inherit via `InferenceAsympLikStdModCache`
+- implementing it across **all** current LR paths is **hard** and intentionally
+  out of scope for `InferenceParamBootstrap`
+
+## Architecture
+
+The inheritance chain relevant to parametric bootstrap is:
+
+```
+InferenceAsympLik
+├── InferenceParamBootstrap            ← bootstrap-capable families live here
+│   └── InferenceAsympLikStdModCache   ← GLM / KM standard-cache families
+│       └── (Easy / Borderline concrete classes)
+└── (direct InferenceAsympLik children) ← Difficult families; bypass InferenceParamBootstrap
+```
+
+The **Difficult** families (Cox, stratified Cox, combined-design Cox, frailty,
+copula, clogit-plus-GLMM hybrid, custom combined-likelihood paths) remain direct
+children of `InferenceAsympLik` and never pass through
+`InferenceParamBootstrap`. This is by design: the intermediate class only exists
+where parametric null simulation is a realistic long-run goal.
+
+All **Easy** and most **Borderline** families already sit under
+`InferenceParamBootstrap` via `InferenceAsympLikStdModCache`.
 
 ## What A Bootstrap-Calibrated LR Test Needs
 
@@ -73,7 +95,7 @@ A bootstrap-calibrated LR test then:
 3. recomputes the same LR statistic on each bootstrap dataset
 4. estimates the p-value by the empirical tail probability
 
-That is different from the package’s current bootstrap workflows, which are
+That is different from the package's current bootstrap workflows, which are
 primarily:
 
 - case/design resampling of observed rows
@@ -82,11 +104,11 @@ primarily:
 Those are useful building blocks, but they are not yet a parametric null
 bootstrap.
 
-## What Can Be Centralized
+## What Can Be Centralized In InferenceParamBootstrap
 
-The shared outer logic can live in `InferenceAsympLik`.
+The shared outer logic can live in `InferenceParamBootstrap`.
 
-The base class already knows how to:
+`InferenceParamBootstrap` inherits `InferenceAsympLik` and already knows how to:
 
 - obtain `spec = get_likelihood_test_spec()`
 - evaluate the observed full and null neg-log-likelihoods
@@ -108,18 +130,11 @@ The generic part should:
 5. compute `LR*`
 6. return the empirical tail probability
 
-The missing piece is a family-specific hook like:
+The missing piece is a family-specific hook to be defined on
+`InferenceParamBootstrap` (with default `NULL` return):
 
 ```r
 simulate_under_lik_null = function(spec, delta, null_fit, worker_state){
-  NULL
-}
-```
-
-or equivalently:
-
-```r
-generate_bootstrap_lik_data_from_null = function(delta, null_fit, worker_state){
   NULL
 }
 ```
@@ -143,9 +158,9 @@ candidate `delta` visited during inversion you may need:
 So if the p-value is feasible, the CI is conceptually straightforward but
 computationally much heavier.
 
-This means the report’s difficulty labels should be read as:
+This means the report's difficulty labels should be read as:
 
-- “easy enough to support bootstrap-LR p-values first”
+- "easy enough to support bootstrap-LR p-values first"
 - with CI inversion being the same method but at significantly higher cost
 
 ## Main Architectural Gap
@@ -157,15 +172,17 @@ units**:
 - `load_bootstrap_sample_into_worker(...)`
 - `bootstrap_subset_inference(...)`
 
-Bootstrap-calibrated LR needs a second branch of worker logic:
+Bootstrap-calibrated LR needs a second branch of worker logic inside
+`InferenceParamBootstrap`:
 
 - duplicate the inference object / design structure once
 - keep `X`, `w`, and any matching/blocking structure fixed
 - replace the response under a null-data simulator
 - recompute unrestricted and constrained likelihood fits
 
-So the biggest missing abstraction is not LR refitting. It is **null-data
-simulation under each likelihood family**.
+So the biggest missing abstraction is not LR refitting (already in place via
+`InferenceAsympLik`). It is **null-data simulation under each likelihood
+family**, which is the gap that `InferenceParamBootstrap` needs to fill.
 
 ## Audit Table
 
@@ -181,7 +198,7 @@ simulation under each likelihood family**.
 | `InferenceIncidBinomialIdentityRiskDiff` | `fast_identity_binomial_regression_cpp` | **Easy** | Same comment: if the constrained fit returns valid probabilities, null simulation is direct. |
 | `InferenceIncidKKClogitOneLik` | stacked conditional-logistic + reservoir-logistic path via `fast_logistic_regression_with_var_cpp` | **Borderline** | The combined likelihood is still generative enough to simulate, but the data-generation interpretation is custom. |
 | `InferenceIncidKKGLMM` | `fast_logistic_glmm_cpp` | **Borderline** | Parametric simulation is possible, but requires drawing random effects and respecting the GH-approximated likelihood structure. |
-| `InferenceIncidKKClogitPlusGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | **Difficult** | Hybrid conditional-logit plus GLMM null simulation is too bespoke for a clean first rollout. |
+| `InferenceIncidKKClogitPlusGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | **Difficult** | Hybrid conditional-logit plus GLMM null simulation is too bespoke for a clean first rollout. Remains a direct `InferenceAsympLik` child. |
 
 ### Count
 
@@ -196,8 +213,8 @@ simulation under each likelihood family**.
 | `InferenceCountZeroInflatedNegBin` | `fast_zinb_cpp` | **Borderline** | Generative, but mixture plus dispersion makes the simulator and refits more bespoke. |
 | `InferenceCountHurdleNegBin` | `fast_hurdle_negbin_cpp` | **Borderline** | Same as above. |
 | `InferenceCountKKGLMM` | `fast_poisson_glmm_cpp` | **Borderline** | Parametric null simulation is plausible but random effects make it materially more complex. |
-| `InferenceCountKKHurdlePoissonOneLik` | `fast_hurdle_poisson_glmm_cpp` | **Difficult** | Hurdle plus GLMM structure is too custom for a broad first implementation. |
-| `InferenceCountKKCPoissonOneLik` | `fast_cpoisson_combined_with_var_cpp` | **Difficult** | Custom combined likelihood with unclear generic null-simulation semantics. |
+| `InferenceCountKKHurdlePoissonOneLik` | `fast_hurdle_poisson_glmm_cpp` | **Difficult** | Hurdle plus GLMM structure is too custom for a broad first implementation. Remains a direct `InferenceAsympLik` child. |
+| `InferenceCountKKCPoissonOneLik` | `fast_cpoisson_combined_with_var_cpp` | **Difficult** | Custom combined likelihood with unclear generic null-simulation semantics. Remains a direct `InferenceAsympLik` child. |
 
 ### Continuous
 
@@ -214,7 +231,7 @@ simulation under each likelihood family**.
 | `InferenceOrdinalOrderedProbitRegr` | `fast_ordinal_probit_regression_cpp` | **Borderline** | Same issue with probit thresholds. |
 | `InferenceOrdinalCauchitRegr` | `fast_ordinal_cauchit_regression_cpp` | **Borderline** | Same as above. |
 | `InferenceOrdinalCloglogRegr` | `fast_ordinal_cloglog_regression_cpp` | **Borderline** | Same as above. |
-| `InferenceOrdinalKKGLMM` | `fast_ordinal_glmm_cpp` | **Difficult** | Ordinal thresholds plus random effects move this out of the easy bootstrap-LR tier. |
+| `InferenceOrdinalKKGLMM` | `fast_ordinal_glmm_cpp` | **Difficult** | Ordinal thresholds plus random effects move this out of the easy bootstrap-LR tier. Remains a direct `InferenceAsympLik` child. |
 
 ### Proportion
 
@@ -228,14 +245,14 @@ simulation under each likelihood family**.
 
 | Concrete likelihood-based inference path | Engine / fitter | Audit result | Why |
 |---|---|---|---|
-| `InferenceSurvivalCoxPHRegr` | `fast_coxph_regression_cpp` | **Difficult** | The likelihood path is partial likelihood, not a full generative survival model. Null simulation requires extra baseline-hazard and censoring choices. |
-| `InferenceSurvivalStratCoxPHRegr` | `fast_stratified_coxph_regression_cpp` | **Difficult** | Same Cox issue with added strata-specific baseline structure. |
-| `InferenceSurvivalKKLWACoxOneLik` | `fast_coxph_regression_cpp` | **Difficult** | Combined-design Cox path still lacks a natural generic full-data simulator. |
-| `InferenceSurvivalKKStratCoxOneLik` | `fast_stratified_coxph_regression_cpp` | **Difficult** | Same issue with stratification. |
+| `InferenceSurvivalCoxPHRegr` | `fast_coxph_regression_cpp` | **Difficult** | The likelihood path is partial likelihood, not a full generative survival model. Null simulation requires extra baseline-hazard and censoring choices. Remains a direct `InferenceAsympLik` child. |
+| `InferenceSurvivalStratCoxPHRegr` | `fast_stratified_coxph_regression_cpp` | **Difficult** | Same Cox issue with added strata-specific baseline structure. Remains a direct `InferenceAsympLik` child. |
+| `InferenceSurvivalKKLWACoxOneLik` | `fast_coxph_regression_cpp` | **Difficult** | Combined-design Cox path still lacks a natural generic full-data simulator. Remains a direct `InferenceAsympLik` child. |
+| `InferenceSurvivalKKStratCoxOneLik` | `fast_stratified_coxph_regression_cpp` | **Difficult** | Same issue with stratification. Remains a direct `InferenceAsympLik` child. |
 | `InferenceSurvivalWeibullRegr` | `fast_weibull_regression_cpp` | **Borderline** | Full parametric survival simulation is possible, but event-time and censoring generation add family-specific work. |
-| `InferenceSurvivalDepCensTransformRegr` | `fast_dep_cens_transform_optim_cpp` | **Difficult** | Highly bespoke joint event/censoring structure. |
-| `InferenceSurvivalKKWeibullFrailtyOneLik` | `fast_weibull_frailty_cpp` | **Difficult** | Frailty simulation plus censoring plus repeated null refits is too heavy for a first generic rollout. |
-| `InferenceSurvivalKKClaytonCopulaOneLik` | `fast_clayton_weibull_aft_optim_cpp` | **Difficult** | Copula-based survival simulation is possible in principle but too bespoke package-wide. |
+| `InferenceSurvivalDepCensTransformRegr` | `fast_dep_cens_transform_optim_cpp` | **Difficult** | Highly bespoke joint event/censoring structure. Remains a direct `InferenceAsympLik` child. |
+| `InferenceSurvivalKKWeibullFrailtyOneLik` | `fast_weibull_frailty_cpp` | **Difficult** | Frailty simulation plus censoring plus repeated null refits is too heavy for a first generic rollout. Remains a direct `InferenceAsympLik` child. |
+| `InferenceSurvivalKKClaytonCopulaOneLik` | `fast_clayton_weibull_aft_optim_cpp` | **Difficult** | Copula-based survival simulation is possible in principle but too bespoke package-wide. Remains a direct `InferenceAsympLik` child. |
 
 ## Easy Tier
 
@@ -257,7 +274,9 @@ Why these are easiest:
 - the null model is clearly generative
 - simulating responses under the constrained fit is straightforward
 - the unconstrained and constrained refits already exist
-- the current LR plumbing in `InferenceAsympLik` can be reused almost directly
+- all ten already sit under `InferenceParamBootstrap` (via
+  `InferenceAsympLikStdModCache`), so the hook can be added without any
+  class-hierarchy surgery
 
 ## Borderline Tier
 
@@ -284,10 +303,14 @@ The recurring complications are:
 - event-time and censoring generation
 
 These are good second-tier candidates if the base framework proves stable.
+All of them already inherit via `InferenceParamBootstrap`, so no hierarchy
+changes are needed, only the null-simulation hook implementation.
 
 ## Difficult Tier
 
-These are the weakest candidates for a common bootstrap-LR rollout:
+These are the weakest candidates for a common bootstrap-LR rollout and
+**remain direct children of `InferenceAsympLik`**, bypassing
+`InferenceParamBootstrap` entirely:
 
 - Cox / stratified Cox / combined-design Cox
 - the dependent-censoring transform path
@@ -303,23 +326,27 @@ itself a complete generative model for survival times and censoring.
 
 ## Recommended Implementation Plan
 
-### Phase 1: Base-Class API
+### Phase 1: InferenceParamBootstrap API
 
-Add a generic interface in `InferenceAsympLik`:
+Fill in the stub already present in `InferenceParamBootstrap`
+(`inference_all_abstract_param_boot.R`):
 
-1. `compute_lik_ratio_bootstrap_two_sided_pval(delta = 0, B = 199, ...)`
-2. optionally `compute_lik_ratio_bootstrap_confidence_interval(...)`
-3. subclass hooks like:
-   - `supports_lik_ratio_bootstrap()`
-   - `simulate_under_lik_null(...)`
+1. Add `compute_lik_ratio_bootstrap_two_sided_pval(delta = 0, B = 199, ...)`
+   with the generic outer loop (observe LR, simulate null data, refit, compare)
+2. Optionally add `compute_lik_ratio_bootstrap_confidence_interval(...)`
+3. Add abstract / stub hooks:
+   - `supports_lik_ratio_param_bootstrap()` — already present, returns `FALSE`
+   - `simulate_under_lik_null(spec, delta, null_fit, worker_state)` — returns `NULL` by default
    - possibly `create_lik_ratio_bootstrap_worker_state(...)`
 
-This is a moderate framework change, but it is localized and conceptually
-clean.
+This is a moderate framework change, but it is fully localized to
+`InferenceParamBootstrap` and does not touch any of the Difficult families
+sitting under `InferenceAsympLik`.
 
 ### Phase 2: Easy Generative Families
 
-Implement first for:
+Implement `simulate_under_lik_null` and flip
+`supports_lik_ratio_param_bootstrap()` to `TRUE` for:
 
 1. binary logit
 2. binary probit
@@ -329,8 +356,8 @@ Implement first for:
 6. identity-binomial
 7. Gaussian OLS one-likelihood path
 
-This gives a large fraction of the package’s most standard LR paths with
-relatively little model-specific simulation complexity.
+All seven already inherit via `InferenceAsympLikStdModCache →
+InferenceParamBootstrap`, so the additions are purely additive.
 
 ### Phase 3: Selected Borderline Families
 
@@ -342,22 +369,20 @@ Only after the base framework is working:
 4. selected GLMMs
 5. maybe zero-inflated / hurdle paths if they are worth the runtime
 
-I would defer Cox and the more exotic survival hybrids.
+Defer Cox and the more exotic survival hybrids indefinitely.
 
 ## Bottom Line
 
-Bootstrap-calibrated LR testing is a realistic extension for this repo, but the
-reason is **not** that the current bootstrap is already enough. The existing
-bootstrap is mainly observed-data resampling, while LR calibration needs
-**parametric null simulation**.
+Bootstrap-calibrated LR testing is a realistic extension for this repo.
+The `InferenceParamBootstrap` class is now the designated home for this
+functionality, and the class hierarchy already encodes the easy/difficult split:
 
-So the real summary is:
+- **Easy / Borderline** families sit under `InferenceParamBootstrap` and are
+  ready to receive the null-simulation hook
+- **Difficult** families remain direct children of `InferenceAsympLik` and are
+  explicitly excluded
 
-- **Easy**: simple generative GLM-like paths and Gaussian OLS
-- **Borderline**: ordinal, negative binomial, beta, Weibull, GLMM, and some
-  mixture families
-- **Difficult**: Cox, frailty, copula, dependent-censoring, and custom hybrid
-  combined-likelihood paths
-
-That makes bootstrap-calibrated LR a good candidate for a **selective rollout**
-rather than a simultaneous all-path implementation.
+The actual gap is not structural — it is the missing
+`simulate_under_lik_null(...)` implementations and the generic parametric-null
+bootstrap loop in `InferenceParamBootstrap`. Filling those in for the Easy tier
+is a realistic first milestone.

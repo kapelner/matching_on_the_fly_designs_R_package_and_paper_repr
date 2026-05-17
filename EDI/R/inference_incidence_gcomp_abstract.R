@@ -32,17 +32,27 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 		#'   \code{[prob_clip_eps, 1 - prob_clip_eps]} so that the IWLS weight
 		#'   \eqn{mu(1-mu)} is bounded away from zero. Must be in \code{[0, 0.5)}.
 		#'   Default \code{.Machine$double.eps} (essentially no clamping).
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, prob_clip_eps = .Machine$double.eps){
+		#' @param smart_cold_start_default Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, prob_clip_eps = .Machine$double.eps, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 				assertFormula(model_formula, null.ok = TRUE)
 				assertNumber(prob_clip_eps, lower = 0, upper = 0.5)
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
 			private$prob_clip_eps = prob_clip_eps
+		},
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		},
 		#' @description Computes the g-computation treatment-effect estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.

@@ -29,11 +29,21 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose If TRUE, print additional information.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE) {
+		#' @param smart_cold_start_default Whether to use smart cold start values by default.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE) {
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
+		},
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		},
 		#' @description Computes the appropriate estimate for mean difference
 		#'
@@ -64,6 +74,9 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 				"median"
 			)
 		},
+		#' @description Computes the treatment effect estimate for a bootstrap sample.
+		#' @param subject_or_block_weights Row weights for the bootstrap sample.
+		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
 			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
 			private$cached_values$beta_hat_T = private$weighted_survival_stat_diff(row_weights, requested_stat = "median")
@@ -208,6 +221,9 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 			y = y[keep]
 			dead = dead[keep]
 			row_weights = as.numeric(row_weights[keep])
+			if (requested_stat == "median") {
+				return(private$weighted_km_median(y, dead, row_weights))
+			}
 			fit = tryCatch(
 				survival::survfit(
 					survival::Surv(y, dead) ~ 1,
@@ -216,11 +232,6 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 				error = function(e) NULL
 			)
 			if (is.null(fit)) return(NA_real_)
-			if (requested_stat == "median") {
-				q = tryCatch(stats::quantile(fit, probs = 0.5), error = function(e) NULL)
-				med = if (!is.null(q)) as.numeric(q$quantile) else NA_real_
-				return(if (length(med)) med[1L] else NA_real_)
-			}
 			tau = max(y)
 			times = c(0, fit$time)
 			surv_vals = c(1, fit$surv)
@@ -247,6 +258,48 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 			)
 			if (!is.finite(stat_t) || !is.finite(stat_c)) return(NA_real_)
 			as.numeric(stat_t - stat_c)
+		},
+		weighted_km_median = function(y, dead, row_weights){
+			ord = order(y)
+			y = as.numeric(y[ord])
+			dead = as.integer(dead[ord])
+			row_weights = as.numeric(row_weights[ord])
+			survival_prob = 1.0
+			unique_times = 0
+			survival_probs = 1
+			i = 1L
+			n = length(y)
+			while (i <= n) {
+				current_time = y[i]
+				j = i
+				event_weight = 0
+				at_risk_weight = sum(row_weights[i:n])
+				while (j <= n && y[j] == current_time) {
+					if (dead[j] == 1L) {
+						event_weight = event_weight + row_weights[j]
+					}
+					j = j + 1L
+				}
+				if (event_weight > 0 && at_risk_weight > 0) {
+					survival_prob = survival_prob * (1 - event_weight / at_risk_weight)
+					unique_times = c(unique_times, current_time)
+					survival_probs = c(survival_probs, survival_prob)
+				}
+				i = j
+			}
+			for (k in seq_along(survival_probs)) {
+				if (survival_probs[k] < 0.5) {
+					if (k > 1L) {
+						p1 = survival_probs[k - 1L]
+						p2 = survival_probs[k]
+						t1 = unique_times[k - 1L]
+						t2 = unique_times[k]
+						return(as.numeric(t1 + (t2 - t1) * (0.5 - p1) / (p2 - p1)))
+					}
+					return(as.numeric(unique_times[k]))
+				}
+			}
+			Inf
 		}
 	)
 )

@@ -190,7 +190,7 @@ Eigen::MatrixXd get_zero_augmented_poisson_hessian_cpp(const Eigen::MatrixXd& X,
 //' @param Xzi Matrix of predictors for the zero-inflation/hurdle component.
 //' @param is_hurdle If TRUE, fit a hurdle model; if FALSE, fit a zero-inflated model.
 //' @param warm_start_params Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param estimate_only If TRUE, skip variance component calculations.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
@@ -223,21 +223,12 @@ List fast_zero_augmented_poisson_cpp(const Eigen::MatrixXd& X,
     if (warm_start_params.isNotNull()) {
         params = as<Eigen::VectorXd>(NumericVector(warm_start_params));
     } else if (smart_cold_start) {
-        // Condition component: OLS on log1p(y)
-        params.head(p_cond) = ols_warm_start_beta_on_log1p(X, y);
-        // ZI component: OLS on (y == 0)
-        Eigen::VectorXd y_is_zero = (y.array() == 0.0).cast<double>();
-        params.tail(p_zi) = ols_warm_start_beta(Xzi, y_is_zero);
+        params = edi_opt::zap_smart_cold_start(X, Xzi, y);
     } else {
         params.setZero();
         // Naive warm_start_params for intercept
         double mean_y = y.mean();
         if (mean_y > 0) params[0] = std::log(mean_y);
-
-        double prop_zero = 0;
-        for(int i=0; i<y.size(); ++i) if(y[i] == 0) prop_zero++;
-        prop_zero /= y.size();
-            if (prop_zero > 0 && prop_zero < 1) params[p_cond] = std::log(prop_zero / (1.0 - prop_zero));
     }
     FixedParamSpec fixed_spec = make_fixed_param_spec(total_p, fixed_idx, fixed_values);
 

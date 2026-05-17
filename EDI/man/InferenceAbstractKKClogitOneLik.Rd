@@ -10,26 +10,12 @@ Abstract class for Conditional Logistic Combined-Likelihood Compound Inference
 }
 \details{
 Fits a single joint likelihood over all KK design data for incidence responses.
-The matched-pair component uses the conditional logistic likelihood on discordant
-pairs (signed within-pair differences); the reservoir component uses the marginal
-logistic likelihood. Both share the treatment effect beta_T and covariate slopes
-beta_xs.
-
-Combined design matrix (column layout: beta_0, beta_T, beta_xs):
-Discordant pair rows: (0, t_diff_k, X_diff_k)
-Reservoir rows:       (1, w_i, X_i)
-The zero in column 1 for pair rows encodes that beta_0 is absent from the
-conditional likelihood (eliminated by conditioning on the pair sum).
-Fitting a single logistic regression on the stacked dataset maximises the
-combined log-likelihood L = L_cond(pairs) + L_marg(reservoir).
-
-Under \code{harden = TRUE}, the combined fit preserves the treatment column and
-retries reduced covariate sets after QR-based rank reduction. Extreme finite
-coefficients / standard errors are rejected and treated as non-estimable.
+The matched-pair component uses the conditional logistic likelihood, and the
+reservoir component uses the standard Bernoulli log-likelihood.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceAbstractKKClogitOneLik}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceAbstractKKClogitOneLik}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -102,19 +88,20 @@ coefficients / standard errors are rejected and treated as non-estimable.
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitOneLik-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClogitOneLik-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize the inference object.
+Initialize
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClogitOneLik$new(
   des_obj,
   model_formula = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  smart_cold_start_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+\item{\code{des_obj}}{A completed \code{Design} object.}
 
 \item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
 the formula from the design object is used and its pre-computed design matrix is
@@ -122,6 +109,8 @@ reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart optimizer start values.}
 }
 \if{html}{\out{</div>}}
 }
@@ -130,7 +119,7 @@ design's imputed covariates.}
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitOneLik-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClogitOneLik-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
-Returns the combined-likelihood estimate of the treatment effect.
+Compute the treatment effect estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClogitOneLik$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
@@ -147,7 +136,7 @@ Returns the combined-likelihood estimate of the treatment effect.
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitOneLik-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClogitOneLik-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes an asymptotic confidence interval for the treatment effect.
+Computes an approximate confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClogitOneLik$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
@@ -155,7 +144,7 @@ Computes an asymptotic confidence interval for the treatment effect.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{Significance level.}
+\item{\code{alpha}}{Confidence level.}
 }
 \if{html}{\out{</div>}}
 }
@@ -164,7 +153,7 @@ Computes an asymptotic confidence interval for the treatment effect.
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitOneLik-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClogitOneLik-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
-Computes an asymptotic two-sided p-value for the treatment effect.
+Computes an approximate two-sided p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClogitOneLik$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
@@ -181,6 +170,7 @@ Computes an asymptotic two-sided p-value for the treatment effect.
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitOneLik-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClogitOneLik-approximate_bootstrap_distribution_beta_hat_T}{}}}
 \subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClogitOneLik$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
@@ -190,6 +180,22 @@ Computes an asymptotic two-sided p-value for the treatment effect.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitOneLik-clone"></a>}}

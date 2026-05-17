@@ -11,7 +11,7 @@ general R fitters.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceOrdinalPartialProportionalOddsRegr}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceOrdinalPartialProportionalOddsRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -81,7 +81,7 @@ Initialize the internal PPO base object.
   harden = TRUE,
   model_formula = NULL,
   nonparallel = character(0),
-  smart_default = TRUE
+  smart_cold_start_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -102,7 +102,7 @@ design's imputed covariates.}
 
 \item{\code{nonparallel}}{Covariate names that may vary across thresholds.}
 
-\item{\code{smart_default}}{Whether to use smart optimizer start values by default.}
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default.}
 }
 \if{html}{\out{</div>}}
 }

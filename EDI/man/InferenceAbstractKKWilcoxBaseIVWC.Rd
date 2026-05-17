@@ -16,14 +16,14 @@ required by the full Hodges-Lehmann estimate.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceAbstractKKWilcoxBaseIVWC}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceAbstractKKWilcoxBaseIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceAbstractKKWilcoxBaseIVWC-new}{\code{InferenceAbstractKKWilcoxBaseIVWC$new()}}
-\item \href{#method-InferenceAbstractKKWilcoxBaseIVWC-compute_bootstrap_confidence_interval}{\code{InferenceAbstractKKWilcoxBaseIVWC$compute_bootstrap_confidence_interval()}}
 \item \href{#method-InferenceAbstractKKWilcoxBaseIVWC-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceAbstractKKWilcoxBaseIVWC$approximate_bootstrap_distribution_beta_hat_T()}}
+\item \href{#method-InferenceAbstractKKWilcoxBaseIVWC-compute_bootstrap_confidence_interval}{\code{InferenceAbstractKKWilcoxBaseIVWC$compute_bootstrap_confidence_interval()}}
 \item \href{#method-InferenceAbstractKKWilcoxBaseIVWC-clone}{\code{InferenceAbstractKKWilcoxBaseIVWC$clone()}}
 }
 }
@@ -94,7 +94,8 @@ Initialize the abstract base.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWilcoxBaseIVWC$new(
   des_obj,
   model_formula = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  smart_cold_start_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -106,8 +107,41 @@ Initialize the abstract base.
 \item{\code{model_formula}}{Optional formula for covariate adjustment.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
 }
 \if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKWilcoxBaseIVWC-approximate_bootstrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWilcoxBaseIVWC-approximate_bootstrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWilcoxBaseIVWC$approximate_bootstrap_distribution_beta_hat_T(
+  B = 501,
+  show_progress = TRUE,
+  debug = FALSE,
+  bootstrap_type = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
 }
 }
 \if{html}{\out{<hr>}}
@@ -133,20 +167,6 @@ adequate starting bound for the bisection and is computed in O(1).
 }
 \if{html}{\out{</div>}}
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractKKWilcoxBaseIVWC-approximate_bootstrap_distribution_beta_hat_T"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWilcoxBaseIVWC-approximate_bootstrap_distribution_beta_hat_T}{}}}
-\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWilcoxBaseIVWC$approximate_bootstrap_distribution_beta_hat_T(
-  B = 501,
-  show_progress = TRUE,
-  debug = FALSE,
-  bootstrap_type = NULL
-)}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKWilcoxBaseIVWC-clone"></a>}}

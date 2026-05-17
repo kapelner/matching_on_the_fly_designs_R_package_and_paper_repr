@@ -4,6 +4,11 @@
 \alias{InferenceAbstractQuantileRandCI}
 \title{Abstract mixin: Zhang combined randomisation CI for quantile regression}
 \description{
+Abstract mixin: Zhang combined randomisation CI for quantile regression
+
+Abstract mixin: Zhang combined randomisation CI for quantile regression
+}
+\details{
 Provides \code{compute_rand_confidence_interval()}
 via Zhang's combined test-inversion method for both Bernoulli (\eqn{m = 0},
 all subjects in the reservoir) and KK matching-on-the-fly designs
@@ -11,11 +16,12 @@ all subjects in the reservoir) and KK matching-on-the-fly designs
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{InferenceAbstractQuantileRandCI}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{InferenceAbstractQuantileRandCI}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceAbstractQuantileRandCI-new}{\code{InferenceAbstractQuantileRandCI$new()}}
 \item \href{#method-InferenceAbstractQuantileRandCI-compute_rand_confidence_interval}{\code{InferenceAbstractQuantileRandCI$compute_rand_confidence_interval()}}
 \item \href{#method-InferenceAbstractQuantileRandCI-clone}{\code{InferenceAbstractQuantileRandCI$clone()}}
 }
@@ -75,25 +81,73 @@ all subjects in the reservoir) and KK matching-on-the-fly designs
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>EDI::InferenceAsympLik$get_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_information_preference"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>EDI::InferenceAsympLik$set_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>EDI::InferenceAsympLik$set_testing_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_confidence_interval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_two_sided_pval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThroughCompound" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceKKPassThroughCompound.html#method-InferenceKKPassThroughCompound-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceKKPassThroughCompound$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThroughCompound" data-id="initialize"><a href='../../EDI/html/InferenceKKPassThroughCompound.html#method-InferenceKKPassThroughCompound-initialize'><code>EDI::InferenceKKPassThroughCompound$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractQuantileRandCI-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractQuantileRandCI-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractQuantileRandCI$new(
+  des_obj,
+  model_formula = NULL,
+  verbose = FALSE,
+  smart_cold_start_default = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{verbose}}{Whether to print messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractQuantileRandCI-compute_rand_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractQuantileRandCI-compute_rand_confidence_interval}{}}}
 \subsection{Method \code{compute_rand_confidence_interval()}}{
+Computes a 1-alpha level frequentist confidence interval for the randomization test.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractQuantileRandCI$compute_rand_confidence_interval(
   alpha = 0.05,
-  r = 499,
+  r = 501,
   pval_epsilon = 0.005,
   show_progress = TRUE,
   ci_search_control = NULL
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The significance level.}
+
+\item{\code{r}}{Number of randomization vectors.}
+
+\item{\code{pval_epsilon}}{The bisection algorithm tolerance.}
+
+\item{\code{show_progress}}{Show a text progress indicator.}
+
+\item{\code{ci_search_control}}{Optional randomization-CI search control list.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A 1 - alpha sized frequentist confidence interval.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractQuantileRandCI-clone"></a>}}

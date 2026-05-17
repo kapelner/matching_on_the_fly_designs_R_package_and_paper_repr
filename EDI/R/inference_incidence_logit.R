@@ -26,19 +26,22 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		#' @param smart_default Whether to use smart optimizer start values by default.
+		#' @param smart_cold_start_default Whether to use smart cold start values by default.
 		#' @param optimization_alg  Optimization algorithm to use. Default is dispatched via policy.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_default = TRUE, optimization_alg = NULL){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 				assertFormula(model_formula, null.ok = TRUE)
 			}
 			self$set_optimization_alg(optimization_alg, allow_irls = TRUE, default = "lbfgs")
-			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_default = smart_default)
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
 		},
+		#' @description Computes the treatment effect estimate for a bootstrap sample.
+		#' @param subject_or_block_weights Row weights for the bootstrap sample.
+		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
 			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
 			X_full = private$build_design_matrix()
@@ -51,7 +54,7 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 						y = private$y,
 						weights = row_weights,
 						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
-						smart_start = private$smart_default,
+						smart_cold_start = private$smart_cold_start_default,
 						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
 						optimization_alg = private$optimization_alg
 					)
@@ -102,7 +105,7 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 			res = fast_logistic_regression_cpp(
 				X = X, y = as.numeric(private$y),
 				warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
-				smart_start = private$smart_default,
+				smart_cold_start = private$smart_cold_start_default,
 				warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X)),
 				optimization_alg = private$optimization_alg
 			)
@@ -115,11 +118,60 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
+		supports_lik_ratio_param_bootstrap = function(){
+			TRUE
+		},
 		supports_likelihood_tests = function(){
 			TRUE
 		},
 		supports_fisher_information = function(){
 			TRUE
+		},
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			b_null = as.numeric(null_fit$b)
+			eta    = as.numeric(spec$X %*% b_null)
+			mu     = pmin(pmax(1 / (1 + exp(-eta)), 0), 1)
+			y_sim  = as.numeric(rbinom(length(mu), 1L, mu))
+			X_fit  = spec$X
+			j      = spec$j
+			
+			# Parametric bootstrap: use observed fit as anchor
+			ws_args = private$get_backend_warm_start_args(ncol(X_fit))
+			full_fit_b = tryCatch(
+				fast_logistic_regression_cpp(
+					X = X_fit, y = y_sim,
+					warm_start_beta = ws_args$warm_start_beta,
+					warm_start_weights = ws_args$warm_start_weights,
+					warm_start_fisher_info = ws_args$warm_start_fisher_info,
+					smart_cold_start = private$smart_cold_start_default,
+					optimization_alg = private$optimization_alg
+				),
+				error = function(e) NULL
+			)
+			if (is.null(full_fit_b) || length(full_fit_b$b) < j || !is.finite(full_fit_b$b[j])) return(NULL)
+			list(
+				full_fit = full_fit_b,
+				fit_null = function(d, start = NULL){
+					ws_args_null = private$get_backend_warm_start_args(ncol(X_fit))
+					tryCatch(
+						fast_logistic_regression_with_var_cpp(
+							X = X_fit, y = y_sim, j = j,
+							warm_start_beta = start %||% full_fit_b$b,
+							warm_start_weights = ws_args_null$warm_start_weights,
+							warm_start_fisher_info = ws_args_null$warm_start_fisher_info,
+							fixed_idx = j, fixed_values = d,
+							smart_cold_start = TRUE,
+							optimization_alg = private$optimization_alg
+						),
+						error = function(e) NULL
+					)
+				},
+				neg_loglik = function(fit){
+					eta_f      = as.numeric(X_fit %*% as.numeric(fit$b))
+					log_denom  = ifelse(eta_f > 0, eta_f + log1p(exp(-eta_f)), log1p(exp(eta_f)))
+					-sum(y_sim * eta_f - log_denom)
+				}
+			)
 		},
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
@@ -134,13 +186,15 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 				j = j_treat,
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
+					ws_args = private$get_backend_warm_start_args(ncol(X_fit))
 					fast_logistic_regression_with_var_cpp(
 						X = X_fit,
 						y = y,
 						j = j_treat,
-						warm_start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
-						smart_start = private$smart_default,
-						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
+						warm_start_beta = start %||% ws_args$warm_start_beta,
+						smart_cold_start = private$smart_cold_start_default,
+						warm_start_weights = ws_args$warm_start_weights,
+						warm_start_fisher_info = ws_args$warm_start_fisher_info,
 						fixed_idx = j_treat,
 						fixed_values = delta,
 						optimization_alg = private$optimization_alg
@@ -175,23 +229,24 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 				X_full = X_full,
 				required_cols = 2L, # intercept and treatment
 				fit_fun = function(X_fit){
-					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit))
-					warm_fisher = private$get_fit_warm_start_fisher(ncol(X_fit))
+					ws_args = private$get_backend_warm_start_args(ncol(X_fit))
 					if (estimate_only) {
 						res = fast_logistic_regression_cpp(
 							X_fit, private$y,
-							warm_start_beta = warm_start_beta,
-							smart_start = private$smart_default,
-							warm_start_fisher_info = warm_fisher,
+							warm_start_beta = ws_args$warm_start_beta,
+							warm_start_weights = ws_args$warm_start_weights,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default,
 							optimization_alg = private$optimization_alg
 						)
 						list(b = res$b, fisher_information = res$fisher_information, ssq_b_2 = NA_real_)
 					} else {
 						fast_logistic_regression_with_var_cpp(
 							X_fit, private$y,
-							warm_start_beta = warm_start_beta,
-							smart_start = private$smart_default,
-							warm_start_fisher_info = warm_fisher,
+							warm_start_beta = ws_args$warm_start_beta,
+							warm_start_weights = ws_args$warm_start_weights,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default,
 							optimization_alg = private$optimization_alg
 						)
 					}
@@ -203,7 +258,7 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 				}
 			)
 			if (!is.null(attempt$fit)){
-				private$set_fit_warm_start(attempt$fit$b, "beta", fisher = attempt$fit$fisher_information)
+				private$set_fit_warm_start(attempt$fit$b, "beta", fisher = attempt$fit$fisher_information, weights = attempt$fit$w)
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(
 					X = attempt$X,
@@ -222,6 +277,7 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
 			}
 			X
-		}
+		},
+		get_complexity_tier = function() "medium"
 	)
 )

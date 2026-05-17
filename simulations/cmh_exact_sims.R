@@ -1,3 +1,4 @@
+options(java.parameters = c("--enable-preview", "-Dged.wgpu.lib.path=/home/kapelner/workspace/GreedyExperimentalDesign/lib/wgpu/lib/libwgpu_native.so"))
 suppressPackageStartupMessages(library(EDI))
 suppressPackageStartupMessages(library(data.table))
 
@@ -6,7 +7,7 @@ Nrep = 10000L   # Monte Carlo replications per cell
 sim = SimulationFramework$new(
         Nrep                          = Nrep,
         num_cores                     = 20,
-        results_filename              = sprintf("simulations/cmh_exact_sims_results_Nrep_%d.csv.bz2", Nrep),
+        results_filename              = sprintf("simulations/cmh_exact_sims_plus_greedy_results_Nrep_%d.csv.bz2", Nrep),
         continue_from_last_result_row = TRUE,
         response_type                 = "incidence",
         n                             = c(64L, 128L, 256L),
@@ -19,14 +20,15 @@ sim = SimulationFramework$new(
         design_classes_and_params     = list(
                                           DesignFixediBCRD,
                                           DesignFixedBinaryMatch,
-                                          DesignFixedOptimalBlocks = list(B = 4),
-                                          DesignFixedOptimalBlocks = list(B = 8),
-                                          DesignFixedOptimalBlocks = list(B = 16),
-                                          DesignFixedOptimalBlocks = list(B = 32),
-                                          DesignFixedBlocking =      list(B_target = 4,  exact_num_blocks = TRUE),
-                                          DesignFixedBlocking =      list(B_target = 8,  exact_num_blocks = TRUE),
-                                          DesignFixedBlocking =      list(B_target = 16, exact_num_blocks = TRUE),
-                                          DesignFixedBlocking =      list(B_target = 32, exact_num_blocks = TRUE)
+                                          DesignFixedOptimalBlocks =   list(B = 4),
+                                          DesignFixedOptimalBlocks =   list(B = 8),
+                                          DesignFixedOptimalBlocks =   list(B = 16),
+                                          DesignFixedOptimalBlocks =   list(B = 32),
+                                          DesignFixedBlocking =        list(B_target = 4,  exact_num_blocks = TRUE),
+                                          DesignFixedBlocking =        list(B_target = 8,  exact_num_blocks = TRUE),
+                                          DesignFixedBlocking =        list(B_target = 16, exact_num_blocks = TRUE),
+                                          DesignFixedBlocking =        list(B_target = 32, exact_num_blocks = TRUE),
+                                          DesignFixedRerandomization = list(prop_acceptable = 0.01) 
                                         ),
         inference_classes_and_params  = list(
                                           InferenceIncidenceWald,

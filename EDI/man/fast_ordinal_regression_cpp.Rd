@@ -8,7 +8,7 @@ fast_ordinal_regression_cpp(
   X,
   y,
   warm_start_params = NULL,
-  smart_start = TRUE,
+  smart_cold_start = TRUE,
   maxit = 100L,
   tol = 1e-06,
   fixed_idx = NULL,
@@ -21,6 +21,10 @@ fast_ordinal_regression_cpp(
 \item{X}{A numeric matrix of predictors.}
 
 \item{y}{A numeric vector of responses.}
+
+\item{warm_start_params}{Optional starting values for [alpha, beta]. If provided, \code{smart_cold_start} is ignored.}
+
+\item{smart_cold_start}{Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.}
 
 \item{maxit}{Maximum number of iterations.}
 

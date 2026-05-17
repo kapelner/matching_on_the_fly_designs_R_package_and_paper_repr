@@ -26,14 +26,14 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
-		#' @param smart_default Whether to use smart optimizer start values by default.
+		#' @param smart_cold_start_default Whether to use smart optimizer start values by default.
 		#' @param optimization_alg  Optimization algorithm to use. Default is dispatched via policy.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_default = FALSE, optimization_alg = NULL){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 			}
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
-			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_default = smart_default)
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -41,6 +41,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 	),
 	private = list(
 		best_X_colnames = NULL,
+		get_complexity_tier = function() "heavy",
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -56,12 +57,13 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(1, treatment = private$w, X_cov)
 			}
+			ws_args = private$get_backend_warm_start_args(ncol(X) + 1L)
 			res = tryCatch(
 				fast_neg_bin_cpp(
 					X = X, y = as.integer(private$y),
-					warm_start_params = private$get_fit_warm_start_for_length("params", ncol(X) + 1L),
-					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X) + 1L),
-					smart_start = private$smart_default,
+					start_params = ws_args$start_params,
+					warm_start_fisher_info = ws_args$warm_start_fisher_info,
+					smart_cold_start = private$smart_cold_start_default,
 					optimization_alg = private$optimization_alg
 				),
 				error = function(e) NULL
@@ -75,8 +77,52 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
+		supports_lik_ratio_param_bootstrap = function(){
+			TRUE
+		},
 		supports_likelihood_tests = function(){
 			TRUE
+		},
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			b_null   = as.numeric(null_fit$b)
+			theta    = as.numeric(null_fit$theta_hat)
+			if (!is.finite(theta) || theta <= 0) return(NULL)
+			mu       = pmax(exp(as.numeric(spec$X %*% b_null)), 0)
+			y_sim    = as.integer(rnbinom(length(mu), size = theta, mu = mu))
+			X_fit    = spec$X
+			j        = spec$j
+			full_res = tryCatch(
+				fast_neg_bin_cpp(
+					X = X_fit, y = y_sim,
+					smart_cold_start = private$smart_cold_start_default,
+					optimization_alg = private$optimization_alg
+				),
+				error = function(e) NULL
+			)
+			if (is.null(full_res) || !isTRUE(full_res$converged) || length(full_res$b) < j || !is.finite(full_res$b[j])) return(NULL)
+			full_fit_boot = list(
+				b          = as.numeric(full_res$b),
+				theta_hat  = full_res$theta_hat,
+				neg_loglik = -as.numeric(full_res$logLik)
+			)
+			list(
+				full_fit = full_fit_boot,
+				fit_null = function(d, start = NULL){
+					res = tryCatch(
+						fast_neg_bin_cpp(
+							X = X_fit, y = y_sim,
+							warm_start_params = start %||% c(as.numeric(full_res$b), log(as.numeric(full_res$theta_hat))),
+							fixed_idx = j, fixed_values = d,
+							smart_cold_start = TRUE,
+							optimization_alg = private$optimization_alg
+						),
+						error = function(e) NULL
+					)
+					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
+					list(b = as.numeric(res$b), theta_hat = res$theta_hat, neg_loglik = -as.numeric(res$logLik))
+				},
+				neg_loglik = function(fit) as.numeric(fit$neg_loglik)
+			)
 		},
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
@@ -89,13 +135,14 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 				X = X_fit, y = y, j = j_treat,
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
+					ws_args = private$get_backend_warm_start_args(ncol(X_fit) + 1L)
 					res = tryCatch(
 						fast_neg_bin_cpp(
 							X = X_fit, y = y,
-							warm_start_params = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L),
-							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit) + 1L),
+							start_params = start %||% ws_args$start_params,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
 							fixed_idx = j_treat, fixed_values = delta,
-							smart_start = private$smart_default,
+							smart_cold_start = private$smart_cold_start_default,
 							optimization_alg = private$optimization_alg
 						),
 						error = function(e) NULL
@@ -137,30 +184,29 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 				required_cols = 2L,
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
-					warm_start_params = private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L)
-					warm_fisher = private$get_fit_warm_start_fisher(ncol(X_fit) + 1L)
+					ws_args = private$get_backend_warm_start_args(ncol(X_fit) + 1L)
 					if (estimate_only) {
 						res = tryCatch(
 							fast_neg_bin_cpp(
 								X = X_fit, y = as.integer(private$y),
-								warm_start_params = warm_start_params,
-								warm_start_fisher_info = warm_fisher,
-								smart_start = private$smart_default,
+								start_params = ws_args$start_params,
+								warm_start_fisher_info = ws_args$warm_start_fisher_info,
+								smart_cold_start = private$smart_cold_start_default,
 								optimization_alg = private$optimization_alg
 							),
 							error = function(e) NULL
 						)
 						if (is.null(res) || !isTRUE(res$converged)) return(NULL)
-						list(b = as.numeric(res$b), ssq_b_j = NA_real_, j_treat = j_treat,
+						list(b = as.numeric(res$b), ssq_b_2 = NA_real_, j_treat = j_treat,
 						     theta_hat = res$theta_hat, neg_loglik = -as.numeric(res$logLik),
 						     fisher_information = res$fisher_information)
 					} else {
 						res = tryCatch(
 							fast_neg_bin_with_var_cpp(
 								X = X_fit, y = as.integer(private$y),
-								warm_start_params = warm_start_params,
-								warm_start_fisher_info = warm_fisher,
-								smart_start = private$smart_default,
+								start_params = ws_args$start_params,
+								warm_start_fisher_info = ws_args$warm_start_fisher_info,
+								smart_cold_start = private$smart_cold_start_default,
 								optimization_alg = private$optimization_alg
 							),
 							error = function(e) NULL

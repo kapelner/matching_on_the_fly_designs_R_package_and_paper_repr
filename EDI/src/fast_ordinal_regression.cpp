@@ -26,8 +26,8 @@ private:
     edi_ordinal::FixedOrdinalRegression m_model;
 
 public:
-    OrdinalRegression(const MatrixXd& X, const VectorXd& y) :
-        m_model(X, y, edi_ordinal::Link::Logit, -1.0) {}
+    OrdinalRegression(const MatrixXd& X, const VectorXd& y, const VectorXd& weights = VectorXd()) :
+        m_model(X, y, edi_ordinal::Link::Logit, -1.0, weights) {}
 
     static std::vector<double> init_levels(const VectorXd& y) {
         return edi_ordinal::init_levels(y);
@@ -84,7 +84,7 @@ Eigen::MatrixXd get_ordinal_regression_hessian_cpp(const Eigen::MatrixXd& X, con
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses.
 //' @param warm_start_params Optional starting values for [alpha, beta]. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -118,10 +118,16 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
             legacy_start.alpha[k] = -1.0 + 2.0 * (k + 1) / K;
         }
         legacy_start.beta = VectorXd::Zero(p);
-        params = ordinal_start_to_params(
-            smart_cold_start ? ordinal_start_from_ols_or_legacy(X, y, edi_ordinal::Link::Logit, legacy_start, fixed_spec)
-                        : legacy_start
-        );
+        
+        if (smart_cold_start) {
+            // Use OLS on rank-transformed y
+            Eigen::VectorXd y_rank = (y.array() - 1.0) / static_cast<double>(K - 1);
+            Eigen::VectorXd beta;
+            if (edi_opt::robust_ols_solve(X, y_rank, beta)) {
+                legacy_start.beta = beta;
+            }
+        }
+        params = ordinal_start_to_params(legacy_start);
     }
     params = apply_fixed_values(params, fixed_spec);
 
@@ -129,6 +135,91 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
     const Eigen::MatrixXd* h_ptr = nullptr;
     if (warm_start_fisher_info.isNotNull()) {
         H_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        h_ptr = &H_start;
+    } else if (smart_cold_start) {
+        H_start = model.hessian(params);
+        h_ptr = &H_start;
+    }
+
+    LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, h_ptr);
+    params = fit.params;
+
+    return List::create(
+        Named("b") = params.tail(p),
+        Named("alpha") = params.head(n_alpha),
+        Named("n_params") = n_params,
+        Named("params") = params,
+        Named("neg_loglik") = fit.value,
+        Named("converged") = fit.converged,
+        Named("iterations") = fit.niter,
+        Named("fisher_information") = model.hessian(params)
+    );
+}
+
+//' @title Fast Weighted Ordinal Regression (C++)
+//' @description High-performance weighted ordinal regression fitting using Newton-Raphson.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param weights A numeric vector of nonnegative observation weights.
+//' @param warm_start_params Optional starting values for [alpha, beta].
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix.
+//' @return A list containing coefficients (beta), thresholds (alpha), and convergence status.
+//' @export
+//' @keywords internal
+// [[Rcpp::export]]
+List fast_ordinal_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights,
+                                          Nullable<NumericVector> warm_start_params = R_NilValue, bool smart_cold_start = true, int maxit = 100, double tol = 1e-6,
+                                          Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                          Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                          std::string optimization_alg = "newton_raphson",
+                                          Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+    if (weights.size() != X.rows()) {
+        stop("weights must have length equal to nrow(X)");
+    }
+    OrdinalRegression model(X, y, weights);
+    int p = X.cols();
+    int K = OrdinalRegression::init_levels(y).size();
+    int n_alpha = K - 1;
+    int n_params = n_alpha + p;
+
+    VectorXd params(n_params);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
+    if (warm_start_params.isNotNull()) {
+        params = as<Eigen::VectorXd>(NumericVector(warm_start_params));
+        if (params.size() != n_params) stop("warm_start_params must have length equal to the number of model parameters");
+    } else {
+        OrdinalStart legacy_start;
+        legacy_start.alpha = VectorXd(n_alpha);
+        for (int k = 0; k < n_alpha; ++k) {
+            legacy_start.alpha[k] = -1.0 + 2.0 * (k + 1) / K;
+        }
+        legacy_start.beta = VectorXd::Zero(p);
+        
+        if (smart_cold_start) {
+            // Use OLS on rank-transformed y
+            Eigen::VectorXd y_rank = (y.array() - 1.0) / static_cast<double>(K - 1);
+            Eigen::VectorXd beta;
+            if (edi_opt::robust_ols_solve(X, y_rank, beta)) {
+                legacy_start.beta = beta;
+            }
+        }
+        params = ordinal_start_to_params(legacy_start);
+    }
+    params = apply_fixed_values(params, fixed_spec);
+
+    Eigen::MatrixXd H_start;
+    const Eigen::MatrixXd* h_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        H_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        h_ptr = &H_start;
+    } else if (smart_cold_start) {
+        H_start = model.hessian(params);
         h_ptr = &H_start;
     }
 
@@ -152,7 +243,7 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses.
 //' @param warm_start_params Optional starting values for [alpha, beta]. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.

@@ -75,16 +75,27 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
         beta_start = as<Eigen::VectorXd>(Rcpp::NumericVector(warm_start_beta));
         if (beta_start.size() != p) Rcpp::stop("warm_start_beta must have length equal to ncol(X)");
     } else if (smart_cold_start) {
-        beta_start = ols_warm_start_beta_on_log1p_or_legacy(X, y, VectorXd::Zero(p), fixed_spec);
+        beta_start = edi_opt::poisson_smart_cold_start(X, y);
     }
     beta_start = apply_fixed_values(beta_start, fixed_spec);
 
     if (alg != "irls") {
         VectorXd beta = beta_start;
         PoissonNegLogLik fun(X, y, weights);
+        
+        Eigen::MatrixXd H_start_val;
+        const Eigen::MatrixXd* h_ptr = nullptr;
+        if (warm_start_fisher_info.isNotNull()) {
+            H_start_val = as<Eigen::MatrixXd>(warm_start_fisher_info);
+            h_ptr = &H_start_val;
+        } else if (smart_cold_start) {
+            H_start_val = edi_opt::poisson_smart_hessian(X, beta_start);
+            h_ptr = &H_start_val;
+        }
+
         LikelihoodFitResult fit = (alg == "lbfgs") ?
             optimize_fixed_likelihood_lbfgs(fun, beta, fixed_spec, maxit, tol) :
-            optimize_fixed_likelihood_newton(fun, beta, fixed_spec, maxit, tol);
+            optimize_fixed_likelihood(fun, beta, fixed_spec, maxit, tol, alg, "newton_raphson", 0, h_ptr);
 
         ModelResult res;
         res.b = fit.params;
@@ -147,6 +158,9 @@ ModelResult fast_poisson_internal(const Eigen::MatrixXd& X,
             Eigen::MatrixXd info_full = as<Eigen::MatrixXd>(warm_start_fisher_info);
             if (info_full.rows() != p || info_full.cols() != p) Rcpp::stop("warm_start_fisher_info must be a p x p matrix");
             XtWX_free = subset_matrix(info_full, fixed_spec.free_idx, fixed_spec.free_idx);
+        } else if (iter == 0 && smart_cold_start && warm_start_beta.isNull()) {
+            Eigen::MatrixXd H_full = edi_opt::poisson_smart_hessian(X, beta_start);
+            XtWX_free = subset_matrix(H_full, fixed_spec.free_idx, fixed_spec.free_idx);
         } else {
             XtWX_free = weighted_crossprod(X_free, w);
         }
@@ -273,7 +287,7 @@ Eigen::MatrixXd get_poisson_regression_weighted_hessian_cpp(const Eigen::MatrixX
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (counts).
 //' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when no \code{warm_start_beta} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -315,7 +329,7 @@ List fast_poisson_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 //' @param y A numeric vector of responses (counts).
 //' @param weights A numeric vector of weights.
 //' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when no \code{warm_start_beta} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -355,7 +369,7 @@ List fast_poisson_regression_weighted_cpp(const Eigen::MatrixXd& X,
 //' @param y A numeric vector of responses (counts).
 //' @param j 1-based index of the parameter for which to return specific variance.
 //' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when no \code{warm_start_beta} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -420,7 +434,7 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
 //' @param y A numeric vector of responses (counts).
 //' @param j 1-based index of the parameter for which to return specific variance.
 //' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when no \code{warm_start_beta} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.

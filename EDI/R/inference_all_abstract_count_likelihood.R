@@ -8,7 +8,7 @@
 #' @keywords internal
 InferenceCountLikelihood = R6::R6Class("InferenceCountLikelihood",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLik,
+	inherit = InferenceParamBootstrap,
 	public = list(
 		#' @description Computes the treatment estimate using the underlying model.
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -83,6 +83,9 @@ InferenceCountLikelihood = R6::R6Class("InferenceCountLikelihood",
 			private$shared(estimate_only = FALSE)
 			private$cached_values$df %||% Inf
 		},
+		get_backend_warm_start_args = function(expected_length, expected_fisher_dim = expected_length) {
+			private$get_optimal_warm_start_config(expected_length, expected_fisher_dim)
+		},
 
 		# --- Likelihood test support ---
 
@@ -93,6 +96,25 @@ InferenceCountLikelihood = R6::R6Class("InferenceCountLikelihood",
 		get_likelihood_test_spec = function(){
 			# This is still abstract, but we provide the structure
 			NULL
+		},
+
+		compute_score_two_sided_pval_impl = function(delta){
+			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "score")
+		},
+		compute_gradient_two_sided_pval_impl = function(delta){
+			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "gradient")
+		},
+		compute_lik_ratio_two_sided_pval_impl = function(delta){
+			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "lik_ratio")
+		},
+		compute_score_confidence_interval_impl = function(alpha){
+			private$invert_test_pval_confidence_interval(alpha, testing_type = "score")
+		},
+		compute_gradient_confidence_interval_impl = function(alpha){
+			private$invert_test_pval_confidence_interval(alpha, testing_type = "gradient")
+		},
+		compute_lik_ratio_confidence_interval_impl = function(alpha){
+			private$invert_test_pval_confidence_interval(alpha, testing_type = "lik_ratio")
 		}
 	)
 )

@@ -70,6 +70,15 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 			private$compute_shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			private$cached_values$beta_hat_T = private$weighted_peto_prentice_mean_difference(row_weights)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes a (1 - alpha)-level confidence interval based on the asymptotic normality
 		#' of the Peto-Prentice weighted martingale residual mean difference. Falls back to
 		#' bootstrap if the SE is unavailable.
@@ -156,6 +165,42 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 		}
 	),
 	private = list(
+		weighted_peto_prentice_mean_difference = function(row_weights){
+			keep = is.finite(private$y) & is.finite(private$dead) & is.finite(row_weights) & row_weights > 0
+			if (!any(keep)) return(NA_real_)
+			y = private$y[keep]
+			dead = private$dead[keep]
+			w = private$w[keep]
+			row_weights = as.numeric(row_weights[keep])
+			surv_obj = survival::Surv(y, dead)
+			cox_null = tryCatch(
+				survival::coxph(surv_obj ~ 1, weights = row_weights),
+				error = function(e) NULL
+			)
+			if (is.null(cox_null)) return(NA_real_)
+			M = tryCatch(
+				as.numeric(stats::residuals(cox_null, type = "martingale")),
+				error = function(e) NULL
+			)
+			if (is.null(M) || length(M) != length(y) || !all(is.finite(M))) return(NA_real_)
+			km_all = tryCatch(
+				survival::survfit(surv_obj ~ 1, weights = row_weights),
+				error = function(e) NULL
+			)
+			if (is.null(km_all)) return(NA_real_)
+			idx = findInterval(y, km_all$time, left.open = TRUE)
+			peto_weights = c(1.0, km_all$surv)[idx + 1L]
+			M_w = peto_weights * M
+			idx_t = w == 1
+			idx_c = w == 0
+			if (!any(idx_t) || !any(idx_c)) return(NA_real_)
+			wt_t = row_weights[idx_t]
+			wt_c = row_weights[idx_c]
+			if (sum(wt_t) <= 0 || sum(wt_c) <= 0) return(NA_real_)
+			mean_t = sum(wt_t * M_w[idx_t]) / sum(wt_t)
+			mean_c = sum(wt_c * M_w[idx_c]) / sum(wt_c)
+			as.numeric(mean_t - mean_c)
+		},
 		# Computes the Peto-Prentice weighted martingale residual estimate and SE.
 		# Results are cached in private$cached_values.
 		compute_shared = function(estimate_only = FALSE){

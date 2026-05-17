@@ -133,7 +133,7 @@ public:
 ModelResult fast_beta_regression_internal(const Eigen::MatrixXd& X,
                                         const Eigen::VectorXd& y,
                                         const Eigen::VectorXd* warm_start_beta = nullptr,
-                                        bool smart_start = true,
+                                        bool smart_cold_start = true,
                                         double start_phi = 10.0,
                                         Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                         Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
@@ -144,7 +144,7 @@ ModelResult fast_beta_regression_internal(const Eigen::MatrixXd& X,
     Eigen::VectorXd params = Eigen::VectorXd::Zero(p + 1);
     if (warm_start_beta) {
         params.head(p) = *warm_start_beta;
-    } else if (smart_start) {
+    } else if (smart_cold_start) {
         // Smart warm_start_params: OLS on logit(y)
         Eigen::VectorXd y_logit = (y.array() / (1.0 - y.array())).log().matrix();
         // Handle potential INF/NA from 0/1 in y if any (though beta regr assumes (0,1))
@@ -220,7 +220,8 @@ Eigen::MatrixXd get_beta_regression_hessian_cpp(const Eigen::MatrixXd& X,
 //' @description High-performance beta regression fitting using Newton-Raphson or L-BFGS.
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (in (0, 1)).
-//' @param warm_start_beta Optional starting values for coefficients.
+//' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param start_phi Optional starting value for precision parameter phi.
 //' @param compute_std_errs Deprecated.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -238,7 +239,7 @@ Eigen::MatrixXd get_beta_regression_hessian_cpp(const Eigen::MatrixXd& X,
 List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
 								const NumericVector& y,
 								Nullable<NumericVector> warm_start_beta = R_NilValue,
-								bool smart_start = true,
+								bool smart_cold_start = true,
 								double start_phi = 10.0,
                                 bool compute_std_errs = false,
                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -254,7 +255,7 @@ List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
         sb_ptr = &sb;
     }
 
-    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, smart_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
+    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, smart_cold_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
 
     Eigen::VectorXd params_full(fit.b.size() + 1);
     params_full.head(fit.b.size()) = fit.b;
@@ -276,7 +277,8 @@ List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
 //' @description Beta regression with full variance-covariance matrix and standard error estimation.
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (in (0, 1)).
-//' @param warm_start_beta Optional starting values for coefficients.
+//' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param start_phi Optional starting value for precision parameter phi.
 //' @param compute_std_errs Deprecated.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -293,7 +295,7 @@ List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
 List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
 									 const NumericVector& y,
 									 Nullable<NumericVector> warm_start_beta = R_NilValue,
-									 bool smart_start = true,
+									 bool smart_cold_start = true,
 									 double start_phi = 10.0,
 
                                      bool compute_std_errs = true,
@@ -310,7 +312,7 @@ List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
         sb_ptr = &sb;
     }
 
-    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, smart_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
+    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, smart_cold_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols() + 1, fixed_idx, fixed_values);
     Eigen::MatrixXd H_free = subset_matrix(fit.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
 	Eigen::MatrixXd cov_free = H_free.inverse();

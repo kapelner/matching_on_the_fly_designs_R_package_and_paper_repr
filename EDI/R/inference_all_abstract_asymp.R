@@ -202,6 +202,50 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			}
 			
 			stats::uniroot(target_fn, lower = lower, upper = upper, tol = 1e-6)$root
+		},
+		# Complexity tiers for optimization paths:
+		# "heavy": Expensive (quadrature, transcendental). Always use full warm start (Beta + Info).
+		# "medium": Moderate (standard IRLS). Use Beta + Weights.
+		# "light": Extremely fast. Use Beta-only to avoid R/C++ bridge overhead for matrices.
+		get_complexity_tier = function() "light",
+		
+		# Helper to extract optimal warm start components based on complexity tier and problem scale.
+		# Returns a list of arguments for the backend solver.
+		get_optimal_warm_start_config = function(expected_length, expected_fisher_dim = expected_length) {
+			tier = private$get_complexity_tier()
+			p = expected_length
+			
+			start_beta = private$get_fit_warm_start_for_length("beta", p)
+			start_params = private$get_fit_warm_start_for_length("params", p)
+			
+			# Tier 3 (Light) or very high dimensionality: Beta-only is safest and fastest.
+			# If p > 50, matrix copying overhead for Hessian usually negates its benefit.
+			if (tier == "light" || p > 50) {
+				return(list(
+					start_beta = start_beta,
+					warm_start_beta = start_beta,
+					start_params = start_params
+				))
+			}
+			
+			# Tier 2 (Medium): Beta + Weights
+			if (tier == "medium") {
+				return(list(
+					start_beta = start_beta,
+					warm_start_beta = start_beta,
+					start_params = start_params,
+					warm_start_weights = private$get_fit_warm_start_weights(private$n)
+				))
+			}
+			
+			# Tier 1 (Heavy): Full Warm Start (Beta + Info)
+			return(list(
+				start_beta = start_beta,
+				warm_start_beta = start_beta,
+				start_params = start_params,
+				warm_start_weights = private$get_fit_warm_start_weights(private$n),
+				warm_start_fisher_info = private$get_fit_warm_start_fisher(expected_fisher_dim)
+			))
 		}
 	)
 )

@@ -76,7 +76,7 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
         beta_start = as<Eigen::VectorXd>(Rcpp::NumericVector(warm_start_beta));
         if (beta_start.size() != p) Rcpp::stop("warm_start_beta must have length equal to ncol(X)");
     } else if (smart_cold_start) {
-        beta_start = ols_warm_start_beta_or_legacy(X_eigen, y_eigen, Eigen::VectorXd::Zero(p), fixed_spec);
+        beta_start = edi_opt::logistic_smart_cold_start(X_eigen, y_eigen);
     }
     beta_start = apply_fixed_values(beta_start, fixed_spec);
     std::vector<double> beta_full(p, 0.0);
@@ -140,6 +140,9 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
             Eigen::MatrixXd info_full = as<Eigen::MatrixXd>(warm_start_fisher_info);
             if (info_full.rows() != p || info_full.cols() != p) Rcpp::stop("warm_start_fisher_info must be a p x p matrix");
             final_XtWX_eigen = subset_matrix(info_full, fixed_spec.free_idx, fixed_spec.free_idx);
+        } else if (iter == 0 && smart_cold_start && warm_start_beta.isNull()) {
+            Eigen::MatrixXd H_full = edi_opt::logistic_smart_hessian(X_eigen, beta_start);
+            final_XtWX_eigen = subset_matrix(H_full, fixed_spec.free_idx, fixed_spec.free_idx);
         } else {
             final_XtWX_eigen.noalias() = X_free_map.transpose() * w_diag_map.asDiagonal() * X_free_map;
         }
@@ -226,7 +229,7 @@ Eigen::MatrixXd get_logistic_regression_weighted_hessian_cpp(const Eigen::Matrix
 //' @param X A numeric matrix of predictors.
 //' @param y A binary numeric vector of responses.
 //' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_beta} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -266,7 +269,7 @@ List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorX
 //' @param y A binary numeric vector of responses.
 //' @param weights A numeric vector of weights.
 //' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_beta} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -304,7 +307,7 @@ List fast_logistic_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen
 //' @param y A binary numeric vector of responses.
 //' @param j The 1-based index of the parameter for which to return specific variance.
 //' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_beta} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
 //' @param warm_start_weights Optional initial working weights for the first IRLS iteration.

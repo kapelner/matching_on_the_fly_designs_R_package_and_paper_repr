@@ -287,7 +287,7 @@ Eigen::MatrixXd get_zero_one_inflated_beta_hessian_cpp(Eigen::MatrixXd X,
 //' @param X_zero_one Matrix of predictors for the zero and one inflation components.
 //' @param y Vector of responses in [0, 1].
 //' @param warm_start_params Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
 //' @param optimization_alg Optimization algorithm.
@@ -334,8 +334,8 @@ List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
 		// Zero/One components: OLS on indicators
 		Eigen::VectorXd y_is_zero = (y_eigen.array() == 0.0).cast<double>();
 		Eigen::VectorXd y_is_one  = (y_eigen.array() == 1.0).cast<double>();
-		params.segment(p + 1, p_zo) = ols_warm_start_beta(X_zero_one, y_is_zero);
-		params.tail(p_zo)           = ols_warm_start_beta(X_zero_one, y_is_one);
+		params.segment(p + 1, p_zo) = ols_smart_cold_start_beta(X_zero_one, y_is_zero);
+		params.tail(p_zo)           = ols_smart_cold_start_beta(X_zero_one, y_is_one);
 	} else {
 		params.setZero();
 		params[p] = 2.0;

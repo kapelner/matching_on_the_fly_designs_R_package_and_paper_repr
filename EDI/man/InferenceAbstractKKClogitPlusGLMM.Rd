@@ -3,22 +3,20 @@
 %   R/inference_incidence_KK_clogit_plus_glmm_abstract.R
 \name{InferenceAbstractKKClogitPlusGLMM}
 \alias{InferenceAbstractKKClogitPlusGLMM}
-\title{internalAbstract Conditional Logistic Plus GLMM Inference}
+\title{Abstract Conditional Logistic Plus GLMM Inference}
 \description{
-internalAbstract Conditional Logistic Plus GLMM Inference
+Abstract Conditional Logistic Plus GLMM Inference
 
-internalAbstract Conditional Logistic Plus GLMM Inference
+Abstract Conditional Logistic Plus GLMM Inference
 }
 \details{
 Fits one likelihood with a conditional-logistic contribution from discordant
 matched pairs and a random-intercept logistic GLMM contribution from concordant
-matched pairs. The fixed effects are shared by both likelihood components. The
-reservoir component is also included as additional independent observations
-in the GLMM part.
+matched pairs and reservoir subjects.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceAbstractKKClogitPlusGLMM}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceAbstractKKClogitPlusGLMM}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -91,7 +89,7 @@ in the GLMM part.
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitPlusGLMM-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClogitPlusGLMM-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize the inference object.
+Initialize
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClogitPlusGLMM$new(
   des_obj,
@@ -99,22 +97,24 @@ Initialize the inference object.
   max_abs_reasonable_coef = 10000,
   max_abs_log_sigma = 8,
   verbose = FALSE,
-  smart_default = TRUE
+  smart_cold_start_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{des_obj}}{A completed KK design object.}
+\item{\code{des_obj}}{A completed \code{Design} object with an incidence response.}
 
 \item{\code{model_formula}}{Optional formula for covariate adjustment.}
 
-\item{\code{max_abs_reasonable_coef}}{Cap for coefficient magnitudes.}
+\item{\code{max_abs_reasonable_coef}}{Cap for reasonable coefficient estimates.}
 
-\item{\code{max_abs_log_sigma}}{Cap for log-random-effect-SD.}
+\item{\code{max_abs_log_sigma}}{Cap for reasonable log random effect variance.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart optimizer start values.}
 }
 \if{html}{\out{</div>}}
 }
@@ -123,7 +123,7 @@ Initialize the inference object.
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitPlusGLMM-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClogitPlusGLMM-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
-Returns the combined-likelihood estimate of the treatment effect.
+Compute the treatment effect estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClogitPlusGLMM$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
@@ -140,7 +140,7 @@ Returns the combined-likelihood estimate of the treatment effect.
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitPlusGLMM-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClogitPlusGLMM-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes the asymptotic confidence interval.
+Computes an approximate confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClogitPlusGLMM$compute_asymp_confidence_interval(
   alpha = 0.05
@@ -159,7 +159,7 @@ Computes the asymptotic confidence interval.
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitPlusGLMM-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClogitPlusGLMM-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
-Computes the asymptotic p-value.
+Computes an approximate two-sided p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClogitPlusGLMM$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
@@ -167,7 +167,7 @@ Computes the asymptotic p-value.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{Null difference.}
+\item{\code{delta}}{Null treatment effect value.}
 }
 \if{html}{\out{</div>}}
 }
@@ -176,6 +176,7 @@ Computes the asymptotic p-value.
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitPlusGLMM-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClogitPlusGLMM-approximate_bootstrap_distribution_beta_hat_T}{}}}
 \subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClogitPlusGLMM$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
@@ -185,6 +186,22 @@ Computes the asymptotic p-value.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKClogitPlusGLMM-clone"></a>}}

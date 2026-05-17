@@ -24,7 +24,7 @@ inf$compute_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{\link[EDI:InferenceAsympLikStdModCache]{EDI::InferenceAsympLikStdModCache}} -> \code{InferenceIncidProbitRegr}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{\link[EDI:InferenceAsympLikStdModCache]{EDI::InferenceAsympLikStdModCache}} -> \code{InferenceIncidProbitRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -89,7 +89,8 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>EDI::InferenceAsympLik$get_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_information_preference"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>EDI::InferenceAsympLik$set_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>EDI::InferenceAsympLik$set_testing_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="supports_lik_ratio_param_bootstrap"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-supports_lik_ratio_param_bootstrap'><code>EDI::InferenceParamBootstrap$supports_lik_ratio_param_bootstrap()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_confidence_interval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_two_sided_pval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLikStdModCache" data-id="compute_estimate"><a href='../../EDI/html/InferenceAsympLikStdModCache.html#method-InferenceAsympLikStdModCache-compute_estimate'><code>EDI::InferenceAsympLikStdModCache$compute_estimate()</code></a></span></li>
 </ul>
 </details>
@@ -104,7 +105,7 @@ Initialize a probit-regression inference object.
   des_obj,
   model_formula = NULL,
   verbose = FALSE,
-  smart_default = TRUE,
+  smart_cold_start_default = TRUE,
   optimization_alg = NULL
 )}\if{html}{\out{</div>}}
 }
@@ -121,7 +122,7 @@ design's imputed covariates.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
 
-\item{\code{smart_default}}{Whether to use smart optimizer start values by default.}
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default.}
 
 \item{\code{optimization_alg}}{Optimization algorithm to use. Default is dispatched via policy.}
 }

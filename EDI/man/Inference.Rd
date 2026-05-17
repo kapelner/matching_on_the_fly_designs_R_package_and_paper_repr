@@ -58,7 +58,7 @@ Initialize an estimation and test object after the design is completed.
   verbose = FALSE,
   harden = TRUE,
   model_formula = NULL,
-  smart_default = TRUE
+  smart_cold_start_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -85,7 +85,7 @@ the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
-\item{\code{smart_default}}{Whether to use smart optimizer start values by default for
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default for
 likelihood-based models. Explicit starts always override this object-level policy.}
 }
 \if{html}{\out{</div>}}

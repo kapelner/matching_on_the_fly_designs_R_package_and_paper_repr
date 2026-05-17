@@ -244,7 +244,7 @@ double get_zinb_neg_loglik_cpp(const Eigen::MatrixXd& X,
 //' @param y Vector of responses.
 //' @param Xzi Matrix of predictors for the zero-inflation component.
 //' @param warm_start_params Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param estimate_only If TRUE, skip variance component calculations.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
@@ -278,24 +278,14 @@ List fast_zinb_cpp(
     if (warm_start_params.isNotNull()) {
         par = as<Eigen::VectorXd>(NumericVector(warm_start_params));
     } else if (smart_cold_start) {
-        // Condition component: OLS on log1p(y)
-        par.head(pc) = ols_warm_start_beta_on_log1p(X, y);
-        // ZI component: OLS on (y == 0)
-        Eigen::VectorXd y_is_zero = (y.array() == 0.0).cast<double>();
-        par.segment(pc, pz) = ols_warm_start_beta(Xzi, y_is_zero);
-        // log_theta = 0 (theta=1)
-        par[pc + pz] = 0.0;
+        par = edi_opt::zinb_smart_cold_start(X, Xzi, y);
     } else {
         par.setZero();
-        // Init cond intercept from mean of positive observations; zi starts at 0;
-        // log_theta = 0 (theta=1). Starting zi at logit(prop_zeros) is wrong
-        // because it attributes all zeros to the structural component, biasing the
-        // optimizer toward a poor local minimum.
+        // Init cond intercept from mean of positive observations
         double sum_pos = 0.0; int cnt_pos = 0;
         for (int i = 0; i < y.size(); ++i)
             if (y[i] > 0.0) { sum_pos += y[i]; ++cnt_pos; }
         if (cnt_pos > 0) par[0] = std::log(sum_pos / cnt_pos);
-        // par[pc..pc+pz-1] = 0 (zi), par[pc+pz] = 0 (log_theta) already set
     }
 
     ZeroInflatedNegBin fun(y, X, Xzi);

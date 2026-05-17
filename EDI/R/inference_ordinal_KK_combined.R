@@ -26,15 +26,37 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_default = TRUE){
+		#' @param smart_cold_start_default Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				if (!check_package_installed("multgee")){
 					stop("Package 'multgee' is required for ", class(self)[1], ". Please install it.")
 				}
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$init_kk_gee_shared(des_obj, use_rcpp = FALSE)
 		},
+		#' @description Compute the treatment estimate.
+		#' @param estimate_only Whether to skip standard-error calculations.
+		compute_estimate = function(estimate_only = FALSE){
+			private$shared_gee_dispatch(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
+		},
+		#' @description Computes an approximate confidence interval.
+		#' @param alpha Confidence level.
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			private$shared_gee_dispatch(estimate_only = FALSE)
+			private$compute_z_or_t_ci_from_s_and_df(alpha)
+		},
+		#' @description Computes an approximate two-sided p-value.
+		#' @param delta Null treatment effect value.
+		compute_asymp_two_sided_pval = function(delta = 0){
+			private$shared_gee_dispatch(estimate_only = FALSE)
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+		},
+		#' @description Computes the treatment effect estimate for a bootstrap sample.
+		#' @param subject_or_block_weights Row weights for the bootstrap sample.
+		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
 			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
 			pred_df = private$gee_predictors_df()
@@ -44,32 +66,40 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 				private$cached_values$s_beta_hat_T = NA_real_
 				return(NA_real_)
 			}
-			dat = data.frame(
-				y = factor(private$y[ok], ordered = TRUE),
-				pred_df[ok, , drop = FALSE],
-				check.names = FALSE
-			)
+			X_fit = as.matrix(pred_df[ok, , drop = FALSE])
+			y_fit = as.numeric(private$y[ok])
+			n_params = ncol(X_fit) + length(sort(unique(y_fit))) - 1L
 			mod = tryCatch(
-				suppressWarnings(
-					MASS::polr(
-						y ~ .,
-						data = dat,
-						weights = as.numeric(row_weights[ok]),
-						method = "logistic",
-						Hess = FALSE
-					)
+				fast_ordinal_regression_weighted_cpp(
+					X = X_fit,
+					y = y_fit,
+					weights = as.numeric(row_weights[ok]),
+					warm_start_params = private$get_fit_warm_start_for_length("params", n_params),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
+					smart_cold_start = private$smart_cold_start_default
 				),
 				error = function(e) NULL
 			)
-			beta_hat_T = if (is.null(mod)) NA_real_ else as.numeric(stats::coef(mod)[["w"]] %||% NA_real_)
+			if (!is.null(mod) && !is.null(mod$params)) {
+				private$set_fit_warm_start(as.numeric(mod$params), "params", fisher = mod$fisher_information)
+			}
+			beta_hat_T = if (is.null(mod) || length(mod$b) < 1L) NA_real_ else as.numeric(mod$b[1L])
 			private$cached_values$beta_hat_T = beta_hat_T
 			private$cached_values$s_beta_hat_T = NA_real_
 			private$cached_values$df = Inf
 			private$cached_values$summary_table = NULL
-			beta_hat_T
+		},
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		}
 	)),
-	private = c(InferenceMixinKKGEEShared$private, list(
+	private = utils::modifyList(as.list(InferenceMixinKKGEEShared$private), list(
 		gee_response_type = function() "ordinal",
 		gee_family        = function() stats::binomial(link = "logit"),
 		# Ordinal response requires ordLORgee, not geeglm.
@@ -151,7 +181,7 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = c(InferenceMixinKKGLMMShared$public, list(
+	public = utils::modifyList(as.list(InferenceMixinKKGLMMShared$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj A completed \code{Design} object with an ordinal response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -160,18 +190,19 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 		#'   design's imputed covariates.
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use internal Rcpp.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_default = TRUE){
+		#' @param smart_cold_start_default Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(use_rcpp)
 			}
 			if (use_rcpp) private$skip_glmm_pkg_check = TRUE
-			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_default = smart_default)
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 			private$init_kk_glmm_shared(des_obj)
 			private$use_rcpp = use_rcpp
 		}
 	)),
-	private = c(InferenceMixinKKGLMMShared$private, list(
+	private = utils::modifyList(as.list(InferenceMixinKKGLMMShared$private), list(
 		use_rcpp = TRUE,
 		glmm_response_type  = function() "ordinal",
 		glmm_family         = function() glmmTMB::cumulative(link = "logit"),
@@ -239,7 +270,7 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 					group_id   = as.integer(group_id),
 					K          = K,
 					j_T        = j_T,
-					smart_start = private$smart_default,
+					smart_cold_start = private$smart_cold_start_default,
 					estimate_only = estimate_only,
 					warm_start_params = start,
 					eps_g      = 1e-3,
@@ -320,7 +351,7 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 								group_id = group_id,
 								K = K,
 								j_T = 0L,
-								smart_start = private$smart_default,
+								smart_cold_start = private$smart_cold_start_default,
 								estimate_only = FALSE,
 								n_gh = n_gh,
 								max_abs_log_sigma = 8.0,

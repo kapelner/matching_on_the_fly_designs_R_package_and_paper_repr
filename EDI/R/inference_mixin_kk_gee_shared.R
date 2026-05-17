@@ -21,13 +21,6 @@ InferenceMixinKKGEEShared = list(
 			private$cached_values$beta_hat_T
 		},
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
-			if (!requireNamespace("geepack", quietly = TRUE)) {
-				stop(
-					"Package 'geepack' is required for weighted Bayesian-bootstrap estimation in ",
-					class(self)[1], ".",
-					call. = FALSE
-				)
-			}
 			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
 			beta_hat_T = private$fit_weighted_gee_with_fallback(row_weights)
 			private$cached_values$beta_hat_T = as.numeric(beta_hat_T)[1L]
@@ -72,6 +65,17 @@ InferenceMixinKKGEEShared = list(
 		use_rcpp = TRUE,
 		max_abs_reasonable_coef = 1e4,
 		kk_gee_engine = TRUE,
+		get_complexity_tier = function() "medium",
+		gee_warm_start_args = function(expected_length, expected_fisher_dim = expected_length){
+			start_beta = private$get_fit_warm_start_for_length("beta", expected_length)
+			list(
+				start_beta = start_beta,
+				warm_start_beta = start_beta,
+				start_params = private$get_fit_warm_start_for_length("params", expected_length),
+				warm_start_weights = private$get_fit_warm_start_weights(private$n),
+				warm_start_fisher_info = private$get_fit_warm_start_fisher(expected_fisher_dim)
+			)
+		},
 		init_kk_gee_shared = function(des_obj, use_rcpp = TRUE, model_formula = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), private$gee_response_type())
@@ -132,8 +136,14 @@ InferenceMixinKKGEEShared = list(
 				fit_fun = function(X_fit) X_fit,
 				fit_ok = function(mod, X_fit, keep) TRUE
 			)
-			candidates = list(normalize_candidate(attempt$X_fit))
+			candidates = list(as.data.frame(predictors_df, check.names = FALSE))
 			keys = paste(colnames(candidates[[1L]]), collapse = "|")
+			first_qr = normalize_candidate(attempt$X_fit)
+			first_key = paste(colnames(first_qr), collapse = "|")
+			if (!(first_key %in% keys)) {
+				candidates[[length(candidates) + 1L]] = first_qr
+				keys = c(keys, first_key)
+			}
 			other_idx = setdiff(seq_len(ncol(X_full)), 1L)
 			if (length(other_idx) > 0L){
 				thresholds = c(0.99, 0.95, 0.90, 0.85, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.20, 0.10)
@@ -338,14 +348,15 @@ InferenceMixinKKGEEShared = list(
 		fit_gee_on_data = function(fit_data, std_err = TRUE, estimate_only = FALSE){
 			if (private$use_rcpp) {
 				X_rcpp = cbind(`(Intercept)` = 1, as.matrix(fit_data$dat))
+				ws_args = private$gee_warm_start_args(ncol(X_rcpp))
 				res = tryCatch({
 					gee_pairs_singletons_cpp(
 						X = X_rcpp,
 						y = as.numeric(fit_data$y_sorted),
 						group_id = as.integer(fit_data$id_sorted),
 						family_str = private$gee_family_str(),
-						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_rcpp)),
-						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_rcpp))
+						warm_start_beta = ws_args$warm_start_beta,
+						warm_start_fisher_info = ws_args$warm_start_fisher_info
 					)
 				}, error = function(e) NULL)
 				if (!is.null(res) && isTRUE(res$converged)) return(res)
@@ -355,7 +366,7 @@ InferenceMixinKKGEEShared = list(
 			tryCatch({
 				dat_geepack = data.frame(y = fit_data$y_sorted, fit_data$dat)
 				X_geepack = cbind(`(Intercept)` = 1, as.matrix(fit_data$dat))
-				warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_geepack))
+				ws_args = private$gee_warm_start_args(ncol(X_geepack))
 
 				utils::capture.output(mod <- suppressMessages(suppressWarnings(
 					geepack::geeglm(
@@ -365,7 +376,7 @@ InferenceMixinKKGEEShared = list(
 						id     = fit_data$id_sorted,
 						corstr = "exchangeable",
 						std.err = std_err_arg,
-						start  = warm_start_beta
+						start  = ws_args$warm_start_beta
 					)
 				)))
 				mod
@@ -381,13 +392,30 @@ InferenceMixinKKGEEShared = list(
 			weights_sorted = as.numeric(fit_data$weights_sorted)
 			keep = is.finite(weights_sorted) & weights_sorted > 0
 			if (!any(keep)) return(NULL)
-			dat_geepack = data.frame(y = fit_data$y_sorted, fit_data$dat, check.names = FALSE)
-			dat_geepack = dat_geepack[keep, , drop = FALSE]
 			weights_kept = weights_sorted[keep]
 			id_sorted = fit_data$id_sorted[keep]
 			if (length(unique(id_sorted)) < 1L) return(NULL)
+			dat_kept = fit_data$dat[keep, , drop = FALSE]
+			y_kept = fit_data$y_sorted[keep]
+			if (private$use_rcpp) {
+				X_rcpp = cbind(`(Intercept)` = 1, as.matrix(dat_kept))
+				ws_args = private$gee_warm_start_args(ncol(X_rcpp))
+				return(tryCatch({
+					gee_pairs_singletons_weighted_cpp(
+						X = X_rcpp,
+						y = as.numeric(y_kept),
+						group_id = as.integer(id_sorted),
+						family_str = private$gee_family_str(),
+						weights = as.numeric(weights_kept),
+						warm_start_beta = ws_args$warm_start_beta,
+						warm_start_fisher_info = ws_args$warm_start_fisher_info
+					)
+				}, error = function(e) NULL))
+			}
+			if (!requireNamespace("geepack", quietly = TRUE)) return(NULL)
+			dat_geepack = data.frame(y = y_kept, dat_kept, check.names = FALSE)
 			X_geepack = cbind(`(Intercept)` = 1, as.matrix(dat_geepack[, setdiff(colnames(dat_geepack), "y"), drop = FALSE]))
-			warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_geepack))
+			ws_args = private$gee_warm_start_args(ncol(X_geepack))
 			tryCatch({
 				utils::capture.output(mod <- suppressMessages(suppressWarnings(
 					geepack::geeglm(
@@ -398,7 +426,7 @@ InferenceMixinKKGEEShared = list(
 						id     = id_sorted,
 						corstr = "exchangeable",
 						std.err = "none",
-						start  = warm_start_beta
+						start  = ws_args$warm_start_beta
 					)
 				)))
 				mod
@@ -407,7 +435,16 @@ InferenceMixinKKGEEShared = list(
 		fit_weighted_gee_with_fallback = function(row_weights){
 			gee_fit_ok = function(mod){
 				if (is.null(mod)) return(FALSE)
-				beta = tryCatch(stats::coef(mod), error = function(e) NULL)
+				beta = tryCatch(
+					if (inherits(mod, "geeglm")) {
+						stats::coef(mod)
+					} else if (!is.null(mod$beta)) {
+						mod$beta
+					} else {
+						stats::coef(mod)
+					},
+					error = function(e) NULL
+				)
 				if (is.null(beta) || !private$gee_coefficients_are_usable(beta)) return(FALSE)
 				beta_hat = private$extract_gee_treatment_estimate(mod)
 				is.finite(beta_hat)
@@ -420,7 +457,9 @@ InferenceMixinKKGEEShared = list(
 				)
 				mod = private$fit_weighted_gee_on_data(fit_data)
 				if (gee_fit_ok(mod)) {
-					private$set_fit_warm_start(stats::coef(mod), "beta")
+					beta = if (inherits(mod, "geeglm")) stats::coef(mod) else mod$beta
+					fisher = if (inherits(mod, "geeglm")) NULL else mod$fisher_information
+					private$set_fit_warm_start(beta, "beta", fisher = fisher)
 					return(private$extract_gee_treatment_estimate(mod))
 				}
 				if (private$gee_has_reservoir()) {
@@ -431,7 +470,9 @@ InferenceMixinKKGEEShared = list(
 					)
 					mod_fb = private$fit_weighted_gee_on_data(fit_data_fb)
 					if (gee_fit_ok(mod_fb)) {
-						private$set_fit_warm_start(stats::coef(mod_fb), "beta")
+						beta_fb = if (inherits(mod_fb, "geeglm")) stats::coef(mod_fb) else mod_fb$beta
+						fisher_fb = if (inherits(mod_fb, "geeglm")) NULL else mod_fb$fisher_information
+						private$set_fit_warm_start(beta_fb, "beta", fisher = fisher_fb)
 						return(private$extract_gee_treatment_estimate(mod_fb))
 					}
 				}

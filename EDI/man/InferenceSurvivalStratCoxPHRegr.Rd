@@ -28,7 +28,7 @@ inf$compute_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{\link[EDI:InferenceAsympLikStdModCache]{EDI::InferenceAsympLikStdModCache}} -> \code{InferenceSurvivalStratCoxPHRegr}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{\link[EDI:InferenceAsympLikStdModCache]{EDI::InferenceAsympLikStdModCache}} -> \code{InferenceSurvivalStratCoxPHRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -94,7 +94,8 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>EDI::InferenceAsympLik$get_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_information_preference"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>EDI::InferenceAsympLik$set_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>EDI::InferenceAsympLik$set_testing_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="supports_lik_ratio_param_bootstrap"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-supports_lik_ratio_param_bootstrap'><code>EDI::InferenceParamBootstrap$supports_lik_ratio_param_bootstrap()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_confidence_interval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_two_sided_pval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_two_sided_pval()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -110,7 +111,7 @@ Initialize
   use_rcpp = TRUE,
   optimization_alg = "newton_raphson",
   verbose = FALSE,
-  smart_default = TRUE
+  smart_cold_start_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -128,6 +129,8 @@ If \code{FALSE}, use \pkg{survival::coxph}.}
 \item{\code{optimization_alg}}{Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
 }
 \if{html}{\out{</div>}}
 }
@@ -136,7 +139,7 @@ If \code{FALSE}, use \pkg{survival::coxph}.}
 \if{html}{\out{<a id="method-InferenceSurvivalStratCoxPHRegr-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalStratCoxPHRegr-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
-Compute treatment estimate
+Compute the treatment effect estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalStratCoxPHRegr$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
@@ -153,7 +156,7 @@ Compute treatment estimate
 \if{html}{\out{<a id="method-InferenceSurvivalStratCoxPHRegr-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalStratCoxPHRegr-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
-Compute asymp confidence interval
+Computes an approximate confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalStratCoxPHRegr$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
@@ -161,7 +164,7 @@ Compute asymp confidence interval
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The significance level (default 0.05).}
+\item{\code{alpha}}{Confidence level.}
 }
 \if{html}{\out{</div>}}
 }
@@ -170,7 +173,7 @@ Compute asymp confidence interval
 \if{html}{\out{<a id="method-InferenceSurvivalStratCoxPHRegr-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalStratCoxPHRegr-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
-Compute asymp two sided pval for treatment effect
+Computes an approximate two-sided p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalStratCoxPHRegr$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
@@ -178,7 +181,7 @@ Compute asymp two sided pval for treatment effect
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{The null treatment effect (default 0).}
+\item{\code{delta}}{Null treatment effect value.}
 }
 \if{html}{\out{</div>}}
 }

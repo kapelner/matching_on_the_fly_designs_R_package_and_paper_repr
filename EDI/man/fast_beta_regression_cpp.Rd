@@ -8,7 +8,7 @@ fast_beta_regression_cpp(
   X,
   y,
   warm_start_beta = NULL,
-  smart_start = TRUE,
+  smart_cold_start = TRUE,
   start_phi = 10,
   compute_std_errs = FALSE,
   fixed_idx = NULL,
@@ -22,7 +22,9 @@ fast_beta_regression_cpp(
 
 \item{y}{A numeric vector of responses (in (0, 1)).}
 
-\item{warm_start_beta}{Optional starting values for coefficients.}
+\item{warm_start_beta}{Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.}
+
+\item{smart_cold_start}{Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.}
 
 \item{start_phi}{Optional starting value for precision parameter phi.}
 

@@ -26,20 +26,39 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		#' @param smart_default Whether to use smart optimizer start values by default.
+		#' @param smart_cold_start_default Whether to use smart optimizer start values by default.
 		#' @param optimization_alg Character scalar specifying the optimization algorithm. 
 		#'   Default is dispatched via policy.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_default = FALSE, optimization_alg = NULL){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 				assertFormula(model_formula, null.ok = TRUE)
 			}
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
+		},
+		#' @description Compute the treatment effect estimate.
+		#' @param estimate_only If TRUE, skip variance component calculations.
+		compute_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
+		},
+		#' @description Computes an approximate confidence interval.
+		#' @param alpha Confidence level.
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			private$shared(estimate_only = FALSE)
+			private$compute_z_or_t_ci_from_s_and_df(alpha)
+		},
+		#' @description Computes an approximate two-sided p-value.
+		#' @param delta Null treatment effect value.
+		compute_asymp_two_sided_pval = function(delta = 0){
+			private$shared(estimate_only = FALSE)
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
 	private = list(
 		best_X_colnames = NULL,
+		get_complexity_tier = function() "light",
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -56,11 +75,13 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
 			}
 			n_params = ncol(X) + 1L
+			ws_args = private$get_backend_warm_start_args(n_params)
+			
 			res = fast_weibull_regression_cpp(
 				y = private$y, dead = private$dead, X = X,
-				warm_start_params = private$get_fit_warm_start_for_length("params", n_params),
-				warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
-				smart_start = private$smart_default,
+				warm_start_params = ws_args$start_params,
+				warm_start_fisher_info = ws_args$warm_start_fisher_info,
+				smart_cold_start = private$smart_cold_start_default,
 				estimate_only = TRUE, optimization_alg = private$optimization_alg
 			)
 			if (is.null(res) || !isTRUE(res$converged) || !is.finite(res$coefficients[2])){
@@ -72,8 +93,61 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
+		supports_lik_ratio_param_bootstrap = function(){
+			TRUE
+		},
 		supports_likelihood_tests = function(){
 			TRUE
+		},
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			b_null    = as.numeric(null_fit$b)
+			log_sigma = as.numeric(null_fit$log_sigma)
+			sigma     = exp(log_sigma)
+			if (!is.finite(sigma) || sigma <= 0) return(NULL)
+			X_fit    = spec$X
+			j        = spec$j
+			n        = nrow(X_fit)
+			mu_log   = as.numeric(X_fit %*% b_null)
+			T_sim    = rweibull(n, shape = 1 / sigma, scale = exp(mu_log))
+			if (!all(is.finite(T_sim)) || any(T_sim <= 0)) return(NULL)
+			y_obs    = as.numeric(private$y)
+			d_obs    = as.numeric(private$dead)
+			C_i      = ifelse(d_obs == 0, y_obs, Inf)
+			y_sim    = pmin(T_sim, C_i)
+			dead_sim = as.numeric(T_sim <= C_i)
+			if (!all(is.finite(y_sim)) || any(y_sim <= 0)) return(NULL)
+			full_res = tryCatch(
+				fast_weibull_regression_cpp(
+					y = y_sim, dead = dead_sim, X = X_fit,
+					smart_cold_start = private$smart_cold_start_default,
+					estimate_only = FALSE, optimization_alg = private$optimization_alg
+				),
+				error = function(e) NULL
+			)
+			if (is.null(full_res) || !isTRUE(full_res$converged) || length(full_res$coefficients) < j || !is.finite(full_res$coefficients[j])) return(NULL)
+			full_fit_boot = list(
+				b          = as.numeric(full_res$coefficients),
+				log_sigma  = as.numeric(full_res$log_sigma),
+				neg_loglik = as.numeric(full_res$neg_ll)
+			)
+			list(
+				full_fit = full_fit_boot,
+				fit_null = function(d, start = NULL){
+					res = tryCatch(
+						fast_weibull_regression_cpp(
+							y = y_sim, dead = dead_sim, X = X_fit,
+							warm_start_params = start %||% c(as.numeric(full_res$coefficients), as.numeric(full_res$log_sigma)),
+							fixed_idx = j, fixed_values = d,
+							smart_cold_start = TRUE,
+							estimate_only = FALSE, optimization_alg = private$optimization_alg
+						),
+						error = function(e) NULL
+					)
+					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
+					list(b = as.numeric(res$coefficients), log_sigma = as.numeric(res$log_sigma), neg_loglik = as.numeric(res$neg_ll))
+				},
+				neg_loglik = function(fit) as.numeric(fit$neg_loglik)
+			)
 		},
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
@@ -87,13 +161,14 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 				X = X_fit, y = y, j = j_treat,
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
+					ws_args = private$get_backend_warm_start_args(ncol(X_fit) + 1L)
 					res = tryCatch(
 						fast_weibull_regression_cpp(
 							y = y, dead = dead, X = X_fit,
-							warm_start_params = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit) + 1L),
-							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit) + 1L),
+							warm_start_params = start %||% ws_args$start_params,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
 							fixed_idx = j_treat, fixed_values = delta,
-							smart_start = private$smart_default,
+							smart_cold_start = private$smart_cold_start_default,
 							optimization_alg = private$optimization_alg
 						),
 						error = function(e) NULL
@@ -130,13 +205,12 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 				required_cols = 2L,
 				fit_fun = function(X_fit){
 					n_params = ncol(X_fit) + 1L
-					warm_start_params = private$get_fit_warm_start_for_length("params", n_params)
-					warm_fisher = private$get_fit_warm_start_fisher(n_params)
+					ws_args = private$get_backend_warm_start_args(n_params)
 					res = fast_weibull_regression_cpp(
 						y = private$y, dead = private$dead, X = X_fit,
-						warm_start_params = warm_start_params,
-						warm_start_fisher_info = warm_fisher,
-						smart_start = private$smart_default,
+						warm_start_params = ws_args$start_params,
+						warm_start_fisher_info = ws_args$warm_start_fisher_info,
+						smart_cold_start = private$smart_cold_start_default,
 						estimate_only = estimate_only, optimization_alg = private$optimization_alg
 					)
 					if (is.null(res) || !isTRUE(res$converged)) return(NULL)

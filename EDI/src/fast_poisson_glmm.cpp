@@ -287,7 +287,7 @@ List fast_poisson_glmm_cpp(
 	const Eigen::VectorXi& group_id,
 	int j_T,
 	Nullable<NumericVector> warm_start_params = R_NilValue,
-	bool smart_start = true,
+	bool smart_cold_start = true,
 	bool estimate_only = false,
 	int n_gh = 20,
 	int maxit = 300,
@@ -313,7 +313,7 @@ List fast_poisson_glmm_cpp(
 		if (sp.size() == total) {
 			for (int i = 0; i < total; ++i) par[i] = sp[i];
 		}
-	} else if (smart_start) {
+	} else if (smart_cold_start) {
 		// Init: beta via OLS on log(y+0.5), log_sigma = -3
 		Eigen::VectorXd log_y_safe = (y.array() + 0.5).log().matrix();
 		Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X);

@@ -6,7 +6,7 @@
 #' @keywords internal
 InferenceCountCompositeLikelihood = R6::R6Class("InferenceCountCompositeLikelihood",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLik,
+	inherit = InferenceParamBootstrap,
 	public = list(
 		#' @description Computes the treatment estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -67,6 +67,44 @@ InferenceCountCompositeLikelihood = R6::R6Class("InferenceCountCompositeLikeliho
 			TRUE
 		},
 
+		supports_lik_ratio_param_bootstrap = function(){
+			TRUE
+		},
+
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			b_null     = as.numeric(null_fit$b)
+			mu         = pmax(exp(as.numeric(spec$X %*% b_null)), 0)
+			y_sim      = as.numeric(rpois(length(mu), mu))
+			X_fit      = spec$X
+			j          = spec$j
+			full_fit_b = tryCatch(
+				fast_poisson_regression_cpp(
+					X = X_fit, y = y_sim,
+					smart_cold_start = private$smart_cold_start_default
+				),
+				error = function(e) NULL
+			)
+			if (is.null(full_fit_b) || length(full_fit_b$b) < j || !is.finite(full_fit_b$b[j])) return(NULL)
+			list(
+				full_fit = full_fit_b,
+				fit_null = function(d, start = NULL){
+					tryCatch(
+						fast_poisson_regression_with_var_cpp(
+							X = X_fit, y = y_sim, j = j,
+							warm_start_beta = start %||% full_fit_b$b,
+							fixed_idx = j, fixed_values = d,
+							smart_cold_start = TRUE
+						),
+						error = function(e) NULL
+					)
+				},
+				neg_loglik = function(fit){
+					eta_f = as.numeric(X_fit %*% as.numeric(fit$b))
+					-sum(y_sim * eta_f - exp(eta_f) - lgamma(y_sim + 1))
+				}
+			)
+		},
+
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context
@@ -83,7 +121,7 @@ InferenceCountCompositeLikelihood = R6::R6Class("InferenceCountCompositeLikeliho
 					y = y,
 					j = j_treat,
 					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
-					smart_start = private$smart_default,
+					smart_cold_start = private$smart_cold_start_default,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
 				),
 				error = function(e) NULL
@@ -104,7 +142,7 @@ InferenceCountCompositeLikelihood = R6::R6Class("InferenceCountCompositeLikeliho
 						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
 						fixed_idx = j_treat,
 						fixed_values = delta,
-						smart_start = private$smart_default,
+						smart_cold_start = private$smart_cold_start_default,
 						optimization_alg = private$optimization_alg %||% "lbfgs"
 					)
 				},

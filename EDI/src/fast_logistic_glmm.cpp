@@ -424,7 +424,7 @@ List fast_logistic_glmm_cpp(
 	const Eigen::VectorXi& group_id,// group IDs, sorted internally
 	int j_T,                        // 0-based treatment column index in X
 	Nullable<NumericVector> warm_start_params = R_NilValue,
-	bool smart_start = true,
+	bool smart_cold_start = true,
 	bool estimate_only = false,
 	int n_gh = 20,
 	int maxit = 300,
@@ -451,9 +451,9 @@ List fast_logistic_glmm_cpp(
 		if (sp.size() == total) {
 			for (int i = 0; i < total; ++i) par[i] = sp[i];
 		}
-	} else if (smart_start) {
+	} else if (smart_cold_start) {
 		// Logistic smart warm_start_params: OLS on y
-		par.head(p) = ols_warm_start_beta(X, y);
+		par.head(p) = ols_smart_cold_start_beta(X, y);
 		par[total - 1] = -3.0;
 	} else {
 		par.head(p).setZero();

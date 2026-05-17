@@ -24,7 +24,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		#' @param use_rcpp Whether to use Rcpp speedup.
 		#' @param verbose Whether to print progress messages.
 		#' @param optimization_alg  Optimization algorithm to use. Default is dispatched via policy.
-		initialize = function(des_obj, model_formula = NULL, model_formula_zero = ~ ., use_rcpp = TRUE, verbose = FALSE, smart_default = TRUE, optimization_alg = NULL){
+		initialize = function(des_obj, model_formula = NULL, model_formula_zero = ~ ., use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = TRUE, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 				assertFormula(model_formula, null.ok = TRUE)
@@ -32,7 +32,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				assertFlag(use_rcpp)
 			}
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -74,6 +74,9 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		}
 	),
 		private = list(
+		supports_reusable_bootstrap_worker = function(){
+			FALSE
+		},
 		cached_mod = NULL,
 		get_standard_error = function(){
 			private$shared(estimate_only = FALSE)
@@ -89,6 +92,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		best_Xzi_colnames = NULL,
 		use_rcpp = TRUE,
 		model_formula_zero = NULL,
+		get_complexity_tier = function() "heavy",
 		build_component_matrix = function(model_formula, selected_colnames = NULL, treatment_name = "treatment"){
 			if (is.null(selected_colnames)) {
 				if (identical(model_formula, ~ .)) {
@@ -167,17 +171,15 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			Xzi_fit = private$build_component_matrix(private$model_formula_zero, private$best_Xzi_colnames, treatment_name = "treatment")
 			if (private$use_rcpp && identical(private$za_description(), "Zero-Inflated Negative Binomial")) {
 				n_params = ncol(X_fit) + ncol(Xzi_fit) + 1L
-				warm_start_params = private$get_fit_warm_start_for_length("params", n_params)
-				warm_fisher = private$get_fit_warm_start_fisher(n_params)
+				ws_args = private$get_backend_warm_start_args(n_params)
 				fit = tryCatch(
 					fast_zinb_cpp(
 						X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit,
-						warm_start_params = warm_start_params,
-						warm_start_fisher_info = warm_fisher,
-						smart_start = private$smart_default,
+						warm_start_params = ws_args$start_params,
+						warm_start_fisher_info = ws_args$warm_start_fisher_info,
+						smart_cold_start = private$smart_cold_start_default,
 						estimate_only = estimate_only, optimization_alg = private$optimization_alg
-					)
-,
+					),
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) return(NA_real_)
@@ -186,18 +188,16 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			} else if (private$use_rcpp && !grepl("Negative Binomial", private$za_description())) {
 				is_hurdle = identical(private$za_description(), "Hurdle Poisson")
 				n_params = ncol(X_fit) + ncol(Xzi_fit)
-				warm_start_params = private$get_fit_warm_start_for_length("params", n_params)
-				warm_fisher = private$get_fit_warm_start_fisher(n_params)
+				ws_args = private$get_backend_warm_start_args(n_params)
 				fit = tryCatch(
 					fast_zero_augmented_poisson_cpp(
 						X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit,
 						is_hurdle = is_hurdle,
-						warm_start_params = warm_start_params,
-						warm_start_fisher_info = warm_fisher,
-						smart_start = private$smart_default,
+						warm_start_params = ws_args$start_params,
+						warm_start_fisher_info = ws_args$warm_start_fisher_info,
+						smart_cold_start = private$smart_cold_start_default,
 						estimate_only = estimate_only, optimization_alg = private$optimization_alg
-					)
-,
+					),
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) return(NA_real_)
@@ -249,7 +249,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 							Xzi = Xzi_fit,
 							warm_start_params = warm_start_params,
 							warm_start_fisher_info = warm_fisher,
-							smart_start = private$smart_default,
+							smart_cold_start = private$smart_cold_start_default,
 							estimate_only = FALSE,
 							optimization_alg = private$optimization_alg,
 							fixed_idx = j_treat,
@@ -263,7 +263,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 							is_hurdle = is_hurdle,
 							warm_start_params = warm_start_params,
 							warm_start_fisher_info = warm_fisher,
-							smart_start = private$smart_default,
+							smart_cold_start = private$smart_cold_start_default,
 							estimate_only = FALSE,
 							optimization_alg = private$optimization_alg,
 							fixed_idx = j_treat,
@@ -378,14 +378,13 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			out = list()
 			if (private$use_rcpp && identical(private$za_description(), "Zero-Inflated Negative Binomial")) {
 				n_params = ncol(X_fit) + ncol(Xzi_fit) + 1L
-				warm_start_params = private$get_fit_warm_start_for_length("params", n_params)
-				warm_fisher = private$get_fit_warm_start_fisher(n_params)
+				ws_args = private$get_backend_warm_start_args(n_params)
 				fit = tryCatch(
 					fast_zinb_cpp(
 						X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit,
-						warm_start_params = warm_start_params,
-						warm_start_fisher_info = warm_fisher,
-						smart_start = private$smart_default,
+						warm_start_params = ws_args$start_params,
+						warm_start_fisher_info = ws_args$warm_start_fisher_info,
+						smart_cold_start = private$smart_cold_start_default,
 						estimate_only = estimate_only, optimization_alg = private$optimization_alg
 					),
 					error = function(e) NULL
@@ -394,6 +393,9 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					private$cache_nonestimable_estimate("zinb_fit_unavailable")
 					return(NULL)
 				}
+				
+				private$cached_mod = fit
+				private$set_fit_warm_start(as.numeric(fit$params), "params", fisher = fit$fisher_information)
 				
 				private$cached_values$likelihood_test_context = list(
 					X = X_fit,
@@ -412,15 +414,14 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			} else if (private$use_rcpp && !grepl("Negative Binomial", private$za_description())) {
 				is_hurdle = identical(private$za_description(), "Hurdle Poisson")
 				n_params = ncol(X_fit) + ncol(Xzi_fit)
-				warm_start_params = private$get_fit_warm_start_for_length("params", n_params)
-				warm_fisher = private$get_fit_warm_start_fisher(n_params)
+				ws_args = private$get_backend_warm_start_args(n_params)
 				fit = tryCatch(
 					fast_zero_augmented_poisson_cpp(
 						X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit,
 						is_hurdle = is_hurdle,
-						warm_start_params = warm_start_params,
-						warm_start_fisher_info = warm_fisher,
-						smart_start = private$smart_default,
+						warm_start_params = ws_args$start_params,
+						warm_start_fisher_info = ws_args$warm_start_fisher_info,
+						smart_cold_start = private$smart_cold_start_default,
 						estimate_only = estimate_only, optimization_alg = private$optimization_alg
 					),
 					error = function(e) NULL
@@ -429,6 +430,10 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					private$cache_nonestimable_estimate("zero_augmented_poisson_fit_unavailable")
 					return(NULL)
 				}
+				
+				private$cached_mod = fit
+				full_params = as.numeric(c(fit$coefficients$cond, fit$coefficients$zi))
+				private$set_fit_warm_start(full_params, "params", fisher = fit$fisher_information)
 				
 				private$cached_values$likelihood_test_context = list(
 					X = X_fit,
@@ -441,7 +446,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					se = tryCatch(sqrt(fit$vcov[2, 2]), error = function(e) NA_real_)
 					out$ssq_b_j = if (is.finite(se) && se > 0) se^2 else NA_real_
 				}
-				out$params = as.numeric(c(fit$coefficients$cond, fit$coefficients$zi))
+				out$params = full_params
 				out$fisher_information = fit$fisher_information
 				out$mod = fit
 			} else {

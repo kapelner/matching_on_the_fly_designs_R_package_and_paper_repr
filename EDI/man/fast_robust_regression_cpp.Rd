@@ -8,7 +8,7 @@ fast_robust_regression_cpp(
   X,
   y,
   warm_start_beta = NULL,
-  smart_start = TRUE,
+  smart_cold_start = TRUE,
   method = "MM",
   j = 2L,
   c = 1.345,
@@ -25,7 +25,7 @@ fast_robust_regression_cpp(
 
 \item{y}{A numeric vector of responses.}
 
-\item{warm_start_beta}{Optional starting values for coefficients.}
+\item{warm_start_beta}{Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.}
 
 \item{method}{Robust estimation method ("M" or "MM").}
 

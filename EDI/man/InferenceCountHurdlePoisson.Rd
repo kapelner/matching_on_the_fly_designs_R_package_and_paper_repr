@@ -24,7 +24,7 @@ inf$compute_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{EDI::InferenceCountLikelihood} -> \code{EDI::InferenceCountZeroAugmentedPoissonAbstract} -> \code{InferenceCountHurdlePoisson}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{\link[EDI:InferenceCountLikelihood]{EDI::InferenceCountLikelihood}} -> \code{EDI::InferenceCountZeroAugmentedPoissonAbstract} -> \code{InferenceCountHurdlePoisson}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -87,6 +87,8 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>EDI::InferenceAsympLik$get_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_information_preference"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>EDI::InferenceAsympLik$set_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>EDI::InferenceAsympLik$set_testing_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_confidence_interval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_two_sided_pval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceCountLikelihood" data-id="compute_estimate"><a href='../../EDI/html/InferenceCountLikelihood.html#method-InferenceCountLikelihood-compute_estimate'><code>EDI::InferenceCountLikelihood$compute_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceCountZeroAugmentedPoissonAbstract" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceCountZeroAugmentedPoissonAbstract.html#method-InferenceCountZeroAugmentedPoissonAbstract-compute_asymp_confidence_interval'><code>EDI::InferenceCountZeroAugmentedPoissonAbstract$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceCountZeroAugmentedPoissonAbstract" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceCountZeroAugmentedPoissonAbstract.html#method-InferenceCountZeroAugmentedPoissonAbstract-compute_asymp_two_sided_pval'><code>EDI::InferenceCountZeroAugmentedPoissonAbstract$compute_asymp_two_sided_pval()</code></a></span></li>
@@ -105,7 +107,7 @@ Initialize a hurdle Poisson inference object.
   model_formula_hurdle = ~.,
   use_rcpp = TRUE,
   verbose = FALSE,
-  smart_default = TRUE,
+  smart_cold_start_default = TRUE,
   optimization_alg = NULL
 )}\if{html}{\out{</div>}}
 }
@@ -124,6 +126,8 @@ Initialize a hurdle Poisson inference object.
 implementation. If \code{FALSE}, use \pkg{glmmTMB}.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
 
 \item{\code{optimization_alg}}{Optimization algorithm. Default is dispatched via policy.}
 }

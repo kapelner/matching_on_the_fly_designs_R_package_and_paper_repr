@@ -67,15 +67,20 @@ InferenceMixinKKPassThrough = list(
 						y = y, dead = dead, w = w, X = X,
 						m = m, n_reservoir = n_reservoir
 					)
+					kk_boot_draws = replicate(
+						as.integer(B),
+						des_priv$draw_bootstrap_indices(),
+						simplify = FALSE
+					)
 					if (isTRUE(private$use_reusable_kk_bootstrap_worker())) {
 						if (isTRUE(debug)) {
-							return(private$compute_kk_bootstrap_debug_with_reused_worker(B, kk_boot_context))
+							return(private$compute_kk_bootstrap_debug_with_reused_worker(kk_boot_draws, kk_boot_context))
 						}
 						actual_cores = private$effective_parallel_cores("bootstrap", self$num_cores)
 						if (actual_cores > 1L) {
 							do_warmup_iter = function() {
 								worker_state = private$create_kk_bootstrap_worker_state(kk_boot_context)
-								sample_info = des_priv$draw_bootstrap_indices()
+								sample_info = kk_boot_draws[[1L]]
 								private$load_kk_bootstrap_sample_into_worker(worker_state, sample_info)
 								tryCatch(private$compute_kk_bootstrap_worker_estimate(worker_state), error = function(e) NA_real_)
 							}
@@ -87,7 +92,7 @@ InferenceMixinKKPassThrough = list(
 							}
 						}
 						return(private$compute_kk_bootstrap_distribution_with_reused_workers(
-							B = B,
+							kk_boot_draws = kk_boot_draws,
 							kk_boot_context = kk_boot_context,
 							actual_cores = actual_cores,
 							show_progress = show_progress
@@ -97,7 +102,7 @@ InferenceMixinKKPassThrough = list(
 						debug_results = vector("list", B)
 						has_res_stat_debug = private$has_private_method("compute_reservoir_and_match_statistics")
 						for (b in seq_len(B)) {
-							boot_sample = des_priv$draw_bootstrap_indices()
+							boot_sample = kk_boot_draws[[b]]
 							i_b   = boot_sample$i_b
 							m_vec_b = boot_sample$m_vec_b
 							iter_warns = character(0)
@@ -152,7 +157,7 @@ InferenceMixinKKPassThrough = list(
 						beta_hat_T_bs = rep(NA_real_, B)
 						has_res_stat_serial = private$has_private_method("compute_reservoir_and_match_statistics")
 						for (b in 1:B) {
-							boot_sample = des_priv$draw_bootstrap_indices()
+							boot_sample = kk_boot_draws[[b]]
 							i_b    = boot_sample$i_b
 							m_vec_b = boot_sample$m_vec_b
 							boot_inf_obj = self$duplicate()
@@ -197,8 +202,8 @@ InferenceMixinKKPassThrough = list(
 						kk_template = self$duplicate()
 						has_res_stat = private$object_has_private_method(kk_template, "compute_reservoir_and_match_statistics")
 						# Use private$par_lapply which handles both persistent fork clusters and other strategies.
-						beta_hat_T_bs = unlist(private$par_lapply(1:B, function(b) {
-							boot_sample = des_priv$draw_bootstrap_indices()
+						beta_hat_T_bs = unlist(private$par_lapply(seq_along(kk_boot_draws), function(b) {
+							boot_sample = kk_boot_draws[[b]]
 							i_b    = boot_sample$i_b
 							m_vec_b = boot_sample$m_vec_b
 							worker_inf = kk_template$duplicate()
@@ -215,8 +220,8 @@ InferenceMixinKKPassThrough = list(
 							}, error = function(e) NA_real_)
 						}, n_cores = cores_to_use, show_progress = private$verbose,
 						export_list = list(
-							des_priv = des_priv,
 							y = y, dead = dead, w = w, X = X, kk_template = kk_template,
+							kk_boot_draws = kk_boot_draws,
 							has_res_stat = has_res_stat
 						)))
 						return(beta_hat_T_bs)
@@ -240,7 +245,7 @@ InferenceMixinKKPassThrough = list(
 			"auto"
 		},
 		use_reusable_kk_bootstrap_worker = function(){
-			TRUE
+			FALSE
 		},
 		init_kk_passthrough = function(des_obj){
 			if (should_run_asserts()) {
@@ -315,14 +320,15 @@ InferenceMixinKKPassThrough = list(
 		compute_kk_bootstrap_worker_estimate = function(worker_state){
 			as.numeric(worker_state$worker$compute_estimate(estimate_only = TRUE))[1L]
 		},
-		compute_kk_bootstrap_debug_with_reused_worker = function(B, kk_boot_context){
+		compute_kk_bootstrap_debug_with_reused_worker = function(kk_boot_draws, kk_boot_context){
+			B = length(kk_boot_draws)
 			worker_state = private$create_kk_bootstrap_worker_state(kk_boot_context)
 			debug_results = vector("list", B)
 			for (b in seq_len(B)) {
 				iter_warns = character(0)
 				iter_val = withCallingHandlers(
 					tryCatch({
-						sample_info = private$des_obj_priv_int$draw_bootstrap_indices()
+						sample_info = kk_boot_draws[[b]]
 						private$load_kk_bootstrap_sample_into_worker(worker_state, sample_info)
 						private$compute_kk_bootstrap_worker_estimate(worker_state)
 					}, error = function(e) list(val = NA_real_, error = conditionMessage(e))),
@@ -356,16 +362,16 @@ InferenceMixinKKPassThrough = list(
 				prop_illegal_values = mean(!is.finite(values))
 			)
 		},
-		compute_kk_bootstrap_distribution_with_reused_workers = function(B, kk_boot_context, actual_cores, show_progress = FALSE){
+		compute_kk_bootstrap_distribution_with_reused_workers = function(kk_boot_draws, kk_boot_context, actual_cores, show_progress = FALSE){
+			B = length(kk_boot_draws)
 			chunk_n = max(1L, min(as.integer(actual_cores), as.integer(B)))
 			chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
 			chunks = split(seq_len(B), chunk_id)
-			des_priv_rw = private$des_obj_priv_int
 			run_chunk = function(idxs) {
 				worker_state = private$create_kk_bootstrap_worker_state(kk_boot_context)
 				out = numeric(length(idxs))
 				for (k in seq_along(idxs)) {
-					sample_info = des_priv_rw$draw_bootstrap_indices()
+					sample_info = kk_boot_draws[[idxs[[k]]]]
 					out[k] = tryCatch({
 						private$load_kk_bootstrap_sample_into_worker(worker_state, sample_info)
 						private$compute_kk_bootstrap_worker_estimate(worker_state)

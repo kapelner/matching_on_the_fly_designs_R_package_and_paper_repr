@@ -9,7 +9,7 @@ test_that("likelihood inversion paths populate and reuse null-fit warm-start cac
 	linpred <- -0.2 + 0.7 * w + 0.3 * x
 	des$add_all_subject_responses(rbinom(n, 1, plogis(linpred)))
 
-	inf <- InferenceIncidLogRegr$new(des, verbose = FALSE, smart_default = TRUE)
+	inf <- InferenceIncidLogRegr$new(des, verbose = FALSE, smart_cold_start_default = TRUE)
 	inf$set_testing_type("lik_ratio")
 	p1 <- inf$compute_asymp_two_sided_pval(0.05)
 	p2 <- inf$compute_asymp_two_sided_pval(0.08)
@@ -49,7 +49,7 @@ test_that("gradient testing type is available on representative likelihood famil
 	des_logit$add_all_subjects_to_experiment(data.frame(x = x))
 	des_logit$overwrite_all_subject_assignments(w)
 	des_logit$add_all_subject_responses(rbinom(n, 1, plogis(-0.1 + 0.5 * w + 0.2 * x)))
-	inf_logit <- InferenceIncidLogRegr$new(des_logit, verbose = FALSE, smart_default = TRUE)
+	inf_logit <- InferenceIncidLogRegr$new(des_logit, verbose = FALSE, smart_cold_start_default = TRUE)
 	expect_true("gradient" %in% inf_logit$get_supported_testing_types())
 	inf_logit$set_testing_type("gradient")
 	p_logit <- inf_logit$compute_asymp_two_sided_pval(0)
@@ -61,7 +61,7 @@ test_that("gradient testing type is available on representative likelihood famil
 	des_pois$add_all_subjects_to_experiment(data.frame(x = x))
 	des_pois$overwrite_all_subject_assignments(w)
 	des_pois$add_all_subject_responses(rpois(n, lambda = exp(0.2 + 0.35 * w + 0.15 * x)))
-	inf_pois <- InferenceCountPoisson$new(des_pois, verbose = FALSE, smart_default = TRUE)
+	inf_pois <- InferenceCountPoisson$new(des_pois, verbose = FALSE, smart_cold_start_default = TRUE)
 	expect_true("gradient" %in% inf_pois$get_supported_testing_types())
 	inf_pois$set_testing_type("gradient")
 	p_pois <- inf_pois$compute_asymp_two_sided_pval(0)
@@ -88,7 +88,7 @@ test_that("gradient testing type is available on representative likelihood famil
 	y_surv <- exp(0.4 + 0.3 * w + 0.15 * x + rnorm(n, sd = 0.2))
 	dead <- rbinom(n, 1, 0.85)
 	des_weib$add_all_subject_responses(y_surv, dead)
-	inf_weib <- InferenceSurvivalWeibullRegr$new(des_weib, verbose = FALSE, smart_default = TRUE)
+	inf_weib <- InferenceSurvivalWeibullRegr$new(des_weib, verbose = FALSE, smart_cold_start_default = TRUE)
 	expect_true("gradient" %in% inf_weib$get_supported_testing_types())
 	inf_weib$set_testing_type("gradient")
 	p_weib <- inf_weib$compute_asymp_two_sided_pval(0)
@@ -124,7 +124,7 @@ test_that("bootstrap reusable workers retain warm-start state across refits", {
 	mu <- exp(0.25 + 0.4 * w + 0.2 * x)
 	des$add_all_subject_responses(rpois(n, mu))
 
-	inf <- InferenceCountPoisson$new(des, verbose = FALSE, smart_default = TRUE)
+	inf <- InferenceCountPoisson$new(des, verbose = FALSE, smart_cold_start_default = TRUE)
 	worker_state <- inf$.__enclos_env__$private$create_bootstrap_worker_state()
 	idx1 <- sample.int(n, n, replace = TRUE)
 	idx2 <- sample.int(n, n, replace = TRUE)
@@ -152,7 +152,7 @@ test_that("randomization CI p-value search reuses object-level warm starts acros
 	}
 	add_all_subject_responses_seq(des, rpois(n, lambda = exp(0.2 + 0.3 * des$.__enclos_env__$private$w)))
 
-	inf <- InferenceCountPoisson$new(des, verbose = FALSE, smart_default = TRUE)
+	inf <- InferenceCountPoisson$new(des, verbose = FALSE, smart_cold_start_default = TRUE)
 	priv <- inf$.__enclos_env__$private
 	perms <- priv$generate_permutations(25L)
 	cache_env <- new.env(parent = emptyenv())

@@ -9,7 +9,7 @@ fast_stereotype_logit_cpp(
   y,
   maxit = 100L,
   tol = 1e-08,
-  smart_start = TRUE,
+  smart_cold_start = TRUE,
   fixed_idx = NULL,
   fixed_values = NULL,
   optimization_alg = "newton_raphson",

@@ -129,7 +129,7 @@ ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X,
         params = as<Eigen::VectorXd>(NumericVector(warm_start_params));
         if (params.size() != p + 1) stop("warm_start_params must have length equal to the number of model parameters");
     } else if (smart_cold_start) {
-        Eigen::VectorXd beta_smart = ols_warm_start_beta_on_log1p(X, y_double);
+        Eigen::VectorXd beta_smart = ols_smart_cold_start_beta_on_log1p(X, y_double);
         Eigen::VectorXd beta_start = vector_is_usable_start(beta_smart, p) ? beta_smart : legacy_params.head(p);
         params.head(p) = beta_start;
         params[p] = std::log(smart_negbin_theta_start_from_beta(X, y, beta_start, theta_start));
@@ -140,11 +140,14 @@ ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X,
 
     NBLogLik fun(X, y);
     
-    Eigen::MatrixXd H_start;
+    Eigen::MatrixXd H_start_val;
     const Eigen::MatrixXd* h_ptr = nullptr;
     if (warm_start_fisher_info.isNotNull()) {
-        H_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
-        h_ptr = &H_start;
+        H_start_val = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        h_ptr = &H_start_val;
+    } else if (smart_cold_start) {
+        H_start_val = edi_opt::negbin_smart_hessian(X, params, y);
+        h_ptr = &H_start_val;
     }
     
     LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, eps_g, optimization_alg, "newton_raphson", 0, h_ptr);
@@ -200,7 +203,7 @@ Eigen::MatrixXd get_negbin_regression_hessian_cpp(const Eigen::MatrixXd& X,
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses (non-negative integers).
 //' @param warm_start_params Optional starting values for coefficients and dispersion. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param maxit Maximum number of iterations.
 //' @param eps_f Convergence tolerance for function value.
 //' @param eps_g Convergence tolerance for gradient.
@@ -248,7 +251,7 @@ List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
 //' @param X A numeric matrix of predictors.
 //' @param y A numeric vector of responses.
 //' @param warm_start_params Optional starting values for coefficients and dispersion. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param maxit Maximum number of iterations.
 //' @param eps_f Convergence tolerance for function value.
 //' @param eps_g Convergence tolerance for gradient.

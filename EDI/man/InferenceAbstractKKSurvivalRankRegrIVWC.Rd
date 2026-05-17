@@ -25,16 +25,16 @@ non-estimable.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceAbstractKKSurvivalRankRegrIVWC}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceAbstractKKSurvivalRankRegrIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceAbstractKKSurvivalRankRegrIVWC-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceAbstractKKSurvivalRankRegrIVWC$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferenceAbstractKKSurvivalRankRegrIVWC-new}{\code{InferenceAbstractKKSurvivalRankRegrIVWC$new()}}
 \item \href{#method-InferenceAbstractKKSurvivalRankRegrIVWC-compute_estimate}{\code{InferenceAbstractKKSurvivalRankRegrIVWC$compute_estimate()}}
 \item \href{#method-InferenceAbstractKKSurvivalRankRegrIVWC-compute_asymp_confidence_interval}{\code{InferenceAbstractKKSurvivalRankRegrIVWC$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAbstractKKSurvivalRankRegrIVWC-compute_asymp_two_sided_pval}{\code{InferenceAbstractKKSurvivalRankRegrIVWC$compute_asymp_two_sided_pval()}}
+\item \href{#method-InferenceAbstractKKSurvivalRankRegrIVWC-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceAbstractKKSurvivalRankRegrIVWC$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferenceAbstractKKSurvivalRankRegrIVWC-clone}{\code{InferenceAbstractKKSurvivalRankRegrIVWC$clone()}}
 }
 }
@@ -95,20 +95,6 @@ non-estimable.
 </details>
 }}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractKKSurvivalRankRegrIVWC-approximate_bootstrap_distribution_beta_hat_T"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractKKSurvivalRankRegrIVWC-approximate_bootstrap_distribution_beta_hat_T}{}}}
-\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKSurvivalRankRegrIVWC$approximate_bootstrap_distribution_beta_hat_T(
-  B = 501,
-  show_progress = TRUE,
-  debug = FALSE,
-  bootstrap_type = NULL
-)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKSurvivalRankRegrIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKSurvivalRankRegrIVWC-new}{}}}
 \subsection{Method \code{new()}}{
@@ -117,7 +103,8 @@ Initialize the inference object.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKSurvivalRankRegrIVWC$new(
   des_obj,
   model_formula = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  smart_cold_start_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -132,6 +119,8 @@ reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
 }
 \if{html}{\out{</div>}}
 }
@@ -189,6 +178,37 @@ Computes the asymptotic p-value.
 any treatment effect at all this is set to zero (the default).}
 }
 \if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKSurvivalRankRegrIVWC-approximate_bootstrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKSurvivalRankRegrIVWC-approximate_bootstrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKSurvivalRankRegrIVWC$approximate_bootstrap_distribution_beta_hat_T(
+  B = 501,
+  show_progress = TRUE,
+  debug = FALSE,
+  bootstrap_type = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
 }
 }
 \if{html}{\out{<hr>}}

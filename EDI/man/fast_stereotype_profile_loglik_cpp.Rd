@@ -4,7 +4,15 @@
 \alias{fast_stereotype_profile_loglik_cpp}
 \title{Compute Stereotype Profile Log-Likelihood (C++)}
 \usage{
-fast_stereotype_profile_loglik_cpp(X, y, beta_fixed, maxit = 100L, tol = 1e-08)
+fast_stereotype_profile_loglik_cpp(
+  X,
+  y,
+  beta_fixed,
+  maxit = 100L,
+  tol = 1e-08,
+  warm_start_params = NULL,
+  warm_start_beta = NULL
+)
 }
 \arguments{
 \item{X}{A numeric matrix of predictors.}

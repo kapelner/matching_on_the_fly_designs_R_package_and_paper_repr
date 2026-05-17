@@ -10,7 +10,7 @@ fast_stratified_coxph_regression_cpp(
   dead,
   strata,
   warm_start_beta = NULL,
-  smart_start = TRUE,
+  smart_cold_start = TRUE,
   estimate_only = FALSE,
   maxit = 20L,
   tol = 1e-09,
@@ -29,7 +29,7 @@ fast_stratified_coxph_regression_cpp(
 
 \item{strata}{An integer vector of strata IDs.}
 
-\item{warm_start_beta}{Optional starting values for coefficients.}
+\item{warm_start_beta}{Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.}
 
 \item{estimate_only}{If TRUE, only return coefficients and likelihood.}
 

@@ -382,7 +382,7 @@ List fast_hurdle_poisson_glmm_cpp(
 	const Eigen::VectorXi& group_id,
 	int j_T,
 	Nullable<NumericVector> warm_start_params = R_NilValue,
-	bool smart_start = true,
+	bool smart_cold_start = true,
 	bool estimate_only = false,
 	int n_gh = 7,
 	int maxit = 300,
@@ -430,7 +430,7 @@ List fast_hurdle_poisson_glmm_cpp(
 	Eigen::VectorXd par(total);
 	if (warm_start_params.isNotNull()) {
 		par = as<Eigen::VectorXd>(NumericVector(warm_start_params));
-	} else if (smart_start) {
+	} else if (smart_cold_start) {
 		par.setZero();
 		Eigen::VectorXd log_y = y_pos.array().log().matrix();
 		Eigen::VectorXd legacy_beta = Eigen::VectorXd::Zero(p);

@@ -2,42 +2,16 @@
 % Please edit documentation in R/inference_proportion_KK_combined.R
 \name{InferencePropKKGLMM}
 \alias{InferencePropKKGLMM}
-\title{GLMM Inference for KK Designs with Proportion Response}
+\title{KK GLMM Inference for Proportion Responses}
 \description{
-GLMM Inference for KK Designs with Proportion Response
-
-GLMM Inference for KK Designs with Proportion Response
-}
-\details{
-Fits a Generalized Linear Mixed Model (GLMM) for proportion (continuous values
-in (0, 1)) responses under a KK matching-on-the-fly design. The random intercept
-per matched pair is integrated out via Gauss-Hermite quadrature.
-
-When \code{use_rcpp = TRUE} (default) the likelihood is maximised by an internal
-Rcpp/L-BFGS routine that requires no external packages. Set \code{use_rcpp = FALSE}
-to fall back to \pkg{glmmTMB}.
-}
-\examples{
-\donttest{
-seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'proportion')
-for (i in 1:10) {
-  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
-}
-seq_des$add_all_subject_responses(runif(10))
-inf = InferencePropKKGLMM$new(seq_des)
-inf$compute_estimate()
-}
+Concrete exported wrapper around the logistic KK GLMM implementation.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferencePropKKGLMM}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceAbstractKKClogitPlusGLMM]{EDI::InferenceAbstractKKClogitPlusGLMM}} -> \code{\link[EDI:InferenceAbstractKKLogisticGLMMOneLik]{EDI::InferenceAbstractKKLogisticGLMMOneLik}} -> \code{InferencePropKKGLMM}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferencePropKKGLMM-compute_estimate}{\code{InferencePropKKGLMM$compute_estimate()}}
-\item \href{#method-InferencePropKKGLMM-compute_asymp_confidence_interval}{\code{InferencePropKKGLMM$compute_asymp_confidence_interval()}}
-\item \href{#method-InferencePropKKGLMM-compute_asymp_two_sided_pval}{\code{InferencePropKKGLMM$compute_asymp_two_sided_pval()}}
-\item \href{#method-InferencePropKKGLMM-new}{\code{InferencePropKKGLMM$new()}}
 \item \href{#method-InferencePropKKGLMM-clone}{\code{InferencePropKKGLMM$clone()}}
 }
 }
@@ -63,7 +37,6 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>EDI::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
@@ -95,71 +68,14 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>EDI::InferenceAsympLik$get_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_information_preference"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>EDI::InferenceAsympLik$set_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>EDI::InferenceAsympLik$set_testing_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClogitPlusGLMM" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceAbstractKKClogitPlusGLMM.html#method-InferenceAbstractKKClogitPlusGLMM-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceAbstractKKClogitPlusGLMM$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClogitPlusGLMM" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKClogitPlusGLMM.html#method-InferenceAbstractKKClogitPlusGLMM-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKClogitPlusGLMM$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClogitPlusGLMM" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAbstractKKClogitPlusGLMM.html#method-InferenceAbstractKKClogitPlusGLMM-compute_asymp_two_sided_pval'><code>EDI::InferenceAbstractKKClogitPlusGLMM$compute_asymp_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClogitPlusGLMM" data-id="compute_estimate"><a href='../../EDI/html/InferenceAbstractKKClogitPlusGLMM.html#method-InferenceAbstractKKClogitPlusGLMM-compute_estimate'><code>EDI::InferenceAbstractKKClogitPlusGLMM$compute_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKLogisticGLMMOneLik" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKLogisticGLMMOneLik.html#method-InferenceAbstractKKLogisticGLMMOneLik-initialize'><code>EDI::InferenceAbstractKKLogisticGLMMOneLik$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferencePropKKGLMM-compute_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferencePropKKGLMM-compute_estimate}{}}}
-\subsection{Method \code{compute_estimate()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropKKGLMM$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferencePropKKGLMM-compute_asymp_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferencePropKKGLMM-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropKKGLMM$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferencePropKKGLMM-compute_asymp_two_sided_pval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferencePropKKGLMM-compute_asymp_two_sided_pval}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropKKGLMM$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferencePropKKGLMM-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferencePropKKGLMM-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize the inference object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropKKGLMM$new(
-  des_obj,
-  model_formula = NULL,
-  use_rcpp = TRUE,
-  optimization_alg = NULL,
-  verbose = FALSE,
-  smart_default = TRUE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed \code{Design} object with a proportion response.}
-
-\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
-the formula from the design object is used and its pre-computed design matrix is
-reused. If a formula is provided, a new design matrix is constructed from the
-design's imputed covariates.}
-
-\item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), use our internal Rcpp.}
-
-\item{\code{optimization_alg}}{Optimization algorithm. Default is dispatched via policy.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropKKGLMM-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropKKGLMM-clone}{}}}

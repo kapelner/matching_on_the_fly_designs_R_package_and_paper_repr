@@ -45,6 +45,39 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			X_full = private$build_design_matrix()
+			keep = is.finite(row_weights) & row_weights > 0 & is.finite(private$y)
+			if (!any(keep)) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			fit = tryCatch(
+				stats::lm.wfit(
+					x = X_full[keep, , drop = FALSE],
+					y = as.numeric(private$y[keep]),
+					w = as.numeric(row_weights[keep])
+				),
+				error = function(e) NULL
+			)
+			coef_hat = if (!is.null(fit)) as.numeric(stats::coef(fit)) else numeric(0)
+			if (length(coef_hat) < 2L || !is.finite(coef_hat[2L])) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			private$cached_values$beta_hat_T = coef_hat[2L]
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes an approximate confidence interval for the treatment effect.
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.

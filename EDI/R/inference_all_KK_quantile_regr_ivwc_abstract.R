@@ -28,7 +28,8 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 		#'   design's imputed covariates.
 		#' @param verbose                 A flag indicating whether messages should be displayed.
 		#'   Default is \code{FALSE}.
-		initialize = function(des_obj, model_formula = NULL, tau = 0.5, transform_y_fn = identity,  verbose = FALSE){
+		#' @param smart_cold_start_default Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, tau = 0.5, transform_y_fn = identity,  verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertFormula(model_formula, null.ok = TRUE)
 				assertNumeric(tau, lower = .Machine$double.eps, upper = 1 - .Machine$double.eps)
@@ -40,11 +41,20 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			}
 			private$tau = tau
 			private$transform_y_fn_list = list(fn = transform_y_fn)
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (private$is_KK){
 				private$m = des_obj$.__enclos_env__$private$m
 				private$compute_basic_match_data()
 			}
+		},
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		},
 		#' @description Computes the appropriate quantile regression compound estimate
 		#'

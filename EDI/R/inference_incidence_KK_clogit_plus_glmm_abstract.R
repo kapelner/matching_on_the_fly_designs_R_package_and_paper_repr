@@ -1,27 +1,26 @@
-#'  internalAbstract Conditional Logistic Plus GLMM Inference
+#' Abstract Conditional Logistic Plus GLMM Inference
 #'
 #' Fits one likelihood with a conditional-logistic contribution from discordant
 #' matched pairs and a random-intercept logistic GLMM contribution from concordant
-#' matched pairs. The fixed effects are shared by both likelihood components. The
-#' reservoir component is also included as additional independent observations
-#' in the GLMM part.
+#' matched pairs and reservoir subjects.
 #'
 #' @keywords internal
 InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGLMM",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = c(InferenceMixinKKPassThrough$public, list(
-		#' @description Initialize the inference object.
-		#' @param des_obj A completed KK design object.
+	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
+		#' @description Initialize
+		#' @param des_obj A completed \code{Design} object with an incidence response.
 		#' @param model_formula Optional formula for covariate adjustment.
-		#' @param max_abs_reasonable_coef Cap for coefficient magnitudes.
-		#' @param max_abs_log_sigma Cap for log-random-effect-SD.
+		#' @param max_abs_reasonable_coef Cap for reasonable coefficient estimates.
+		#' @param max_abs_log_sigma Cap for reasonable log random effect variance.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, max_abs_reasonable_coef = 1e4, max_abs_log_sigma = 8, verbose = FALSE, smart_default = TRUE){
+		#' @param smart_cold_start_default   Whether to use smart optimizer start values.
+		initialize = function(des_obj, model_formula = NULL, max_abs_reasonable_coef = 1e4, max_abs_log_sigma = 8, verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$max_abs_reasonable_coef = max_abs_reasonable_coef
 			private$max_abs_log_sigma = max_abs_log_sigma
 			if (should_run_asserts()) {
@@ -29,391 +28,202 @@ InferenceAbstractKKClogitPlusGLMM = R6::R6Class("InferenceAbstractKKClogitPlusGL
 			}
 			private$init_kk_passthrough(des_obj)
 		},
-		#' @description Returns the combined-likelihood estimate of the treatment effect.
+		#' @description Compute the treatment effect estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes the asymptotic confidence interval.
+		#' @description Computes an approximate confidence interval.
 		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			if (should_run_asserts()) {
-				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			}
-			if (!identical(self$get_testing_type(), "wald")) {
-				return(super$compute_asymp_confidence_interval(alpha = alpha))
-			}
-			private$shared()
-			if (should_run_asserts()) {
-				private$assert_finite_se()
-			}
+			private$shared(estimate_only = FALSE)
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Computes the asymptotic p-value.
-		#' @param delta Null difference.
+		#' @description Computes an approximate two-sided p-value.
+		#' @param delta Null treatment effect value.
 		compute_asymp_two_sided_pval = function(delta = 0){
-			if (should_run_asserts()) {
-				assertNumeric(delta)
-			}
-			if (!identical(self$get_testing_type(), "wald")) {
-				return(super$compute_asymp_two_sided_pval(delta = delta))
-			}
-			private$shared()
-			if (should_run_asserts()) {
-				private$assert_finite_se()
-			}
+			private$shared(estimate_only = FALSE)
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+		},
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		}
 	)),
-	private = c(InferenceMixinKKPassThrough$private, list(
-			max_abs_reasonable_coef = 1e4,
-			max_abs_log_sigma = 8,
-			get_standard_error = function(){
-				private$shared(estimate_only = FALSE)
-				se = private$compute_standard_error_from_information_matrix()
-				if (is.finite(se)) return(se)
-				private$cached_values$s_beta_hat_T
-			},
-			get_degrees_of_freedom = function(){
-				private$cached_values$df %||% NA_real_
-			},
-			supports_likelihood_tests = function(){
-				isTRUE(private$combine_reservoir_into_glmm())
-			},
-			get_likelihood_test_spec = function(){
-				private$shared(estimate_only = FALSE)
-				ctx = private$cached_values$likelihood_test_context
-				if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
-				j_treat = as.integer(ctx$j_treat)
-				start_len = length(ctx$start)
-				list(
-					j = j_treat,
-					full_fit = private$cached_mod,
-					fit_null = function(delta, start = NULL){
-						warm_start_params = start %||% private$get_fit_warm_start_for_length("params", start_len) %||% as.numeric(ctx$start)
-						warm_fisher = private$get_fit_warm_start_fisher(start_len)
-						fast_clogit_plus_glmm_cpp(
-							X_disc = ctx$X_disc,
-							y_disc = ctx$y_disc,
-							X_conc = ctx$X_conc,
-							y_conc = ctx$y_conc,
-							group_conc = ctx$group_conc,
-							warm_start_params = warm_start_params,
-							warm_start_fisher_info = warm_fisher,
-							has_discordant = ctx$has_discordant,
-							has_concordant = ctx$has_concordant,
-							estimate_only = FALSE,
-							max_abs_log_sigma = private$max_abs_log_sigma,
-							fixed_idx = j_treat,
-							fixed_values = delta,
-							optimization_alg = private$optimization_alg
-						)
-					},
-					score = function(fit){
-						get_clogit_plus_glmm_score_cpp(
-							ctx$X_disc, ctx$y_disc, ctx$X_conc, ctx$y_conc, ctx$group_conc,
-							as.numeric(fit$params %||% fit$b),
-							ctx$has_discordant, ctx$has_concordant,
-							private$max_abs_log_sigma
-						)
-					},
-					observed_information = function(fit){
-						as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% get_clogit_plus_glmm_hessian_cpp(
-							ctx$X_disc, ctx$y_disc, ctx$X_conc, ctx$y_conc, ctx$group_conc,
-							as.numeric(fit$params %||% fit$b),
-							ctx$has_discordant, ctx$has_concordant,
-							private$max_abs_log_sigma
-						))
-					},
-					fisher_information = function(fit){
-						as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% get_clogit_plus_glmm_hessian_cpp(
-							ctx$X_disc, ctx$y_disc, ctx$X_conc, ctx$y_conc, ctx$group_conc,
-							as.numeric(fit$params %||% fit$b),
-							ctx$has_discordant, ctx$has_concordant,
-							private$max_abs_log_sigma
-						))
-					},
-					information = function(fit){
-						as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% get_clogit_plus_glmm_hessian_cpp(
-							ctx$X_disc, ctx$y_disc, ctx$X_conc, ctx$y_conc, ctx$group_conc,
-							as.numeric(fit$params %||% fit$b),
-							ctx$has_discordant, ctx$has_concordant,
-							private$max_abs_log_sigma
-						))
-					},
-					neg_loglik = function(fit){
-						as.numeric(fit$neg_loglik %||% fit$neg_ll)
-					}
-				)
-			},
-			shared = function(estimate_only = FALSE){
-				if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-				if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-				private$clear_nonestimable_state()
-				private$cached_values$likelihood_test_context = NULL
-				private$cached_mod = NULL
-			data_parts = private$build_clogit_plus_glmm_data()
-			if (is.null(data_parts)){
-				private$cache_nonestimable_estimate("clogit_plus_glmm_no_data")
+	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+		max_abs_reasonable_coef = 1e4,
+		max_abs_log_sigma = 8,
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && isTRUE(private$cached_values$s_beta_hat_T > 0)) return(invisible(NULL))
+			private$clear_nonestimable_state()
+			private$cached_mod = NULL
+			private$cached_values$likelihood_test_context = NULL
+			
+			d = private$prepare_clogit_plus_glmm_data()
+			if (!d$has_discordant && !d$has_concordant) {
+				private$cache_nonestimable_estimate("no_data_for_clogit_plus_glmm")
 				return(invisible(NULL))
 			}
-			fit = if (private$combine_reservoir_into_glmm()){
-				private$fit_clogit_plus_glmm(data_parts, estimate_only = estimate_only)
-			} else {
-				private$fit_clogit_plus_glmm_ivwc(data_parts, estimate_only = estimate_only)
-			}
-				if (is.null(fit)){
-				private$cache_nonestimable_estimate("clogit_plus_glmm_fit_failed")
-				return(invisible(NULL))
-				}
-				if (private$combine_reservoir_into_glmm() && !is.null(fit$mod)) {
-					j_treat = if (isTRUE(data_parts$has_concordant)) 2L else 1L
-					private$cached_mod = fit$mod
-					private$set_fit_warm_start(as.numeric(fit$mod$b), "params", fisher = fit$mod$fisher_information)
-					private$cached_values$likelihood_test_context = list(
-						X_disc = as.matrix(data_parts$X_disc),
-						y_disc = as.numeric(data_parts$y_disc),
-						X_conc = as.matrix(data_parts$X_conc),
-						y_conc = as.numeric(data_parts$y_conc),
-						group_conc = as.integer(data_parts$group_conc),
-						start = as.numeric(fit$mod$b),
-						has_discordant = data_parts$has_discordant,
-						has_concordant = data_parts$has_concordant,
-						j_treat = j_treat
-					)
-				}
-				private$cached_values$beta_hat_T = as.numeric(fit$beta_T)
-			if (!estimate_only) private$cached_values$s_beta_hat_T = as.numeric(fit$se_beta_T)
-			private$cached_values$df = NA_real_
-			invisible(NULL)
-		},
-		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
-			# Re-read design variables which might have been transformed during randomization
-			private$w = private$des_obj_priv_int$w
-			private$y = private$des_obj_priv_int$y
 			
-			# Recompute basic match data for the new w/y
-			private$compute_basic_match_data()
-			
-			# Use the same joint-likelihood logic for the point estimate
-			private$shared(estimate_only = estimate_only)
-			private$cached_values$beta_hat_T
-		},
-		assert_finite_se = function(){
-			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				return(invisible(NULL))
-			}
-		},
-		build_clogit_plus_glmm_data = function(include_reservoir = private$combine_reservoir_into_glmm()){
-			if (is.null(private$cached_values$KKstats)){
-				private$compute_basic_match_data()
-			}
-			KKstats = private$cached_values$KKstats
-			m_vec = private$m
-			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
-			m_vec[is.na(m_vec)] = 0L
-			i_matched = which(m_vec > 0L)
-			p = ncol(as.matrix(private$X))
-			X_m = if (p > 0L) as.matrix(private$get_X()[i_matched, drop = FALSE]) else matrix(nrow = length(i_matched), ncol = 0L)
-			y_m = as.numeric(private$y[i_matched])
-			w_m = as.numeric(private$w[i_matched])
-			strata_m = as.integer(m_vec[i_matched])
-			discordant_rows = integer(0)
-			concordant_rows = integer(0)
-			if (length(i_matched) > 0L){
-				pair_rows = split(seq_along(i_matched), strata_m)
-				for (rows in pair_rows){
-					if (length(unique(y_m[rows])) > 1L){
-						discordant_rows = c(discordant_rows, rows)
-					} else {
-						concordant_rows = c(concordant_rows, rows)
-					}
-				}
-			}
-			has_discordant = length(discordant_rows) > 0L
-			has_concordant = length(concordant_rows) > 0L
-			# Discordant: Clogit (diff-matrix)
-			X_disc = matrix(0, 0, 0)
-			y_disc = numeric(0)
-			if (has_discordant){
-				disc = collect_discordant_pairs_cpp(
-					as.double(y_m[discordant_rows]),
-					as.double(w_m[discordant_rows]),
-					X_m[discordant_rows, drop = FALSE],
-					as.integer(strata_m[discordant_rows])
-				)
-				if (disc$nd > 0L){
-					X_disc = if (p > 0L) cbind(disc$t_diffs, disc$X_diffs) else matrix(disc$t_diffs, ncol = 1L)
-					y_disc = disc$y_01
-				} else {
-					has_discordant = FALSE
-				}
-			}
-			# Concordant (plus optionally Reservoir): GLMM
-			X_conc = matrix(0, 0, 0)
-			y_conc = numeric(0)
-			group_conc = integer(0)
-			
-			curr_y = numeric(0)
-			curr_w = numeric(0)
-			curr_X = matrix(nrow = 0, ncol = p)
-			curr_g = integer(0)
-			if (has_concordant){
-				curr_y = y_m[concordant_rows]
-				curr_w = w_m[concordant_rows]
-				if (p > 0L) curr_X = X_m[concordant_rows, , drop = FALSE]
-				curr_g = strata_m[concordant_rows]
-			}
-			if (include_reservoir && KKstats$nRT > 0L && KKstats$nRC > 0L){
-				curr_y = c(curr_y, as.numeric(KKstats$y_reservoir))
-				curr_w = c(curr_w, as.numeric(KKstats$w_reservoir))
-				if (p > 0L) curr_X = rbind(curr_X, as.matrix(KKstats$X_reservoir))
-				max_g = if (length(curr_g) > 0) max(curr_g) else 0L
-				curr_g = c(curr_g, max_g + seq_len(KKstats$nRT + KKstats$nRC))
-			}
-			if (length(curr_y) > 0L){
-				# Ensure consistent n_rows for Intercept and treatment
-				n_conc = length(curr_y)
-				X_conc = if (p > 0L) {
-					cbind(Intercept = rep(1, n_conc), treatment = curr_w, curr_X)
-				} else {
-					cbind(Intercept = rep(1, n_conc), treatment = curr_w)
-				}
-				y_conc = curr_y
-				group_conc = curr_g
-			}
-			if (!has_discordant && length(y_conc) == 0L) return(NULL)
-			list(
-				has_discordant = has_discordant,
-				X_disc         = X_disc,
-				y_disc         = y_disc,
-				has_concordant = length(y_conc) > 0L,
-				X_conc         = X_conc,
-				y_conc         = y_conc,
-				group_conc     = group_conc
-			)
-		},
-		fit_clogit_plus_glmm = function(data_parts, estimate_only = FALSE){
-			n_params = if (isTRUE(data_parts$has_concordant)) {
-				ncol(data_parts$X_conc) + 1L
-			} else {
-				ncol(data_parts$X_disc)
-			}
-			start = private$get_fit_warm_start_for_length("params", n_params) %||% private$get_clogit_plus_glmm_start(data_parts)
-			warm_fisher = private$get_fit_warm_start_fisher(n_params)
-			
-			res = tryCatch(
+			n_params = ncol(d$X_conc) + 1L # betas + log_sigma
+			fit = tryCatch(
 				fast_clogit_plus_glmm_cpp(
-					X_disc          = as.matrix(data_parts$X_disc),
-					y_disc          = as.numeric(data_parts$y_disc),
-					X_conc          = as.matrix(data_parts$X_conc),
-					y_conc          = as.numeric(data_parts$y_conc),
-					group_conc      = as.integer(data_parts$group_conc),
-					warm_start_params = as.numeric(start),
-					warm_start_fisher_info = warm_fisher,
-					has_discordant  = data_parts$has_discordant,
-					has_concordant  = data_parts$has_concordant,
-					estimate_only   = estimate_only,
+					X_disc = d$X_disc, y_disc = d$y_disc,
+					X_conc = d$X_conc, y_conc = d$y_conc,
+					group_conc = d$group_conc,
+					has_discordant = d$has_discordant,
+					has_concordant = d$has_concordant,
+					warm_start_params = private$get_fit_warm_start_for_length("params", n_params),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
+					estimate_only = estimate_only,
 					max_abs_log_sigma = private$max_abs_log_sigma,
 					optimization_alg = private$optimization_alg
 				),
 				error = function(e) NULL
 			)
-				if (is.null(res) || !is.finite(res$beta_T)) return(NULL)
-				if (!estimate_only && (!is.finite(res$se_beta_T) || res$se_beta_T <= 0)) return(NULL)
-				
-				res$mod = res
-				res
-			},
-		fit_clogit_plus_glmm_ivwc = function(data_parts, estimate_only = FALSE){
-			# Fit discordant part (Clogit)
-			beta_m = NA_real_
-			se_m = NA_real_
-			if (data_parts$has_discordant){
-				res_m = tryCatch(
-					fast_logistic_regression_with_var(data_parts$X_disc, data_parts$y_disc, j = 1L),
-					error = function(e) NULL
-				)
-				if (!is.null(res_m) && is.finite(res_m$b[1])){
-					beta_m = res_m$b[1]
-					se_m = sqrt(res_m$ssq_b_j)
-				}
+			if (is.null(fit) || !isTRUE(fit$converged)) {
+				private$cache_nonestimable_estimate("joint_likelihood_failed_to_converge")
+				return(invisible(NULL))
 			}
-			# Fit concordant/reservoir part (GLMM)
-			beta_r = NA_real_
-			se_r = NA_real_
-			if (data_parts$has_concordant){
-				# Parameters: [Intercept, beta_T, beta_xs, log_sigma]
-				# We want beta_T (index 2)
-				start = private$get_clogit_plus_glmm_start(data_parts)
-				res_r = tryCatch(
-					fast_logistic_glmm_cpp(
-						X = as.matrix(data_parts$X_conc),
-						y = as.numeric(data_parts$y_conc),
-						group_id = as.integer(data_parts$group_conc),
-						j_T = 2L,
-						estimate_only = estimate_only,
-						optimization_alg = private$optimization_alg
-					),
-					error = function(e) NULL
-				)
-				if (!is.null(res_r) && is.finite(res_r$beta_T)){
-					beta_r = res_r$beta_T
-					se_r = res_r$se_beta_T
-				}
+			
+			# Treatment effect index:
+			# If has_concordant is true, shared beta starts at par[0] (intercept), so treatment is par[1].
+			# If has_concordant is false, shared beta starts at par[0], so treatment is par[0].
+			j_T = if (d$has_concordant) 2L else 1L
+			
+			beta_hat_T = as.numeric(fit$params[j_T])
+			if (!is.finite(beta_hat_T) || abs(beta_hat_T) > private$max_abs_reasonable_coef) {
+				private$cache_nonestimable_estimate("joint_likelihood_nonestimable")
+				return(invisible(NULL))
 			}
-			m_ok = is.finite(beta_m) && (estimate_only || (is.finite(se_m) && se_m > 0))
-			r_ok = is.finite(beta_r) && (estimate_only || (is.finite(se_r) && se_r > 0))
-			if (m_ok && r_ok){
-				pooled = private$weighted_average(beta_m, se_m %||% 1, beta_r, se_r %||% 1)
-				list(beta_T = pooled$beta, se_beta_T = if (estimate_only) NA_real_ else pooled$se)
-			} else if (m_ok){
-				list(beta_T = beta_m, se_beta_T = se_m)
-			} else if (r_ok){
-				list(beta_T = beta_r, se_beta_T = se_r)
-			} else {
-				NULL
-			}
-		},
-		get_clogit_plus_glmm_start = function(data_parts){
-			if (data_parts$has_concordant){
-				X = data_parts$X_conc
-				y = data_parts$y_conc
-				fit = tryCatch(fast_logistic_regression_cpp(X, y), error = function(e) NULL)
-				if (!is.null(fit) && all(is.finite(fit$b))) return(c(fit$b, 0.0))
-			}
-			p = if (is.null(data_parts$X_disc)) 0L else max(ncol(data_parts$X_disc) - 1L, 0L)
-			return(rep(0, p + 3)) # [Intercept, beta_T, beta_xs, log_sigma]
-		},
-		# Overridden by concrete classes
-		combine_reservoir_into_glmm = function() TRUE,
-		compute_basic_match_data = function(){
-			m_vec = private$m
-			if (is.null(m_vec)) {
-				m_vec = rep(NA_integer_, private$n)
-			}
-			m_vec[is.na(m_vec)] = 0L
-			private$cached_values$KKstats = compute_zhang_match_data_cpp(
-				as.matrix(private$get_X()),
-				as.numeric(private$y),
-				as.integer(private$w),
-				as.integer(m_vec)
+			
+			private$cached_mod = fit
+			private$set_fit_warm_start(as.numeric(fit$params), "params", fisher = fit$fisher_information)
+			private$cached_values$likelihood_test_context = list(
+				d = d,
+				j_T = j_T,
+				start = as.numeric(fit$params)
 			)
+			private$cached_values$beta_hat_T = beta_hat_T
+			private$cached_values$df   = Inf
+			if (estimate_only) return(invisible(NULL))
+			ssq = fit$ssq_b_j 
+			private$cached_values$s_beta_hat_T = if (!is.null(ssq) && is.finite(ssq) && ssq > 0) sqrt(ssq) else NA_real_
 		},
-		clear_nonestimable_state = function(){
-			private$cached_values$beta_hat_T = NULL
-			private$cached_values$s_beta_hat_T = NULL
-		},
-		# --- Utils ---
-		weighted_average = function(beta1, se1, beta2, se2){
-			w1 = 1 / se1^2
-			w2 = 1 / se2^2
+		get_likelihood_test_spec = function(){
+			private$shared(estimate_only = FALSE)
+			ctx = private$cached_values$likelihood_test_context
+			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+			d = ctx$d
+			j_treat = as.integer(ctx$j_T)
 			list(
-				beta = (w1 * beta1 + w2 * beta2) / (w1 + w2),
-				se   = sqrt(1 / (w1 + w2))
+				X = d$X_conc, 
+				j = j_treat,
+				full_fit = private$cached_mod,
+				fit_null = function(delta, start = NULL){
+					fast_clogit_plus_glmm_cpp(
+						X_disc = d$X_disc, y_disc = d$y_disc,
+						X_conc = d$X_conc, y_conc = d$y_conc,
+						group_conc = d$group_conc,
+						has_discordant = d$has_discordant,
+						has_concordant = d$has_concordant,
+						warm_start_params = start %||% private$get_fit_warm_start_for_length("params", length(ctx$start)) %||% ctx$start,
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(length(ctx$start)),
+						estimate_only = FALSE,
+						max_abs_log_sigma = private$max_abs_log_sigma,
+						fixed_idx = j_treat, fixed_values = delta,
+						optimization_alg = private$optimization_alg
+					)
+				},
+				extract_start = function(fit){ as.numeric(fit$params) },
+				score = function(fit){
+					as.numeric(get_clogit_plus_glmm_score_cpp(
+						d$X_disc, d$y_disc, d$X_conc, d$y_conc, d$group_conc,
+						as.numeric(fit$params), d$has_discordant, d$has_concordant,
+						private$max_abs_log_sigma
+					))
+				},
+				observed_information = function(fit){
+					as.matrix(get_clogit_plus_glmm_hessian_cpp(
+						d$X_disc, d$y_disc, d$X_conc, d$y_conc, d$group_conc,
+						as.numeric(fit$params), d$has_discordant, d$has_concordant,
+						private$max_abs_log_sigma
+					))
+				},
+				fisher_information = function(fit){
+					as.matrix(get_clogit_plus_glmm_hessian_cpp(
+						d$X_disc, d$y_disc, d$X_conc, d$y_conc, d$group_conc,
+						as.numeric(fit$params), d$has_discordant, d$has_concordant,
+						private$max_abs_log_sigma
+					))
+				},
+				information = function(fit){
+					as.matrix(get_clogit_plus_glmm_hessian_cpp(
+						d$X_disc, d$y_disc, d$X_conc, d$y_conc, d$group_conc,
+						as.numeric(fit$params), d$has_discordant, d$has_concordant,
+						private$max_abs_log_sigma
+					))
+				},
+				neg_loglik = function(fit){
+					as.numeric(fit$neg_loglik %||% fit$neg_ll)
+				}
 			)
 		},
+		prepare_clogit_plus_glmm_data = function(){
+			private$compute_basic_match_data()
+			KKstats = private$cached_values$KKstats
+			
+			# Discordant pairs
+			yTs = as.numeric(KKstats$yTs_matched)
+			yCs = as.numeric(KKstats$yCs_matched)
+			y_m = yTs - yCs # 1 if (1,0), -1 if (0,1)
+			
+			i_m_disc = which(abs(y_m) == 1)
+			X_disc_cov = KKstats$X_matched_diffs_full[i_m_disc, , drop = FALSE]
+			# Prepend 1 for the treatment effect in clogit part
+			X_disc = cbind(treatment = 1, X_disc_cov)
+			# y for clogit should be 1 if (1,0) and 0 if (0,1)
+			y_disc = (y_m[i_m_disc] + 1) / 2
+			
+			# Concordant pairs and reservoir for GLMM part
+			m_vec = private$m
+			i_m_conc = which(y_m == 0)
+			
+			i_conc_pair = which(m_vec %in% i_m_conc)
+			i_res = which(is.na(m_vec) | m_vec == 0L)
+			
+			i_glmm = if (private$combine_reservoir_into_glmm()) c(i_conc_pair, i_res) else i_conc_pair
+			
+			X_glmm_cov = private$get_X()[i_glmm, , drop = FALSE]
+			y_glmm = private$y[i_glmm]
+			w_glmm = private$w[i_glmm]
+			group_glmm = m_vec[i_glmm]
+			i_glmm_res = which(is.na(group_glmm) | group_glmm == 0L)
+			if (length(i_glmm_res) > 0L) {
+				group_glmm[i_glmm_res] = max(c(0L, m_vec), na.rm = TRUE) + seq_along(i_glmm_res)
+			}
+			
+			X_glmm = cbind(`(Intercept)` = 1, treatment = w_glmm, X_glmm_cov)
+			
+			list(
+				X_disc = as.matrix(X_disc),
+				y_disc = as.numeric(y_disc),
+				X_conc = as.matrix(X_glmm),
+				y_conc = as.numeric(y_glmm),
+				group_conc = as.integer(group_glmm),
+				has_discordant = length(i_m_disc) > 0L,
+				has_concordant = length(i_glmm) > 0L
+			)
+		},
+		combine_reservoir_into_glmm = function() stop("must implement combine_reservoir_into_glmm()"),
 		log_sum_exp = function(x){
 			m = max(x)
 			if (!is.finite(m)) return(m)

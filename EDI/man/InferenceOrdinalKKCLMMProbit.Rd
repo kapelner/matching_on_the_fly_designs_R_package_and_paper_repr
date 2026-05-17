@@ -23,7 +23,7 @@ inf$compute_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceAbstractKKOrdinalCLMM]{EDI::InferenceAbstractKKOrdinalCLMM}} -> \code{InferenceOrdinalKKCLMMProbit}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceAbstractKKOrdinalCLMM]{EDI::InferenceAbstractKKOrdinalCLMM}} -> \code{InferenceOrdinalKKCLMMProbit}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -102,7 +102,8 @@ Initialize
   des_obj,
   model_formula = NULL,
   use_rcpp = TRUE,
-  verbose = FALSE
+  verbose = FALSE,
+  smart_cold_start_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -116,6 +117,8 @@ Initialize
 \item{\code{use_rcpp}}{Use internal Rcpp implementation (default \code{TRUE}).}
 
 \item{\code{verbose}}{Print messages?}
+
+\item{\code{smart_cold_start_default}}{Use smart cold start values?}
 }
 \if{html}{\out{</div>}}
 }

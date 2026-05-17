@@ -94,12 +94,13 @@ InferenceAsympLikStdModCache = R6::R6Class("InferenceAsympLikStdModCache",
 				length(private$cached_values$s_beta_hat_T) == 1L &&
 				isTRUE(is.finite(private$cached_values$s_beta_hat_T))
 			if (isTRUE(!is.null(private$cached_values$beta_hat_T) && (estimate_only || has_cached_se))) return(invisible(NULL))
-			model_output = private$generate_mod(estimate_only = estimate_only) #abstract function implemented by daughter classes. Should return a list with 'b' and 'ssq_b_2'.
+			
+			# Abstract function implemented by daughter classes.
+			# Should return a list with 'b' (coeff vector), 'params' (full vector if diff from b),
+			# 'fisher_information' (Hessian matrix), and 'ssq_b_2' (variance of treatment effect).
+			model_output = private$generate_mod(estimate_only = estimate_only) 
+			
 			private$cached_mod = model_output
-			# generate_mod may return NULL when the fit failed for all column subsets
-			# (tryCatch in fit_with_hardened_qr_column_dropping catches convergence errors
-			# and returns NULL). NULL$b[2] evaluates to NULL in R without error, which
-			# would propagate as NULL from compute_estimate(). Guard here.
 			if (is.null(model_output)) {
 				private$cached_values$beta_hat_T = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
@@ -112,7 +113,8 @@ InferenceAsympLikStdModCache = R6::R6Class("InferenceAsympLikStdModCache",
 				private$set_fit_warm_start(
 					as.numeric(model_output$params %||% model_output$b),
 					type = if (!is.null(model_output$params)) "params" else "beta",
-					fisher = model_output$fisher_information
+					fisher = model_output$fisher_information %||% model_output$XtWX,
+					weights = model_output$w %||% model_output$mu
 				)
 			}
 
@@ -124,6 +126,10 @@ InferenceAsympLikStdModCache = R6::R6Class("InferenceAsympLikStdModCache",
 				private$cached_values$s_beta_hat_T = NA_real_
 			}
 			private$cached_values$df = model_output$df %||% NA_real_
+		},
+		# Helper for subclasses to extract the policy-driven warm start arguments for C++ calls.
+		get_backend_warm_start_args = function(expected_length, expected_fisher_dim = expected_length) {
+			private$get_optimal_warm_start_config(expected_length, expected_fisher_dim)
 		}
 	)
 )

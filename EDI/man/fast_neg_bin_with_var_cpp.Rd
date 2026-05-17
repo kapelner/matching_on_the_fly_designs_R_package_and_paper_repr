@@ -25,7 +25,7 @@ fast_neg_bin_with_var_cpp(
 
 \item{warm_start_params}{Optional starting values for coefficients and dispersion. If provided, \code{smart_cold_start} is ignored.}
 
-\item{smart_cold_start}{Whether to use a "smart" OLS-based cold start when no \code{warm_start_params} is provided.}
+\item{smart_cold_start}{Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.}
 
 \item{maxit}{Maximum number of iterations.}
 

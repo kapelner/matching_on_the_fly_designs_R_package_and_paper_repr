@@ -36,16 +36,44 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 		#' @param model_formula_zero_one Formula for the zero/one inflation submodels.
 		#'   Defaults to \code{~ .}, meaning treatment plus all available covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, model_formula_zero_one = ~ ., verbose = FALSE, smart_default = TRUE){
+		#' @param smart_cold_start_default Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, model_formula_zero_one = ~ ., verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "proportion")
 				assertFormula(model_formula_zero_one, null.ok = FALSE)
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
 			private$model_formula_zero_one = model_formula_zero_one
+		},
+		#' @description Computes the treatment effect estimate.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
+		},
+		#' @description Computes an approximate confidence interval.
+		#' @param alpha Confidence level.
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			private$shared(estimate_only = FALSE)
+			private$compute_z_or_t_ci_from_s_and_df(alpha)
+		},
+		#' @description Computes an approximate two-sided p-value.
+		#' @param delta Null treatment effect value.
+		compute_asymp_two_sided_pval = function(delta = 0){
+			private$shared(estimate_only = FALSE)
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+		},
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		}
 	),
 	private = list(
@@ -93,7 +121,7 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 				fast_zero_one_inflated_beta_cpp(
 					X, X_zero_one, private$y, 
 					warm_start_params = private$get_fit_warm_start_for_length("params", start_len) %||% rep(0, start_len),
-					smart_start = private$smart_default,
+					smart_cold_start = private$smart_cold_start_default,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len)
 				),
 				error = function(e) NULL
@@ -103,7 +131,7 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 			as.numeric(res$b[2])
 		},
 		supports_reusable_bootstrap_worker = function(){
-			TRUE
+			FALSE
 		},
 		supports_likelihood_tests = function(){
 			TRUE
@@ -130,7 +158,7 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 							X_zero_one,
 							y,
 							warm_start_params = warm_start_params,
-							smart_start = private$smart_default,
+							smart_cold_start = private$smart_cold_start_default,
 							warm_start_fisher_info = warm_fisher,
 							fixed_idx = j_treat,
 							fixed_values = delta
@@ -181,7 +209,7 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 						fast_zero_one_inflated_beta_cpp(
 							X_fit, X_zero_one, private$y, 
 							warm_start_params = warm_start_params,
-							smart_start = private$smart_default,
+							smart_cold_start = private$smart_cold_start_default,
 							warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len)
 						),
 						error = function(e) NULL

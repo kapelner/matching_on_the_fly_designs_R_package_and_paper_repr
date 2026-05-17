@@ -13,7 +13,7 @@ fast_log_binomial_regression_with_var_cpp(
   fixed_idx = NULL,
   fixed_values = NULL,
   warm_start_beta = NULL,
-  smart_start = TRUE,
+  smart_cold_start = TRUE,
   warm_start_weights = NULL,
   warm_start_fisher_info = NULL
 )
@@ -33,7 +33,7 @@ fast_log_binomial_regression_with_var_cpp(
 
 \item{fixed_values}{Optional values for fixed parameters.}
 
-\item{warm_start_beta}{Optional starting values for coefficients.}
+\item{warm_start_beta}{Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.}
 
 \item{warm_start_weights}{Optional initial working weights for the first IRLS iteration.}
 

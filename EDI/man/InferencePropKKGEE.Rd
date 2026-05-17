@@ -13,11 +13,6 @@ Fits a Generalized Estimating Equations (GEE) model (using \pkg{geepack})
 for proportion (continuous values in (0, 1)) responses under a KK
 matching-on-the-fly design using the treatment indicator and, optionally,
 all recorded covariates as predictors.
-
-
-This class requires the \pkg{geepack} package, which is listed in Suggests
-and is not installed automatically with \pkg{EDI}.
-Install \pkg{geepack} before using this class.
 }
 \examples{
 \donttest{
@@ -31,16 +26,17 @@ inf$compute_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferencePropKKGEE}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferencePropKKGEE}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferencePropKKGEE-compute_estimate}{\code{InferencePropKKGEE$compute_estimate()}}
-\item \href{#method-InferencePropKKGEE-compute_estimate_with_bootstrap_weights}{\code{InferencePropKKGEE$compute_estimate_with_bootstrap_weights()}}
-\item \href{#method-InferencePropKKGEE-compute_asymp_confidence_interval}{\code{InferencePropKKGEE$compute_asymp_confidence_interval()}}
 \item \href{#method-InferencePropKKGEE-compute_asymp_two_sided_pval}{\code{InferencePropKKGEE$compute_asymp_two_sided_pval()}}
 \item \href{#method-InferencePropKKGEE-new}{\code{InferencePropKKGEE$new()}}
+\item \href{#method-InferencePropKKGEE-compute_estimate}{\code{InferencePropKKGEE$compute_estimate()}}
+\item \href{#method-InferencePropKKGEE-compute_asymp_confidence_interval}{\code{InferencePropKKGEE$compute_asymp_confidence_interval()}}
+\item \href{#method-InferencePropKKGEE-compute_estimate_with_bootstrap_weights}{\code{InferencePropKKGEE$compute_estimate_with_bootstrap_weights()}}
+\item \href{#method-InferencePropKKGEE-approximate_bootstrap_distribution_beta_hat_T}{\code{InferencePropKKGEE$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferencePropKKGEE-clone}{\code{InferencePropKKGEE$clone()}}
 }
 }
@@ -66,7 +62,6 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>EDI::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
@@ -89,36 +84,6 @@ inf$compute_estimate()
 </details>
 }}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferencePropKKGEE-compute_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferencePropKKGEE-compute_estimate}{}}}
-\subsection{Method \code{compute_estimate()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropKKGEE$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferencePropKKGEE-compute_estimate_with_bootstrap_weights"></a>}}
-\if{latex}{\out{\hypertarget{method-InferencePropKKGEE-compute_estimate_with_bootstrap_weights}{}}}
-\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropKKGEE$compute_estimate_with_bootstrap_weights(
-  subject_or_block_weights,
-  estimate_only = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferencePropKKGEE-compute_asymp_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferencePropKKGEE-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropKKGEE$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropKKGEE-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropKKGEE-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
@@ -138,7 +103,7 @@ Initialize the inference object.
   model_formula = NULL,
   use_rcpp = TRUE,
   verbose = FALSE,
-  smart_default = TRUE
+  smart_cold_start_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -147,16 +112,102 @@ Initialize the inference object.
 \describe{
 \item{\code{des_obj}}{A completed \code{Design} object with a proportion response.}
 
-\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
-the formula from the design object is used and its pre-computed design matrix is
-reused. If a formula is provided, a new design matrix is constructed from the
-design's imputed covariates.}
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
 
-\item{\code{use_rcpp}}{Whether to use the internal Rcpp solver (TRUE) or fallback to geepack (FALSE).}
+\item{\code{use_rcpp}}{Whether to use the internal Rcpp solver.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
 }
 \if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferencePropKKGEE-compute_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferencePropKKGEE-compute_estimate}{}}}
+\subsection{Method \code{compute_estimate()}}{
+Compute the treatment estimate.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferencePropKKGEE$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{Whether to skip standard-error calculations.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferencePropKKGEE-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferencePropKKGEE-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes an approximate confidence interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferencePropKKGEE$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Confidence level.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferencePropKKGEE-compute_estimate_with_bootstrap_weights"></a>}}
+\if{latex}{\out{\hypertarget{method-InferencePropKKGEE-compute_estimate_with_bootstrap_weights}{}}}
+\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Computes the treatment effect estimate for a bootstrap sample.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferencePropKKGEE$compute_estimate_with_bootstrap_weights(
+  subject_or_block_weights,
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Row weights for the bootstrap sample.}
+
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferencePropKKGEE-approximate_bootstrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-InferencePropKKGEE-approximate_bootstrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferencePropKKGEE$approximate_bootstrap_distribution_beta_hat_T(
+  B = 501,
+  show_progress = TRUE,
+  debug = FALSE,
+  bootstrap_type = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
 }
 }
 \if{html}{\out{<hr>}}

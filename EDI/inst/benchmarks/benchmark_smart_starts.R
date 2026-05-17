@@ -1,5 +1,5 @@
 args <- commandArgs(trailingOnly = TRUE)
-out_dir <- if (length(args) >= 1L) args[[1L]] else file.path(tempdir(), "smart_start_reports")
+out_dir <- if (length(args) >= 1L) args[[1L]] else file.path(tempdir(), "smart_cold_start_reports")
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
 suppressPackageStartupMessages({
@@ -149,16 +149,16 @@ latent_ord <- 0.4 * w + drop(as.matrix(X_cov) %*% beta_cov) / 4 + rnorm(n)
 y_ord <- as.numeric(cut(latent_ord, breaks = c(-Inf, -0.5, 0.4, Inf), labels = FALSE))
 
 init_report <- do.call(rbind, list(
-	summarize_fit_policy("logistic", "smart", bench_reps(function() EDI:::fast_logistic_regression_weighted_cpp(X_fit, y_logit, rep(1, n), smart_start = TRUE), 5L)),
-	summarize_fit_policy("logistic", "legacy", bench_reps(function() EDI:::fast_logistic_regression_weighted_cpp(X_fit, y_logit, rep(1, n), smart_start = FALSE), 5L)),
-	summarize_fit_policy("poisson", "smart", bench_reps(function() EDI:::fast_poisson_regression_cpp(X_fit, y_pois, smart_start = TRUE), 5L)),
-	summarize_fit_policy("poisson", "legacy", bench_reps(function() EDI:::fast_poisson_regression_cpp(X_fit, y_pois, smart_start = FALSE), 5L)),
-	summarize_fit_policy("negbin", "smart", bench_reps(function() EDI:::fast_neg_bin_cpp(X_fit, as.integer(y_nb), smart_start = TRUE), 5L)),
-	summarize_fit_policy("negbin", "legacy", bench_reps(function() EDI:::fast_neg_bin_cpp(X_fit, as.integer(y_nb), smart_start = FALSE), 5L)),
-	summarize_fit_policy("weibull", "smart", bench_reps(function() EDI:::fast_weibull_regression_cpp(X_fit, y_surv, dead, smart_start = TRUE, estimate_only = TRUE), 5L)),
-	summarize_fit_policy("weibull", "legacy", bench_reps(function() EDI:::fast_weibull_regression_cpp(X_fit, y_surv, dead, smart_start = FALSE, estimate_only = TRUE), 5L)),
-	summarize_fit_policy("ordinal_logit", "smart", bench_reps(function() EDI:::fast_ordinal_regression_cpp(X_fit[, -1, drop = FALSE], y_ord, smart_start = TRUE), 5L)),
-	summarize_fit_policy("ordinal_logit", "legacy", bench_reps(function() EDI:::fast_ordinal_regression_cpp(X_fit[, -1, drop = FALSE], y_ord, smart_start = FALSE), 5L))
+	summarize_fit_policy("logistic", "smart", bench_reps(function() EDI:::fast_logistic_regression_weighted_cpp(X_fit, y_logit, rep(1, n), smart_cold_start = TRUE), 5L)),
+	summarize_fit_policy("logistic", "legacy", bench_reps(function() EDI:::fast_logistic_regression_weighted_cpp(X_fit, y_logit, rep(1, n), smart_cold_start = FALSE), 5L)),
+	summarize_fit_policy("poisson", "smart", bench_reps(function() EDI:::fast_poisson_regression_cpp(X_fit, y_pois, smart_cold_start = TRUE), 5L)),
+	summarize_fit_policy("poisson", "legacy", bench_reps(function() EDI:::fast_poisson_regression_cpp(X_fit, y_pois, smart_cold_start = FALSE), 5L)),
+	summarize_fit_policy("negbin", "smart", bench_reps(function() EDI:::fast_neg_bin_cpp(X_fit, as.integer(y_nb), smart_cold_start = TRUE), 5L)),
+	summarize_fit_policy("negbin", "legacy", bench_reps(function() EDI:::fast_neg_bin_cpp(X_fit, as.integer(y_nb), smart_cold_start = FALSE), 5L)),
+	summarize_fit_policy("weibull", "smart", bench_reps(function() EDI:::fast_weibull_regression_cpp(X_fit, y_surv, dead, smart_cold_start = TRUE, estimate_only = TRUE), 5L)),
+	summarize_fit_policy("weibull", "legacy", bench_reps(function() EDI:::fast_weibull_regression_cpp(X_fit, y_surv, dead, smart_cold_start = FALSE, estimate_only = TRUE), 5L)),
+	summarize_fit_policy("ordinal_logit", "smart", bench_reps(function() EDI:::fast_ordinal_regression_cpp(X_fit[, -1, drop = FALSE], y_ord, smart_cold_start = TRUE), 5L)),
+	summarize_fit_policy("ordinal_logit", "legacy", bench_reps(function() EDI:::fast_ordinal_regression_cpp(X_fit[, -1, drop = FALSE], y_ord, smart_cold_start = FALSE), 5L))
 ))
 init_report <- add_gain_column(init_report, "model")
 
@@ -169,11 +169,11 @@ des_weib <- make_fixed_design("survival", X_cov, w, y_surv, dead)
 des_ord <- make_fixed_design("ordinal", X_cov, w, y_ord)
 
 ci_models <- list(
-	logistic = function() InferenceIncidLogRegr$new(des_logit, verbose = FALSE, smart_default = TRUE),
-	poisson = function() InferenceCountPoisson$new(des_pois, verbose = FALSE, smart_default = TRUE),
-	negbin = function() InferenceCountNegBin$new(des_nb, verbose = FALSE, smart_default = TRUE),
-	weibull = function() InferenceSurvivalWeibullRegr$new(des_weib, verbose = FALSE, smart_default = TRUE),
-	ordinal_logit = function() InferenceOrdinalPropOddsRegr$new(des_ord, verbose = FALSE, smart_default = TRUE)
+	logistic = function() InferenceIncidLogRegr$new(des_logit, verbose = FALSE, smart_cold_start_default = TRUE),
+	poisson = function() InferenceCountPoisson$new(des_pois, verbose = FALSE, smart_cold_start_default = TRUE),
+	negbin = function() InferenceCountNegBin$new(des_nb, verbose = FALSE, smart_cold_start_default = TRUE),
+	weibull = function() InferenceSurvivalWeibullRegr$new(des_weib, verbose = FALSE, smart_cold_start_default = TRUE),
+	ordinal_logit = function() InferenceOrdinalPropOddsRegr$new(des_ord, verbose = FALSE, smart_cold_start_default = TRUE)
 )
 
 bench_ci_type <- function(testing_type) {
@@ -205,7 +205,7 @@ des_rand <- make_seq_count_design(X_cov_rand, y_pois_rand)
 
 rand_rows <- list()
 for (reuse in c("on", "off")) {
-	inf <- InferenceCountPoisson$new(des_rand, verbose = FALSE, smart_default = TRUE)
+	inf <- InferenceCountPoisson$new(des_rand, verbose = FALSE, smart_cold_start_default = TRUE)
 	if (reuse == "on") {
 		with_reuse_settings(inf, fit_warm = TRUE, null_warm = TRUE, reusable_worker = TRUE)
 		ctrl <- list(fit_warm_start_enable = TRUE, fit_reuse_factorizations = TRUE)
@@ -222,7 +222,7 @@ randomization_report <- add_gain_column(do.call(rbind, rand_rows), "model")
 
 boot_rows <- list()
 for (reuse in c("on", "off")) {
-	inf <- InferenceCountPoisson$new(des_rand, verbose = FALSE, smart_default = TRUE)
+	inf <- InferenceCountPoisson$new(des_rand, verbose = FALSE, smart_cold_start_default = TRUE)
 	if (reuse == "on") {
 		with_reuse_settings(inf, fit_warm = TRUE, null_warm = TRUE, reusable_worker = TRUE)
 	} else {

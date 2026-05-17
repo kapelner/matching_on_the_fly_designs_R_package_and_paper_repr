@@ -18,7 +18,6 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 	lock_objects = FALSE,
 	inherit = InferenceCountLikelihood,
 	public = list(
-				
 		#' @description Initialize a Poisson regression inference object.
 		#' @param des_obj A completed \code{Design} object with a count response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -26,16 +25,37 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
-		#' @param smart_default Whether to use smart optimizer start values by default.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_default = TRUE){
+		#' @param smart_cold_start_default Whether to use smart cold start values by default.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
 		},
+		#' @description Compute the treatment effect estimate.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
+		},
+		#' @description Computes an approximate confidence interval.
+		#' @param alpha Confidence level.
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			private$shared(estimate_only = FALSE)
+			private$compute_z_or_t_ci_from_s_and_df(alpha)
+		},
+		#' @description Computes an approximate two-sided p-value.
+		#' @param delta Null treatment effect value.
+		compute_asymp_two_sided_pval = function(delta = 0){
+			private$shared(estimate_only = FALSE)
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+		},
+		#' @description Computes the treatment effect estimate for a bootstrap sample.
+		#' @param subject_or_block_weights Row weights for the bootstrap sample.
+		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
 			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
 			X_data = private$get_X()
@@ -49,13 +69,15 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 				required_cols = 2L,
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
+					ws_args = private$get_backend_warm_start_args(ncol(X_fit))
 					res = fast_poisson_regression_weighted_cpp(
 						X = X_fit,
 						y = private$y,
 						weights = row_weights,
-						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
-						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
-						smart_start = private$smart_default
+						warm_start_beta = ws_args$warm_start_beta,
+						warm_start_weights = ws_args$warm_start_weights,
+						warm_start_fisher_info = ws_args$warm_start_fisher_info,
+						smart_cold_start = private$smart_cold_start_default
 					)
 					list(b = res$b, XtWX = res$XtWX, ssq_b_j = NA_real_, j_treat = j_treat)
 				},
@@ -78,10 +100,20 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 				fisher = attempt$fit$XtWX
 			)
 			private$cached_values$beta_hat_T
+		},
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		}
 	),
 	private = list(
 		best_X_colnames = NULL,
+		get_complexity_tier = function() "medium",
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -98,12 +130,14 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(1, treatment = private$w, X_cov)
 			}
+			ws_args = private$get_backend_warm_start_args(ncol(X))
 			res = tryCatch(
 				fast_poisson_regression_cpp(
 					X = X, y = as.numeric(private$y),
-					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
-					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X)),
-					smart_start = private$smart_default
+					warm_start_beta = ws_args$warm_start_beta,
+					warm_start_weights = ws_args$warm_start_weights,
+					warm_start_fisher_info = ws_args$warm_start_fisher_info,
+					smart_cold_start = private$smart_cold_start_default
 				),
 				error = function(e) NULL
 			)
@@ -116,11 +150,56 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},
+		supports_lik_ratio_param_bootstrap = function(){
+			TRUE
+		},
 		supports_likelihood_tests = function(){
 			TRUE
 		},
 		supports_fisher_information = function(){
 			TRUE
+		},
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			b_null     = as.numeric(null_fit$b)
+			mu         = pmax(exp(as.numeric(spec$X %*% b_null)), 0)
+			y_sim      = as.numeric(rpois(length(mu), mu))
+			X_fit      = spec$X
+			j          = spec$j
+			
+			# Parametric bootstrap: use observed fit as anchor
+			ws_args = private$get_backend_warm_start_args(ncol(X_fit))
+			full_fit_b = tryCatch(
+				fast_poisson_regression_cpp(
+					X = X_fit, y = y_sim,
+					warm_start_beta = ws_args$warm_start_beta,
+					warm_start_weights = ws_args$warm_start_weights,
+					warm_start_fisher_info = ws_args$warm_start_fisher_info,
+					smart_cold_start = private$smart_cold_start_default
+				),
+				error = function(e) NULL
+			)
+			if (is.null(full_fit_b) || length(full_fit_b$b) < j || !is.finite(full_fit_b$b[j])) return(NULL)
+			list(
+				full_fit = full_fit_b,
+				fit_null = function(d, start = NULL){
+					ws_args_null = private$get_backend_warm_start_args(ncol(X_fit))
+					tryCatch(
+						fast_poisson_regression_with_var_cpp(
+							X = X_fit, y = y_sim, j = j,
+							warm_start_beta = start %||% full_fit_b$b,
+							warm_start_weights = ws_args_null$warm_start_weights,
+							warm_start_fisher_info = ws_args_null$warm_start_fisher_info,
+							fixed_idx = j, fixed_values = d,
+							smart_cold_start = TRUE
+						),
+						error = function(e) NULL
+					)
+				},
+				neg_loglik = function(fit){
+					eta_f = as.numeric(X_fit %*% as.numeric(fit$b))
+					-sum(y_sim * eta_f - exp(eta_f) - lgamma(y_sim + 1))
+				}
+			)
 		},
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
@@ -135,15 +214,17 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 				j = j_treat,
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
+					ws_args = private$get_backend_warm_start_args(ncol(X_fit))
 					fast_poisson_regression_with_var_cpp(
 						X = X_fit,
 						y = y,
 						j = j_treat,
-						warm_start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
-						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
+						warm_start_beta = start %||% ws_args$warm_start_beta,
+						warm_start_weights = ws_args$warm_start_weights,
+						warm_start_fisher_info = ws_args$warm_start_fisher_info,
 						fixed_idx = j_treat,
 						fixed_values = delta,
-						smart_start = private$smart_default
+						smart_cold_start = private$smart_cold_start_default
 					)
 				},
 				extract_start = function(fit){
@@ -180,22 +261,23 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 				required_cols = 2L,
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
-					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit))
-					warm_fisher = private$get_fit_warm_start_fisher(ncol(X_fit))
+					ws_args = private$get_backend_warm_start_args(ncol(X_fit))
 					if (estimate_only) {
 						res = fast_poisson_regression_cpp(
 							X = X_fit, y = private$y,
-							warm_start_beta = warm_start_beta,
-							warm_start_fisher_info = warm_fisher,
-							smart_start = private$smart_default
+							warm_start_beta = ws_args$warm_start_beta,
+							warm_start_weights = ws_args$warm_start_weights,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default
 						)
-						list(b = res$b, XtWX = res$XtWX, ssq_b_j = NA_real_, j_treat = j_treat)
+						list(b = res$b, XtWX = res$XtWX, w = res$w, ssq_b_j = NA_real_, j_treat = j_treat)
 					} else {
 						res = fast_poisson_regression_with_var_cpp(
 							X = X_fit, y = private$y, j = j_treat,
-							warm_start_beta = warm_start_beta,
-							warm_start_fisher_info = warm_fisher,
-							smart_start = private$smart_default
+							warm_start_beta = ws_args$warm_start_beta,
+							warm_start_weights = ws_args$warm_start_weights,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default
 						)
 						res$j_treat = j_treat
 						res

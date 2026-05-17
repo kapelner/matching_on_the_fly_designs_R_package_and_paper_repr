@@ -74,6 +74,41 @@ InferenceIncidBinomialIdentityRiskDiff = R6::R6Class("InferenceIncidBinomialIden
 		supports_likelihood_tests = function(){
 			TRUE
 		},
+		supports_lik_ratio_param_bootstrap = function(){
+			TRUE
+		},
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			b_null     = as.numeric(null_fit$b)
+			mu         = pmin(pmax(as.numeric(spec$X %*% b_null), 0), 1)
+			y_sim      = as.numeric(rbinom(length(mu), 1L, mu))
+			X_fit      = spec$X
+			j          = spec$j
+			full_fit_b = tryCatch(
+				fast_identity_binomial_regression_cpp(X = X_fit, y = y_sim),
+				error = function(e) NULL
+			)
+			if (is.null(full_fit_b) || !isTRUE(full_fit_b$converged)) return(NULL)
+			if (length(full_fit_b$b) < j || !is.finite(full_fit_b$b[j])) return(NULL)
+			list(
+				full_fit = full_fit_b,
+				fit_null = function(d, start = NULL){
+					res = tryCatch(
+						fast_identity_binomial_regression_cpp(
+							X = X_fit, y = y_sim,
+							warm_start_beta = start %||% full_fit_b$b,
+							fixed_idx = j, fixed_values = d
+						),
+						error = function(e) NULL
+					)
+					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
+					res
+				},
+				neg_loglik = function(fit){
+					mu_fit = as.numeric(X_fit %*% as.numeric(fit$b))
+					-sum(y_sim * log(pmax(mu_fit, 1e-15)) + (1 - y_sim) * log(pmax(1 - mu_fit, 1e-15)))
+				}
+			)
+		},
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context

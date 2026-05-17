@@ -26,13 +26,13 @@ InferenceOrdinalAdjCatLogitRegr = R6::R6Class("InferenceOrdinalAdjCatLogitRegr",
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
 		#' @param harden Whether to apply robustness measures.
-		#' @param smart_default Whether to use smart optimizer starts.
-		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_default = TRUE){
+		#' @param smart_cold_start_default Whether to use smart cold starts.
+		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
 				assertFormula(model_formula, null.ok = TRUE)
 			}
-			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_default = smart_default)
+			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}

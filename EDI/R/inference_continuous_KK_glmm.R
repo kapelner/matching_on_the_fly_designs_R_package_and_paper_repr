@@ -22,7 +22,7 @@
 InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = c(InferenceMixinKKGLMMShared$public, list(
+	public = utils::modifyList(as.list(InferenceMixinKKGLMMShared$public), list(
 		#' @description Initialize a KK GLMM inference object.
 		#' @param des_obj A completed \code{Design} object with a continuous response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -33,8 +33,9 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 		#'   Gaussian LMM implementation (no external package required). If \code{FALSE},
 		#'   use \pkg{glmmTMB}.
 		#' @param verbose Whether to print progress messages.
+		#' @param smart_cold_start_default Whether to use smart cold start values.
 		#' @param optimization_alg The optimization algorithm to use. Default is dispatched via policy.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = NULL){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = TRUE, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(use_rcpp)
@@ -42,15 +43,34 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 			# If using Rcpp, skip glmmTMB package check in the parent initialize.
 			if (use_rcpp) private$skip_glmm_pkg_check = TRUE
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
-			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 			private$init_kk_glmm_shared(des_obj)
 			private$use_rcpp = use_rcpp
+		},
+		#' @description Compute the treatment effect estimate.
+		#' @param estimate_only If TRUE, skip variance component calculations.
+		compute_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
+		},
+		#' @description Computes an approximate confidence interval.
+		#' @param alpha Confidence level.
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			private$shared(estimate_only = FALSE)
+			private$compute_z_or_t_ci_from_s_and_df(alpha)
+		},
+		#' @description Computes an approximate two-sided p-value.
+		#' @param delta Null treatment effect value.
+		compute_asymp_two_sided_pval = function(delta = 0){
+			private$shared(estimate_only = FALSE)
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	)),
-	private = c(InferenceMixinKKGLMMShared$private, list(
+	private = utils::modifyList(as.list(InferenceMixinKKGLMMShared$private), list(
 		use_rcpp = TRUE,
 		glmm_response_type = function() "continuous",
 		glmm_family        = function() stats::gaussian(link = "identity"),
+		get_complexity_tier = function() "heavy",
 		supports_likelihood_tests = function(){
 			isTRUE(private$use_rcpp)
 		},
@@ -88,19 +108,19 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 			if (length(j_T_r) == 0L) j_T_r = 2L   # fallback: second column
 			
 			start_len = ncol(X_fit) + 2L # beta + log_sigma + log_tau
-			warm_start_params = private$get_fit_warm_start_for_length("params", start_len)
+			ws_args = private$get_optimal_warm_start_config(start_len)
 			
 			fit = tryCatch(
 				fast_gaussian_lmm_cpp(
 					X             = X_fit,
 					y             = as.numeric(private$y),
 					group_id      = as.integer(group_id),
-					warm_start_params = warm_start_params,
+					warm_start_params = ws_args$start_params,
 					estimate_only = estimate_only,
 					maxit         = 300L,
 					eps_g         = 1e-6,
 					optimization_alg = private$optimization_alg,
-					warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len)
+					warm_start_fisher_info = ws_args$warm_start_fisher_info
 				),
 				error = function(e) NULL
 			)

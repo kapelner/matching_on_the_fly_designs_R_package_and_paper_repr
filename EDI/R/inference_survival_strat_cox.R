@@ -30,23 +30,24 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 		#'   If \code{FALSE}, use \pkg{survival::coxph}.
 		#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = "newton_raphson", verbose = FALSE, smart_default = TRUE) {
+		#' @param smart_cold_start_default Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = "newton_raphson", verbose = FALSE, smart_cold_start_default = TRUE) {
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 				assertFlag(use_rcpp)
 			}
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$use_rcpp = use_rcpp
 		},
-		#' @description Compute treatment estimate
+		#' @description Compute the treatment effect estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Compute asymp confidence interval
-		#' @param alpha The significance level (default 0.05).
+		#' @description Computes an approximate confidence interval.
+		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -54,8 +55,8 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Compute asymp two sided pval for treatment effect
-		#' @param delta The null treatment effect (default 0).
+		#' @description Computes an approximate two-sided p-value.
+		#' @param delta Null treatment effect value.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
@@ -76,6 +77,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 		private = list(
 		use_rcpp = TRUE,
 		cached_mod = NULL,
+		get_complexity_tier = function() "light",
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
@@ -106,7 +108,8 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 				j = j_treat,
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
-					warm_start_beta = start %||% private$get_fit_warm_start_for_length("params", ncol(X_fit))
+					ws_args = private$get_backend_warm_start_args(ncol(X_fit))
+					warm_start_beta = start %||% ws_args$warm_start_beta
 					if (stratified) {
 						fast_stratified_coxph_regression_cpp(
 							X = X_fit,
@@ -260,7 +263,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 					dead          = inp$dead,
 					strata        = strata_sub,
 					warm_start_beta    = private$get_fit_warm_start_for_length("params", ncol(inp$X)),
-					smart_start   = private$smart_default,
+					smart_cold_start   = private$smart_cold_start_default,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(inp$X)),
 					estimate_only = FALSE,
 					optimization_alg = private$optimization_alg
@@ -279,7 +282,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 					y             = inp$y,
 					dead          = inp$dead,
 					warm_start_beta    = private$get_fit_warm_start_for_length("params", ncol(inp$X)),
-					smart_start   = private$smart_default,
+					smart_cold_start   = private$smart_cold_start_default,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(inp$X)),
 					estimate_only = FALSE,
 					optimization_alg = private$optimization_alg

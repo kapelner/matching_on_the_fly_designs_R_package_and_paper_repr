@@ -18,7 +18,8 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 		#'
 		#' @param response_type 	The data type of response values.
 		#' @param prob_T  The probability of the treatment assignment.
-		#' @param obj_val_cutoff 	The maximum allowable objective value.
+		#' @param obj_val_cutoff 	The maximum allowable objective value. Cannot be specified together with prop_acceptable.
+		#' @param prop_acceptable	The proportion of randomizations to accept (draws r/prop_acceptable total, returns r lowest). Cannot be specified together with obj_val_cutoff.
 		#' @param objective 	The objective function to use. Default is "mahal_dist".
 		#' @param include_is_missing_as_a_new_feature  Flag for missingness indicators.
 		#' @param n  		The sample size.
@@ -32,16 +33,20 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 				response_type,
 				prob_T = 0.5,
 				obj_val_cutoff = NULL,
+				prop_acceptable = NULL,
 				objective = "mahal_dist",
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
-				
 				verbose = FALSE,
 				missingness_method = "impute",
 				model_formula = ~ .
 			) {
+			if (!is.null(obj_val_cutoff) && !is.null(prop_acceptable)) {
+				stop("Cannot specify both obj_val_cutoff and prop_acceptable.")
+			}
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
 			private$obj_val_cutoff = obj_val_cutoff
+			private$prop_acceptable = prop_acceptable
 			private$objective = objective
 			private$uses_covariates = TRUE
 		},
@@ -59,6 +64,32 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 			if (is.null(private$X) || ncol(private$X) == 0){
 				n_T = round(n * private$prob_T)
 				return(replicate(r, sample(c(rep(1, n_T), rep(0, n - n_T)))))
+			}
+			# prop_acceptable path: draw r/prop_acceptable randomizations, return r with lowest obj vals
+			if (!is.null(private$prop_acceptable)) {
+				if (private$objective == "mahal_dist" && is.null(private$S_inv)){
+					X = private$X[1:n, , drop = FALSE]
+					S = var(X)
+					if (abs(det(S)) < 1e-10){
+						S = S + diag(1e-6, ncol(X))
+					}
+					private$S_inv = solve(S)
+				}
+				X = private$X[1:n, , drop = FALSE]
+				n_draw = round(r / private$prop_acceptable)
+				seed = sample.int(.Machine$integer.max, 1L)
+				if (private$prob_T == 0.5) {
+					indicTs = GreedyExperimentalDesign:::complete_randomization_forced_balanced_cpp(n, n_draw, seed)
+				} else {
+					n_T = round(n * private$prob_T)
+					indicTs = GreedyExperimentalDesign:::complete_randomization_imbalanced_cpp(n, n_T, n_draw, seed)
+				}
+				obj_vals = GreedyExperimentalDesign:::compute_objective_vals_cpp(X, indicTs, private$objective, private$S_inv)
+				ord = order(obj_vals)
+				# indicTs is n_draw x n; subset rows for best r, then transpose to n x r
+				w_mat = t(indicTs[ord[seq_len(r)], , drop = FALSE])
+				storage.mode(w_mat) = "numeric"
+				return(w_mat)
 			}
 			# Use GED for the balanced even-n case
 			use_ged = private$prob_T == 0.5 && n %% 2 == 0 &&
@@ -110,6 +141,7 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 	),
 	private = list(
 		obj_val_cutoff = NULL,
+		prop_acceptable = NULL,
 		objective = NULL,
 		S_inv = NULL,
 		validate_allocation_matrix = function(w_mat, n, r, require_balanced = FALSE){

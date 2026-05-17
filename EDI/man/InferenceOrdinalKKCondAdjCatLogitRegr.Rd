@@ -25,16 +25,16 @@ inf$compute_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceOrdinalKKCondAdjCatLogitRegr}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceOrdinalKKCondAdjCatLogitRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceOrdinalKKCondAdjCatLogitRegr-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceOrdinalKKCondAdjCatLogitRegr$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferenceOrdinalKKCondAdjCatLogitRegr-new}{\code{InferenceOrdinalKKCondAdjCatLogitRegr$new()}}
 \item \href{#method-InferenceOrdinalKKCondAdjCatLogitRegr-compute_estimate}{\code{InferenceOrdinalKKCondAdjCatLogitRegr$compute_estimate()}}
 \item \href{#method-InferenceOrdinalKKCondAdjCatLogitRegr-compute_asymp_confidence_interval}{\code{InferenceOrdinalKKCondAdjCatLogitRegr$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceOrdinalKKCondAdjCatLogitRegr-compute_asymp_two_sided_pval}{\code{InferenceOrdinalKKCondAdjCatLogitRegr$compute_asymp_two_sided_pval()}}
+\item \href{#method-InferenceOrdinalKKCondAdjCatLogitRegr-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceOrdinalKKCondAdjCatLogitRegr$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferenceOrdinalKKCondAdjCatLogitRegr-clone}{\code{InferenceOrdinalKKCondAdjCatLogitRegr$clone()}}
 }
 }
@@ -95,20 +95,6 @@ inf$compute_estimate()
 </details>
 }}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceOrdinalKKCondAdjCatLogitRegr-approximate_bootstrap_distribution_beta_hat_T"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceOrdinalKKCondAdjCatLogitRegr-approximate_bootstrap_distribution_beta_hat_T}{}}}
-\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalKKCondAdjCatLogitRegr$approximate_bootstrap_distribution_beta_hat_T(
-  B = 501,
-  show_progress = TRUE,
-  debug = FALSE,
-  bootstrap_type = NULL
-)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalKKCondAdjCatLogitRegr-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalKKCondAdjCatLogitRegr-new}{}}}
 \subsection{Method \code{new()}}{
@@ -119,7 +105,7 @@ Initialize the inference object.
   verbose = FALSE,
   harden = TRUE,
   model_formula = NULL,
-  smart_default = TRUE
+  smart_cold_start_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -134,7 +120,7 @@ Initialize the inference object.
 
 \item{\code{model_formula}}{Optional formula for covariate adjustment.}
 
-\item{\code{smart_default}}{Whether to use smart optimizer start values by default.}
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default.}
 }
 \if{html}{\out{</div>}}
 }
@@ -190,6 +176,37 @@ Returns the asymptotic p-value.
 \item{\code{delta}}{Null hypothesis treatment effect.}
 }
 \if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceOrdinalKKCondAdjCatLogitRegr-approximate_bootstrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalKKCondAdjCatLogitRegr-approximate_bootstrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalKKCondAdjCatLogitRegr$approximate_bootstrap_distribution_beta_hat_T(
+  B = 501,
+  show_progress = TRUE,
+  debug = FALSE,
+  bootstrap_type = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
 }
 }
 \if{html}{\out{<hr>}}

@@ -1,4 +1,3 @@
-#' @importFrom pbmcapply pbmclapply
 #' @importFrom randomizr block_ra block_and_cluster_ra cluster_ra
 NULL
 

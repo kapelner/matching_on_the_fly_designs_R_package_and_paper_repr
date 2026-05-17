@@ -21,13 +21,13 @@ InferenceOrdinalPartialProportionalOddsRegr = R6::R6Class(
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		#' @param smart_default Whether to use smart optimizer start values by default.
+		#' @param smart_cold_start_default Whether to use smart cold start values by default.
 		#' @param harden Whether to apply robustness measures.
-		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, nonparallel = character(0), smart_default = TRUE){
+		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, nonparallel = character(0), smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
 			}
-			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_default = smart_default)
+			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 				assertCharacter(nonparallel, null.ok = TRUE)
@@ -175,7 +175,11 @@ InferenceOrdinalPartialProportionalOddsRegr = R6::R6Class(
 		},
 
 		ppo_covariate_matrix = function(){
-			stop(class(self)[1], " must implement ppo_covariate_matrix()")
+			X_cov = private$get_X()
+			if (is.null(X_cov) || length(X_cov) == 0L) {
+				return(matrix(0, nrow = private$n, ncol = 0))
+			}
+			as.matrix(X_cov)
 		},
 
 		shared = function(estimate_only = FALSE){

@@ -27,14 +27,24 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 		#' matrix is reused. If a formula is provided, a new design matrix is constructed from
 		#' the design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+		#' @param smart_cold_start_default Whether to use smart cold start values by default.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+		},
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		},
 		#' @description Computes the g-computation (G-Comp) treatment-effect estimate (mean difference).
 		#' @param estimate_only If TRUE, skip variance component calculations.
@@ -42,15 +52,26 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$md
 		},
+		#' @description Computes the treatment effect estimate for a bootstrap sample.
+		#' @param subject_or_block_weights Row weights for the bootstrap sample.
+		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
 			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
-			md = private$weighted_gcomp_md_from_row_weights(row_weights)
-			private$cached_values$md = as.numeric(md)[1L]
-			private$cached_values$beta_hat_T = private$cached_values$md
-			private$cached_values$se_md = NA_real_
-			private$cached_values$mean1 = NA_real_
-			private$cached_values$mean0 = NA_real_
-			private$cached_values$beta_hat_T
+			# Keep weighted replicate evaluation side-effect free so it cannot poison
+			# the ordinary cached fit or its warm-start / model-selection state.
+			saved_cached_values = private$cached_values
+			saved_best_X_colnames = private$best_X_colnames
+			saved_fit_warm_start = private$fit_warm_start
+			saved_fit_warm_start_type = private$fit_warm_start_type
+			saved_fit_warm_start_fisher = private$fit_warm_start_fisher
+			on.exit({
+				private$cached_values = saved_cached_values
+				private$best_X_colnames = saved_best_X_colnames
+				private$fit_warm_start = saved_fit_warm_start
+				private$fit_warm_start_type = saved_fit_warm_start_type
+				private$fit_warm_start_fisher = saved_fit_warm_start_fisher
+			}, add = TRUE)
+			as.numeric(private$weighted_gcomp_md_from_row_weights(row_weights))[1L]
 		},
 		#' @description Computes a 1 - \code{alpha} confidence interval for the G-Comp mean difference.
 		#' @param alpha The significance level (default 0.05).
@@ -106,13 +127,20 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				cbind(treatment = private$w, X_cov)
 			}
+			n_params = (length(sort(unique(private$y))) - 1L) + ncol(X_fit)
 			fit = tryCatch(
-				fast_ordinal_regression_cpp(X = X_fit, y = as.numeric(private$y)),
+				fast_ordinal_regression_cpp(
+					X = X_fit, y = as.numeric(private$y),
+					warm_start_params = private$get_fit_warm_start_for_length("params", n_params),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
+					smart_cold_start = private$smart_cold_start_default
+				),
 				error = function(e) NULL
 			)
 			if (is.null(fit) || length(fit$b) == 0 || is.null(fit$alpha)){
 				return(NA_real_)
 			}
+			private$set_fit_warm_start(fit$params, "params", fisher = fit$fisher_information)
 			res = gcomp_ordinal_proportional_odds_post_fit_cpp(
 				X_fit = X_fit,
 				coef_hat = as.numeric(fit$b),
@@ -215,27 +243,61 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 			j_treat = reduced$j_treat - 1L
 			ok = is.finite(row_weights) & row_weights > 0 & is.finite(private$y)
 			if (sum(ok) <= ncol(X_fit)) return(NA_real_)
-			dat = data.frame(y = factor(private$y[ok], ordered = TRUE), X_fit[ok, , drop = FALSE], check.names = FALSE)
-			mod = tryCatch(
-				suppressWarnings(
-					MASS::polr(
-						y ~ .,
-						data = dat,
+			X_fit_ok = X_fit[ok, , drop = FALSE]
+			y_ok = as.numeric(private$y[ok])
+			n_params = ncol(X_fit_ok) + length(sort(unique(y_ok))) - 1L
+			try_weighted_fit = function(start_params = NULL, start_fisher = NULL){
+				tryCatch(
+					fast_ordinal_regression_weighted_cpp(
+						X = X_fit_ok,
+						y = y_ok,
 						weights = as.numeric(row_weights[ok]),
-						method = "logistic",
-						Hess = FALSE
-					)
-				),
-				error = function(e) NULL
+						warm_start_params = start_params,
+						warm_start_fisher_info = start_fisher,
+						smart_cold_start = private$smart_cold_start_default
+					),
+					error = function(e) NULL
+				)
+			}
+			mod = NULL
+			start_candidates = list(
+				list(
+					params = private$get_fit_warm_start_for_length("params", n_params),
+					fisher = private$get_fit_warm_start_fisher(n_params)
+				)
 			)
+			if (is.null(start_candidates[[1L]]$params)) {
+				unweighted_fit = tryCatch(
+					fast_ordinal_regression_cpp(
+						X = X_fit_ok,
+						y = y_ok,
+						warm_start_params = NULL,
+						warm_start_fisher_info = NULL,
+						smart_cold_start = private$smart_cold_start_default
+					),
+					error = function(e) NULL
+				)
+				if (!is.null(unweighted_fit) && !is.null(unweighted_fit$params)) {
+					start_candidates[[length(start_candidates) + 1L]] = list(
+						params = as.numeric(unweighted_fit$params),
+						fisher = unweighted_fit$fisher_information %||% NULL
+					)
+				}
+			}
+			start_candidates[[length(start_candidates) + 1L]] = list(params = NULL, fisher = NULL)
+			for (cand in start_candidates) {
+				mod = try_weighted_fit(cand$params, cand$fisher)
+				if (!is.null(mod) && !is.null(mod$b) && length(mod$b) > 0L && !is.null(mod$alpha)) break
+			}
 			if (is.null(mod)) return(NA_real_)
-			coef_hat = as.numeric(stats::coef(mod))
-			alpha_hat = as.numeric(mod$zeta)
+			coef_hat = as.numeric(mod$b)
+			alpha_hat = as.numeric(mod$alpha)
 			if (!length(coef_hat) || !length(alpha_hat) || j_treat < 1L || j_treat > length(coef_hat)) return(NA_real_)
-			private$best_X_colnames = setdiff(colnames(X_fit), "treatment")
+			private$set_fit_warm_start(as.numeric(mod$params), "params", fisher = mod$fisher_information)
+			private$best_X_colnames = setdiff(colnames(X_fit_ok), "treatment")
 			res = tryCatch(
 				gcomp_ordinal_proportional_odds_post_fit_cpp(
-					X_fit = X_fit,
+					X_fit = X_fit_ok,
 					coef_hat = coef_hat,
 					alpha_hat = alpha_hat,
 					j_treat = j_treat

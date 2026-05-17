@@ -1,184 +1,100 @@
 #' Abstract class for Conditional Logistic Combined-Likelihood Compound Inference
 #'
 #' Fits a single joint likelihood over all KK design data for incidence responses.
-#' The matched-pair component uses the conditional logistic likelihood on discordant
-#' pairs (signed within-pair differences); the reservoir component uses the marginal
-#' logistic likelihood. Both share the treatment effect beta_T and covariate slopes
-#' beta_xs.
-#'
-#' Combined design matrix (column layout: beta_0, beta_T, beta_xs):
-#' Discordant pair rows: (0, t_diff_k, X_diff_k)
-#' Reservoir rows:       (1, w_i, X_i)
-#' The zero in column 1 for pair rows encodes that beta_0 is absent from the
-#' conditional likelihood (eliminated by conditioning on the pair sum).
-#' Fitting a single logistic regression on the stacked dataset maximises the
-#' combined log-likelihood L = L_cond(pairs) + L_marg(reservoir).
-#'
-#' Under \code{harden = TRUE}, the combined fit preserves the treatment column and
-#' retries reduced covariate sets after QR-based rank reduction. Extreme finite
-#' coefficients / standard errors are rejected and treated as non-estimable.
+#' The matched-pair component uses the conditional logistic likelihood, and the
+#' reservoir component uses the standard Bernoulli log-likelihood.
 #'
 #' @keywords internal
 InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = c(InferenceMixinKKPassThrough$public, list(
-		#' @description Initialize the inference object.
-		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
+	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
+		#' @description Initialize
+		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
+		#' @param smart_cold_start_default   Whether to use smart optimizer start values.
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
 			private$init_kk_passthrough(des_obj)
 		},
-		#' @description Returns the combined-likelihood estimate of the treatment effect.
+		#' @description Compute the treatment effect estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes an asymptotic confidence interval for the treatment effect.
-		#' @param alpha Significance level.
+		#' @description Computes an approximate confidence interval.
+		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			if (should_run_asserts()) {
-				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			}
 			if (!identical(self$get_testing_type(), "wald")) {
 				return(super$compute_asymp_confidence_interval(alpha = alpha))
 			}
 			private$shared_combined_likelihood(estimate_only = FALSE)
-			if (should_run_asserts()) {
-				private$assert_finite_se()
-			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Computes an asymptotic two-sided p-value for the treatment effect.
+		#' @description Computes an approximate two-sided p-value.
 		#' @param delta Null treatment effect value.
 		compute_asymp_two_sided_pval = function(delta = 0){
-			if (should_run_asserts()) {
-				assertNumeric(delta)
-			}
 			if (!identical(self$get_testing_type(), "wald")) {
 				return(super$compute_asymp_two_sided_pval(delta = delta))
 			}
 			private$shared_combined_likelihood(estimate_only = FALSE)
-			if (should_run_asserts()) {
-				private$assert_finite_se()
-			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+		},
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		}
 	)),
-	private = c(InferenceMixinKKPassThrough$private, list(
+	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
-			max_abs_reasonable_coef = 1e4,
-			get_standard_error = function(){
-				private$shared_combined_likelihood(estimate_only = FALSE)
-				se = private$compute_standard_error_from_information_matrix()
-				if (is.finite(se)) return(se)
-				private$cached_values$s_beta_hat_T
-			},
-			get_degrees_of_freedom = function(){
-				private$cached_values$df %||% NA_real_
-			},
-			supports_likelihood_tests = function(){
-				TRUE
-			},
-			supports_fisher_information = function(){
-				TRUE
-			},
-			get_likelihood_test_spec = function(){
-				private$shared_combined_likelihood(estimate_only = FALSE)
-				ctx = private$cached_values$likelihood_test_context
-				if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
-				X_fit = ctx$X
-				y = as.numeric(ctx$y)
-				j_treat = as.integer(ctx$j_treat)
-				list(
-					X = X_fit,
-					y = y,
-					j = j_treat,
-					full_fit = private$cached_mod,
-					fit_null = function(delta){
-						fast_logistic_regression_with_var_cpp(
-							X = X_fit,
-							y = y,
-							j = j_treat,
-							fixed_idx = j_treat,
-							fixed_values = delta
-						)
-					},
-					score = function(fit){
-						get_logistic_regression_score_cpp(X_fit, y, as.numeric(fit$b))
-					},
-					observed_information = function(fit){
-						-get_logistic_regression_hessian_cpp(X_fit, as.numeric(fit$b))
-					},
-					fisher_information = function(fit){
-						-get_logistic_regression_hessian_cpp(X_fit, as.numeric(fit$b))
-					},
-					information = function(fit){
-						-get_logistic_regression_hessian_cpp(X_fit, as.numeric(fit$b))
-					},
-					neg_loglik = function(fit){
-						eta = as.numeric(X_fit %*% as.numeric(fit$b))
-						log_denom = ifelse(eta > 0, eta + log1p(exp(-eta)), log1p(exp(eta)))
-						-sum(y * eta - log_denom)
-					}
-				)
-			},
-			fit_combined_logistic_candidate = function(X_comb, y_comb, j_beta_T, estimate_only = FALSE){
-			tryCatch(
-				if (estimate_only) {
-					fast_logistic_regression(X_comb, y_comb)
-				} else {
-					fast_logistic_regression_with_var(X_comb, y_comb, j = j_beta_T)
-				},
-				error = function(e) NULL
-			)
-		},
-		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
-		assert_finite_se = function(){
-			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				return(invisible(NULL))
-			}
-		},
-		# Fit the combined logistic likelihood over discordant matched-pair differences
-		# and reservoir observations with SHARED covariate effects beta_xs.
-			shared_combined_likelihood = function(estimate_only = FALSE){
-				if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-				if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-				private$cached_values$likelihood_test_context = NULL
+		max_abs_reasonable_coef = 1e4,
+		shared_combined_likelihood = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			private$cached_values$likelihood_test_context = NULL
 			if (is.null(private$cached_values$KKstats)){
 				private$compute_basic_match_data()
 			}
 			KKstats = private$cached_values$KKstats
+			if (is.null(KKstats)) return(invisible(NULL))
+
 			m   = KKstats$m
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
 			p             = ncol(as.matrix(private$X))
 			has_reservoir = nRT > 0 && nRC > 0
-			# ---- Build combined design matrix ------------------------------------
+
 			X_comb   = NULL
 			y_comb   = NULL
 			j_beta_T = 2L
+
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
+			m_vec[is.na(m_vec)] = 0L
+
 			if (m > 0){
-				m_vec = private$m
-				if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
-				m_vec[is.na(m_vec)] = 0L
-				i_matched = which(m_vec > 0)
+				i_matched = which(m_vec > 0L)
 				y_m      = private$y[i_matched]
 				w_m      = private$w[i_matched]
 				strata_m = m_vec[i_matched]
 				X_mat    = if (p > 0L) as.matrix(private$get_X()[i_matched, drop = FALSE]) else matrix(nrow = length(y_m), ncol = 0L)
+
 				if (has_reservoir){
 					y_r    = KKstats$y_reservoir
 					w_r    = KKstats$w_reservoir
@@ -206,18 +122,41 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 				X_comb = if (p > 0L) cbind(1, w_r, as.matrix(KKstats$X_reservoir)) else cbind(1, w_r)
 				y_comb = y_r
 			}
+
 			if (is.null(X_comb)){
 				private$cache_nonestimable_estimate("kk_clogit_combined_no_informative_data")
 				return(invisible(NULL))
 			}
+
 			colnames(X_comb) = paste0("x", seq_len(ncol(X_comb)))
 			colnames(X_comb)[j_beta_T] = "beta_T"
+
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_comb,
 				required_cols = j_beta_T,
 				fit_fun = function(X_fit){
 					j_beta_fit = match("beta_T", colnames(X_fit))
-					private$fit_combined_logistic_candidate(X_fit, y_comb, j_beta_fit, estimate_only = estimate_only)
+					tryCatch(
+						if (estimate_only) {
+							fast_logistic_regression(
+								X = X_fit,
+								y = y_comb,
+								optimization_alg = private$optimization_alg,
+								warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+								warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
+							)
+						} else {
+							fast_logistic_regression_with_var(
+								X = X_fit,
+								y = y_comb,
+								j = j_beta_fit,
+								optimization_alg = private$optimization_alg,
+								warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+								warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
+							)
+						},
+						error = function(e) NULL
+					)
 				},
 				fit_ok = function(mod, X_fit, keep){
 					if (is.null(mod)) return(FALSE)
@@ -231,7 +170,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 				}
 			)
 			mod = attempt$fit
-			j_beta_T = if (!is.null(attempt$X)) match("beta_T", colnames(attempt$X)) else NA_integer_
+			j_beta_T = if (!is.null(attempt$X_fit)) match("beta_T", colnames(attempt$X_fit)) else NA_integer_
 			if (is.null(mod) || !is.finite(j_beta_T) || is.na(j_beta_T) || !is.finite(mod$b[j_beta_T])){
 				private$cache_nonestimable_estimate("kk_clogit_combined_fit_failed")
 				return(invisible(NULL))
@@ -240,14 +179,16 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 				private$cache_nonestimable_estimate("kk_clogit_combined_extreme_coefficients")
 				return(invisible(NULL))
 			}
-				private$cached_values$beta_hat_T   = as.numeric(mod$b[j_beta_T])
-				private$cached_mod = mod
-				private$cached_values$likelihood_test_context = list(
-					X = attempt$X,
-					y = y_comb,
-					j_treat = j_beta_T
-				)
-				if (!estimate_only) {
+
+			private$cached_values$beta_hat_T   = as.numeric(mod$b[j_beta_T])
+			private$cached_mod = mod
+			private$set_fit_warm_start(as.numeric(mod$b), "beta")
+			private$cached_values$likelihood_test_context = list(
+				X = attempt$X_fit,
+				y = y_comb,
+				j_treat = j_beta_T
+			)
+			if (!estimate_only) {
 				se = sqrt(mod$ssq_b_j)
 				private$cached_values$s_beta_hat_T = if (is.finite(se) && se <= private$max_abs_reasonable_coef) se else NA_real_
 				if (!is.finite(private$cached_values$s_beta_hat_T)){
@@ -255,340 +196,215 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 					return(invisible(NULL))
 				}
 			}
-				private$clear_nonestimable_state()
-				private$cached_values$df           = NA_real_
-				invisible(NULL)
-			}
+			private$clear_nonestimable_state()
+			private$cached_values$df = NA_real_
+			invisible(NULL)
+		},
+		supports_likelihood_tests = function() TRUE,
+		get_likelihood_test_spec = function(){
+			private$shared_combined_likelihood(estimate_only = FALSE)
+			ctx = private$cached_values$likelihood_test_context
+			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+			X_fit = ctx$X
+			y = as.numeric(ctx$y)
+			j_treat = as.integer(ctx$j_treat)
+			list(
+				X = X_fit,
+				y = y,
+				j = j_treat,
+				full_fit = private$cached_mod,
+				fit_null = function(delta){
+					fast_logistic_regression_with_var_cpp(
+						X = X_fit,
+						y = y,
+						j = j_treat,
+						fixed_idx = j_treat,
+						fixed_values = delta
+					)
+				},
+				score = function(fit){
+					get_logistic_regression_score_cpp(X_fit, y, as.numeric(fit$b))
+				},
+				observed_information = function(fit){
+					-get_logistic_regression_hessian_cpp(X_fit, as.numeric(fit$b))
+				},
+				fisher_information = function(fit){
+					-get_logistic_regression_hessian_cpp(X_fit, as.numeric(fit$b))
+				},
+				information = function(fit){
+					-get_logistic_regression_hessian_cpp(X_fit, as.numeric(fit$b))
+				},
+				neg_loglik = function(fit){
+					eta = as.numeric(X_fit %*% as.numeric(fit$b))
+					log_denom = ifelse(eta > 0, eta + log1p(exp(-eta)), log1p(exp(eta)))
+					-sum(y * eta - log_denom)
+				}
+			)
+		}
 	))
 )
-#' Abstract class for Conditional Logistic Compound Inference for KK Designs
-#'
-#' This class implements a compound estimator for KK matching-on-the-fly designs with
-#' binary (incidence) responses using conditional logistic regression for matched
-#' pairs and ordinary logistic regression for the reservoir. The two treatment-effect
-#' estimates (on the log-odds scale) are combined by inverse-variance weighting.
-#'
-#' @details
-#' The matched-pair component uses the conditional logistic likelihood, which
-#' implicitly accounts for pair-level effects. For the reservoir, standard logistic
-#' regression is used. Both are combined via inverse-variance combination (IVWC).
+#' Abstract class for Inverse-Variance Weighted Combined Clogit Inference
 #'
 #' @keywords internal
 InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = c(InferenceMixinKKPassThrough$public, list(
-		#' @description Initialize the inference object.
-		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
+	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
+		#' @description Initialize
+		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+		#' @param smart_cold_start_default   Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
 			private$init_kk_passthrough(des_obj)
 		},
-		#' @description Returns the estimated treatment effect (log-odds ratio).
+		#' @description Compute the treatment effect estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes the asymptotic confidence interval.
-		#' @param alpha                                   The confidence level in the computed
-		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
+		#' @description Computes an approximate confidence interval.
+		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			if (should_run_asserts()) {
-				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			}
-			private$shared()
-			if (should_run_asserts()) {
-				private$assert_finite_se()
-			}
+			private$shared(estimate_only = FALSE)
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Computes the asymptotic p-value.
-		#' @param delta                                   The null difference to test against. Default is 0.
+		#' @description Computes an approximate two-sided p-value.
+		#' @param delta Null treatment effect value.
 		compute_asymp_two_sided_pval = function(delta = 0){
-			if (should_run_asserts()) {
-				assertNumeric(delta)
-			}
-			private$shared()
-			if (should_run_asserts()) {
-				private$assert_finite_se()
-			}
+			private$shared(estimate_only = FALSE)
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-		#' @description Duplicates the object while preserving caches.
-		#' @param verbose Whether the duplicate should be verbose.
-		#' @param make_fork_cluster Whether the duplicate should be allowed to create a fork cluster.
-		duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){
-			inf_obj = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
-			inf_obj
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		}
 	)),
-	private = c(InferenceMixinKKPassThrough$private, list(
+	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		supports_likelihood_tests = function() FALSE,
-		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
-			# Ensure we have the best design and parameters from the original data
-			if (is.null(private$best_X_colnames_matched) && is.null(private$best_X_colnames_reservoir)){
-				private$shared()
-			}
-			# If we still don't have enough (e.g., initial fit failed), fall back to standard
-			if (is.null(private$best_X_colnames_matched) && is.null(private$best_X_colnames_reservoir)){
-				return(self$compute_estimate(estimate_only = estimate_only))
-			}
-			if (is.null(private$cached_values$KKstats)){
-				private$compute_basic_match_data()
-			}
-			KKstats = private$cached_values$KKstats
-			m = KKstats$m
-			nRT = KKstats$nRT
-			nRC = KKstats$nRC
-			X_data = private$get_X()
-			# Matched pairs component (Clogit)
-			beta_m = NA_real_
-			ssq_m = NA_real_
-			if (m > 0 && !is.null(private$best_X_colnames_matched)){
-				m_vec = private$m
-				if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
-				m_vec[is.na(m_vec)] = 0L
-				i_matched = which(m_vec > 0L)
-				X_cov = X_data[i_matched, intersect(private$best_X_colnames_matched, colnames(X_data)), drop = FALSE]
-				X = cbind(w = private$w[i_matched], X_cov)
-				fit_m = clogit_helper(
-					y_m = private$y[i_matched],
-					X_m = X_cov,
-					w_m = private$w[i_matched],
-					strata_m = m_vec[i_matched]
-				)
-				if (!is.null(fit_m) && is.finite(fit_m$b[2L])){
-					beta_m = fit_m$b[2L]
-					if (!estimate_only && !is.null(fit_m$ssq_b_2) && is.finite(fit_m$ssq_b_2) && fit_m$ssq_b_2 > 0){
-						ssq_m = fit_m$ssq_b_2
-					}
-				}
-			}
-			# Reservoir component (Logistic)
-			beta_r = NA_real_
-			ssq_r = NA_real_
-			if (nRT > 0 && nRC > 0 && !is.null(private$best_X_colnames_reservoir)){
-				m_vec = private$m
-				if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
-				m_vec[is.na(m_vec)] = 0L
-				i_reservoir = which(m_vec == 0L)
-				X_cov = X_data[i_reservoir, intersect(private$best_X_colnames_reservoir, colnames(X_data)), drop = FALSE]
-				X = cbind(`(Intercept)` = 1, w = private$w[i_reservoir], X_cov)
-				fit_r = fast_logistic_regression_with_var(
-					X = X,
-					y = private$y[i_reservoir],
-					j = 2L,
-					optimization_alg = private$optimization_alg
-				)
-				if (!is.null(fit_r) && is.finite(fit_r$b[2L])){
-					beta_r = fit_r$b[2L]
-					if (!estimate_only && !is.null(fit_r$ssq_b_2) && is.finite(fit_r$ssq_b_2) && fit_r$ssq_b_2 > 0){
-						ssq_r = fit_r$ssq_b_2
-					}
-				}
-			}
-			# Inverse-variance weighted pooling
-			m_ok = is.finite(beta_m) && (!estimate_only && is.finite(ssq_m) || estimate_only)
-			r_ok = is.finite(beta_r) && (!estimate_only && is.finite(ssq_r) || estimate_only)
-			if (m_ok && r_ok){
-				if (estimate_only) {
-					ssq_m_orig = private$cached_values$ssq_beta_T_matched
-					ssq_r_orig = private$cached_values$ssq_beta_T_reservoir
-					if (is.finite(ssq_m_orig) && is.finite(ssq_r_orig)){
-						w_star = ssq_r_orig / (ssq_r_orig + ssq_m_orig)
-						return(w_star * beta_m + (1 - w_star) * beta_r)
-					}
-					return(0.5 * beta_m + 0.5 * beta_r)
-				}
-				w_star = ssq_r / (ssq_r + ssq_m)
-				return(w_star * beta_m + (1 - w_star) * beta_r)
-			} else if (m_ok){
-				return(beta_m)
-			} else if (r_ok){
-				return(beta_r)
-			}
-			NA_real_
-		},
-		best_X_colnames_matched = NULL,
-		best_X_colnames_reservoir = NULL,
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (is.null(private$cached_values$KKstats)){
-				private$compute_basic_match_data()
-			}
+			private$compute_basic_match_data()
 			KKstats = private$cached_values$KKstats
-			m = KKstats$m
-			nRT = KKstats$nRT
-			nRC = KKstats$nRC
-			if (m > 0){
-				private$clogit_for_matched_pairs(estimate_only = estimate_only)
+			if (is.null(KKstats)) return(invisible(NULL))
+			X_covars = private$X
+			
+			# --- Matched pairs: Conditional Logistic ---
+			if (KKstats$m > 0){
+				private$clogit_for_matched_pairs(KKstats, X_covars)
 			}
-			beta_m = private$cached_values$beta_T_matched
-			ssq_m = private$cached_values$ssq_beta_T_matched
-			m_ok = !is.null(beta_m) && is.finite(beta_m) && 
-			       (!estimate_only && !is.null(ssq_m) && is.finite(ssq_m) && ssq_m > 0 || estimate_only)
-			if (nRT > 0 && nRC > 0){
-				private$logistic_for_reservoir(estimate_only = estimate_only)
+			beta_m   = private$cached_values$beta_T_matched
+			ssq_m    = private$cached_values$ssq_beta_T_matched
+			m_ok     = !is.null(beta_m) && is.finite(beta_m) &&
+			           !is.null(ssq_m)  && is.finite(ssq_m) && ssq_m > 0
+			# --- Reservoir: Logistic Regression ---
+			if (KKstats$nRT > 0 && KKstats$nRC > 0){
+				private$logistic_for_reservoir(KKstats, X_covars)
 			}
-			beta_r = private$cached_values$beta_T_reservoir
-			ssq_r = private$cached_values$ssq_beta_T_reservoir
-			r_ok = !is.null(beta_r) && is.finite(beta_r) &&
-			       (!estimate_only && !is.null(ssq_r) && is.finite(ssq_r) && ssq_r > 0 || estimate_only)
+			beta_r   = private$cached_values$beta_T_reservoir
+			ssq_r    = private$cached_values$ssq_beta_T_reservoir
+			r_ok     = !is.null(beta_r) && is.finite(beta_r) &&
+			           !is.null(ssq_r)  && is.finite(ssq_r) && ssq_r > 0
+			# --- Variance-weighted combination ---
 			if (m_ok && r_ok){
 				w_star = ssq_r / (ssq_r + ssq_m)
-				private$cached_values$beta_hat_T = w_star * beta_m + (1 - w_star) * beta_r
-			if (estimate_only) return(invisible(NULL))
+				private$cached_values$beta_hat_T   = w_star * beta_m + (1 - w_star) * beta_r
+				if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = sqrt(ssq_m * ssq_r / (ssq_m + ssq_r))
 			} else if (m_ok){
-				private$cached_values$beta_hat_T = beta_m
-				private$cached_values$s_beta_hat_T = if (estimate_only) NA_real_ else sqrt(ssq_m)
+				private$cached_values$beta_hat_T   = beta_m
+				private$cached_values$s_beta_hat_T = sqrt(ssq_m)
 			} else if (r_ok){
-				private$cached_values$beta_hat_T = beta_r
-				private$cached_values$s_beta_hat_T = if (estimate_only) NA_real_ else sqrt(ssq_r)
+				private$cached_values$beta_hat_T   = beta_r
+				private$cached_values$s_beta_hat_T = sqrt(ssq_r)
 			} else {
-				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$beta_hat_T   = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
 			}
+			private$cached_values$df = Inf
 		},
-		assert_finite_se = function(){
-			if (!is.finite(private$cached_values$s_beta_hat_T)){
+		clogit_for_matched_pairs = function(KKstats, X_covars){
+			yTs = KKstats$yTs_matched
+			yCs = KKstats$yCs_matched
+			y_m_all = yTs - yCs # 1 if (1,0), -1 if (0,1)
+			i_m_disc = which(abs(y_m_all) == 1)
+			if (length(i_m_disc) == 0L) {
+				private$cached_values$beta_T_matched = NA_real_
+				private$cached_values$ssq_beta_T_matched = NA_real_
 				return(invisible(NULL))
 			}
-		},
-		clogit_for_matched_pairs = function(estimate_only = FALSE){
-			m_vec = private$m
-			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
-			m_vec[is.na(m_vec)] = 0L
-			i_matched = which(m_vec > 0L)
-			if (length(i_matched) == 0L) return(invisible(NULL))
-			X_data = private$get_X()
-			X_matched = X_data[i_matched, , drop = FALSE]
-			fit = clogit_helper(
-				y_m = private$y[i_matched],
-				X_m = X_matched,
-				w_m = private$w[i_matched],
-				strata_m = m_vec[i_matched]
-			)
+			# X_m should be the difference X_T - X_C. 
+			# KKstats$X_matched_diffs is already X_T - X_C.
+			# For treatment effect, the difference is 1 - 0 = 1.
+			X_m = cbind(treatment = 1, KKstats$X_matched_diffs[i_m_disc, , drop = FALSE])
+			y_m = (y_m_all[i_m_disc] + 1) / 2 # 1 if (1,0), 0 if (0,1)
 			
-			if (!is.null(fit) && is.finite(fit$b[2L])){
-				private$cached_values$beta_T_matched = fit$b[2L]
-				private$cached_values$ssq_beta_T_matched = if (estimate_only) NA_real_ else fit$ssq_b_2
-				private$best_X_colnames_matched = if (is.null(X_matched) || ncol(X_matched) == 0) character(0) else colnames(X_matched)
-			}
-		},
-		logistic_for_reservoir = function(estimate_only = FALSE){
-			m_vec = private$m
-			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
-			m_vec[is.na(m_vec)] = 0L
-			i_reservoir = which(m_vec == 0L)
-			if (length(i_reservoir) == 0L) return(invisible(NULL))
-			X_data = private$get_X()
-			X_reservoir = X_data[i_reservoir, , drop = FALSE]
-			X_full = cbind(`(Intercept)` = 1, w = private$w[i_reservoir], X_reservoir)
-			attempt = private$fit_with_hardened_qr_column_dropping(
-				X_full = X_full,
-				required_cols = 2L, # intercept and treatment
-				fit_fun = function(X_fit){
-					fast_logistic_regression_with_var(
-						X = X_fit,
-						y = private$y[i_reservoir],
-						j = 2L,
-						optimization_alg = private$optimization_alg
-					)
-				},
-				fit_ok = function(mod, X_fit, keep){
-					if (is.null(mod) || !is.finite(mod$b[2L])) return(FALSE)
-					if (estimate_only) return(TRUE)
-					is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
-				}
-			)
-			
-			if (!is.null(attempt$fit)){
-				private$cached_values$beta_T_reservoir = attempt$fit$b[2L]
-				private$cached_values$ssq_beta_T_reservoir = if (estimate_only) NA_real_ else attempt$fit$ssq_b_2
-				private$best_X_colnames_reservoir = setdiff(colnames(attempt$X_fit), c("(Intercept)", "w"))
+			# Conditional logistic fit via internal Rcpp
+			fit = tryCatch(fast_logistic_regression_with_var_cpp(X_m, y_m, j = 1L), error = function(e) NULL)
+			if (is.null(fit) || !isTRUE(fit$converged)){
+				private$cached_values$beta_T_matched = NA_real_
+				private$cached_values$ssq_beta_T_matched = NA_real_
 				return(invisible(NULL))
 			}
+			private$cached_values$beta_T_matched = as.numeric(fit$b[1])
+			private$cached_values$ssq_beta_T_matched = as.numeric(fit$ssq_b_j)
+		},
+		logistic_for_reservoir = function(KKstats, X_covars){
+			y_r = KKstats$y_reservoir
+			w_r = KKstats$w_reservoir
+			if (is.null(X_covars) || ncol(X_covars) == 0){
+				X_r = cbind(`(Intercept)` = 1, treatment = w_r)
+			} else {
+				X_r = cbind(`(Intercept)` = 1, treatment = w_r, KKstats$X_reservoir)
+			}
+			# Logistic fit via internal Rcpp
+			fit = tryCatch(fast_logistic_regression_with_var_cpp(X_r, y_r, j = 2L), error = function(e) NULL)
+			if (is.null(fit) || !isTRUE(fit$converged)){
+				private$cached_values$beta_T_reservoir = NA_real_
+				private$cached_values$ssq_beta_T_reservoir = NA_real_
+				return(invisible(NULL))
+			}
+			private$cached_values$beta_T_reservoir = as.numeric(fit$b[2])
+			private$cached_values$ssq_beta_T_reservoir = as.numeric(fit$ssq_b_j)
 		}
 	))
 )
-#' Conditional-Logistic Inference for KK Designs with IVWC
+
+#' Conditional Logistic IVWC Inference for KK Designs with Binary Responses
 #'
-#' Fits a conditional-logistic regression for binary (incidence) responses under
-#' a KK matching-on-the-fly design using the Independent-Variables-as-Working-Covariates
-#' (IVWC) approach.
+#' Concrete exported wrapper around the IVWC clogit implementation.
 #'
-#' @examples
-#' \donttest{
-#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'incidence')
-#' for (i in 1:10) {
-#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
-#' }
-#' seq_des$add_all_subject_responses(rbinom(10, 1, 0.5))
-#' inf = InferenceIncidKKClogitIVWC$new(seq_des)
-#' inf$compute_estimate()
-#' }
 #' @export
 InferenceIncidKKClogitIVWC = R6::R6Class("InferenceIncidKKClogitIVWC",
 	lock_objects = FALSE,
-	inherit = InferenceAbstractKKClogitIVWC,
-	public = list(
-		#' @description Initialize the inference object.
-		#' @param des_obj A completed \code{DesignSeqOneByOneKK14} object.
-		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
-		#'   the formula from the design object is used and its pre-computed design matrix is
-		#'   reused. If a formula is provided, a new design matrix is constructed from the
-		#'   design's imputed covariates.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
-		}
-	)
+	inherit = InferenceAbstractKKClogitIVWC
 )
-#' Conditional-Logistic Inference for KK Designs with Combined Likelihood
+
+#' Conditional Logistic Combined-Likelihood Inference for KK Designs with Binary Responses
 #'
-#' Fits a conditional-logistic regression for binary (incidence) responses under
-#' a KK matching-on-the-fly design using the combined-likelihood approach.
+#' Concrete exported wrapper around the combined-likelihood clogit implementation.
 #'
-#' @examples
-#' \donttest{
-#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'incidence')
-#' for (i in 1:10) {
-#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
-#' }
-#' seq_des$add_all_subject_responses(rbinom(10, 1, 0.5))
-#' inf = InferenceIncidKKClogitOneLik$new(seq_des)
-#' inf$compute_estimate()
-#' }
 #' @export
 InferenceIncidKKClogitOneLik = R6::R6Class("InferenceIncidKKClogitOneLik",
 	lock_objects = FALSE,
-	inherit = InferenceAbstractKKClogitOneLik,
-	public = list(
-		#' @description Initialize the inference object.
-		#' @param des_obj A completed \code{DesignSeqOneByOneKK14} object.
-		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
-		#'   the formula from the design object is used and its pre-computed design matrix is
-		#'   reused. If a formula is provided, a new design matrix is constructed from the
-		#'   design's imputed covariates.
-		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
-		}
-	)
+	inherit = InferenceAbstractKKClogitOneLik
 )

@@ -16,16 +16,16 @@ estimates (on the log-time ratio scale) are combined by inverse-variance weighti
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{EDI::InferenceBayesianBootstrap} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceAbstractKKClaytonCopulaIVWC}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceAbstractKKClaytonCopulaIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceAbstractKKClaytonCopulaIVWC-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceAbstractKKClaytonCopulaIVWC$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferenceAbstractKKClaytonCopulaIVWC-new}{\code{InferenceAbstractKKClaytonCopulaIVWC$new()}}
 \item \href{#method-InferenceAbstractKKClaytonCopulaIVWC-compute_estimate}{\code{InferenceAbstractKKClaytonCopulaIVWC$compute_estimate()}}
 \item \href{#method-InferenceAbstractKKClaytonCopulaIVWC-compute_asymp_confidence_interval}{\code{InferenceAbstractKKClaytonCopulaIVWC$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAbstractKKClaytonCopulaIVWC-compute_asymp_two_sided_pval}{\code{InferenceAbstractKKClaytonCopulaIVWC$compute_asymp_two_sided_pval()}}
+\item \href{#method-InferenceAbstractKKClaytonCopulaIVWC-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceAbstractKKClaytonCopulaIVWC$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferenceAbstractKKClaytonCopulaIVWC-duplicate}{\code{InferenceAbstractKKClaytonCopulaIVWC$duplicate()}}
 \item \href{#method-InferenceAbstractKKClaytonCopulaIVWC-clone}{\code{InferenceAbstractKKClaytonCopulaIVWC$clone()}}
 }
@@ -86,20 +86,6 @@ estimates (on the log-time ratio scale) are combined by inverse-variance weighti
 </details>
 }}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractKKClaytonCopulaIVWC-approximate_bootstrap_distribution_beta_hat_T"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractKKClaytonCopulaIVWC-approximate_bootstrap_distribution_beta_hat_T}{}}}
-\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClaytonCopulaIVWC$approximate_bootstrap_distribution_beta_hat_T(
-  B = 501,
-  show_progress = TRUE,
-  debug = FALSE,
-  bootstrap_type = NULL
-)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKClaytonCopulaIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKClaytonCopulaIVWC-new}{}}}
 \subsection{Method \code{new()}}{
@@ -108,7 +94,8 @@ Initialize the inference object.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClaytonCopulaIVWC$new(
   des_obj,
   model_formula = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  smart_cold_start_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -123,6 +110,8 @@ reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
 }
 \if{html}{\out{</div>}}
 }
@@ -179,6 +168,37 @@ Computes the asymptotic p-value.
 \item{\code{delta}}{The null difference to test against. Default is 0.}
 }
 \if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKClaytonCopulaIVWC-approximate_bootstrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKClaytonCopulaIVWC-approximate_bootstrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKClaytonCopulaIVWC$approximate_bootstrap_distribution_beta_hat_T(
+  B = 501,
+  show_progress = TRUE,
+  debug = FALSE,
+  bootstrap_type = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
 }
 }
 \if{html}{\out{<hr>}}

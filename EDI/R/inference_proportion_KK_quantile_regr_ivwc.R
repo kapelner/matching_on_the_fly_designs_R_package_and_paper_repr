@@ -64,11 +64,12 @@ InferencePropKKQuantileRegrIVWC = R6::R6Class("InferencePropKKQuantileRegrIVWC",
 		#'   design's imputed covariates.
 		#' @param verbose A flag indicating whether messages should be
 		#'   displayed to the user. Default is \code{FALSE}.
-		initialize = function(des_obj, model_formula = NULL, tau = 0.5,  verbose = FALSE){
+		#' @param smart_cold_start_default Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, tau = 0.5,  verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "proportion")
 			}
-			super$initialize(des_obj, tau, qlogis, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, tau, qlogis, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}

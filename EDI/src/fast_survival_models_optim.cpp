@@ -571,7 +571,7 @@ List fast_dep_cens_transform_optim_cpp(
     const Eigen::VectorXd& y,
     const Eigen::VectorXd& dead,
     Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
-    bool smart_start = true,
+    bool smart_cold_start = true,
     bool estimate_only = false,
     int maxit = 2000,
     double reltol = 1e-9,
@@ -585,7 +585,7 @@ List fast_dep_cens_transform_optim_cpp(
     Eigen::VectorXd params(total);
     if (warm_start_params.isNotNull()) {
         params = as<Eigen::VectorXd>(Rcpp::NumericVector(warm_start_params));
-    } else if (smart_start) {
+    } else if (smart_cold_start) {
         params.setZero();
         Eigen::VectorXd log_y = (y.array() + 1e-8).log().matrix();
         Eigen::VectorXd b_ols = safe_ols_solve(X, log_y);

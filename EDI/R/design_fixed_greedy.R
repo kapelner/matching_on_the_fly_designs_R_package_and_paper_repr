@@ -29,8 +29,7 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 				prob_T = 0.5,
 				objective = "mahal_dist",
 				include_is_missing_as_a_new_feature = TRUE,
-				n = NULL,
-				
+				n = NULL,				
 				verbose = FALSE,
 				missingness_method = "impute",
 				model_formula = ~ .

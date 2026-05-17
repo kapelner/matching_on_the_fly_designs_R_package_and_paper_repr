@@ -13,7 +13,7 @@ fast_coxph_regression(
   optimization_alg = "newton_raphson",
   warm_start_beta = NULL,
   warm_start_fisher_info = NULL,
-  smart_start = TRUE
+  smart_cold_start = TRUE
 )
 }
 \arguments{
@@ -32,11 +32,11 @@ matrix calculation for speed.}
 
 \item{optimization_alg}{Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.}
 
-\item{warm_start_beta}{Optional starting values for coefficients.}
+\item{warm_start_beta}{Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.}
 
 \item{warm_start_fisher_info}{Optional initial Fisher Information matrix.}
 
-\item{smart_start}{Logical. If \code{TRUE} (default), use an initial OLS-based guess.}
+\item{smart_cold_start}{Logical. If \code{TRUE} (default), use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if \code{warm_start_beta} is provided.}
 }
 \value{
 A list containing the following components:

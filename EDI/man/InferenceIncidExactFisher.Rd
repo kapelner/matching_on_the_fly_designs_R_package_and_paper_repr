@@ -21,6 +21,7 @@ Exact Fisher Incidence Inference
 \itemize{
 \item \href{#method-InferenceIncidExactFisher-new}{\code{InferenceIncidExactFisher$new()}}
 \item \href{#method-InferenceIncidExactFisher-compute_estimate}{\code{InferenceIncidExactFisher$compute_estimate()}}
+\item \href{#method-InferenceIncidExactFisher-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceIncidExactFisher$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferenceIncidExactFisher-clone}{\code{InferenceIncidExactFisher$clone()}}
 }
 }
@@ -51,7 +52,12 @@ Exact Fisher Incidence Inference
 \subsection{Method \code{new()}}{
 Initialize exact Fisher inference for incidence outcomes.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExactFisher$new(des_obj, model_formula = NULL, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExactFisher$new(
+  des_obj,
+  model_formula = NULL,
+  verbose = FALSE,
+  smart_cold_start_default = TRUE
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -65,6 +71,8 @@ reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default.}
 }
 \if{html}{\out{</div>}}
 }
@@ -90,6 +98,37 @@ Compute the Fisher exact treatment estimate on the log-odds scale.
 }
 \subsection{Returns}{
 The treatment estimate.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceIncidExactFisher-approximate_bootstrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidExactFisher-approximate_bootstrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExactFisher$approximate_bootstrap_distribution_beta_hat_T(
+  B = 501,
+  show_progress = TRUE,
+  debug = FALSE,
+  bootstrap_type = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
 }
 }
 \if{html}{\out{<hr>}}

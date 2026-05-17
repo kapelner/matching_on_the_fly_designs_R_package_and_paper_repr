@@ -25,12 +25,37 @@ InferenceAllSimpleMeanDiffPooledVar = R6::R6Class("InferenceAllSimpleMeanDiffPoo
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
+		#' @param smart_cold_start_default Whether to use smart cold start values.
 		#' @return A new \code{InferenceAllSimpleMeanDiffPooledVar} object.
-		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE, smart_cold_start_default = TRUE){
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+		},
+		#' @description Compute the treatment effect estimate.
+		#' @param estimate_only If TRUE, skip variance component calculations.
+		compute_estimate = function(estimate_only = FALSE){
+			super$compute_estimate(estimate_only = estimate_only)
+		},
+		#' @description Computes an approximate confidence interval.
+		#' @param alpha Confidence level.
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			super$compute_asymp_confidence_interval(alpha = alpha)
+		},
+		#' @description Computes an approximate two-sided p-value.
+		#' @param delta Null treatment effect value.
+		compute_asymp_two_sided_pval = function(delta = 0){
+			super$compute_asymp_two_sided_pval(delta = delta)
+		},
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		}
 	),
 	private = list(

@@ -191,9 +191,25 @@ Eigen::MatrixXd get_adjacent_category_logit_hessian_cpp(const Eigen::MatrixXd& X
     return -fun.hessian(params);
 }
 
+//' @title Fast Adjacent-Category Logit (C++)
+//' @description High-performance adjacent-category logit model fitting.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses (categorical).
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix.
+//' @param warm_start_params Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.
+//' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
+//' @return A list containing coefficients, alpha, and convergence status.
+//' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
-                                        bool smart_start = true,
+                                        bool smart_cold_start = true,
                                         Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                         Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                         std::string optimization_alg = "newton_raphson",
@@ -221,11 +237,11 @@ List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::Vec
         if (sb.size() == p) {
             params.tail(p) = sb;
         }
-    } else if (smart_start) {
+    } else if (smart_cold_start) {
         // Smart warm_start_params: OLS on y_mapped
         Eigen::VectorXd y_double(y_mapped.size());
         for(size_t i=0; i<y_mapped.size(); ++i) y_double[i] = (double)y_mapped[i];
-        params.tail(p) = ols_warm_start_beta(X, y_double);
+        params.tail(p) = ols_smart_cold_start_beta(X, y_double);
     }
     
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
@@ -247,9 +263,25 @@ List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::Vec
     );
 }
 
+//' @title Fast Adjacent-Category Logit with Variance (C++)
+//' @description Adjacent-category logit model fitting with full variance-covariance matrix.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses (categorical).
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix.
+//' @param warm_start_params Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.
+//' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
+//' @return A list containing coefficients, vcov, and convergence status.
+//' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
-                                                bool smart_start = true,
+                                                bool smart_cold_start = true,
                                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                                 std::string optimization_alg = "newton_raphson",
@@ -277,11 +309,11 @@ List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const E
         if (sb.size() == p) {
             params.tail(p) = sb;
         }
-    } else if (smart_start) {
+    } else if (smart_cold_start) {
         // Smart warm_start_params: OLS on y_mapped
         Eigen::VectorXd y_double(y_mapped.size());
         for(size_t i=0; i<y_mapped.size(); ++i) y_double[i] = (double)y_mapped[i];
-        params.tail(p) = ols_warm_start_beta(X, y_double);
+        params.tail(p) = ols_smart_cold_start_beta(X, y_double);
     }
 
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);

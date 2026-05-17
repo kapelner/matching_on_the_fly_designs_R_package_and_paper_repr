@@ -15,13 +15,13 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		#' @param smart_default Whether to use smart optimizer start values by default.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_default = TRUE){
+		#' @param smart_cold_start_default Whether to use smart cold start values by default.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
 				assertFormula(model_formula, null.ok = TRUE)
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_default = smart_default)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -29,6 +29,7 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 	),
 	private = list(
 		best_X_colnames = NULL,
+		get_complexity_tier = function() "heavy",
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -39,26 +40,30 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 			if (length(X_cols) == 0L){
-				X = matrix(private$w, ncol = 1L)
+				X = as.matrix(private$w)
 				colnames(X) = "treatment"
 			} else {
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(treatment = private$w, X_cov)
 			}
 			n_params = ncol(X) + length(sort(unique(private$y))) - 1L
+			ws_args = private$get_backend_warm_start_args(n_params)
 			res = fast_ordinal_probit_regression_cpp(
 				X = X, y = as.numeric(private$y),
-				warm_start_params = private$get_fit_warm_start_for_length("params", n_params),
-				warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
-				smart_start = private$smart_default
+				warm_start_params = ws_args$start_params,
+				warm_start_fisher_info = ws_args$warm_start_fisher_info,
+				smart_cold_start = private$smart_cold_start_default
 			)
 			if (is.null(res) || length(res$b) < 1L || !is.finite(res$b[length(res$b)])){
 				return(NA_real_)
 			}
-			private$set_fit_warm_start(res$params, "params", fisher = res$fisher_information)
+			private$set_fit_warm_start(as.numeric(res$params), "params", fisher = res$fisher_information)
 			as.numeric(res$b[length(res$b)])
 		},
 		supports_reusable_bootstrap_worker = function(){
+			TRUE
+		},
+		supports_lik_ratio_param_bootstrap = function(){
 			TRUE
 		},
 		supports_likelihood_tests = function(){
@@ -66,6 +71,56 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 		},
 		supports_fisher_information = function(){
 			TRUE
+		},
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			params_null = as.numeric(null_fit$params)
+			cat_vals    = sort(unique(spec$y))
+			K           = length(cat_vals)
+			n_alpha     = K - 1L
+			thresholds  = params_null[seq_len(n_alpha)]
+			betas       = params_null[(n_alpha + 1L):length(params_null)]
+			eta         = as.numeric(spec$X %*% betas)
+			cum_probs   = outer(thresholds, eta, function(a, e) pnorm(a - e))
+			cat_probs   = pmax(rbind(cum_probs, 1) - rbind(0, cum_probs), 0)
+			y_sim       = cat_vals[apply(cat_probs, 2, function(p){ s = sum(p); if (s <= 0) return(1L); sample.int(K, 1L, prob = p / s) })]
+			y_sim       = as.numeric(y_sim)
+			if (length(unique(y_sim)) < K) return(NULL)
+			X_fit    = spec$X
+			j        = spec$j
+			
+			# Parametric bootstrap: use observed fit as anchor
+			ws_args = private$get_backend_warm_start_args(length(params_null))
+			full_res = tryCatch(
+				fast_ordinal_probit_regression_cpp(
+					X_fit, y_sim,
+					warm_start_params = ws_args$start_params,
+					warm_start_fisher_info = ws_args$warm_start_fisher_info,
+					smart_cold_start = private$smart_cold_start_default
+				),
+				error = function(e) NULL
+			)
+			if (is.null(full_res) || length(full_res$params) == 0L) return(NULL)
+			full_fit_boot = list(params = as.numeric(full_res$params), neg_loglik = as.numeric(full_res$neg_loglik))
+			if (!is.finite(full_fit_boot$neg_loglik)) return(NULL)
+			list(
+				full_fit = full_fit_boot,
+				fit_null = function(d, start = NULL){
+					ws_args_null = private$get_backend_warm_start_args(length(params_null))
+					res = tryCatch(
+						fast_ordinal_probit_regression_cpp(
+							X_fit, y_sim,
+							warm_start_params = start %||% full_fit_boot$params,
+							warm_start_fisher_info = ws_args_null$warm_start_fisher_info,
+							fixed_idx = j, fixed_values = d,
+							smart_cold_start = TRUE
+						),
+						error = function(e) NULL
+					)
+					if (is.null(res) || length(res) == 0L) return(NULL)
+					list(params = as.numeric(res$params), neg_loglik = as.numeric(res$neg_loglik))
+				},
+				neg_loglik = function(fit) as.numeric(fit$neg_loglik)
+			)
 		},
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
@@ -79,13 +134,14 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 				X = X_fit, y = y, j = j_treat,
 				full_fit = full_fit,
 				fit_null = function(delta, start = NULL){
+					ws_args = private$get_backend_warm_start_args(length(ctx$full_params))
 					res = tryCatch(
 						fast_ordinal_probit_regression_cpp(
 							X_fit, y,
 							fixed_idx = j_treat, fixed_values = delta,
-							warm_start_params = start %||% private$get_fit_warm_start_for_length("params", length(ctx$full_params)),
-							warm_start_fisher_info = private$get_fit_warm_start_fisher(length(ctx$full_params)),
-							smart_start = private$smart_default
+							warm_start_params = start %||% ws_args$start_params,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default
 						),
 						error = function(e) NULL
 					)
@@ -117,23 +173,22 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 				required_cols = 1L,
 				fit_fun = function(X_fit){
 					n_params = ncol(X_fit) + length(sort(unique(private$y))) - 1L
-					warm_start_params = private$get_fit_warm_start_for_length("params", n_params)
-					warm_fisher = private$get_fit_warm_start_fisher(n_params)
+					ws_args = private$get_backend_warm_start_args(n_params)
 					if (estimate_only) {
 						res = fast_ordinal_probit_regression_cpp(
 							X_fit, private$y,
-							warm_start_params = warm_start_params,
-							warm_start_fisher_info = warm_fisher,
-							smart_start = private$smart_default
+							warm_start_params = ws_args$start_params,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default
 						)
 						if (is.null(res) || length(res) == 0) return(NULL)
 						list(b = res$b, ssq_b_j = NA_real_, params = res$params, neg_loglik = res$neg_loglik, fisher_information = res$fisher_information)
 					} else {
 						res = fast_ordinal_probit_regression_with_var_cpp(
 							X_fit, private$y,
-							warm_start_params = warm_start_params,
-							warm_start_fisher_info = warm_fisher,
-							smart_start = private$smart_default
+							warm_start_params = ws_args$start_params,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default
 						)
 						if (is.null(res) || length(res$b) == 0 || is.na(res$b[1])) return(NULL)
 						list(b = res$b, ssq_b_j = res$ssq_b_j, params = res$params, neg_loglik = res$neg_loglik, fisher_information = res$fisher_information)

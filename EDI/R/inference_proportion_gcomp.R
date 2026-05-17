@@ -70,8 +70,9 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#'   fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
 		#'   Can be overridden per-call in \code{approximate_bootstrap_distribution_beta_hat_T}.
 		#'   Must be a positive integer. Default \code{50L}.
+		#' @param smart_cold_start_default Whether to use smart cold start values.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, prob_clip_eps = 1e-6, prob_clip_strong_eps = 1e-4,
-			max_resample_attempts = 50L,
+			max_resample_attempts = 50L, smart_cold_start_default = TRUE,
 			variance_fallback_methods = c(
 				"robust", "stabilized_robust", "model_based",
 				"stabilized_robust_fd", "model_based_fd",
@@ -94,7 +95,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				))
 				assertCount(max_resample_attempts, positive = TRUE)
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}

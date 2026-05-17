@@ -78,8 +78,13 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 				return(private$cached_values$bayes_boot_distr_cache[[cache_key]])
 			}
 			inf_template = self$duplicate()
+			draws = replicate(
+				as.integer(B),
+				private$bayesian_bootstrap_sample_weights(weighting_unit_type = weighting_unit_type),
+				simplify = FALSE
+			)
 			run_one_iter = function(worker_inf) {
-				draw = private$bayesian_bootstrap_sample_weights(weighting_unit_type = weighting_unit_type)
+				draw = draws[[1L]]
 				worker_inf$.__enclos_env__$private$current_bayesian_bootstrap_context = draw$context
 				as.numeric(worker_inf$compute_estimate_with_bootstrap_weights(
 					subject_or_block_weights = draw$subject_or_block_weights,
@@ -87,17 +92,20 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 				))[1L]
 			}
 			if (isTRUE(debug)) {
-				run_debug_iter = function(worker_inf = NULL, worker_state = NULL) {
+				run_debug_iter = function(draw, worker_inf = NULL, worker_state = NULL) {
 					iter_warns = character(0)
 					iter_errs = character(0)
 					iter_val = withCallingHandlers(
 						tryCatch({
 							if (!is.null(worker_state)) {
-								draw = private$bayesian_bootstrap_sample_weights(weighting_unit_type = weighting_unit_type)
 								private$load_bayesian_bootstrap_weights_into_worker(worker_state, draw)
 								private$compute_bayesian_bootstrap_worker_estimate(worker_state)
 							} else {
-								run_one_iter(worker_inf)
+								worker_inf$.__enclos_env__$private$current_bayesian_bootstrap_context = draw$context
+								as.numeric(worker_inf$compute_estimate_with_bootstrap_weights(
+									subject_or_block_weights = draw$subject_or_block_weights,
+									estimate_only = TRUE
+								))[1L]
 							}
 						}, error = function(e) { iter_errs <<- c(iter_errs, conditionMessage(e)); NA_real_ }),
 						warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
@@ -111,13 +119,13 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 				run_debug_chunk = if (isTRUE(private$use_reusable_bootstrap_worker())) {
 					function(idxs) {
 						worker_state = private$create_bootstrap_worker_state()
-						lapply(idxs, function(idx) run_debug_iter(worker_state = worker_state))
+						lapply(idxs, function(idx) run_debug_iter(draw = draws[[idx]], worker_state = worker_state))
 					}
 				} else {
 					function(idxs) {
 						lapply(idxs, function(idx) {
 							worker_inf = inf_template$duplicate(make_fork_cluster = FALSE)
-							run_debug_iter(worker_inf = worker_inf)
+							run_debug_iter(draw = draws[[idx]], worker_inf = worker_inf)
 						})
 					}
 				}
@@ -156,14 +164,21 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 				do_warmup_iter = if (isTRUE(private$use_reusable_bootstrap_worker())) {
 					function() {
 						worker_state = private$create_bootstrap_worker_state()
-						draw = private$bayesian_bootstrap_sample_weights(weighting_unit_type = weighting_unit_type)
+						draw = draws[[1L]]
 						private$load_bayesian_bootstrap_weights_into_worker(worker_state, draw)
 						tryCatch(private$compute_bayesian_bootstrap_worker_estimate(worker_state), error = function(e) NA_real_)
 					}
 				} else {
 					function() {
 						worker_inf = inf_template$duplicate(make_fork_cluster = FALSE)
-						tryCatch(run_one_iter(worker_inf), error = function(e) NA_real_)
+						draw = draws[[1L]]
+						tryCatch({
+							worker_inf$.__enclos_env__$private$current_bayesian_bootstrap_context = draw$context
+							as.numeric(worker_inf$compute_estimate_with_bootstrap_weights(
+								subject_or_block_weights = draw$subject_or_block_weights,
+								estimate_only = TRUE
+							))[1L]
+						}, error = function(e) NA_real_)
 					}
 				}
 				system.time(do_warmup_iter())
@@ -173,21 +188,27 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 			}
 			boot_distr = if (isTRUE(private$use_reusable_bootstrap_worker())) {
 				private$compute_bayesian_bootstrap_distribution_with_reused_workers(
-					B = B,
+					draws = draws,
 					actual_cores = actual_cores,
-					show_progress = show_progress,
-					weighting_unit_type = weighting_unit_type
+					show_progress = show_progress
 				)
 			} else {
 				unlist(private$par_lapply(
-					1:B,
+					seq_along(draws),
 					function(idx) {
 						worker_inf = inf_template$duplicate(make_fork_cluster = FALSE)
-						tryCatch(run_one_iter(worker_inf), error = function(e) NA_real_)
+						draw = draws[[idx]]
+						tryCatch({
+							worker_inf$.__enclos_env__$private$current_bayesian_bootstrap_context = draw$context
+							as.numeric(worker_inf$compute_estimate_with_bootstrap_weights(
+								subject_or_block_weights = draw$subject_or_block_weights,
+								estimate_only = TRUE
+							))[1L]
+						}, error = function(e) NA_real_)
 					},
 					n_cores = actual_cores,
 					show_progress = show_progress,
-					export_list = list(inf_template = inf_template, run_one_iter = run_one_iter)
+					export_list = list(inf_template = inf_template, draws = draws)
 				))
 			}
 			boot_distr = as.numeric(boot_distr)
@@ -405,7 +426,8 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 			}
 			theta
 		},
-		compute_bayesian_bootstrap_distribution_with_reused_workers = function(B, actual_cores, show_progress = FALSE, weighting_unit_type = NULL){
+		compute_bayesian_bootstrap_distribution_with_reused_workers = function(draws, actual_cores, show_progress = FALSE){
+			B = length(draws)
 			chunk_n = max(1L, min(as.integer(actual_cores), as.integer(B)))
 			chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
 			chunks = split(seq_len(B), chunk_id)
@@ -413,7 +435,7 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 				worker_state = private$create_bootstrap_worker_state()
 				out = numeric(length(idxs))
 				for (k in seq_along(idxs)) {
-					draw = private$bayesian_bootstrap_sample_weights(weighting_unit_type = weighting_unit_type)
+					draw = draws[[idxs[[k]]]]
 					out[k] = tryCatch({
 						private$load_bayesian_bootstrap_weights_into_worker(worker_state, draw)
 						private$compute_bayesian_bootstrap_worker_estimate(worker_state)

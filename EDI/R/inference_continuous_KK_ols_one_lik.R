@@ -117,6 +117,39 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 			private$cached_values$df %||% NA_real_
 		},
 		supports_likelihood_tests = function() TRUE,
+		supports_lik_ratio_param_bootstrap = function() TRUE,
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			b_null   = as.numeric(null_fit$b)
+			sig2     = spec$full_fit$sigma2_hat
+			if (!is.finite(sig2) || sig2 <= 0) return(NULL)
+			n        = nrow(spec$X)
+			X_fit    = spec$X
+			j        = spec$j
+			mu       = as.numeric(X_fit %*% b_null)
+			y_sim    = mu + stats::rnorm(n, 0, sqrt(sig2))
+			if (n <= ncol(X_fit)) return(NULL)
+			lm_boot  = tryCatch(stats::lm.fit(X_fit, y_sim), error = function(e) NULL)
+			if (is.null(lm_boot)) return(NULL)
+			b_boot   = as.numeric(stats::coef(lm_boot))
+			if (length(b_boot) < j || !is.finite(b_boot[j])) return(NULL)
+			full_fit_boot = list(b = b_boot)
+			list(
+				full_fit = full_fit_boot,
+				fit_null = function(d, start = NULL){
+					tryCatch(
+						fast_ols_with_var_cpp(
+							X = X_fit, y = y_sim, j = j,
+							fixed_idx = j, fixed_values = d
+						),
+						error = function(e) NULL
+					)
+				},
+				neg_loglik = function(fit){
+					rss = sum((y_sim - X_fit %*% as.numeric(fit$b))^2)
+					0.5 * rss / sig2
+				}
+			)
+		},
 		get_supported_testing_types_impl = function() c("wald", "score", "gradient", "lik_ratio"),
 		get_score_test_information_matrix = function(spec, fit){
 			tryCatch(spec$fisher_information(fit), error = function(e) NULL)

@@ -119,7 +119,8 @@ Eigen::MatrixXd get_continuation_ratio_regression_hessian_cpp(const Eigen::Matri
 
 // [[Rcpp::export]]
 List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
-                                             bool smart_start = true,
+                                             Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
+                                             bool smart_cold_start = true,
                                              Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                              Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                              std::string optimization_alg = "newton_raphson",
@@ -136,9 +137,12 @@ List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eige
     int p_aug = n_alpha + p;
     ContinuationRatioObjective fun(X_aug, z);
     VectorXd beta = VectorXd::Zero(p_aug);
-    if (smart_start) {
+    if (warm_start_beta.isNotNull()) {
+        beta = as<VectorXd>(warm_start_beta);
+        if (beta.size() != p_aug) stop("warm_start_beta size mismatch");
+    } else if (smart_cold_start) {
         // Smart warm_start_params: OLS on z (the augmented binary response)
-        beta = ols_warm_start_beta(X_aug, z);
+        beta = ols_smart_cold_start_beta(X_aug, z);
     }
     FixedParamSpec fixed_spec = make_fixed_param_spec(p_aug, fixed_idx, fixed_values);
     
@@ -155,6 +159,7 @@ List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eige
         Named("b") = fit.params.tail(p),
         Named("alpha") = fit.params.head(n_alpha),
         Named("beta_full") = fit.params,
+        Named("params") = fit.params,
         Named("X_aug") = X_aug,
         Named("z") = z,
         Named("converged") = fit.converged,
@@ -164,7 +169,8 @@ List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eige
 
 // [[Rcpp::export]]
 List fast_continuation_ratio_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
-                                                      bool smart_start = true,
+                                                      Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
+                                                      bool smart_cold_start = true,
                                                       Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                       Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                                       std::string optimization_alg = "newton_raphson",
@@ -181,8 +187,11 @@ List fast_continuation_ratio_regression_with_var_cpp(const Eigen::MatrixXd& X, c
     int p_aug = n_alpha + p;
     ContinuationRatioObjective fun(X_aug, z);
     VectorXd beta = VectorXd::Zero(p_aug);
-    if (smart_start) {
-        beta = ols_warm_start_beta(X_aug, z);
+    if (warm_start_beta.isNotNull()) {
+        beta = as<VectorXd>(warm_start_beta);
+        if (beta.size() != p_aug) stop("warm_start_beta size mismatch");
+    } else if (smart_cold_start) {
+        beta = ols_smart_cold_start_beta(X_aug, z);
     }
     FixedParamSpec fixed_spec = make_fixed_param_spec(p_aug, fixed_idx, fixed_values);
     
@@ -214,6 +223,7 @@ List fast_continuation_ratio_regression_with_var_cpp(const Eigen::MatrixXd& X, c
         Named("ssq_b_j") = ssq_b_j,
         Named("vcov") = vcov,
         Named("converged") = fit.converged,
+        Named("params") = fit.params,
         Named("fisher_information") = info
     );
 }
