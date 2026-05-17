@@ -7,7 +7,7 @@
 #' @keywords internal
 InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLik,
+	inherit = InferenceParamBootstrap,
 	public = as.list(modifyList(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object.
@@ -170,7 +170,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 				}
 			)
 			mod = attempt$fit
-			j_beta_T = if (!is.null(attempt$X_fit)) match("beta_T", colnames(attempt$X_fit)) else NA_integer_
+			j_beta_T = if (!is.null(attempt$X)) match("beta_T", colnames(attempt$X)) else NA_integer_
 			if (is.null(mod) || !is.finite(j_beta_T) || is.na(j_beta_T) || !is.finite(mod$b[j_beta_T])){
 				private$cache_nonestimable_estimate("kk_clogit_combined_fit_failed")
 				return(invisible(NULL))
@@ -184,7 +184,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 			private$cached_mod = mod
 			private$set_fit_warm_start(as.numeric(mod$b), "beta")
 			private$cached_values$likelihood_test_context = list(
-				X = attempt$X_fit,
+				X = attempt$X,
 				y = y_comb,
 				j_treat = j_beta_T
 			)
@@ -240,6 +240,41 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 					-sum(y * eta - log_denom)
 				}
 			)
+		},
+		supports_lik_ratio_param_bootstrap = function() TRUE,
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			X = spec$X
+			j = spec$j
+			n = nrow(X)
+			b_null = as.numeric(null_fit$b)
+			pi = plogis(as.numeric(X %*% b_null))
+			y_sim = as.integer(rbinom(n, 1L, pi))
+			full_res = tryCatch(
+				fast_logistic_regression_cpp(
+					X = X, y = y_sim,
+					optimization_alg = private$optimization_alg %||% "lbfgs"
+				),
+				error = function(e) NULL
+			)
+			if (is.null(full_res) || !is.finite(full_res$b[j])) return(NULL)
+			list(
+				full_fit = full_res,
+				fit_null = function(d, start = NULL){
+					tryCatch(
+						fast_logistic_regression_with_var_cpp(
+							X = X, y = y_sim, j = j,
+							warm_start_beta = start %||% as.numeric(full_res$b),
+							fixed_idx = j, fixed_values = d
+						),
+						error = function(e) NULL
+					)
+				},
+				neg_loglik = function(fit){
+					eta = as.numeric(X %*% as.numeric(fit$b))
+					log_denom = ifelse(eta > 0, eta + log1p(exp(-eta)), log1p(exp(eta)))
+					-sum(y_sim * eta - log_denom)
+				}
+			)
 		}
 	)))
 )
@@ -249,7 +284,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
+	public = as.list(modifyList(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -295,7 +330,7 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		}
-	))),
+	)), make_ivwc_bayesian_bootstrap_public_overrides())),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		supports_likelihood_tests = function() FALSE,

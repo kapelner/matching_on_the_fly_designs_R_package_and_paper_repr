@@ -324,6 +324,43 @@ simple generic full-data simulator under the null.
 In particular, the Cox paths are difficult because partial likelihood is not by
 itself a complete generative model for survival times and censoring.
 
+## Implementation Status
+
+### Phase 1: InferenceParamBootstrap API — **DONE**
+
+- `compute_lik_ratio_bootstrap_two_sided_pval(delta, B, ...)` implemented with
+  parallel-chunk strategy (same multicore approach as `compute_randomization_two_sided_pval`)
+- Hooks `supports_lik_ratio_param_bootstrap()` and `simulate_under_lik_null(spec, delta, null_fit)`
+  added to `InferenceParamBootstrap`
+
+### Phase 2: Easy Generative Families — **DONE**
+
+All ten Easy families have `simulate_under_lik_null` and
+`supports_lik_ratio_param_bootstrap = TRUE`:
+`InferenceIncidLogRegr`, `InferenceIncidProbitRegr`, `InferenceCountPoisson`,
+`InferenceIncidModifiedPoisson`, `InferenceIncidKKModifiedPoisson`,
+`InferenceIncidLogBinomial`, `InferenceIncidBinomialIdentityRiskDiff`,
+`InferenceCountRobustPoisson`, `InferenceCountQuasiPoisson`,
+`InferenceContinKKOLSOneLik`.
+
+### Phase 3: Selected Borderline Families — **DONE** (with noted exceptions)
+
+| Family | Status | Notes |
+|---|---|---|
+| `InferenceCountNegBin` | ✓ Done | dispersion `theta` extracted from `null_fit$theta_hat` |
+| `InferenceCountZeroInflatedPoisson` | ✓ Done | mixture simulated via `rbinom`/`rpois`; fixed pre-existing `neg_loglik` extraction bug |
+| `InferenceCountHurdlePoisson` | ✓ Done | zero-truncated Poisson generation via `qpois` |
+| `InferenceCountZeroInflatedNegBin` | ✓ Done | `log_theta` extracted from tail of params vector |
+| `InferenceCountHurdleNegBin` | ✗ Disabled | C-level heap corruption in `fast_truncated_negbin_count_cpp` during loop; `supports_lik_ratio_param_bootstrap = FALSE` |
+| `InferenceCountKKGLMM` | ✓ Done | random effects drawn before Poisson generation; inherits from `InferenceParamBootstrap` |
+| `InferenceContinKKGLMM` | ✓ Done | all params in `$b = c(betas, log_sigma, log_tau)`; inherits from `InferenceParamBootstrap` |
+| `InferencePropZeroOneInflatedBetaRegr` | ✓ Done | three-part mixture (zero / beta / one) simulation |
+| `InferenceIncidKKClogitOneLik` | ✓ Done | generative Bernoulli simulation from combined-likelihood design matrix; fixed pre-existing `attempt$X_fit` → `attempt$X` bug |
+| `InferenceIncidKKGLMM` | ✗ Skipped | alias for `InferenceIncidKKClogitPlusGLMMOneLik` (Difficult) |
+| `InferencePropKKGLMM` | ✗ Skipped | `InferenceAbstractKKLogisticGLMMOneLik` — combined clogit+GLMM (Difficult) |
+| Ordinal fixed-effects models | ✗ Not yet | `InferenceOrdinalPropOddsRegr` etc. — ordinal category sampling needed |
+| `InferenceSurvivalWeibullRegr` | ✗ Not yet | event-time + censoring generation needed |
+
 ## Recommended Implementation Plan
 
 ### Phase 1: InferenceParamBootstrap API

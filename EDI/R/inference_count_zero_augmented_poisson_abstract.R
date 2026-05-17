@@ -71,6 +71,43 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				return(self$compute_bootstrap_two_sided_pval(delta = delta, na.rm = TRUE))
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+		},
+		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			if (!check_package_installed("glmmTMB")) {
+				stop(class(self)[1], " weighted bootstrap estimation requires package 'glmmTMB'.")
+			}
+			row_weights = as.numeric(private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights))
+			X_fit = private$build_component_matrix(private$model_formula, private$best_X_colnames, treatment_name = "w")
+			if (is.null(X_fit)) {
+				private$cache_nonestimable_estimate("zero_augmented_poisson_design_unusable")
+				return(NA_real_)
+			}
+			Xzi_fit = private$build_component_matrix(private$model_formula_zero, private$best_Xzi_colnames, treatment_name = "w")
+			if (is.null(Xzi_fit)) {
+				private$cache_nonestimable_estimate("zero_augmented_poisson_aux_design_unusable")
+				return(NA_real_)
+			}
+			dat = private$build_component_frame(X_fit, Xzi_fit)
+			mod = private$fit_zero_augmented_model(dat, X_fit, Xzi_fit, weights = row_weights)
+			if (is.null(mod)) {
+				private$cache_nonestimable_estimate("zero_augmented_poisson_weighted_fit_unavailable")
+				return(NA_real_)
+			}
+			cond_coef = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
+			if (is.null(cond_coef) || !("w" %in% names(cond_coef)) || !is.finite(cond_coef["w"])) {
+				private$cache_nonestimable_estimate("zero_augmented_poisson_weighted_treatment_missing")
+				return(NA_real_)
+			}
+			private$cached_mod = mod
+			private$cached_values$likelihood_test_context = NULL
+			private$cached_values$beta_hat_T = as.numeric(cond_coef["w"])
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$cached_values$full_coefficients = cond_coef
+			private$cached_values$beta_hat_T
 		}
 	),
 		private = list(
@@ -299,7 +336,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					if (is_zinb) {
 						as.numeric(fit$neg_loglik %||% fit$neg_ll %||% get_zinb_neg_loglik_cpp(X = X_fit, y = y, Xzi = Xzi_fit, params))
 					} else {
-						as.numeric(fit$neg_loglik %||% fit$neg_ll)
+						as.numeric(fit$neg_loglik %||% fit$neg_ll %||% fit$mod$neg_ll %||% fit$mod$neg_loglik)
 					}
 				}
 			)
@@ -314,7 +351,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				data.frame(w = private$w)
 			}
 		},
-		fit_zero_augmented_model = function(dat, X_fit, Xzi_fit){
+		fit_zero_augmented_model = function(dat, X_fit, Xzi_fit, weights = NULL){
 			formula_cond = private$build_formula_from_matrix(X_fit)
 			formula_zi = private$build_formula_from_matrix(Xzi_fit, response = NULL)
 			glmm_control = glmmTMB::glmmTMBControl(parallel = self$num_cores)
@@ -325,6 +362,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 						ziformula = formula_zi,
 						family = private$za_family(),
 						data = dat,
+						weights = weights,
 						control = glmm_control
 					)
 				)),
@@ -340,6 +378,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 						ziformula = ~ w,
 						family = private$za_family(),
 						data = dat_fallback,
+						weights = weights,
 						control = glmm_control
 					)
 				)),
@@ -477,6 +516,109 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
 			}
+		},
+		supports_lik_ratio_param_bootstrap = function(){
+			isTRUE(private$use_rcpp) && private$za_description() %in% c(
+				"Zero-Inflated Negative Binomial",
+				"Zero-Inflated Poisson",
+				"Hurdle Poisson"
+			)
+		},
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			is_zinb   = identical(private$za_description(), "Zero-Inflated Negative Binomial")
+			is_hurdle = identical(private$za_description(), "Hurdle Poisson")
+			X   = spec$X
+			Xzi = spec$Xzi
+			j   = spec$j
+			n   = nrow(X)
+			b_cond = as.numeric(null_fit$coefficients$cond)
+			b_zi   = as.numeric(null_fit$coefficients$zi)
+			lambda = exp(pmin(as.numeric(X %*% b_cond), 20))
+			pi     = plogis(as.numeric(Xzi %*% b_zi))
+			if (is_zinb){
+				full_params = as.numeric(null_fit$params)
+				theta = exp(min(full_params[length(full_params)], 15))
+				if (!is.finite(theta) || theta <= 0) return(NULL)
+				u = rbinom(n, 1L, pi)
+				counts = rnbinom(n, size = theta, mu = lambda)
+				y_sim = as.integer(ifelse(u == 1L, 0L, counts))
+			} else if (is_hurdle){
+				p0 = ppois(0, lambda)
+				u  = rbinom(n, 1L, pi)
+				y_pos = as.integer(qpois(p0 + (1 - p0) * runif(n), lambda))
+				y_pos = pmax(y_pos, 1L)
+				y_sim = as.integer(ifelse(u == 0L, 0L, y_pos))
+			} else {
+				u = rbinom(n, 1L, pi)
+				y_sim = as.integer(ifelse(u == 1L, 0L, rpois(n, lambda)))
+			}
+			n_params = if (is_zinb) ncol(X) + ncol(Xzi) + 1L else ncol(X) + ncol(Xzi)
+			full_res = tryCatch(
+				if (is_zinb) {
+					fast_zinb_cpp(
+						X = X, y = as.numeric(y_sim), Xzi = Xzi,
+						smart_cold_start = private$smart_cold_start_default,
+						estimate_only = FALSE,
+						optimization_alg = private$optimization_alg
+					)
+				} else {
+					fast_zero_augmented_poisson_cpp(
+						X = X, y = as.numeric(y_sim), Xzi = Xzi,
+						is_hurdle = is_hurdle,
+						smart_cold_start = private$smart_cold_start_default,
+						estimate_only = FALSE,
+						optimization_alg = private$optimization_alg
+					)
+				},
+				error = function(e) NULL
+			)
+			if (is.null(full_res) || !isTRUE(full_res$converged)) return(NULL)
+			beta_j = as.numeric(full_res$coefficients$cond[j])
+			if (!is.finite(beta_j)) return(NULL)
+			if (is.null(full_res$params) && !is.null(full_res$coefficients)){
+				full_res$params = as.numeric(c(full_res$coefficients$cond, full_res$coefficients$zi))
+			}
+			list(
+				full_fit = full_res,
+				fit_null = function(d, start = NULL){
+					ws = start %||% private$get_fit_warm_start_for_length("params", n_params)
+					fit = tryCatch(
+						if (is_zinb) {
+							fast_zinb_cpp(
+								X = X, y = as.numeric(y_sim), Xzi = Xzi,
+								warm_start_params = ws,
+								smart_cold_start = private$smart_cold_start_default,
+								estimate_only = FALSE,
+								optimization_alg = private$optimization_alg,
+								fixed_idx = j, fixed_values = d
+							)
+						} else {
+							fast_zero_augmented_poisson_cpp(
+								X = X, y = as.numeric(y_sim), Xzi = Xzi,
+								is_hurdle = is_hurdle,
+								warm_start_params = ws,
+								smart_cold_start = private$smart_cold_start_default,
+								estimate_only = FALSE,
+								optimization_alg = private$optimization_alg,
+								fixed_idx = j, fixed_values = d
+							)
+						},
+						error = function(e) NULL
+					)
+					if (!is.null(fit) && is.null(fit$params) && !is.null(fit$coefficients)){
+						fit$params = as.numeric(c(fit$coefficients$cond, fit$coefficients$zi))
+					}
+					fit
+				},
+				neg_loglik = function(fit){
+					params = as.numeric(fit$params %||% c(as.numeric(fit$coefficients$cond), as.numeric(fit$coefficients$zi)))
+					if (is_zinb){
+						as.numeric(fit$neg_loglik %||% fit$neg_ll %||% get_zinb_neg_loglik_cpp(X = X, y = as.numeric(y_sim), Xzi = Xzi, params))
+					} else {
+						as.numeric(fit$neg_loglik %||% fit$neg_ll)
+					}
+				}
+			)
 		}
 	)
 )

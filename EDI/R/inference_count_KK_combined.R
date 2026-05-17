@@ -19,7 +19,7 @@
 #' @export
 InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLik,
+	inherit = InferenceParamBootstrap,
 	public = utils::modifyList(as.list(InferenceMixinKKGLMMShared$public), list(
 		#' @description Initialize a KK Poisson GLMM inference object.
 		#' @param des_obj A completed \code{Design} object with a count response.
@@ -187,6 +187,47 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 				neg_loglik = function(fit){
 					as.numeric(fit$neg_loglik %||% fit$neg_ll)
 				}
+			)
+		},
+		supports_lik_ratio_param_bootstrap = function() isTRUE(private$use_rcpp),
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			b_null = as.numeric(null_fit$b)
+			sigma_u = exp(as.numeric(null_fit$log_sigma))
+			X = spec$X
+			group_id = spec$group_id
+			n = nrow(X)
+			K = max(group_id)
+			u = rnorm(K, 0, sigma_u)
+			eta = as.numeric(X %*% b_null) + u[group_id]
+			y_sim = as.integer(rpois(n, exp(pmin(eta, 20))))
+			j = spec$j
+			full_res = tryCatch(
+				fast_poisson_glmm_cpp(
+					X = X, y = as.numeric(y_sim), group_id = group_id,
+					j_T = j - 1L,
+					smart_cold_start = private$smart_cold_start_default,
+					optimization_alg = private$optimization_alg
+				),
+				error = function(e) NULL
+			)
+			if (is.null(full_res) || !isTRUE(full_res$converged) || !is.finite(full_res$b[j])) return(NULL)
+			list(
+				full_fit = full_res,
+				fit_null = function(d, start = NULL){
+					tryCatch(
+						fast_poisson_glmm_cpp(
+							X = X, y = as.numeric(y_sim), group_id = group_id,
+							j_T = j - 1L,
+							warm_start_params = start %||% as.numeric(c(full_res$b, full_res$log_sigma)),
+							estimate_only = FALSE,
+							fixed_idx = j, fixed_values = d,
+							smart_cold_start = private$smart_cold_start_default,
+							optimization_alg = private$optimization_alg
+						),
+						error = function(e) NULL
+					)
+				},
+				neg_loglik = function(fit){ as.numeric(fit$neg_loglik %||% fit$neg_ll) }
 			)
 		}
 	))

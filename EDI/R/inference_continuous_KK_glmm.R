@@ -21,7 +21,7 @@
 #' @export
 InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLik,
+	inherit = InferenceParamBootstrap,
 	public = utils::modifyList(as.list(InferenceMixinKKGLMMShared$public), list(
 		#' @description Initialize a KK GLMM inference object.
 		#' @param des_obj A completed \code{Design} object with a continuous response.
@@ -196,6 +196,49 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 				neg_loglik = function(fit){
 					as.numeric(fit$neg_loglik %||% fit$neg_ll)
 				}
+			)
+		},
+		supports_lik_ratio_param_bootstrap = function() isTRUE(private$use_rcpp),
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			# fast_gaussian_lmm_cpp bundles all params in $b: c(betas, log_sigma, log_tau)
+			p      = ncol(spec$X)
+			b_all  = as.numeric(null_fit$b)
+			if (length(b_all) < p + 2L) return(NULL)
+			b_null    = b_all[seq_len(p)]
+			sigma_u   = exp(b_all[p + 1L])
+			sigma_e   = exp(b_all[p + 2L])
+			X = spec$X
+			group_id = spec$group_id
+			n = nrow(X)
+			K = max(group_id)
+			u_g = rnorm(K, 0, sigma_u)
+			mu = as.numeric(X %*% b_null) + u_g[group_id]
+			y_sim = rnorm(n, mu, sigma_e)
+			j = spec$j
+			full_res = tryCatch(
+				fast_gaussian_lmm_cpp(
+					X = X, y = y_sim, group_id = group_id,
+					estimate_only = FALSE, maxit = 300L, eps_g = 1e-6,
+					optimization_alg = private$optimization_alg
+				),
+				error = function(e) NULL
+			)
+			if (is.null(full_res) || !isTRUE(full_res$converged) || !is.finite(full_res$b[j])) return(NULL)
+			list(
+				full_fit = full_res,
+				fit_null = function(d, start = NULL){
+					tryCatch(
+						fast_gaussian_lmm_cpp(
+							X = X, y = y_sim, group_id = group_id,
+							warm_start_params = start %||% as.numeric(full_res$b),
+							estimate_only = FALSE, maxit = 300L, eps_g = 1e-6,
+							fixed_idx = j, fixed_values = d,
+							optimization_alg = private$optimization_alg
+						),
+						error = function(e) NULL
+					)
+				},
+				neg_loglik = function(fit){ as.numeric(fit$neg_loglik %||% fit$neg_ll) }
 			)
 		}
 	))

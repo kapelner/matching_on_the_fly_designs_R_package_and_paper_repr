@@ -108,6 +108,51 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 		#' @param alpha The significance level (default 0.05).
 		compute_gradient_confidence_interval = function(alpha = 0.05){
 			private$invert_test_pval_confidence_interval(alpha)
+		},
+		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			if (!check_package_installed("glmmTMB")) {
+				stop(class(self)[1], " weighted bootstrap estimation requires package 'glmmTMB'.")
+			}
+			row_weights = as.numeric(private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights))
+			X_fit = private$build_component_matrix(private$model_formula, private$best_X_colnames, treatment_name = "w")
+			X_hurdle = private$build_component_matrix(private$model_formula_hurdle, private$best_hurdle_X_colnames, treatment_name = "w")
+			if (is.null(X_fit) || is.null(X_hurdle)) {
+				private$cache_nonestimable_estimate("hurdle_negbin_weighted_design_unusable")
+				return(NA_real_)
+			}
+			dat = private$build_hurdle_frame(X_fit, X_hurdle)
+			mod = tryCatch(
+				suppressWarnings(suppressMessages(
+					glmmTMB::glmmTMB(
+						private$build_formula_from_matrix(X_fit, response = "y"),
+						ziformula = private$build_formula_from_matrix(X_hurdle, response = NULL),
+						family = glmmTMB::truncated_nbinom2(link = "log"),
+						data = dat,
+						weights = row_weights,
+						control = glmmTMB::glmmTMBControl(parallel = self$num_cores)
+					)
+				)),
+				error = function(e) NULL
+			)
+			if (is.null(mod)) {
+				private$cache_nonestimable_estimate("hurdle_negbin_weighted_fit_unavailable")
+				return(NA_real_)
+			}
+			cond_coef = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
+			if (is.null(cond_coef) || !("w" %in% names(cond_coef)) || !is.finite(cond_coef["w"])) {
+				private$cache_nonestimable_estimate("hurdle_negbin_weighted_treatment_missing")
+				return(NA_real_)
+			}
+			private$cached_mod = mod
+			private$cached_values$count_likelihood_context = NULL
+			private$cached_values$beta_hat_T = as.numeric(cond_coef["w"])
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$cached_values$full_coefficients = cond_coef
+			private$cached_values$beta_hat_T
 		}
 	),
 	private = list(
@@ -118,6 +163,28 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 		cached_mod = NULL,
 		model_formula_hurdle = NULL,
 		best_hurdle_X_colnames = NULL,
+		build_hurdle_frame = function(X_cond, X_hurdle){
+			dat = data.frame(y = private$y, w = private$w)
+			if (ncol(X_cond) > 2L) {
+				Xc = as.data.frame(X_cond[, -c(1, 2), drop = FALSE])
+				names(Xc) = make.names(colnames(X_cond)[-c(1, 2)], unique = TRUE)
+				dat = cbind(dat, Xc)
+			}
+			if (ncol(X_hurdle) > 2L) {
+				Xh = as.data.frame(X_hurdle[, -c(1, 2), drop = FALSE])
+				names(Xh) = make.names(colnames(X_hurdle)[-c(1, 2)], unique = TRUE)
+				for (nm in names(Xh)) {
+					if (!nm %in% names(dat)) dat[[nm]] = Xh[[nm]]
+				}
+			}
+			dat
+		},
+		build_formula_from_matrix = function(X_fit, response = "y"){
+			vars = colnames(X_fit)[-1]
+			rhs = if (!length(vars)) "1" else paste(vars, collapse = " + ")
+			if (is.null(response)) return(stats::as.formula(paste("~", rhs)))
+			stats::as.formula(paste(response, "~", rhs))
+		},
 		build_component_matrix = function(model_formula, selected_colnames = NULL, treatment_name = "treatment"){
 			if (is.null(selected_colnames)) {
 				if (identical(model_formula, ~ .)) {
@@ -307,6 +374,60 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))
 			}
+		},
+		supports_lik_ratio_param_bootstrap = function() FALSE,
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			X       = spec$X
+			X_hurdle = spec$X_hurdle
+			y_obs   = as.numeric(spec$y)
+			j       = spec$j
+			n       = nrow(X)
+			b_count = as.numeric(null_fit$b)
+			theta   = as.numeric(null_fit$theta_hat %||% exp(tail(as.numeric(null_fit$params), 1)))
+			if (!is.finite(theta) || theta <= 0) return(NULL)
+			lambda  = exp(pmin(as.numeric(X %*% b_count), 20))
+			hurdle_b = private$cached_values$hurdle_coefficients
+			if (!is.null(hurdle_b) && !is.null(X_hurdle) && length(hurdle_b) == ncol(X_hurdle)){
+				pi_pos = plogis(as.numeric(X_hurdle %*% hurdle_b))
+			} else {
+				pi_pos = rep(mean(y_obs > 0), n)
+			}
+			u = rbinom(n, 1L, pi_pos)
+			cdf0 = pnbinom(0, size = theta, mu = lambda)
+			u_trunc = cdf0 + (1 - cdf0) * runif(n)
+			y_pos = as.integer(qnbinom(u_trunc, size = theta, mu = lambda))
+			y_pos = pmax(y_pos, 1L)
+			y_sim = as.integer(ifelse(u == 0L, 0L, y_pos))
+			n_params = ncol(X) + 1L
+			full_res = tryCatch(
+				fast_truncated_negbin_count_cpp(
+					X = X, y = y_sim,
+					smart_cold_start = private$smart_cold_start_default,
+					estimate_only = FALSE,
+					optimization_alg = private$optimization_alg %||% "lbfgs"
+				),
+				error = function(e) NULL
+			)
+			if (is.null(full_res) || !isTRUE(full_res$converged)) return(NULL)
+			b_j = as.numeric(full_res$b[j])
+			if (!is.finite(b_j)) return(NULL)
+			list(
+				full_fit = full_res,
+				fit_null = function(d, start = NULL){
+					tryCatch(
+						fast_truncated_negbin_count_cpp(
+							X = X, y = y_sim,
+							warm_start_params = start %||% as.numeric(c(full_res$b, log(as.numeric(full_res$theta_hat)))),
+							smart_cold_start = private$smart_cold_start_default,
+							estimate_only = FALSE,
+							optimization_alg = private$optimization_alg %||% "lbfgs",
+							fixed_idx = j, fixed_values = d
+						),
+						error = function(e) NULL
+					)
+				},
+				neg_loglik = function(fit){ as.numeric(fit$neg_loglik %||% fit$neg_ll) }
+			)
 		}
 	)
 )

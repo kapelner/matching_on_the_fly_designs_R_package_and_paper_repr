@@ -54,6 +54,91 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = as.numeric(private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights))
+			X = private$build_component_matrix(private$model_formula, private$best_X_colnames)
+			X_zero_one = private$build_component_matrix(private$model_formula_zero_one, private$best_X_zero_one_colnames)
+			y = as.numeric(private$y)
+			is_zero = as.numeric(y == 0)
+			is_one = as.numeric(y == 1)
+			is_mid = y > 0 & y < 1
+			zero_fit = tryCatch(
+				fast_logistic_regression_weighted_cpp(
+					X = X_zero_one,
+					y = is_zero,
+					weights = row_weights
+				),
+				error = function(e) NULL
+			)
+			one_fit = tryCatch(
+				fast_logistic_regression_weighted_cpp(
+					X = X_zero_one,
+					y = is_one,
+					weights = row_weights
+				),
+				error = function(e) NULL
+			)
+			if (!any(is_mid)) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			X_mid = X[is_mid, , drop = FALSE]
+			y_mid = sanitize_beta_response(y[is_mid])
+			w_mid = row_weights[is_mid]
+			beta_fit = tryCatch({
+				if (check_package_installed("betareg")) {
+					df_mid = as.data.frame(X_mid[, -1, drop = FALSE])
+					df_mid$y = y_mid
+					suppressWarnings(
+						betareg::betareg(
+							y ~ .,
+							data = df_mid,
+							weights = w_mid,
+							control = betareg::betareg.control(start = list(phi = 10))
+						)
+					)
+				} else {
+					NULL
+				}
+			}, error = function(e) NULL)
+			if (!is.null(beta_fit)) {
+				coef_vec = stats::coef(beta_fit)[colnames(X_mid)]
+				beta_hat = coef_vec[2L]
+			}
+			if (is.null(beta_fit) || !is.finite(beta_hat)) {
+				lm_fit = tryCatch(
+					stats::lm.wfit(x = X_mid, y = logit(y_mid), w = w_mid),
+					error = function(e) NULL
+				)
+				if (is.null(lm_fit) || length(lm_fit$coefficients) < 2L) {
+					private$cached_values$beta_hat_T = NA_real_
+					private$cached_values$s_beta_hat_T = NA_real_
+					private$cached_values$df = NA_real_
+					return(NA_real_)
+				}
+				coef_vec = as.numeric(lm_fit$coefficients)
+				beta_hat = coef_vec[2L]
+			}
+			if (!is.finite(beta_hat)) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			private$cached_values$beta_hat_T = as.numeric(beta_hat)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$cached_values$full_coefficients = coef_vec
+			private$cached_values$summary_table = NULL
+			private$cached_values$zero_coefficients = if (!is.null(zero_fit)) zero_fit$b else NULL
+			private$cached_values$one_coefficients = if (!is.null(one_fit)) one_fit$b else NULL
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes an approximate confidence interval.
 		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -251,6 +336,70 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 				private$cached_values$likelihood_test_context = NULL
 			}
 			attempt$fit
+		},
+		supports_lik_ratio_param_bootstrap = function() TRUE,
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			X        = spec$X
+			X_zo     = spec$X_zero_one
+			j        = spec$j
+			n        = nrow(X)
+			p        = ncol(X)
+			q        = ncol(X_zo)
+			params   = as.numeric(null_fit$params)
+			if (length(params) < p + 1L + 2L * q) return(NULL)
+			b_beta   = params[seq_len(p)]
+			log_phi  = params[p + 1L]
+			b_zero   = params[(p + 2L):(p + 1L + q)]
+			b_one    = params[(p + 1L + q + 1L):(p + 1L + 2L * q)]
+			phi_val  = exp(min(log_phi, 15))
+			if (!is.finite(phi_val) || phi_val <= 0) return(NULL)
+			mu_i  = plogis(as.numeric(X %*% b_beta))
+			p0_i  = plogis(as.numeric(X_zo %*% b_zero))
+			p1_i  = plogis(as.numeric(X_zo %*% b_one))
+			p_b_i = pmax(1 - p0_i - p1_i, 0)
+			tot   = p0_i + p1_i + p_b_i
+			p0_i  = p0_i / tot; p1_i = p1_i / tot; p_b_i = p_b_i / tot
+			u = runif(n)
+			y_sim = numeric(n)
+			for (i in seq_len(n)){
+				if (u[i] < p0_i[i]){
+					y_sim[i] = 0
+				} else if (u[i] < p0_i[i] + p1_i[i]){
+					y_sim[i] = 1
+				} else {
+					a = mu_i[i] * phi_val
+					b = (1 - mu_i[i]) * phi_val
+					y_sim[i] = rbeta(1L, max(a, 1e-4), max(b, 1e-4))
+				}
+			}
+			y_sim = pmin(pmax(y_sim, 0), 1)
+			start_len = p + 1L + 2L * q
+			ws = as.numeric(params)
+			full_res = tryCatch(
+				fast_zero_one_inflated_beta_cpp(
+					X, X_zo, y_sim,
+					warm_start_params = ws,
+					smart_cold_start = private$smart_cold_start_default
+				),
+				error = function(e) NULL
+			)
+			if (is.null(full_res) || length(full_res$b) < j || !is.finite(full_res$b[j])) return(NULL)
+			list(
+				full_fit = full_res,
+				fit_null = function(d, start = NULL){
+					ws_null = start %||% as.numeric(full_res$params %||% ws)
+					tryCatch(
+						fast_zero_one_inflated_beta_cpp(
+							X, X_zo, y_sim,
+							warm_start_params = ws_null,
+							smart_cold_start = private$smart_cold_start_default,
+							fixed_idx = j, fixed_values = d
+						),
+						error = function(e) NULL
+					)
+				},
+				neg_loglik = function(fit){ as.numeric(fit$neg_loglik) }
+			)
 		}
 	)
 )
