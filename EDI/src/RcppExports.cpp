@@ -1232,6 +1232,34 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_log_binomial_regression_weighted_score_cpp
+Eigen::VectorXd get_log_binomial_regression_weighted_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, const Eigen::VectorXd& beta);
+RcppExport SEXP _EDI_get_log_binomial_regression_weighted_score_cpp(SEXP XSEXP, SEXP ySEXP, SEXP weightsSEXP, SEXP betaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type beta(betaSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_log_binomial_regression_weighted_score_cpp(X, y, weights, beta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_log_binomial_regression_weighted_hessian_cpp
+Eigen::MatrixXd get_log_binomial_regression_weighted_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, const Eigen::VectorXd& beta);
+RcppExport SEXP _EDI_get_log_binomial_regression_weighted_hessian_cpp(SEXP XSEXP, SEXP ySEXP, SEXP weightsSEXP, SEXP betaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type beta(betaSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_log_binomial_regression_weighted_hessian_cpp(X, y, weights, beta));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_identity_binomial_regression_score_cpp
 Eigen::VectorXd get_identity_binomial_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& beta);
 RcppExport SEXP _EDI_get_identity_binomial_regression_score_cpp(SEXP XSEXP, SEXP ySEXP, SEXP betaSEXP) {
@@ -1255,6 +1283,34 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type beta(betaSEXP);
     rcpp_result_gen = Rcpp::wrap(get_identity_binomial_regression_hessian_cpp(X, y, beta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_identity_binomial_regression_weighted_score_cpp
+Eigen::VectorXd get_identity_binomial_regression_weighted_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, const Eigen::VectorXd& beta);
+RcppExport SEXP _EDI_get_identity_binomial_regression_weighted_score_cpp(SEXP XSEXP, SEXP ySEXP, SEXP weightsSEXP, SEXP betaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type beta(betaSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_identity_binomial_regression_weighted_score_cpp(X, y, weights, beta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_identity_binomial_regression_weighted_hessian_cpp
+Eigen::MatrixXd get_identity_binomial_regression_weighted_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, const Eigen::VectorXd& beta);
+RcppExport SEXP _EDI_get_identity_binomial_regression_weighted_hessian_cpp(SEXP XSEXP, SEXP ySEXP, SEXP weightsSEXP, SEXP betaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type beta(betaSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_identity_binomial_regression_weighted_hessian_cpp(X, y, weights, beta));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1299,6 +1355,27 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_log_binomial_regression_weighted_cpp
+List fast_log_binomial_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, bool smart_cold_start, Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_log_binomial_regression_weighted_cpp(SEXP XSEXP, SEXP ySEXP, SEXP weightsSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_betaSEXP, SEXP smart_cold_startSEXP, SEXP warm_start_weightsSEXP, SEXP warm_start_fisher_infoSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_beta(warm_start_betaSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_weights(warm_start_weightsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_log_binomial_regression_weighted_cpp(X, y, weights, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fast_identity_binomial_regression_cpp
 List fast_identity_binomial_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, bool smart_cold_start, Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
 RcppExport SEXP _EDI_fast_identity_binomial_regression_cpp(SEXP XSEXP, SEXP ySEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_betaSEXP, SEXP smart_cold_startSEXP, SEXP warm_start_weightsSEXP, SEXP warm_start_fisher_infoSEXP) {
@@ -1337,6 +1414,27 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_weights(warm_start_weightsSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
     rcpp_result_gen = Rcpp::wrap(fast_identity_binomial_regression_with_var_cpp(X, y, j, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_identity_binomial_regression_weighted_cpp
+List fast_identity_binomial_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, int maxit, double tol, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta, bool smart_cold_start, Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
+RcppExport SEXP _EDI_fast_identity_binomial_regression_weighted_cpp(SEXP XSEXP, SEXP ySEXP, SEXP weightsSEXP, SEXP maxitSEXP, SEXP tolSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP warm_start_betaSEXP, SEXP smart_cold_startSEXP, SEXP warm_start_weightsSEXP, SEXP warm_start_fisher_infoSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_beta(warm_start_betaSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type warm_start_weights(warm_start_weightsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_identity_binomial_regression_weighted_cpp(X, y, weights, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -4418,12 +4516,18 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_compute_matching_wilcox_distr_parallel_cpp", (DL_FUNC) &_EDI_compute_matching_wilcox_distr_parallel_cpp, 8},
     {"_EDI_get_log_binomial_regression_score_cpp", (DL_FUNC) &_EDI_get_log_binomial_regression_score_cpp, 3},
     {"_EDI_get_log_binomial_regression_hessian_cpp", (DL_FUNC) &_EDI_get_log_binomial_regression_hessian_cpp, 3},
+    {"_EDI_get_log_binomial_regression_weighted_score_cpp", (DL_FUNC) &_EDI_get_log_binomial_regression_weighted_score_cpp, 4},
+    {"_EDI_get_log_binomial_regression_weighted_hessian_cpp", (DL_FUNC) &_EDI_get_log_binomial_regression_weighted_hessian_cpp, 4},
     {"_EDI_get_identity_binomial_regression_score_cpp", (DL_FUNC) &_EDI_get_identity_binomial_regression_score_cpp, 3},
     {"_EDI_get_identity_binomial_regression_hessian_cpp", (DL_FUNC) &_EDI_get_identity_binomial_regression_hessian_cpp, 3},
+    {"_EDI_get_identity_binomial_regression_weighted_score_cpp", (DL_FUNC) &_EDI_get_identity_binomial_regression_weighted_score_cpp, 4},
+    {"_EDI_get_identity_binomial_regression_weighted_hessian_cpp", (DL_FUNC) &_EDI_get_identity_binomial_regression_weighted_hessian_cpp, 4},
     {"_EDI_fast_log_binomial_regression_cpp", (DL_FUNC) &_EDI_fast_log_binomial_regression_cpp, 10},
     {"_EDI_fast_log_binomial_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_log_binomial_regression_with_var_cpp, 11},
+    {"_EDI_fast_log_binomial_regression_weighted_cpp", (DL_FUNC) &_EDI_fast_log_binomial_regression_weighted_cpp, 11},
     {"_EDI_fast_identity_binomial_regression_cpp", (DL_FUNC) &_EDI_fast_identity_binomial_regression_cpp, 10},
     {"_EDI_fast_identity_binomial_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_identity_binomial_regression_with_var_cpp, 11},
+    {"_EDI_fast_identity_binomial_regression_weighted_cpp", (DL_FUNC) &_EDI_fast_identity_binomial_regression_weighted_cpp, 11},
     {"_EDI_get_logistic_glmm_score_cpp", (DL_FUNC) &_EDI_get_logistic_glmm_score_cpp, 5},
     {"_EDI_get_logistic_glmm_hessian_cpp", (DL_FUNC) &_EDI_get_logistic_glmm_hessian_cpp, 5},
     {"_EDI_get_logistic_glmm_neg_loglik_cpp", (DL_FUNC) &_EDI_get_logistic_glmm_neg_loglik_cpp, 5},

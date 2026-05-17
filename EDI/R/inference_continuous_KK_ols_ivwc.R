@@ -19,7 +19,7 @@
 InferenceContinKKOLSIVWC = R6::R6Class("InferenceContinKKOLSIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
-	public = list(
+	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -27,7 +27,8 @@ InferenceContinKKOLSIVWC = R6::R6Class("InferenceContinKKOLSIVWC",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+		#' @param smart_cold_start_default Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
 				assertFormula(model_formula, null.ok = TRUE)
@@ -37,44 +38,48 @@ InferenceContinKKOLSIVWC = R6::R6Class("InferenceContinKKOLSIVWC",
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-		#' @description Returns the estimated treatment effect.
-		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_estimate = function(estimate_only = FALSE){
-			private$shared(estimate_only = estimate_only)
-			private$cached_values$beta_hat_T
+		#' @description Gated off for IVWC.
+		#' @param subject_or_block_weights weights.
+		#' @param estimate_only flag.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
+			stop_bayesian_bootstrap_for_ivwc(self)
 		},
-		#' @description Computes the approximate confidence interval.
-		#' @param alpha The confidence level in the computed confidence interval is 1 -
-		#'   \code{alpha}. The default is 0.05.
-		compute_asymp_confidence_interval = function(alpha = 0.05){
-			if (should_run_asserts()) {
-				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			}
-			private$shared()
-			if (should_run_asserts()) {
-				private$assert_finite_se()
-			}
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
+		#' @description Gated off for IVWC.
+		#' @param B replicates.
+		#' @param show_progress flag.
+		#' @param debug flag.
+		#' @param weighting_unit_type type.
+		approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
 		},
-		#' @description Computes the approximate p-value.
-		#' @param delta The null difference to test against. For any treatment effect at all this
-		#'   is set to zero (the default).
-		compute_asymp_two_sided_pval = function(delta = 0){
-			if (should_run_asserts()) {
-				assertNumeric(delta)
-			}
-			private$shared()
-			if (should_run_asserts()) {
-				private$assert_finite_se()
-			}
-			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+		#' @description Gated off for IVWC.
+		#' @param delta null.
+		#' @param B replicates.
+		#' @param type type.
+		#' @param na.rm flag.
+		#' @param show_progress flag.
+		#' @param min_number_usable_samples count.
+		#' @param weighting_unit_type type.
+		compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param alpha level.
+		#' @param B replicates.
+		#' @param type type.
+		#' @param na.rm flag.
+		#' @param show_progress flag.
+		#' @param min_number_usable_samples count.
+		#' @param weighting_unit_type type.
+		compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
 		}
-	),
+	))),
 	private = list(
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			preserve = if (is.null(permutations$m_mat)) c("kk_ols_ivwc_matched_reduced_design", "kk_ols_ivwc_reservoir_reduced_design") else character()

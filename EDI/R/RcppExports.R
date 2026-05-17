@@ -621,6 +621,32 @@ get_log_binomial_regression_hessian_cpp <- function(X, y, beta) {
     .Call(`_EDI_get_log_binomial_regression_hessian_cpp`, X, y, beta)
 }
 
+#' @title Compute Weighted Log-Binomial Regression Score
+#' @description Calculates the weighted score vector for a log-binomial regression model.
+#' @param X A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param weights A nonnegative numeric vector of observation weights.
+#' @param beta A numeric vector of coefficients.
+#' @return A numeric vector representing the weighted score.
+#' @export
+#' @keywords internal
+get_log_binomial_regression_weighted_score_cpp <- function(X, y, weights, beta) {
+    .Call(`_EDI_get_log_binomial_regression_weighted_score_cpp`, X, y, weights, beta)
+}
+
+#' @title Compute Weighted Log-Binomial Regression Hessian
+#' @description Calculates the weighted Hessian matrix for a log-binomial regression model.
+#' @param X A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param weights A nonnegative numeric vector of observation weights.
+#' @param beta A numeric vector of coefficients.
+#' @return A numeric matrix representing the weighted Hessian.
+#' @export
+#' @keywords internal
+get_log_binomial_regression_weighted_hessian_cpp <- function(X, y, weights, beta) {
+    .Call(`_EDI_get_log_binomial_regression_weighted_hessian_cpp`, X, y, weights, beta)
+}
+
 #' @title Compute Identity-Binomial Regression Score
 #' @description Calculates the score vector for a binomial regression model with an identity link.
 #' @param X A numeric matrix of predictors.
@@ -643,6 +669,32 @@ get_identity_binomial_regression_score_cpp <- function(X, y, beta) {
 #' @keywords internal
 get_identity_binomial_regression_hessian_cpp <- function(X, y, beta) {
     .Call(`_EDI_get_identity_binomial_regression_hessian_cpp`, X, y, beta)
+}
+
+#' @title Compute Weighted Identity-Binomial Regression Score
+#' @description Calculates the weighted score vector for a binomial regression model with an identity link.
+#' @param X A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param weights A nonnegative numeric vector of observation weights.
+#' @param beta A numeric vector of coefficients.
+#' @return A numeric vector representing the weighted score.
+#' @export
+#' @keywords internal
+get_identity_binomial_regression_weighted_score_cpp <- function(X, y, weights, beta) {
+    .Call(`_EDI_get_identity_binomial_regression_weighted_score_cpp`, X, y, weights, beta)
+}
+
+#' @title Compute Weighted Identity-Binomial Regression Hessian
+#' @description Calculates the weighted Hessian matrix for a binomial regression model with an identity link.
+#' @param X A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param weights A nonnegative numeric vector of observation weights.
+#' @param beta A numeric vector of coefficients.
+#' @return A numeric matrix representing the weighted Hessian.
+#' @export
+#' @keywords internal
+get_identity_binomial_regression_weighted_hessian_cpp <- function(X, y, weights, beta) {
+    .Call(`_EDI_get_identity_binomial_regression_weighted_hessian_cpp`, X, y, weights, beta)
 }
 
 #' @title Fast Log-Binomial Regression (C++)
@@ -682,6 +734,25 @@ fast_log_binomial_regression_with_var_cpp <- function(X, y, j = 2L, maxit = 100L
     .Call(`_EDI_fast_log_binomial_regression_with_var_cpp`, X, y, j, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info)
 }
 
+#' @title Fast Weighted Log-Binomial Regression (C++)
+#' @description High-performance weighted log-binomial regression fitting using Fisher scoring.
+#' @param X A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param weights A nonnegative numeric vector of observation weights.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
+#' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
+#' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
+#' @return A list containing coefficients and fitted values.
+#' @export
+#' @keywords internal
+fast_log_binomial_regression_weighted_cpp <- function(X, y, weights, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_log_binomial_regression_weighted_cpp`, X, y, weights, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info)
+}
+
 #' @title Fast Identity-Binomial Regression (C++)
 #' @description High-performance binomial regression with identity link using Fisher scoring.
 #' @param X A numeric matrix of predictors.
@@ -717,6 +788,25 @@ fast_identity_binomial_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8
 #' @keywords internal
 fast_identity_binomial_regression_with_var_cpp <- function(X, y, j = 2L, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
     .Call(`_EDI_fast_identity_binomial_regression_with_var_cpp`, X, y, j, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info)
+}
+
+#' @title Fast Weighted Identity-Binomial Regression (C++)
+#' @description High-performance weighted binomial regression with identity link using Fisher scoring.
+#' @param X A numeric matrix of predictors.
+#' @param y A binary numeric vector of responses.
+#' @param weights A nonnegative numeric vector of observation weights.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
+#' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
+#' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
+#' @return A list containing coefficients and fitted values.
+#' @export
+#' @keywords internal
+fast_identity_binomial_regression_weighted_cpp <- function(X, y, weights, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_identity_binomial_regression_weighted_cpp`, X, y, weights, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info)
 }
 
 get_logistic_glmm_score_cpp <- function(X, y, group_id, params, n_gh = 20L) {
@@ -2348,4 +2438,3 @@ compute_zhang_match_data_cpp <- function(X, y, w, m_vec) {
 compute_matching_wy_stats_cpp <- function(w, y, m_vec) {
     .Call(`_EDI_compute_matching_wy_stats_cpp`, w, y, m_vec)
 }
-

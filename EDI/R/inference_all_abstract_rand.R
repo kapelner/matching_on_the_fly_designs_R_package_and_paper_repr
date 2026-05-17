@@ -178,14 +178,9 @@ InferenceRand = R6::R6Class("InferenceRand",
 				# wrongly choose parallel for small r values like r = 19.
 				system.time(do_warmup_iter())  # First call: discarded (cold-start overhead)
 				t_rand_warmup = system.time(do_warmup_iter())[[3]]  # Second call: representative cost
-				# For fork cluster: round-trip per task ~10ms, but first call also pays ~300ms
-				# cluster-creation cost. For mclapply: per-fork cost ~500ms per worker.
-				fork_cl = get_global_fork_cluster()
-				fork_overhead_estimate = if (!is.null(fork_cl)) 0.01 else 0.5
-				cluster_create_overhead = 0.0 # Cluster is global and pre-created
-				# Better logic: if total estimated time is much greater than overhead, use all cores.
-				# We multiply overhead by actual_rand_cores to account for total fork cost.
-				if (t_rand_warmup * r < fork_overhead_estimate * actual_rand_cores * 2.0 + cluster_create_overhead) {
+				# Existing cluster: ~10ms round-trip overhead. No cluster yet: ~300ms lazy creation.
+				fork_overhead_estimate = if (!is.null(get_global_fork_cluster())) 0.01 else 0.3
+				if (t_rand_warmup * r < fork_overhead_estimate * actual_rand_cores * 2.0) {
 					actual_rand_cores = 1L
 				}
 			} else if (actual_rand_cores > 1L && !need_thread_objs) {
@@ -202,8 +197,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 				}
 				system.time(do_warmup_iter_lw())
 				t_lw_warmup = system.time(do_warmup_iter_lw())[[3]]
-				fork_cl = get_global_fork_cluster()
-				fork_overhead_estimate = if (!is.null(fork_cl)) 0.01 else 0.5
+				fork_overhead_estimate = if (!is.null(get_global_fork_cluster())) 0.01 else 0.3
 				if (t_lw_warmup * r < fork_overhead_estimate * actual_rand_cores * 2.0) {
 					actual_rand_cores = 1L
 				}

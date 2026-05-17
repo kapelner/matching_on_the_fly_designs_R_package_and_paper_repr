@@ -4,16 +4,15 @@ if (!requireNamespace("pkgload", quietly = TRUE)) {
 }
 pkgload::load_all("EDI", quiet = TRUE)
 library(EDI)
-library(microbenchmark)
 library(data.table)
 
 set.seed(42)
 
-# Helper to generate data (Very small for speed)
-generate_data = function(n = 200, p = 2, family = "logistic", n_groups = 10) {
+# Helper to generate data
+generate_data = function(n = 500, p = 5, family = "logistic", n_groups = 20) {
     X = matrix(rnorm(n * p), n, p)
     X[, 1] = 1 
-    beta = rnorm(p) * 0.5
+    beta = rnorm(p) * 2.0
     eta = X %*% beta
     group_id = rep(1:n_groups, length.out = n)
     
@@ -66,9 +65,7 @@ get_reasonable_starts = function(data, family_name) {
         p_avg = mean(y)
         mu = rep(p_avg, n)
         w = mu * (1 - mu)
-        mu_init = (y + 0.5) / 2
-        eta_init = qlogis(mu_init)
-        b_ols = fast_ols_cpp(X, eta_init)$coefficients
+        b_ols = fast_ols_cpp(X, qlogis((y + 0.5)/2))$coefficients
         if (family_name == "LogisticGLMM") b_ols = c(b_ols, 0)
         info = t(X) %*% (X * w)
     } else if (family_name == "Poisson (IRLS)" || family_name == "ZAP") {
@@ -135,16 +132,18 @@ run_comprehensive_warm_benchmark = function(family_name, fit_fun, data, alg = NU
         do.call(fit_fun, a)
     }
     
-    bm_res = microbenchmark(
-        Cold   = do.call(fit_fun, args_base),
-        Warm_Flow = fit_warm(),
-        times = 3
-    )
+    # Accurate timing via many replications
+    n_rep = 20
+    t_cold = system.time(replicate(n_rep, do.call(fit_fun, args_base)))["elapsed"] / n_rep * 1000
+    t_warm = system.time(replicate(n_rep, fit_warm()))["elapsed"] / n_rep * 1000
+    
     cat("Done.\n")
-    summ = as.data.table(bm_res)
-    summ = summ[, .(time_ms = mean(time) / 1e6), by = expr]
-    summ[, family := family_name]
-    all_results[[family_name]] <<- summ
+    
+    all_results[[family_name]] <<- data.table(
+        family = family_name,
+        Cold = t_cold,
+        Warm_Flow = t_warm
+    )
 }
 
 families = list(
@@ -166,6 +165,5 @@ for (f in families) {
 
 final_tab = rbindlist(all_results)
 cat("\n\n### END-TO-END WARM START BENEFIT SUMMARY (Heuristic: fast_ols_cpp) ###\n")
-pivoted = dcast(final_tab, family ~ expr, value.var = "time_ms")
-pivoted[, speedup := (Cold - Warm_Flow) / Cold * 100]
-print(pivoted[order(-speedup)])
+final_tab[, speedup := (Cold - Warm_Flow) / Cold * 100]
+print(final_tab[order(-speedup)])

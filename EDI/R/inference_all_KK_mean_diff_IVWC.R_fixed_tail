@@ -1,0 +1,15 @@
+
+					if (!is.finite(ssqD) || ssqD <= 0) {
+						if (is.finite(ssqR) && ssqR > 0) sqrt(ssqR) else NA_real_
+					} else if (!is.finite(ssqR) || ssqR <= 0) {
+						sqrt(ssqD)
+					} else {
+						sqrt(ssqR * ssqD / (ssqR + ssqD))
+					}
+				}
+		}
+	)))
+)
+
+#' @export
+InferenceAllKKCompoundMeanDiff <- InferenceAllKKMeanDiffIVWC

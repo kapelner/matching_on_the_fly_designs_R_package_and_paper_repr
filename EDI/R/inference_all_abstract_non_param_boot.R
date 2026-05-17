@@ -121,7 +121,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 						unlist(res_raw, recursive = FALSE, use.names = FALSE)
 					}
 					# Harden debug_results: remove any NULLs or non-list results that might 
-					# have come from worker crashes in par_lapply/mclapply.
+					# have come from worker crashes in par_lapply.
 					debug_results_surviving = Filter(function(x) is.list(x) && !is.null(x$val), debug_results)
 					if (length(debug_results_surviving) < length(debug_results)) {
 						warning("Some bootstrap iterations (", length(debug_results) - length(debug_results_surviving), ") were lost due to worker crashes or invalid results.")
@@ -160,8 +160,8 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				}
 			# Determine cores — warm-up guard: run one iteration serially to estimate per-iteration
 			# cost, then only parallelize if computation outweighs overhead per worker.
-			# For a persistent fork cluster the per-call overhead is ~10ms (socket round-trip);
-			# for mclapply (per-call fork) it is ~500ms.
+			# For an existing persistent fork cluster the per-call overhead is ~10ms (socket
+			# round-trip); if the cluster doesn't exist yet it will be created lazily (~300ms).
 			# We run the warmup iteration TWICE and use the second timing. The first call often
 			# pays cold-start penalties (C++ JIT, OS page-cache misses, R bytecode compilation)
 			# that can inflate the estimate 5-15x vs steady-state cost, causing the guard to
@@ -186,11 +186,9 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				}
 				system.time(do_warmup_iter())  # First call: discarded (cold-start overhead)
 				t_boot_warmup = system.time(do_warmup_iter())[[3]]  # Second call: representative cost
-				# For fork cluster: round-trip per task ~10ms, but first call also pays ~300ms
-				# cluster-creation cost. For mclapply: per-fork cost ~500ms per worker.
-				fork_overhead_estimate = if (!is.null(get_global_fork_cluster())) 0.01 else 0.5
-				cluster_create_overhead = if (!is.null(get_global_fork_cluster()) && is.null(get_global_fork_cluster())) 0.3 else 0.0
-				if (!(t_boot_warmup * B > fork_overhead_estimate * actual_cores + cluster_create_overhead))
+				# Existing cluster: ~10ms round-trip overhead. No cluster yet: ~300ms lazy creation.
+				fork_overhead_estimate = if (!is.null(get_global_fork_cluster())) 0.01 else 0.3
+				if (!(t_boot_warmup * B > fork_overhead_estimate * actual_cores))
 					actual_cores = 1L
 			}
 			boot_distr = if (isTRUE(private$use_reusable_bootstrap_worker())) {

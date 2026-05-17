@@ -31,10 +31,10 @@ inf$compute_estimate()
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferencePropKKGEE-compute_asymp_two_sided_pval}{\code{InferencePropKKGEE$compute_asymp_two_sided_pval()}}
 \item \href{#method-InferencePropKKGEE-new}{\code{InferencePropKKGEE$new()}}
 \item \href{#method-InferencePropKKGEE-compute_estimate}{\code{InferencePropKKGEE$compute_estimate()}}
 \item \href{#method-InferencePropKKGEE-compute_asymp_confidence_interval}{\code{InferencePropKKGEE$compute_asymp_confidence_interval()}}
+\item \href{#method-InferencePropKKGEE-compute_asymp_two_sided_pval}{\code{InferencePropKKGEE$compute_asymp_two_sided_pval()}}
 \item \href{#method-InferencePropKKGEE-compute_estimate_with_bootstrap_weights}{\code{InferencePropKKGEE$compute_estimate_with_bootstrap_weights()}}
 \item \href{#method-InferencePropKKGEE-approximate_bootstrap_distribution_beta_hat_T}{\code{InferencePropKKGEE$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferencePropKKGEE-clone}{\code{InferencePropKKGEE$clone()}}
@@ -83,15 +83,6 @@ inf$compute_estimate()
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferencePropKKGEE-compute_asymp_two_sided_pval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferencePropKKGEE-compute_asymp_two_sided_pval}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferencePropKKGEE$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropKKGEE-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropKKGEE-new}{}}}
@@ -153,6 +144,23 @@ Computes an approximate confidence interval.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{alpha}}{Confidence level.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferencePropKKGEE-compute_asymp_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferencePropKKGEE-compute_asymp_two_sided_pval}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes an approximate two-sided p-value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferencePropKKGEE$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect value.}
 }
 \if{html}{\out{</div>}}
 }

@@ -14,10 +14,10 @@ Per prior preference, the main tables below leave out `IVWC` paths. A short
 
 ## Current Audit Summary
 
-- In-scope concrete bootstrap-capable classes with real weighted support: `31`
-- In-scope concrete bootstrap-capable classes still unimplemented: `77`
+- In-scope concrete bootstrap-capable classes with real weighted support: `34`
+- In-scope concrete bootstrap-capable classes still unimplemented: `74`
 - Exact/custom out-of-scope classes: `6`
-- Non-IVWC unimplemented classes shown in the main tables below: `64`
+- Non-IVWC unimplemented classes shown in the main tables below: `61`
 - IVWC classes omitted from the main tables: `13`
 
 ## Crosscheck Against The Previous Checklist
@@ -26,7 +26,7 @@ The previous version of this file was stale.
 
 Main discrepancies:
 
-- It said only `3` concrete paths were implemented. The current source has `31`.
+- It said only `3` concrete paths were implemented. The current source has `34`.
 - It marked these currently implemented classes as `Not implemented`:
   `InferenceAllSimpleMeanDiff`,
   `InferenceContinLin`,
@@ -84,10 +84,12 @@ are `IVWC`:
 | `InferenceCountPoissonMultiKKGEE` | Count KK GEE | `InferenceCountPoissonKKGEE` | Inherits weighted KK GEE implementation |
 | `InferenceCountPoissonUnivKKGEE` | Count KK GEE | `InferenceCountPoissonKKGEE` | Inherits weighted KK GEE implementation |
 | `InferenceIncidCMH` | Incidence | `InferenceAllSimpleMeanDiff` | Weighted empirical contrast path |
+| `InferenceIncidBinomialIdentityRiskDiff` | Incidence | `InferenceIncidBinomialIdentityRiskDiff` | Weighted constrained identity-binomial |
 | `InferenceIncidExtendedRobins` | Incidence | `InferenceAllSimpleMeanDiff` | Weighted empirical contrast path |
 | `InferenceIncidGCompRiskDiff` | Incidence g-comp | `InferenceIncidGCompAbstract` | Weighted g-computation |
 | `InferenceIncidGCompRiskRatio` | Incidence g-comp | `InferenceIncidGCompAbstract` | Weighted g-computation |
 | `InferenceIncidKKGEE` | Incidence KK GEE | `InferenceIncidKKGEE` | Native weighted KK GEE |
+| `InferenceIncidLogBinomial` | Incidence | `InferenceIncidLogBinomial` | Weighted constrained log-binomial |
 | `InferenceIncidLogRegr` | Incidence | `InferenceIncidLogRegr` | First-wave weighted logistic |
 | `InferenceIncidModifiedPoisson` | Incidence | `InferenceIncidModifiedPoisson` | First-wave weighted modified Poisson |
 | `InferenceIncidMultiModifiedPoisson` | Incidence | `InferenceIncidModifiedPoisson` | Alias inherits weighted modified Poisson |
@@ -96,6 +98,7 @@ are `IVWC`:
 | `InferenceOrdinalGCompMeanDiff` | Ordinal g-comp | `InferenceOrdinalGCompMeanDiff` | Weighted ordinal g-computation |
 | `InferenceOrdinalKKGEE` | Ordinal KK GEE | `InferenceOrdinalKKGEE` | Weighted ordinal surrogate path |
 | `InferenceOrdinalPropOddsRegr` | Ordinal | `InferenceOrdinalPropOddsRegr` | Weighted proportional odds |
+| `InferencePropFractionalLogit` | Proportion | `InferencePropFractionalLogit` | Weighted fractional logit |
 | `InferencePropGCompMeanDiff` | Proportion g-comp | `InferencePropGCompAbstract` | Weighted g-computation |
 | `InferencePropKKGEE` | Proportion KK GEE | `InferencePropKKGEE` | Native weighted KK GEE |
 | `InferenceSurvivalGehanWilcox` | Survival | `InferenceSurvivalGehanWilcox` | Weighted Peto-Prentice score estimate |
@@ -125,12 +128,9 @@ coverage without adding major new infrastructure.
 | `InferenceCountHurdleNegBin` | Count | Two-part weighted mixture refit needed |
 | `InferenceCountZeroInflatedPoisson` | Count | Zero-inflated weighted refit needed |
 | `InferenceCountZeroInflatedNegBin` | Count | Zero-inflated weighted refit needed |
-| `InferenceIncidBinomialIdentityRiskDiff` | Incidence | Weighted constrained binomial path not yet wired |
-| `InferenceIncidLogBinomial` | Incidence | Weighted constrained log-binomial path not yet wired |
 | `InferenceIncidProbitRegr` | Incidence | No weighted probit backend in current native stack |
 | `InferenceIncidNewcombeRiskDiff` | Incidence | Standalone non-likelihood formula path not yet adapted |
 | `InferenceIncidMiettinenNurminenRiskDiff` | Incidence | Standalone non-likelihood formula path not yet adapted |
-| `InferencePropFractionalLogit` | Proportion | Needs weighted fractional-logit refit |
 | `InferencePropBetaRegr` | Proportion | Needs weighted beta-regression refit |
 | `InferencePropZeroOneInflatedBetaRegr` | Proportion | Mixture-model weighted refit needed |
 
@@ -228,3 +228,128 @@ These are not part of the package’s built-in weighted Bayesian-bootstrap rollo
 - `InferenceCustomAsymp`
 - `InferenceCustomRand`
 - `InferenceCustomBoot`
+
+## Recommended Implementation Order For The Near-Term Block
+
+This is the recommended implementation order for the still-unimplemented
+near-term families, based on backend availability, expected semantic clarity
+under Bayesian-bootstrap weights, and numerical risk.
+
+### 1. `InferencePropBetaRegr`
+
+- Recommended backend:
+  weighted beta-regression fit. If the package already has a native beta
+  backend, add weight support there; otherwise use the current beta fitting
+  helper with explicit observation weights.
+- Why first:
+  still a single-likelihood path, but more numerically delicate than the GLMs
+  above.
+
+### 2. `InferenceCountNegBin`
+
+- Recommended backend:
+  weighted negative-binomial native fitter if available; otherwise extend the
+  current NB likelihood helper to accept observation weights.
+- Why second:
+  straightforward likelihood target, but dispersion handling makes it more
+  involved than Poisson.
+
+### 3. `InferenceCountQuasiPoisson`
+
+- Recommended backend:
+  weighted quasi-Poisson via the existing Poisson fit plus quasi-variance
+  logic, or a weighted GLM fallback if that is how the current class is
+  implemented.
+- Why third:
+  should be easier than full negative binomial once weighted Poisson is already
+  in place.
+
+### 4. `InferenceCountRobustPoisson`
+
+- Recommended backend:
+  weighted Poisson point refit plus the class’s existing robust / sandwich
+  logic if needed for non-`estimate_only` paths.
+- Why fourth:
+  the point estimate is easy, but the variance story is more policy-heavy.
+
+### 5. `InferenceCountHurdlePoisson`
+
+- Recommended backend:
+  weighted two-part refit using weighted logistic for the zero hurdle plus a
+  weighted truncated/count component for positive counts.
+- Why fifth:
+  mixture structure, but still tractable once the underlying weighted GLM
+  pieces are solid.
+
+### 6. `InferenceCountHurdleNegBin`
+
+- Recommended backend:
+  weighted hurdle model with weighted logistic hurdle plus a weighted negative
+  binomial positive-count component.
+- Why sixth:
+  same structure as hurdle Poisson, but harder because of dispersion.
+
+### 7. `InferenceCountZeroInflatedPoisson`
+
+- Recommended backend:
+  weighted zero-inflated Poisson likelihood.
+- Why seventh:
+  harder than hurdle because the latent-zero mixture is less stable under
+  weighting.
+
+### 8. `InferenceCountZeroInflatedNegBin`
+
+- Recommended backend:
+  weighted zero-inflated negative-binomial likelihood.
+- Why eighth:
+  the heaviest count-mixture path in this near-term block.
+
+### 9. `InferenceContinRobustRegr`
+
+- Recommended backend:
+  decide estimator policy first.
+- Preferred implementation:
+  native weighted robust regression if observation-weight support is added to
+  `fast_robust_regression_cpp`; otherwise `MASS::rlm(..., weights = ...)` only
+  as an explicitly temporary implementation.
+- Why later:
+  the estimator meaning under Bayesian-bootstrap weights should be nailed down
+  before implementation.
+
+### 10. `InferenceContinQuantileRegr`
+
+- Recommended backend:
+  weighted quantile regression via `quantreg::rq(..., weights = ...)` or a
+  native weighted quantile-regression path if one is added later.
+- Why last in this block:
+  technically feasible, but more brittle under resampling weights and less
+  aligned with the current native backend stack.
+
+## Suggested Milestones
+
+- Milestone 1:
+  `InferencePropBetaRegr`
+- Milestone 2:
+  `InferenceCountNegBin`,
+  `InferenceCountQuasiPoisson`,
+  `InferenceCountRobustPoisson`
+- Milestone 3:
+  `InferenceCountHurdlePoisson`,
+  `InferenceCountHurdleNegBin`
+- Milestone 4:
+  `InferenceCountZeroInflatedPoisson`,
+  `InferenceCountZeroInflatedNegBin`
+- Milestone 5:
+  `InferenceContinRobustRegr`,
+  `InferenceContinQuantileRegr`
+
+## Backend Selection Rule
+
+- Prefer native backend extension where the class already uses a package-owned
+  optimizer.
+- Use external weighted fits only when the class already depends on that
+  external engine or when the implementation is clearly temporary and
+  documented as such.
+- Keep `estimate_only = TRUE` as the first target for every class, and defer
+  weighted replicate-SE logic unless a Bayesian-bootstrap summary actually
+  needs it.

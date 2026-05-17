@@ -35,6 +35,48 @@ InferencePropFractionalLogit = R6::R6Class("InferencePropFractionalLogit",
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+		},
+		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			X_full = private$build_design_matrix()
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 2L,
+				fit_fun = function(X_fit, keep){
+					res = tryCatch(
+						fast_logistic_regression_weighted_cpp(
+							X = X_fit,
+							y = as.numeric(private$y),
+							weights = as.numeric(row_weights),
+							warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
+						),
+						error = function(e) NULL
+					)
+					if (is.null(res)) return(NULL)
+					list(b = res$b, fisher_information = res$fisher_information, ssq_b_2 = NA_real_)
+				},
+				fit_ok = function(mod, X_fit, keep){
+					!is.null(mod) && length(mod$b) >= 2L && is.finite(mod$b[2L])
+				}
+			)
+			private$cached_mod = attempt$fit
+			if (is.null(attempt$fit) || is.null(attempt$fit$b) || length(attempt$fit$b) < 2L || !is.finite(attempt$fit$b[2L])) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				return(NA_real_)
+			}
+			private$cached_values$beta_hat_T = as.numeric(attempt$fit$b[2L])
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$set_fit_warm_start(
+				as.numeric(attempt$fit$b),
+				"beta",
+				fisher = attempt$fit$fisher_information
+			)
+			private$cached_values$beta_hat_T
 		}
 	),
 	private = list(

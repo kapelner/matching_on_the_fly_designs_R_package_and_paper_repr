@@ -92,12 +92,46 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 		#' @return A numeric vector of bootstrap estimates.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
+		},
+		#' @description Gated off for IVWC.
+		#' @param subject_or_block_weights weights.
+		#' @param estimate_only flag.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param B replicates.
+		#' @param show_progress flag.
+		#' @param debug flag.
+		#' @param weighting_unit_type type.
+		approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param delta null.
+		#' @param B replicates.
+		#' @param type type.
+		#' @param na.rm flag.
+		#' @param show_progress flag.
+		#' @param min_number_usable_samples count.
+		#' @param weighting_unit_type type.
+		compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param alpha level.
+		#' @param B replicates.
+		#' @param type type.
+		#' @param na.rm flag.
+		#' @param show_progress flag.
+		#' @param min_number_usable_samples count.
+		#' @param weighting_unit_type type.
+		compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
 		}
 	)),
 	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
-		supports_likelihood_tests = function() FALSE,
-		max_abs_reasonable_coef = 1e4,
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		extract_term_estimate = function(mod, term_name = "w"){
 			coefs = tryCatch(stats::coef(mod), error = function(e) NULL)
@@ -132,6 +166,10 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			private$clear_nonestimable_state()
 			KKstats = private$cached_values$KKstats
+			if (is.null(KKstats)) {
+				private$compute_basic_match_data()
+				KKstats = private$cached_values$KKstats
+			}
 			m   = KKstats$m
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
@@ -235,10 +273,11 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			private$cached_values$ssq_beta_T_matched = if (!estimate_only && is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef) se^2 else NA_real_
 		},
 		aftsrr_for_reservoir = function(estimate_only = FALSE){
-			y_r    = private$cached_values$KKstats$y_reservoir
-			w_r    = private$cached_values$KKstats$w_reservoir
+			KKstats = private$cached_values$KKstats
+			y_r    = KKstats$y_reservoir
+			w_r    = KKstats$w_reservoir
 			dead_r = private$dead[private$m == 0]
-			X_r    = as.matrix(private$cached_values$KKstats$X_reservoir)
+			X_r    = as.matrix(KKstats$X_reservoir)
 			if (sum(dead_r) < 2) return(invisible(NULL))
 			dat = data.frame(y = y_r, dead = dead_r, w = w_r)
 			formula_str = "survival::Surv(y, dead) ~ w"

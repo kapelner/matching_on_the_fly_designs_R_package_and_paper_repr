@@ -9,7 +9,7 @@
 InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRegrIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractQuantileRandCI,
-	public = list(
+	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize
 		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
 		#'   and response y is recorded within.
@@ -95,9 +95,45 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 				private$shared()
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+		},
+		#' @description Gated off for IVWC.
+		#' @param subject_or_block_weights weights.
+		#' @param estimate_only flag.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param B replicates.
+		#' @param show_progress flag.
+		#' @param debug flag.
+		#' @param weighting_unit_type type.
+		approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param delta null.
+		#' @param B replicates.
+		#' @param type type.
+		#' @param na.rm flag.
+		#' @param show_progress flag.
+		#' @param min_number_usable_samples count.
+		#' @param weighting_unit_type type.
+		compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param alpha level.
+		#' @param B replicates.
+		#' @param type type.
+		#' @param na.rm flag.
+		#' @param show_progress flag.
+		#' @param min_number_usable_samples count.
+		#' @param weighting_unit_type type.
+		compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
 		}
-	),
-	private = list(
+	))),
+	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		tau = NULL,
 		transform_y_fn_list = NULL,  # list(fn = ...) wrapping avoids R6 treating function as a locked method
 		m = NULL,
@@ -383,5 +419,5 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			if (is.null(fit)) return(NA_real_)
 			tryCatch(coef(fit)[["trt__"]], error = function(e) NA_real_)
 		}
-	)
+	)))
 )

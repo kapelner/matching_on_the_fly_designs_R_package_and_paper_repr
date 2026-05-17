@@ -49,6 +49,9 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 			private$prop_acceptable = prop_acceptable
 			private$objective = objective
 			private$uses_covariates = TRUE
+			if (!is.null(n)) {
+				private$m = rep(1L, as.integer(n))
+			}
 		},
 		#' @description Draw multiple treatment assignment vectors.
 		#'

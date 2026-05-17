@@ -108,13 +108,13 @@ InferenceCountLikelihood = R6::R6Class("InferenceCountLikelihood",
 			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "lik_ratio")
 		},
 		compute_score_confidence_interval_impl = function(alpha){
-			private$invert_test_pval_confidence_interval(alpha, testing_type = "score")
+			private$invert_test_pval_confidence_interval(alpha)
 		},
 		compute_gradient_confidence_interval_impl = function(alpha){
-			private$invert_test_pval_confidence_interval(alpha, testing_type = "gradient")
+			private$invert_test_pval_confidence_interval(alpha)
 		},
 		compute_lik_ratio_confidence_interval_impl = function(alpha){
-			private$invert_test_pval_confidence_interval(alpha, testing_type = "lik_ratio")
+			private$invert_test_pval_confidence_interval(alpha)
 		}
 	)
 )

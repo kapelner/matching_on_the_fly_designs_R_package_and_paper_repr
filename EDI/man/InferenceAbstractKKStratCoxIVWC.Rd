@@ -27,6 +27,10 @@ rejected and treated as non-estimable.
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceAbstractKKStratCoxIVWC-compute_estimate_with_bootstrap_weights}{\code{InferenceAbstractKKStratCoxIVWC$compute_estimate_with_bootstrap_weights()}}
+\item \href{#method-InferenceAbstractKKStratCoxIVWC-approximate_bayesian_bootstrap_distribution_beta_hat_T}{\code{InferenceAbstractKKStratCoxIVWC$approximate_bayesian_bootstrap_distribution_beta_hat_T()}}
+\item \href{#method-InferenceAbstractKKStratCoxIVWC-compute_bayesian_bootstrap_two_sided_pval}{\code{InferenceAbstractKKStratCoxIVWC$compute_bayesian_bootstrap_two_sided_pval()}}
+\item \href{#method-InferenceAbstractKKStratCoxIVWC-compute_bayesian_bootstrap_confidence_interval}{\code{InferenceAbstractKKStratCoxIVWC$compute_bayesian_bootstrap_confidence_interval()}}
 \item \href{#method-InferenceAbstractKKStratCoxIVWC-new}{\code{InferenceAbstractKKStratCoxIVWC$new()}}
 \item \href{#method-InferenceAbstractKKStratCoxIVWC-compute_estimate}{\code{InferenceAbstractKKStratCoxIVWC$compute_estimate()}}
 \item \href{#method-InferenceAbstractKKStratCoxIVWC-compute_asymp_confidence_interval}{\code{InferenceAbstractKKStratCoxIVWC$compute_asymp_confidence_interval()}}
@@ -59,10 +63,6 @@ rejected and treated as non-estimable.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>EDI::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_estimate_with_bootstrap_weights"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_estimate_with_bootstrap_weights'><code>EDI::InferenceBayesianBootstrap$compute_estimate_with_bootstrap_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="approximate_jackknife_distribution_beta_hat_T"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>EDI::InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_bias_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>EDI::InferenceJackknife$compute_jackknife_bias_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_corrected_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_corrected_estimate'><code>EDI::InferenceJackknife$compute_jackknife_corrected_estimate()</code></a></span></li>
@@ -91,6 +91,66 @@ rejected and treated as non-estimable.
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKStratCoxIVWC-compute_estimate_with_bootstrap_weights"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKStratCoxIVWC-compute_estimate_with_bootstrap_weights}{}}}
+\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKStratCoxIVWC$compute_estimate_with_bootstrap_weights(
+  subject_or_block_weights,
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKStratCoxIVWC-approximate_bayesian_bootstrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKStratCoxIVWC-approximate_bayesian_bootstrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_bayesian_bootstrap_distribution_beta_hat_T()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKStratCoxIVWC$approximate_bayesian_bootstrap_distribution_beta_hat_T(
+  B = 501,
+  show_progress = TRUE,
+  debug = FALSE,
+  weighting_unit_type = NULL
+)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKStratCoxIVWC-compute_bayesian_bootstrap_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKStratCoxIVWC-compute_bayesian_bootstrap_two_sided_pval}{}}}
+\subsection{Method \code{compute_bayesian_bootstrap_two_sided_pval()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKStratCoxIVWC$compute_bayesian_bootstrap_two_sided_pval(
+  delta = 0,
+  B = 501,
+  type = NULL,
+  na.rm = FALSE,
+  show_progress = TRUE,
+  min_number_usable_samples = 5L,
+  weighting_unit_type = NULL
+)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKStratCoxIVWC-compute_bayesian_bootstrap_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKStratCoxIVWC-compute_bayesian_bootstrap_confidence_interval}{}}}
+\subsection{Method \code{compute_bayesian_bootstrap_confidence_interval()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKStratCoxIVWC$compute_bayesian_bootstrap_confidence_interval(
+  alpha = 0.05,
+  B = 501,
+  type = NULL,
+  na.rm = TRUE,
+  show_progress = TRUE,
+  min_number_usable_samples = 5L,
+  weighting_unit_type = NULL
+)}\if{html}{\out{</div>}}
+}
+
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKStratCoxIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKStratCoxIVWC-new}{}}}

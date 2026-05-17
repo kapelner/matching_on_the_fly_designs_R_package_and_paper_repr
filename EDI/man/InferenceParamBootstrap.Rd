@@ -104,7 +104,8 @@ returns the empirical tail probability of the observed LR statistic.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceParamBootstrap$compute_lik_ratio_bootstrap_two_sided_pval(
   delta = 0,
-  B = 199
+  B = 199,
+  show_progress = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -114,6 +115,8 @@ returns the empirical tail probability of the observed LR statistic.
 \item{\code{delta}}{Null treatment effect. Default 0.}
 
 \item{\code{B}}{Number of bootstrap replicates. Default 199.}
+
+\item{\code{show_progress}}{Logical; show a progress bar. Default \code{FALSE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -134,7 +137,8 @@ substantially more expensive than the p-value alone.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceParamBootstrap$compute_lik_ratio_bootstrap_confidence_interval(
   alpha = 0.05,
-  B = 199
+  B = 199,
+  show_progress = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -144,6 +148,8 @@ substantially more expensive than the p-value alone.
 \item{\code{alpha}}{Significance level. Default 0.05.}
 
 \item{\code{B}}{Bootstrap replicates per p-value evaluation. Default 199.}
+
+\item{\code{show_progress}}{Logical; show a progress bar. Default \code{FALSE}.}
 }
 \if{html}{\out{</div>}}
 }

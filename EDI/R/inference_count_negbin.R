@@ -61,7 +61,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 			res = tryCatch(
 				fast_neg_bin_cpp(
 					X = X, y = as.integer(private$y),
-					start_params = ws_args$start_params,
+					warm_start_params = ws_args$start_params,
 					warm_start_fisher_info = ws_args$warm_start_fisher_info,
 					smart_cold_start = private$smart_cold_start_default,
 					optimization_alg = private$optimization_alg
@@ -139,7 +139,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 					res = tryCatch(
 						fast_neg_bin_cpp(
 							X = X_fit, y = y,
-							start_params = start %||% ws_args$start_params,
+							warm_start_params = start %||% ws_args$start_params,
 							warm_start_fisher_info = ws_args$warm_start_fisher_info,
 							fixed_idx = j_treat, fixed_values = delta,
 							smart_cold_start = private$smart_cold_start_default,
@@ -189,7 +189,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 						res = tryCatch(
 							fast_neg_bin_cpp(
 								X = X_fit, y = as.integer(private$y),
-								start_params = ws_args$start_params,
+								warm_start_params = ws_args$start_params,
 								warm_start_fisher_info = ws_args$warm_start_fisher_info,
 								smart_cold_start = private$smart_cold_start_default,
 								optimization_alg = private$optimization_alg
@@ -204,7 +204,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 						res = tryCatch(
 							fast_neg_bin_with_var_cpp(
 								X = X_fit, y = as.integer(private$y),
-								start_params = ws_args$start_params,
+								warm_start_params = ws_args$start_params,
 								warm_start_fisher_info = ws_args$warm_start_fisher_info,
 								smart_cold_start = private$smart_cold_start_default,
 								optimization_alg = private$optimization_alg

@@ -27,7 +27,7 @@
 InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
-	public = list(
+	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#'
 		#' @description Computes the IVWC mean-difference estimate across pairs and reservoir
 		#'
@@ -122,9 +122,45 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 				}
 			}
 			super$compute_rand_confidence_interval(alpha = alpha, r = r, pval_epsilon = pval_epsilon, show_progress = show_progress, ci_search_control = ci_search_control)
+		},
+		#' @description Gated off for IVWC.
+		#' @param subject_or_block_weights weights.
+		#' @param estimate_only flag.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param B replicates.
+		#' @param show_progress flag.
+		#' @param debug flag.
+		#' @param weighting_unit_type type.
+		approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param delta null.
+		#' @param B replicates.
+		#' @param type type.
+		#' @param na.rm flag.
+		#' @param show_progress flag.
+		#' @param min_number_usable_samples count.
+		#' @param weighting_unit_type type.
+		compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param alpha level.
+		#' @param B replicates.
+		#' @param type type.
+		#' @param na.rm flag.
+		#' @param show_progress flag.
+		#' @param min_number_usable_samples count.
+		#' @param weighting_unit_type type.
+		compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
 		}
-	),
-	private = list(
+	))),
+	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_fast_bootstrap_distr = function(B, i_reservoir, n_reservoir, m, y, w, m_vec) {
 			# Only safe for simple additive/linear combinations right now.
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
@@ -226,8 +262,8 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 					}
 				}
 		}
-	)
+	)))
 )
 
 #' @export
-InferenceAllKKCompoundMeanDiff = InferenceAllKKMeanDiffIVWC
+InferenceAllKKCompoundMeanDiff <- InferenceAllKKMeanDiffIVWC

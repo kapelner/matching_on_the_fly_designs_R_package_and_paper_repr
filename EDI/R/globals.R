@@ -1,5 +1,8 @@
 # Internal environment for the EDI package to store global state
 edi_env = new.env(parent = emptyenv())
+
+`%||%` <- function(a, b) if (!is.null(a)) a else b
+
 # Closure to encapsulate the internal assertion override flag (used by SimulationFramework)
 .assert_manager = (function() {
   internal_run_asserts = TRUE
@@ -36,6 +39,32 @@ toggle_asserts = function(on = TRUE) {
 }
 # private method
 should_run_asserts = .assert_manager$should_run
+
+stop_bayesian_bootstrap_for_ivwc = function(self_obj = NULL) {
+  cls = if (is.null(self_obj)) "This IVWC class" else class(self_obj)[1]
+  stop(
+    cls,
+    " does not support Bayesian bootstrap functionality. IVWC inference paths are explicitly gated off."
+  )
+}
+
+make_ivwc_bayesian_bootstrap_public_overrides = function() {
+  list(
+    compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
+      stop_bayesian_bootstrap_for_ivwc(self)
+    },
+    approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL) {
+      stop_bayesian_bootstrap_for_ivwc(self)
+    },
+    compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+      stop_bayesian_bootstrap_for_ivwc(self)
+    },
+    compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+      stop_bayesian_bootstrap_for_ivwc(self)
+    }
+  )
+}
+
 # Creates a fork cluster and caps OMP/BLAS threads on each worker to 1.
 # Returns the cluster without storing it — callers decide where it lives.
 make_configured_fork_cluster = function(n_cores) {

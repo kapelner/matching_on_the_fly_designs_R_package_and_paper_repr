@@ -9,7 +9,7 @@
 InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCopulaIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
+	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -71,9 +71,45 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 		duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){
 			inf_obj = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
 			inf_obj
+		},
+		#' @description Gated off for IVWC.
+		#' @param subject_or_block_weights weights.
+		#' @param estimate_only flag.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param B replicates.
+		#' @param show_progress flag.
+		#' @param debug flag.
+		#' @param weighting_unit_type type.
+		approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param delta null.
+		#' @param B replicates.
+		#' @param type type.
+		#' @param na.rm flag.
+		#' @param show_progress flag.
+		#' @param min_number_usable_samples count.
+		#' @param weighting_unit_type type.
+		compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param alpha level.
+		#' @param B replicates.
+		#' @param type type.
+		#' @param na.rm flag.
+		#' @param show_progress flag.
+		#' @param min_number_usable_samples count.
+		#' @param weighting_unit_type type.
+		compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
 		}
-	)),
-	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+	))),
+	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		supports_likelihood_tests = function() FALSE,
 		max_abs_reasonable_coef = 1e4,
@@ -275,20 +311,15 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 				}
 			}
 		}
-	))
+	)))
 )
 #' Abstract class for Clayton Copula Combined-Likelihood Inference
-#'
-#' This class implements a combined-likelihood estimator for KK matching-on-the-fly
-#' designs with survival responses using a Clayton copula with Weibull AFT margins.
-#' The likelihood includes contributions from both matched pairs (bivariate) and
-#' reservoir subjects (univariate).
 #'
 #' @keywords internal
 InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClaytonCopulaOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
+	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -345,8 +376,8 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 			inf_obj = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
 			inf_obj
 		}
-	)),
-	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+	))),
+	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		best_X_colnames = NULL,
 		best_par = NULL,
@@ -540,54 +571,25 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 			private$cached_values$beta_hat_T = NA_real_
 			private$cached_values$s_beta_hat_T = NA_real_
 		}
-	))
+	)))
 )
+
 #' Clayton Copula IVWC Compound Inference for KK Designs
 #'
-#' Fits a compound estimator for KK matching-on-the-fly designs with survival responses
-#' using a Clayton copula with Weibull AFT margins for matched pairs and standard
-#' Weibull AFT regression for reservoir subjects.
-#'
-#' @examples
-#' \dontrun{
-#' \donttest{
-#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'survival')
-#' for (i in 1:10) {
-#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
-#' }
-#' seq_des$add_all_subject_responses(runif(10))
-#' inf = InferenceSurvivalKKClaytonCopulaOneLik$new(seq_des)
-#' inf$compute_estimate()
-#' }
-#' }
 #' @export
 InferenceSurvivalKKClaytonCopulaIVWC = R6::R6Class("InferenceSurvivalKKClaytonCopulaIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKClaytonCopulaIVWC,
-	public = list(
-	)
+	public = list()
 )
 InferenceIncidKKClaytonCopulaIVWC = InferenceSurvivalKKClaytonCopulaIVWC
+
 #' Clayton Copula Combined-Likelihood Inference for KK Designs
 #'
-#' Fits a joint copula-based likelihood for KK matching-on-the-fly designs with
-#' survival responses using a Clayton copula with Weibull AFT margins.
-#'
-#' @examples
-#' \donttest{
-#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'survival')
-#' for (i in 1:10) {
-#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
-#' }
-#' seq_des$add_all_subject_responses(runif(10))
-#' inf = InferenceSurvivalKKClaytonCopulaOneLik$new(seq_des)
-#' inf$compute_estimate()
-#' }
 #' @export
 InferenceSurvivalKKClaytonCopulaOneLik = R6::R6Class("InferenceSurvivalKKClaytonCopulaOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKClaytonCopulaOneLik,
-	public = list(
-	)
+	public = list()
 )
 InferenceIncidKKClaytonCopulaOneLik = InferenceSurvivalKKClaytonCopulaOneLik

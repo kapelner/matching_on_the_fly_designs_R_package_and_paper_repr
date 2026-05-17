@@ -32,20 +32,27 @@ setup_benchmark_des = function(n = 150, p = 5, family = "logistic") {
 run_full_resampling_benchmark = function(name, des, inf_class) {
     cat(sprintf("\n--- %s Resampling Benchmarks ---\n", name))
     
-    # 1. Randomization (100 perms)
+    # 1. Randomization (20 perms)
     inf_cold = inf_class$new(des, smart_cold_start_default = FALSE)
-    tm_rand_cold = system.time(inf_cold$approximate_randomization_distribution_beta_hat_T(r = 100, show_progress = FALSE))["elapsed"]
+    tm_rand_cold = system.time(inf_cold$approximate_randomization_distribution_beta_hat_T(r = 20, show_progress = FALSE))["elapsed"]
     
     inf_warm = inf_class$new(des, smart_cold_start_default = TRUE)
-    tm_rand_warm = system.time(inf_warm$approximate_randomization_distribution_beta_hat_T(r = 100, show_progress = FALSE))["elapsed"]
+    tm_rand_warm = system.time(inf_warm$approximate_randomization_distribution_beta_hat_T(r = 20, show_progress = FALSE))["elapsed"]
     
     # 2. Jackknife
-    tm_jk_cold = system.time(inf_cold$compute_jackknife_standard_error())["elapsed"]
-    tm_jk_warm = system.time(inf_warm$compute_jackknife_standard_error())["elapsed"]
+    # For Jackknife, we use a smaller n subset to keep it fast
+    n_jk = 40
+    des_jk = setup_benchmark_des(n = n_jk, p = ncol(des$get_X()), family = if(name == "Logistic (Medium)") "logistic" else "negbin")
     
-    # 3. Non-parametric Bootstrap (100 draws)
-    tm_boot_cold = system.time(inf_cold$approximate_bootstrap_distribution_beta_hat_T(B = 100, show_progress = FALSE))["elapsed"]
-    tm_boot_warm = system.time(inf_warm$approximate_bootstrap_distribution_beta_hat_T(B = 100, show_progress = FALSE))["elapsed"]
+    inf_jk_cold = inf_class$new(des_jk, smart_cold_start_default = FALSE)
+    tm_jk_cold = system.time(inf_jk_cold$compute_jackknife_standard_error())["elapsed"]
+    
+    inf_jk_warm = inf_class$new(des_jk, smart_cold_start_default = TRUE)
+    tm_jk_warm = system.time(inf_jk_warm$compute_jackknife_standard_error())["elapsed"]
+    
+    # 3. Non-parametric Bootstrap (20 draws)
+    tm_boot_cold = system.time(inf_cold$approximate_bootstrap_distribution_beta_hat_T(B = 20, show_progress = FALSE))["elapsed"]
+    tm_boot_warm = system.time(inf_warm$approximate_bootstrap_distribution_beta_hat_T(B = 20, show_progress = FALSE))["elapsed"]
     
     # 4. CI Inversion (Likelihood Ratio)
     inf_cold$set_testing_type("lik_ratio")
@@ -54,13 +61,12 @@ run_full_resampling_benchmark = function(name, des, inf_class) {
     inf_warm$set_testing_type("lik_ratio")
     tm_ci_warm = system.time(inf_warm$compute_asymp_confidence_interval())["elapsed"]
     
-    # 5. Parametric Bootstrap (LRT calibration, 20 draws)
-    # We use a smaller B because parametric boot is expensive
-    tm_pboot_cold = system.time(inf_cold$compute_bootstrapped_lik_ratio_test_pval(B = 20, show_progress = FALSE))["elapsed"]
-    tm_pboot_warm = system.time(inf_warm$compute_bootstrapped_lik_ratio_test_pval(B = 20, show_progress = FALSE))["elapsed"]
+    # 5. Parametric Bootstrap (LRT calibration, 5 draws)
+    tm_pboot_cold = system.time(inf_cold$compute_lik_ratio_bootstrap_two_sided_pval(B = 5, show_progress = FALSE))["elapsed"]
+    tm_pboot_warm = system.time(inf_warm$compute_lik_ratio_bootstrap_two_sided_pval(B = 5, show_progress = FALSE))["elapsed"]
     
     res = data.frame(
-        Procedure = c("Randomization (100)", "Jackknife (N)", "NP-Bootstrap (100)", "CI Inversion (LR)", "Param-Bootstrap (20)"),
+        Procedure = c("Randomization (20)", "Jackknife (40)", "NP-Bootstrap (20)", "CI Inversion (LR)", "Param-Bootstrap (5)"),
         Cold_sec = as.numeric(c(tm_rand_cold, tm_jk_cold, tm_boot_cold, tm_ci_cold, tm_pboot_cold)),
         Warm_sec = as.numeric(c(tm_rand_warm, tm_jk_warm, tm_boot_warm, tm_ci_warm, tm_pboot_warm))
     )

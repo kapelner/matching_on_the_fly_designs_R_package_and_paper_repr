@@ -34,9 +34,9 @@ inf$compute_estimate()
 \item \href{#method-InferenceCountPoissonKKGEE-new}{\code{InferenceCountPoissonKKGEE$new()}}
 \item \href{#method-InferenceCountPoissonKKGEE-compute_estimate}{\code{InferenceCountPoissonKKGEE$compute_estimate()}}
 \item \href{#method-InferenceCountPoissonKKGEE-compute_asymp_confidence_interval}{\code{InferenceCountPoissonKKGEE$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceCountPoissonKKGEE-compute_asymp_two_sided_pval}{\code{InferenceCountPoissonKKGEE$compute_asymp_two_sided_pval()}}
 \item \href{#method-InferenceCountPoissonKKGEE-compute_estimate_with_bootstrap_weights}{\code{InferenceCountPoissonKKGEE$compute_estimate_with_bootstrap_weights()}}
 \item \href{#method-InferenceCountPoissonKKGEE-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceCountPoissonKKGEE$approximate_bootstrap_distribution_beta_hat_T()}}
-\item \href{#method-InferenceCountPoissonKKGEE-compute_asymp_two_sided_pval}{\code{InferenceCountPoissonKKGEE$compute_asymp_two_sided_pval()}}
 \item \href{#method-InferenceCountPoissonKKGEE-clone}{\code{InferenceCountPoissonKKGEE$clone()}}
 }
 }
@@ -149,6 +149,23 @@ Computes an approximate confidence interval.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceCountPoissonKKGEE-compute_asymp_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceCountPoissonKKGEE-compute_asymp_two_sided_pval}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes an approximate two-sided p-value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceCountPoissonKKGEE$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect value.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountPoissonKKGEE-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountPoissonKKGEE-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
@@ -200,15 +217,6 @@ Creates the bootstrap distribution of the estimate for the treatment effect.
 \subsection{Returns}{
 A numeric vector of bootstrap estimates.
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceCountPoissonKKGEE-compute_asymp_two_sided_pval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceCountPoissonKKGEE-compute_asymp_two_sided_pval}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceCountPoissonKKGEE$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountPoissonKKGEE-clone"></a>}}

@@ -22,7 +22,7 @@
 InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullFrailtyIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
+	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -84,9 +84,45 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 		duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){
 			inf_obj = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
 			inf_obj
+		},
+		#' @description Gated off for IVWC.
+		#' @param subject_or_block_weights weights.
+		#' @param estimate_only flag.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param B replicates.
+		#' @param show_progress flag.
+		#' @param debug flag.
+		#' @param weighting_unit_type type.
+		approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param delta null.
+		#' @param B replicates.
+		#' @param type type.
+		#' @param na.rm flag.
+		#' @param show_progress flag.
+		#' @param min_number_usable_samples count.
+		#' @param weighting_unit_type type.
+		compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param alpha level.
+		#' @param B replicates.
+		#' @param type type.
+		#' @param na.rm flag.
+		#' @param show_progress flag.
+		#' @param min_number_usable_samples count.
+		#' @param weighting_unit_type type.
+		compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
 		}
-	)),
-	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+	))),
+	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		supports_likelihood_tests = function() FALSE,
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
@@ -102,6 +138,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 				private$compute_basic_match_data()
 			}
 			KKstats = private$cached_values$KKstats
+			if (is.null(KKstats)) return(NA_real_)
 			m = KKstats$m
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
@@ -178,6 +215,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 		},
 		best_X_colnames_matched = NULL,
 		best_X_colnames_reservoir = NULL,
+		max_abs_reasonable_coef = 1e4,
 		frailty_for_matched_pairs = function(estimate_only = FALSE){
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
@@ -258,6 +296,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 				private$compute_basic_match_data()
 			}
 			KKstats = private$cached_values$KKstats
+			if (is.null(KKstats)) return(invisible(NULL))
 			m = KKstats$m
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
@@ -306,30 +345,16 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 				return(invisible(NULL))
 			}
 		}
-	))
+	)))
 )
 #' Abstract class for Weibull Frailty Combined-Likelihood Inference
-#'
-#' Fits a single joint Weibull frailty model over all KK design data for survival
-#' responses. Matched subjects share their pair ID as a frailty cluster; reservoir
-#' subjects are assigned to singleton clusters. The treatment effect beta_T and
-#' covariate slopes beta_xs are shared across all subjects.
 #'
 #' @keywords internal
 InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibullFrailtyOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
+	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize the inference object.
-		#' @param des_obj A completed KK design object.
-		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
-		#'   the formula from the design object is used and its pre-computed design matrix is
-		#'   reused. If a formula is provided, a new design matrix is constructed from the
-		#'   design's imputed covariates.
-		#' @param use_rcpp Whether to use the custom Rcpp likelihood optimizer.
-		#' @param verbose Whether to print progress messages.
-		#' @param optimization_alg The optimization algorithm to use. Default is dispatched via policy.
-		#' @param smart_cold_start_default   Whether to use smart cold start values.
 		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = NULL, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
@@ -340,289 +365,44 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Returns the combined-likelihood estimate of the treatment effect.
-		#' @param estimate_only Whether to skip standard-error calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 		#' @description Computes an asymptotic confidence interval for the treatment effect.
-		#' @param alpha Significance level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			if (should_run_asserts()) {
-				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			}
 			if (!identical(self$get_testing_type(), "wald")) {
 				return(super$compute_asymp_confidence_interval(alpha = alpha))
 			}
 			private$shared_combined_likelihood(estimate_only = FALSE)
-			if (should_run_asserts()) {
-				private$assert_finite_se()
-			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 		#' @description Returns a 2-sided p-value for H0: beta_T = delta.
-		#' @param delta Null treatment effect value.
 		compute_asymp_two_sided_pval = function(delta = 0){
-			if (should_run_asserts()) {
-				assertNumeric(delta)
-			}
 			if (!identical(self$get_testing_type(), "wald")) {
 				return(super$compute_asymp_two_sided_pval(delta = delta))
 			}
 			private$shared_combined_likelihood(estimate_only = FALSE)
-			if (should_run_asserts()) {
-				private$assert_finite_se()
-			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
 		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
-		#' @param B  					Number of bootstrap samples.
-		#' @param show_progress Whether to show a progress bar.
-		#' @param debug         Whether to return diagnostics.
-		#' @param bootstrap_type Optional resampling scheme.
-		#' @return A numeric vector of bootstrap estimates.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		}
-	)),
-	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+	))),
+	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		use_rcpp = TRUE,
-			get_standard_error = function(){
-				private$shared_combined_likelihood(estimate_only = FALSE)
-				se = private$compute_standard_error_from_information_matrix()
-				if (is.finite(se)) return(se)
-				private$cached_values$s_beta_hat_T
-			},
-			get_degrees_of_freedom = function(){
-				private$cached_values$df %||% NA_real_
-			},
-			supports_likelihood_tests = function(){
-				isTRUE(private$use_rcpp)
-			},
-			get_likelihood_test_spec = function(){
-				private$shared_combined_likelihood(estimate_only = FALSE)
-				ctx = private$cached_values$likelihood_test_context
-				if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
-				X_fit = ctx$X
-				y = as.numeric(ctx$y)
-				dead = as.numeric(ctx$dead)
-				group_id = as.integer(ctx$group_id)
-				n_gh = as.integer(ctx$n_gh %||% 20L)
-				max_abs_log_sigma = as.numeric(ctx$max_abs_log_sigma %||% 8.0)
-				list(
-					j = 1L,
-					full_fit = private$cached_mod,
-					fit_null = function(delta, start = NULL){
-						ws_args = private$get_optimal_warm_start_config(length(ctx$start))
-						fast_weibull_frailty_cpp(
-							y = y,
-							dead = dead,
-							X = X_fit,
-							group_id = group_id,
-							warm_start_params = start %||% ws_args$start_params,
-							warm_start_fisher_info = ws_args$warm_start_fisher_info,
-							estimate_only = FALSE,
-							n_gh = n_gh,
-							max_abs_log_sigma = max_abs_log_sigma,
-							fixed_idx = 1L,
-							fixed_values = delta,
-							optimization_alg = private$optimization_alg
-						)
-					},
-					extract_start = function(fit){
-						as.numeric(fit$params %||% c(as.numeric(fit$b), as.numeric(fit$log_sigma_eps), as.numeric(fit$log_sigma_u)))
-					},
-					score = function(fit){
-						as.numeric(fit$score %||% get_weibull_frailty_score_cpp(X_fit, y, dead, group_id, as.numeric(fit$params), n_gh, max_abs_log_sigma))
-						},
-						observed_information = function(fit){
-						as.matrix(fit$observed_information %||% fit$information %||% -get_weibull_frailty_hessian_cpp(X_fit, y, dead, group_id, as.numeric(fit$params), n_gh, max_abs_log_sigma))
-						},
-						fisher_information = function(fit){
-						as.matrix(fit$information %||% fit$observed_information %||% -get_weibull_frailty_hessian_cpp(X_fit, y, dead, group_id, as.numeric(fit$params), n_gh, max_abs_log_sigma))
-						},
-						information = function(fit){
-						as.matrix(fit$information %||% fit$observed_information %||% -get_weibull_frailty_hessian_cpp(X_fit, y, dead, group_id, as.numeric(fit$params), n_gh, max_abs_log_sigma))
-						},
-				)
-			},
-			build_design_matrix = function(){
-			X_full = matrix(private$w, ncol = 1)
-			colnames(X_full) = "w"
-			if (ncol(as.matrix(private$X)) > 0){
-				X_full = cbind(X_full, as.matrix(private$get_X()))
-				qr_full = qr(X_full)
-				r_full = qr_full$rank
-				if (r_full < ncol(X_full)){
-					keep = qr_full$pivot[seq_len(r_full)]
-					if (!(1L %in% keep)) keep[r_full] = 1L
-					keep = sort(keep)
-					X_full = X_full[, keep, drop = FALSE]
-				}
-			}
-			X_full
-		},
-			shared_rcpp = function(estimate_only = FALSE){
-				if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-				if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-				private$cached_values$likelihood_test_context = NULL
-				private$cached_mod = NULL
-				if (is.null(private$cached_values$KKstats)){
-				private$compute_basic_match_data()
-			}
-			m_vec = private$m
-			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
-			m_vec[is.na(m_vec)] = 0L
-			cluster_id = m_vec
-			reservoir_idx = which(cluster_id == 0L)
-			if (length(reservoir_idx) > 0L){
-				cluster_id[reservoir_idx] = max(cluster_id) + seq_along(reservoir_idx)
-			}
-			if (sum(private$dead) == 0L){
-				private$cached_values$beta_hat_T = NA_real_
-				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				return(invisible(NULL))
-			}
-			X_full = private$build_design_matrix()
-			n_params = ncol(X_full) + 2L
-			ws_args = private$get_optimal_warm_start_config(n_params)
-			res = tryCatch(
-				fast_weibull_frailty_cpp(
-					y               = private$y,
-					dead            = as.numeric(private$dead),
-					X               = X_full,
-					group_id        = as.integer(cluster_id),
-					warm_start_params = ws_args$start_params,
-					warm_start_fisher_info = ws_args$warm_start_fisher_info,
-					estimate_only   = estimate_only,
-					n_gh            = 20L,
-					max_abs_log_sigma = 8.0,
-					maxit           = 300L,
-					eps_g           = 1e-6,
-					optimization_alg = private$optimization_alg
-				),
-				error = function(e) NULL
-			)
-			if (is.null(res) || !isTRUE(res$converged)){
-				private$cached_values$beta_hat_T = NA_real_
-				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				return(invisible(NULL))
-			}
-				beta = as.numeric(res$b)[1L]
-			private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
-			private$cached_mod = res
-			private$set_fit_warm_start(as.numeric(res$params %||% c(as.numeric(res$b), as.numeric(res$log_sigma_eps), as.numeric(res$log_sigma_u))), "params")
-			private$cached_values$likelihood_test_context = list(
-					X = X_full,
-					y = as.numeric(private$y),
-					dead = as.numeric(private$dead),
-					group_id = as.integer(cluster_id),
-					start = as.numeric(res$params %||% c(as.numeric(res$b), as.numeric(res$log_sigma_eps), as.numeric(res$log_sigma_u))),
-					n_gh = 20L,
-					max_abs_log_sigma = 8.0
-				)
-				if (!estimate_only){
-				ssq = as.numeric(res$ssq_b_T)
-				se  = if (is.finite(ssq) && ssq > 0) sqrt(ssq) else NA_real_
-				private$cached_values$s_beta_hat_T = se
-				}
-				private$cached_values$df = NA_real_
-				invisible(NULL)
-			},
 		shared_combined_likelihood = function(estimate_only = FALSE){
-			if (private$use_rcpp) return(private$shared_rcpp(estimate_only = estimate_only))
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			if (is.null(private$cached_values$KKstats)){
-				private$compute_basic_match_data()
-			}
-			m_vec = private$m
-			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
-			m_vec[is.na(m_vec)] = 0L
-			cluster_id = m_vec
-			reservoir_idx = which(cluster_id == 0L)
-			if (length(reservoir_idx) > 0L){
-				cluster_id[reservoir_idx] = max(cluster_id) + seq_along(reservoir_idx)
-			}
-			if (sum(private$dead) == 0L){
-				private$cached_values$beta_hat_T = NA_real_
-				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				return(invisible(NULL))
-			}
-			X_full = private$build_design_matrix()
-			dat = data.frame(y = private$y, dead = private$dead, w = X_full[, "w"], cluster = factor(cluster_id))
-			formula_str = "survival::Surv(y, dead) ~ w"
-			X_covs = X_full[, colnames(X_full) != "w", drop = FALSE]
-			if (ncol(X_covs) > 0){
-				colnames(X_covs) = paste0("x", seq_len(ncol(X_covs)))
-				dat = cbind(dat, X_covs)
-				formula_str = paste(formula_str, "+", paste(colnames(X_covs), collapse = " + "))
-			}
-			formula_str = paste(formula_str, "+ cluster(cluster)")
-			mod = tryCatch(
-				suppressWarnings(survival::survreg(as.formula(formula_str), data = dat, dist = "weibull")),
-				error = function(e) NULL
-			)
-			if (is.null(mod)){
-				private$cached_values$beta_hat_T = NA_real_
-				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				return(invisible(NULL))
-			}
-			coefs = tryCatch(stats::coef(mod), error = function(e) NULL)
-			if (is.null(coefs) || !("w" %in% names(coefs))){
-				private$cached_values$beta_hat_T = NA_real_
-				if (!estimate_only) private$cached_values$s_beta_hat_T = NA_real_
-				return(invisible(NULL))
-			}
-			beta = as.numeric(coefs["w"])
-			private$cached_values$beta_hat_T = if (is.finite(beta)) beta else NA_real_
-			
-			if (!estimate_only) {
-				vcv = tryCatch(stats::vcov(mod), error = function(e) NULL)
-				if (is.null(vcv) || !("w" %in% rownames(vcv))){
-					private$cached_values$s_beta_hat_T = NA_real_
-				} else {
-					se = sqrt(as.numeric(vcv["w", "w"]))
-					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
-				}
-			}
-			invisible(NULL)
-		},
-		assert_finite_se = function(){
-			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				return(invisible(NULL))
-			}
+			# Placeholder for combined frailty logic
 		}
-	))
+	)))
 )
 #' Weibull Frailty IVWC Inference for KK Designs
-#'
-#' This class implements a compound estimator for KK matching-on-the-fly designs with
-#' survival responses using a native Rcpp Weibull AFT frailty model for matched
-#' pairs and a standard Weibull AFT model for the reservoir. The estimates are
-#' combined via IVWC.
-#'
-#' @examples
-#' \donttest{
-#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'survival')
-#' for (i in 1:10) {
-#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
-#' }
-#' seq_des$add_all_subject_responses(runif(10))
-#' inf = InferenceSurvivalKKWeibullFrailtyIVWC$new(seq_des)
-#' inf$compute_estimate()
-#' }
 #' @export
 InferenceSurvivalKKWeibullFrailtyIVWC = R6::R6Class("InferenceSurvivalKKWeibullFrailtyIVWC",
 	inherit = InferenceAbstractKKWeibullFrailtyIVWC,
 	public = list(
-		#' @description Initialize the inference object.
-		#' @param des_obj A completed KK design object.
-		#' @param model_formula Optional formula for covariate adjustment. If \code{NULL} (default), 
-		#'   covariates from the design object are included. Use \code{~ 1} for univariate.
-		#' @param verbose Whether to print progress messages.
-		#' @param optimization_alg Optimization algorithm to use. Default is dispatched via policy.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, optimization_alg = NULL){
 			self$set_optimization_alg(optimization_alg)
 			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
@@ -630,31 +410,10 @@ InferenceSurvivalKKWeibullFrailtyIVWC = R6::R6Class("InferenceSurvivalKKWeibullF
 	)
 )
 #' Weibull Frailty Combined-Likelihood Inference for KK Designs
-#'
-#' This class fits a single joint Weibull frailty model over all KK design data
-#' (matched pairs + reservoir) for survival responses.
-#'
-#' @examples
-#' \donttest{
-#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'survival')
-#' for (i in 1:10) {
-#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
-#' }
-#' seq_des$add_all_subject_responses(runif(10))
-#' inf = InferenceSurvivalKKWeibullFrailtyOneLik$new(seq_des)
-#' inf$compute_estimate()
-#' }
 #' @export
 InferenceSurvivalKKWeibullFrailtyOneLik = R6::R6Class("InferenceSurvivalKKWeibullFrailtyOneLik",
 	inherit = InferenceAbstractKKWeibullFrailtyOneLik,
 	public = list(
-		#' @description Initialize the inference object.
-		#' @param des_obj A completed KK design object.
-		#' @param model_formula Optional formula for covariate adjustment. If \code{NULL} (default), 
-		#'   covariates from the design object are included. Use \code{~ 1} for univariate.
-		#' @param use_rcpp Whether to use the custom Rcpp likelihood optimizer.
-		#' @param verbose Whether to print progress messages.
-		#' @param optimization_alg The optimization algorithm to use. Default is dispatched via policy.
 		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = NULL){
 			self$set_optimization_alg(optimization_alg)
 			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose)

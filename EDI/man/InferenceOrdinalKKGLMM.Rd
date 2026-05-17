@@ -34,10 +34,10 @@ inf$compute_estimate()
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceOrdinalKKGLMM-new}{\code{InferenceOrdinalKKGLMM$new()}}
 \item \href{#method-InferenceOrdinalKKGLMM-compute_estimate}{\code{InferenceOrdinalKKGLMM$compute_estimate()}}
 \item \href{#method-InferenceOrdinalKKGLMM-compute_asymp_confidence_interval}{\code{InferenceOrdinalKKGLMM$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceOrdinalKKGLMM-compute_asymp_two_sided_pval}{\code{InferenceOrdinalKKGLMM$compute_asymp_two_sided_pval()}}
-\item \href{#method-InferenceOrdinalKKGLMM-new}{\code{InferenceOrdinalKKGLMM$new()}}
 \item \href{#method-InferenceOrdinalKKGLMM-clone}{\code{InferenceOrdinalKKGLMM$clone()}}
 }
 }
@@ -99,33 +99,6 @@ inf$compute_estimate()
 </details>
 }}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceOrdinalKKGLMM-compute_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceOrdinalKKGLMM-compute_estimate}{}}}
-\subsection{Method \code{compute_estimate()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalKKGLMM$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceOrdinalKKGLMM-compute_asymp_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceOrdinalKKGLMM-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalKKGLMM$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceOrdinalKKGLMM-compute_asymp_two_sided_pval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceOrdinalKKGLMM-compute_asymp_two_sided_pval}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalKKGLMM$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalKKGLMM-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalKKGLMM-new}{}}}
 \subsection{Method \code{new()}}{
@@ -155,6 +128,57 @@ design's imputed covariates.}
 \item{\code{verbose}}{Whether to print progress messages.}
 
 \item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceOrdinalKKGLMM-compute_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalKKGLMM-compute_estimate}{}}}
+\subsection{Method \code{compute_estimate()}}{
+Compute the treatment effect estimate.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalKKGLMM$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceOrdinalKKGLMM-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalKKGLMM-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes an approximate confidence interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalKKGLMM$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Confidence level.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceOrdinalKKGLMM-compute_asymp_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalKKGLMM-compute_asymp_two_sided_pval}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes an approximate two-sided p-value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalKKGLMM$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect value.}
 }
 \if{html}{\out{</div>}}
 }

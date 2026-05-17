@@ -979,10 +979,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         num_cores_to_use = 1L
         private$current_task_label = "Des/Inf"
         if (num_cores > 1L) {
-          has_java_designs = any(vapply(private$design_classes, function(cls) cls$classname %in% c("DesignFixedBinaryMatch", "DesignFixedGreedy", "DesignFixedMatchingGreedyPairSwitching", "DesignFixedRerandomization"), logical(1L)))
-          if (!use_mirai_backend && has_java_designs) {
-            if (isTRUE(private$verbose)) private$.message_stderr("Warning: Multithreading disabled for Java-based designs; forking is unstable. Serial execution used for this cell.\n")
-          } else if (use_mirai_backend) {
+          if (use_mirai_backend) {
             num_cores_to_use = num_cores
             private$current_task_label = "Chunk Reps"
             chunk_size = num_cores_to_use

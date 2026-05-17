@@ -21,7 +21,44 @@
 InferenceIncidKKClogitPlusGLMMIVWC = R6::R6Class("InferenceIncidKKClogitPlusGLMMIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKClogitPlusGLMM,
-	public = list(),
+	public = list(
+		#' @description Gated off for IVWC.
+		#' @param subject_or_block_weights weights.
+		#' @param estimate_only flag.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param B replicates.
+		#' @param show_progress flag.
+		#' @param debug flag.
+		#' @param weighting_unit_type type.
+		approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param delta null.
+		#' @param B replicates.
+		#' @param type type.
+		#' @param na.rm flag.
+		#' @param show_progress flag.
+		#' @param min_number_usable_samples count.
+		#' @param weighting_unit_type type.
+		compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		},
+		#' @description Gated off for IVWC.
+		#' @param alpha level.
+		#' @param B replicates.
+		#' @param type type.
+		#' @param na.rm flag.
+		#' @param show_progress flag.
+		#' @param min_number_usable_samples count.
+		#' @param weighting_unit_type type.
+		compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+			stop_bayesian_bootstrap_for_ivwc(self)
+		}
+	),
 	private = list(
 		combine_reservoir_into_glmm = function() FALSE
 	)
@@ -48,7 +85,18 @@ InferenceIncidKKClogitPlusGLMMIVWC = R6::R6Class("InferenceIncidKKClogitPlusGLMM
 InferenceIncidKKClogitPlusGLMMOneLik = R6::R6Class("InferenceIncidKKClogitPlusGLMMOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKClogitPlusGLMM,
-	public = list(),
+	public = list(
+		#' @description Initialize
+		#' @param des_obj A completed \code{Design} object with an incidence response.
+		#' @param model_formula Optional formula for covariate adjustment.
+		#' @param max_abs_reasonable_coef Cap for reasonable coefficient estimates.
+		#' @param max_abs_log_sigma Cap for reasonable log random effect variance.
+		#' @param verbose Whether to print progress messages.
+		#' @param smart_cold_start_default   Whether to use smart optimizer start values.
+		initialize = function(des_obj, model_formula = NULL, max_abs_reasonable_coef = 1e4, max_abs_log_sigma = 8, verbose = FALSE, smart_cold_start_default = TRUE){
+			super$initialize(des_obj, model_formula = model_formula, max_abs_reasonable_coef = max_abs_reasonable_coef, max_abs_log_sigma = max_abs_log_sigma, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
+		}
+	),
 	private = list(
 		combine_reservoir_into_glmm = function() TRUE
 	)

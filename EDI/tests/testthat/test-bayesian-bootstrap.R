@@ -65,6 +65,60 @@ test_that("weighted logistic hook returns a finite estimate", {
 	expect_true(is.finite(as.numeric(weighted_est)))
 })
 
+test_that("weighted log-binomial hook returns a finite estimate and matches equal weights", {
+	des = make_seq_design_for_bayes_boot("incidence", c(0L, 1L, 0L, 1L, 1L, 0L, 1L, 0L))
+	inf = InferenceIncidLogBinomial$new(des)
+	n = des$get_n()
+	inf$.__enclos_env__$private$current_bayesian_bootstrap_context = list(
+		row_to_unit = seq_len(n),
+		unit_group_id = rep(1L, n),
+		n_units = n
+	)
+	weighted_est = inf$compute_estimate_with_bootstrap_weights(rep(1, n))
+	expect_true(is.finite(as.numeric(weighted_est)))
+	expect_equal(
+		as.numeric(weighted_est),
+		as.numeric(inf$compute_estimate()),
+		tolerance = 1e-6
+	)
+})
+
+test_that("weighted fractional-logit hook returns a finite estimate and matches equal weights", {
+	des = make_seq_design_for_bayes_boot("proportion", c(0.1, 0.8, 0.2, 0.7, 0.6, 0.3, 0.9, 0.4))
+	inf = InferencePropFractionalLogit$new(des)
+	n = des$get_n()
+	inf$.__enclos_env__$private$current_bayesian_bootstrap_context = list(
+		row_to_unit = seq_len(n),
+		unit_group_id = rep(1L, n),
+		n_units = n
+	)
+	weighted_est = inf$compute_estimate_with_bootstrap_weights(rep(1, n))
+	expect_true(is.finite(as.numeric(weighted_est)))
+	expect_equal(
+		as.numeric(weighted_est),
+		as.numeric(inf$compute_estimate()),
+		tolerance = 1e-6
+	)
+})
+
+test_that("weighted identity-binomial hook returns a finite estimate and matches equal weights", {
+	des = make_seq_design_for_bayes_boot("incidence", c(0L, 1L, 0L, 1L, 1L, 0L, 1L, 0L))
+	inf = InferenceIncidBinomialIdentityRiskDiff$new(des)
+	n = des$get_n()
+	inf$.__enclos_env__$private$current_bayesian_bootstrap_context = list(
+		row_to_unit = seq_len(n),
+		unit_group_id = rep(1L, n),
+		n_units = n
+	)
+	weighted_est = inf$compute_estimate_with_bootstrap_weights(rep(1, n))
+	expect_true(is.finite(as.numeric(weighted_est)))
+	expect_equal(
+		as.numeric(weighted_est),
+		as.numeric(inf$compute_estimate()),
+		tolerance = 1e-6
+	)
+})
+
 test_that("Bayesian bootstrap smoke test runs on a stable first-wave family", {
 	des = make_seq_design_for_bayes_boot("count", c(0L, 1L, 1L, 2L, 3L, 1L, 0L, 2L))
 	inf = InferenceCountPoisson$new(des)
@@ -278,4 +332,24 @@ test_that("Bayesian bootstrap matches mirai-backed parallel execution", {
 	)
 
 	expect_equal(unname(mirai_boot), unname(serial_boot), tolerance = 1e-10)
+})
+
+test_that("IVWC classes are gated off from Bayesian bootstrap functionality", {
+	des_cont = make_kk_design_for_weighted_bayes_boot("continuous", c(0, 1, 2, 3, 4, 5, 6, 7))
+	inf_cont_ivwc = InferenceContinKKOLSIVWC$new(des_cont, verbose = FALSE)
+	expect_error(
+		inf_cont_ivwc$approximate_bayesian_bootstrap_distribution_beta_hat_T(B = 3L, show_progress = FALSE),
+		"does not support Bayesian bootstrap functionality"
+	)
+	expect_error(
+		inf_cont_ivwc$compute_estimate_with_bootstrap_weights(rep(1, des_cont$get_n())),
+		"does not support Bayesian bootstrap functionality"
+	)
+
+	des_incid = make_kk_design_for_weighted_bayes_boot("incidence", c(0L, 1L, 0L, 1L, 1L, 0L, 1L, 0L))
+	inf_incid_ivwc = InferenceIncidKKClogitIVWC$new(des_incid, verbose = FALSE)
+	expect_error(
+		inf_incid_ivwc$compute_bayesian_bootstrap_confidence_interval(B = 3L, show_progress = FALSE),
+		"does not support Bayesian bootstrap functionality"
+	)
 })

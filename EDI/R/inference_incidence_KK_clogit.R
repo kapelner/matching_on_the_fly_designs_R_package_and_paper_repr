@@ -8,7 +8,7 @@
 InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
+	public = as.list(modifyList(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -60,8 +60,8 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		}
-	)),
-	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+	)), make_ivwc_bayesian_bootstrap_public_overrides())),
+	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		max_abs_reasonable_coef = 1e4,
 		shared_combined_likelihood = function(estimate_only = FALSE){
@@ -241,7 +241,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 				}
 			)
 		}
-	))
+	)))
 )
 #' Abstract class for Inverse-Variance Weighted Combined Clogit Inference
 #'
@@ -249,7 +249,7 @@ InferenceAbstractKKClogitOneLik = R6::R6Class("InferenceAbstractKKClogitOneLik",
 InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
+	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -295,8 +295,8 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		}
-	)),
-	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+	))),
+	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		supports_likelihood_tests = function() FALSE,
 		shared = function(estimate_only = FALSE){
@@ -386,12 +386,10 @@ InferenceAbstractKKClogitIVWC = R6::R6Class("InferenceAbstractKKClogitIVWC",
 			private$cached_values$beta_T_reservoir = as.numeric(fit$b[2])
 			private$cached_values$ssq_beta_T_reservoir = as.numeric(fit$ssq_b_j)
 		}
-	))
+	)))
 )
 
 #' Conditional Logistic IVWC Inference for KK Designs with Binary Responses
-#'
-#' Concrete exported wrapper around the IVWC clogit implementation.
 #'
 #' @export
 InferenceIncidKKClogitIVWC = R6::R6Class("InferenceIncidKKClogitIVWC",
@@ -400,8 +398,6 @@ InferenceIncidKKClogitIVWC = R6::R6Class("InferenceIncidKKClogitIVWC",
 )
 
 #' Conditional Logistic Combined-Likelihood Inference for KK Designs with Binary Responses
-#'
-#' Concrete exported wrapper around the combined-likelihood clogit implementation.
 #'
 #' @export
 InferenceIncidKKClogitOneLik = R6::R6Class("InferenceIncidKKClogitOneLik",

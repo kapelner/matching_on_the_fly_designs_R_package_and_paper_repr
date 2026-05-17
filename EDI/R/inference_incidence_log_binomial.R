@@ -42,6 +42,40 @@ InferenceIncidLogBinomial = R6::R6Class("InferenceIncidLogBinomial",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			X_data = private$get_X()
+			X = if (is.null(X_data) || ncol(X_data) == 0) {
+				cbind(`(Intercept)` = 1, treatment = private$w)
+			} else {
+				cbind(`(Intercept)` = 1, treatment = private$w, X_data)
+			}
+			res = tryCatch(
+				fast_log_binomial_regression_weighted_cpp(
+					X = X,
+					y = as.numeric(private$y),
+					weights = as.numeric(row_weights),
+					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X)),
+					smart_cold_start = private$smart_cold_start_default
+				),
+				error = function(e) NULL
+			)
+			if (is.null(res) || length(res$b) < 2L || !is.finite(res$b[2L])){
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			private$set_fit_warm_start(res$b, "beta", fisher = res$fisher_information)
+			private$cached_values$beta_hat_T = as.numeric(res$b[2L])
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes an approximate confidence interval.
 		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){

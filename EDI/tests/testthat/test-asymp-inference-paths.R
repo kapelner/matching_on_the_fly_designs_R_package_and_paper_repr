@@ -7,7 +7,6 @@ test_all_asymp_paths <- function(inf, label = "") {
 	
 	for (tt in c("wald", "score", "gradient", "lik_ratio")) {
 		if (tt %in% supported) {
-			cat(sprintf("\n--- Testing %s: %s ---\n", label, tt))
 			test_that(sprintf("%s: %s paths work", label, tt), {
 				inf$set_testing_type(tt)
 				
