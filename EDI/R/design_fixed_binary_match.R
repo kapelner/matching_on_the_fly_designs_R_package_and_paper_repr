@@ -3,7 +3,7 @@
 #' An R6 Class encapsulating the data and functionality for a fixed binary match
 #' experimental design.
 #' This design pairs subjects based on covariate distances and randomizes within pairs.
-#' Uses the \pkg{GreedyExperimentalDesign} package for distance computation and random allocation.
+#' Uses non-bipartite matching via \pkg{nbpMatching} for distance computation.
 #'
 #' @examples
 #' des = DesignFixedBinaryMatch$new(n = 10, response_type = 'continuous')
@@ -58,8 +58,8 @@ DesignFixedBinaryMatch = R6::R6Class("DesignFixedBinaryMatch",
 							stop("When supplying m to DesignFixedBinaryMatch$new(), length(m) must equal n.")
 						}
 					}
-					# GED availability is checked lazily in ensure_matching_structure_computed so
-					# that workers using pre-computed w vectors never trigger a JVM load.
+					# nbpMatching availability is checked lazily in ensure_matching_structure_computed
+					# so that workers using pre-computed w vectors never load it unnecessarily.
 				}
 				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 				private$blocking_capable = TRUE
@@ -88,7 +88,7 @@ DesignFixedBinaryMatch = R6::R6Class("DesignFixedBinaryMatch",
 				# No covariates: fall back to BCRD
 				return(replicate(r, sample(c(rep(1, n/2), rep(0, n/2)))))
 			}
-			# Use the in-house Rcpp search instead of GreedyExperimentalDesign Java search
+			# Use the in-house Rcpp search
 			w_mat = draw_binary_match_assignments_cpp(
 				private$bms$indicies_pairs,
 				as.integer(n),
@@ -131,9 +131,8 @@ DesignFixedBinaryMatch = R6::R6Class("DesignFixedBinaryMatch",
 			ensure_matching_structure_computed = function(){
 				n = self$get_n()
 				if (is.null(private$bms) && !is.null(private$X) && ncol(private$X) > 0){
-				assert_greedy_experimental_design_installed("DesignFixedBinaryMatch")
 				X = private$X[1:n, , drop = FALSE]
-				private$bms = GreedyExperimentalDesign::computeBinaryMatchStructure(X, mahal_match = private$mahal_match)
+				private$bms = compute_binary_match_structure(X, mahal_match = private$mahal_match)
 				# Build pair-ID vector m where m[i] = pair index for subject i
 				m_vec = integer(n)
 				pairs = private$bms$indicies_pairs

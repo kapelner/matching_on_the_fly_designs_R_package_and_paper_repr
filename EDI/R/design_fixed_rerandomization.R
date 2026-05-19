@@ -4,7 +4,7 @@
 #' experimental design.
 #' This design generates random allocations and only accepts those that meet a
 #' covariate balance criterion.
-#' For balanced designs (prob_T = 0.5, even n) uses the \pkg{GreedyExperimentalDesign} package.
+#' For balanced designs (prob_T = 0.5, even n) uses a native C++ parallel rejection sampler.
 #'
 #' @examples
 #' \dontrun{
@@ -85,48 +85,42 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 				n_draw = round(r / private$prop_acceptable)
 				ext_seed = if (!is.null(private$seed)) private$seed else sample.int(.Machine$integer.max, 1L)
 				if (private$prob_T == 0.5) {
-					indicTs = GreedyExperimentalDesign:::complete_randomization_forced_balanced_cpp(n, n_draw, ext_seed)
+					indicTs = complete_randomization_forced_balanced_cpp(n, n_draw, ext_seed)
 				} else {
 					n_T = round(n * private$prob_T)
-					indicTs = GreedyExperimentalDesign:::complete_randomization_imbalanced_cpp(n, n_T, n_draw, ext_seed)
+					indicTs = complete_randomization_imbalanced_cpp(n, n_T, n_draw, ext_seed)
 				}
-				obj_vals = GreedyExperimentalDesign:::compute_objective_vals_cpp(X, indicTs, private$objective, private$S_inv)
+				obj_vals = compute_objective_vals_cpp(X, indicTs, private$objective, private$S_inv)
 				ord = order(obj_vals)
 				# indicTs is n_draw x n; subset rows for best r, then transpose to n x r
 				w_mat = t(indicTs[ord[seq_len(r)], , drop = FALSE])
 				storage.mode(w_mat) = "numeric"
 				return(w_mat)
 			}
-			# Use GED for the balanced even-n case
-			use_ged = private$prob_T == 0.5 && n %% 2 == 0 &&
-					  check_package_installed("GreedyExperimentalDesign") &&
-					  check_package_installed("rJava")
-			if (use_ged){
+			# C++ parallel rejection sampler for balanced even-n case
+			if (private$prob_T == 0.5 && n %% 2 == 0) {
 				private$covariate_impute_if_necessary_and_then_create_model_matrix()
 				X = private$X[1:n, , drop = FALSE]
-				cutoff = if (is.null(private$obj_val_cutoff)) Inf else private$obj_val_cutoff
-				search_obj = GreedyExperimentalDesign::initRerandomizationExperimentalDesignObject(
-					X                      = X,
-					obj_val_cutoff_to_include = cutoff,
-					max_designs            = r,
-					objective              = private$objective,
-					wait                   = TRUE,
-					start                  = TRUE,
-					num_cores              = self$num_cores,
-					verbose                = private$verbose
+				cutoff_user = if (is.null(private$obj_val_cutoff)) Inf else private$obj_val_cutoff
+				# The C++ function uses the M-matrix objective which is scaled relative to the
+				# user-facing objective: mahal_dist → f_cpp = user_mahal/4;
+				# abs_sum_diff → f_cpp = GED-standardised/2.
+				cutoff_scale = if (private$objective == "mahal_dist") 4.0 else 2.0
+				cutoff_cpp   = if (is.infinite(cutoff_user)) Inf else cutoff_user / cutoff_scale
+				max_draws = max(r * 1000L, 100000L)
+				w_mat = rerandomization_search_cpp(
+					X_raw     = X,
+					r         = as.integer(r),
+					objective = private$objective,
+					cutoff    = as.double(cutoff_cpp),
+					max_draws = as.integer(max_draws)
 				)
-				res = GreedyExperimentalDesign::resultsRerandomizationSearch(search_obj, include_assignments = TRUE, form = "one_zero")
-				# resultsRerandomizationSearch returns r x n; transpose to n x r
-				w_mat = private$validate_allocation_matrix(
-					t(res$ending_indicTs),
-					n = n,
-					r = r,
-					require_balanced = TRUE
-				)
+				w_mat = private$validate_allocation_matrix(w_mat, n = n, r = ncol(w_mat), require_balanced = TRUE)
 				# Recycle if fewer were found than requested (tight cutoff)
-				if (ncol(w_mat) < r){
+				if (ncol(w_mat) < r) {
 					w_mat = w_mat[, rep(seq_len(ncol(w_mat)), length.out = r), drop = FALSE]
 				}
+				storage.mode(w_mat) = "numeric"
 				return(w_mat[, seq_len(r), drop = FALSE])
 			}
 			# Fallback pure-R for unbalanced or odd-n cases
@@ -156,21 +150,21 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 			}
 			if (should_run_asserts()) {
 				if (!is.matrix(w_mat) || nrow(w_mat) != n || ncol(w_mat) < 1L) {
-					stop("GreedyExperimentalDesign returned an unexpected allocation matrix shape.")
+					stop("DesignFixedRerandomization returned an unexpected allocation matrix shape.")
 				}
 			}
 			storage.mode(w_mat) = "numeric"
 			if (should_run_asserts()) {
 				if (any(!is.finite(w_mat)) || any(is.na(w_mat))) {
-					stop("GreedyExperimentalDesign returned non-finite treatment assignments.")
+					stop("DesignFixedRerandomization returned non-finite treatment assignments.")
 				}
 				if (any(!(w_mat %in% c(0, 1)))) {
-					stop("GreedyExperimentalDesign returned an invalid treatment assignment matrix.")
+					stop("DesignFixedRerandomization returned an invalid treatment assignment matrix.")
 				}
 				if (isTRUE(require_balanced)) {
 					treated_counts = colSums(w_mat)
 					if (any(treated_counts != n / 2)) {
-						stop("GreedyExperimentalDesign returned an unbalanced allocation.")
+						stop("DesignFixedRerandomization returned an unbalanced allocation.")
 					}
 				}
 			}

@@ -95,23 +95,23 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 			}
 			if (should_run_asserts()) {
 				if (!is.matrix(w_mat) || nrow(w_mat) != n || ncol(w_mat) < r) {
-					stop("GreedyExperimentalDesign returned an unexpected allocation matrix shape.")
+					stop("DesignFixedGreedy returned an unexpected allocation matrix shape.")
 				}
 			}
 			w_mat = w_mat[, seq_len(r), drop = FALSE]
 			storage.mode(w_mat) = "numeric"
 			if (should_run_asserts()) {
 				if (any(!is.finite(w_mat)) || any(is.na(w_mat))) {
-					stop("GreedyExperimentalDesign returned non-finite treatment assignments.")
+					stop("DesignFixedGreedy returned non-finite treatment assignments.")
 				}
 				if (any(!(w_mat %in% c(0, 1)))) {
-					stop("GreedyExperimentalDesign returned an invalid treatment assignment matrix.")
+					stop("DesignFixedGreedy returned an invalid treatment assignment matrix.")
 				}
 			}
 			treated_counts = colSums(w_mat)
 			if (should_run_asserts()) {
 				if (any(treated_counts != n / 2)) {
-					stop("GreedyExperimentalDesign returned an unbalanced allocation.")
+					stop("DesignFixedGreedy returned an unbalanced allocation.")
 				}
 			}
 			w_mat

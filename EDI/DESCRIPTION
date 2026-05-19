@@ -48,7 +48,6 @@ Suggests:
     Rfit,
     testthat,
     VGAM,
-    GreedyExperimentalDesign,
     ompr,
     ompr.roi,
     ROI.plugin.glpk

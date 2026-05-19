@@ -11,17 +11,17 @@ NULL
 		options(edi.run_asserts = TRUE)
 	}
 	
-	# Set Java heap size for rJava-based dependencies (like GreedyExperimentalDesign)
-	# This must be set before the JVM is initialized.
-	if (is.null(getOption("java.parameters"))) {
-		options(java.parameters = "-Xmx10g")
-	}
 }
 
 .onAttach = function(libname, pkgname){
+	version <- tryCatch(
+		as.character(utils::packageDescription(pkgname, lib.loc = libname, fields = "Version")),
+		error = function(e) NA_character_
+	)
+	if (!is.character(version) || length(version) != 1L || is.na(version) || version == "") {
+		version <- "unknown"
+	}
 	packageStartupMessage(
-			paste("Welcome to EDI v",
-					utils::packageVersion("EDI"),
-					sep = "")
+			paste("Welcome to EDI v", version, sep = "")
 	)
 }

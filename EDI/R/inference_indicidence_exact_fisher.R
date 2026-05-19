@@ -44,6 +44,7 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 		}
 	),
 	private = list(
+		has_match_structure = FALSE,
 		default_exact_type = "Fisher",
 		resolve_exact_type = function(type){
 			if (is.null(type)) type = private$default_exact_type

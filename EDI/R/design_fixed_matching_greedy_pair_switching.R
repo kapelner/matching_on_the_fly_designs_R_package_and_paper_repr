@@ -2,7 +2,7 @@
 #'
 #' An R6 class encapsulating a fixed experimental design that first computes
 #' binary matches and then improves the matched design with greedy pair switching
-#' using the \pkg{GreedyExperimentalDesign} package.
+#' using a native C++ implementation.
 #'
 #' @examples
 #' \dontrun{
@@ -12,8 +12,8 @@
 DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyPairSwitching",
 	inherit = DesignFixed,
 	public = list(
-		#' @description Returns TRUE: simulation framework can pre-generate all
-		#'   treatment vectors for a cell in one Java call instead of one per rep.
+		#' @description Returns TRUE: simulation framework pre-generates one
+		#'   treatment vector per rep in the main process (no JVM workers needed).
 		supports_batch_w_pregeneration = function() TRUE,
 		#' @description Initialize a fixed design that performs binary matching followed by greedy pair switching.
 		#'
@@ -24,10 +24,7 @@ DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyP
 		#' @param verbose A flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
-		#' @param max_designs The number of searched designs to retain.
-		#' @param objective The imbalance objective passed to \pkg{GreedyExperimentalDesign}.
-		#' @param wait If \code{TRUE}, wait for the search to finish before returning.
-		#' @param diff_method Passed to the upstream binary-match-then-greedy initializer.
+		#' @param objective The imbalance objective. Either \code{"mahal_dist"} (default) or \code{"abs_sum_diff"}.
 		#' @param seed Integer seed for reproducibility.
 		#'
 		#' @return A new \code{DesignFixedMatchingGreedyPairSwitching} object.
@@ -37,10 +34,7 @@ DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyP
 				include_is_missing_as_a_new_feature = TRUE,
 				n,
 				verbose = FALSE,
-				max_designs = 100,
 				objective = "mahal_dist",
-				wait = TRUE,
-				diff_method = FALSE,
 				missingness_method = "impute",
 				model_formula = ~ .,
 				seed = NULL
@@ -50,118 +44,71 @@ DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyP
 					stop("DesignFixedMatchingGreedyPairSwitching only supports balanced designs (prob_T = 0.5).")
 				}
 			}
-			# GED availability is checked lazily in draw_ws_according_to_design so
-			# that workers using pre-computed w vectors never trigger a JVM load.
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
-			private$max_designs = max_designs
 			private$objective = objective
-			private$wait = wait
-			private$diff_method = diff_method
 			private$uses_covariates = TRUE
 		},
 		#' @description Draw multiple treatment assignment vectors according to binary match followed by
-		#' greedy switching.
+		#' greedy pair switching.
 		#'
-		#' @param r 	The number of designs to draw.
+		#' @param r The number of designs to draw.
 		#'
-		#' @return 		A matrix of size n x r.
+		#' @return A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
 			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				assertCount(r, positive = TRUE)
-			}
-			assert_greedy_experimental_design_installed("DesignFixedMatchingGreedyPairSwitching")
-			if (should_run_asserts()) {
 				self$assert_all_subjects_arrived()
 			}
 			n = self$get_n()
 			if (should_run_asserts()) {
-				if (n %% 2 != 0) {
-					stop("Binary-match-then-greedy designs require an even number of subjects.")
+				if (n %% 4 != 0) {
+					stop("DesignFixedMatchingGreedyPairSwitching requires n divisible by 4.")
 				}
 			}
 			private$covariate_impute_if_necessary_and_then_create_model_matrix()
 			X = private$X[1:n, , drop = FALSE]
-			search_budget = max(as.integer(r), as.integer(private$max_designs))
-			search_obj = GreedyExperimentalDesign::initBinaryMatchFollowedByGreedyExperimentalDesignSearchObject(
-				X = X,
-				diff_method = private$diff_method,
-				max_designs = search_budget,
-				objective = private$objective,
-				wait = private$wait,
-				start = TRUE,
-				num_cores = self$num_cores,
-				verbose = private$verbose
+			bms = compute_binary_match_structure(X, mahal_match = (private$objective == "mahal_dist"))
+			pairs_mat = bms$indicies_pairs
+			storage.mode(pairs_mat) = "integer"
+			n_iter = max(500L, 500L * as.integer(n))
+			w_mat = greedy_design_search_cpp(
+				X_raw          = X,
+				r              = as.integer(r),
+				objective      = private$objective,
+				n_iter         = n_iter,
+				indicies_pairs = pairs_mat
 			)
-			w_mat = GreedyExperimentalDesign::resultsBinaryMatchThenGreedySearch(
-				search_obj,
-				num_vectors = r,
-				form = "one_zero"
-			)
-			private$validate_allocation_matrix(
-				private$extract_allocation_matrix(w_mat, n = n, r = r),
-				n = n,
-				r = r,
-				require_balanced = TRUE
-			)
+			storage.mode(w_mat) = "numeric"
+			private$validate_allocation_matrix(w_mat, n = n, r = r)
 		}
 	),
 	private = list(
-		max_designs = NULL,
 		objective = NULL,
-		wait = NULL,
-		diff_method = NULL,
-		validate_allocation_matrix = function(w_mat, n, r, require_balanced = FALSE){
+		validate_allocation_matrix = function(w_mat, n, r){
 			if (is.vector(w_mat)) {
 				w_mat = matrix(w_mat, nrow = n, ncol = 1)
 			}
 			if (should_run_asserts()) {
 				if (!is.matrix(w_mat) || nrow(w_mat) != n || ncol(w_mat) < r) {
-					stop("resultsBinaryMatchThenGreedySearch returned an unexpected allocation matrix shape.")
+					stop("DesignFixedMatchingGreedyPairSwitching returned an unexpected allocation matrix shape.")
 				}
 			}
 			w_mat = w_mat[, seq_len(r), drop = FALSE]
 			storage.mode(w_mat) = "numeric"
 			if (should_run_asserts()) {
 				if (any(!is.finite(w_mat)) || any(is.na(w_mat))) {
-					stop("resultsBinaryMatchThenGreedySearch returned non-finite treatment assignments.")
+					stop("DesignFixedMatchingGreedyPairSwitching returned non-finite treatment assignments.")
 				}
 				if (any(!(w_mat %in% c(0, 1)))) {
-					stop("resultsBinaryMatchThenGreedySearch returned an invalid treatment assignment matrix.")
+					stop("DesignFixedMatchingGreedyPairSwitching returned an invalid treatment assignment matrix.")
 				}
-				if (isTRUE(require_balanced)) {
-					treated_counts = colSums(w_mat)
-					if (any(treated_counts != n / 2)) {
-						stop("resultsBinaryMatchThenGreedySearch returned an unbalanced allocation.")
-					}
+				treated_counts = colSums(w_mat)
+				if (any(treated_counts != n / 2)) {
+					stop("DesignFixedMatchingGreedyPairSwitching returned an unbalanced allocation.")
 				}
 			}
 			w_mat
-		},
-		extract_allocation_matrix = function(res, n, r){
-			if (is.matrix(res)) {
-				w_mat = res
-			} else if (is.list(res)) {
-				if (!is.null(res$ending_indicTs)) {
-					w_mat = res$ending_indicTs
-				} else if (!is.null(res$designs)) {
-					w_mat = res$designs
-				} else if (!is.null(res$indicTs)) {
-					w_mat = res$indicTs
-				} else {
-					if (should_run_asserts()) {
-						stop("resultsBinaryMatchThenGreedySearch returned an unsupported result structure.")
-					}
-				}
-			} else if (is.vector(res)) {
-				w_mat = matrix(res, nrow = n, ncol = 1)
-			} else {
-				if (should_run_asserts()) {
-					stop("resultsBinaryMatchThenGreedySearch returned an unsupported result type.")
-				}
-			}
-			# resultsBinaryMatchThenGreedySearch returns r x n; transpose to n x r
-			t(w_mat)
 		}
 	)
 )

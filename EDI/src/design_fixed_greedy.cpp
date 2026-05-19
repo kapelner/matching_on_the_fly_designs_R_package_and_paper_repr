@@ -39,14 +39,29 @@ using Eigen::Success;
 
 // [[Rcpp::export]]
 Rcpp::IntegerMatrix greedy_design_search_cpp(
-    const Eigen::Map<Eigen::MatrixXd> X_raw,
-    const int                         r,
-    const std::string&                objective,
-    const int                         n_iter
+    const Eigen::Map<Eigen::MatrixXd>       X_raw,
+    const int                               r,
+    const std::string&                      objective,
+    const int                               n_iter,
+    Rcpp::Nullable<Rcpp::IntegerMatrix>     indicies_pairs = R_NilValue
 ) {
     const int n  = static_cast<int>(X_raw.rows());
     const int p  = static_cast<int>(X_raw.cols());
     const int nt = n / 2;
+
+    // ── Pair-constrained mode: load pairs (convert 1-based R indices to 0-based) ─
+    bool pair_mode = indicies_pairs.isNotNull();
+    int  np = 0;
+    std::vector<std::array<int, 2>> pairs;
+    if (pair_mode) {
+        Rcpp::IntegerMatrix pm(indicies_pairs);
+        np = pm.nrow();
+        pairs.resize(static_cast<std::size_t>(np));
+        for (int k = 0; k < np; k++) {
+            pairs[static_cast<std::size_t>(k)][0] = pm(k, 0) - 1;
+            pairs[static_cast<std::size_t>(k)][1] = pm(k, 1) - 1;
+        }
+    }
 
     Rcpp::IntegerMatrix result(n, r);
 
@@ -120,61 +135,89 @@ Rcpp::IntegerMatrix greedy_design_search_cpp(
 #ifdef _OPENMP
         tid = omp_get_thread_num();
 #endif
-        std::mt19937                     rng(seeds[static_cast<std::size_t>(tid)]);
+        std::mt19937                       rng(seeds[static_cast<std::size_t>(tid)]);
         std::uniform_int_distribution<int> pick_nt(0, nt - 1);
+        std::uniform_int_distribution<int> pick_pair_dist(0, np > 0 ? np - 1 : 0);
+        std::bernoulli_distribution        coin(0.5);
 
         // Thread-local working buffers
         std::vector<int> w(n), treated(nt), control(nt), order(n);
+        std::vector<int> pair_cur_t(static_cast<std::size_t>(np)); // 0/1: which pair member is T
         VectorXd dbl_w(n), d(p), delta(p);
 
 #pragma omp for schedule(static)
         for (int des = 0; des < r; des++) {
-            // ── Random balanced init (Fisher-Yates) ──────────────────────────
-            std::iota(order.begin(), order.end(), 0);
-            for (int i = n - 1; i > 0; i--)
-                std::swap(order[static_cast<std::size_t>(i)],
-                          order[static_cast<std::size_t>(
-                              std::uniform_int_distribution<int>(0, i)(rng))]);
-            std::fill(w.begin(), w.end(), 0);
-            for (int i = 0; i < nt; i++) w[static_cast<std::size_t>(order[static_cast<std::size_t>(i)])] = 1;
+            if (pair_mode) {
+                // ── Pair-constrained init: random coin-flip per pair ─────────
+                std::fill(w.begin(), w.end(), 0);
+                for (int k = 0; k < np; k++) {
+                    int side = coin(rng) ? 0 : 1;
+                    pair_cur_t[static_cast<std::size_t>(k)] = side;
+                    w[static_cast<std::size_t>(pairs[static_cast<std::size_t>(k)][side])]     = 1;
+                    w[static_cast<std::size_t>(pairs[static_cast<std::size_t>(k)][1 - side])] = 0;
+                }
+            } else {
+                // ── Random balanced init (Fisher-Yates) ──────────────────────
+                std::iota(order.begin(), order.end(), 0);
+                for (int i = n - 1; i > 0; i--)
+                    std::swap(order[static_cast<std::size_t>(i)],
+                              order[static_cast<std::size_t>(
+                                  std::uniform_int_distribution<int>(0, i)(rng))]);
+                std::fill(w.begin(), w.end(), 0);
+                for (int i = 0; i < nt; i++) w[static_cast<std::size_t>(order[static_cast<std::size_t>(i)])] = 1;
 
-            { int ti = 0, ci = 0;
-              for (int i = 0; i < n; i++) {
-                  if (w[static_cast<std::size_t>(i)]) treated[static_cast<std::size_t>(ti++)] = i;
-                  else                                 control[static_cast<std::size_t>(ci++)] = i;
-              } }
+                { int ti = 0, ci = 0;
+                  for (int i = 0; i < n; i++) {
+                      if (w[static_cast<std::size_t>(i)]) treated[static_cast<std::size_t>(ti++)] = i;
+                      else                                 control[static_cast<std::size_t>(ci++)] = i;
+                  } }
+            }
 
-            for (int i = 0; i < n; i++) dbl_w[i] = w[static_cast<std::size_t>(i)] ? 1.0 : -1.0;
+            for (int i = 0; i < n; i++) dbl_w[i] = 2.0 * static_cast<double>(w[static_cast<std::size_t>(i)]) - 1.0;
             d.noalias() = M * dbl_w;
             double f    = abs_mode ? d.lpNorm<1>() : d.squaredNorm();
 
             // ── Greedy swap iterations ───────────────────────────────────────
-            for (int it = 0; it < n_iter; it++) {
-                const int ti = pick_nt(rng);
-                const int ci = pick_nt(rng);
-                const int i  = treated[static_cast<std::size_t>(ti)];
-                const int j  = control[static_cast<std::size_t>(ci)];
+            if (pair_mode) {
+                for (int it = 0; it < n_iter; it++) {
+                    const int k    = pick_pair_dist(rng);
+                    const int side = pair_cur_t[static_cast<std::size_t>(k)];
+                    const int i    = pairs[static_cast<std::size_t>(k)][side];       // current T
+                    const int j    = pairs[static_cast<std::size_t>(k)][1 - side];   // current C
 
-                // Δ = 2(M[:,j] − M[:,i])  — single fused SIMD pass
-                delta.noalias() = 2.0 * (M.col(j) - M.col(i));
+                    delta.noalias() = 2.0 * (M.col(j) - M.col(i));
+                    const double f_cand = abs_mode
+                        ? (d + delta).lpNorm<1>()
+                        : f + 2.0 * d.dot(delta) + delta.squaredNorm();
 
-                double f_cand;
-                if (abs_mode) {
-                    // Fused: abs_mode avoids writing d+Δ; Eigen evaluates as
-                    // a single vectorised pass over (d[k]+delta[k]).
-                    f_cand = (d + delta).lpNorm<1>();
-                } else {
-                    // ‖d+Δ‖² = ‖d‖² + 2 d·Δ + ‖Δ‖²  — no temp vector needed
-                    f_cand = f + 2.0 * d.dot(delta) + delta.squaredNorm();
+                    if (f_cand < f) {
+                        w[static_cast<std::size_t>(i)] = 0;
+                        w[static_cast<std::size_t>(j)] = 1;
+                        pair_cur_t[static_cast<std::size_t>(k)] ^= 1;
+                        d += delta;
+                        f  = f_cand;
+                    }
                 }
+            } else {
+                for (int it = 0; it < n_iter; it++) {
+                    const int ti = pick_nt(rng);
+                    const int ci = pick_nt(rng);
+                    const int i  = treated[static_cast<std::size_t>(ti)];
+                    const int j  = control[static_cast<std::size_t>(ci)];
 
-                if (f_cand < f) {
-                    w[static_cast<std::size_t>(i)] = 0;
-                    w[static_cast<std::size_t>(j)] = 1;
-                    treated[static_cast<std::size_t>(ti)] = j;
-                    control[static_cast<std::size_t>(ci)] = i;
-                    d += delta;   // in-place — no copy of d
-                    f  = f_cand;
+                    delta.noalias() = 2.0 * (M.col(j) - M.col(i));
+                    const double f_cand = abs_mode
+                        ? (d + delta).lpNorm<1>()
+                        : f + 2.0 * d.dot(delta) + delta.squaredNorm();
+
+                    if (f_cand < f) {
+                        w[static_cast<std::size_t>(i)] = 0;
+                        w[static_cast<std::size_t>(j)] = 1;
+                        treated[static_cast<std::size_t>(ti)] = j;
+                        control[static_cast<std::size_t>(ci)] = i;
+                        d += delta;
+                        f  = f_cand;
+                    }
                 }
             }
 

@@ -9,41 +9,10 @@ package_cache = new.env(parent = emptyenv())
 #' @export
 check_package_installed = function(package_name) {
 	if (!exists(package_name, envir = package_cache, inherits = FALSE)) {
-		# We use the real requireNamespace here once
 		res = requireNamespace(package_name, quietly = TRUE)
-		
-		# If it is GreedyExperimentalDesign, also check Java compatibility
-		if (res && package_name == "GreedyExperimentalDesign") {
-			res = check_java_compatibility()
-		}
-		
 		assign(package_name, res, envir = package_cache)
 	}
 	get(package_name, envir = package_cache)
-}
-
-check_java_compatibility = function() {
-	if (!requireNamespace("rJava", quietly = TRUE)) return(FALSE)
-	
-	# Attempt to initialize rJava and probe the GED class version
-	# We use a tryCatch to handle UnsupportedClassVersionError or other JVM initialization failures
-	res = tryCatch({
-		rJava::.jinit()
-		# Probe by attempting to instantiate a basic class or check its version
-		# UnsupportedClassVersionError is thrown during .jnew if incompatible
-		GreedyExperimentalDesign::computeBinaryMatchStructure(matrix(1:4, 2, 2))
-		TRUE
-	}, error = function(e) {
-		# If we hit a Java version error, it's incompatible.
-		msg = conditionMessage(e)
-		if (grepl("UnsupportedClassVersionError", msg, ignore.case = TRUE) ||
-		    grepl("ClassFormatError", msg, ignore.case = TRUE)) {
-			return(FALSE)
-		}
-		# For other errors (e.g. no JVM, etc), also treat as unavailable
-		FALSE
-	})
-	res
 }
 
 # Helper for parallel progress bars
@@ -53,10 +22,58 @@ print_progress = function(pb, i, total) {
 	}
 }
 
-assert_greedy_experimental_design_installed = function(caller) {
-	if (!check_package_installed("GreedyExperimentalDesign")) {
-		stop("Package 'GreedyExperimentalDesign' is required for ", caller, ".")
+assert_nbpmatching_installed = function(caller) {
+	if (!requireNamespace("nbpMatching", quietly = TRUE)) {
+		stop("Package 'nbpMatching' is required for ", caller, ".")
 	}
+}
+
+# Compute non-bipartite pair-matching structure from a covariate matrix.
+# Returns a list with $indicies_pairs (n/2 x 2 integer matrix, 1-based row indices).
+# Uses squared Euclidean distance by default; Mahalanobis if mahal_match = TRUE.
+# For p == 1 the subjects are simply ordered and paired consecutively.
+compute_binary_match_structure = function(X, mahal_match = FALSE) {
+	assert_nbpmatching_installed("compute_binary_match_structure")
+	n = nrow(X)
+	p = ncol(X)
+	if (n %% 2L != 0L) {
+		stop("Design matrix must have an even number of rows for binary matching.")
+	}
+	if (p == 1L) {
+		indicies_pairs = matrix(order(X[, 1L]), ncol = 2L, byrow = TRUE)
+	} else {
+		if (mahal_match) {
+			S = stats::var(X)
+			S_inv = tryCatch(solve(S), error = function(e) NULL)
+			if (is.null(S_inv)) {
+				ridge = 1e-8
+				for (i in seq_len(6L)) {
+					S_inv = tryCatch(solve(S + diag(ridge, ncol(S))), error = function(e) NULL)
+					if (!is.null(S_inv)) break
+					ridge = ridge * 10
+				}
+			}
+			if (is.null(S_inv)) stop("Covariance matrix is singular; cannot compute Mahalanobis distances.")
+			D = matrix(NA_real_, nrow = n, ncol = n)
+			for (i in seq_len(n - 1L)) {
+				for (j in seq(i + 1L, n)) {
+					xdiff = X[i, ] - X[j, ]
+					D[i, j] = D[j, i] = as.numeric(xdiff %*% (S_inv %*% xdiff))
+				}
+			}
+		} else {
+			D = as.matrix(stats::dist(X))^2
+		}
+		diag(D) = .Machine$double.xmax
+		indicies_pairs = as.matrix(
+			nbpMatching::nonbimatch(nbpMatching::distancematrix(D))$matches[, c("Group1.Row", "Group2.Row")]
+		)
+		for (i in seq_len(n)) {
+			indicies_pairs[i, ] = sort(indicies_pairs[i, ])
+		}
+		indicies_pairs = unique(indicies_pairs)
+	}
+	list(indicies_pairs = indicies_pairs, indices_pairs = indicies_pairs, n = n, p = p)
 }
 
 assert_optimal_blocks_libraries_installed = function(caller) {

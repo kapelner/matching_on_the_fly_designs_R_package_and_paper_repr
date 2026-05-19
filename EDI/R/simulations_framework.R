@@ -685,19 +685,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         }
         assign("num_cores_override", prev_override, envir = ns$edi_env)
       }, add = TRUE)
-      # Fork-based workers (mcparallel) inherit the parent's JVM state, which
-      # causes deadlocks when rJava is used post-fork. Force mirai (separate
-      # processes) whenever rJava has already been initialised in the parent.
-      java_loaded = "rJava" %in% loadedNamespaces() || "GreedyExperimentalDesign" %in% loadedNamespaces()
-      # For fixed-X simulations with Java-backed designs (e.g. DesignFixedGreedy),
-      # w is pre-generated in the main process one-at-a-time; workers only run fast
-      # R inference. Spawning num_cores JVM-bearing workers simultaneously causes OOM
-      # on memory-limited systems (e.g. WSL). Force serial execution in this case.
+      # For fixed-X simulations with pre-generating designs, w is pre-generated in
+      # the main process one-at-a-time; workers only run fast R inference.
       has_pregen_designs = any(vapply(private$design_classes, function(dc)
         !is.null(dc$public_methods$supports_batch_w_pregeneration), logical(1L)))
       force_serial = has_pregen_designs && !isTRUE(private$random_X_draws)
       use_mirai_backend = !force_serial && isTRUE(num_cores > 1L) &&
-        (.Platform$OS.type != "unix" || !is.null(prev_global_mirai_cores) || java_loaded)
+        (.Platform$OS.type != "unix" || !is.null(prev_global_mirai_cores))
       if (use_mirai_backend) {
         if (!check_package_installed("mirai")) {
           use_mirai_backend = FALSE
@@ -736,7 +730,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       n_existing = nrow(existing_results)
       
       if (isTRUE(private$verbose) && n_existing > 0L) {
-        private$.message_stderr(sprintf("%d existing results loaded\n", n_existing))
+        private$.message_stderr(sprintf("%s existing results loaded\n", format(n_existing, big.mark = ",")))
       }
       # Pre-allocate results list for data.table batches (one per chunk or serial replication)
       private$raw_results = vector("list", 1L + private$Nrep * n_cells)
@@ -953,13 +947,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         private$.finish_run()
         return(invisible(self))
       }
-      # Plan validation above may have loaded rJava/GreedyExperimentalDesign (via
-      # requireNamespace inside DesignFixedGreedy$new). Re-check now: if Java is
-      # loaded and we are on Unix without mirai already, upgrade to mirai to avoid
-      # the fork-after-JVM-init deadlock.
-      if (!force_serial && !use_mirai_backend && isTRUE(num_cores > 1L) &&
-          .Platform$OS.type == "unix" &&
-          ("rJava" %in% loadedNamespaces() || "GreedyExperimentalDesign" %in% loadedNamespaces())) {
+      if (FALSE) {  # dead branch — retained for structure; no Java-backed designs remain
         if (check_package_installed("mirai")) {
           use_mirai_backend = TRUE
           private$.ensure_mirai_daemons(num_cores)
@@ -1037,13 +1025,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           tryCatch({
             d_pg = do.call(dc$new, c(list(response_type = cs$response_type, n = cs$n), dp))
             d_pg$add_all_subjects_to_experiment(as.data.frame(cs$shared_X))
-            prev_use_gpu = getOption("GreedyExperimentalDesign.use_gpu")
-            options(GreedyExperimentalDesign.use_gpu = FALSE)
             prev_nc = ns$edi_env$num_cores_override
             assign("num_cores_override", 1L, envir = ns$edi_env)
             w_mat = d_pg$draw_ws_according_to_design(1L)
             assign("num_cores_override", prev_nc, envir = ns$edi_env)
-            options(GreedyExperimentalDesign.use_gpu = prev_use_gpu)
             storage.mode(w_mat) = "integer"
             new_cache[[dl]] = list(ws = w_mat, rep_to_col = setNames(1L, as.character(rep)))
           }, error = function(e) NULL)
@@ -1605,21 +1590,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       s = tryCatch(mirai::status(), error = function(e) list(connections = 0L))
       n_running = if (is.numeric(s$connections) && length(s$connections) == 1L) as.integer(s$connections) else 0L
       if (n_running != as.integer(n)) mirai::daemons(as.integer(n))
-      # Capture java.parameters from the parent so each worker initialises the
-      # JVM with the same heap size and flags.
-      java_params = getOption("java.parameters", default = character(0))
-      # On WSL, wgpu cannot reliably initialise concurrent GPU contexts across
-      # many worker processes (the GPU-PV paravirtualisation layer races and
-      # throws silent Java exceptions, leaving num_completed=0). Detect WSL via
-      # the WSL_DISTRO_NAME env var (set by WSL2) or a "microsoft" marker in
-      # /proc/version, and disable GPU only in that environment.
-      is_wsl = nzchar(Sys.getenv("WSL_DISTRO_NAME")) ||
-        grepl("microsoft|wsl", tryCatch(readLines("/proc/version", n = 1L), error = function(e) ""), ignore.case = TRUE)
-      # everywhere() in mirai 2.x is asynchronous: it submits setup tasks to all
-      # workers but returns immediately. We must collect/await the result before
-      # submitting real tasks; otherwise workers can start executing GED (and
-      # initialising the JVM) before java.parameters has been set, causing the
-      # JVM to start with the default Xmx (~25% of RAM) instead of our cap.
+      # everywhere() in mirai 2.x is asynchronous; collect before submitting real tasks.
       setup_tasks = tryCatch(
         mirai::everywhere({
           Sys.setenv(
@@ -1631,49 +1602,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             NUMEXPR_NUM_THREADS    = 1L
           )
           options(mc.cores = 1L)
-          # Propagate java.parameters so the JVM initialises with the correct
-          # heap size and flags when GreedyExperimentalDesign is first loaded.
-          # Strip -Xms (initial heap) flags: each worker runs a single GED search
-          # and doesn't need a pre-committed large heap. Keeping -Xms from the
-          # parent (e.g. -Xms10g) would cause N_workers * 10g simultaneous heap
-          # commits, exhausting RAM when many workers start their JVMs at once.
-          # Strip flags that bloat native memory in small-heap worker JVMs:
-          # -Xms: pre-commits a large heap (wastes RAM when N workers start at once)
-          # G1GC flags: G1GC has 2-3x native-memory overhead vs SerialGC; for the
-          #   small per-worker Xmx, SerialGC is sufficient and far cheaper.
-          # UseStringDeduplication/OptimizeStringConcat: G1GC-only, not valid w/ SerialGC
-          worker_java_params = java_params[!grepl(
-            "^-Xms|^-XX:\\+UseG1GC|^-XX:\\+UseStringDeduplication|^-XX:\\+OptimizeStringConcat",
-            java_params
-          )]
-          worker_java_params = c(worker_java_params, "-XX:+UseSerialGC")
-          if (length(worker_java_params) > 0L && is.null(getOption("java.parameters")))
-            options(java.parameters = worker_java_params)
-          # Disable GPU only on WSL where concurrent wgpu process init is broken.
-          # Also strip the wgpu native-lib JVM property: on WSL, even with
-          # use_gpu=FALSE, WebGpuPanama's static initialiser will load the
-          # wgpu native .so and map ~8-10 GB of GPU-accessible memory per
-          # worker if the ged.wgpu.lib.path JVM property is present.
-          if (isTRUE(is_wsl)) {
-            options(GreedyExperimentalDesign.use_gpu = FALSE)
-            worker_java_params = worker_java_params[!grepl("^-Dged\\.wgpu\\.lib\\.path", worker_java_params)]
-            if (!is.null(getOption("java.parameters")))
-              options(java.parameters = getOption("java.parameters")[!grepl("^-Dged\\.wgpu\\.lib\\.path", getOption("java.parameters"))])
-          }
           if (requireNamespace("data.table", quietly = TRUE)) data.table::setDTthreads(1L)
           if (requireNamespace("fixest", quietly = TRUE)) suppressWarnings(try(fixest::setFixest_nthreads(1L), silent = TRUE))
-          # Pre-initialise the JVM now, while java.parameters is freshly set.
-          # This prevents a race where GED is first loaded via closure
-          # deserialization (before the task body runs), which could call
-          # .jpackage() → .jinit() with stale or default options.
-          if (length(worker_java_params) > 0L && requireNamespace("rJava", quietly = TRUE))
-            tryCatch(rJava::.jinit(), error = function(e) invisible(NULL))
           invisible(NULL)
-        }, java_params = java_params, is_wsl = is_wsl),
+        }),
         error = function(e) NULL
       )
-      # Block until every worker has finished the setup; this guarantees
-      # java.parameters is set before any GED task can initialise the JVM.
       if (!is.null(setup_tasks)) {
         tryCatch(mirai::collect_mirai(setup_tasks), error = function(e) invisible(NULL))
       }

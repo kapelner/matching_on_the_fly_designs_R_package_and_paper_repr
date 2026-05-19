@@ -417,7 +417,7 @@ audit: `InferenceAsympLikStdModCache`, `InferenceCountLikelihood`,
 | `InferenceCountHurdleNegBin` | Disabled pending backend fixes | Bootstrap simulator code exists, but the class is kept off `InferenceParamBootstrap` until the repeated null-refit path is reliable. |
 | `InferenceIncidRiskDiff` | Intentionally unsupported | Kept off `InferenceParamBootstrap`; no likelihood-null simulator hook. |
 | `InferencePropFractionalLogit` | Intentionally unsupported | Kept off `InferenceParamBootstrap`; not yet given a generative fractional-response bootstrap path. |
-| `InferenceOrdinalAdjCatLogitRegr` | Intentionally unsupported | Inherits the base `FALSE` support gate; no adjacent-category null simulator yet. |
+| `InferenceOrdinalAdjCatLogitRegr` | Intentionally unsupported | Kept off `InferenceParamBootstrap`; no adjacent-category null simulator yet. |
 | `InferenceOrdinalStereotypeLogitRegr` | Intentionally unsupported | Kept off `InferenceParamBootstrap`. |
 | `InferenceOrdinalContRatioRegr` | Intentionally unsupported | Kept off `InferenceParamBootstrap`. |
 | `InferenceSurvivalDepCensTransformRegr` | Intentionally unsupported | Kept off `InferenceParamBootstrap`; the joint event/censoring simulator remains out of scope. |
@@ -441,104 +441,62 @@ parametric bootstrap methods.
 | `InferencePropKKQuantileRegrOneLik` | Intentionally unsupported | Proportion quantile path does not currently define a likelihood-null simulator. |
 | `InferenceIncidKKNewcombeRiskDiff` | Intentionally unsupported | Newcombe-style risk-difference path is not on the LR-bootstrap surface. |
 
-## Concrete Checklist
+## Additional Families That Could Be Brought Onto The Parametric-Bootstrap Branch
 
-### Checklist A: Finish The Parametric-Bootstrap LR Architecture
+### Best Candidates
 
-- [x] Add the generic outer-loop API in `InferenceParamBootstrap`:
-  `compute_lik_ratio_bootstrap_two_sided_pval(...)`
-- [x] Add bootstrap-LR CI inversion in `InferenceParamBootstrap`:
-  `compute_lik_ratio_bootstrap_confidence_interval(...)`
-- [x] Add the family hook `simulate_under_lik_null(spec, delta, null_fit)`
-- [x] Add the family capability gate `supports_lik_ratio_param_bootstrap()`
-- [x] Add a validator for the return object from `simulate_under_lik_null(...)`
-  so all families return the same minimal contract:
-  `full_fit`, `fit_null(delta, start = NULL)`, and `neg_loglik(fit)`
-- [x] Add reusable simulation helpers inside `InferenceParamBootstrap` or a
-  nearby helper module for common null generators:
-  Bernoulli, Poisson, Gaussian, ordinal-category sampling, Weibull
-- [x] Add explicit replicate diagnostics for bootstrap-LR failures:
-  simulated-data failure, full-refit failure, null-refit failure, non-finite LR
-- [x] Add a retry / minimum-usable-replicates policy when too many bootstrap
-  replicates return `NA`
-- [x] Audit every `InferenceParamBootstrap` descendant and mark each one as one
-  of:
-  supported now, intentionally unsupported, or disabled pending backend fixes
-- [x] Keep `InferenceCountHurdleNegBin` disabled until the
-  `fast_truncated_negbin_count_cpp` stability issue is fixed
+- `InferenceOrdinalAdjCatLogitRegr`
+  at `EDI/R/inference_ordinal_adj_cat_logit.R`
+  already has a dedicated C++ fit path, warm starts, and reusable-worker
+  support via `generate_mod()` and `get_bootstrap_worker_spec()`. What it
+  lacks is the same likelihood-test spec plus constrained-null simulation hook
+  already present in the supported ordinal families.
+- `InferenceOrdinalStereotypeLogitRegr`
+  at `EDI/R/inference_ordinal_stereotype_logit.R`
+  has a real parametric backend, warm starts, and reusable-worker plumbing,
+  but no LR-bootstrap contract yet.
+- `InferenceOrdinalContRatioRegr`
+  at `EDI/R/inference_ordinal_stereotype_logit.R`
+  is in the same position as the stereotype model: proper parametric backend,
+  no null-simulation/bootstrap-LR hook yet.
+- `InferenceCountHurdleNegBin`
+  at `EDI/R/inference_count_hurdle.R`
+  is a deferred reactivation candidate rather than a fresh addition. It
+  already has `get_likelihood_test_spec()` and `simulate_under_lik_null()`,
+  but should stay off the branch until the repeated null-refit failure is
+  fixed.
 
-### Checklist B: Add Reusable Worker Support For Parametric Null Simulation
+### Plausible But Harder
 
-- [x] Add a parametric-bootstrap worker-state API parallel to the existing
-  nonparametric worker API, likely in `InferenceParamBootstrap`:
-  `create_param_bootstrap_worker_state(...)`
-- [x] Add a worker loader for simulated null data:
-  `load_param_bootstrap_draw_into_worker(worker_state, sim_data)`
-- [x] Add a worker computation method:
-  `compute_param_bootstrap_worker_lrt(worker_state, delta)`
-- [x] Make worker state hold fixed design-side objects once:
-  `X`, `w`, block / match structure, static metadata, base warm starts
-- [x] On each bootstrap replicate, replace only response-side data:
-  `y`, `dead`, and any family-specific latent / mixture components
-- [x] Refit unrestricted and null models on the worker object using the same
-  family-specific likelihood machinery already used in the generic path
-- [x] Route `compute_lik_ratio_bootstrap_two_sided_pval(...)` through the worker
-  path when available, with fallback to the current per-replicate path
-- [x] Add parity tests:
-  reusable-worker path vs current generic path for the same seed and `B`
-- [x] Add serial / parallel determinism tests where exact equality is expected
-  under fixed seeds
-- [x] Add smoke tests for censoring, mixture, ordinal, and GLMM-style families
-  via `EDI/tests/testthat/test-parametric-bootstrap-lr-smoke-families.R`
+- `InferenceSurvivalDepCensTransformRegr`
+  at `EDI/R/inference_survival_dep_cens_transform.R`
+  is closer than most unsupported families because it already implements
+  `supports_likelihood_tests()` and `get_likelihood_test_spec()`. The missing
+  piece is `simulate_under_lik_null()`. Its backend model is explicit enough to
+  simulate from: a joint lognormal event/censoring model with correlated
+  normals and parameters
+  `[beta_event, beta_cens, log_sigma_event, log_sigma_cens, atanh_rho]`.
+  That makes it feasible, but materially trickier than the ordinal additions.
 
-### Checklist C: Make The Existing User-Facing API Easy To Run Reliably
+### Probably Not Good Candidates For This Branch
 
-- [x] Keep the existing public methods as the sole user-facing API:
-  `compute_lik_ratio_bootstrap_two_sided_pval(...)` and
-  `compute_lik_ratio_bootstrap_confidence_interval(...)`
-  Diagnostic accessors remain supplementary only.
-- [x] Move intentionally unsupported families off the
-  `InferenceParamBootstrap` branch so they do not expose the parametric LR
-  bootstrap methods in the first place
-- [x] Standardize and document the expected user-facing arguments and defaults:
-  `delta = 0`, `B = 199`, `show_progress = FALSE`
-- [x] Add roxygen docs describing:
-  what each method does, when it is available, and expected runtime costs
-- [x] Document the availability rule clearly:
-  only classes with `supports_lik_ratio_param_bootstrap() == TRUE` should
-  support successful runs
-- [x] Add examples to a few stable first-wave families:
-  `InferenceIncidLogRegr`, `InferenceCountPoisson`,
-  `InferenceSurvivalWeibullRegr`, `InferenceOrdinalPropOddsRegr`
-- [x] Add one package-level vignette / README section showing the end-user flow:
-  fit design -> create inference object -> call bootstrap LR p-value
+- `InferencePropFractionalLogit`
+  at `EDI/R/inference_proportion_fractional_logit.R`
+  explicitly sets `supports_likelihood_tests = FALSE`. This is
+  quasi-likelihood territory, so there is no obvious native LR target without
+  introducing a different generative family.
+- `InferenceIncidRiskDiff`
+  at `EDI/R/inference_incidence_risk_diff.R`
+  is OLS / linear-probability-model based rather than likelihood based, so LR
+  parametric bootstrap is not a natural fit.
+- The KK pass-through / IVWC / Bai / quantile / Newcombe families are not
+  single parametric likelihoods, so putting them on the LR parametric-bootstrap
+  branch would force the wrong abstraction.
 
-### Checklist D: What A User Needs In Order To Run The Existing API Reliably
+### Suggested Next-Wave Order
 
-- [ ] Pick a first-wave supported family
-- [ ] Fit the corresponding inference object on a completed design
-- [ ] Confirm the class is one with `supports_lik_ratio_param_bootstrap() == TRUE`
-- [ ] Start with a small `B` smoke run, e.g. `B = 19` or `B = 49`
-- [ ] Then run the real analysis at a larger `B`, e.g. `B = 199` or `B = 499`
-- [ ] For expensive families, prefer p-values first and only then CI inversion
-- [ ] Expect CI inversion to be much slower than the p-value because each
-  candidate `delta` triggers a full nested bootstrap-LR calculation
-- [ ] For families with occasional optimizer failures, monitor the share of
-  usable bootstrap replicates and rerun with a larger `B` if needed
-
-## Bottom Line
-
-Bootstrap-calibrated LR testing is a realistic extension for this repo.
-The `InferenceParamBootstrap` class is now the designated home for this
-functionality, and the class hierarchy already encodes the easy/difficult split:
-
-- **Easy / Borderline** families sit under `InferenceParamBootstrap` and are
-  ready to receive the null-simulation hook
-- **Difficult** families remain direct children of `InferenceAsympLik` and are
-  explicitly excluded
-
-The actual gap is no longer structural. The generic parametric-null bootstrap
-loop in `InferenceParamBootstrap` and the main first-wave
-`simulate_under_lik_null(...)` implementations are now in place. What remains
-is selective hardening, test coverage, and deliberate scoping decisions for the
-most bespoke hybrid families.
+1. `InferenceOrdinalAdjCatLogitRegr`
+2. `InferenceOrdinalStereotypeLogitRegr`
+3. `InferenceOrdinalContRatioRegr`
+4. Re-enable `InferenceCountHurdleNegBin` after the null-refit bug is fixed
+5. `InferenceSurvivalDepCensTransformRegr`

@@ -1,14 +1,3 @@
-invisible(try(dyn.load("/home/kapelner/workspace/GreedyExperimentalDesign/lib/wgpu/lib/libwgpu_native.so", local = FALSE, now = TRUE), silent = TRUE))
-num_cores = 7L
-options(java.parameters = c(
-	"--enable-preview",
-	"--enable-native-access=ALL-UNNAMED",
-	sprintf("-Xmx%dm", 10240L %/% num_cores),  # cap per-worker JVM at 10GB/num_cores
-	"-XX:+UseG1GC",     # G1 GC handles large heaps better than default
-	"-XX:+UseStringDeduplication",  # G1GC: deduplicate identical strings
-	"-XX:+OptimizeStringConcat",
-	"-Dged.wgpu.lib.path=/home/kapelner/workspace/GreedyExperimentalDesign/lib/wgpu/lib/libwgpu_native.so"
-))
 suppressPackageStartupMessages(library(EDI))
 suppressPackageStartupMessages(library(data.table))
 
@@ -16,7 +5,7 @@ Nrep = 10000L   # Monte Carlo replications per cell
 
 sim = SimulationFramework$new(
         Nrep                          = Nrep,
-        num_cores                     = num_cores,
+        num_cores                     = 12L,
         results_filename              = sprintf("simulations/cmh_exact_sims_plus_greedy_results_Nrep_%d.csv.bz2", Nrep),
         continue_from_last_result_row = TRUE,
         response_type                 = "incidence",

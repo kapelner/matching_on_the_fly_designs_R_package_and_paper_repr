@@ -457,8 +457,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // greedy_design_search_cpp
-Rcpp::IntegerMatrix greedy_design_search_cpp(const Eigen::Map<Eigen::MatrixXd> X_raw, const int r, const std::string& objective, const int n_iter);
-RcppExport SEXP _EDI_greedy_design_search_cpp(SEXP X_rawSEXP, SEXP rSEXP, SEXP objectiveSEXP, SEXP n_iterSEXP) {
+Rcpp::IntegerMatrix greedy_design_search_cpp(const Eigen::Map<Eigen::MatrixXd> X_raw, const int r, const std::string& objective, const int n_iter, Rcpp::Nullable<Rcpp::IntegerMatrix> indicies_pairs);
+RcppExport SEXP _EDI_greedy_design_search_cpp(SEXP X_rawSEXP, SEXP rSEXP, SEXP objectiveSEXP, SEXP n_iterSEXP, SEXP indicies_pairsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -466,7 +466,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type r(rSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type objective(objectiveSEXP);
     Rcpp::traits::input_parameter< const int >::type n_iter(n_iterSEXP);
-    rcpp_result_gen = Rcpp::wrap(greedy_design_search_cpp(X_raw, r, objective, n_iter));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerMatrix> >::type indicies_pairs(indicies_pairsSEXP);
+    rcpp_result_gen = Rcpp::wrap(greedy_design_search_cpp(X_raw, r, objective, n_iter, indicies_pairs));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -4048,6 +4049,62 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// complete_randomization_forced_balanced_cpp
+Rcpp::IntegerMatrix complete_randomization_forced_balanced_cpp(int n, int r, int seed);
+RcppExport SEXP _EDI_complete_randomization_forced_balanced_cpp(SEXP nSEXP, SEXP rSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type r(rSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(complete_randomization_forced_balanced_cpp(n, r, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
+// complete_randomization_imbalanced_cpp
+Rcpp::IntegerMatrix complete_randomization_imbalanced_cpp(int n, int nT, int r, int seed);
+RcppExport SEXP _EDI_complete_randomization_imbalanced_cpp(SEXP nSEXP, SEXP nTSEXP, SEXP rSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< int >::type nT(nTSEXP);
+    Rcpp::traits::input_parameter< int >::type r(rSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(complete_randomization_imbalanced_cpp(n, nT, r, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_objective_vals_cpp
+Rcpp::NumericVector compute_objective_vals_cpp(Rcpp::NumericMatrix X, Rcpp::IntegerMatrix indicTs, std::string objective, Rcpp::Nullable<Rcpp::NumericMatrix> inv_cov_X);
+RcppExport SEXP _EDI_compute_objective_vals_cpp(SEXP XSEXP, SEXP indicTsSEXP, SEXP objectiveSEXP, SEXP inv_cov_XSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type X(XSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type indicTs(indicTsSEXP);
+    Rcpp::traits::input_parameter< std::string >::type objective(objectiveSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type inv_cov_X(inv_cov_XSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_objective_vals_cpp(X, indicTs, objective, inv_cov_X));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rerandomization_search_cpp
+Rcpp::IntegerMatrix rerandomization_search_cpp(const Eigen::Map<Eigen::MatrixXd> X_raw, const int r, const std::string& objective, const double cutoff, const int max_draws);
+RcppExport SEXP _EDI_rerandomization_search_cpp(SEXP X_rawSEXP, SEXP rSEXP, SEXP objectiveSEXP, SEXP cutoffSEXP, SEXP max_drawsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd> >::type X_raw(X_rawSEXP);
+    Rcpp::traits::input_parameter< const int >::type r(rSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type objective(objectiveSEXP);
+    Rcpp::traits::input_parameter< const double >::type cutoff(cutoffSEXP);
+    Rcpp::traits::input_parameter< const int >::type max_draws(max_drawsSEXP);
+    rcpp_result_gen = Rcpp::wrap(rerandomization_search_cpp(X_raw, r, objective, cutoff, max_draws));
+    return rcpp_result_gen;
+END_RCPP
+}
 // clear_result_key_store_cpp
 void clear_result_key_store_cpp();
 RcppExport SEXP _EDI_clear_result_key_store_cpp() {
@@ -4485,7 +4542,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_compute_all_subject_data_cpp", (DL_FUNC) &_EDI_compute_all_subject_data_cpp, 4},
     {"_EDI_compute_proportional_mahal_distances_cpp", (DL_FUNC) &_EDI_compute_proportional_mahal_distances_cpp, 4},
     {"_EDI_compute_weighted_sqd_distances_cpp", (DL_FUNC) &_EDI_compute_weighted_sqd_distances_cpp, 4},
-    {"_EDI_greedy_design_search_cpp", (DL_FUNC) &_EDI_greedy_design_search_cpp, 4},
+    {"_EDI_greedy_design_search_cpp", (DL_FUNC) &_EDI_greedy_design_search_cpp, 5},
     {"_EDI_efron_redraw_cpp", (DL_FUNC) &_EDI_efron_redraw_cpp, 3},
     {"_EDI_get_adjacent_category_logit_score_cpp", (DL_FUNC) &_EDI_get_adjacent_category_logit_score_cpp, 3},
     {"_EDI_get_adjacent_category_logit_hessian_cpp", (DL_FUNC) &_EDI_get_adjacent_category_logit_hessian_cpp, 3},
@@ -4713,6 +4770,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_qr_reduce_preserve_cols_cpp", (DL_FUNC) &_EDI_qr_reduce_preserve_cols_cpp, 2},
     {"_EDI_random_block_size_redraw_w_cpp", (DL_FUNC) &_EDI_random_block_size_redraw_w_cpp, 3},
     {"_EDI_randomization_loop_cpp", (DL_FUNC) &_EDI_randomization_loop_cpp, 5},
+    {"_EDI_complete_randomization_forced_balanced_cpp", (DL_FUNC) &_EDI_complete_randomization_forced_balanced_cpp, 3},
+    {"_EDI_complete_randomization_imbalanced_cpp", (DL_FUNC) &_EDI_complete_randomization_imbalanced_cpp, 4},
+    {"_EDI_compute_objective_vals_cpp", (DL_FUNC) &_EDI_compute_objective_vals_cpp, 4},
+    {"_EDI_rerandomization_search_cpp", (DL_FUNC) &_EDI_rerandomization_search_cpp, 5},
     {"_EDI_clear_result_key_store_cpp", (DL_FUNC) &_EDI_clear_result_key_store_cpp, 0},
     {"_EDI_init_result_key_store_cpp", (DL_FUNC) &_EDI_init_result_key_store_cpp, 1},
     {"_EDI_add_to_result_key_store_cpp", (DL_FUNC) &_EDI_add_to_result_key_store_cpp, 11},

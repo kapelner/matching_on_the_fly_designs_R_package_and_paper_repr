@@ -77,3 +77,45 @@ All benchmarks were performed on a synthetic clinical-trial-scale dataset genera
 | InferenceIncidGCompRiskDiff | incidence | 0.02 | None | None | NA | NA |
 | InferenceOrdinalGCompMeanDiff | ordinal | 0.05 | None | None | NA | NA |
 | InferencePropZeroOneInflatedBetaRegr | proportion | 0.02 | None | None | NA | NA |
+
+## Wald Test Performance (Full Inference)
+
+This table compares the performance of **Full Inference** (Model Fit + Standard Error calculation + P-value derivation).
+Unlike the point-estimation table above, these results include the computational cost of the variance-covariance matrix (Hessian or Fisher Information) and the Wald test statistic calculation.
+
+| Class | Response | EDI Time (ms) | Canonical Pkg | Canonical Func | Canonical Time (ms) | Speedup |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| InferenceIncidLogRegr | incidence | 177.06 | stats | glm.fit+Wald | 3.87 | 0.02x |
+| InferenceContinOLS | continuous | 11.28 | stats | lm.fit+Wald | 0.33 | 0.03x |
+| InferenceCountPoisson | count | 28.02 | stats | glm.fit+Wald | 3.29 | 0.12x |
+| InferenceSurvivalCoxPHRegr | survival | 85.61 | survival | coxph.fit+Wald | 2.07 | 0.02x |
+| InferenceCountNegBin | count | 70.44 | MASS | glm.nb+summary | 38.3 | 0.54x |
+| InferencePropBetaRegr | proportion | 42.87 | betareg | betareg.fit+Wald | 83.3 | 1.94x |
+| InferenceOrdinalPropOddsRegr | ordinal | 60.67 | ordinal | clm+summary | 19.46 | 0.32x |
+| InferenceCountHurdlePoisson | count | 98.24 | pscl | hurdle+summary | 26.44 | 0.27x |
+| InferenceCountZeroInflatedPoisson | count | 9.78 | pscl | zeroinfl+summary | 97.04 | 9.92x |
+| InferenceCountZeroInflatedNegBin | count | 124.85 | pscl | zeroinfl(nb)+summary | 133.75 | 1.07x |
+| InferenceCountHurdleNegBin | count | 60.44 | pscl | hurdle(nb)+summary | 68.43 | 1.13x |
+| InferenceCountQuasiPoisson | count | 52.41 | stats | glm.fit+Wald(quasi) | 3.51 | 0.07x |
+| InferenceSurvivalWeibullRegr | survival | 39.81 | survival | survreg+summary | 9.76 | 0.25x |
+| InferenceContinRobustRegr | continuous | 3.41 | MASS | rlm+summary | 3.57 | 1.05x |
+| InferenceContinQuantileRegr | continuous | 138 | quantreg | rq+summary | 5.56 | 0.04x |
+| InferenceIncidLogBinomial | incidence | 87.11 | stats | glm.fit+Wald(log) | 2.29 | 0.03x |
+| InferenceOrdinalAdjCatLogitRegr | ordinal | 25.85 | VGAM | vglm+summary | 95.91 | 3.71x |
+| InferenceOrdinalContRatioRegr | ordinal | 59.07 | VGAM | vglm+summary | 66.72 | 1.13x |
+| InferenceSurvivalLogRank | survival | 24.56 | survival | survdiff | 2.86 | 0.12x |
+| InferenceSurvivalGehanWilcox | survival | 55.65 | survival | survdiff(rho=1) | 2.78 | 0.05x |
+| InferenceAllSimpleMeanDiffPooledVar | continuous | 29.69 | stats | t.test(pool) | 0.79 | 0.03x |
+| InferenceAllSimpleWilcox | continuous | 49.26 | stats | wilcox.test | 2.99 | 0.06x |
+| InferenceIncidExactFisher | incidence | NA | stats | fisher.test | 2.01 | NA |
+| InferenceIncidCMH | incidence | 31.27 | stats | mantelhaen | 2.11 | 0.07x |
+| InferenceOrdinalJonckheereTerpstraTest | ordinal | 3578.13 | clinfun | jonckheere | 1.09 | 0x |
+| InferenceIncidMiettinenNurminenRiskDiff | incidence | 7.07 | DescTools | BinomDiffCI(mn) | 2.86 | 0.4x |
+| InferenceSurvivalStratCoxPHRegr | survival | 121.66 | survival | coxph.fit(strat)+Wald | 1.69 | 0.01x |
+| InferenceContinLin | continuous | 33.31 | stats | lm.fit(interact)+Wald | 1.41 | 0.04x |
+| InferenceIncidRiskDiff | incidence | 57.37 | stats | prop.test | 1.08 | 0.02x |
+| InferenceSurvivalKMDiff | survival | 415.88 | survival | survfit(median)+CI | 6.38 | 0.02x |
+| InferenceCountRobustPoisson | count | 79.97 | sandwich | glm+vcovHC | 10.82 | 0.14x |
+| InferenceOrdinalRidit | ordinal | 0.54 | stats | mean(ridit) | 0.62 | 1.15x |
+| InferenceIncidExactZhang | incidence | NA | Exact | exact.test(z) | 1939.28 | NA |
+| InferenceIncidNewcombeRiskDiff | incidence | 21.07 | DescTools | BinomDiffCI(score) | 3.26 | 0.15x |

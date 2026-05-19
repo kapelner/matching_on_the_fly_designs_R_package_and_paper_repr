@@ -165,8 +165,8 @@ compute_weighted_sqd_distances_cpp <- function(x_new, X_all_scaled_col_subset, r
     .Call(`_EDI_compute_weighted_sqd_distances_cpp`, x_new, X_all_scaled_col_subset, reservoir_indices, covariate_weights)
 }
 
-greedy_design_search_cpp <- function(X_raw, r, objective, n_iter) {
-    .Call(`_EDI_greedy_design_search_cpp`, X_raw, r, objective, n_iter)
+greedy_design_search_cpp <- function(X_raw, r, objective, n_iter, indicies_pairs = NULL) {
+    .Call(`_EDI_greedy_design_search_cpp`, X_raw, r, objective, n_iter, indicies_pairs)
 }
 
 efron_redraw_cpp <- function(t, prob_T, weighted_coin_prob) {
@@ -2311,6 +2311,22 @@ random_block_size_redraw_w_cpp <- function(strata_keys_sexp, block_sizes_sexp, p
 
 randomization_loop_cpp <- function(r, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores = 1L) {
     .Call(`_EDI_randomization_loop_cpp`, r, duplicate_design_fn, duplicate_inference_fn, run_randomization_iteration_fn, num_cores)
+}
+
+complete_randomization_forced_balanced_cpp <- function(n, r, seed) {
+    .Call(`_EDI_complete_randomization_forced_balanced_cpp`, n, r, seed)
+}
+
+complete_randomization_imbalanced_cpp <- function(n, nT, r, seed) {
+    .Call(`_EDI_complete_randomization_imbalanced_cpp`, n, nT, r, seed)
+}
+
+compute_objective_vals_cpp <- function(X, indicTs, objective, inv_cov_X = NULL) {
+    .Call(`_EDI_compute_objective_vals_cpp`, X, indicTs, objective, inv_cov_X)
+}
+
+rerandomization_search_cpp <- function(X_raw, r, objective, cutoff, max_draws) {
+    .Call(`_EDI_rerandomization_search_cpp`, X_raw, r, objective, cutoff, max_draws)
 }
 
 clear_result_key_store_cpp <- function() {

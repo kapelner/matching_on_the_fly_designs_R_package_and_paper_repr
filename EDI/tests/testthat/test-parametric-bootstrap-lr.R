@@ -42,6 +42,7 @@ test_that("parametric bootstrap LR reusable worker path matches generic path", {
 	expect_true(is.list(diag_worker))
 	expect_equal(diag_worker$B, 9L)
 	expect_true(isTRUE(diag_worker$used_reusable_worker))
+	expect_true(isTRUE(diag_worker$used_deterministic_mode))
 	expect_equal(diag_worker$n_success + diag_worker$n_failure, diag_worker$B)
 	expect_equal(sum(unlist(diag_worker$reason_counts, use.names = FALSE)), diag_worker$B)
 	expect_equal(length(diag_worker$replicate_results), diag_worker$B)
@@ -104,4 +105,23 @@ test_that("generic parametric bootstrap LR is serial-parallel deterministic unde
 	expect_equal(ci_serial, ci_parallel, tolerance = 0)
 	expect_true(is.finite(p_serial))
 	expect_true(all(is.finite(ci_serial)))
+
+	diag_serial <- inf_serial$get_last_param_bootstrap_diagnostics()
+	diag_parallel <- inf_parallel$get_last_param_bootstrap_diagnostics()
+	expect_true(isTRUE(diag_serial$used_deterministic_mode))
+	expect_true(isTRUE(diag_parallel$used_deterministic_mode))
+})
+
+test_that("parametric bootstrap LR keeps deterministic mode off when no seed is set", {
+	des <- make_param_boot_logit_design(seed = 20260522L, n = 90L)
+	inf <- InferenceIncidLogRegr$new(des, model_formula = ~ x1 + x2, verbose = FALSE)
+	inf$num_cores <- 2L
+	inf$.__enclos_env__$private$reusable_bootstrap_worker_enabled <- FALSE
+
+	p <- inf$compute_lik_ratio_bootstrap_two_sided_pval(B = 9L, show_progress = FALSE)
+	diag <- inf$get_last_param_bootstrap_diagnostics()
+
+	expect_true(is.finite(p))
+	expect_true(is.list(diag))
+	expect_false(isTRUE(diag$used_deterministic_mode))
 })

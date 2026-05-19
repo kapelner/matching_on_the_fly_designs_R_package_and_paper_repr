@@ -107,14 +107,25 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 			replicate_seeds = sample.int(.Machine$integer.max, as.integer(B), replace = TRUE)
 
 			use_worker_path = isTRUE(private$use_reusable_param_bootstrap_worker())
+			deterministic_mode = isTRUE(private$use_deterministic_param_bootstrap())
 			run_one_lr = function(b){
-				private$compute_param_bootstrap_lr_impl(
-					spec = spec,
-					delta = delta,
-					null_fit = null_fit,
-					seed = replicate_seeds[[b]],
-					max_attempts_per_replicate = max_attempts_per_replicate
-				)
+				if (isTRUE(deterministic_mode)) {
+					private$compute_param_bootstrap_lr_deterministic(
+						spec = spec,
+						delta = delta,
+						null_fit = null_fit,
+						seed = replicate_seeds[[b]],
+						max_attempts_per_replicate = max_attempts_per_replicate
+					)
+				} else {
+					private$compute_param_bootstrap_lr_impl(
+						spec = spec,
+						delta = delta,
+						null_fit = null_fit,
+						seed = replicate_seeds[[b]],
+						max_attempts_per_replicate = max_attempts_per_replicate
+					)
+				}
 			}
 
 			run_worker_chunk = function(idxs){
@@ -132,11 +143,17 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 				})
 			}
 
-			if (!use_worker_path) {
-				actual_cores = 1L
-			}
-
-			results = if (use_worker_path && actual_cores <= 1L) {
+			results = if (isTRUE(deterministic_mode) && actual_cores <= 1L) {
+				lapply(seq_len(B), run_one_lr)
+			} else if (isTRUE(deterministic_mode) && actual_cores > 1L) {
+				unlist(private$par_lapply(
+					as.list(seq_len(B)),
+					function(idx) list(run_one_lr(as.integer(idx)[1L])),
+					n_cores = actual_cores,
+					budget = 1L,
+					show_progress = show_progress
+				), recursive = FALSE, use.names = FALSE)
+			} else if (use_worker_path && actual_cores <= 1L) {
 				run_worker_chunk(seq_len(B))
 			} else if (!use_worker_path && actual_cores <= 1L) {
 				lapply(seq_len(B), run_one_lr)
@@ -162,7 +179,8 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 					B = as.integer(B),
 					min_number_usable_samples = as.integer(min_number_usable_samples),
 					max_attempts_per_replicate = as.integer(max_attempts_per_replicate),
-					used_reusable_worker = isTRUE(use_worker_path)
+					used_reusable_worker = isTRUE(use_worker_path),
+					used_deterministic_mode = isTRUE(deterministic_mode)
 				)
 			private$cached_values$last_param_bootstrap_summary = list(
 				B = as.integer(B),
@@ -170,7 +188,8 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 				finite_fraction = n_finite / as.integer(B),
 				min_number_usable_samples = as.integer(min_number_usable_samples),
 				max_attempts_per_replicate = as.integer(max_attempts_per_replicate),
-				used_reusable_worker = isTRUE(use_worker_path)
+				used_reusable_worker = isTRUE(use_worker_path),
+				used_deterministic_mode = isTRUE(deterministic_mode)
 			)
 			if (n_finite < as.integer(min_number_usable_samples)) return(NA_real_)
 			n_exceed = sum(finite_lr >= lr_obs)
@@ -376,6 +395,9 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 				private$has_private_method("supports_reusable_param_bootstrap_worker") &&
 				isTRUE(tryCatch(private$supports_reusable_param_bootstrap_worker(), error = function(e) FALSE))
 		},
+		use_deterministic_param_bootstrap = function(){
+			!is.null(private$seed) && is.finite(private$seed)
+		},
 		with_param_bootstrap_seed = function(seed, expr){
 			if (is.null(seed) || !is.finite(seed)) return(force(expr))
 			had_seed = exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
@@ -469,6 +491,45 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 				}
 				last_result
 			})
+		},
+		compute_param_bootstrap_lr_deterministic = function(spec, delta, null_fit, seed = NULL, max_attempts_per_replicate = 1L){
+			worker_state = private$create_param_bootstrap_worker_state(spec, delta, null_fit)
+			if (!is.null(worker_state)) {
+				return(private$compute_param_bootstrap_worker_lrt(
+					worker_state = worker_state,
+					delta = delta,
+					seed = seed,
+					max_attempts_per_replicate = max_attempts_per_replicate
+				))
+			}
+			worker = self$duplicate(verbose = FALSE, make_fork_cluster = FALSE)
+			worker$num_cores = 1L
+			worker_priv = worker$.__enclos_env__$private
+			worker_priv$cached_values = list()
+			worker_priv$clear_likelihood_null_warm_cache()
+			worker_priv$clear_fit_warm_start()
+			worker_spec = worker_priv$get_likelihood_test_spec()
+			if (is.null(worker_spec)) {
+				return(private$param_boot_failure_result("simulated_data_failure"))
+			}
+			worker_eval = worker_priv$get_memoized_likelihood_test_eval(
+				delta = delta,
+				testing_type = "lik_ratio",
+				spec = worker_spec,
+				include_full_negloglik = TRUE,
+				include_null_negloglik = TRUE
+			)
+			if (isTRUE(worker_eval$invalid) || is.null(worker_eval$null_fit)) {
+				return(private$param_boot_failure_result("null_refit_failure"))
+			}
+			worker_priv$compute_param_bootstrap_lr_impl(
+				spec = worker_spec,
+				delta = delta,
+				null_fit = worker_eval$null_fit,
+				seed = seed,
+				max_attempts_per_replicate = max_attempts_per_replicate,
+				worker_priv = worker_priv
+			)
 		},
 		load_param_bootstrap_draw_into_worker = function(worker_state, sim_data){
 			if (is.null(worker_state) || is.null(worker_state$worker_priv) || is.null(worker_state$state_env)) {
@@ -619,7 +680,7 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 				last_result
 			})
 		},
-		summarize_param_bootstrap_diagnostics = function(results, B, min_number_usable_samples, max_attempts_per_replicate, used_reusable_worker){
+		summarize_param_bootstrap_diagnostics = function(results, B, min_number_usable_samples, max_attempts_per_replicate, used_reusable_worker, used_deterministic_mode = FALSE){
 			if (is.null(results)) results = list()
 			reasons = vapply(results, function(res) as.character(res$reason %||% "unknown_failure")[1L], character(1))
 			attempts = vapply(results, function(res) as.integer(res$attempts %||% NA_integer_)[1L], integer(1))
@@ -637,6 +698,7 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 				min_number_usable_samples = as.integer(min_number_usable_samples),
 				max_attempts_per_replicate = as.integer(max_attempts_per_replicate),
 				used_reusable_worker = isTRUE(used_reusable_worker),
+				used_deterministic_mode = isTRUE(used_deterministic_mode),
 				reason_counts = reason_counts,
 				prop_simulated_data_failure = unname(reason_counts$simulated_data_failure) / max(1L, as.integer(B)),
 				prop_full_refit_failure = unname(reason_counts$full_refit_failure) / max(1L, as.integer(B)),
