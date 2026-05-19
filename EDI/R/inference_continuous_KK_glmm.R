@@ -53,6 +53,29 @@ InferenceContinKKGLMM = R6::R6Class("InferenceContinKKGLMM",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Compute the treatment estimate with bootstrap weights.
+		#' @param subject_or_block_weights Numeric vector. Row weights for bootstrap.
+		#' @param estimate_only Logical. If TRUE, skip variance component calculations.
+		#' @return The treatment estimate.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			if (weights_are_effectively_constant(row_weights)) {
+				beta_hat_T = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+				if (is.finite(beta_hat_T)) {
+					private$cached_values$beta_hat_T = beta_hat_T
+					private$cached_values$s_beta_hat_T = NA_real_
+					private$cached_values$df = Inf
+					private$cached_values$summary_table = NULL
+					return(private$cached_values$beta_hat_T)
+				}
+			}
+			beta_hat_T = private$compute_weighted_glmm_bootstrap_estimate(row_weights)
+			private$cached_values$beta_hat_T = as.numeric(beta_hat_T)[1L]
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = Inf
+			private$cached_values$summary_table = NULL
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes an approximate confidence interval.
 		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){

@@ -32,19 +32,13 @@ inf$compute_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{InferenceIncidKKNewcombeRiskDiff}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{EDI::InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{InferenceIncidKKNewcombeRiskDiff}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceIncidKKNewcombeRiskDiff-compute_estimate_with_bootstrap_weights}{\code{InferenceIncidKKNewcombeRiskDiff$compute_estimate_with_bootstrap_weights()}}
-\item \href{#method-InferenceIncidKKNewcombeRiskDiff-approximate_bayesian_bootstrap_distribution_beta_hat_T}{\code{InferenceIncidKKNewcombeRiskDiff$approximate_bayesian_bootstrap_distribution_beta_hat_T()}}
-\item \href{#method-InferenceIncidKKNewcombeRiskDiff-compute_bayesian_bootstrap_two_sided_pval}{\code{InferenceIncidKKNewcombeRiskDiff$compute_bayesian_bootstrap_two_sided_pval()}}
-\item \href{#method-InferenceIncidKKNewcombeRiskDiff-compute_bayesian_bootstrap_confidence_interval}{\code{InferenceIncidKKNewcombeRiskDiff$compute_bayesian_bootstrap_confidence_interval()}}
 \item \href{#method-InferenceIncidKKNewcombeRiskDiff-new}{\code{InferenceIncidKKNewcombeRiskDiff$new()}}
-\item \href{#method-InferenceIncidKKNewcombeRiskDiff-compute_estimate}{\code{InferenceIncidKKNewcombeRiskDiff$compute_estimate()}}
-\item \href{#method-InferenceIncidKKNewcombeRiskDiff-compute_asymp_confidence_interval}{\code{InferenceIncidKKNewcombeRiskDiff$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceIncidKKNewcombeRiskDiff-compute_asymp_two_sided_pval}{\code{InferenceIncidKKNewcombeRiskDiff$compute_asymp_two_sided_pval()}}
+\item \href{#method-InferenceIncidKKNewcombeRiskDiff-compute_estimate_with_bootstrap_weights}{\code{InferenceIncidKKNewcombeRiskDiff$compute_estimate_with_bootstrap_weights()}}
 \item \href{#method-InferenceIncidKKNewcombeRiskDiff-clone}{\code{InferenceIncidKKNewcombeRiskDiff$clone()}}
 }
 }
@@ -66,12 +60,16 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>EDI::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="approximate_jackknife_distribution_beta_hat_T"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>EDI::InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_bias_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>EDI::InferenceJackknife$compute_jackknife_bias_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_corrected_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_corrected_estimate'><code>EDI::InferenceJackknife$compute_jackknife_corrected_estimate()</code></a></span></li>
@@ -84,6 +82,9 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_two_sided_pval'><code>EDI::InferenceAsymp$compute_wald_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceMLEorKMSummaryTable" data-id="compute_estimate"><a href='../../EDI/html/InferenceMLEorKMSummaryTable.html#method-InferenceMLEorKMSummaryTable-compute_estimate'><code>EDI::InferenceMLEorKMSummaryTable$compute_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_asymp_confidence_interval'><code>EDI::InferenceAsympLik$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_asymp_two_sided_pval'><code>EDI::InferenceAsympLik$compute_asymp_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_gradient_confidence_interval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_gradient_confidence_interval'><code>EDI::InferenceAsympLik$compute_gradient_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_gradient_two_sided_pval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_gradient_two_sided_pval'><code>EDI::InferenceAsympLik$compute_gradient_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_lik_ratio_confidence_interval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_confidence_interval'><code>EDI::InferenceAsympLik$compute_lik_ratio_confidence_interval()</code></a></span></li>
@@ -104,66 +105,6 @@ inf$compute_estimate()
 </details>
 }}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-compute_estimate_with_bootstrap_weights"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-compute_estimate_with_bootstrap_weights}{}}}
-\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKNewcombeRiskDiff$compute_estimate_with_bootstrap_weights(
-  subject_or_block_weights,
-  estimate_only = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-approximate_bayesian_bootstrap_distribution_beta_hat_T"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-approximate_bayesian_bootstrap_distribution_beta_hat_T}{}}}
-\subsection{Method \code{approximate_bayesian_bootstrap_distribution_beta_hat_T()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKNewcombeRiskDiff$approximate_bayesian_bootstrap_distribution_beta_hat_T(
-  B = 501,
-  show_progress = TRUE,
-  debug = FALSE,
-  weighting_unit_type = NULL
-)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-compute_bayesian_bootstrap_two_sided_pval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-compute_bayesian_bootstrap_two_sided_pval}{}}}
-\subsection{Method \code{compute_bayesian_bootstrap_two_sided_pval()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKNewcombeRiskDiff$compute_bayesian_bootstrap_two_sided_pval(
-  delta = 0,
-  B = 501,
-  type = NULL,
-  na.rm = FALSE,
-  show_progress = TRUE,
-  min_number_usable_samples = 5L,
-  weighting_unit_type = NULL
-)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-compute_bayesian_bootstrap_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-compute_bayesian_bootstrap_confidence_interval}{}}}
-\subsection{Method \code{compute_bayesian_bootstrap_confidence_interval()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKNewcombeRiskDiff$compute_bayesian_bootstrap_confidence_interval(
-  alpha = 0.05,
-  B = 501,
-  type = NULL,
-  na.rm = TRUE,
-  show_progress = TRUE,
-  min_number_usable_samples = 5L,
-  weighting_unit_type = NULL
-)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-new}{}}}
 \subsection{Method \code{new()}}{
@@ -172,7 +113,8 @@ Initialize the inference object.
 \if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKNewcombeRiskDiff$new(
   des_obj,
   model_formula = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  smart_cold_start_default = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -187,60 +129,30 @@ reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
 \item{\code{verbose}}{Flag for progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-compute_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-compute_estimate}{}}}
-\subsection{Method \code{compute_estimate()}}{
-Returns the IVWC Newcombe estimate.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKNewcombeRiskDiff$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
-}
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-compute_asymp_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-Returns the asymptotic confidence interval based on pooled variance.
+\if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-compute_estimate_with_bootstrap_weights"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-compute_estimate_with_bootstrap_weights}{}}}
+\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Weighted bootstrap estimate using a direct empirical risk-difference surrogate.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKNewcombeRiskDiff$compute_asymp_confidence_interval(
-  alpha = 0.05
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKNewcombeRiskDiff$compute_estimate_with_bootstrap_weights(
+  subject_or_block_weights,
+  estimate_only = FALSE
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The confidence level in the computed confidence
-interval is 1 - \code{alpha}. The default is 0.05.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-compute_asymp_two_sided_pval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-compute_asymp_two_sided_pval}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval()}}{
-Returns the MLE p-value.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKNewcombeRiskDiff$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
-}
+\item{\code{subject_or_block_weights}}{bootstrap weights at the subject/block level.}
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null risk difference to test against. Default is zero.}
+\item{\code{estimate_only}}{flag.}
 }
 \if{html}{\out{</div>}}
 }

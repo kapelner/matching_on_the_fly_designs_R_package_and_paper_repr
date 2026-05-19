@@ -17,28 +17,16 @@ public:
 
     int n_model_params() const { return K - 1; }
 
-    // Recover thresholds from log-difference parameterization
-    inline std::vector<double> get_alpha(const Eigen::VectorXd& par) const {
-        int na = K - 1;
-        std::vector<double> alpha(na);
-        alpha[0] = par[0];
-        for (int k = 1; k < na; ++k) alpha[k] = alpha[k - 1] + std::exp(par[k]);
-        return alpha;
-    }
-
     inline void get_alpha_bounds(const Eigen::VectorXd& par, int y_ir, double& alpha_lo, double& alpha_up) const {
         alpha_lo = 0.0;
         alpha_up = 0.0;
-
         const int upper_idx = (y_ir >= K) ? -1 : (y_ir - 1);
         const int lower_idx = (y_ir <= 1) ? -1 : (y_ir - 2);
         const int last_idx = std::max(lower_idx, upper_idx);
         if (last_idx < 0) return;
-
         double alpha_curr = par[0];
         if (lower_idx == 0) alpha_lo = alpha_curr;
         if (upper_idx == 0) alpha_up = alpha_curr;
-
         for (int k = 1; k <= last_idx; ++k) {
             alpha_curr += std::exp(par[k]);
             if (k == lower_idx) alpha_lo = alpha_curr;
@@ -48,9 +36,10 @@ public:
 
     double log_prob(double y_val, double eta, const Eigen::VectorXd& par) const {
         int y_ir = static_cast<int>(y_val);
-        std::vector<double> alpha = get_alpha(par);
-        double F_up = (y_ir >= K) ? 1.0 : Link::cdf(alpha[y_ir - 1] - eta);
-        double F_lo = (y_ir <= 1) ? 0.0 : Link::cdf(alpha[y_ir - 2] - eta);
+        double alpha_lo, alpha_up;
+        get_alpha_bounds(par, y_ir, alpha_lo, alpha_up);
+        double F_up = (y_ir >= K) ? 1.0 : Link::cdf(alpha_up - eta);
+        double F_lo = (y_ir <= 1) ? 0.0 : Link::cdf(alpha_lo - eta);
         return std::log(std::max(1e-15, F_up - F_lo));
     }
 
@@ -58,8 +47,7 @@ public:
         int y_ir = static_cast<int>(y_val);
         int na = K - 1;
 
-        double alpha_lo;
-        double alpha_up;
+        double alpha_lo, alpha_up;
         get_alpha_bounds(par, y_ir, alpha_lo, alpha_up);
 
         double F_up = (y_ir >= K) ? 1.0 : Link::cdf(alpha_up - eta);
@@ -67,29 +55,25 @@ public:
         double prob = std::max(1e-15, F_up - F_lo);
         double lp = std::log(prob);
 
-        const double g_up = (y_ir >= K) ? 0.0 : Link::pdf(alpha_up - eta) / prob;
-        const double g_lo = (y_ir <= 1) ? 0.0 : Link::pdf(alpha_lo - eta) / prob;
+        // pdf_from_cdf avoids re-calling cdf() inside pdf() — F_up/F_lo already computed.
+        const double g_up = (y_ir >= K) ? 0.0 : Link::pdf_from_cdf(alpha_up - eta, F_up) / prob;
+        const double g_lo = (y_ir <= 1) ? 0.0 : Link::pdf_from_cdf(alpha_lo - eta, F_lo) / prob;
 
-        // Gradient w.r.t eta
         dp.setZero(na);
         de = -(g_up - g_lo);
         dp[0] = g_up - g_lo;
 
-        if (y_ir <= 1) {
-            return lp;
-        }
+        if (y_ir <= 1) return lp;
 
         const int lower_idx = y_ir - 2;
         const double base_suffix = (y_ir >= K) ? -g_lo : (g_up - g_lo);
         for (int j = 1; j <= lower_idx; ++j) {
             dp[j] = base_suffix * std::exp(par[j]);
         }
-
         if (y_ir < K) {
             const int upper_idx = y_ir - 1;
             dp[upper_idx] = g_up * std::exp(par[upper_idx]);
         }
-
         return lp;
     }
 };

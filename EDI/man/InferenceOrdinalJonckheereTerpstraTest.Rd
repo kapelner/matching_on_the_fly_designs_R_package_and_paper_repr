@@ -39,6 +39,7 @@ infer
 \itemize{
 \item \href{#method-InferenceOrdinalJonckheereTerpstraTest-new}{\code{InferenceOrdinalJonckheereTerpstraTest$new()}}
 \item \href{#method-InferenceOrdinalJonckheereTerpstraTest-compute_estimate}{\code{InferenceOrdinalJonckheereTerpstraTest$compute_estimate()}}
+\item \href{#method-InferenceOrdinalJonckheereTerpstraTest-compute_estimate_with_bootstrap_weights}{\code{InferenceOrdinalJonckheereTerpstraTest$compute_estimate_with_bootstrap_weights()}}
 \item \href{#method-InferenceOrdinalJonckheereTerpstraTest-compute_exact_two_sided_pval_for_treatment_effect}{\code{InferenceOrdinalJonckheereTerpstraTest$compute_exact_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-InferenceOrdinalJonckheereTerpstraTest-compute_asymp_confidence_interval}{\code{InferenceOrdinalJonckheereTerpstraTest$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceOrdinalJonckheereTerpstraTest-compute_asymp_two_sided_pval}{\code{InferenceOrdinalJonckheereTerpstraTest$compute_asymp_two_sided_pval()}}
@@ -62,6 +63,7 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
@@ -72,7 +74,6 @@ infer
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_estimate_with_bootstrap_weights"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_estimate_with_bootstrap_weights'><code>EDI::InferenceBayesianBootstrap$compute_estimate_with_bootstrap_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="approximate_jackknife_distribution_beta_hat_T"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>EDI::InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_bias_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>EDI::InferenceJackknife$compute_jackknife_bias_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_corrected_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_corrected_estimate'><code>EDI::InferenceJackknife$compute_jackknife_corrected_estimate()</code></a></span></li>
@@ -130,6 +131,28 @@ Returns the estimated treatment effect (JT superiority measure).
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceOrdinalJonckheereTerpstraTest-compute_estimate_with_bootstrap_weights"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalJonckheereTerpstraTest-compute_estimate_with_bootstrap_weights}{}}}
+\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Returns the weighted JT superiority estimate for Bayesian-bootstrap re-estimation.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalJonckheereTerpstraTest$compute_estimate_with_bootstrap_weights(
+  subject_or_block_weights,
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Bootstrap weights at the subject/block level.}
+
+\item{\code{estimate_only}}{If TRUE, skip exact p-value calculations.}
 }
 \if{html}{\out{</div>}}
 }

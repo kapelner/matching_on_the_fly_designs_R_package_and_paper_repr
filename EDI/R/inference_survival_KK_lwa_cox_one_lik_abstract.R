@@ -8,7 +8,7 @@
 #' @keywords internal
 InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLik,
+	inherit = InferenceParamBootstrap,
 	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
@@ -29,6 +29,37 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
+		},
+		#' @description Recomputes the LWA one-likelihood treatment estimate under
+		#'   Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Subject-, block-, cluster-, or matched-set
+		#'   bootstrap weights.
+		#' @param estimate_only If \code{TRUE}, compute only the weighted point
+		#'   estimate.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			if (weights_are_effectively_constant(row_weights)) {
+				beta_hat_T = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+				if (is.finite(beta_hat_T)) {
+					private$cached_values$beta_hat_T = beta_hat_T
+					private$cached_values$s_beta_hat_T = NA_real_
+					return(private$cached_values$beta_hat_T)
+				}
+			}
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
+			m_vec[is.na(m_vec)] = 0L
+			cluster_ids = m_vec
+			res_idx = which(cluster_ids == 0L)
+			if (length(res_idx) > 0L){
+				max_m = max(cluster_ids)
+				cluster_ids[res_idx] = max_m + seq_along(res_idx)
+			}
+			X_fit = private$design_matrix_candidates()
+			fit = weighted_cox_bootstrap_surrogate_fit(private$y, private$dead, X_fit, row_weights, cluster = cluster_ids)
+			private$cached_values$beta_hat_T = if (is.null(fit)) NA_real_ else as.numeric(fit$beta_hat)
+			private$cached_values$s_beta_hat_T = NA_real_
 			private$cached_values$beta_hat_T
 		},
 		#' @description Compute an asymptotic confidence interval.
@@ -62,13 +93,12 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 		#' @param bootstrap_type Optional resampling scheme.
 		#' @return A numeric vector of bootstrap estimates.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
-			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
+			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
 		}
 	)),
 	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		max_abs_reasonable_coef = 1e4,
-		best_X_colnames = NULL,
 		optimization_alg = "lbfgs",
 		get_standard_error = function(){
 			private$shared_combined_likelihood()
@@ -80,8 +110,51 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 				return(invisible(NULL))
 			}
 		},
-		supports_likelihood_tests = function(){
-			isTRUE(private$use_rcpp)
+		supports_likelihood_tests = function() TRUE,
+		supports_lik_ratio_param_bootstrap = function() TRUE,
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			b_null = as.numeric(null_fit$coefficients %||% null_fit$b)
+			if (!all(is.finite(b_null))) return(NULL)
+			X_fit = spec$X
+			y_obs = as.numeric(spec$y)
+			dead_obs = as.numeric(spec$dead)
+			group_id = as.integer(spec$group_id)
+			j = spec$j
+			breslow = .breslow_hazard(y_obs, dead_obs, X_fit, b_null)
+			if (length(breslow$times) == 0L) return(NULL)
+			sim = .cox_simulate_from_breslow(breslow, y_obs, dead_obs, X_fit, b_null)
+			y_sim = sim$y_sim; dead_sim = sim$dead_sim
+			if (!all(is.finite(y_sim)) || any(y_sim <= 0)) return(NULL)
+			full_res = tryCatch(
+				fast_coxph_regression_cpp(
+					X = X_fit, y = y_sim, dead = dead_sim,
+					cluster = group_id,
+					estimate_only = FALSE,
+					optimization_alg = private$optimization_alg
+				),
+				error = function(e) NULL
+			)
+			if (is.null(full_res) || !isTRUE(full_res$converged) || !is.finite(full_res$coefficients[j])) return(NULL)
+			full_fit_boot = list(b = as.numeric(full_res$coefficients), neg_loglik = as.numeric(full_res$neg_ll))
+			list(
+				full_fit = full_fit_boot,
+				fit_null = function(d, start = NULL){
+					res = tryCatch(
+						fast_coxph_regression_cpp(
+							X = X_fit, y = y_sim, dead = dead_sim,
+							cluster = group_id,
+							warm_start_beta = start %||% as.numeric(full_res$coefficients),
+							fixed_idx = j, fixed_values = d,
+							estimate_only = FALSE,
+							optimization_alg = private$optimization_alg
+						),
+						error = function(e) NULL
+					)
+					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
+					list(b = as.numeric(res$coefficients), neg_loglik = as.numeric(res$neg_ll))
+				},
+				neg_loglik = function(fit) as.numeric(fit$neg_loglik %||% fit$neg_ll)
+			)
 		},
 		get_likelihood_test_spec = function(){
 			private$shared_combined_likelihood(estimate_only = FALSE)
@@ -95,6 +168,8 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 			list(
 				X = X_fit,
 				y = y,
+				dead = dead,
+				group_id = group_id,
 				j = j_treat,
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
@@ -145,17 +220,17 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 			private$compute_basic_match_data()
 			
 			# Ensure we have the best design from the original data
-			if (is.null(private$best_X_colnames)){
+			if (is.null(private$cached_values$best_X_colnames)){
 				private$shared_combined_likelihood(estimate_only = TRUE)
 			}
 			# Fallback if initial fit failed
-			if (is.null(private$best_X_colnames)){
+			if (is.null(private$cached_values$best_X_colnames)){
 				return(NA_real_)
 			}
 			X_data = private$get_X()
 			X_full = matrix(private$w, ncol = 1)
 			colnames(X_full) = "w"
-			X_covs_filtered = X_data[, intersect(private$best_X_colnames, colnames(X_data)), drop = FALSE]
+			X_covs_filtered = X_data[, intersect(private$cached_values$best_X_colnames, colnames(X_data)), drop = FALSE]
 			if (ncol(X_covs_filtered) > 0){
 				X_full = cbind(X_full, X_covs_filtered)
 			}
@@ -235,7 +310,7 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 			)
 				res = attempt$fit
 				if (!is.null(res)){
-					private$best_X_colnames = setdiff(colnames(attempt$X), "w")
+					private$cached_values$best_X_colnames = setdiff(colnames(attempt$X), "w")
 					private$cached_mod = res
 					private$cached_values$likelihood_test_context = list(
 						X = attempt$X,

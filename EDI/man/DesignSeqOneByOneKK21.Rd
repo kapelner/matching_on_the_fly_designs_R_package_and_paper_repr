@@ -116,6 +116,7 @@ option to use matching parameters of Morrison and Owen (2025)
   ordinal_use_speedup = TRUE,
   missingness_method = "impute",
   model_formula = ~.,
+  seed = NULL,
   ...
 )}\if{html}{\out{</div>}}
 }
@@ -193,6 +194,8 @@ model each time? This is at the expense of the weights being less accurate. Defa
 \item{\code{missingness_method}}{How to handle missing values in covariates.}
 
 \item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
 
 \item{\code{...}}{Extra arguments passed to the \code{DesignSeqOneByOneKK14} superclass.}
 }

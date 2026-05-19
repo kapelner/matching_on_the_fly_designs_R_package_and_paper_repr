@@ -15,6 +15,11 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
 	public = list(
+		#' @description Returns diagnostics from the most recent parametric-bootstrap LR run.
+		#' @return A list of diagnostics, or \code{NULL} if no parametric-bootstrap LR run has been executed.
+		get_last_param_bootstrap_diagnostics = function(){
+			private$cached_values$last_param_bootstrap_diagnostics
+		},
 		#' @description Bootstrap-calibrated likelihood-ratio two-sided p-value.
 		#'
 		#' Fits the null model at \code{delta}, simulates \code{B} datasets from
@@ -25,7 +30,7 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 		#' @param B            Number of bootstrap replicates. Default 199.
 		#' @param show_progress Logical; show a progress bar. Default \code{FALSE}.
 		#' @return A scalar p-value, or \code{NA_real_} if the computation fails.
-		compute_lik_ratio_bootstrap_two_sided_pval = function(delta = 0, B = 199, show_progress = FALSE){
+		compute_lik_ratio_bootstrap_two_sided_pval = function(delta = 0, B = 199, show_progress = FALSE, min_number_usable_samples = 5L, max_attempts_per_replicate = 2L){
 			if (!isTRUE(private$supports_lik_ratio_param_bootstrap())){
 				stop(
 					class(self)[1], " does not support parametric-bootstrap LR calibration. ",
@@ -36,6 +41,11 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 			if (should_run_asserts()){
 				assertNumeric(delta, len = 1)
 				assertCount(B, positive = TRUE)
+				assertCount(min_number_usable_samples, positive = TRUE)
+				assertCount(max_attempts_per_replicate, positive = TRUE)
+				if (as.integer(B) < as.integer(min_number_usable_samples)) {
+					stop("B must be at least min_number_usable_samples for bootstrap LR calibration.", call. = FALSE)
+				}
 			}
 			spec = private$get_likelihood_test_spec()
 			if (is.null(spec)) return(NA_real_)
@@ -54,50 +64,80 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 			null_fit = eval_obs$null_fit
 
 			actual_cores = private$effective_parallel_cores("param_bootstrap", self$num_cores)
+			if (!is.null(private$seed)) {
+				had_seed = exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+				if (had_seed) old_seed = get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+				on.exit(
+					if (had_seed) assign(".Random.seed", old_seed, envir = .GlobalEnv) else rm(".Random.seed", envir = .GlobalEnv),
+					add = TRUE
+				)
+				set.seed(private$seed)
+			}
+			replicate_seeds = sample.int(.Machine$integer.max, as.integer(B), replace = TRUE)
 
+			use_worker_path = isTRUE(private$use_reusable_param_bootstrap_worker())
 			run_one_lr = function(b){
-				boot_spec = tryCatch(
-					private$simulate_under_lik_null(spec, delta, null_fit),
-					error = function(e) NULL
+				private$compute_param_bootstrap_lr_impl(
+					spec = spec,
+					delta = delta,
+					null_fit = null_fit,
+					seed = replicate_seeds[[b]],
+					max_attempts_per_replicate = max_attempts_per_replicate
 				)
-				if (is.null(boot_spec)) return(NA_real_)
-				full_nll_boot = tryCatch(
-					boot_spec$neg_loglik(boot_spec$full_fit),
-					error = function(e) NA_real_
-				)
-				if (!is.finite(full_nll_boot)) return(NA_real_)
-				null_fit_boot = tryCatch(
-					boot_spec$fit_null(delta),
-					error = function(e) NULL
-				)
-				if (is.null(null_fit_boot)) return(NA_real_)
-				null_nll_boot = tryCatch(
-					boot_spec$neg_loglik(null_fit_boot),
-					error = function(e) NA_real_
-				)
-				if (!is.finite(null_nll_boot)) return(NA_real_)
-				lr_boot = 2 * (null_nll_boot - full_nll_boot)
-				if (is.finite(lr_boot)) lr_boot else NA_real_
 			}
 
-			lr_boots = if (actual_cores <= 1L) {
-				vapply(seq_len(B), run_one_lr, numeric(1))
+			run_worker_chunk = function(idxs){
+				worker_state = private$create_param_bootstrap_worker_state(spec, delta, null_fit)
+				if (is.null(worker_state)) {
+					return(lapply(idxs, run_one_lr))
+				}
+				lapply(idxs, function(idx){
+					private$compute_param_bootstrap_worker_lrt(
+						worker_state = worker_state,
+						delta = delta,
+						seed = replicate_seeds[[idx]],
+						max_attempts_per_replicate = max_attempts_per_replicate
+					)
+				})
+			}
+
+			results = if (use_worker_path && actual_cores <= 1L) {
+				run_worker_chunk(seq_len(B))
+			} else if (!use_worker_path && actual_cores <= 1L) {
+				lapply(seq_len(B), run_one_lr)
 			} else {
 				chunk_n = max(1L, min(as.integer(actual_cores), as.integer(B)))
 				chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
 				chunks = split(seq_len(B), chunk_id)
-				as.numeric(unlist(private$par_lapply(
+				unlist(private$par_lapply(
 					chunks,
-					function(idxs) vapply(idxs, run_one_lr, numeric(1)),
+					if (use_worker_path) run_worker_chunk else function(idxs) lapply(idxs, run_one_lr),
 					n_cores = actual_cores,
 					budget = 1L,
 					show_progress = show_progress
-				), use.names = FALSE))
+				), recursive = FALSE, use.names = FALSE)
 			}
 
+			lr_boots = vapply(results, function(res) as.numeric(res$lr %||% NA_real_)[1L], numeric(1))
 			finite_lr = lr_boots[is.finite(lr_boots)]
 			n_finite = length(finite_lr)
-			if (n_finite == 0L) return(NA_real_)
+			private$cached_values$last_param_bootstrap_diagnostics =
+				private$summarize_param_bootstrap_diagnostics(
+					results = results,
+					B = as.integer(B),
+					min_number_usable_samples = as.integer(min_number_usable_samples),
+					max_attempts_per_replicate = as.integer(max_attempts_per_replicate),
+					used_reusable_worker = isTRUE(use_worker_path)
+				)
+			private$cached_values$last_param_bootstrap_summary = list(
+				B = as.integer(B),
+				n_finite = as.integer(n_finite),
+				finite_fraction = n_finite / as.integer(B),
+				min_number_usable_samples = as.integer(min_number_usable_samples),
+				max_attempts_per_replicate = as.integer(max_attempts_per_replicate),
+				used_reusable_worker = isTRUE(use_worker_path)
+			)
+			if (n_finite < as.integer(min_number_usable_samples)) return(NA_real_)
 			n_exceed = sum(finite_lr >= lr_obs)
 			(1 + n_exceed) / (1 + n_finite)
 		},
@@ -113,7 +153,7 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 		#' @param B            Bootstrap replicates per p-value evaluation. Default 199.
 		#' @param show_progress Logical; show a progress bar. Default \code{FALSE}.
 		#' @return Named two-element numeric vector with the confidence-interval bounds.
-		compute_lik_ratio_bootstrap_confidence_interval = function(alpha = 0.05, B = 199, show_progress = FALSE){
+		compute_lik_ratio_bootstrap_confidence_interval = function(alpha = 0.05, B = 199, show_progress = FALSE, min_number_usable_samples = 5L, max_attempts_per_replicate = 2L){
 			if (!isTRUE(private$supports_lik_ratio_param_bootstrap())){
 				stop(
 					class(self)[1], " does not support parametric-bootstrap LR calibration. ",
@@ -124,11 +164,19 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 			if (should_run_asserts()){
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 				assertCount(B, positive = TRUE)
+				assertCount(min_number_usable_samples, positive = TRUE)
+				assertCount(max_attempts_per_replicate, positive = TRUE)
 			}
 			est = self$compute_estimate()
 			if (!is.finite(est)) return(c(NA_real_, NA_real_))
 
-			pval_fn = function(d) self$compute_lik_ratio_bootstrap_two_sided_pval(d, B = B, show_progress = show_progress)
+			pval_fn = function(d) self$compute_lik_ratio_bootstrap_two_sided_pval(
+				d,
+				B = B,
+				show_progress = show_progress,
+				min_number_usable_samples = min_number_usable_samples,
+				max_attempts_per_replicate = max_attempts_per_replicate
+			)
 
 			se = tryCatch(private$get_standard_error(), error = function(e) NA_real_)
 			step = if (is.finite(se) && se > 0) se else max(abs(est), 1)
@@ -140,20 +188,291 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 			lower_seed = if (length(wald_ci) >= 1L && is.finite(wald_ci[[1L]])) wald_ci[[1L]] else NA_real_
 			upper_seed = if (length(wald_ci) >= 2L && is.finite(wald_ci[[2L]])) wald_ci[[2L]] else NA_real_
 
-			ci_vals = pval_invert_ci_cpp(
-				pval_fn    = pval_fn,
-				est        = est,
-				alpha      = alpha,
-				step       = step,
-				lower_seed = lower_seed,
-				upper_seed = upper_seed
+			p_est = pval_fn(est)
+			if (!is.finite(p_est)) {
+				ci = c(NA_real_, NA_real_)
+				names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
+				return(ci)
+			}
+			if (p_est < alpha) {
+				ci = c(est, est)
+				names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
+				return(ci)
+			}
+
+			finite_seed_offsets = abs(c(lower_seed, upper_seed) - est)
+			finite_seed_offsets = finite_seed_offsets[is.finite(finite_seed_offsets)]
+			max_radius = max(
+				8 * step,
+				if (length(finite_seed_offsets)) 2 * max(finite_seed_offsets) else 0
 			)
-			ci = c(ci_vals[1L], ci_vals[2L])
+
+			find_bound = function(direction, seed){
+				outer = NA_real_
+				f_outer = NA_real_
+				if (is.finite(seed) && ((direction < 0 && seed < est) || (direction > 0 && seed > est))) {
+					if (abs(seed - est) <= max_radius) {
+						f_seed = pval_fn(seed) - alpha
+						if (is.finite(f_seed)) {
+							if (abs(f_seed) <= 1e-6) return(seed)
+							if (f_seed <= 0) {
+								outer = seed
+								f_outer = f_seed
+							}
+						}
+					}
+				}
+
+				if (!is.finite(outer)) {
+					for (i in 0:19) {
+						d = est + direction * step * 2^i
+						if (abs(d - est) > max_radius) break
+						f_d = pval_fn(d) - alpha
+						if (!is.finite(f_d)) next
+						if (abs(f_d) <= 1e-6) return(d)
+						if (f_d <= 0) {
+							outer = d
+							f_outer = f_d
+							break
+						}
+					}
+				}
+
+				if (!is.finite(outer) || !is.finite(f_outer)) return(NA_real_)
+
+				f_est = p_est - alpha
+				if (!is.finite(f_est)) return(NA_real_)
+				if (abs(f_est) <= 1e-6) return(est)
+
+				lower = min(est, outer)
+				upper = max(est, outer)
+				root_fn = function(d) pval_fn(d) - alpha
+				as.numeric(tryCatch(
+					suppressWarnings(stats::uniroot(root_fn, lower = lower, upper = upper, tol = 1e-6)$root),
+					error = function(e) NA_real_
+				))
+			}
+
+			ci = c(
+				find_bound(direction = -1, seed = lower_seed),
+				find_bound(direction = 1, seed = upper_seed)
+			)
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 			ci
 		}
 	),
 	private = list(
+		simulate_param_boot_bernoulli_y = function(mu){
+			mu = as.numeric(mu)
+			if (!length(mu) || any(!is.finite(mu))) return(NULL)
+			mu = pmin(pmax(mu, 0), 1)
+			as.numeric(stats::rbinom(length(mu), 1L, mu))
+		},
+		simulate_param_boot_poisson_y = function(mu){
+			mu = as.numeric(mu)
+			if (!length(mu) || any(!is.finite(mu)) || any(mu < 0)) return(NULL)
+			as.numeric(stats::rpois(length(mu), mu))
+		},
+		simulate_param_boot_gaussian_y = function(mu, sigma2){
+			mu = as.numeric(mu)
+			sigma2 = as.numeric(sigma2)[1L]
+			if (!length(mu) || any(!is.finite(mu)) || !is.finite(sigma2) || sigma2 <= 0) return(NULL)
+			as.numeric(mu + stats::rnorm(length(mu), 0, sqrt(sigma2)))
+		},
+		simulate_param_boot_ordinal_y = function(X, params_null, y_template, cdf_fn){
+			X = as.matrix(X)
+			params_null = as.numeric(params_null)
+			cat_vals = sort(unique(as.numeric(y_template)))
+			K = length(cat_vals)
+			if (!is.function(cdf_fn) || K < 2L) return(NULL)
+			n_alpha = K - 1L
+			if (length(params_null) <= n_alpha) return(NULL)
+			thresholds = params_null[seq_len(n_alpha)]
+			betas = params_null[(n_alpha + 1L):length(params_null)]
+			eta = as.numeric(X %*% betas)
+			cum_probs = outer(thresholds, eta, function(a, e) cdf_fn(a - e))
+			cat_probs = pmax(rbind(cum_probs, 1) - rbind(0, cum_probs), 0)
+			y_sim = cat_vals[apply(cat_probs, 2, function(p){
+				s = sum(p)
+				if (!is.finite(s) || s <= 0) return(1L)
+				sample.int(K, 1L, prob = p / s)
+			})]
+			y_sim = as.numeric(y_sim)
+			if (length(unique(y_sim)) < K) return(NULL)
+			y_sim
+		},
+		simulate_param_boot_weibull_observed = function(X, b_null, log_sigma, y_obs, dead_obs){
+			X = as.matrix(X)
+			b_null = as.numeric(b_null)
+			log_sigma = as.numeric(log_sigma)[1L]
+			y_obs = as.numeric(y_obs)
+			dead_obs = as.numeric(dead_obs)
+			sigma = exp(log_sigma)
+			if (!is.finite(sigma) || sigma <= 0) return(NULL)
+			mu_log = as.numeric(X %*% b_null)
+			T_sim = stats::rweibull(nrow(X), shape = 1 / sigma, scale = exp(mu_log))
+			if (!all(is.finite(T_sim)) || any(T_sim <= 0)) return(NULL)
+			C_i = ifelse(dead_obs == 0, y_obs, Inf)
+			y_sim = pmin(T_sim, C_i)
+			dead_sim = as.numeric(T_sim <= C_i)
+			if (!all(is.finite(y_sim)) || any(y_sim <= 0)) return(NULL)
+			list(y = y_sim, dead = dead_sim)
+		},
+		supports_reusable_param_bootstrap_worker = function(){
+			TRUE
+		},
+		use_reusable_param_bootstrap_worker = function(){
+			isTRUE(private$reusable_bootstrap_worker_enabled) &&
+				private$has_private_method("supports_reusable_param_bootstrap_worker") &&
+				isTRUE(tryCatch(private$supports_reusable_param_bootstrap_worker(), error = function(e) FALSE))
+		},
+		with_param_bootstrap_seed = function(seed, expr){
+			if (is.null(seed) || !is.finite(seed)) return(force(expr))
+			had_seed = exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+			if (had_seed) old_seed = get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+			on.exit(
+				if (had_seed) assign(".Random.seed", old_seed, envir = .GlobalEnv) else rm(".Random.seed", envir = .GlobalEnv),
+				add = TRUE
+			)
+			set.seed(as.integer(seed)[1L])
+			force(expr)
+		},
+		param_boot_failure_result = function(reason, attempts = 1L, details = NULL){
+			list(
+				success = FALSE,
+				lr = NA_real_,
+				reason = as.character(reason)[1L],
+				attempts = as.integer(attempts)[1L],
+				details = details
+			)
+		},
+		param_boot_success_result = function(lr, attempts = 1L){
+			list(
+				success = TRUE,
+				lr = as.numeric(lr)[1L],
+				reason = "success",
+				attempts = as.integer(attempts)[1L],
+				details = NULL
+			)
+		},
+		validate_param_bootstrap_spec = function(boot_spec){
+			if (is.null(boot_spec) || !is.list(boot_spec)) return(FALSE)
+			if (is.null(boot_spec$full_fit)) return(FALSE)
+			if (!is.function(boot_spec$fit_null)) return(FALSE)
+			if (!is.function(boot_spec$neg_loglik)) return(FALSE)
+			TRUE
+		},
+		extract_param_bootstrap_failure_reason = function(boot_spec, default = "simulated_data_failure"){
+			if (is.null(boot_spec) || !is.list(boot_spec)) return(default)
+			reason = boot_spec$failure_reason %||% attr(boot_spec, "edi_param_boot_failure_reason", exact = TRUE)
+			if (is.null(reason) || !length(reason) || !is.character(reason)) default else reason[[1L]]
+		},
+		compute_param_bootstrap_lr_from_boot_spec = function(boot_spec, delta){
+			if (is.null(boot_spec)) {
+				return(private$param_boot_failure_result("simulated_data_failure"))
+			}
+			if (!isTRUE(private$validate_param_bootstrap_spec(boot_spec))) {
+				return(private$param_boot_failure_result(private$extract_param_bootstrap_failure_reason(boot_spec, default = "full_refit_failure")))
+			}
+			full_nll_boot = tryCatch(
+				boot_spec$neg_loglik(boot_spec$full_fit),
+				error = function(e) NA_real_
+			)
+			if (!is.finite(full_nll_boot)) return(private$param_boot_failure_result("full_refit_failure"))
+			null_fit_boot = tryCatch(
+				boot_spec$fit_null(delta),
+				error = function(e) NULL
+			)
+			if (is.null(null_fit_boot)) return(private$param_boot_failure_result("null_refit_failure"))
+			null_nll_boot = tryCatch(
+				boot_spec$neg_loglik(null_fit_boot),
+				error = function(e) NA_real_
+			)
+			if (!is.finite(null_nll_boot)) return(private$param_boot_failure_result("non_finite_lr"))
+			lr_boot = 2 * (null_nll_boot - full_nll_boot)
+			if (is.finite(lr_boot)) private$param_boot_success_result(lr_boot) else private$param_boot_failure_result("non_finite_lr")
+		},
+		compute_param_bootstrap_lr_impl = function(spec, delta, null_fit, seed = NULL, max_attempts_per_replicate = 1L, worker_priv = NULL){
+			runner_priv = worker_priv %||% private
+			private$with_param_bootstrap_seed(seed, {
+				last_result = private$param_boot_failure_result("simulated_data_failure", attempts = 0L)
+				for (attempt in seq_len(max(1L, as.integer(max_attempts_per_replicate)))) {
+					boot_spec = tryCatch(
+						runner_priv$simulate_under_lik_null(spec, delta, null_fit),
+						error = function(e) NULL
+					)
+					res = runner_priv$compute_param_bootstrap_lr_from_boot_spec(boot_spec, delta)
+					res$attempts = as.integer(attempt)
+					last_result = res
+					if (isTRUE(res$success) && is.finite(res$lr)) return(res)
+				}
+				last_result
+			})
+		},
+		create_param_bootstrap_worker_state = function(spec, delta, null_fit){
+			worker = self$duplicate(verbose = FALSE, make_fork_cluster = FALSE)
+			worker$num_cores = 1L
+			worker_priv = worker$.__enclos_env__$private
+			worker_priv$cached_values = list()
+			worker_priv$clear_likelihood_null_warm_cache()
+			worker_priv$clear_fit_warm_start()
+			worker_spec = worker_priv$get_likelihood_test_spec()
+			if (is.null(worker_spec)) return(NULL)
+			worker_eval = worker_priv$get_memoized_likelihood_test_eval(
+				delta = delta,
+				testing_type = "lik_ratio",
+				spec = worker_spec,
+				include_full_negloglik = TRUE,
+				include_null_negloglik = TRUE
+			)
+			if (isTRUE(worker_eval$invalid) || is.null(worker_eval$null_fit)) return(NULL)
+			list(
+				worker = worker,
+				worker_priv = worker_priv,
+				spec = worker_spec,
+				null_fit = worker_eval$null_fit
+			)
+		},
+		compute_param_bootstrap_worker_lrt = function(worker_state, delta, seed = NULL, max_attempts_per_replicate = 1L){
+			if (is.null(worker_state) || is.null(worker_state$worker_priv)) {
+				return(private$param_boot_failure_result("simulated_data_failure"))
+			}
+			worker_state$worker_priv$compute_param_bootstrap_lr_impl(
+				spec = worker_state$spec,
+				delta = delta,
+				null_fit = worker_state$null_fit,
+				seed = seed,
+				max_attempts_per_replicate = max_attempts_per_replicate,
+				worker_priv = worker_state$worker_priv
+			)
+		},
+		summarize_param_bootstrap_diagnostics = function(results, B, min_number_usable_samples, max_attempts_per_replicate, used_reusable_worker){
+			if (is.null(results)) results = list()
+			reasons = vapply(results, function(res) as.character(res$reason %||% "unknown_failure")[1L], character(1))
+			attempts = vapply(results, function(res) as.integer(res$attempts %||% NA_integer_)[1L], integer(1))
+			lrs = vapply(results, function(res) as.numeric(res$lr %||% NA_real_)[1L], numeric(1))
+			success = is.finite(lrs)
+			reason_levels = c("success", "simulated_data_failure", "full_refit_failure", "null_refit_failure", "non_finite_lr", "unknown_failure")
+			reason_factor = factor(ifelse(reasons %in% reason_levels, reasons, "unknown_failure"), levels = reason_levels)
+			reason_counts = as.list(as.integer(table(reason_factor)))
+			names(reason_counts) = reason_levels
+			list(
+				B = as.integer(B),
+				n_success = sum(success),
+				n_failure = sum(!success),
+				success_fraction = mean(success),
+				min_number_usable_samples = as.integer(min_number_usable_samples),
+				max_attempts_per_replicate = as.integer(max_attempts_per_replicate),
+				used_reusable_worker = isTRUE(used_reusable_worker),
+				reason_counts = reason_counts,
+				prop_simulated_data_failure = unname(reason_counts$simulated_data_failure) / max(1L, as.integer(B)),
+				prop_full_refit_failure = unname(reason_counts$full_refit_failure) / max(1L, as.integer(B)),
+				prop_null_refit_failure = unname(reason_counts$null_refit_failure) / max(1L, as.integer(B)),
+				prop_non_finite_lr = unname(reason_counts$non_finite_lr) / max(1L, as.integer(B)),
+				mean_attempts = mean(attempts, na.rm = TRUE),
+				replicate_results = results
+			)
+		},
 		supports_lik_ratio_param_bootstrap = function() FALSE,
 		#' Simulate a bootstrap dataset under the fitted null likelihood and return
 		#' a minimal spec list for refitting.

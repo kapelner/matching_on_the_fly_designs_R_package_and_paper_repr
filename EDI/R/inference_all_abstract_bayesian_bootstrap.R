@@ -78,6 +78,15 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 				return(private$cached_values$bayes_boot_distr_cache[[cache_key]])
 			}
 			inf_template = self$duplicate()
+			if (!is.null(private$seed)) {
+				had_seed = exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+				if (had_seed) old_seed = get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+				on.exit(
+					if (had_seed) assign(".Random.seed", old_seed, envir = .GlobalEnv) else rm(".Random.seed", envir = .GlobalEnv),
+					add = TRUE
+				)
+				set.seed(private$seed)
+			}
 			draws = replicate(
 				as.integer(B),
 				private$bayesian_bootstrap_sample_weights(weighting_unit_type = weighting_unit_type),

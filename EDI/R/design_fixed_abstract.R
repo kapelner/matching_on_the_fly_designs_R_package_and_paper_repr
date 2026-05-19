@@ -23,6 +23,7 @@ DesignFixed = R6::R6Class("DesignFixed",
 		#' @param verbose A flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
+		#' @param seed Integer seed for reproducibility.
 		#' @param ... Extra arguments passed to the \code{Design} superclass.
 		#'
 		#' @return  A new `DesignFixed` object
@@ -34,13 +35,21 @@ DesignFixed = R6::R6Class("DesignFixed",
 				verbose = FALSE,
 				missingness_method = "impute",
 				model_formula = ~ .,
+				seed = NULL,
 				...
 			) {
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, ...)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed, ...)
 		},
 		#' @description Assign treatment to all subjects in the fixed experiment.
-		assign_w_to_all_subjects = function(){
-			private$w[1:self$get_n()] = self$draw_ws_according_to_design(1)[, 1]
+		#' @param w_precomputed Optional numeric vector of length n. If supplied the
+		#'   allocation is used directly and \code{draw_ws_according_to_design} is
+		#'   not called (avoids e.g. the Java round-trip for \code{DesignFixedGreedy}).
+		assign_w_to_all_subjects = function(w_precomputed = NULL){
+			if (!is.null(w_precomputed)) {
+				private$w[1:self$get_n()] = as.numeric(w_precomputed)
+			} else {
+				private$w[1:self$get_n()] = self$draw_ws_according_to_design(1)[, 1]
+			}
 		},
 		#' @description Add all subjects' covariates to a fixed design at once.
 		#'
@@ -115,16 +124,6 @@ DesignFixed = R6::R6Class("DesignFixed",
 		#' @return 	TRUE if supported.
 		supports_resampling = function(){
 			class(self)[1] != "DesignFixed"
-		},
-		#' @description Draw multiple treatment assignment vectors.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
-			if (should_run_asserts()) {
-				stop("Must be implemented by subclass.")
-			}
 		}
 	),
 	private = list()

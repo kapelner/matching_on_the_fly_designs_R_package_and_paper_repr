@@ -12,6 +12,9 @@
 DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyPairSwitching",
 	inherit = DesignFixed,
 	public = list(
+		#' @description Returns TRUE: simulation framework can pre-generate all
+		#'   treatment vectors for a cell in one Java call instead of one per rep.
+		supports_batch_w_pregeneration = function() TRUE,
 		#' @description Initialize a fixed design that performs binary matching followed by greedy pair switching.
 		#'
 		#' @param response_type The data type of response values.
@@ -25,28 +28,31 @@ DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyP
 		#' @param objective The imbalance objective passed to \pkg{GreedyExperimentalDesign}.
 		#' @param wait If \code{TRUE}, wait for the search to finish before returning.
 		#' @param diff_method Passed to the upstream binary-match-then-greedy initializer.
+		#' @param seed Integer seed for reproducibility.
 		#'
 		#' @return A new \code{DesignFixedMatchingGreedyPairSwitching} object.
 		initialize = function(
 				response_type,
 				prob_T = 0.5,
 				include_is_missing_as_a_new_feature = TRUE,
-				n,				
+				n,
 				verbose = FALSE,
 				max_designs = 100,
 				objective = "mahal_dist",
 				wait = TRUE,
 				diff_method = FALSE,
 				missingness_method = "impute",
-				model_formula = ~ .
+				model_formula = ~ .,
+				seed = NULL
 			) {
 			if (should_run_asserts()) {
 				if (prob_T != 0.5) {
 					stop("DesignFixedMatchingGreedyPairSwitching only supports balanced designs (prob_T = 0.5).")
 				}
 			}
-			assert_greedy_experimental_design_installed("DesignFixedMatchingGreedyPairSwitching")
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+			# GED availability is checked lazily in draw_ws_according_to_design so
+			# that workers using pre-computed w vectors never trigger a JVM load.
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 			private$max_designs = max_designs
 			private$objective = objective
 			private$wait = wait
@@ -60,6 +66,7 @@ DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyP
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
+			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				assertCount(r, positive = TRUE)
 			}

@@ -54,11 +54,25 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 			private$shared_gee_dispatch(estimate_only = FALSE)
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-		#' @description Computes the treatment effect estimate for a bootstrap sample.
-		#' @param subject_or_block_weights Row weights for the bootstrap sample.
-		#' @param estimate_only If TRUE, skip variance calculations.
+		#' @description Recomputes the KK ordinal GEE treatment estimate under
+		#'   Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Subject-, block-, cluster-, or matched-set
+		#'   bootstrap weights.
+		#' @param estimate_only If \code{TRUE}, compute only the weighted point
+		#'   estimate.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
 			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			if (length(row_weights) > 0L && all(is.finite(row_weights)) &&
+			    (max(row_weights) - min(row_weights)) <= sqrt(.Machine$double.eps)) {
+				beta_hat_T = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+				if (is.finite(beta_hat_T)) {
+					private$cached_values$beta_hat_T = beta_hat_T
+					private$cached_values$s_beta_hat_T = NA_real_
+					private$cached_values$df = Inf
+					private$cached_values$summary_table = NULL
+					return(private$cached_values$beta_hat_T)
+				}
+			}
 			pred_df = private$gee_predictors_df()
 			ok = is.finite(row_weights) & row_weights > 0 & is.finite(private$y)
 			if (!any(ok)) {
@@ -88,6 +102,7 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 			private$cached_values$s_beta_hat_T = NA_real_
 			private$cached_values$df = Inf
 			private$cached_values$summary_table = NULL
+			private$cached_values$beta_hat_T
 		},
 		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
 		#' @param B  					Number of bootstrap samples.
@@ -218,6 +233,15 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 		compute_asymp_two_sided_pval = function(delta = 0){
 			private$shared(estimate_only = FALSE)
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+		},
+		#' @description Recomputes the KK ordinal GLMM treatment estimate under
+		#'   Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Subject-, block-, cluster-, or matched-set
+		#'   bootstrap weights.
+		#' @param estimate_only If \code{TRUE}, compute only the weighted point
+		#'   estimate.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			eval(body(InferenceMixinKKGLMMShared$public$compute_estimate_with_bootstrap_weights))
 		}
 	)),
 	private = utils::modifyList(as.list(InferenceMixinKKGLMMShared$private), list(

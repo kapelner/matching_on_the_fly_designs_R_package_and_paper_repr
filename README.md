@@ -46,6 +46,60 @@ three build modes, run:
 bash scripts/benchmark_randomization_ci_build_modes.sh
 ```
 
+### Setting a seed for reproducible output
+
+All three layers of the package accept a seed for deterministic output.
+
+**Design classes** — pass `seed` to `$new()`:
+
+```r
+# Fixed design: same seed → same draw_ws_according_to_design() every call
+des = DesignFixedBernoulli$new(n = 100, response_type = "continuous", seed = 42)
+des$add_all_subjects_to_experiment(X)
+w1 = des$draw_ws_according_to_design(r = 500)
+w2 = des$draw_ws_according_to_design(r = 500)
+identical(w1, w2)  # TRUE
+
+# Sequential design: same seed → same assignment sequence
+des = DesignSeqOneByOneBernoulli$new(n = 100, response_type = "continuous", seed = 42)
+for (i in seq_len(100)) des$add_one_subject_to_experiment_and_assign(X[i, , drop = FALSE])
+```
+
+**Inference classes** — call `$set_seed()` after construction:
+
+```r
+inf = InferenceAllSimpleMeanDiff$new(des)
+inf$set_seed(42)
+
+# Same seed + same num_cores → identical p-value / CI / Bayesian-bootstrap distribution
+p  = inf$compute_rand_two_sided_pval(r = 999, show_progress = FALSE)
+ci = inf$compute_bootstrap_confidence_interval(B = 999, show_progress = FALSE)
+```
+
+Reproducibility is guaranteed only when `num_cores` is the same across runs (cross-core
+determinism is out of scope). Set the number of parallel workers before running:
+
+```r
+set_num_cores(4)   # or unset_num_cores() for serial
+```
+
+**SimulationFramework** — pass `seed` to `$new()`:
+
+```r
+sim = SimulationFramework$new(
+    response_type = "continuous",
+    design_classes_and_params = list(DesignFixedBernoulli),
+    inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
+    inference_types_and_params = list(asymp_pval = list()),
+    n = 50L, Nrep = 200L, seed = 321, ...
+)
+sim$run()
+```
+
+**Note on `duplicate()`:** Objects produced by `$duplicate()` have their seed cleared intentionally. This prevents all parallel inference workers from resetting to the same RNG stream and producing duplicate treatment allocations.
+
+---
+
 ### Experimental findings
 The `scripts/benchmark_randomization_ci_ordinal_ppo.R`/`scripts/benchmark_randomization_ci_cases.R` experiments show the native-speed flags are beneficial for the heavier Eigen/OpenMP workloads but not universally faster:
 

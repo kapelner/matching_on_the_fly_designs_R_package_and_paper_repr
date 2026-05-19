@@ -45,6 +45,31 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Recomputes the KK Poisson-GLMM treatment estimate under
+		#'   Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Subject-, block-, cluster-, or matched-set
+		#'   bootstrap weights.
+		#' @param estimate_only If \code{TRUE}, compute only the weighted point
+		#'   estimate.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			if (weights_are_effectively_constant(row_weights)) {
+				beta_hat_T = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+				if (is.finite(beta_hat_T)) {
+					private$cached_values$beta_hat_T = beta_hat_T
+					private$cached_values$s_beta_hat_T = NA_real_
+					private$cached_values$df = Inf
+					private$cached_values$summary_table = NULL
+					return(private$cached_values$beta_hat_T)
+				}
+			}
+			beta_hat_T = private$compute_weighted_glmm_bootstrap_estimate(row_weights)
+			private$cached_values$beta_hat_T = as.numeric(beta_hat_T)[1L]
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = Inf
+			private$cached_values$summary_table = NULL
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes an approximate confidence interval.
 		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -232,40 +257,3 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 		}
 	))
 )
-
-#' KK Hurdle Poisson Combined-Likelihood Inference for Count Responses
-#'
-#' Fits a compound estimator for KK matching-on-the-fly designs with count
-#' responses using a joint likelihood over all subjects.
-#'
-#' @examples
-#' \donttest{
-#' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'count')
-#' for (i in 1:10) {
-#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
-#' }
-#' seq_des$add_all_subject_responses(rpois(10, 2))
-#' inf = InferenceCountKKHurdlePoissonOneLik$new(seq_des)
-#' inf$compute_estimate()
-#' }
-#' @export
-InferenceCountKKHurdlePoissonOneLik = R6::R6Class("InferenceCountKKHurdlePoissonOneLik",
-	lock_objects = FALSE,
-	inherit = InferenceAbstractKKHurdlePoissonOneLik,
-	public = list()
-)
-
-#' KK Hurdle Poisson IVWC Inference for Count Responses
-#'
-#' Historical public alias. This wrapper preserves the exported class binding
-#' @name InferenceCountKKHurdlePoissonIVWC
-#' @description concrete class.
-#' under the IVWC name.
-#'
-#' @export
-if (!exists("InferenceCountKKHurdlePoissonIVWC", inherits = FALSE)) {
-	InferenceCountKKHurdlePoissonIVWC = R6::R6Class("InferenceCountKKHurdlePoissonIVWC",
-		lock_objects = FALSE,
-		inherit = InferenceCountKKHurdlePoissonOneLik
-	)
-}

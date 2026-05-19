@@ -398,10 +398,17 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
 	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
-    MatrixXd cov_free = info_free.inverse();
-    MatrixXd vcov = expand_free_covariance(X.cols(), fixed_spec, cov_free, true);
-	res.ssq_b_j = (j > 0 && j <= X.cols()) ? vcov(j - 1, j - 1) : NA_REAL;
-	res.ssq_b_2 = (X.cols() >= 2) ? vcov(1, 1) : NA_REAL;
+
+    auto free_idx_of = [&](int k) -> int {
+        for (int jj = 0; jj < (int)fixed_spec.free_idx.size(); ++jj)
+            if (fixed_spec.free_idx[jj] == k) return jj + 1;
+        return -1;
+    };
+    int free_j = (j > 0 && j <= X.cols()) ? free_idx_of(j - 1) : -1;
+    res.ssq_b_j = (free_j > 0) ? compute_diagonal_inverse_entry(info_free, free_j) : NA_REAL;
+    int free_2 = (X.cols() >= 2) ? free_idx_of(1) : -1;
+    res.ssq_b_2 = (free_2 > 0) ? compute_diagonal_inverse_entry(info_free, free_2) : NA_REAL;
+
 	VectorXd score = get_poisson_regression_score_cpp(X, y, res.b);
 	MatrixXd information = res.XtWX;
 	Eigen::ArrayXd eta = (X * res.b).array().max(-30.0).min(30.0);
@@ -415,7 +422,6 @@ List fast_poisson_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
 		Named("mu") = res.mu,
 		Named("converged") = res.converged,
 		Named("iterations") = res.iterations,
-        Named("vcov") = vcov,
 		Named("score") = score,
 		Named("observed_information") = information,
 		Named("fisher_information") = information,
@@ -461,17 +467,22 @@ List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& X,
 	ModelResult res = fast_poisson_internal(X, y, Eigen::VectorXd(), warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
-    MatrixXd cov_free = info_free.inverse();
-    MatrixXd vcov = expand_free_covariance(X.cols(), fixed_spec, cov_free, true);
+
+    auto free_idx_of = [&](int k) -> int {
+        for (int jj = 0; jj < (int)fixed_spec.free_idx.size(); ++jj)
+            if (fixed_spec.free_idx[jj] == k) return jj + 1;
+        return -1;
+    };
 
 	const int df_resid = X.rows() - X.cols();
 	if (df_resid > 0) {
 		ArrayXd pearson_terms = ((y - res.mu).array().square()) / res.mu.array();
 		res.dispersion = pearson_terms.sum() / static_cast<double>(df_resid);
 		if (std::isfinite(res.dispersion) && res.dispersion > 0) {
-            vcov *= res.dispersion;
-			res.ssq_b_j = (j > 0 && j <= X.cols()) ? vcov(j - 1, j - 1) : NA_REAL;
-			if (X.cols() >= 2) res.ssq_b_2 = vcov(1, 1);
+            int free_j = (j > 0 && j <= X.cols()) ? free_idx_of(j - 1) : -1;
+            res.ssq_b_j = (free_j > 0) ? res.dispersion * compute_diagonal_inverse_entry(info_free, free_j) : NA_REAL;
+            int free_2 = (X.cols() >= 2) ? free_idx_of(1) : -1;
+            if (free_2 > 0) res.ssq_b_2 = res.dispersion * compute_diagonal_inverse_entry(info_free, free_2);
 		}
 	}
 
@@ -482,8 +493,7 @@ List fast_quasipoisson_regression_with_var_cpp(const Eigen::MatrixXd& X,
 		Named("dispersion") = res.dispersion,
 		Named("mu") = res.mu,
 		Named("converged") = res.converged,
-		Named("iterations") = res.iterations,
-        Named("vcov") = vcov
+		Named("iterations") = res.iterations
 	);
 }
 

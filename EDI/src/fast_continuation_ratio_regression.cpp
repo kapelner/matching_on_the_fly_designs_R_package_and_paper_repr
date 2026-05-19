@@ -206,22 +206,15 @@ List fast_continuation_ratio_regression_with_var_cpp(const Eigen::MatrixXd& X, c
     
     MatrixXd info = fun.hessian(fit.params);
     MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);
-    FullPivLU<MatrixXd> lu(info_free);
-    
-    double ssq_b_j = NA_REAL;
-    MatrixXd vcov = MatrixXd::Constant(p_aug, p_aug, NA_REAL);
-    if (lu.isInvertible()) {
-        MatrixXd inv_free = lu.inverse();
-        vcov = expand_free_covariance(p_aug, fixed_spec, inv_free, true);
-        if (p >= 1) {
-            ssq_b_j = vcov(n_alpha, n_alpha);
-        }
-    }
-    
+    int free_j = -1;
+    for (int jj = 0; jj < (int)fixed_spec.free_idx.size(); ++jj)
+        if (fixed_spec.free_idx[jj] == n_alpha) { free_j = jj + 1; break; }
+    double ssq_b_j = (p >= 1 && free_j > 0) ? compute_diagonal_inverse_entry(info_free, free_j) : NA_REAL;
+
     return List::create(
         Named("b") = fit.params.tail(p),
         Named("ssq_b_j") = ssq_b_j,
-        Named("vcov") = vcov,
+        Named("vcov") = R_NilValue,
         Named("converged") = fit.converged,
         Named("params") = fit.params,
         Named("fisher_information") = info

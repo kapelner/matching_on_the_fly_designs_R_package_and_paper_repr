@@ -31,6 +31,29 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Recomputes the IVWC Clayton-copula treatment estimate under
+		#'   Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Subject-, block-, cluster-, or matched-set
+		#'   bootstrap weights.
+		#' @param estimate_only If \code{TRUE}, compute only the weighted point
+		#'   estimate.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			if (weights_are_effectively_constant(row_weights)) {
+				beta_hat_T = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+				if (is.finite(beta_hat_T)) {
+					private$cached_values$beta_hat_T = beta_hat_T
+					private$cached_values$s_beta_hat_T = NA_real_
+					return(private$cached_values$beta_hat_T)
+				}
+			}
+			X_cov = private$get_X()
+			X_fit = if (ncol(as.matrix(X_cov)) > 0) cbind(treatment = private$w, X_cov) else matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
+			fit = weighted_weibull_bootstrap_surrogate_fit(private$y, private$dead, X_fit, row_weights)
+			private$cached_values$beta_hat_T = if (is.null(fit)) NA_real_ else as.numeric(fit$beta_hat)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes the asymptotic confidence interval.
 		#' @param alpha                                   The confidence level in the computed
 		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
@@ -63,7 +86,7 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 		#' @param bootstrap_type Optional resampling scheme.
 		#' @return A numeric vector of bootstrap estimates.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
-			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
+			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
 		},
 		#' @description Duplicates the object while preserving caches.
 		#' @param verbose Whether the duplicate should be verbose.
@@ -313,12 +336,12 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 		}
 	)))
 )
-#' Abstract class for Clayton Copula Combined-Likelihood Inference
+#' Clayton Copula Combined-Likelihood Inference for KK Designs
 #'
-#' @keywords internal
-InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClaytonCopulaOneLik",
+#' @export
+InferenceSurvivalKKClaytonCopulaOneLik = R6::R6Class("InferenceSurvivalKKClaytonCopulaOneLik",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLik,
+	inherit = InferenceParamBootstrap,
 	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
@@ -367,7 +390,7 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 		#' @param bootstrap_type Optional resampling scheme.
 		#' @return A numeric vector of bootstrap estimates.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
-			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
+			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
 		},
 		#' @description Duplicates the object while preserving caches.
 		#' @param verbose Whether the duplicate should be verbose.
@@ -422,6 +445,9 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 			list(
 				X = X,
 				y = y,
+				dead = dead,
+				pair_idx = pair_idx,
+				singleton_rows = singleton_rows,
 				j = j_treat,
 				full_fit = private$cached_mod$best_fit %||% private$cached_mod,
 				fit_null = function(delta, start = NULL){
@@ -570,6 +596,88 @@ InferenceAbstractKKClaytonCopulaOneLik = R6::R6Class("InferenceAbstractKKClayton
 			}
 			private$cached_values$beta_hat_T = NA_real_
 			private$cached_values$s_beta_hat_T = NA_real_
+		},
+		supports_lik_ratio_param_bootstrap = function() TRUE,
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			par = as.numeric(null_fit$par %||% null_fit$params %||% null_fit$b)
+			if (!all(is.finite(par))) return(NULL)
+			p = ncol(spec$X)
+			if (length(par) < p + 2L) return(NULL)
+			b_null = par[seq_len(p)]
+			log_sigma = par[p + 1L]
+			log_theta = par[p + 2L]
+			sigma = exp(log_sigma)
+			theta = exp(log_theta)
+			if (!is.finite(sigma) || sigma <= 0 || !is.finite(theta) || theta <= 0) return(NULL)
+			X = spec$X
+			y_obs = as.numeric(spec$y)
+			dead_obs = as.numeric(spec$dead)
+			pair_idx = spec$pair_idx      # 0-indexed pairs matrix (n_pairs x 2)
+			singleton_rows = spec$singleton_rows  # 0-indexed singleton row indices
+			n = nrow(X)
+			mu = as.numeric(X %*% b_null)
+			T_sim = rep(NA_real_, n)
+			# Simulate paired subjects via Clayton survival copula
+			if (length(pair_idx) > 0L){
+				pair_mat = as.matrix(pair_idx) + 1L  # convert to 1-indexed
+				for (k in seq_len(nrow(pair_mat))){
+					i1 = pair_mat[k, 1L]; i2 = pair_mat[k, 2L]
+					U1 = runif(1L)
+					W  = runif(1L)
+					inner = (W * U1^(theta + 1L))^(-theta / (theta + 1L)) - U1^(-theta) + 1
+					inner = max(inner, .Machine$double.xmin)
+					U2 = inner^(-1 / theta)
+					U2 = min(max(U2, .Machine$double.xmin), 1 - .Machine$double.xmin)
+					T_sim[i1] = exp(mu[i1]) * (-log(max(U1, .Machine$double.xmin)))^sigma
+					T_sim[i2] = exp(mu[i2]) * (-log(max(U2, .Machine$double.xmin)))^sigma
+				}
+			}
+			# Simulate singleton subjects via marginal Weibull
+			if (length(singleton_rows) > 0L){
+				sg_idx = singleton_rows + 1L  # convert to 1-indexed
+				for (i in sg_idx){
+					U = runif(1L)
+					T_sim[i] = exp(mu[i]) * (-log(max(U, .Machine$double.xmin)))^sigma
+				}
+			}
+			if (!all(is.finite(T_sim)) || any(T_sim <= 0)) return(NULL)
+			C_i = ifelse(dead_obs == 0, y_obs, Inf)
+			y_sim = pmin(T_sim, C_i)
+			dead_sim = as.numeric(T_sim <= C_i)
+			if (!all(is.finite(y_sim)) || any(y_sim <= 0)) return(NULL)
+			j = spec$j
+			warm_full = c(as.numeric(par))
+			full_res = tryCatch(
+				fast_clayton_weibull_aft_optim_cpp(
+					X = X, y = y_sim, dead = dead_sim,
+					pair_idx = pair_idx, singleton_rows = singleton_rows,
+					warm_start_params = warm_full,
+					estimate_only = FALSE,
+					optimization_alg = private$optimization_alg
+				),
+				error = function(e) NULL
+			)
+			if (is.null(full_res) || !isTRUE(full_res$converged)) return(NULL)
+			full_par = as.numeric(full_res$par %||% full_res$params %||% full_res$b)
+			if (length(full_par) < j || !is.finite(full_par[j])) return(NULL)
+			list(
+				full_fit = full_res,
+				fit_null = function(d, start = NULL){
+					warm = start %||% full_par
+					tryCatch(
+						fast_clayton_weibull_aft_optim_cpp(
+							X = X, y = y_sim, dead = dead_sim,
+							pair_idx = pair_idx, singleton_rows = singleton_rows,
+							warm_start_params = warm,
+							estimate_only = FALSE,
+							optimization_alg = private$optimization_alg,
+							fixed_idx = j, fixed_values = d
+						),
+						error = function(e) NULL
+					)
+				},
+				neg_loglik = function(fit) as.numeric(fit$neg_loglik %||% fit$neg_ll %||% fit$value)
+			)
 		}
 	)))
 )
@@ -582,14 +690,3 @@ InferenceSurvivalKKClaytonCopulaIVWC = R6::R6Class("InferenceSurvivalKKClaytonCo
 	inherit = InferenceAbstractKKClaytonCopulaIVWC,
 	public = list()
 )
-InferenceIncidKKClaytonCopulaIVWC = InferenceSurvivalKKClaytonCopulaIVWC
-
-#' Clayton Copula Combined-Likelihood Inference for KK Designs
-#'
-#' @export
-InferenceSurvivalKKClaytonCopulaOneLik = R6::R6Class("InferenceSurvivalKKClaytonCopulaOneLik",
-	lock_objects = FALSE,
-	inherit = InferenceAbstractKKClaytonCopulaOneLik,
-	public = list()
-)
-InferenceIncidKKClaytonCopulaOneLik = InferenceSurvivalKKClaytonCopulaOneLik

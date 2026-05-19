@@ -43,6 +43,25 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Recomputes the Weibull AFT treatment estimate under
+		#'   Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Subject-, block-, cluster-, or matched-set
+		#'   bootstrap weights.
+		#' @param estimate_only If \code{TRUE}, compute only the weighted point
+		#'   estimate.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			if (weights_are_effectively_constant(row_weights)) {
+				beta_hat_T = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+				if (is.finite(beta_hat_T)) return(beta_hat_T)
+			}
+			X_fit = private$build_design_matrix()[, -1, drop = FALSE]
+			colnames(X_fit)[1L] = "treatment"
+			fit = weighted_weibull_bootstrap_surrogate_fit(private$y, private$dead, X_fit, row_weights)
+			private$cached_values$beta_hat_T = if (is.null(fit)) NA_real_ else as.numeric(fit$beta_hat)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes an approximate confidence interval.
 		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -102,20 +121,18 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 		simulate_under_lik_null = function(spec, delta, null_fit){
 			b_null    = as.numeric(null_fit$b)
 			log_sigma = as.numeric(null_fit$log_sigma)
-			sigma     = exp(log_sigma)
-			if (!is.finite(sigma) || sigma <= 0) return(NULL)
 			X_fit    = spec$X
 			j        = spec$j
-			n        = nrow(X_fit)
-			mu_log   = as.numeric(X_fit %*% b_null)
-			T_sim    = rweibull(n, shape = 1 / sigma, scale = exp(mu_log))
-			if (!all(is.finite(T_sim)) || any(T_sim <= 0)) return(NULL)
-			y_obs    = as.numeric(private$y)
-			d_obs    = as.numeric(private$dead)
-			C_i      = ifelse(d_obs == 0, y_obs, Inf)
-			y_sim    = pmin(T_sim, C_i)
-			dead_sim = as.numeric(T_sim <= C_i)
-			if (!all(is.finite(y_sim)) || any(y_sim <= 0)) return(NULL)
+			sim_data = private$simulate_param_boot_weibull_observed(
+				X = X_fit,
+				b_null = b_null,
+				log_sigma = log_sigma,
+				y_obs = private$y,
+				dead_obs = private$dead
+			)
+			if (is.null(sim_data)) return(NULL)
+			y_sim = sim_data$y
+			dead_sim = sim_data$dead
 			full_res = tryCatch(
 				fast_weibull_regression_cpp(
 					y = y_sim, dead = dead_sim, X = X_fit,

@@ -1349,3 +1349,71 @@ NULL
 		mod = mod
 	)
 }
+
+# Breslow non-parametric baseline hazard estimate for Cox PH simulation.
+# Returns list(times, cumhaz) with the cumulative baseline hazard at each unique event time.
+.breslow_hazard = function(y, dead, X, b_null){
+	if (length(y) == 0L || sum(dead) == 0L) return(list(times = numeric(0), cumhaz = numeric(0)))
+	eta = as.numeric(X %*% b_null)
+	risk = exp(eta - max(eta))
+	o = order(y, -dead)
+	y_o = y[o]; dead_o = dead[o] > 0.5; risk_o = risk[o]
+	event_times = unique(y_o[dead_o])
+	if (length(event_times) == 0L) return(list(times = numeric(0), cumhaz = numeric(0)))
+	cumhaz = numeric(length(event_times))
+	h_acc = 0
+	for (k in seq_along(event_times)){
+		at_risk = y_o >= event_times[k]
+		R_k = sum(risk_o[at_risk])
+		d_k = sum(dead_o[y_o == event_times[k]])
+		h_acc = h_acc + d_k / max(R_k, 1e-10)
+		cumhaz[k] = h_acc
+	}
+	list(times = event_times, cumhaz = cumhaz)
+}
+
+# Simulate survival times under a stratified Cox model using per-stratum Breslow baselines.
+.cox_simulate_stratified = function(y_obs, dead_obs, X_null, b_null, strata){
+	n = nrow(X_null)
+	eta = as.numeric(X_null %*% b_null)
+	risk_i = exp(eta - max(eta))
+	max_time = max(y_obs) * 2
+	T_sim = rep(max_time, n)
+	for (s in unique(strata)){
+		idx = which(strata == s)
+		breslow_s = .breslow_hazard(y_obs[idx], dead_obs[idx], X_null[idx, , drop = FALSE], b_null)
+		if (length(breslow_s$times) == 0L) next
+		for (i in idx){
+			U = runif(1L)
+			tgt = -log(max(U, 1e-10)) / risk_i[i]
+			j_k = which(breslow_s$cumhaz >= tgt)
+			T_sim[i] = if (length(j_k) == 0L) max_time else breslow_s$times[j_k[1L]]
+		}
+	}
+	C_i = ifelse(dead_obs == 0, y_obs, Inf)
+	y_sim = pmin(T_sim, C_i)
+	dead_sim = as.numeric(T_sim <= C_i)
+	list(y_sim = y_sim, dead_sim = dead_sim)
+}
+
+# Simulate survival times by inverting the Breslow baseline hazard.
+# Returns list(y_sim, dead_sim) applying observed censoring times.
+.cox_simulate_from_breslow = function(breslow, y_obs, dead_obs, X_null, b_null){
+	n = nrow(X_null)
+	eta = as.numeric(X_null %*% b_null)
+	risk_i = exp(eta - max(eta))
+	U = runif(n)
+	target = -log(pmax(U, 1e-10))
+	times = breslow$times
+	cumhaz = breslow$cumhaz
+	max_time = max(y_obs) * 2
+	T_sim = vapply(seq_len(n), function(i){
+		tgt = target[i] / risk_i[i]
+		idx = which(cumhaz >= tgt)
+		if (length(idx) == 0L) max_time else times[idx[1L]]
+	}, numeric(1L))
+	C_i = ifelse(dead_obs == 0, y_obs, Inf)
+	y_sim = pmin(T_sim, C_i)
+	dead_sim = as.numeric(T_sim <= C_i)
+	list(y_sim = y_sim, dead_sim = dead_sim)
+}

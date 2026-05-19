@@ -20,13 +20,22 @@ InferenceIncidExtendedRobins = R6::R6Class("InferenceIncidExtendedRobins",
 	lock_objects = FALSE,
 	inherit = InferenceAllSimpleMeanDiff,
 	public = list(
+		#' @description Computes an approximate confidence interval.
+		#' @param alpha Numeric. Significance level (default 0.05).
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			private$get_standard_error()
+			super$compute_asymp_confidence_interval(alpha)
+		},
+		#' @description Computes an approximate two-sided p-value.
+		#' @param delta Numeric. Null treatment effect value (default 0).
+		compute_asymp_two_sided_pval = function(delta = 0){
+			private$get_standard_error()
+			super$compute_asymp_two_sided_pval(delta)
+		},
 		#' @description Initialize Extended Robins blocked-design incidence inference.
 		#' @param des_obj A completed design object.
-		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
-		#'   the formula from the design object is used and its pre-computed design matrix is
-		#'   reused. If a formula is provided, a new design matrix is constructed from the
-		#'   design's imputed covariates.
-		#' @param verbose Whether to print progress messages.
+		#' @param model_formula Optional formula for covariate adjustment.
+		#' @param verbose Logical. Whether to print progress messages.
 		#' @return A new \code{InferenceIncidExtendedRobins} object.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
 			if (should_run_asserts()) {
@@ -51,6 +60,8 @@ InferenceIncidExtendedRobins = R6::R6Class("InferenceIncidExtendedRobins",
 				private$des_obj$get_block_ids(),
 				private$des_obj_priv_int$n
 			)
+			private$cached_values$s_beta_hat_T = private$cached_values$robins_s_beta_hat_T
+			private$cached_values$df = NA_real_
 			private$cached_values$robins_s_beta_hat_T
 		},
 		get_degrees_of_freedom = function(){

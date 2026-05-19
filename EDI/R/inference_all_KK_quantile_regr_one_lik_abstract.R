@@ -59,6 +59,24 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Compute the treatment estimate with bootstrap weights.
+		#' @param subject_or_block_weights Numeric vector. Row weights for bootstrap.
+		#' @param estimate_only Logical. If TRUE, skip variance component calculations.
+		#' @return The treatment estimate.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			if (weights_are_effectively_constant(row_weights)) {
+				beta_hat_T = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+				if (is.finite(beta_hat_T)) {
+					private$cached_values$beta_hat_T = beta_hat_T
+					private$cached_values$s_beta_hat_T = NA_real_
+					return(private$cached_values$beta_hat_T)
+				}
+			}
+			private$cached_values$beta_hat_T = private$compute_weighted_combined_estimate(row_weights)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Compute an asymptotic confidence interval.
 		#' @param alpha Significance level.
 		#' @return A confidence interval.
@@ -208,6 +226,78 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 		# zero, which bypasses the usual !is.finite() || <= 0 guard in callers).
 		extract_se_from_rq = function(fit, coef_name){
 			.extract_se_from_rq_fit(fit, coef_name)
+		},
+		compute_weighted_combined_estimate = function(row_weights){
+			if (is.null(private$cached_values$KKstats)){
+				private$compute_basic_match_data()
+			}
+			KKstats = private$cached_values$KKstats
+			if (is.null(KKstats)) return(NA_real_)
+			kk_w = kk_pair_and_reservoir_bootstrap_weights(private, row_weights)
+			m   = KKstats$m
+			nRT = KKstats$nRT
+			nRC = KKstats$nRC
+			tau = private$tau
+			fn  = private$transform_y_fn_list$fn
+			has_reservoir = nRT > 0 && nRC > 0
+			y_stack  = NULL
+			X_stack  = NULL
+			w_stack  = NULL
+			j_beta_T = 2L
+			if (m > 0){
+				yd = fn(KKstats$yTs_matched) - fn(KKstats$yCs_matched)
+				if (has_reservoir){
+					Xd = as.matrix(KKstats$X_matched_diffs_full)
+					p = ncol(Xd)
+					y_r = fn(KKstats$y_reservoir)
+					w_r = KKstats$w_reservoir
+					X_r = as.matrix(KKstats$X_reservoir)
+					X_pairs = if (p > 0) cbind(0, 1, Xd) else matrix(c(0, 1), nrow = m, ncol = 2, byrow = TRUE)
+					X_res = if (p > 0) cbind(1, w_r, X_r) else cbind(1, w_r)
+					X_stack = rbind(X_pairs, X_res)
+					y_stack = c(yd, y_r)
+					w_stack = c(kk_w$pair_weights, kk_w$reservoir_weights)
+					j_beta_T = 2L
+				} else {
+					Xd = as.matrix(KKstats$X_matched_diffs)
+					p = ncol(Xd)
+					X_stack = if (p > 0) cbind(1, Xd) else matrix(1, nrow = m, ncol = 1)
+					y_stack = yd
+					w_stack = kk_w$pair_weights
+					j_beta_T = 1L
+				}
+			} else if (has_reservoir){
+				y_r = fn(KKstats$y_reservoir)
+				w_r = KKstats$w_reservoir
+				X_r = as.matrix(KKstats$X_reservoir)
+				p = ncol(X_r)
+				X_stack = if (p > 0) cbind(1, w_r, X_r) else cbind(1, w_r)
+				y_stack = y_r
+				w_stack = kk_w$reservoir_weights
+				j_beta_T = 2L
+			}
+			if (is.null(X_stack) || is.null(w_stack)) return(NA_real_)
+			ok = is.finite(w_stack) & w_stack > 0 & is.finite(y_stack)
+			if (!any(ok)) return(NA_real_)
+			X_stack = X_stack[ok, , drop = FALSE]
+			y_stack = y_stack[ok]
+			w_stack = w_stack[ok]
+			reduced = qr_reduce_preserve_cols_cpp(X_stack, j_beta_T)
+			X_stack = reduced$X_reduced
+			j_beta_T = match(j_beta_T, reduced$keep)
+			if (nrow(X_stack) <= ncol(X_stack)) return(NA_real_)
+			cn = paste0("x", seq_len(ncol(X_stack)))
+			cn[j_beta_T] = "trt__"
+			colnames(X_stack) = cn
+			dat = as.data.frame(X_stack)
+			dat$y_stack__ = y_stack
+			fit = tryCatch(
+				suppressWarnings(quantreg::rq(y_stack__ ~ . - 1, tau = tau, data = dat, weights = w_stack)),
+				error = function(e) NULL
+			)
+			if (is.null(fit)) return(NA_real_)
+			beta = tryCatch(coef(fit)[["trt__"]], error = function(e) NA_real_)
+			if (is.finite(beta)) as.numeric(beta) else NA_real_
 		}
 	)
 )

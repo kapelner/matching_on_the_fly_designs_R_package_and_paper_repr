@@ -11,6 +11,9 @@
 DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 	inherit = DesignFixed,
 	public = list(
+		#' @description Returns TRUE: simulation framework can pre-generate all
+		#'   treatment vectors for a cell in one Java call instead of one per rep.
+		supports_batch_w_pregeneration = function() TRUE,
 		#' @description Initialize a greedy search fixed experimental design
 		#'
 		#' @param response_type 	The data type of response values.
@@ -21,6 +24,7 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 		#' @param verbose  Flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
+		#' @param seed Integer seed for reproducibility.
 		#'
 		#' @return 			A new `DesignFixedGreedy` object
 		#'
@@ -29,18 +33,20 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 				prob_T = 0.5,
 				objective = "mahal_dist",
 				include_is_missing_as_a_new_feature = TRUE,
-				n = NULL,				
+				n = NULL,
 				verbose = FALSE,
 				missingness_method = "impute",
-				model_formula = ~ .
+				model_formula = ~ .,
+				seed = NULL
 			) {
 			if (should_run_asserts()) {
 				if (prob_T != 0.5){
 					stop("Greedy designs currently only support even treatment allocation (prob_T = 0.5)")
 				}
 			}
-			assert_greedy_experimental_design_installed("DesignFixedGreedy")
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+			# GED availability is checked lazily in draw_ws_according_to_design so
+			# that workers using pre-computed w vectors never trigger a JVM load.
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 			private$objective = objective
 			private$uses_covariates = TRUE
 		},
@@ -50,6 +56,7 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
+			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				assertCount(r, positive = TRUE)
 			}

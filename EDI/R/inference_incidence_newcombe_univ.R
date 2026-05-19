@@ -47,6 +47,34 @@ InferenceIncidNewcombeRiskDiff = R6::R6Class("InferenceIncidNewcombeRiskDiff",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = as.numeric(private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights))
+			i_t = private$w == 1
+			i_c = private$w == 0
+			w_t = sum(row_weights[i_t])
+			w_c = sum(row_weights[i_c])
+			if (!is.finite(w_t) || !is.finite(w_c) || w_t <= 0 || w_c <= 0) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			p_t = sum(row_weights[i_t] * as.numeric(private$y[i_t])) / w_t
+			p_c = sum(row_weights[i_c] * as.numeric(private$y[i_c])) / w_c
+			private$cached_values$counts = list(
+				n_t = w_t, n_c = w_c,
+				x_t = sum(row_weights[i_t] * as.numeric(private$y[i_t])),
+				x_c = sum(row_weights[i_c] * as.numeric(private$y[i_c])),
+				p_t = p_t, p_c = p_c
+			)
+			private$cached_values$beta_hat_T = p_t - p_c
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes a 1 - \code{alpha} Newcombe confidence interval.
 		#' @param alpha The significance level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){

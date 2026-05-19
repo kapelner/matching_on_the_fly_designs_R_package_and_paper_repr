@@ -454,15 +454,12 @@ List fast_weibull_frailty_cpp(
 		par       = fit.params;
 		neg_ll    = fit.value;
 		converged = std::isfinite(neg_ll) && fit.converged;
-	} catch (...) {
-		return List::create(
-			Named("b")           = par.head(p),
-			Named("log_sigma_eps") = NA_REAL,
-			Named("log_sigma_u") = NA_REAL,
-			Named("ssq_b_T")     = NA_REAL,
-			Named("converged")   = false,
-			Named("neg_loglik")  = NA_REAL
-		);
+	} catch (...) {}
+	// If neg_ll is still NA (optimizer threw or returned non-finite value), evaluate at last iterate
+	if (!std::isfinite(neg_ll) && par.allFinite()) {
+		Eigen::VectorXd grad_tmp(n_par);
+		double val = obj(par, grad_tmp);
+		if (std::isfinite(val)) neg_ll = val;
 	}
 
 	double ssq_b_T = NA_REAL;

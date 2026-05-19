@@ -79,7 +79,12 @@ get_reasonable_starts = function(data, family_name) {
         b_ols = c(fast_ols_cpp(X, eta)$coefficients, 0) 
         w = exp(eta) / 2 
         info = t(X) %*% (X * w)
-        if (family_name == "ZINB") b_ols = c(b_ols, b_ols)
+        if (family_name == "ZINB") {
+            # Better ZINB start: Zero-part OLS on I(y==0)
+            y0 = as.numeric(y == 0)
+            b0 = fast_ols_cpp(X, qlogis((y0 + 0.5)/2))$coefficients
+            b_ols = c(b_ols[1:p], b0, 0)
+        }
     } else if (family_name == "Weibull (AFT)") {
         idx = which(data$dead == 1)
         if (length(idx) > p) {
@@ -116,11 +121,32 @@ run_comprehensive_warm_benchmark = function(family_name, fit_fun, data, alg = NU
     }
     args_base = c(args_base, extra_args)
     
-    fit_warm = function() {
+    # 1. Naive (smart off)
+    fit_naive = function() {
+        a = args_base
+        if ("smart_cold_start" %in% names(formals(fit_fun))) a$smart_cold_start = FALSE
+        if ("smart_cold_start_default" %in% names(formals(fit_fun))) a$smart_cold_start_default = FALSE
+        do.call(fit_fun, a)
+    }
+    
+    # 2. Internal Smart (all in C++)
+    fit_internal_smart = function() {
+        a = args_base
+        if ("smart_cold_start" %in% names(formals(fit_fun))) a$smart_cold_start = TRUE
+        if ("smart_cold_start_default" %in% names(formals(fit_fun))) a$smart_cold_start_default = TRUE
+        do.call(fit_fun, a)
+    }
+
+    # 3. R-side Heuristic (Explicit Warm Flow)
+    fit_r_warm = function() {
         starts = get_reasonable_starts(data, family_name)
         a = args_base
+        if ("smart_cold_start" %in% names(formals(fit_fun))) a$smart_cold_start = FALSE
+        if ("smart_cold_start_default" %in% names(formals(fit_fun))) a$smart_cold_start_default = FALSE
+        
         if (family_name == "Logistic (IRLS)") {
             a$warm_start_weights = starts$w
+            # By setting smart_cold_start = FALSE and passing weights, we mimic glm.fit
         } else {
             if ("start_params" %in% names(formals(fit_fun))) a$start_params = starts$b
             else if ("start_beta" %in% names(formals(fit_fun))) a$start_beta = starts$b
@@ -132,17 +158,26 @@ run_comprehensive_warm_benchmark = function(family_name, fit_fun, data, alg = NU
         do.call(fit_fun, a)
     }
     
-    # Accurate timing via many replications
-    n_rep = 20
-    t_cold = system.time(replicate(n_rep, do.call(fit_fun, args_base)))["elapsed"] / n_rep * 1000
-    t_warm = system.time(replicate(n_rep, fit_warm()))["elapsed"] / n_rep * 1000
+    # Iteration counts
+    it_naive = tryCatch(fit_naive()$iterations %||% 0, error = function(e) NA)
+    it_smart = tryCatch(fit_internal_smart()$iterations %||% 0, error = function(e) NA)
+    it_warm  = tryCatch(fit_r_warm()$iterations %||% 0, error = function(e) NA)
+
+    n_rep = 25
+    t_naive = system.time(replicate(n_rep, fit_naive()))["elapsed"] / n_rep * 1000
+    t_smart = system.time(replicate(n_rep, fit_internal_smart()))["elapsed"] / n_rep * 1000
+    t_warm  = system.time(replicate(n_rep, fit_r_warm()))["elapsed"] / n_rep * 1000
     
     cat("Done.\n")
     
     all_results[[family_name]] <<- data.table(
         family = family_name,
-        Cold = t_cold,
-        Warm_Flow = t_warm
+        Naive_Time = t_naive,
+        Naive_Its = it_naive,
+        Smart_Time = t_smart,
+        Smart_Its = it_smart,
+        Warm_Time = t_warm,
+        Warm_Its = it_warm
     )
 }
 
@@ -152,7 +187,6 @@ families = list(
     list(name = "NegBin", fun = fast_neg_bin_with_var_cpp, family = "negbin"),
     list(name = "Beta", fun = fast_beta_regression_with_var_cpp, family = "beta"),
     list(name = "Weibull (AFT)", fun = fast_weibull_regression_cpp, family = "weibull"),
-    list(name = "Ordinal", fun = fast_ordinal_regression_with_var_cpp, family = "ordinal"),
     list(name = "LogisticGLMM", fun = fast_logistic_glmm_cpp, family = "glmm_logistic"),
     list(name = "ZINB", fun = fast_zinb_cpp, family = "negbin"),
     list(name = "ZAP", fun = fast_zero_augmented_poisson_cpp, family = "poisson")
@@ -164,6 +198,7 @@ for (f in families) {
 }
 
 final_tab = rbindlist(all_results)
-cat("\n\n### END-TO-END WARM START BENEFIT SUMMARY (Heuristic: fast_ols_cpp) ###\n")
-final_tab[, speedup := (Cold - Warm_Flow) / Cold * 100]
-print(final_tab[order(-speedup)])
+cat("\n\n### END-TO-END SMART START PERFORMANCE (N=500, Strong Signal) ###\n")
+# Calculate speedup of Smart over Naive
+final_tab[, Speedup_Smart := (Naive_Time - Smart_Time) / Naive_Time * 100]
+print(final_tab)

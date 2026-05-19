@@ -48,6 +48,7 @@ DesignFixedBlocking = R6::R6Class("DesignFixedBlocking",
 			#' @param verbose A flag for verbosity.
 			#' @param missingness_method How to handle missing values in covariates.
 			#' @param model_formula A formula object.
+			#' @param seed Integer seed for reproducibility.
 		#'
 		#' @return  A new `DesignFixedBlocking` object
 			initialize = function(
@@ -63,7 +64,8 @@ DesignFixedBlocking = R6::R6Class("DesignFixedBlocking",
 							m = NULL,
 							verbose = FALSE,
 					missingness_method = "impute",
-					model_formula = ~ .) {
+					model_formula = ~ .,
+					seed = NULL) {
 				if (should_run_asserts()) {
 					if (!is.null(strata_cols)) assertCharacter(strata_cols, min.len = 1)
 				assertCount(preferred_num_bins_for_continuous_covariate, positive = TRUE)
@@ -85,7 +87,7 @@ DesignFixedBlocking = R6::R6Class("DesignFixedBlocking",
 					}
 				}
 			}
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 			private$blocking_capable = TRUE
 			private$strata_cols = strata_cols
 			private$preferred_num_bins_for_continuous_covariate = preferred_num_bins_for_continuous_covariate
@@ -103,10 +105,11 @@ DesignFixedBlocking = R6::R6Class("DesignFixedBlocking",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
+			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				self$assert_all_subjects_arrived()
 			}
-			
+
 			strata_keys = private$get_strata_keys()
 			
 			# Use randomizr::block_ra for canonical stratified blocking if available,

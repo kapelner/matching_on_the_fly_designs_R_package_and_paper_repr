@@ -217,29 +217,30 @@ GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y,
         bread_is_zero = true; // Compute Bread in subsequent iterations
     }
 
-    MatrixXd Bread = MatrixXd::Zero(p, p), Meat = MatrixXd::Zero(p, p);
+    MatrixXd Bread = MatrixXd::Zero(p, p); 
+    MatrixXd Meat = MatrixXd::Zero(p, p);
     VectorXd ScoreFinal = VectorXd::Zero(p);
     double quasi_loglik = 0.0; VectorXd mu(n), resid(n);
     for (int i = 0; i < n; ++i) { mu[i] = gee_link_inv(X.row(i).dot(beta), family); resid[i] = y[i] - mu[i]; quasi_loglik += gee_obs_weight(weights, i) * gee_quasi_loglik_contrib(y[i], mu[i], family); }
     alpha = gee_estimate_exchangeable_alpha(resid, mu, grp_start, grp_size, family, weights);
 
     for (int gi = 0; gi < G; ++gi) {
-        int sz = grp_size[gi], warm_start_params = grp_start[gi];
+        int sz = grp_size[gi], gs = grp_start[gi];
         if (sz == 1) {
-            double mui = mu[warm_start_params], vi = gee_variance(mui, family), di = gee_dmu_deta(mui, family);
-            double wi = gee_obs_weight(weights, warm_start_params);
+            double mui = mu[gs], vi = gee_variance(mui, family), di = gee_dmu_deta(mui, family);
+            double wi = gee_obs_weight(weights, gs);
             double Vi_inv = 1.0 / vi, w = wi * di * di * Vi_inv;
-            double si_val = wi * di * Vi_inv * resid[warm_start_params];
+            double si_val = wi * di * Vi_inv * resid[gs];
             for(int r=0; r<p; r++) {
-                double sir = si_val * X(warm_start_params, r);
+                double sir = si_val * X(gs, r);
                 ScoreFinal[r] += sir;
                 for(int c=0; c<=r; c++) {
-                    Bread(r, c) += w * X(warm_start_params, r) * X(warm_start_params, c);
-                    Meat(r, c) += sir * si_val * X(warm_start_params, c);
+                    Bread(r, c) += w * X(gs, r) * X(gs, c);
+                    Meat(r, c) += sir * si_val * X(gs, c);
                 }
             }
         } else {
-            int i1 = warm_start_params, i2 = warm_start_params + 1;
+            int i1 = gs, i2 = gs + 1;
             double v1 = gee_variance(mu[i1], family), v2 = gee_variance(mu[i2], family), d1 = gee_dmu_deta(mu[i1], family), d2 = gee_dmu_deta(mu[i2], family);
             double s1 = std::sqrt(v1), s2 = std::sqrt(v2), detV = v1 * v2 * (1.0 - alpha * alpha);
             double V11 = v2/detV, V22 = v1/detV, V12 = -(alpha*s1*s2)/detV, r1 = resid[i1], r2 = resid[i2];
@@ -257,7 +258,7 @@ GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y,
     }
     for(int r=0; r<p; r++) for(int c=0; c<r; c++) { Bread(c, r) = Bread(r, c); Meat(c, r) = Meat(r, c); }
     MatrixXd BI = gee_inverse_system(Bread);
-    return {beta, alpha, BI * Meat * BI, quasi_loglik, ScoreFinal, Bread, converged, iter};
+    return {beta, alpha, BI * Meat * BI, quasi_loglik, ScoreFinal, Bread, converged, std::min(maxit, iter + 1)};
 }
 
 // [[Rcpp::export]]

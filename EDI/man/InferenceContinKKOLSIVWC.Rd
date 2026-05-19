@@ -26,19 +26,17 @@ inf$compute_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{InferenceContinKKOLSIVWC}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{EDI::InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{InferenceContinKKOLSIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceContinKKOLSIVWC-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceContinKKOLSIVWC$approximate_bootstrap_distribution_beta_hat_T()}}
+\item \href{#method-InferenceContinKKOLSIVWC-new}{\code{InferenceContinKKOLSIVWC$new()}}
 \item \href{#method-InferenceContinKKOLSIVWC-compute_estimate_with_bootstrap_weights}{\code{InferenceContinKKOLSIVWC$compute_estimate_with_bootstrap_weights()}}
 \item \href{#method-InferenceContinKKOLSIVWC-approximate_bayesian_bootstrap_distribution_beta_hat_T}{\code{InferenceContinKKOLSIVWC$approximate_bayesian_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferenceContinKKOLSIVWC-compute_bayesian_bootstrap_two_sided_pval}{\code{InferenceContinKKOLSIVWC$compute_bayesian_bootstrap_two_sided_pval()}}
 \item \href{#method-InferenceContinKKOLSIVWC-compute_bayesian_bootstrap_confidence_interval}{\code{InferenceContinKKOLSIVWC$compute_bayesian_bootstrap_confidence_interval()}}
-\item \href{#method-InferenceContinKKOLSIVWC-new}{\code{InferenceContinKKOLSIVWC$new()}}
-\item \href{#method-InferenceContinKKOLSIVWC-compute_estimate}{\code{InferenceContinKKOLSIVWC$compute_estimate()}}
-\item \href{#method-InferenceContinKKOLSIVWC-compute_asymp_confidence_interval}{\code{InferenceContinKKOLSIVWC$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceContinKKOLSIVWC-compute_asymp_two_sided_pval}{\code{InferenceContinKKOLSIVWC$compute_asymp_two_sided_pval()}}
 \item \href{#method-InferenceContinKKOLSIVWC-clone}{\code{InferenceContinKKOLSIVWC$clone()}}
 }
 }
@@ -60,6 +58,7 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
@@ -78,6 +77,9 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_two_sided_pval'><code>EDI::InferenceAsymp$compute_wald_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceMLEorKMSummaryTable" data-id="compute_estimate"><a href='../../EDI/html/InferenceMLEorKMSummaryTable.html#method-InferenceMLEorKMSummaryTable-compute_estimate'><code>EDI::InferenceMLEorKMSummaryTable$compute_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_asymp_confidence_interval'><code>EDI::InferenceAsympLik$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_asymp_two_sided_pval'><code>EDI::InferenceAsympLik$compute_asymp_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_gradient_confidence_interval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_gradient_confidence_interval'><code>EDI::InferenceAsympLik$compute_gradient_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_gradient_two_sided_pval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_gradient_two_sided_pval'><code>EDI::InferenceAsympLik$compute_gradient_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_lik_ratio_confidence_interval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_confidence_interval'><code>EDI::InferenceAsympLik$compute_lik_ratio_confidence_interval()</code></a></span></li>
@@ -93,69 +95,39 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>EDI::InferenceAsympLik$set_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_confidence_interval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_two_sided_pval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThroughCompound" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceKKPassThroughCompound.html#method-InferenceKKPassThroughCompound-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceKKPassThroughCompound$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-compute_estimate_with_bootstrap_weights"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceContinKKOLSIVWC-compute_estimate_with_bootstrap_weights}{}}}
-\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+\if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-approximate_bootstrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKOLSIVWC-approximate_bootstrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSIVWC$compute_estimate_with_bootstrap_weights(
-  subject_or_block_weights,
-  estimate_only = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-approximate_bayesian_bootstrap_distribution_beta_hat_T"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceContinKKOLSIVWC-approximate_bayesian_bootstrap_distribution_beta_hat_T}{}}}
-\subsection{Method \code{approximate_bayesian_bootstrap_distribution_beta_hat_T()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSIVWC$approximate_bayesian_bootstrap_distribution_beta_hat_T(
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSIVWC$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
   show_progress = TRUE,
   debug = FALSE,
-  weighting_unit_type = NULL
+  bootstrap_type = NULL
 )}\if{html}{\out{</div>}}
 }
 
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-compute_bayesian_bootstrap_two_sided_pval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceContinKKOLSIVWC-compute_bayesian_bootstrap_two_sided_pval}{}}}
-\subsection{Method \code{compute_bayesian_bootstrap_two_sided_pval()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSIVWC$compute_bayesian_bootstrap_two_sided_pval(
-  delta = 0,
-  B = 501,
-  type = NULL,
-  na.rm = FALSE,
-  show_progress = TRUE,
-  min_number_usable_samples = 5L,
-  weighting_unit_type = NULL
-)}\if{html}{\out{</div>}}
-}
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
 
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-compute_bayesian_bootstrap_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceContinKKOLSIVWC-compute_bayesian_bootstrap_confidence_interval}{}}}
-\subsection{Method \code{compute_bayesian_bootstrap_confidence_interval()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSIVWC$compute_bayesian_bootstrap_confidence_interval(
-  alpha = 0.05,
-  B = 501,
-  type = NULL,
-  na.rm = TRUE,
-  show_progress = TRUE,
-  min_number_usable_samples = 5L,
-  weighting_unit_type = NULL
-)}\if{html}{\out{</div>}}
-}
+\item{\code{show_progress}}{Whether to show a progress bar.}
 
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-new"></a>}}
@@ -163,7 +135,12 @@ inf$compute_estimate()
 \subsection{Method \code{new()}}{
 Initialize the inference object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSIVWC$new(des_obj, model_formula = NULL, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSIVWC$new(
+  des_obj,
+  model_formula = NULL,
+  verbose = FALSE,
+  smart_cold_start_default = TRUE
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -177,59 +154,132 @@ reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-compute_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceContinKKOLSIVWC-compute_estimate}{}}}
-\subsection{Method \code{compute_estimate()}}{
-Returns the estimated treatment effect.
+\if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-compute_estimate_with_bootstrap_weights"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKOLSIVWC-compute_estimate_with_bootstrap_weights}{}}}
+\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Gated off for IVWC.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSIVWC$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSIVWC$compute_estimate_with_bootstrap_weights(
+  subject_or_block_weights,
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+\item{\code{subject_or_block_weights}}{weights.}
+
+\item{\code{estimate_only}}{flag.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-compute_asymp_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceContinKKOLSIVWC-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes the approximate confidence interval.
+\if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-approximate_bayesian_bootstrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKOLSIVWC-approximate_bayesian_bootstrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_bayesian_bootstrap_distribution_beta_hat_T()}}{
+Gated off for IVWC.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSIVWC$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSIVWC$approximate_bayesian_bootstrap_distribution_beta_hat_T(
+  B = 501,
+  show_progress = TRUE,
+  debug = FALSE,
+  weighting_unit_type = NULL
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 -
-\code{alpha}. The default is 0.05.}
+\item{\code{B}}{replicates.}
+
+\item{\code{show_progress}}{flag.}
+
+\item{\code{debug}}{flag.}
+
+\item{\code{weighting_unit_type}}{type.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-compute_asymp_two_sided_pval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceContinKKOLSIVWC-compute_asymp_two_sided_pval}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval()}}{
-Computes the approximate p-value.
+\if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-compute_bayesian_bootstrap_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKOLSIVWC-compute_bayesian_bootstrap_two_sided_pval}{}}}
+\subsection{Method \code{compute_bayesian_bootstrap_two_sided_pval()}}{
+Gated off for IVWC.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSIVWC$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSIVWC$compute_bayesian_bootstrap_two_sided_pval(
+  delta = 0,
+  B = 501,
+  type = NULL,
+  na.rm = FALSE,
+  show_progress = TRUE,
+  min_number_usable_samples = 5L,
+  weighting_unit_type = NULL
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{delta}}{The null difference to test against. For any treatment effect at all this
-is set to zero (the default).}
+\item{\code{delta}}{null.}
+
+\item{\code{B}}{replicates.}
+
+\item{\code{type}}{type.}
+
+\item{\code{na.rm}}{flag.}
+
+\item{\code{show_progress}}{flag.}
+
+\item{\code{min_number_usable_samples}}{count.}
+
+\item{\code{weighting_unit_type}}{type.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-compute_bayesian_bootstrap_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKOLSIVWC-compute_bayesian_bootstrap_confidence_interval}{}}}
+\subsection{Method \code{compute_bayesian_bootstrap_confidence_interval()}}{
+Gated off for IVWC.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSIVWC$compute_bayesian_bootstrap_confidence_interval(
+  alpha = 0.05,
+  B = 501,
+  type = NULL,
+  na.rm = TRUE,
+  show_progress = TRUE,
+  min_number_usable_samples = 5L,
+  weighting_unit_type = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{level.}
+
+\item{\code{B}}{replicates.}
+
+\item{\code{type}}{type.}
+
+\item{\code{na.rm}}{flag.}
+
+\item{\code{show_progress}}{flag.}
+
+\item{\code{min_number_usable_samples}}{count.}
+
+\item{\code{weighting_unit_type}}{type.}
 }
 \if{html}{\out{</div>}}
 }

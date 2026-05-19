@@ -1,9 +1,9 @@
 test_that("KK Wilcox rank-regression fast bootstrap matches the generic KK bootstrap", {
 	skip_if_not_installed("Rfit")
 
-	SlowInferenceAllKKWilcoxRegrMultiIVWC = R6::R6Class(
-		"SlowInferenceAllKKWilcoxRegrMultiIVWC",
-		inherit = InferenceAllKKWilcoxRegrMultiIVWC,
+	SlowInferenceAllKKWilcoxIVWC = R6::R6Class(
+		"SlowInferenceAllKKWilcoxIVWC",
+		inherit = InferenceAllKKWilcoxIVWC,
 		private = list(
 			compute_fast_bootstrap_distr = function(B, i_reservoir, n_reservoir, m, y, w, m_vec){
 				NULL
@@ -24,8 +24,8 @@ test_that("KK Wilcox rank-regression fast bootstrap matches the generic KK boots
 		des$add_one_subject_response(i, y[i] + 0.2 * w_i)
 	}
 
-	fast_inf = InferenceAllKKWilcoxRegrMultiIVWC$new(des, verbose = FALSE)
-	slow_inf = SlowInferenceAllKKWilcoxRegrMultiIVWC$new(des, verbose = FALSE)
+	fast_inf = InferenceAllKKWilcoxIVWC$new(des, verbose = FALSE)
+	slow_inf = SlowInferenceAllKKWilcoxIVWC$new(des, verbose = FALSE)
 
 	set.seed(44)
 	fast_boot = suppressWarnings(
@@ -77,7 +77,7 @@ test_that("KK Wilcox rank-regression low-level exact solver matches Rfit formula
 		w_i = des$add_one_subject_to_experiment_and_assign(X[i, , drop = FALSE])
 		des$add_one_subject_response(i, y[i] + 0.1 * w_i)
 	}
-	inf = InferenceAllKKWilcoxRegrMultiIVWC$new(des, verbose = FALSE)
+	inf = InferenceAllKKWilcoxIVWC$new(des, verbose = FALSE)
 	priv = inf$.__enclos_env__$private
 
 	set.seed(20260331)

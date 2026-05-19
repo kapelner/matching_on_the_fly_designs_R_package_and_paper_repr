@@ -8,23 +8,8 @@ Weibull Frailty Combined-Likelihood Inference for KK Designs
 
 Weibull Frailty Combined-Likelihood Inference for KK Designs
 }
-\details{
-This class fits a single joint Weibull frailty model over all KK design data
-(matched pairs + reservoir) for survival responses.
-}
-\examples{
-\donttest{
-seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'survival')
-for (i in 1:10) {
-  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
-}
-seq_des$add_all_subject_responses(runif(10))
-inf = InferenceSurvivalKKWeibullFrailtyOneLik$new(seq_des)
-inf$compute_estimate()
-}
-}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceAbstractKKWeibullFrailtyOneLik]{EDI::InferenceAbstractKKWeibullFrailtyOneLik}} -> \code{InferenceSurvivalKKWeibullFrailtyOneLik}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{EDI::InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{\link[EDI:InferenceAbstractKKWeibullFrailtyOneLik]{EDI::InferenceAbstractKKWeibullFrailtyOneLik}} -> \code{InferenceSurvivalKKWeibullFrailtyOneLik}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -51,6 +36,7 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
@@ -60,7 +46,6 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_estimate_with_bootstrap_weights"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_estimate_with_bootstrap_weights'><code>EDI::InferenceBayesianBootstrap$compute_estimate_with_bootstrap_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="approximate_jackknife_distribution_beta_hat_T"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>EDI::InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_bias_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>EDI::InferenceJackknife$compute_jackknife_bias_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_corrected_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_corrected_estimate'><code>EDI::InferenceJackknife$compute_jackknife_corrected_estimate()</code></a></span></li>
@@ -86,10 +71,13 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>EDI::InferenceAsympLik$get_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_information_preference"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>EDI::InferenceAsympLik$set_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>EDI::InferenceAsympLik$set_testing_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_confidence_interval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_two_sided_pval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWeibullFrailtyOneLik" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyOneLik.html#method-InferenceAbstractKKWeibullFrailtyOneLik-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceAbstractKKWeibullFrailtyOneLik$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWeibullFrailtyOneLik" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyOneLik.html#method-InferenceAbstractKKWeibullFrailtyOneLik-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKWeibullFrailtyOneLik$compute_asymp_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWeibullFrailtyOneLik" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyOneLik.html#method-InferenceAbstractKKWeibullFrailtyOneLik-compute_asymp_two_sided_pval'><code>EDI::InferenceAbstractKKWeibullFrailtyOneLik$compute_asymp_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWeibullFrailtyOneLik" data-id="compute_estimate"><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyOneLik.html#method-InferenceAbstractKKWeibullFrailtyOneLik-compute_estimate'><code>EDI::InferenceAbstractKKWeibullFrailtyOneLik$compute_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKWeibullFrailtyOneLik" data-id="compute_estimate_with_bootstrap_weights"><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyOneLik.html#method-InferenceAbstractKKWeibullFrailtyOneLik-compute_estimate_with_bootstrap_weights'><code>EDI::InferenceAbstractKKWeibullFrailtyOneLik$compute_estimate_with_bootstrap_weights()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -97,7 +85,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceSurvivalKKWeibullFrailtyOneLik-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKKWeibullFrailtyOneLik-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize the inference object.
+Initialize the one-likelihood Weibull-frailty inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKWeibullFrailtyOneLik$new(
   des_obj,
@@ -111,16 +99,15 @@ Initialize the inference object.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{des_obj}}{A completed KK design object.}
+\item{\code{des_obj}}{A completed KK survival design object.}
 
-\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default), 
-covariates from the design object are included. Use \code{~ 1} for univariate.}
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
 
-\item{\code{use_rcpp}}{Whether to use the custom Rcpp likelihood optimizer.}
+\item{\code{use_rcpp}}{Logical. If \code{TRUE}, use the internal Rcpp backend.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
 
-\item{\code{optimization_alg}}{The optimization algorithm to use. Default is dispatched via policy.}
+\item{\code{optimization_alg}}{Optimization algorithm to use.}
 }
 \if{html}{\out{</div>}}
 }

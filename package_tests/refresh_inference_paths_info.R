@@ -95,18 +95,18 @@ get_opt_metadata = function(res_type, base_name) {
   } else if (grepl("KKHurdlePoisson", base_name)) {
     via = "ourself/Rcpp GLMM and Poisson"
     alg = "L-BFGS"
-  } else if (base_name == "KKCPoissonIVWC") {
+  } else if (base_name == "KKCondPoissonIVWC") {
     via = "ourself/Rcpp conditional-Poisson plus negative binomial"
     alg = "weighted logistic IRLS plus L-BFGS"
     has_analytic_hess = "Y"
-  } else if (base_name == "KKCPoissonOneLik") {
+  } else if (base_name == "KKCondPoissonOneLik") {
     via = "ourself/Rcpp conditional-Poisson combined likelihood"
     alg = "Newton-Raphson"
     has_analytic_hess = "Y"
-  } else if (grepl("KKClogitPlusGLMM", base_name)) {
+  } else if (grepl("KKCondLogitPlusGLMM", base_name)) {
     via = "ourself/Rcpp conditional-logistic plus GLMM"
     alg = "L-BFGS"
-  } else if (grepl("KKClogit", base_name)) {
+  } else if (grepl("KKCondLogit", base_name)) {
     via = "ourself/Rcpp conditional-logistic"
     alg = "L-BFGS"
   } else if (grepl("KKGEE", base_name)) {
@@ -169,7 +169,7 @@ get_opt_metadata = function(res_type, base_name) {
        irls_avail = "Y"
     } else if (base_name == "HurdleNegBin") {
        irls_avail = "Y" # Hurdle models use IRLS for at least one component
-    } else if (base_name %in% c("NegBin", "BetaRegr", "ZeroOneInflatedBetaRegr", "CoxPHRegr", "WeibullRegr", "DepCensTransformRegr") || grepl("ClaytonCopula", base_name) || grepl("LWACox", base_name) || grepl("StratCox", base_name) || grepl("Clogit", base_name)) {
+    } else if (base_name %in% c("NegBin", "BetaRegr", "ZeroOneInflatedBetaRegr", "CoxPHRegr", "WeibullRegr", "DepCensTransformRegr") || grepl("ClaytonCopula", base_name) || grepl("LWACox", base_name) || grepl("StratCox", base_name) || grepl("CondLogit", base_name)) {
        irls_avail = "N"
     } else if (base_name %in% c("CauchitRegr", "CloglogRegr", "OrderedProbitRegr", "PropOddsRegr")) {
        irls_avail = "N" # Usually NR for cumulative link

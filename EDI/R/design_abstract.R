@@ -40,6 +40,7 @@ Design = R6::R6Class("Design",
 		#' @param model_formula A formula object used to create the design matrix from
 		#'   covariates. Default is \code{~ .}.
 		#' @param ordinal_levels If the response type is "ordinal", the labels for the levels.
+		#' @param seed Integer seed for reproducibility.
 		#'
 		#' @return 			A new `Design` object
 		initialize = function(
@@ -50,7 +51,8 @@ Design = R6::R6Class("Design",
 				verbose = FALSE,
 				missingness_method = "impute",
 				model_formula = ~ .,
-				ordinal_levels = NULL
+				ordinal_levels = NULL,
+				seed = NULL
 			) {
 			if (should_run_asserts()) {
 				assertChoice(response_type, c("continuous", "incidence", "proportion", "count", "survival", "ordinal"))
@@ -58,6 +60,7 @@ Design = R6::R6Class("Design",
 				assertFlag(include_is_missing_as_a_new_feature)
 				assertFlag(verbose)
 				assertCount(n, null.ok = TRUE)
+				assertCount(seed, null.ok = TRUE)
 				assertChoice(missingness_method, c("impute", "drop_column", "error"))
 				assertFormula(model_formula)
 				if (response_type == "ordinal" && !is.null(ordinal_levels)) {
@@ -96,6 +99,7 @@ Design = R6::R6Class("Design",
 				ifelse(private$fixed_sample, "fixed sample", "not fixed sample"),
 				 ".\n"))
 			}
+			private$seed = seed
 		},
 		#' @description For CARA designs, add a single subject response.
 		#'
@@ -393,6 +397,7 @@ Design = R6::R6Class("Design",
 			}
 			# Use the built-in R6 clone method (shallow by default) to bypass $new() logic.
 			d = self$clone()
+			d$.__enclos_env__$private$seed = NULL
 			d$.__enclos_env__$private$verbose = verbose
 			d
 		}
@@ -402,6 +407,7 @@ Design = R6::R6Class("Design",
 		num_cores = function() get_num_cores()
 	),
 	private = list(
+		seed = NULL,
 		all_subject_data_cache = list(),
 		t = 0L,
 		n = NULL,
@@ -581,6 +587,7 @@ Design = R6::R6Class("Design",
 		},
 		has_private_method = function(method_name) {
 			exists(method_name, envir = self$.__enclos_env__$private, inherits = FALSE)
-		}
+		},
+		maybe_set_seed = function() { if (!is.null(private$seed)) set.seed(private$seed) }
 	)
 )

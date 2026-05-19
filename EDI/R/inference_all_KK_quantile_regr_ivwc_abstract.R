@@ -54,7 +54,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 		#' @param bootstrap_type Optional resampling scheme.
 		#' @return A numeric vector of bootstrap estimates.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
-			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
+			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
 		},
 		#' @description Computes the appropriate quantile regression compound estimate
 		#'

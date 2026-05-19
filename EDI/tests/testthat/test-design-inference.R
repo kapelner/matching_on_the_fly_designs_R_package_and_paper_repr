@@ -112,12 +112,13 @@ test_that("CMH inference is gated to blocked incidence designs", {
 	expect_equal(unname(ci), expected_ci, tolerance = 1e-12)
 	expect_equal(as.numeric(pval), expected_pval, tolerance = 1e-8)
 
-	des_bad <- DesignSeqOneByOneBernoulli$new(n = 8, response_type = "incidence", verbose = FALSE)
+	des_nonblock <- DesignSeqOneByOneBernoulli$new(n = 8, response_type = "incidence", verbose = FALSE)
 	for (i in 1:8) {
-		des_bad$add_one_subject_to_experiment_and_assign(data.frame(x = i))
+		des_nonblock$add_one_subject_to_experiment_and_assign(data.frame(x = i))
 	}
-	add_all_subject_responses_seq(des_bad, rbinom(8, 1, 0.5))
-	expect_error(InferenceIncidCMH$new(des_bad, verbose = FALSE), "blocking design")
+	add_all_subject_responses_seq(des_nonblock, c(1, 0, 1, 0, 1, 0, 1, 0))
+	inf_nonblock <- InferenceIncidCMH$new(des_nonblock, verbose = FALSE)
+	expect_true(is.finite(inf_nonblock$compute_estimate()))
 })
 
 test_that("CMH inference requires even treatment allocation", {
@@ -193,6 +194,94 @@ test_that("CMH and Extended Robins standard errors match a fixed blocked simulat
 	}, numeric(2)))
 
 	expect_equal(se_pairs, expected, tolerance = 1e-12)
+})
+
+test_that("CMH get_standard_error block and non-block paths agree when D = 3 and R = n - 1", {
+	# Mathematical basis: when y has exactly 3 ones (3 discordant pairs, rest all-zero),
+	# E[(y^T w_r)^2] = 3 for BOTH paired and Bernoulli randomization, and with
+	# se_est_num_vectors = n - 1 the formula reduces to 2/n * sqrt(3) = SE_block.
+	set.seed(42)
+	n <- 50L
+	n_pairs <- n / 2L
+	y <- c(1, 0, 1, 0, 1, 0, rep(0L, n - 6L))
+
+	# block path: paired blocking design, 3 discordant + 22 concordant (0,0) pairs
+	des_block <- DesignFixedBlocking$new(
+		strata_cols = "s",
+		n = n,
+		B_target = n_pairs,
+		response_type = "incidence",
+		verbose = FALSE
+	)
+	des_block$add_all_subjects_to_experiment(
+		data.frame(s = rep(as.character(seq_len(n_pairs)), each = 2L))
+	)
+	des_block$overwrite_all_subject_assignments(rep(c(1L, 0L), n_pairs))
+	des_block$add_all_subject_responses(y)
+	inf_block <- InferenceIncidCMH$new(des_block, verbose = FALSE)
+	se_block <- inf_block$.__enclos_env__$private$get_standard_error()
+	expect_equal(se_block, 2 / n * sqrt(3), tolerance = 1e-12)
+
+	# non-block path: Bernoulli design, same y, se_est_num_vectors = n - 1
+	des_nonblock <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "incidence", verbose = FALSE)
+	for (i in seq_len(n)) {
+		des_nonblock$add_one_subject_to_experiment_and_assign(data.frame(x = i))
+	}
+	add_all_subject_responses_seq(des_nonblock, y)
+	inf_nonblock <- InferenceIncidCMH$new(des_nonblock, se_est_num_vectors = n - 1L, verbose = FALSE)
+	se_nonblock <- inf_nonblock$.__enclos_env__$private$get_standard_error()
+	expect_equal(se_block, se_nonblock, tolerance = 0.15)
+})
+
+test_that("CMH get_standard_error block and non-block paths agree for many D with n = 100", {
+	# For n = 100, n_pairs = 50 pairs, y with exactly D ones (D discordant pairs),
+	# SE_block = 2/100 * sqrt(D) exactly.
+	# SE_nonblock with R = 4*(n-1)/(D+1) vectors satisfies E[SE_nonblock^2] = SE_block^2,
+	# so both paths agree in expectation for each case below.
+	n <- 100L
+	n_pairs <- n / 2L
+	cases <- list(
+		list(D = 1L, R = 198L),
+		list(D = 2L, R = 132L),
+		list(D = 3L, R = 99L),
+		list(D = 5L, R = 66L),
+		list(D = 8L, R = 44L)
+	)
+	for (k in seq_along(cases)) {
+		D <- cases[[k]]$D
+		R <- cases[[k]]$R
+		y <- c(rep(c(1L, 0L), D), rep(0L, n - 2L * D))
+
+		# block path
+		des_block <- DesignFixedBlocking$new(
+			strata_cols = "s",
+			n = n,
+			B_target = n_pairs,
+			response_type = "incidence",
+			verbose = FALSE
+		)
+		des_block$add_all_subjects_to_experiment(
+			data.frame(s = rep(as.character(seq_len(n_pairs)), each = 2L))
+		)
+		des_block$overwrite_all_subject_assignments(rep(c(1L, 0L), n_pairs))
+		des_block$add_all_subject_responses(y)
+		inf_block <- InferenceIncidCMH$new(des_block, verbose = FALSE)
+		se_block <- inf_block$.__enclos_env__$private$get_standard_error()
+		expect_equal(se_block, 2 / n * sqrt(D), tolerance = 1e-12,
+			label = sprintf("block SE exact for D=%d", D))
+
+		# non-block path
+		set.seed(k * 7L)
+		des_nonblock <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "incidence", verbose = FALSE)
+		for (i in seq_len(n)) {
+			des_nonblock$add_one_subject_to_experiment_and_assign(data.frame(x = i))
+		}
+		add_all_subject_responses_seq(des_nonblock, y)
+		inf_nonblock <- InferenceIncidCMH$new(des_nonblock, se_est_num_vectors = R, verbose = FALSE)
+		se_nonblock <- inf_nonblock$.__enclos_env__$private$get_standard_error()
+		expect_equal(se_block, se_nonblock, tolerance = 0.25,
+			label = sprintf("non-block SE ≈ block SE for D=%d, R=%d", D, R))
+	}
 })
 
 test_that("CMH and Extended Robins confidence intervals use normal critical values", {
@@ -336,7 +425,7 @@ test_that("KK count combined-likelihood multi inference handles full-width covar
 		des$add_one_subject_response(i, y_i, 1)
 	}
 
-	inf <- InferenceCountKKCPoissonOneLik$new(des, verbose = FALSE)
+	inf <- InferenceCountKKCondPoissonOneLik$new(des, verbose = FALSE)
 	est <- inf$compute_estimate()
 
 	expect_true(is.numeric(est))

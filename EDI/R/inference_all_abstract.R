@@ -29,7 +29,8 @@ Inference = R6::R6Class("Inference",
 		#'   design's imputed covariates.
 		#' @param smart_cold_start_default Whether to use smart cold start values by default for
 		#'   likelihood-based models. Explicit starts always override this object-level policy.
-		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_cold_start_default = TRUE){
+		#' @param seed Integer seed for reproducibility.
+		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_cold_start_default = TRUE, seed = NULL){
 			if (should_run_asserts()) {
 				assertClass(des_obj, "Design")
 				assertFormula(model_formula, null.ok = TRUE)
@@ -78,6 +79,7 @@ Inference = R6::R6Class("Inference",
 			}
 			
 			private$verbose = verbose
+			private$seed = seed
 			private$cached_values$rand_distr_cache = list()
 			private$cached_values$m_cache = list()
 			private$cached_values$likelihood_test_eval_cache = list()
@@ -258,7 +260,10 @@ Inference = R6::R6Class("Inference",
 		#' @description Return the optimizer used by likelihood-based inference implementations.
 		get_optimization_alg = function(){
 			private$optimization_alg
-		}
+		},
+		#' @description Set the seed for reproducibility.
+		#' @param seed Integer seed for reproducibility.
+		set_seed = function(seed) { private$seed = seed }
 		),
 	active = list(
 		#' @field num_cores Current number of cores for this inference object.
@@ -279,6 +284,7 @@ Inference = R6::R6Class("Inference",
 		finalize = function(){
 			# We no longer own the cluster, it is global.
 		},
+		seed = NULL,
 		harden = TRUE,
 		des_obj = NULL,		des_obj_priv_int = NULL,
 		m = NULL,
@@ -526,11 +532,20 @@ Inference = R6::R6Class("Inference",
 					if (length(results) == 0L) return(list())
 					unlist(results, recursive = FALSE, use.names = FALSE)
 				}
-				if (n_cores <= 1L) return(RUN_CHUNK(X))
+				if (n_cores <= 1L) {
+					if (!is.null(private$seed)) {
+						had = exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+						if (had) old = get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+						on.exit(if (had) assign(".Random.seed", old, envir = .GlobalEnv) else rm(".Random.seed", envir = .GlobalEnv), add = TRUE)
+						set.seed(private$seed)
+					}
+					return(RUN_CHUNK(X))
+				}
 				global_cl = get_global_fork_cluster()
 				global_mirai_cores = get_global_mirai_cores()
 				if (!is.null(global_cl)){
 					worker_cl = global_cl[seq_len(min(n_cores, length(global_cl)))]
+					if (!is.null(private$seed)) parallel::clusterSetRNGStream(worker_cl, private$seed)
 					tryCatch({
 						if (!is.null(export_list) && length(export_list) > 0L) {
 							export_env = list2env(export_list, parent = emptyenv())
@@ -548,6 +563,7 @@ Inference = R6::R6Class("Inference",
 							fresh_cl = make_configured_fork_cluster(n_cores)
 							edi_env$global_fork_cluster = fresh_cl
 							fresh_worker_cl = fresh_cl[seq_len(min(n_cores, length(fresh_cl)))]
+							if (!is.null(private$seed)) parallel::clusterSetRNGStream(fresh_worker_cl, private$seed)
 							return(flatten_chunk_results(parallel::parLapply(fresh_worker_cl, chunks, RUN_CHUNK)))
 						}
 							stop(e)
@@ -556,7 +572,15 @@ Inference = R6::R6Class("Inference",
 					requested_mirai_cores = min(n_cores, global_mirai_cores)
 					private$ensure_mirai_daemons(requested_mirai_cores)
 					on.exit(private$ensure_mirai_daemons(global_mirai_cores), add = TRUE)
-					tasks = lapply(chunks, function(chunk) mirai::mirai({RUN_CHUNK(chunk)}, RUN_CHUNK = RUN_CHUNK, chunk = chunk))
+					seed_val = private$seed
+					tasks = lapply(seq_along(chunks), function(i) {
+						chunk = chunks[[i]]
+						chunk_seed = if (!is.null(seed_val)) seed_val + i else NULL
+						mirai::mirai({
+							if (!is.null(chunk_seed)) set.seed(chunk_seed)
+							RUN_CHUNK(chunk)
+						}, RUN_CHUNK = RUN_CHUNK, chunk = chunk, chunk_seed = chunk_seed)
+					})
 					flatten_chunk_results(lapply(tasks, function(m) m[]))
 				} else if (.Platform$OS.type != "unix"){
 					if (!isTRUE(private$warned_no_parallel)){
@@ -570,6 +594,7 @@ Inference = R6::R6Class("Inference",
 					lazy_cl = make_configured_fork_cluster(n_cores)
 					edi_env$global_fork_cluster = lazy_cl
 					lazy_worker_cl = lazy_cl[seq_len(min(n_cores, length(lazy_cl)))]
+					if (!is.null(private$seed)) parallel::clusterSetRNGStream(lazy_worker_cl, private$seed)
 					flatten_chunk_results(parallel::parLapply(lazy_worker_cl, chunks, RUN_CHUNK))
 				}
 			},

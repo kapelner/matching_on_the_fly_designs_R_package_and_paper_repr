@@ -42,6 +42,47 @@ InferenceCountQuasiPoisson = R6::R6Class("InferenceCountQuasiPoisson",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = as.numeric(private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights))
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = private$build_design_matrix(),
+				required_cols = 2L,
+				fit_fun = function(X_fit, keep){
+					res = tryCatch(
+						fast_poisson_regression_weighted_cpp(
+							X = X_fit,
+							y = as.numeric(private$y),
+							weights = row_weights,
+							warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+							smart_cold_start = private$smart_cold_start_default,
+							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
+						),
+						error = function(e) NULL
+					)
+					if (is.null(res)) return(NULL)
+					list(b = res$b, XtWX = res$XtWX %||% res$fisher_information, ssq_b_j = NA_real_, j_treat = which(keep == 2L))
+				},
+				fit_ok = function(mod, X_fit, keep){
+					j_treat = mod$j_treat
+					!is.null(mod) && length(mod$b) >= j_treat && is.finite(mod$b[j_treat])
+				}
+			)
+			private$cached_mod = attempt$fit
+			if (is.null(attempt$fit) || is.null(attempt$fit$b) || length(attempt$fit$b) < 2L || !is.finite(attempt$fit$b[2L])) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			private$cached_values$beta_hat_T = as.numeric(attempt$fit$b[2L])
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$set_fit_warm_start(as.numeric(attempt$fit$b), "beta", fisher = attempt$fit$XtWX)
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes an approximate confidence interval.
 		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){

@@ -49,6 +49,15 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Returns the weighted JT superiority estimate for Bayesian-bootstrap re-estimation.
+		#' @param subject_or_block_weights Bootstrap weights at the subject/block level.
+		#' @param estimate_only If TRUE, skip exact p-value calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			private$cached_values$beta_hat_T = private$weighted_superiority(private$y, private$w, row_weights) - 0.5
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Returns the exact two-sided p-value.
 		compute_exact_two_sided_pval_for_treatment_effect = function(){
 			private$shared()
@@ -66,6 +75,23 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 		}
 	),
 	private = list(
+		weighted_superiority = function(y_vals, w_vals, row_weights){
+			y_vals = as.numeric(y_vals)
+			w_vals = as.integer(w_vals)
+			row_weights = as.numeric(row_weights)
+			i_t = which(w_vals == 1L & is.finite(y_vals) & is.finite(row_weights) & row_weights > 0)
+			i_c = which(w_vals == 0L & is.finite(y_vals) & is.finite(row_weights) & row_weights > 0)
+			if (length(i_t) == 0L || length(i_c) == 0L) return(NA_real_)
+			y_t = y_vals[i_t]
+			y_c = y_vals[i_c]
+			w_t = row_weights[i_t]
+			w_c = row_weights[i_c]
+			comp = outer(y_t, y_c, function(a, b) ifelse(a > b, 1, ifelse(a < b, 0, 0.5)))
+			w_pair = outer(w_t, w_c, "*")
+			den = sum(w_pair)
+			if (!is.finite(den) || den <= 0) return(NA_real_)
+			sum(comp * w_pair) / den
+		},
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))

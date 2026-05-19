@@ -25,6 +25,33 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+		},
+		#' @description Recomputes the ordinal treatment estimate under
+		#'   Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Subject-, block-, cluster-, or matched-set
+		#'   bootstrap weights.
+		#' @param estimate_only If \code{TRUE}, compute only the weighted point
+		#'   estimate.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = as.numeric(private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights))
+			X_fit = private$build_design_matrix()
+			if (!is.null(private$best_X_colnames)) {
+				keep = c("treatment", intersect(private$best_X_colnames, colnames(X_fit)))
+				X_fit = X_fit[, keep, drop = FALSE]
+			}
+			fit = weighted_ordinal_bootstrap_surrogate_fit(X_fit, private$y, row_weights, method = "probit")
+			if (is.null(fit) || !is.finite(fit$beta_hat)) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			private$cached_values$beta_hat_T = as.numeric(fit$beta_hat)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$cached_values$full_coefficients = fit$coefficients
+			private$cached_values$summary_table = NULL
+			private$cached_values$beta_hat_T
 		}
 	),
 	private = list(
@@ -74,17 +101,8 @@ InferenceOrdinalOrderedProbitRegr = R6::R6Class("InferenceOrdinalOrderedProbitRe
 		},
 		simulate_under_lik_null = function(spec, delta, null_fit){
 			params_null = as.numeric(null_fit$params)
-			cat_vals    = sort(unique(spec$y))
-			K           = length(cat_vals)
-			n_alpha     = K - 1L
-			thresholds  = params_null[seq_len(n_alpha)]
-			betas       = params_null[(n_alpha + 1L):length(params_null)]
-			eta         = as.numeric(spec$X %*% betas)
-			cum_probs   = outer(thresholds, eta, function(a, e) pnorm(a - e))
-			cat_probs   = pmax(rbind(cum_probs, 1) - rbind(0, cum_probs), 0)
-			y_sim       = cat_vals[apply(cat_probs, 2, function(p){ s = sum(p); if (s <= 0) return(1L); sample.int(K, 1L, prob = p / s) })]
-			y_sim       = as.numeric(y_sim)
-			if (length(unique(y_sim)) < K) return(NULL)
+			y_sim       = private$simulate_param_boot_ordinal_y(spec$X, params_null, spec$y, stats::pnorm)
+			if (is.null(y_sim)) return(NULL)
 			X_fit    = spec$X
 			j        = spec$j
 			

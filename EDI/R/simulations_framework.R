@@ -685,8 +685,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         }
         assign("num_cores_override", prev_override, envir = ns$edi_env)
       }, add = TRUE)
+      # Fork-based workers (mcparallel) inherit the parent's JVM state, which
+      # causes deadlocks when rJava is used post-fork. Force mirai (separate
+      # processes) whenever rJava has already been initialised in the parent.
+      java_loaded = "rJava" %in% loadedNamespaces() || "GreedyExperimentalDesign" %in% loadedNamespaces()
       use_mirai_backend = isTRUE(num_cores > 1L) &&
-        (.Platform$OS.type != "unix" || !is.null(prev_global_mirai_cores))
+        (.Platform$OS.type != "unix" || !is.null(prev_global_mirai_cores) || java_loaded)
       if (use_mirai_backend) {
         if (!check_package_installed("mirai")) {
           use_mirai_backend = FALSE
@@ -939,6 +943,25 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         private$.finish_run()
         return(invisible(self))
       }
+      # Plan validation above may have loaded rJava/GreedyExperimentalDesign (via
+      # requireNamespace inside DesignFixedGreedy$new). Re-check now: if Java is
+      # loaded and we are on Unix without mirai already, upgrade to mirai to avoid
+      # the fork-after-JVM-init deadlock.
+      if (!use_mirai_backend && isTRUE(num_cores > 1L) &&
+          .Platform$OS.type == "unix" &&
+          ("rJava" %in% loadedNamespaces() || "GreedyExperimentalDesign" %in% loadedNamespaces())) {
+        if (check_package_installed("mirai")) {
+          use_mirai_backend = TRUE
+          private$.ensure_mirai_daemons(num_cores)
+          on.exit({
+            if (!is.null(prev_global_mirai_cores)) {
+              private$.ensure_mirai_daemons(prev_global_mirai_cores)
+            } else {
+              tryCatch(mirai::daemons(0), error = function(e) invisible(NULL))
+            }
+          }, add = TRUE)
+        }
+      }
       for (cell_idx in seq_len(n_cells)) {
         private$current_cell_idx = cell_idx
         private$current_n = private$param_grid$n[[cell_idx]]
@@ -955,6 +978,18 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         cell_key_prefix = paste(private$current_response_type, private$current_cond_exp_func_model,
                                 private$current_n, private$current_p,
                                 private$current_betaT, sep = "|")
+        # Build a lookup set of valid (design, inference, type) keys for this cell
+        # so workers can skip combos that plan-validation already rejected (e.g.,
+        # "This design requires a blocking design.") without treating them as fatal errors.
+        cell_valid_combo_keys = {
+          cell_combos_here = planned_combos_list[[cell_idx]]
+          if (length(cell_combos_here) > 0L) {
+            vapply(cell_combos_here, function(c)
+              paste(c$design, c$inference, c$inference_type, sep = "|"), character(1L))
+          } else {
+            character(0L)
+          }
+        }
         cell_state = list(
           n = private$current_n, p = private$current_p, betaT = private$current_betaT,
           cond_exp_func_model = private$current_cond_exp_func_model, norm_sq_beta_vec = private$norm_sq_beta_vec,
@@ -974,8 +1009,48 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           count_shift = private$count_shift, prob_censoring = private$prob_censoring,
           inference_type_params = private$inference_type_params,
           cell_key_prefix = cell_key_prefix,
+          valid_combo_keys = cell_valid_combo_keys,
           stop_on_error = private$stop_on_error
         )
+        # Pre-generate w vectors for designs that support batching (e.g. DesignFixedGreedy).
+        # When X is fixed across reps, one batch call with max_designs = Nrep replaces
+        # per-rep JVM round-trips, eliminating the dominant cost for Java-backed designs.
+        if (!isTRUE(private$random_X_draws) && length(reps_to_run) > 0L) {
+          design_w_cache = list()
+          for (di in seq_along(private$design_classes)) {
+            dc = private$design_classes[[di]]
+            dl = private$design_labels[[di]]
+            dp = private$design_params[[di]]
+            if (is.null(dc$public_methods$supports_batch_w_pregeneration)) next
+            X_pregen = cell_state$shared_X
+            if (is.null(X_pregen)) next
+            r_needed = length(reps_to_run)
+            tryCatch({
+              d_pregen = do.call(dc$new, c(
+                list(response_type = private$current_response_type, n = private$current_n), dp
+              ))
+              d_pregen$add_all_subjects_to_experiment(as.data.frame(X_pregen))
+              # Use the simulation's full core budget for the batch Java search.
+              prev_nc_override = ns$edi_env$num_cores_override
+              assign("num_cores_override", num_cores, envir = ns$edi_env)
+              w_mat = d_pregen$draw_ws_according_to_design(r_needed)
+              assign("num_cores_override", prev_nc_override, envir = ns$edi_env)
+              storage.mode(w_mat) = "integer"
+              design_w_cache[[dl]] = list(
+                ws         = w_mat,
+                rep_to_col = setNames(seq_len(r_needed), as.character(reps_to_run))
+              )
+            }, error = function(e) {
+              if (isTRUE(private$verbose)) {
+                private$.message_stderr(sprintf(
+                  "Warning: w pre-generation failed for %s (falling back to per-rep draws): %s\n",
+                  dl, conditionMessage(e)
+                ))
+              }
+            })
+          }
+          if (length(design_w_cache) > 0L) cell_state$design_w_cache = design_w_cache
+        }
         num_cores_to_use = 1L
         private$current_task_label = "Des/Inf"
         if (num_cores > 1L) {
@@ -1002,8 +1077,27 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                
                RUN_REP_DETACHED = private$.run_single_replication_in_worker; environment(RUN_REP_DETACHED) = asNamespace("EDI")
                RUN_REP = function(rep_i) RUN_REP_DETACHED(rep_i, cell_state, progress_cb = NULL, is_forked = FALSE)
+               seed_val = private$seed
+               # mirai 2.x returns miraiError (class "miraiError"/"errorValue"/"try-error")
+               # on worker failure — NOT a standard "error" condition. Detect both.
+               is_mirai_failed = function(x) {
+                 is.null(x) || inherits(x, "error") || inherits(x, "miraiError") || inherits(x, "errorValue")
+               }
+               mirai_err_msg = function(x) {
+                 if (is.null(x)) return("Worker returned NULL output.")
+                 if (inherits(x, "miraiError") || inherits(x, "errorValue")) {
+                   msg = attr(x, "message")
+                   if (!is.null(msg)) return(as.character(msg)[1L])
+                   return(as.character(x)[1L])
+                 }
+                 conditionMessage(x)
+               }
                jobs = lapply(active_reps, function(rep_i) {
-                 mirai::mirai({ RUN_REP(rep_i) }, RUN_REP = RUN_REP, rep_i = rep_i)
+                 rep_seed = if (!is.null(seed_val)) seed_val + rep_i else NULL
+                 mirai::mirai({
+                   if (!is.null(rep_seed)) set.seed(rep_seed)
+                   RUN_REP(rep_i)
+                 }, RUN_REP = RUN_REP, rep_i = rep_i, rep_seed = rep_seed)
                })
                names(jobs) = as.character(active_reps)
                chunk_results = vector("list", length(active_reps))
@@ -1019,8 +1113,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                    if (is.null(chunk_results[[nm]])) {
                      job_res = tryCatch(jobs[[nm]][], error = function(e) e)
                      chunk_results[[nm]] = job_res
-                     if (!inherits(job_res, "error") &&
-                         !is.null(job_res) &&
+                     if (!is_mirai_failed(job_res) &&
                          !is.null(job_res$fatal_error)) {
                        pending_jobs = jobs[setdiff(names(jobs), ready)]
                        if (length(pending_jobs) > 0L) {
@@ -1038,7 +1131,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                  private$.draw_progress()
                }
                chunk_results = unname(chunk_results[as.character(active_reps)])
-               chunk_results_ok = chunk_results[!vapply(chunk_results, function(x) inherits(x, "error") || is.null(x), logical(1L))]
+               chunk_results_ok = chunk_results[!vapply(chunk_results, is_mirai_failed, logical(1L))]
                if (length(chunk_results_ok) > 0L) {
                  all_chunk_dt = data.table::rbindlist(lapply(chunk_results_ok, function(w) w$results_dt), use.names = TRUE, fill = TRUE)
                  all_chunk_skipped = sum(vapply(chunk_results_ok, function(w) w$skipped_count, 0L))
@@ -1053,7 +1146,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                if (length(fatal_errors) > 0L) {
                  private$.abort_from_error_record(fatal_errors[[1L]])
                }
-               failed_indices = which(vapply(chunk_results, function(x) inherits(x, "error") || is.null(x), logical(1L)))
+               failed_indices = which(vapply(chunk_results, is_mirai_failed, logical(1L)))
                if (length(failed_indices) > 0L) {
                  failed_errors = lapply(failed_indices, function(idx) {
                    private$.make_error_record(
@@ -1065,11 +1158,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                      inference_params = NULL,
                      inference_type = NA_character_,
                      inference_type_params = NULL,
-                     message = if (is.null(chunk_results[[idx]])) {
-                       "Worker returned NULL output."
-                     } else {
-                       conditionMessage(chunk_results[[idx]])
-                     },
+                     message = mirai_err_msg(chunk_results[[idx]]),
                      metadata = list(cell_index = cell_idx, chunk_rep = active_reps[[idx]], backend = "mirai")
                    )
                  })
@@ -1524,7 +1613,22 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       s = tryCatch(mirai::status(), error = function(e) list(connections = 0L))
       n_running = if (is.numeric(s$connections) && length(s$connections) == 1L) as.integer(s$connections) else 0L
       if (n_running != as.integer(n)) mirai::daemons(as.integer(n))
-      tryCatch(
+      # Capture java.parameters from the parent so each worker initialises the
+      # JVM with the same heap size and flags.
+      java_params = getOption("java.parameters", default = character(0))
+      # On WSL, wgpu cannot reliably initialise concurrent GPU contexts across
+      # many worker processes (the GPU-PV paravirtualisation layer races and
+      # throws silent Java exceptions, leaving num_completed=0). Detect WSL via
+      # the WSL_DISTRO_NAME env var (set by WSL2) or a "microsoft" marker in
+      # /proc/version, and disable GPU only in that environment.
+      is_wsl = nzchar(Sys.getenv("WSL_DISTRO_NAME")) ||
+        grepl("microsoft|wsl", tryCatch(readLines("/proc/version", n = 1L), error = function(e) ""), ignore.case = TRUE)
+      # everywhere() in mirai 2.x is asynchronous: it submits setup tasks to all
+      # workers but returns immediately. We must collect/await the result before
+      # submitting real tasks; otherwise workers can start executing GED (and
+      # initialising the JVM) before java.parameters has been set, causing the
+      # JVM to start with the default Xmx (~25% of RAM) instead of our cap.
+      setup_tasks = tryCatch(
         mirai::everywhere({
           Sys.setenv(
             OMP_NUM_THREADS        = 1L,
@@ -1535,12 +1639,52 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             NUMEXPR_NUM_THREADS    = 1L
           )
           options(mc.cores = 1L)
+          # Propagate java.parameters so the JVM initialises with the correct
+          # heap size and flags when GreedyExperimentalDesign is first loaded.
+          # Strip -Xms (initial heap) flags: each worker runs a single GED search
+          # and doesn't need a pre-committed large heap. Keeping -Xms from the
+          # parent (e.g. -Xms10g) would cause N_workers * 10g simultaneous heap
+          # commits, exhausting RAM when many workers start their JVMs at once.
+          # Strip flags that bloat native memory in small-heap worker JVMs:
+          # -Xms: pre-commits a large heap (wastes RAM when N workers start at once)
+          # G1GC flags: G1GC has 2-3x native-memory overhead vs SerialGC; for the
+          #   small per-worker Xmx, SerialGC is sufficient and far cheaper.
+          # UseStringDeduplication/OptimizeStringConcat: G1GC-only, not valid w/ SerialGC
+          worker_java_params = java_params[!grepl(
+            "^-Xms|^-XX:\\+UseG1GC|^-XX:\\+UseStringDeduplication|^-XX:\\+OptimizeStringConcat",
+            java_params
+          )]
+          worker_java_params = c(worker_java_params, "-XX:+UseSerialGC")
+          if (length(worker_java_params) > 0L && is.null(getOption("java.parameters")))
+            options(java.parameters = worker_java_params)
+          # Disable GPU only on WSL where concurrent wgpu process init is broken.
+          # Also strip the wgpu native-lib JVM property: on WSL, even with
+          # use_gpu=FALSE, WebGpuPanama's static initialiser will load the
+          # wgpu native .so and map ~8-10 GB of GPU-accessible memory per
+          # worker if the ged.wgpu.lib.path JVM property is present.
+          if (isTRUE(is_wsl)) {
+            options(GreedyExperimentalDesign.use_gpu = FALSE)
+            worker_java_params = worker_java_params[!grepl("^-Dged\\.wgpu\\.lib\\.path", worker_java_params)]
+            if (!is.null(getOption("java.parameters")))
+              options(java.parameters = getOption("java.parameters")[!grepl("^-Dged\\.wgpu\\.lib\\.path", getOption("java.parameters"))])
+          }
           if (requireNamespace("data.table", quietly = TRUE)) data.table::setDTthreads(1L)
           if (requireNamespace("fixest", quietly = TRUE)) suppressWarnings(try(fixest::setFixest_nthreads(1L), silent = TRUE))
+          # Pre-initialise the JVM now, while java.parameters is freshly set.
+          # This prevents a race where GED is first loaded via closure
+          # deserialization (before the task body runs), which could call
+          # .jpackage() → .jinit() with stale or default options.
+          if (length(worker_java_params) > 0L && requireNamespace("rJava", quietly = TRUE))
+            tryCatch(rJava::.jinit(), error = function(e) invisible(NULL))
           invisible(NULL)
-        }),
-        error = function(e) invisible(NULL)
+        }, java_params = java_params, is_wsl = is_wsl),
+        error = function(e) NULL
       )
+      # Block until every worker has finished the setup; this guarantees
+      # java.parameters is set before any GED task can initialise the JVM.
+      if (!is.null(setup_tasks)) {
+        tryCatch(mirai::collect_mirai(setup_tasks), error = function(e) invisible(NULL))
+      }
       invisible(NULL)
     },
     # ── Design spec parsing ───────────────────────────────────────────────────
@@ -1991,7 +2135,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       )
     },
     .abort_from_error_record = function(err) {
-      stop(private$.format_error_record(err), call. = FALSE)
+      msg = private$.format_error_record(err)
+      tryCatch(
+        writeLines(c(as.character(Sys.time()), msg, ""), "/tmp/edi_sim_crash.log"),
+        error = function(e) invisible(NULL)
+      )
+      stop(msg, call. = FALSE)
     },
     .log_skip = function(rep, design, inference, inference_type) {
       invisible(NULL)
@@ -2079,10 +2228,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     .run_single_replication_in_worker = function(rep_i, state, progress_cb = NULL, is_forked = FALSE) {
       # This runs in a worker process. It must be self-contained.
       # 1. Cap threads and nested parallelism to avoid N*M oversubscription.
-      # We call these directly as the environment is set to the EDI namespace.
-      set_package_threads(1L)
+      # Use loadNamespace to ensure EDI is loaded and functions are accessible,
+      # because closure environment assignment is not reliably preserved across
+      # mirai serialization.
+      ns_edi = loadNamespace("EDI")
+      ns_edi$set_package_threads(1L)
       if (is_forked) {
-        unset_num_cores() # Clear any inherited clusters
+        ns_edi$unset_num_cores() # Clear any inherited clusters
       }
       
       error_records = list()
@@ -2258,7 +2410,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             }
           } else {
             d$add_all_subjects_to_experiment(X)
-            d$assign_w_to_all_subjects()
+            precomp_w = NULL
+            if (!is.null(state$design_w_cache) && !is.null(state$design_w_cache[[design_name]])) {
+              cache  = state$design_w_cache[[design_name]]
+              col_j  = cache$rep_to_col[[as.character(rep_i)]]
+              if (!is.null(col_j)) precomp_w = cache$ws[, col_j]
+            }
+            d$assign_w_to_all_subjects(precomp_w)
             w = d$get_w()
             out = apply_treatment_and_noise(y_linear_model, w)
             d$add_all_subject_responses(out$y, out$dead)
@@ -2285,6 +2443,14 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           inf_gen  = state$inference_classes[[ii]]
           inf_name = state$inference_labels[[ii]]
           inf_ctor_extra = state$inference_ctor_params[[ii]]
+          # Skip combos that plan-validation already rejected so a re-fired
+          # assertion (e.g. "requires a blocking design") never becomes a
+          # fatal stop_on_error in the worker.
+          if (!is.null(state$valid_combo_keys) && length(state$valid_combo_keys) > 0L) {
+            any_valid_type = any(startsWith(state$valid_combo_keys,
+                                            paste0(design_name, "|", inf_name, "|")))
+            if (!any_valid_type) next
+          }
           inf_obj = tryCatch({
             do.call(inf_gen$new, c(list(des_obj), inf_ctor_extra))
           }, error = function(e) {
@@ -2308,7 +2474,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           
           if (is.null(inf_obj)) next
           is_mean_diff = is(inf_obj, "InferenceAllSimpleMeanDiff") ||
-                         is(inf_obj, "InferenceIncidenceWald") ||
+                         is(inf_obj, "InferenceIncidWald") ||
                          is(inf_obj, "InferenceIncidCMH") ||
                          is(inf_obj, "InferenceIncidExtendedRobins") ||
                          is(inf_obj, "InferenceIncidRiskDiff") ||
@@ -2653,7 +2819,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         design_names = gsub("Design", "", design_names)
         inference_names = unique(vapply(combos, `[[`, "", "inference"))
         inference_names = gsub("Inference", "", inference_names)
-        inference_names = gsub("^(Contin|Count|Incid|Prop|Survival|Ordinal|All)", "", inference_names)
+        inference_names = gsub("^(Contin|Count|Incidence|Incid|Prop|Survival|Ordinal|All)", "", inference_names)
         if (is.null(rt_summaries[[rt]])) {
           rt_summaries[[rt]] = list(
             designs = design_names,
@@ -3158,6 +3324,22 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       n_rows = if (is_dt) nrow(rows) else length(rows)
       if (n_rows == 0L && skipped_count == 0L) return(invisible(NULL))
       if (n_rows > 0L) {
+        # Deduplicate: workers run in fresh processes with an empty C++ key store,
+        # so they re-execute combos that the main process already has on record.
+        # Drop those rows here before writing to avoid corrupt data and inflated
+        # progress_count (which would trigger a premature "already complete" exit).
+        if (is_dt) {
+          already_done = check_in_result_key_store_cpp(
+            rows$response_type, rows$cond_exp_func_model, rows$n, rows$p, rows$betaT,
+            rows$rep, rows$design, rows$inference, rows$inference_type
+          )
+          if (any(already_done)) {
+            rows = rows[!already_done]
+            n_rows = nrow(rows)
+          }
+        }
+      }
+      if (n_rows > 0L) {
         # 1. Update memory store
         # Optimization: Store data.tables directly in raw_results list
         private$results_idx = private$results_idx + 1L
@@ -3186,7 +3368,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         private$.append_result_row_to_file(rows)
       }
       # 4. Advance progress count
-      # ONLY add n_rows (the new ones). 
+      # ONLY add n_rows (the new ones).
       # DO NOT add skipped_count because those tasks were already accounted for
       # in the initial progress_count calculation (the "scanning" phase).
       private$progress_count = private$progress_count + n_rows
@@ -3242,13 +3424,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           InferenceIncidLogRegr,
           InferenceIncidModifiedPoisson,
           InferenceIncidModifiedPoisson,
-          InferenceIncidKKClogitIVWC,
-          InferenceIncidKKClogitOneLik,
+          InferenceIncidKKCondLogitIVWC,
+          InferenceIncidKKCondLogitOneLik,
           InferenceIncidCMH,
           InferenceIncidExtendedRobins,
           InferenceIncidExactZhang,
           InferenceIncidExactFisher,
-          InferenceIncidenceExactBinomial
+          InferenceIncidExactBinomial
         ),
         proportion = list(
           InferenceAllSimpleWilcox,
@@ -3266,15 +3448,14 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           InferenceCountRobustPoisson,
           InferenceCountRobustPoisson,
           InferenceCountKKGEE,
-          InferenceCountKKCPoissonIVWC
         ),
         survival = list(
           InferenceSurvivalCoxPHRegr,
           InferenceSurvivalCoxPHRegr,
           InferenceSurvivalLogRank,
           InferenceSurvivalRestrictedMeanDiff,
-          InferenceSurvivalKKStratCoxIVWC,
-          InferenceSurvivalKKLWACoxIVWC
+          InferenceSurvivalKKStratCoxPHIVWC,
+          InferenceSurvivalKKLWACoxPHIVWC
         ),
         ordinal = list(
           InferenceOrdinalPropOddsRegr,

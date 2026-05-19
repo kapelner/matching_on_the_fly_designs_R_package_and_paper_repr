@@ -101,6 +101,109 @@ test_that("weighted fractional-logit hook returns a finite estimate and matches 
 	)
 })
 
+test_that("additional near-term weighted hooks return finite estimates and recover equal weights when practical", {
+	des_count = make_seq_design_for_bayes_boot("count", c(0L, 1L, 1L, 2L, 3L, 1L, 0L, 2L))
+	n_count = des_count$get_n()
+	ctx_count = list(row_to_unit = seq_len(n_count), unit_group_id = rep(1L, n_count), n_units = n_count)
+
+	inf_nb = InferenceCountNegBin$new(des_count)
+	inf_nb$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_count
+	expect_true(is.finite(as.numeric(inf_nb$compute_estimate_with_bootstrap_weights(rep(1, n_count)))))
+
+	inf_qp = InferenceCountQuasiPoisson$new(des_count)
+	inf_qp$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_count
+	expect_equal(
+		as.numeric(inf_qp$compute_estimate_with_bootstrap_weights(rep(1, n_count))),
+		as.numeric(inf_qp$compute_estimate()),
+		tolerance = 1e-6
+	)
+
+	inf_rp = InferenceCountRobustPoisson$new(des_count)
+	inf_rp$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_count
+	expect_equal(
+		as.numeric(inf_rp$compute_estimate_with_bootstrap_weights(rep(1, n_count))),
+		as.numeric(inf_rp$compute_estimate()),
+		tolerance = 1e-6
+	)
+
+	des_incid = make_seq_design_for_bayes_boot("incidence", c(0L, 1L, 0L, 1L, 1L, 0L, 1L, 0L))
+	n_incid = des_incid$get_n()
+	ctx_incid = list(row_to_unit = seq_len(n_incid), unit_group_id = rep(1L, n_incid), n_units = n_incid)
+	inf_probit = InferenceIncidProbitRegr$new(des_incid)
+	inf_probit$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_incid
+	expect_true(is.finite(as.numeric(inf_probit$compute_estimate_with_bootstrap_weights(rep(1, n_incid)))))
+
+	des_prop = make_seq_design_for_bayes_boot("proportion", c(0.1, 0.8, 0.2, 0.7, 0.6, 0.3, 0.9, 0.4))
+	n_prop = des_prop$get_n()
+	ctx_prop = list(row_to_unit = seq_len(n_prop), unit_group_id = rep(1L, n_prop), n_units = n_prop)
+	inf_beta = InferencePropBetaRegr$new(des_prop)
+	inf_beta$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_prop
+	expect_true(is.finite(as.numeric(inf_beta$compute_estimate_with_bootstrap_weights(rep(1, n_prop)))))
+
+	des_cont = make_seq_design_for_bayes_boot("continuous", c(0, 1, 2, 3, 4, 5, 6, 7))
+	n_cont = des_cont$get_n()
+	ctx_cont = list(row_to_unit = seq_len(n_cont), unit_group_id = rep(1L, n_cont), n_units = n_cont)
+
+	inf_rob = InferenceContinRobustRegr$new(des_cont, use_rcpp = FALSE)
+	inf_rob$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_cont
+	expect_true(is.finite(as.numeric(inf_rob$compute_estimate_with_bootstrap_weights(rep(1, n_cont)))))
+
+	skip_if_not_installed("quantreg")
+	inf_qr = InferenceContinQuantileRegr$new(des_cont)
+	inf_qr$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_cont
+	expect_true(is.finite(as.numeric(inf_qr$compute_estimate_with_bootstrap_weights(rep(1, n_cont)))))
+})
+
+test_that("remaining near-term weighted hooks return finite estimates", {
+	skip_if_not_installed("glmmTMB")
+	des_count = make_seq_design_for_bayes_boot("count", c(0L, 1L, 0L, 2L, 3L, 1L, 0L, 2L))
+	n_count = des_count$get_n()
+	ctx_count = list(row_to_unit = seq_len(n_count), unit_group_id = rep(1L, n_count), n_units = n_count)
+
+	inf_hp = InferenceCountHurdlePoisson$new(des_count, use_rcpp = FALSE)
+	inf_hp$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_count
+	expect_true(is.finite(as.numeric(inf_hp$compute_estimate_with_bootstrap_weights(rep(1, n_count)))))
+
+	inf_hnb = InferenceCountHurdleNegBin$new(des_count)
+	inf_hnb$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_count
+	expect_true(is.finite(as.numeric(inf_hnb$compute_estimate_with_bootstrap_weights(rep(1, n_count)))))
+
+	inf_zip = InferenceCountZeroInflatedPoisson$new(des_count, use_rcpp = FALSE)
+	inf_zip$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_count
+	expect_true(is.finite(as.numeric(inf_zip$compute_estimate_with_bootstrap_weights(rep(1, n_count)))))
+
+	inf_zinb = InferenceCountZeroInflatedNegBin$new(des_count, use_rcpp = FALSE)
+	inf_zinb$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_count
+	expect_true(is.finite(as.numeric(inf_zinb$compute_estimate_with_bootstrap_weights(rep(1, n_count)))))
+
+	des_incid = make_seq_design_for_bayes_boot("incidence", c(0L, 1L, 0L, 1L, 1L, 0L, 1L, 0L))
+	n_incid = des_incid$get_n()
+	ctx_incid = list(row_to_unit = seq_len(n_incid), unit_group_id = rep(1L, n_incid), n_units = n_incid)
+
+	inf_new = InferenceIncidNewcombeRiskDiff$new(des_incid)
+	inf_new$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_incid
+	expect_equal(
+		as.numeric(inf_new$compute_estimate_with_bootstrap_weights(rep(1, n_incid))),
+		as.numeric(inf_new$compute_estimate()),
+		tolerance = 1e-8
+	)
+
+	inf_mn = InferenceIncidMiettinenNurminenRiskDiff$new(des_incid)
+	inf_mn$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_incid
+	expect_equal(
+		as.numeric(inf_mn$compute_estimate_with_bootstrap_weights(rep(1, n_incid))),
+		as.numeric(inf_mn$compute_estimate()),
+		tolerance = 1e-8
+	)
+
+	des_prop = make_seq_design_for_bayes_boot("proportion", c(0, 1, 0.2, 0.7, 0.6, 0.3, 0.9, 0.4))
+	n_prop = des_prop$get_n()
+	ctx_prop = list(row_to_unit = seq_len(n_prop), unit_group_id = rep(1L, n_prop), n_units = n_prop)
+	inf_zoib = InferencePropZeroOneInflatedBetaRegr$new(des_prop)
+	inf_zoib$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_prop
+	expect_true(is.finite(as.numeric(inf_zoib$compute_estimate_with_bootstrap_weights(rep(1, n_prop)))))
+})
+
 test_that("weighted identity-binomial hook returns a finite estimate and matches equal weights", {
 	des = make_seq_design_for_bayes_boot("incidence", c(0L, 1L, 0L, 1L, 1L, 0L, 1L, 0L))
 	inf = InferenceIncidBinomialIdentityRiskDiff$new(des)
@@ -263,6 +366,53 @@ test_that("selected ordinal and survival second-wave hooks return finite weighte
 	expect_true(is.finite(as.numeric(inf_gehan$compute_estimate_with_bootstrap_weights(rep(1, n_surv)))))
 })
 
+test_that("ordinal likelihood-gap weighted hooks are finite and exact empirical ordinal hooks recover equal weights", {
+	des_ord = make_seq_design_for_bayes_boot("ordinal", c(1L, 2L, 2L, 3L, 3L, 4L, 4L, 5L))
+	n_ord = des_ord$get_n()
+	ctx_ord = list(
+		row_to_unit = seq_len(n_ord),
+		unit_group_id = rep(1L, n_ord),
+		n_units = n_ord
+	)
+
+	ordinal_classes = list(
+		InferenceOrdinalAdjCatLogitRegr$new(des_ord),
+		InferenceOrdinalCloglogRegr$new(des_ord),
+		InferenceOrdinalCauchitRegr$new(des_ord),
+		InferenceOrdinalOrderedProbitRegr$new(des_ord),
+		InferenceOrdinalStereotypeLogitRegr$new(des_ord),
+		InferenceOrdinalContRatioRegr$new(des_ord),
+		InferenceOrdinalOrderedProbitRegr$new(des_ord)
+	)
+	for (inf in ordinal_classes) {
+		inf$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_ord
+		expect_true(is.finite(as.numeric(inf$compute_estimate_with_bootstrap_weights(rep(1, n_ord)))))
+	}
+
+	inf_ridit = InferenceOrdinalRidit$new(des_ord)
+	inf_ridit$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_ord
+	expect_equal(
+		as.numeric(inf_ridit$compute_estimate_with_bootstrap_weights(rep(1, n_ord))),
+		as.numeric(inf_ridit$compute_estimate()),
+		tolerance = 1e-8
+	)
+
+	des_kk_ord = make_kk_design_for_weighted_bayes_boot("ordinal", c(1L, 2L, 2L, 3L, 3L, 4L, 4L, 5L))
+	n_kk_ord = des_kk_ord$get_n()
+	ctx_kk_ord = list(
+		row_to_unit = seq_len(n_kk_ord),
+		unit_group_id = rep(1L, n_kk_ord),
+		n_units = n_kk_ord
+	)
+	inf_sign = InferenceOrdinalPairedSignTest$new(des_kk_ord, verbose = FALSE)
+	inf_sign$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_kk_ord
+	expect_equal(
+		as.numeric(inf_sign$compute_estimate_with_bootstrap_weights(rep(1, n_kk_ord))),
+		as.numeric(inf_sign$compute_estimate()),
+		tolerance = 1e-8
+	)
+})
+
 test_that("next-wave weighted hooks return finite estimates on KK GEE paths", {
 	skip_if_not_installed("multgee")
 
@@ -347,7 +497,7 @@ test_that("IVWC classes are gated off from Bayesian bootstrap functionality", {
 	)
 
 	des_incid = make_kk_design_for_weighted_bayes_boot("incidence", c(0L, 1L, 0L, 1L, 1L, 0L, 1L, 0L))
-	inf_incid_ivwc = InferenceIncidKKClogitIVWC$new(des_incid, verbose = FALSE)
+	inf_incid_ivwc = InferenceIncidKKCondLogitIVWC$new(des_incid, verbose = FALSE)
 	expect_error(
 		inf_incid_ivwc$compute_bayesian_bootstrap_confidence_interval(B = 3L, show_progress = FALSE),
 		"does not support Bayesian bootstrap functionality"

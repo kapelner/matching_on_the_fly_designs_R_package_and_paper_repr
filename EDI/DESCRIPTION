@@ -20,7 +20,6 @@ Imports:
     checkmate,
     Rcpp,
     data.table,
-    fastLogisticRegressionWrap,
     survival,
     missRanger,
     missForest,
@@ -87,6 +86,7 @@ Collate:
     'EDI.R'
     'glm_fit_helpers.R'
     'globals.R'
+    'inference_all_abstract_mle_or_KM_summary_table.R'
     'inference_all_abstract_asymp_lik.R'
     'inference_all_abstract_exact.R'
     'inference_mixin_kk_gee_shared.R'
@@ -94,7 +94,6 @@ Collate:
     'inference_mixin_kk_passthrough.R'
     'inference_mixin_kk_passthrough_compound.R'
     'inference_all_abstract_KK_passthrough_compound.R'
-    'inference_all_abstract_mle_or_KM_summary_table.R'
     'inference_all_abstract_non_param_boot.R'
     'inference_all_abstract_bayesian_bootstrap.R'
     'inference_all_abstract_jackknife.R'
@@ -131,7 +130,7 @@ Collate:
     'inference_count_composite_likelihood.R'
     'inference_count_hurdle.R'
     'inference_count_KK_combined.R'
-    'inference_count_KK_cpoisson.R'
+    'inference_count_KK_cond_poisson.R'
     'inference_count_KK_gee.R'
     'inference_count_negbin.R'
     'inference_count_poisson.R'
@@ -147,9 +146,9 @@ Collate:
     'inference_incidence_extended_robins.R'
     'inference_incidence_gcomp_abstract.R'
     'inference_incidence_gcomp.R'
-    'inference_incidence_KK_clogit_plus_glmm_abstract.R'
-    'inference_incidence_KK_clogit_plus_glmm.R'
-    'inference_incidence_KK_clogit.R'
+    'inference_incidence_KK_cond_logit_plus_glmm_abstract.R'
+    'inference_incidence_KK_cond_logit_plus_glmm.R'
+    'inference_incidence_KK_cond_logit.R'
     'inference_incidence_KK_combined.R'
     'inference_incidence_KK_gcomp_abstract.R'
     'inference_incidence_KK_marginal_abstract.R'
@@ -162,7 +161,7 @@ Collate:
     'inference_incidence_newcombe_univ.R'
     'inference_incidence_probit.R'
     'inference_incidence_risk_diff.R'
-    'inference_incidence_wald.R'
+    'inference_incid_wald.R'
     'inference_indicidence_exact_fisher.R'
     'inference_ordinal_adj_cat_logit.R'
     'inference_ordinal_cauchit.R'
@@ -172,7 +171,7 @@ Collate:
     'inference_ordinal_KK_clmm_abstract.R'
     'inference_ordinal_KK_combined.R'
     'inference_ordinal_KK_cond_adj_cat_logit.R'
-    'inference_ordinal_KK_cond_clogit_abstract.R'
+    'inference_ordinal_KK_cond_logit_abstract.R'
     'inference_ordinal_ordered_probit.R'
     'inference_ordinal_paired_sign_test.R'
     'inference_ordinal_partial_proportional_odds.R'

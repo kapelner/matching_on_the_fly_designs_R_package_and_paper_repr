@@ -20,6 +20,7 @@ DesignSeqOneByOneEfron = R6::R6Class("DesignSeqOneByOneEfron",
 		#' @param verbose A flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
+		#' @param seed Integer seed for reproducibility.
 		#' @param weighted_coin_prob The probability of assigning to the under-represented group.
 		#'
 		#' @return  A new `DesignSeqOneByOneEfron` object
@@ -28,13 +29,14 @@ DesignSeqOneByOneEfron = R6::R6Class("DesignSeqOneByOneEfron",
 						prob_T = 0.5,
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
-						
+
 						verbose = FALSE,
 						weighted_coin_prob = 2/3,
 				missingness_method = "impute",
-				model_formula = ~ .
+				model_formula = ~ .,
+				seed = NULL
 			) {
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 			private$weighted_coin_prob = weighted_coin_prob
 		},
 		#' @description Assign the next subject to a treatment group

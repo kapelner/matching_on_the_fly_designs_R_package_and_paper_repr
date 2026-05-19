@@ -61,6 +61,66 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Recomputes the ridit treatment estimate under
+		#'   Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Subject-, block-, cluster-, or matched-set
+		#'   bootstrap weights.
+		#' @param estimate_only If \code{TRUE}, compute only the weighted point
+		#'   estimate.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = as.numeric(private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights))
+			y = as.integer(private$y)
+			w = as.integer(private$w)
+			ok = is.finite(row_weights) & row_weights > 0 & is.finite(y) & is.finite(w)
+			if (!any(ok)) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			cat_vals = sort(unique(y[ok]))
+			ref_idx = switch(
+				private$reference,
+				control = ok & (w == 0L),
+				treatment = ok & (w == 1L),
+				pooled = ok
+			)
+			if (!any(ref_idx)) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			ref_total = sum(row_weights[ref_idx])
+			if (!is.finite(ref_total) || ref_total <= 0) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			probs = vapply(cat_vals, function(k) sum(row_weights[ref_idx & y == k]) / ref_total, numeric(1))
+			cum_prev = c(0, cumsum(probs))[seq_along(probs)]
+			ridit_vals = cum_prev + 0.5 * probs
+			names(ridit_vals) = as.character(cat_vals)
+			scores = unname(ridit_vals[as.character(y)])
+			t_idx = ok & (w == 1L)
+			c_idx = ok & (w == 0L)
+			if (!any(t_idx) || !any(c_idx)) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			mean_t = sum(row_weights[t_idx] * scores[t_idx]) / sum(row_weights[t_idx])
+			mean_c = sum(row_weights[c_idx] * scores[c_idx]) / sum(row_weights[c_idx])
+			private$cached_values$mean_ridit_t = mean_t
+			private$cached_values$mean_ridit_c = mean_c
+			private$cached_values$scores = scores
+			private$cached_values$beta_hat_T = as.numeric(mean_t - 0.5)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Returns the Mean Ridit for the treatment group.
 		#' @return The numeric Mean Ridit.
 		get_mean_ridit_treatment = function(){

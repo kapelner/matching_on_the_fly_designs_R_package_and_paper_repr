@@ -44,7 +44,7 @@ des_kk = build_design("incidence", DesignSeqOneByOneKK14, X, function(i, w_i) {
 	eta = -0.1 + 0.35 * w_i + 0.2 * X$x1[i]
 	rbinom(1, 1, plogis(eta))
 })
-inf_kk = InferenceIncidKKGLMM$new(des_kk, model_formula = ~ .)
+inf_kk = InferenceIncidKKCondLogitPlusGLMMOneLik$new(des_kk, model_formula = ~ .)
 stopifnot(identical(inf_kk$get_supported_information_preferences(), c("auto", "observed")))
 expect_error_contains(inf_kk$set_information_preference("fisher"), "does not support information_preference")
 inf_kk$set_information_preference("observed")

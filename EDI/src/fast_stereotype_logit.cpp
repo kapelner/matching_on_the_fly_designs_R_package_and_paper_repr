@@ -743,19 +743,11 @@ List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::V
     int n_alpha = model.num_alpha();
     int p = X.cols();
 
-    MatrixXd vcov = MatrixXd::Constant(n_par, n_par, NA_REAL);
     MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);
-    FullPivLU<MatrixXd> lu(info_free);
-
-    if (lu.isInvertible()) {
-        MatrixXd vcov_free = lu.inverse();
-        vcov = expand_free_covariance(n_par, fixed_spec, vcov_free, true);
-    } else {
-        MatrixXd vcov_pseudo_free = pseudo_inverse_symmetric(info_free);
-        vcov = expand_free_covariance(n_par, fixed_spec, vcov_pseudo_free, true);
-    }
-
-    double ssq_b_1 = (p >= 1) ? vcov(n_alpha, n_alpha) : NA_REAL;
+    int free_j = -1;
+    for (int jj = 0; jj < (int)fixed_spec.free_idx.size(); ++jj)
+        if (fixed_spec.free_idx[jj] == n_alpha) { free_j = jj + 1; break; }
+    double ssq_b_1 = (p >= 1 && free_j > 0) ? compute_diagonal_inverse_entry(info_free, free_j) : NA_REAL;
     
     // Fallback profiling logic for variance if still not finite
     if (!R_finite(ssq_b_1) && p >= 1 && !fixed_spec.has_fixed) {
@@ -776,7 +768,7 @@ List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::V
         Named("params") = params,
         Named("ssq_b_1") = ssq_b_1,
         Named("ssq_b_j") = ssq_b_1,
-        Named("vcov") = vcov,
+        Named("vcov") = R_NilValue,
         Named("converged") = fit.converged,
         Named("fisher_information") = info
     );

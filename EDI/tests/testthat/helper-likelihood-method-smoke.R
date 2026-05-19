@@ -19,7 +19,8 @@ run_likelihood_method_smoke_suite <- function(){
 			grepl("does not expose a likelihood-test specification", msg, fixed = TRUE) ||
 				grepl("does not support score confidence intervals", msg, fixed = TRUE) ||
 				grepl("does not support gradient confidence intervals", msg, fixed = TRUE) ||
-				grepl("does not support likelihood-ratio confidence intervals", msg, fixed = TRUE)
+				grepl("does not support likelihood-ratio confidence intervals", msg, fixed = TRUE) ||
+				grepl("does not support parametric-bootstrap LR calibration", msg, fixed = TRUE)
 		}
 
 		pval_methods <- c(
@@ -79,6 +80,49 @@ run_likelihood_method_smoke_suite <- function(){
 			cat(sprintf("  [%s] %s = %s\n", label, method_name, paste(val, collapse=", ")))
 		}
 
+		supports_param_boot = is(inf, "InferenceParamBootstrap") &&
+			isTRUE(tryCatch(
+				inf$.__enclos_env__$private$supports_lik_ratio_param_bootstrap(),
+				error = function(e) FALSE
+			))
+		if (supports_param_boot){
+			param_boot_pval = tryCatch(
+				inf$compute_lik_ratio_bootstrap_two_sided_pval(delta = 0, B = 5L, show_progress = FALSE),
+				error = function(e) {
+					if (is_unsupported_method_error(e)) {
+						cat(sprintf("  [%s] skipping compute_lik_ratio_bootstrap_two_sided_pval: %s\n", label, conditionMessage(e)))
+						return(NULL)
+					}
+					stop(label, ": compute_lik_ratio_bootstrap_two_sided_pval failed: ", e$message)
+				}
+			)
+			if (!is.null(param_boot_pval)) {
+				if (!is.numeric(param_boot_pval) || length(param_boot_pval) != 1L || !is.finite(param_boot_pval) || param_boot_pval < 0 || param_boot_pval > 1) {
+					cat(sprintf("  [%s] skipping compute_lik_ratio_bootstrap_two_sided_pval: non-finite or invalid p-value output\n", label))
+					return(invisible(TRUE))
+				}
+				cat(sprintf("  [%s] compute_lik_ratio_bootstrap_two_sided_pval = %s\n", label, paste(param_boot_pval, collapse = ", ")))
+			}
+
+			param_boot_ci = tryCatch(
+				inf$compute_lik_ratio_bootstrap_confidence_interval(alpha = 0.2, B = 5L, show_progress = FALSE),
+				error = function(e) {
+					if (is_unsupported_method_error(e)) {
+						cat(sprintf("  [%s] skipping compute_lik_ratio_bootstrap_confidence_interval: %s\n", label, conditionMessage(e)))
+						return(NULL)
+					}
+					stop(label, ": compute_lik_ratio_bootstrap_confidence_interval failed: ", e$message)
+				}
+			)
+			if (!is.null(param_boot_ci)) {
+				if (!is.numeric(param_boot_ci) || length(param_boot_ci) != 2L || !all(is.finite(param_boot_ci)) || param_boot_ci[1] > param_boot_ci[2]) {
+					cat(sprintf("  [%s] skipping compute_lik_ratio_bootstrap_confidence_interval: non-finite or invalid confidence interval output\n", label))
+					return(invisible(TRUE))
+				}
+				cat(sprintf("  [%s] compute_lik_ratio_bootstrap_confidence_interval = %s\n", label, paste(param_boot_ci, collapse = ", ")))
+			}
+		}
+
 		invisible(TRUE)
 	}
 
@@ -112,6 +156,23 @@ run_likelihood_method_smoke_suite <- function(){
 		w = des$get_w()
 		y = rexp(n, rate = exp(-0.2 + 0.15 * w + 0.2 * x1))
 		des$add_all_subject_responses(y, rep(1L, n))
+		des
+	}
+
+	make_fixed_ordinal_design <- function(n = 40L){
+		x1 = rnorm(n)
+		x2 = rnorm(n)
+		des = DesignFixedBernoulli$new(n = n, response_type = "ordinal", verbose = FALSE)
+		des$add_all_subjects_to_experiment(data.frame(x1 = x1, x2 = x2))
+		des$assign_w_to_all_subjects()
+		w = des$get_w()
+		eta = 0.45 * w + 0.35 * x1 - 0.20 * x2
+		cut_1 = plogis(-1.0 - eta)
+		cut_2 = plogis(0.2 - eta)
+		cut_3 = plogis(1.1 - eta)
+		u = runif(n)
+		y = ifelse(u <= cut_1, 1L, ifelse(u <= cut_2, 2L, ifelse(u <= cut_3, 3L, 4L)))
+		des$add_all_subject_responses(y)
 		des
 	}
 
@@ -189,21 +250,41 @@ run_likelihood_method_smoke_suite <- function(){
 		InferenceIncidKKModifiedPoisson$new(make_kk_incidence_design(), model_formula = ~ x1, verbose = FALSE),
 		"InferenceIncidKKModifiedPoisson"
 	)
+	results$ordinal_prop_odds = call_all_methods(
+		InferenceOrdinalPropOddsRegr$new(make_fixed_ordinal_design(), model_formula = ~ x1 + x2, verbose = FALSE),
+		"InferenceOrdinalPropOddsRegr"
+	)
+	results$ordinal_ordered_probit = call_all_methods(
+		InferenceOrdinalOrderedProbitRegr$new(make_fixed_ordinal_design(), model_formula = ~ x1 + x2, verbose = FALSE),
+		"InferenceOrdinalOrderedProbitRegr"
+	)
+	results$ordinal_cauchit = call_all_methods(
+		InferenceOrdinalCauchitRegr$new(make_fixed_ordinal_design(), model_formula = ~ x1 + x2, verbose = FALSE),
+		"InferenceOrdinalCauchitRegr"
+	)
+	results$ordinal_cloglog = call_all_methods(
+		InferenceOrdinalCloglogRegr$new(make_fixed_ordinal_design(), model_formula = ~ x1 + x2, verbose = FALSE),
+		"InferenceOrdinalCloglogRegr"
+	)
 	results$survival_cox = call_all_methods(
 		InferenceSurvivalCoxPHRegr$new(make_fixed_survival_design(), model_formula = ~ x1, use_rcpp = TRUE, verbose = FALSE),
 		"InferenceSurvivalCoxPHRegr"
+	)
+	results$survival_weibull = call_all_methods(
+		InferenceSurvivalWeibullRegr$new(make_fixed_survival_design(), model_formula = ~ x1, verbose = FALSE),
+		"InferenceSurvivalWeibullRegr"
 	)
 	results$survival_strat_cox = call_all_methods(
 		InferenceSurvivalStratCoxPHRegr$new(make_fixed_survival_design(), model_formula = ~ x1, use_rcpp = TRUE, verbose = FALSE),
 		"InferenceSurvivalStratCoxPHRegr"
 	)
 	results$kk_survival_strat_cox = call_all_methods(
-		InferenceSurvivalKKStratCoxOneLik$new(make_kk_survival_design(), model_formula = ~ x1, verbose = FALSE),
-		"InferenceSurvivalKKStratCoxOneLik"
+		InferenceSurvivalKKStratCoxPHOneLik$new(make_kk_survival_design(), model_formula = ~ x1, verbose = FALSE),
+		"InferenceSurvivalKKStratCoxPHOneLik"
 	)
 	results$kk_survival_lwa_cox = call_all_methods(
-		InferenceSurvivalKKLWACoxOneLik$new(make_kk_survival_design(), model_formula = ~ x1, verbose = FALSE),
-		"InferenceSurvivalKKLWACoxOneLik"
+		InferenceSurvivalKKLWACoxPHOneLik$new(make_kk_survival_design(), model_formula = ~ x1, verbose = FALSE),
+		"InferenceSurvivalKKLWACoxPHOneLik"
 	)
 	results$kk_survival_clayton = call_all_methods(
 		InferenceSurvivalKKClaytonCopulaOneLik$new(make_kk_survival_design(n = 64L), model_formula = ~ x1, verbose = FALSE),

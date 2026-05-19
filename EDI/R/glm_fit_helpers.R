@@ -344,25 +344,10 @@ NULL
 #' @export
 fast_logistic_regression = function(X, y, optimization_alg = "lbfgs", warm_start_beta = NULL, warm_start_fisher_info = NULL){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = TRUE, default = "lbfgs")
-	na_b = function() list(b = rep(NA_real_, ncol(X)))
-	fit_cpp = function(cpp_alg = optimization_alg){
-		tryCatch({
-			res = fast_logistic_regression_cpp(X = X, y = as.numeric(y), optimization_alg = cpp_alg, warm_start_beta = warm_start_beta, warm_start_fisher_info = warm_start_fisher_info)
-			list(b = as.vector(res$b))
-		}, error = function(e) na_b())
-	}
-	if (!(optimization_alg %in% c("irls", "lbfgs")) || !is.null(warm_start_beta) || !is.null(warm_start_fisher_info)) return(fit_cpp())
 	tryCatch({
-	mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
-		X = X,
-		ybin = as.numeric(y)
-	))
-	b = as.vector(mod$coefficients)
-	if (!all(is.finite(b))) return(fit_cpp("lbfgs"))
-	list(b = b)
-	}, error = function(e) {
-		fit_cpp("lbfgs")
-	})
+		res = fast_logistic_regression_cpp(X = X, y = as.numeric(y), optimization_alg = optimization_alg, warm_start_beta = warm_start_beta, warm_start_fisher_info = warm_start_fisher_info)
+		list(b = as.vector(res$b))
+	}, error = function(e) list(b = rep(NA_real_, ncol(X))))
 }
 
 #' Fast Logistic Regression with Variance Calculation (R Wrapper)
@@ -399,27 +384,13 @@ fast_logistic_regression_with_var = function(X, y, j = 2, optimization_alg = "lb
 	# Attempt a single fit on matrix X; always returns a list with (b, ssq_b_j, ssq_b_2, converged).
 	# 'converged' is FALSE when separation is detected so the caller can retry with fewer covariates.
 	try_fit = function(X){
-	fit_cpp = function(cpp_alg = optimization_alg){
 		tryCatch({
-			mod = fast_logistic_regression_with_var_cpp(X, as.numeric(y), j = j, optimization_alg = cpp_alg, warm_start_beta = warm_start_beta, warm_start_fisher_info = warm_start_fisher_info)
-			list(b = as.vector(mod$b), ssq_b_j = mod$ssq_b_j, ssq_b_2 = mod$ssq_b_2, converged = is.null(mod$converged) || isTRUE(mod$converged))
+			mod = fast_logistic_regression_with_var_cpp(X, as.numeric(y), j = j, optimization_alg = optimization_alg, warm_start_beta = warm_start_beta, warm_start_fisher_info = warm_start_fisher_info)
+			b = as.vector(mod$b)
+			list(b = b, ssq_b_j = mod$ssq_b_j, ssq_b_2 = mod$ssq_b_2, converged = (is.null(mod$converged) || isTRUE(mod$converged)) && max(abs(b), na.rm = TRUE) <= SEPARATION_THRESHOLD)
 		}, error = function(e) {
 			list(b = rep(NA_real_, ncol(X)), ssq_b_j = NA_real_, ssq_b_2 = NA_real_, converged = FALSE)
 		})
-	}
-	if (!(optimization_alg %in% c("irls", "lbfgs")) || !is.null(warm_start_beta) || !is.null(warm_start_fisher_info)) return(fit_cpp())
-	tryCatch({
-		mod = suppressWarnings(fastLogisticRegressionWrap::fast_logistic_regression(
-			X = X,
-			ybin = as.numeric(y),
-			do_inference_on_var = j
-		))
-		if (any(is.na(mod$se)) || any(!is.finite(mod$se))) stop("non-finite SE")
-		b = as.vector(mod$coefficients)
-		list(b = b, ssq_b_j = mod$se[j]^2, ssq_b_2 = if (length(mod$se) >= 2) mod$se[2]^2 else NA_real_, converged = max(abs(b), na.rm = TRUE) <= SEPARATION_THRESHOLD)
-	}, error = function(e) {
-		fit_cpp("lbfgs")
-	})
 	}
 
 	# Iteratively drop the covariate (column >= 3) with the largest absolute coefficient

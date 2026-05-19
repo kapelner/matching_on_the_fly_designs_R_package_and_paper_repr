@@ -70,7 +70,8 @@ Initialize an experimental design
   verbose = FALSE,
   missingness_method = "impute",
   model_formula = ~.,
-  ordinal_levels = NULL
+  ordinal_levels = NULL,
+  seed = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -109,6 +110,8 @@ model matrix for inference. One of:
 covariates. Default is \code{~ .}.}
 
 \item{\code{ordinal_levels}}{If the response type is "ordinal", the labels for the levels.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
 }
 \if{html}{\out{</div>}}
 }

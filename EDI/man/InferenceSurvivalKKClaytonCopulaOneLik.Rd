@@ -4,26 +4,22 @@
 \alias{InferenceSurvivalKKClaytonCopulaOneLik}
 \title{Clayton Copula Combined-Likelihood Inference for KK Designs}
 \description{
-Fits a joint copula-based likelihood for KK matching-on-the-fly designs with
-survival responses using a Clayton copula with Weibull AFT margins.
-}
-\examples{
-\donttest{
-seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'survival')
-for (i in 1:10) {
-  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
-}
-seq_des$add_all_subject_responses(runif(10))
-inf = InferenceSurvivalKKClaytonCopulaOneLik$new(seq_des)
-inf$compute_estimate()
-}
+Clayton Copula Combined-Likelihood Inference for KK Designs
+
+Clayton Copula Combined-Likelihood Inference for KK Designs
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceAbstractKKClaytonCopulaOneLik]{EDI::InferenceAbstractKKClaytonCopulaOneLik}} -> \code{InferenceSurvivalKKClaytonCopulaOneLik}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{EDI::InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{InferenceSurvivalKKClaytonCopulaOneLik}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceSurvivalKKClaytonCopulaOneLik-new}{\code{InferenceSurvivalKKClaytonCopulaOneLik$new()}}
+\item \href{#method-InferenceSurvivalKKClaytonCopulaOneLik-compute_estimate}{\code{InferenceSurvivalKKClaytonCopulaOneLik$compute_estimate()}}
+\item \href{#method-InferenceSurvivalKKClaytonCopulaOneLik-compute_asymp_confidence_interval}{\code{InferenceSurvivalKKClaytonCopulaOneLik$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceSurvivalKKClaytonCopulaOneLik-compute_asymp_two_sided_pval}{\code{InferenceSurvivalKKClaytonCopulaOneLik$compute_asymp_two_sided_pval()}}
+\item \href{#method-InferenceSurvivalKKClaytonCopulaOneLik-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceSurvivalKKClaytonCopulaOneLik$approximate_bootstrap_distribution_beta_hat_T()}}
+\item \href{#method-InferenceSurvivalKKClaytonCopulaOneLik-duplicate}{\code{InferenceSurvivalKKClaytonCopulaOneLik$duplicate()}}
 \item \href{#method-InferenceSurvivalKKClaytonCopulaOneLik-clone}{\code{InferenceSurvivalKKClaytonCopulaOneLik$clone()}}
 }
 }
@@ -44,6 +40,7 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
@@ -79,15 +76,149 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>EDI::InferenceAsympLik$get_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_information_preference"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>EDI::InferenceAsympLik$set_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>EDI::InferenceAsympLik$set_testing_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaOneLik" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaOneLik.html#method-InferenceAbstractKKClaytonCopulaOneLik-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceAbstractKKClaytonCopulaOneLik$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaOneLik" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaOneLik.html#method-InferenceAbstractKKClaytonCopulaOneLik-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKClaytonCopulaOneLik$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaOneLik" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaOneLik.html#method-InferenceAbstractKKClaytonCopulaOneLik-compute_asymp_two_sided_pval'><code>EDI::InferenceAbstractKKClaytonCopulaOneLik$compute_asymp_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaOneLik" data-id="compute_estimate"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaOneLik.html#method-InferenceAbstractKKClaytonCopulaOneLik-compute_estimate'><code>EDI::InferenceAbstractKKClaytonCopulaOneLik$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaOneLik" data-id="duplicate"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaOneLik.html#method-InferenceAbstractKKClaytonCopulaOneLik-duplicate'><code>EDI::InferenceAbstractKKClaytonCopulaOneLik$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClaytonCopulaOneLik" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKClaytonCopulaOneLik.html#method-InferenceAbstractKKClaytonCopulaOneLik-initialize'><code>EDI::InferenceAbstractKKClaytonCopulaOneLik$initialize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_confidence_interval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_two_sided_pval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_two_sided_pval()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalKKClaytonCopulaOneLik-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalKKClaytonCopulaOneLik-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKClaytonCopulaOneLik$new(
+  des_obj,
+  model_formula = NULL,
+  verbose = FALSE,
+  smart_cold_start_default = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalKKClaytonCopulaOneLik-compute_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalKKClaytonCopulaOneLik-compute_estimate}{}}}
+\subsection{Method \code{compute_estimate()}}{
+Returns the estimated treatment effect (log-time ratio).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKClaytonCopulaOneLik$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalKKClaytonCopulaOneLik-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalKKClaytonCopulaOneLik-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes the asymptotic confidence interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKClaytonCopulaOneLik$compute_asymp_confidence_interval(
+  alpha = 0.05
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed
+confidence interval is 1 - \code{alpha}. The default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalKKClaytonCopulaOneLik-compute_asymp_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalKKClaytonCopulaOneLik-compute_asymp_two_sided_pval}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes the asymptotic p-value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKClaytonCopulaOneLik$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. Default is 0.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalKKClaytonCopulaOneLik-approximate_bootstrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalKKClaytonCopulaOneLik-approximate_bootstrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKClaytonCopulaOneLik$approximate_bootstrap_distribution_beta_hat_T(
+  B = 501,
+  show_progress = TRUE,
+  debug = FALSE,
+  bootstrap_type = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalKKClaytonCopulaOneLik-duplicate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalKKClaytonCopulaOneLik-duplicate}{}}}
+\subsection{Method \code{duplicate()}}{
+Duplicates the object while preserving caches.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKClaytonCopulaOneLik$duplicate(
+  verbose = FALSE,
+  make_fork_cluster = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{verbose}}{Whether the duplicate should be verbose.}
+
+\item{\code{make_fork_cluster}}{Whether the duplicate should be allowed to create a fork cluster.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKKClaytonCopulaOneLik-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKKClaytonCopulaOneLik-clone}{}}}

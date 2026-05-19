@@ -92,7 +92,8 @@ Initialize a factorial fixed experimental design
   n = NULL,
   verbose = FALSE,
   missingness_method = "impute",
-  model_formula = ~.
+  model_formula = ~.,
+  seed = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -113,6 +114,8 @@ levels (e.g. list(A=2, B=2)).}
 \item{\code{missingness_method}}{How to handle missing values in covariates.}
 
 \item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
 }
 \if{html}{\out{</div>}}
 }

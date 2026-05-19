@@ -12,11 +12,11 @@
 #'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
 #' }
 #' seq_des$add_all_subject_responses(rbinom(10, 1, 0.5))
-#' inf = InferenceIncidenceExactBinomial$new(seq_des)
+#' inf = InferenceIncidExactBinomial$new(seq_des)
 #' inf$compute_estimate()
 #' }
 #' @export
-InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
+InferenceIncidExactBinomial = R6::R6Class("InferenceIncidExactBinomial",
 	lock_objects = FALSE,
 	inherit = InferenceExact,
 	public = list(
@@ -28,7 +28,7 @@ InferenceIncidenceExactBinomial = R6::R6Class("InferenceIncidenceExactBinomial",
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
 		#' @param smart_cold_start_default Whether to use smart cold start values by default.
-		#' @return A new \code{InferenceIncidenceExactBinomial} object.
+		#' @return A new \code{InferenceIncidExactBinomial} object.
 		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE, smart_cold_start_default = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")

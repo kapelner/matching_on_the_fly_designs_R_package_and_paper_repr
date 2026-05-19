@@ -113,17 +113,8 @@ InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 		},
 		simulate_under_lik_null = function(spec, delta, null_fit){
 			params_null = as.numeric(null_fit$params)
-			cat_vals    = sort(unique(spec$y))
-			K           = length(cat_vals)
-			n_alpha     = K - 1L
-			thresholds  = params_null[seq_len(n_alpha)]
-			betas       = params_null[(n_alpha + 1L):length(params_null)]
-			eta         = as.numeric(spec$X %*% betas)
-			cum_probs   = outer(thresholds, eta, function(a, e) plogis(a - e))
-			cat_probs   = pmax(rbind(cum_probs, 1) - rbind(0, cum_probs), 0)
-			y_sim       = cat_vals[apply(cat_probs, 2, function(p){ s = sum(p); if (s <= 0) return(1L); sample.int(K, 1L, prob = p / s) })]
-			y_sim       = as.numeric(y_sim)
-			if (length(unique(y_sim)) < K) return(NULL)
+			y_sim       = private$simulate_param_boot_ordinal_y(spec$X, params_null, spec$y, stats::plogis)
+			if (is.null(y_sim)) return(NULL)
 			X_fit    = spec$X
 			j        = spec$j
 			

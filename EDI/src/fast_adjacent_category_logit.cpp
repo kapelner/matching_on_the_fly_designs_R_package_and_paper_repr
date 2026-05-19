@@ -329,19 +329,10 @@ List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const E
 
     MatrixXd info = fun.hessian(fit.params);
     MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);
-    FullPivLU<MatrixXd> lu(info_free);
-
-    if (!lu.isInvertible()) {
-        return List::create(
-            Named("b") = fit.params.tail(X.cols()),
-            Named("ssq_b_1") = NA_REAL,
-            Named("converged") = fit.converged
-        );
-    }
-
-    MatrixXd cov_free = lu.inverse();
-    MatrixXd cov = expand_free_covariance(n_par, fixed_spec, cov_free, true);
-    double ssq_b_1 = (X.cols() >= 1) ? cov(n_alpha, n_alpha) : NA_REAL;
+    int free_j = -1;
+    for (int jj = 0; jj < (int)fixed_spec.free_idx.size(); ++jj)
+        if (fixed_spec.free_idx[jj] == n_alpha) { free_j = jj + 1; break; }
+    double ssq_b_1 = (X.cols() >= 1 && free_j > 0) ? compute_diagonal_inverse_entry(info_free, free_j) : NA_REAL;
 
     return List::create(
         Named("b") = fit.params.tail(X.cols()),
@@ -349,7 +340,7 @@ List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const E
         Named("params") = fit.params,
         Named("ssq_b_1") = ssq_b_1,
         Named("ssq_b_j") = ssq_b_1,
-        Named("vcov") = cov,
+        Named("vcov") = R_NilValue,
         Named("fisher_information") = info,
         Named("converged") = fit.converged
     );

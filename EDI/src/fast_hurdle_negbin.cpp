@@ -527,9 +527,15 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X,
 			ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, R_NilValue, R_NilValue, optimization_alg, R_NilValue, R_NilValue);
 			FixedParamSpec hurdle_spec = make_fixed_param_spec(X_hurdle.cols(), R_NilValue, R_NilValue);
 			MatrixXd info_free = subset_matrix(hurdle_res.XtWX, hurdle_spec.free_idx, hurdle_spec.free_idx);
-			MatrixXd vcov = expand_free_covariance(X_hurdle.cols(), hurdle_spec, info_free.inverse(), true);
-			if (j > 0 && j <= X_hurdle.cols()) hurdle_ssq_b_j = vcov(j - 1, j - 1);
-			if (X_hurdle.cols() >= 2) hurdle_ssq_b_2 = vcov(1, 1);
+			auto hurdle_free_idx_of = [&](int k) -> int {
+				for (int jj = 0; jj < (int)hurdle_spec.free_idx.size(); ++jj)
+					if (hurdle_spec.free_idx[jj] == k) return jj + 1;
+				return -1;
+			};
+			int hfree_j = (j > 0 && j <= X_hurdle.cols()) ? hurdle_free_idx_of(j - 1) : -1;
+			if (hfree_j > 0) hurdle_ssq_b_j = compute_diagonal_inverse_entry(info_free, hfree_j);
+			int hfree_2 = (X_hurdle.cols() >= 2) ? hurdle_free_idx_of(1) : -1;
+			if (hfree_2 > 0) hurdle_ssq_b_2 = compute_diagonal_inverse_entry(info_free, hfree_2);
 		}
 	}
 
@@ -561,9 +567,15 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X,
 				if (H.allFinite()) {
 					FixedParamSpec count_fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
 					MatrixXd H_free = subset_matrix(H, count_fixed_spec.free_idx, count_fixed_spec.free_idx);
-					MatrixXd vcov = expand_free_covariance(p + 1, count_fixed_spec, H_free.inverse(), true);
-					if (j > 0 && j <= p + 1) ssq_b_j = vcov(j - 1, j - 1);
-					if (p >= 2) ssq_b_2 = vcov(1, 1);
+					auto cnt_free_idx_of = [&](int k) -> int {
+						for (int jj = 0; jj < (int)count_fixed_spec.free_idx.size(); ++jj)
+							if (count_fixed_spec.free_idx[jj] == k) return jj + 1;
+						return -1;
+					};
+					int cfree_j = (j > 0 && j <= p + 1) ? cnt_free_idx_of(j - 1) : -1;
+					if (cfree_j > 0) ssq_b_j = compute_diagonal_inverse_entry(H_free, cfree_j);
+					int cfree_2 = (p >= 2) ? cnt_free_idx_of(1) : -1;
+					if (cfree_2 > 0) ssq_b_2 = compute_diagonal_inverse_entry(H_free, cfree_2);
 				}
 			}
 		}
@@ -684,12 +696,9 @@ List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X,
 
         VectorXd score = get_hurdle_negbin_count_score_cpp(X, y, params);
         MatrixXd H = fun.hessian(params);
-        MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
-        MatrixXd vcov = expand_free_covariance(p + 1, fixed_spec, H_free.inverse(), true);
         out["score"] = score;
         out["observed_information"] = H;
         out["information"] = H;
         out["hessian"] = -H;
-        out["vcov"] = vcov;
         return out;
 }

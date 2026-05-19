@@ -280,7 +280,3 @@ InferenceIncidModifiedPoisson = R6::R6Class("InferenceIncidModifiedPoisson",
 #' Historical public alias for the modified Poisson implementation.
 #'
 #' @export
-InferenceIncidMultiModifiedPoisson = R6::R6Class("InferenceIncidMultiModifiedPoisson",
-	lock_objects = FALSE,
-	inherit = InferenceIncidModifiedPoisson
-)

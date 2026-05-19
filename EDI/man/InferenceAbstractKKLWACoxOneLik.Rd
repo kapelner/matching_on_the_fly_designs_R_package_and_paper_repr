@@ -17,13 +17,14 @@ obtained via the Huber-White cluster-robust sandwich estimator (LWA style).
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceAbstractKKLWACoxOneLik}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{EDI::InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{InferenceAbstractKKLWACoxOneLik}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceAbstractKKLWACoxOneLik-new}{\code{InferenceAbstractKKLWACoxOneLik$new()}}
 \item \href{#method-InferenceAbstractKKLWACoxOneLik-compute_estimate}{\code{InferenceAbstractKKLWACoxOneLik$compute_estimate()}}
+\item \href{#method-InferenceAbstractKKLWACoxOneLik-compute_estimate_with_bootstrap_weights}{\code{InferenceAbstractKKLWACoxOneLik$compute_estimate_with_bootstrap_weights()}}
 \item \href{#method-InferenceAbstractKKLWACoxOneLik-compute_asymp_confidence_interval}{\code{InferenceAbstractKKLWACoxOneLik$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAbstractKKLWACoxOneLik-compute_asymp_two_sided_pval}{\code{InferenceAbstractKKLWACoxOneLik$compute_asymp_two_sided_pval()}}
 \item \href{#method-InferenceAbstractKKLWACoxOneLik-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceAbstractKKLWACoxOneLik$approximate_bootstrap_distribution_beta_hat_T()}}
@@ -48,6 +49,7 @@ obtained via the Huber-White cluster-robust sandwich estimator (LWA style).
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
@@ -57,7 +59,6 @@ obtained via the Huber-White cluster-robust sandwich estimator (LWA style).
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_estimate_with_bootstrap_weights"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_estimate_with_bootstrap_weights'><code>EDI::InferenceBayesianBootstrap$compute_estimate_with_bootstrap_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="approximate_jackknife_distribution_beta_hat_T"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>EDI::InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_bias_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>EDI::InferenceJackknife$compute_jackknife_bias_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_corrected_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_corrected_estimate'><code>EDI::InferenceJackknife$compute_jackknife_corrected_estimate()</code></a></span></li>
@@ -83,6 +84,8 @@ obtained via the Huber-White cluster-robust sandwich estimator (LWA style).
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>EDI::InferenceAsympLik$get_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_information_preference"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>EDI::InferenceAsympLik$set_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>EDI::InferenceAsympLik$set_testing_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_confidence_interval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_two_sided_pval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_two_sided_pval()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -130,6 +133,31 @@ Returns the combined-likelihood estimate of the treatment effect.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKLWACoxOneLik-compute_estimate_with_bootstrap_weights"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKLWACoxOneLik-compute_estimate_with_bootstrap_weights}{}}}
+\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Recomputes the LWA one-likelihood treatment estimate under
+  Bayesian-bootstrap weights.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKLWACoxOneLik$compute_estimate_with_bootstrap_weights(
+  subject_or_block_weights,
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
+bootstrap weights.}
+
+\item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
+estimate.}
 }
 \if{html}{\out{</div>}}
 }

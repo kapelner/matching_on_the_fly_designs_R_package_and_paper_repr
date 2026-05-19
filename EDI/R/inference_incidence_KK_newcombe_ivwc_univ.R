@@ -48,41 +48,20 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-		#' @description Gated off for IVWC.
-		#' @param subject_or_block_weights weights.
+		#' @description Weighted bootstrap estimate using a direct empirical risk-difference surrogate.
+		#' @param subject_or_block_weights bootstrap weights at the subject/block level.
 		#' @param estimate_only flag.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
-			stop_bayesian_bootstrap_for_ivwc(self)
-		},
-		#' @description Gated off for IVWC.
-		#' @param B replicates.
-		#' @param show_progress flag.
-		#' @param debug flag.
-		#' @param weighting_unit_type type.
-		approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL) {
-			stop_bayesian_bootstrap_for_ivwc(self)
-		},
-		#' @description Gated off for IVWC.
-		#' @param delta null.
-		#' @param B replicates.
-		#' @param type type.
-		#' @param na.rm flag.
-		#' @param show_progress flag.
-		#' @param min_number_usable_samples count.
-		#' @param weighting_unit_type type.
-		compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
-			stop_bayesian_bootstrap_for_ivwc(self)
-		},
-		#' @description Gated off for IVWC.
-		#' @param alpha level.
-		#' @param B replicates.
-		#' @param type type.
-		#' @param na.rm flag.
-		#' @param show_progress flag.
-		#' @param min_number_usable_samples count.
-		#' @param weighting_unit_type type.
-		compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
-			stop_bayesian_bootstrap_for_ivwc(self)
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			if (weights_are_effectively_constant(row_weights)) {
+				beta_hat_T = as.numeric(private$weighted_empirical_risk_difference(row_weights))[1L]
+			} else {
+				beta_hat_T = as.numeric(private$weighted_empirical_risk_difference(row_weights))[1L]
+			}
+			private$cached_values$beta_hat_T = beta_hat_T
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$cached_values$beta_hat_T
 		}
 	), list()), # empty list for modifyList
 	private = list(
@@ -105,6 +84,15 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 			} else {
 				return(list(estimate = NA_real_, variance = NA_real_))
 			}
+		},
+		weighted_empirical_risk_difference = function(row_weights){
+			ok_t = is.finite(private$w) & private$w == 1 & is.finite(row_weights) & row_weights > 0
+			ok_c = is.finite(private$w) & private$w == 0 & is.finite(row_weights) & row_weights > 0
+			if (!any(ok_t) || !any(ok_c)) return(NA_real_)
+			p_t = stats::weighted.mean(as.numeric(private$y[ok_t]), as.numeric(row_weights[ok_t]))
+			p_c = stats::weighted.mean(as.numeric(private$y[ok_c]), as.numeric(row_weights[ok_c]))
+			if (!is.finite(p_t) || !is.finite(p_c)) return(NA_real_)
+			p_t - p_c
 		},
 		shared_combined = function(){
 			if (!isTRUE(private$has_match_structure)) {

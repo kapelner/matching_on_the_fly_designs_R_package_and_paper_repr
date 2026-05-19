@@ -83,18 +83,24 @@ List fast_ols_with_var_cpp(const Eigen::MatrixXd& X,
     res.sigma2_hat = sse / (n - fixed_spec.free_idx.size());
 
     Eigen::MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
-    Eigen::MatrixXd cov_free = res.sigma2_hat * info_free.inverse();
-    Eigen::MatrixXd vcov = expand_free_covariance(p, fixed_spec, cov_free, true);
 
-    res.ssq_b_j = (j > 0 && j <= p) ? vcov(j - 1, j - 1) : NA_REAL;
-    res.ssq_b_2 = (X.cols() >= 2) ? vcov(1, 1) : NA_REAL;
+    auto free_idx_of = [&](int k) -> int {
+        for (int jj = 0; jj < (int)fixed_spec.free_idx.size(); ++jj)
+            if (fixed_spec.free_idx[jj] == k) return jj + 1;
+        return -1;
+    };
+    int free_j = (j > 0 && j <= p) ? free_idx_of(j - 1) : -1;
+    double raw_j = (free_j > 0) ? compute_diagonal_inverse_entry(info_free, free_j) : NA_REAL;
+    res.ssq_b_j = R_finite(raw_j) ? res.sigma2_hat * raw_j : NA_REAL;
+    int free_2 = (X.cols() >= 2) ? free_idx_of(1) : -1;
+    double raw_2 = (free_2 > 0) ? compute_diagonal_inverse_entry(info_free, free_2) : NA_REAL;
+    res.ssq_b_2 = R_finite(raw_2) ? res.sigma2_hat * raw_2 : NA_REAL;
 
     return List::create(
         Named("b") = res.b,
         Named("XtX") = res.XtWX,
         Named("ssq_b_j") = res.ssq_b_j,
         Named("ssq_b_2") = res.ssq_b_2,
-        Named("sigma2_hat") = res.sigma2_hat,
-        Named("vcov") = vcov
+        Named("sigma2_hat") = res.sigma2_hat
     );
 }

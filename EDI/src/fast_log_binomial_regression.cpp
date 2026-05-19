@@ -421,35 +421,13 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& X,
     );
   }
 
-  Eigen::MatrixXd vcov_free = ldlt.solve(Eigen::MatrixXd::Identity(fixed_spec.free_idx.size(), fixed_spec.free_idx.size()));
-  if (ldlt.info() != Eigen::Success || !all_finite_mat(vcov_free)) {
-    return List::create(
-      _["b"] = beta,
-      _["vcov"] = NumericMatrix(0, 0),
-      _["std_err"] = NumericVector(0),
-      _["z_vals"] = NumericVector(0),
-      _["ssq_b_j"] = NA_REAL,
-      _["converged"] = false
-    );
-  }
-
-  Eigen::MatrixXd vcov = expand_free_covariance(X.cols(), fixed_spec, 0.5 * (vcov_free + vcov_free.transpose()), true);
-  Eigen::VectorXd std_err(X.cols());
-  Eigen::VectorXd z_vals(X.cols());
-  for (int k = 0; k < X.cols(); ++k) {
-    const double var_k = vcov(k, k);
-    std_err[k] = (R_finite(var_k) && var_k >= 0.0) ? std::sqrt(var_k) : NA_REAL;
-    z_vals[k] = (R_finite(std_err[k]) && std_err[k] > 0.0) ? beta[k] / std_err[k] : NA_REAL;
-  }
-
-  const int j0 = j - 1;
-  const double ssq_b_j = (j0 >= 0 && j0 < vcov.rows()) ? vcov(j0, j0) : NA_REAL;
+  int free_j = -1;
+  for (int jj = 0; jj < (int)fixed_spec.free_idx.size(); ++jj)
+    if (fixed_spec.free_idx[jj] == j - 1) { free_j = jj + 1; break; }
+  const double ssq_b_j = (free_j > 0) ? compute_diagonal_inverse_entry(XtWX_free, free_j) : NA_REAL;
 
   return List::create(
     _["b"] = beta,
-    _["vcov"] = vcov,
-    _["std_err"] = std_err,
-    _["z_vals"] = z_vals,
     _["ssq_b_j"] = ssq_b_j,
     _["converged"] = true,
     _["fisher_information"] = weighted_crossprod(X, w)

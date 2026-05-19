@@ -112,7 +112,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			         isTRUE(private$kk_gee_engine) ||
 			         isTRUE(private$kk_glmm_engine) ||
 			         isTRUE(private$kk_passthrough) ||
-			         inherits(self, "InferencePropUniFractionalLogit") ||
 			         inherits(self, "InferencePropZeroOneInflatedBetaRegr") ||
 			         inherits(self, "InferencePropGCompAbstract") ||
 			         inherits(self, "InferenceCountZeroAugmentedPoissonAbstract") ||

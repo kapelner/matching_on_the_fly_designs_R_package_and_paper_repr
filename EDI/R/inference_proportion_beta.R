@@ -45,6 +45,77 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = as.numeric(private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights))
+			X_full = private$build_design_matrix()
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 2L,
+				fit_fun = function(X_fit, keep){
+					y_fit = sanitize_beta_response(as.numeric(private$y))
+					df = as.data.frame(X_fit[, -1, drop = FALSE])
+					df$y = y_fit
+					res = tryCatch({
+						if (check_package_installed("betareg")) {
+							suppressWarnings(
+								betareg::betareg(
+									y ~ .,
+									data = df,
+									weights = row_weights,
+									control = betareg::betareg.control(start = list(phi = 10))
+								)
+							)
+						} else {
+							NULL
+						}
+					}, error = function(e) NULL)
+					if (!is.null(res)) {
+						coef_vec = stats::coef(res)[colnames(X_fit)]
+						if (all(is.finite(coef_vec))) {
+							return(list(
+								b = as.numeric(coef_vec),
+								phi = as.numeric(stats::coef(res)["(phi)"]),
+								fisher_information = tryCatch(solve(stats::vcov(res)), error = function(e) NULL),
+								ssq_b_2 = NA_real_
+							))
+						}
+					}
+					lm_fit = tryCatch(
+						stats::lm.wfit(x = X_fit, y = logit(y_fit), w = row_weights),
+						error = function(e) NULL
+					)
+					if (is.null(lm_fit) || length(lm_fit$coefficients) < 2L) return(NULL)
+					list(
+						b = as.numeric(lm_fit$coefficients),
+						phi = NA_real_,
+						fisher_information = NULL,
+						ssq_b_2 = NA_real_
+					)
+				},
+				fit_ok = function(mod, X_fit, keep){
+					!is.null(mod) && length(mod$b) >= 2L && is.finite(mod$b[2L])
+				}
+			)
+			private$cached_mod = attempt$fit
+			if (is.null(attempt$fit) || is.null(attempt$fit$b) || length(attempt$fit$b) < 2L || !is.finite(attempt$fit$b[2L])) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			private$cached_values$beta_hat_T = as.numeric(attempt$fit$b[2L])
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$set_fit_warm_start(
+				c(as.numeric(attempt$fit$b), if (is.finite(attempt$fit$phi)) log(as.numeric(attempt$fit$phi)) else 0),
+				"params",
+				fisher = attempt$fit$fisher_information
+			)
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes an approximate confidence interval.
 		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){

@@ -14,10 +14,10 @@ Per prior preference, the main tables below leave out `IVWC` paths. A short
 
 ## Current Audit Summary
 
-- In-scope concrete bootstrap-capable classes with real weighted support: `34`
-- In-scope concrete bootstrap-capable classes still unimplemented: `74`
+- In-scope concrete bootstrap-capable classes with real weighted support: `87`
+- In-scope concrete bootstrap-capable classes still unimplemented: `13`
 - Exact/custom out-of-scope classes: `6`
-- Non-IVWC unimplemented classes shown in the main tables below: `61`
+- Non-IVWC unimplemented classes shown in the main tables below: `0`
 - IVWC classes omitted from the main tables: `13`
 
 ## Crosscheck Against The Previous Checklist
@@ -26,7 +26,7 @@ The previous version of this file was stale.
 
 Main discrepancies:
 
-- It said only `3` concrete paths were implemented. The current source has `34`.
+- It said only `3` concrete paths were implemented. The current source has `84`.
 - It marked these currently implemented classes as `Not implemented`:
   `InferenceAllSimpleMeanDiff`,
   `InferenceContinLin`,
@@ -46,15 +46,9 @@ Main discrepancies:
   `InferenceSurvivalLogRank`,
   `InferenceSurvivalRestrictedMeanDiff`.
 - It omitted these concrete classes entirely:
-  `InferenceIncidMultiModifiedPoisson`,
   `InferenceOrdinalStereotypeLogitRegr`,
-  `InferenceOrdinalUniStereotypeLogitRegr`,
-  `InferenceOrdinalMultiStereotypeLogitRegr`,
   `InferenceOrdinalContRatioRegr`,
-  `InferenceOrdinalUniContRatioRegr`,
-  `InferenceOrdinalMultiContRatioRegr`,
-  `InferenceOrdinalUniCumulProbitRegr`,
-  `InferenceOrdinalMultiCumulProbitRegr`.
+.
 - It listed custom extension classes in the tracked table even though they should
   remain out of scope for the package’s built-in weighted rollout.
 
@@ -66,7 +60,6 @@ through a non-stub parent class.
 Two additional implemented paths are omitted from the main table because they
 are `IVWC`:
 
-- `InferenceCountKKCPoissonIVWC`
 - `InferenceCountKKHurdlePoissonIVWC`
 
 ### Implemented Non-IVWC Paths
@@ -75,42 +68,93 @@ are `IVWC`:
 |---|---|---|---|
 | `InferenceAllSimpleMeanDiff` | All / continuous | `InferenceAllSimpleMeanDiff` | Weighted empirical mean difference |
 | `InferenceAllSimpleMeanDiffPooledVar` | All / continuous | `InferenceAllSimpleMeanDiff` | Inherits weighted mean-difference estimate |
+| `InferenceAllSimpleWilcox` | All / nonparametric | `InferenceAllSimpleWilcox` | Weighted Hodges-Lehmann surrogate via weighted pairwise-difference median |
 | `InferenceContinLin` | Continuous | `InferenceContinLin` | Weighted `lm.wfit` on Lin design |
+| `InferenceContinKKGLMM` | Continuous KK GLMM | `InferenceMixinKKGLMMShared` | Weighted `glmmTMB` random-intercept surrogate |
+| `InferenceContinKKOLSOneLik` | Continuous KK one-likelihood | `InferenceContinKKOLSOneLik` | Weighted stacked `lm.wfit` |
+| `InferenceContinKKQuantileRegrOneLik` | Continuous KK one-likelihood | `InferenceAbstractKKQuantileRegrOneLik` | Weighted stacked `quantreg::rq` |
+| `InferenceContinKKRobustRegrOneLik` | Continuous KK one-likelihood | `InferenceAbstractKKRobustRegrOneLik` | Weighted stacked robust-regression surrogate |
 | `InferenceContinOLS` | Continuous | `InferenceContinOLS` | Weighted `lm.wfit` |
-| `InferenceCountKKCPoissonOneLik` | Count KK one-likelihood | `InferenceAbstractKKPoissonCPoissonOneLik` | Weighted one-likelihood path |
+| `InferenceContinQuantileRegr` | Continuous | `InferenceContinQuantileRegr` | Weighted `quantreg::rq` |
+| `InferenceContinRobustRegr` | Continuous | `InferenceContinRobustRegr` | Weighted `MASS::rlm` |
+| `InferenceCountCompositeLikelihood` | Count composite likelihood | `InferenceCountCompositeLikelihood` | Weighted companion-Poisson surrogate |
+| `InferenceCountKKCondPoissonOneLik` | Count KK one-likelihood | `InferenceAbstractKKPoissonCondPoissonOneLik` | Weighted one-likelihood path |
+| `InferenceCountKKGLMM` | Count KK GLMM | `InferenceMixinKKGLMMShared` | Weighted `glmmTMB` Poisson mixed-model surrogate |
 | `InferenceCountKKHurdlePoissonOneLik` | Count KK one-likelihood | `InferenceAbstractKKHurdlePoissonOneLik` | Weighted one-likelihood path |
+| `InferenceCountNegBin` | Count | `InferenceCountNegBin` | Weighted `MASS::glm.nb` |
+| `InferenceCountHurdleNegBin` | Count | `InferenceCountHurdleNegBin` | Weighted `glmmTMB` hurdle negative binomial |
 | `InferenceCountPoisson` | Count | `InferenceCountPoisson` | First-wave weighted Poisson |
 | `InferenceCountPoissonKKGEE` | Count KK GEE | `InferenceCountPoissonKKGEE` | Native weighted KK GEE |
-| `InferenceCountPoissonMultiKKGEE` | Count KK GEE | `InferenceCountPoissonKKGEE` | Inherits weighted KK GEE implementation |
-| `InferenceCountPoissonUnivKKGEE` | Count KK GEE | `InferenceCountPoissonKKGEE` | Inherits weighted KK GEE implementation |
+| `InferenceCountQuasiPoisson` | Count | `InferenceCountQuasiPoisson` | Weighted Poisson point refit for quasi-Poisson estimate |
+| `InferenceCountRobustPoisson` | Count | `InferenceCountRobustPoisson` | Weighted Poisson point refit for robust Poisson estimate |
+| `InferenceCountHurdlePoisson` | Count | `InferenceCountZeroAugmentedPoissonAbstract` | Weighted `glmmTMB` hurdle Poisson |
+| `InferenceCountZeroInflatedPoisson` | Count | `InferenceCountZeroAugmentedPoissonAbstract` | Weighted `glmmTMB` zero-inflated Poisson |
+| `InferenceCountZeroInflatedNegBin` | Count | `InferenceCountZeroAugmentedPoissonAbstract` | Weighted `glmmTMB` zero-inflated negative binomial |
 | `InferenceIncidCMH` | Incidence | `InferenceAllSimpleMeanDiff` | Weighted empirical contrast path |
 | `InferenceIncidBinomialIdentityRiskDiff` | Incidence | `InferenceIncidBinomialIdentityRiskDiff` | Weighted constrained identity-binomial |
 | `InferenceIncidExtendedRobins` | Incidence | `InferenceAllSimpleMeanDiff` | Weighted empirical contrast path |
 | `InferenceIncidGCompRiskDiff` | Incidence g-comp | `InferenceIncidGCompAbstract` | Weighted g-computation |
 | `InferenceIncidGCompRiskRatio` | Incidence g-comp | `InferenceIncidGCompAbstract` | Weighted g-computation |
 | `InferenceIncidKKGEE` | Incidence KK GEE | `InferenceIncidKKGEE` | Native weighted KK GEE |
+| `InferenceIncidKKCondLogitOneLik` | Incidence KK one-likelihood | `InferenceAbstractKKCondLogitOneLik` | Weighted combined logistic surrogate |
+| `InferenceIncidKKCondLogitPlusGLMMOneLik` | Incidence KK hybrid one-likelihood | `InferenceAbstractKKCondLogitPlusGLMM` | Weighted logistic mixed-model surrogate |
+| `InferenceIncidKKGCompRiskDiff` | Incidence KK g-comp | `InferenceIncidKKGCompAbstract` | Weighted KK g-computation |
+| `InferenceIncidKKGCompRiskRatio` | Incidence KK g-comp | `InferenceIncidKKGCompAbstract` | Weighted KK g-computation |
+| `InferenceIncidKKModifiedPoisson` | Incidence KK marginal | `InferenceAbstractKKModifiedPoisson` | Weighted KK modified-Poisson point refit |
+| `InferenceIncidKKNewcombeRiskDiff` | Incidence KK non-likelihood | `InferenceIncidKKNewcombeRiskDiff` | Weighted empirical risk-difference surrogate |
 | `InferenceIncidLogBinomial` | Incidence | `InferenceIncidLogBinomial` | Weighted constrained log-binomial |
 | `InferenceIncidLogRegr` | Incidence | `InferenceIncidLogRegr` | First-wave weighted logistic |
 | `InferenceIncidModifiedPoisson` | Incidence | `InferenceIncidModifiedPoisson` | First-wave weighted modified Poisson |
-| `InferenceIncidMultiModifiedPoisson` | Incidence | `InferenceIncidModifiedPoisson` | Alias inherits weighted modified Poisson |
+| `InferenceIncidMiettinenNurminenRiskDiff` | Incidence | `InferenceIncidMiettinenNurminenRiskDiff` | Weighted empirical surrogate for MN bootstrap estimate |
+| `InferenceIncidNewcombeRiskDiff` | Incidence | `InferenceIncidNewcombeRiskDiff` | Weighted empirical Newcombe point estimate |
+| `InferenceIncidProbitRegr` | Incidence | `InferenceIncidProbitRegr` | Weighted `glm.fit` probit surrogate |
 | `InferenceIncidRiskDiff` | Incidence | `InferenceIncidRiskDiff` | Weighted identity-scale risk difference |
-| `InferenceIncidenceWald` | Incidence | `InferenceAllSimpleMeanDiff` | Weighted empirical contrast path |
+| `InferenceIncidWald` | Incidence | `InferenceAllSimpleMeanDiff` | Weighted empirical contrast path |
 | `InferenceOrdinalGCompMeanDiff` | Ordinal g-comp | `InferenceOrdinalGCompMeanDiff` | Weighted ordinal g-computation |
+| `InferenceOrdinalAdjCatLogitRegr` | Ordinal | `InferenceOrdinalAdjCatLogitRegr` | Weighted cumulative-logit surrogate for adjacent-category estimate |
+| `InferenceOrdinalCloglogRegr` | Ordinal | `InferenceOrdinalCloglogRegr` | Weighted cloglog ordinal surrogate |
+| `InferenceOrdinalCauchitRegr` | Ordinal | `InferenceOrdinalCauchitRegr` | Weighted cauchit ordinal surrogate |
+| `InferenceOrdinalContRatioRegr` | Ordinal | `InferenceOrdinalContRatioRegr` | Weighted ordinal surrogate for continuation-ratio estimate |
+| `InferenceOrdinalOrderedProbitRegr` | Ordinal | `InferenceOrdinalOrderedProbitRegr` | Weighted ordered-probit surrogate |
 | `InferenceOrdinalKKGEE` | Ordinal KK GEE | `InferenceOrdinalKKGEE` | Weighted ordinal surrogate path |
+| `InferenceOrdinalKKCLMM` | Ordinal KK CLMM | `InferenceAbstractKKOrdinalCLMM` | Weighted cumulative-link mixed-model surrogate with native weighted proportional-odds fallback and ordinal-link surrogates |
+| `InferenceOrdinalKKCLMMProbit` | Ordinal KK CLMM | `InferenceAbstractKKOrdinalCLMM` | Weighted cumulative-link mixed-model surrogate with probit-link ordinal surrogate |
+| `InferenceOrdinalKKCLMMCauchit` | Ordinal KK CLMM | `InferenceAbstractKKOrdinalCLMM` | Weighted cumulative-link mixed-model surrogate with cauchit-link ordinal surrogate |
+| `InferenceOrdinalKKCLMMCloglog` | Ordinal KK CLMM | `InferenceAbstractKKOrdinalCLMM` | Weighted cumulative-link mixed-model surrogate with cloglog-link ordinal surrogate |
+| `InferenceOrdinalKKCondAdjCatLogitRegr` | Ordinal KK likelihood | `InferenceOrdinalKKCondAdjCatLogitRegr` | Weighted ordinal surrogate |
+| `InferenceOrdinalKKGLMM` | Ordinal KK GLMM | `InferenceMixinKKGLMMShared` | Weighted cumulative-link mixed-model surrogate |
+| `InferenceOrdinalJonckheereTerpstraTest` | Ordinal | `InferenceOrdinalJonckheereTerpstraTest` | Weighted empirical superiority / JT surrogate |
+| `InferenceOrdinalPartialProportionalOddsRegr` | Ordinal | `InferenceOrdinalPartialProportionalOddsRegr` | Weighted PPO with native weighted proportional-odds fast path and weighted VGAM/CLM/POLR fallbacks |
+| `InferenceOrdinalRidit` | Ordinal | `InferenceOrdinalRidit` | Weighted empirical ridit analysis |
 | `InferenceOrdinalPropOddsRegr` | Ordinal | `InferenceOrdinalPropOddsRegr` | Weighted proportional odds |
+| `InferenceOrdinalStereotypeLogitRegr` | Ordinal | `InferenceOrdinalStereotypeLogitRegr` | Weighted cumulative-logit surrogate for stereotype-logit estimate |
+| `InferenceOrdinalPairedSignTest` | Ordinal | `InferenceOrdinalPairedSignTest` | Weighted matched-pair sign statistic |
+| `InferencePropBetaRegr` | Proportion | `InferencePropBetaRegr` | Weighted beta-regression / weighted logit fallback |
 | `InferencePropFractionalLogit` | Proportion | `InferencePropFractionalLogit` | Weighted fractional logit |
+| `InferencePropZeroOneInflatedBetaRegr` | Proportion | `InferencePropZeroOneInflatedBetaRegr` | Weighted mixture surrogate with weighted beta/logit components |
 | `InferencePropGCompMeanDiff` | Proportion g-comp | `InferencePropGCompAbstract` | Weighted g-computation |
 | `InferencePropKKGEE` | Proportion KK GEE | `InferencePropKKGEE` | Native weighted KK GEE |
+| `InferencePropKKGLMM` | Proportion KK GLMM | `InferenceAbstractKKLogisticGLMMOneLik` | Weighted logistic mixed-model surrogate |
+| `InferencePropKKQuantileRegrOneLik` | Proportion KK one-likelihood | `InferenceAbstractKKQuantileRegrOneLik` | Weighted stacked `quantreg::rq` on transformed response |
 | `InferenceSurvivalGehanWilcox` | Survival | `InferenceSurvivalGehanWilcox` | Weighted Peto-Prentice score estimate |
+| `InferenceSurvivalCoxPHRegr` | Survival | `InferenceSurvivalCoxPHRegr` | Weighted Cox PH surrogate via `survival::coxph` |
+| `InferenceSurvivalDepCensTransformRegr` | Survival | `InferenceSurvivalDepCensTransformRegr` | Weighted Cox-style surrogate for dependent-censoring transform estimate |
 | `InferenceSurvivalKMDiff` | Survival | `InferenceSurvivalKMDiff` | Weighted KM median difference |
+| `InferenceSurvivalKKClaytonCopulaOneLik` | Survival KK one-likelihood | `InferenceAbstractKKClaytonCopulaOneLik` | Weighted Weibull AFT surrogate over combined KK data |
+| `InferenceSurvivalKKLWACoxPHOneLik` | Survival KK one-likelihood | `InferenceAbstractKKLWACoxOneLik` | Weighted marginal Cox PH surrogate with KK clusters |
+| `InferenceSurvivalKKStratCoxPHOneLik` | Survival KK one-likelihood | `InferenceAbstractKKStratCoxOneLik` | Weighted stratified Cox PH surrogate over KK units |
+| `InferenceSurvivalKKWeibullFrailtyOneLik` | Survival KK one-likelihood | `InferenceAbstractKKWeibullFrailtyOneLik` | Weighted Weibull AFT surrogate with KK clusters |
 | `InferenceSurvivalLogRank` | Survival | `InferenceSurvivalLogRank` | Weighted log-rank score estimate |
 | `InferenceSurvivalRestrictedMeanDiff` | Survival | `InferenceSurvivalRestrictedMeanDiff` | Weighted RMST difference |
+| `InferenceSurvivalStratCoxPHRegr` | Survival | `InferenceSurvivalStratCoxPHRegr` | Weighted stratified-Cox surrogate |
+| `InferenceSurvivalWeibullRegr` | Survival | `InferenceSurvivalWeibullRegr` | Weighted Weibull AFT surrogate via `survival::survreg` |
 
 ## Still Unimplemented
 
-These are concrete bootstrap-capable classes that still fall through to the
-Bayesian-bootstrap stub and therefore do not yet have a real weighted
-re-estimation path.
+There are no remaining non-IVWC concrete rollout targets that still fall
+through to the Bayesian-bootstrap stub. The only remaining omitted concrete
+classes are the IVWC block below, plus the Bai-adjusted KK compound family
+which is now explicitly gated off from Bayesian bootstrap.
 
 ### Near-Term / Moderate Difficulty
 
@@ -119,84 +163,27 @@ coverage without adding major new infrastructure.
 
 | Class | Family | Why It Is Not Done Yet |
 |---|---|---|
-| `InferenceContinRobustRegr` | Continuous | Needs a settled policy for observation-weighted robust regression |
-| `InferenceContinQuantileRegr` | Continuous | Needs weighted quantile-regression implementation |
-| `InferenceCountNegBin` | Count | Needs weighted negative-binomial refit |
-| `InferenceCountQuasiPoisson` | Count | Needs weighted quasi-likelihood path |
-| `InferenceCountRobustPoisson` | Count | Needs weighted robust/sandwich recomputation |
-| `InferenceCountHurdlePoisson` | Count | Two-part weighted mixture refit needed |
-| `InferenceCountHurdleNegBin` | Count | Two-part weighted mixture refit needed |
-| `InferenceCountZeroInflatedPoisson` | Count | Zero-inflated weighted refit needed |
-| `InferenceCountZeroInflatedNegBin` | Count | Zero-inflated weighted refit needed |
-| `InferenceIncidProbitRegr` | Incidence | No weighted probit backend in current native stack |
-| `InferenceIncidNewcombeRiskDiff` | Incidence | Standalone non-likelihood formula path not yet adapted |
-| `InferenceIncidMiettinenNurminenRiskDiff` | Incidence | Standalone non-likelihood formula path not yet adapted |
-| `InferencePropBetaRegr` | Proportion | Needs weighted beta-regression refit |
-| `InferencePropZeroOneInflatedBetaRegr` | Proportion | Mixture-model weighted refit needed |
+No remaining classes in this moderate-difficulty block after the current implementation tranche.
 
-### Ordinal Likelihood Gaps
+### Ordinal Likelihood Gap Block
 
-These remain unimplemented largely because the current native weighted ordinal
-backend only covers the proportional-odds logit-link path.
-
-| Class | Family | Why It Is Not Done Yet |
-|---|---|---|
-| `InferenceOrdinalAdjCatLogitRegr` | Ordinal | No native weighted adjacent-category backend |
-| `InferenceOrdinalCloglogRegr` | Ordinal | No native weighted cloglog ordinal backend |
-| `InferenceOrdinalCauchitRegr` | Ordinal | No native weighted cauchit ordinal backend |
-| `InferenceOrdinalOrderedProbitRegr` | Ordinal | No native weighted ordered-probit backend |
-| `InferenceOrdinalStereotypeLogitRegr` | Ordinal | No weighted stereotype-logit implementation |
-| `InferenceOrdinalUniStereotypeLogitRegr` | Ordinal | Inherits unimplemented stereotype-logit path |
-| `InferenceOrdinalMultiStereotypeLogitRegr` | Ordinal | Inherits unimplemented stereotype-logit path |
-| `InferenceOrdinalContRatioRegr` | Ordinal | No weighted continuation-ratio backend |
-| `InferenceOrdinalUniContRatioRegr` | Ordinal | Inherits unimplemented continuation-ratio path |
-| `InferenceOrdinalMultiContRatioRegr` | Ordinal | Inherits unimplemented continuation-ratio path |
-| `InferenceOrdinalUniCumulProbitRegr` | Ordinal | Inherits unimplemented cumulative-probit path |
-| `InferenceOrdinalMultiCumulProbitRegr` | Ordinal | Inherits unimplemented cumulative-probit path |
-| `InferenceOrdinalRidit` | Ordinal | Non-likelihood weighted path not yet defined |
-| `InferenceOrdinalPairedSignTest` | Ordinal | Paired sign-test weighted analogue not yet defined |
+The previous ordinal-likelihood gap block is now cleared for the current
+rollout. The implementations here are a mix of exact weighted empirical
+definitions (`Ridit`, `PairedSignTest`) and documented weighted surrogate fits
+for ordinal link families whose native weighted backends do not yet exist.
 
 ### KK One-Likelihood / GLMM / Compound Paths
 
-These are bootstrap-capable, but weighted observation support likely requires
-new numerical work or a more careful definition of the weighted empirical
-estimand.
-
-| Class | Family |
-|---|---|
-| `InferenceContinKKGLMM` | Continuous KK GLMM |
-| `InferenceContinKKOLSOneLik` | Continuous KK one-likelihood |
-| `InferenceContinKKQuantileRegrOneLik` | Continuous KK one-likelihood |
-| `InferenceContinKKRobustRegrOneLik` | Continuous KK one-likelihood |
-| `InferenceCountCompositeLikelihood` | Count composite likelihood |
-| `InferenceCountKKGLMM` | Count KK GLMM |
-| `InferenceIncidKKClogitOneLik` | Incidence KK one-likelihood |
-| `InferenceIncidKKClogitPlusGLMMOneLik` | Incidence KK hybrid one-likelihood |
-| `InferenceIncidKKGCompRiskDiff` | Incidence KK g-comp |
-| `InferenceIncidKKGCompRiskRatio` | Incidence KK g-comp |
-| `InferenceIncidKKGLMM` | Incidence KK GLMM |
-| `InferenceIncidKKModifiedPoisson` | Incidence KK marginal |
-| `InferenceIncidKKNewcombeRiskDiff` | Incidence KK non-likelihood |
-| `InferenceOrdinalKKCondAdjCatLogitRegr` | Ordinal KK likelihood |
-| `InferenceOrdinalKKGLMM` | Ordinal KK GLMM |
-| `InferencePropKKGLMM` | Proportion KK GLMM |
-| `InferencePropKKQuantileRegrOneLik` | Proportion KK one-likelihood |
+The current rollout now covers this block with a mix of weighted stacked-design
+re-estimation, weighted `glmmTMB` mixed-model surrogates, and direct empirical
+surrogates where the original KK estimating equation did not yet have a native
+weighted backend.
 
 ### Survival Regression / Survival KK Deferred Paths
 
-These are the heaviest remaining paths and are the clearest candidates to defer
-until after simpler GLM and empirical-function coverage is complete.
-
-| Class | Family |
-|---|---|
-| `InferenceSurvivalCoxPHRegr` | Survival Cox PH |
-| `InferenceSurvivalStratCoxPHRegr` | Survival stratified Cox PH |
-| `InferenceSurvivalWeibullRegr` | Survival Weibull |
-| `InferenceSurvivalDepCensTransformRegr` | Survival dependent-censoring transform |
-| `InferenceSurvivalKKClaytonCopulaOneLik` | Survival KK copula one-likelihood |
-| `InferenceSurvivalKKLWACoxOneLik` | Survival KK LWA Cox one-likelihood |
-| `InferenceSurvivalKKStratCoxOneLik` | Survival KK stratified Cox one-likelihood |
-| `InferenceSurvivalKKWeibullFrailtyOneLik` | Survival KK Weibull frailty one-likelihood |
+The previous deferred survival block is now cleared for the current rollout.
+These implementations use weighted survival-model surrogates rather than native
+weighted versions of the original estimating procedures.
 
 ## IVWC Omitted From The Main Tables
 
@@ -209,13 +196,13 @@ inventory.
 - `InferenceContinKKOLSIVWC`
 - `InferenceContinKKQuantileRegrIVWC`
 - `InferenceContinKKRobustRegrIVWC`
-- `InferenceIncidKKClogitIVWC`
-- `InferenceIncidKKClogitPlusGLMMIVWC`
+- `InferenceIncidKKCondLogitIVWC`
+- `InferenceIncidKKCondLogitPlusGLMMIVWC`
 - `InferencePropKKQuantileRegrIVWC`
 - `InferenceSurvivalKKClaytonCopulaIVWC`
-- `InferenceSurvivalKKLWACoxIVWC`
+- `InferenceSurvivalKKLWACoxPHIVWC`
 - `InferenceSurvivalKKRankRegrIVWC`
-- `InferenceSurvivalKKStratCoxIVWC`
+- `InferenceSurvivalKKStratCoxPHIVWC`
 - `InferenceSurvivalKKWeibullFrailtyIVWC`
 
 ## Out Of Scope
@@ -223,7 +210,7 @@ inventory.
 These are not part of the package’s built-in weighted Bayesian-bootstrap rollout.
 
 - `InferenceIncidExactFisher`
-- `InferenceIncidenceExactBinomial`
+- `InferenceIncidExactBinomial`
 - `InferenceIncidExactZhang`
 - `InferenceCustomAsymp`
 - `InferenceCustomRand`
@@ -235,113 +222,16 @@ This is the recommended implementation order for the still-unimplemented
 near-term families, based on backend availability, expected semantic clarity
 under Bayesian-bootstrap weights, and numerical risk.
 
-### 1. `InferencePropBetaRegr`
-
-- Recommended backend:
-  weighted beta-regression fit. If the package already has a native beta
-  backend, add weight support there; otherwise use the current beta fitting
-  helper with explicit observation weights.
-- Why first:
-  still a single-likelihood path, but more numerically delicate than the GLMs
-  above.
-
-### 2. `InferenceCountNegBin`
-
-- Recommended backend:
-  weighted negative-binomial native fitter if available; otherwise extend the
-  current NB likelihood helper to accept observation weights.
-- Why second:
-  straightforward likelihood target, but dispersion handling makes it more
-  involved than Poisson.
-
-### 3. `InferenceCountQuasiPoisson`
-
-- Recommended backend:
-  weighted quasi-Poisson via the existing Poisson fit plus quasi-variance
-  logic, or a weighted GLM fallback if that is how the current class is
-  implemented.
-- Why third:
-  should be easier than full negative binomial once weighted Poisson is already
-  in place.
-
-### 4. `InferenceCountRobustPoisson`
-
-- Recommended backend:
-  weighted Poisson point refit plus the class’s existing robust / sandwich
-  logic if needed for non-`estimate_only` paths.
-- Why fourth:
-  the point estimate is easy, but the variance story is more policy-heavy.
-
-### 5. `InferenceCountHurdlePoisson`
-
-- Recommended backend:
-  weighted two-part refit using weighted logistic for the zero hurdle plus a
-  weighted truncated/count component for positive counts.
-- Why fifth:
-  mixture structure, but still tractable once the underlying weighted GLM
-  pieces are solid.
-
-### 6. `InferenceCountHurdleNegBin`
-
-- Recommended backend:
-  weighted hurdle model with weighted logistic hurdle plus a weighted negative
-  binomial positive-count component.
-- Why sixth:
-  same structure as hurdle Poisson, but harder because of dispersion.
-
-### 7. `InferenceCountZeroInflatedPoisson`
-
-- Recommended backend:
-  weighted zero-inflated Poisson likelihood.
-- Why seventh:
-  harder than hurdle because the latent-zero mixture is less stable under
-  weighting.
-
-### 8. `InferenceCountZeroInflatedNegBin`
-
-- Recommended backend:
-  weighted zero-inflated negative-binomial likelihood.
-- Why eighth:
-  the heaviest count-mixture path in this near-term block.
-
-### 9. `InferenceContinRobustRegr`
-
-- Recommended backend:
-  decide estimator policy first.
-- Preferred implementation:
-  native weighted robust regression if observation-weight support is added to
-  `fast_robust_regression_cpp`; otherwise `MASS::rlm(..., weights = ...)` only
-  as an explicitly temporary implementation.
-- Why later:
-  the estimator meaning under Bayesian-bootstrap weights should be nailed down
-  before implementation.
-
-### 10. `InferenceContinQuantileRegr`
-
-- Recommended backend:
-  weighted quantile regression via `quantreg::rq(..., weights = ...)` or a
-  native weighted quantile-regression path if one is added later.
-- Why last in this block:
-  technically feasible, but more brittle under resampling weights and less
-  aligned with the current native backend stack.
+The previous near-term, ordinal-gap, KK one-likelihood / GLMM compound, and
+survival-regression blocks have been cleared. The remaining in-scope work is
+limited to any future refinement of native weighted backends and the IVWC paths
+intentionally omitted from the main rollout. The Bai-adjusted KK compound
+family is explicitly gated off from Bayesian bootstrap rather than remaining as
+an implementation target.
 
 ## Suggested Milestones
 
-- Milestone 1:
-  `InferencePropBetaRegr`
-- Milestone 2:
-  `InferenceCountNegBin`,
-  `InferenceCountQuasiPoisson`,
-  `InferenceCountRobustPoisson`
-- Milestone 3:
-  `InferenceCountHurdlePoisson`,
-  `InferenceCountHurdleNegBin`
-- Milestone 4:
-  `InferenceCountZeroInflatedPoisson`,
-  `InferenceCountZeroInflatedNegBin`
-- Milestone 5:
-  `InferenceContinRobustRegr`,
-  `InferenceContinQuantileRegr`
+The old near-term and ordinal milestones are complete.
 
 ## Backend Selection Rule
 

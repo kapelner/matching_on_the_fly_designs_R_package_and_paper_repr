@@ -29,21 +29,21 @@ columns when needed.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceAbstractKKWeibullFrailtyIVWC}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{EDI::InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceAbstractKKWeibullFrailtyIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_estimate_with_bootstrap_weights}{\code{InferenceAbstractKKWeibullFrailtyIVWC$compute_estimate_with_bootstrap_weights()}}
-\item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-approximate_bayesian_bootstrap_distribution_beta_hat_T}{\code{InferenceAbstractKKWeibullFrailtyIVWC$approximate_bayesian_bootstrap_distribution_beta_hat_T()}}
-\item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_bayesian_bootstrap_two_sided_pval}{\code{InferenceAbstractKKWeibullFrailtyIVWC$compute_bayesian_bootstrap_two_sided_pval()}}
-\item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_bayesian_bootstrap_confidence_interval}{\code{InferenceAbstractKKWeibullFrailtyIVWC$compute_bayesian_bootstrap_confidence_interval()}}
 \item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-new}{\code{InferenceAbstractKKWeibullFrailtyIVWC$new()}}
 \item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_estimate}{\code{InferenceAbstractKKWeibullFrailtyIVWC$compute_estimate()}}
 \item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_confidence_interval}{\code{InferenceAbstractKKWeibullFrailtyIVWC$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_two_sided_pval}{\code{InferenceAbstractKKWeibullFrailtyIVWC$compute_asymp_two_sided_pval()}}
 \item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceAbstractKKWeibullFrailtyIVWC$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-duplicate}{\code{InferenceAbstractKKWeibullFrailtyIVWC$duplicate()}}
+\item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_estimate_with_bootstrap_weights}{\code{InferenceAbstractKKWeibullFrailtyIVWC$compute_estimate_with_bootstrap_weights()}}
+\item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-approximate_bayesian_bootstrap_distribution_beta_hat_T}{\code{InferenceAbstractKKWeibullFrailtyIVWC$approximate_bayesian_bootstrap_distribution_beta_hat_T()}}
+\item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_bayesian_bootstrap_two_sided_pval}{\code{InferenceAbstractKKWeibullFrailtyIVWC$compute_bayesian_bootstrap_two_sided_pval()}}
+\item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_bayesian_bootstrap_confidence_interval}{\code{InferenceAbstractKKWeibullFrailtyIVWC$compute_bayesian_bootstrap_confidence_interval()}}
 \item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-clone}{\code{InferenceAbstractKKWeibullFrailtyIVWC$clone()}}
 }
 }
@@ -64,6 +64,7 @@ columns when needed.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
@@ -98,66 +99,6 @@ columns when needed.
 </ul>
 </details>
 }}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-compute_estimate_with_bootstrap_weights"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-compute_estimate_with_bootstrap_weights}{}}}
-\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$compute_estimate_with_bootstrap_weights(
-  subject_or_block_weights,
-  estimate_only = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-approximate_bayesian_bootstrap_distribution_beta_hat_T"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-approximate_bayesian_bootstrap_distribution_beta_hat_T}{}}}
-\subsection{Method \code{approximate_bayesian_bootstrap_distribution_beta_hat_T()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$approximate_bayesian_bootstrap_distribution_beta_hat_T(
-  B = 501,
-  show_progress = TRUE,
-  debug = FALSE,
-  weighting_unit_type = NULL
-)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-compute_bayesian_bootstrap_two_sided_pval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-compute_bayesian_bootstrap_two_sided_pval}{}}}
-\subsection{Method \code{compute_bayesian_bootstrap_two_sided_pval()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$compute_bayesian_bootstrap_two_sided_pval(
-  delta = 0,
-  B = 501,
-  type = NULL,
-  na.rm = FALSE,
-  show_progress = TRUE,
-  min_number_usable_samples = 5L,
-  weighting_unit_type = NULL
-)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-compute_bayesian_bootstrap_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-compute_bayesian_bootstrap_confidence_interval}{}}}
-\subsection{Method \code{compute_bayesian_bootstrap_confidence_interval()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$compute_bayesian_bootstrap_confidence_interval(
-  alpha = 0.05,
-  B = 501,
-  type = NULL,
-  na.rm = TRUE,
-  show_progress = TRUE,
-  min_number_usable_samples = 5L,
-  weighting_unit_type = NULL
-)}\if{html}{\out{</div>}}
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-new}{}}}
@@ -292,6 +233,130 @@ Duplicates the object while preserving caches.
 \item{\code{verbose}}{Whether the duplicate should be verbose.}
 
 \item{\code{make_fork_cluster}}{Whether the duplicate should be allowed to create a fork cluster.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-compute_estimate_with_bootstrap_weights"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-compute_estimate_with_bootstrap_weights}{}}}
+\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Gated off for IVWC.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$compute_estimate_with_bootstrap_weights(
+  subject_or_block_weights,
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{weights.}
+
+\item{\code{estimate_only}}{flag.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-approximate_bayesian_bootstrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-approximate_bayesian_bootstrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_bayesian_bootstrap_distribution_beta_hat_T()}}{
+Gated off for IVWC.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$approximate_bayesian_bootstrap_distribution_beta_hat_T(
+  B = 501,
+  show_progress = TRUE,
+  debug = FALSE,
+  weighting_unit_type = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{replicates.}
+
+\item{\code{show_progress}}{flag.}
+
+\item{\code{debug}}{flag.}
+
+\item{\code{weighting_unit_type}}{type.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-compute_bayesian_bootstrap_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-compute_bayesian_bootstrap_two_sided_pval}{}}}
+\subsection{Method \code{compute_bayesian_bootstrap_two_sided_pval()}}{
+Gated off for IVWC.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$compute_bayesian_bootstrap_two_sided_pval(
+  delta = 0,
+  B = 501,
+  type = NULL,
+  na.rm = FALSE,
+  show_progress = TRUE,
+  min_number_usable_samples = 5L,
+  weighting_unit_type = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{null.}
+
+\item{\code{B}}{replicates.}
+
+\item{\code{type}}{type.}
+
+\item{\code{na.rm}}{flag.}
+
+\item{\code{show_progress}}{flag.}
+
+\item{\code{min_number_usable_samples}}{count.}
+
+\item{\code{weighting_unit_type}}{type.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-compute_bayesian_bootstrap_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-compute_bayesian_bootstrap_confidence_interval}{}}}
+\subsection{Method \code{compute_bayesian_bootstrap_confidence_interval()}}{
+Gated off for IVWC.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWeibullFrailtyIVWC$compute_bayesian_bootstrap_confidence_interval(
+  alpha = 0.05,
+  B = 501,
+  type = NULL,
+  na.rm = TRUE,
+  show_progress = TRUE,
+  min_number_usable_samples = 5L,
+  weighting_unit_type = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{level.}
+
+\item{\code{B}}{replicates.}
+
+\item{\code{type}}{type.}
+
+\item{\code{na.rm}}{flag.}
+
+\item{\code{show_progress}}{flag.}
+
+\item{\code{min_number_usable_samples}}{count.}
+
+\item{\code{weighting_unit_type}}{type.}
 }
 \if{html}{\out{</div>}}
 }

@@ -168,22 +168,18 @@ List fast_ordinal_cauchit_regression_with_var_cpp(const Eigen::MatrixXd& X,
     int n_params = params.size();
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
     
-    MatrixXd cov_mat = MatrixXd::Constant(n_params, n_params, NA_REAL);
     double ssq_b_2 = NA_REAL;
     MatrixXd H = model.hessian(params);
     if (converged) {
         FixedParameterFunctor<OrdinalCauchitRegression> fixed_obj(model, fixed_spec, params);
         VectorXd params_free = subset_vector(params, fixed_spec.free_idx);
         MatrixXd H_free = fixed_obj.hessian(params_free);
-        
-        FullPivLU<MatrixXd> lu(H_free);
-        if (lu.isInvertible()) {
-            MatrixXd inv_free = lu.inverse();
-            cov_mat = expand_free_covariance(n_params, fixed_spec, inv_free, true);
-            int p = X.cols();
-            int n_alpha = n_params - p;
-            if (p >= 1) ssq_b_2 = cov_mat(n_alpha, n_alpha);
-        }
+        int p = X.cols();
+        int n_alpha = n_params - p;
+        int free_j = -1;
+        for (int jj = 0; jj < (int)fixed_spec.free_idx.size(); ++jj)
+            if (fixed_spec.free_idx[jj] == n_alpha) { free_j = jj + 1; break; }
+        if (p >= 1 && free_j > 0) ssq_b_2 = compute_diagonal_inverse_entry(H_free, free_j);
     }
 
     return List::create(
@@ -191,7 +187,7 @@ List fast_ordinal_cauchit_regression_with_var_cpp(const Eigen::MatrixXd& X,
         Named("alpha") = res["alpha"],
         Named("params") = params,
         Named("neg_loglik") = res["neg_loglik"],
-        Named("vcov") = cov_mat,
+        Named("vcov") = R_NilValue,
         Named("ssq_b_j") = ssq_b_2,
         Named("converged") = converged,
         Named("iterations") = res["iterations"],

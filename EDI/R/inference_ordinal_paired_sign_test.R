@@ -47,6 +47,57 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Recomputes the paired-sign treatment estimate under
+		#'   Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Subject-, block-, cluster-, or matched-set
+		#'   bootstrap weights.
+		#' @param estimate_only If \code{TRUE}, compute only the weighted point
+		#'   estimate.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = as.numeric(private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights))
+			m_vec = private$m
+			if (is.null(m_vec)) {
+				private$compute_basic_match_data()
+				m_vec = private$m
+			}
+			if (is.null(m_vec)) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			pair_ids = sort(unique(m_vec[m_vec > 0L]))
+			if (!length(pair_ids)) {
+				private$cache_nonestimable_estimate("ordinal_paired_sign_test_no_discordant_pairs")
+				return(NA_real_)
+			}
+			pos_w = 0
+			neg_w = 0
+			for (pid in pair_ids) {
+				idx = which(m_vec == pid)
+				if (length(idx) < 2L) next
+				i_t = idx[private$w[idx] == 1L][1L]
+				i_c = idx[private$w[idx] == 0L][1L]
+				if (!is.finite(i_t) || !is.finite(i_c)) next
+				diff = as.numeric(private$y[i_t]) - as.numeric(private$y[i_c])
+				pair_w = mean(row_weights[c(i_t, i_c)])
+				if (!is.finite(pair_w) || pair_w <= 0) next
+				if (diff > 0) pos_w = pos_w + pair_w
+				if (diff < 0) neg_w = neg_w + pair_w
+			}
+			n_eff = pos_w + neg_w
+			if (!is.finite(n_eff) || n_eff <= 0) {
+				private$cached_values$beta_hat_T = 0
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(private$cached_values$beta_hat_T)
+			}
+			p_hat = pos_w / n_eff
+			private$cached_values$beta_hat_T = as.numeric(p_hat - 0.5)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes the confidence interval for the probability P(T > C).
 		#' @param  alpha  				The significance level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -70,7 +121,7 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 		#' @param bootstrap_type Optional resampling scheme.
 		#' @return A numeric vector of bootstrap estimates.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
-			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
+			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
 		}
 	)),
 	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(

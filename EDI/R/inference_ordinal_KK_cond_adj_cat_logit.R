@@ -35,6 +35,28 @@ InferenceOrdinalKKCondAdjCatLogitRegr = R6::R6Class("InferenceOrdinalKKCondAdjCa
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Recomputes the KK conditional adjacent-category-logit
+		#'   estimate under Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Subject-, block-, cluster-, or matched-set
+		#'   bootstrap weights.
+		#' @param estimate_only If \code{TRUE}, compute only the weighted point
+		#'   estimate.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			if (weights_are_effectively_constant(row_weights)) {
+				beta_hat_T = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+				if (is.finite(beta_hat_T)) {
+					private$cached_values$beta_hat_T = beta_hat_T
+					private$cached_values$s_beta_hat_T = NA_real_
+					return(private$cached_values$beta_hat_T)
+				}
+			}
+			X = private$create_design_matrix()[, -1, drop = FALSE]
+			fit = weighted_ordinal_bootstrap_surrogate_fit(X, private$y, row_weights, method = "logistic")
+			private$cached_values$beta_hat_T = if (is.null(fit)) NA_real_ else as.numeric(fit$beta_hat)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Returns the asymptotic confidence interval.
 		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -56,7 +78,7 @@ InferenceOrdinalKKCondAdjCatLogitRegr = R6::R6Class("InferenceOrdinalKKCondAdjCa
 		#' @param bootstrap_type Optional resampling scheme.
 		#' @return A numeric vector of bootstrap estimates.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
-			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
+			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
 		}
 	)),
 	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(

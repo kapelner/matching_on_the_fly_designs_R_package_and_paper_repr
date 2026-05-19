@@ -368,19 +368,16 @@ List fast_cpoisson_combined_with_var_cpp(
 	VectorXd score = Rcpp::as<VectorXd>(final_si["score"]);
 	MatrixXd info = Rcpp::as<MatrixXd>(final_si["info"]);
 	MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);
-	MatrixXd cov_free = covariance_from_information(info_free);
-	MatrixXd vcov = expand_free_covariance(np, fixed_spec, cov_free, true);
-	double ssq_b_j = (np >= 2) ? vcov(1, 1) : NA_REAL;
+	int free_2 = -1;
+	for (int jj = 0; jj < (int)fixed_spec.free_idx.size(); ++jj)
+		if (fixed_spec.free_idx[jj] == 1) { free_2 = jj + 1; break; }
+	double ssq_b_j = (np >= 2 && free_2 > 0) ? compute_diagonal_inverse_entry(info_free, free_2) : NA_REAL;
 	double neg_loglik = cpoisson_combined_neg_loglik_cpp_impl(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params);
-	if (!converged || !std::isfinite(ssq_b_j)) {
-		Rcout << "DEBUG C++: converged=" << converged << " ssq_b_j=" << ssq_b_j << std::endl;
-	}
 
 	return List::create(
 		Named("b")         = params,
 		Named("params")    = params,
 		Named("ssq_b_j")   = ssq_b_j,
-		Named("vcov")      = vcov,
 		Named("score")     = score,
 		Named("observed_information") = info,
 		Named("fisher_information") = info,

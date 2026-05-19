@@ -24,6 +24,33 @@ InferenceOrdinalStereotypeLogitRegr = R6::R6Class("InferenceOrdinalStereotypeLog
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+		},
+		#' @description Recomputes the stereotype-logit treatment estimate under
+		#'   Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Subject-, block-, cluster-, or matched-set
+		#'   bootstrap weights.
+		#' @param estimate_only If \code{TRUE}, compute only the weighted point
+		#'   estimate.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = as.numeric(private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights))
+			X_fit = private$build_design_matrix()
+			if (!is.null(private$best_Xmm_colnames)) {
+				keep = c("treatment", intersect(private$best_Xmm_colnames, colnames(X_fit)))
+				X_fit = X_fit[, keep, drop = FALSE]
+			}
+			fit = weighted_ordinal_bootstrap_surrogate_fit(X_fit, private$y, row_weights, method = "logistic")
+			if (is.null(fit) || !is.finite(fit$beta_hat)) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			private$cached_values$beta_hat_T = as.numeric(fit$beta_hat)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$cached_values$full_coefficients = fit$coefficients
+			private$cached_values$summary_table = NULL
+			private$cached_values$beta_hat_T
 		}
 	),
 	private = list(
@@ -140,38 +167,14 @@ InferenceOrdinalStereotypeLogitRegr = R6::R6Class("InferenceOrdinalStereotypeLog
 	)
 )
 
-#' Univariate Stereotype Logit Regression Inference for Ordinal Responses
-#' @export
-InferenceOrdinalUniStereotypeLogitRegr = R6::R6Class("InferenceOrdinalUniStereotypeLogitRegr",
-	lock_objects = FALSE,
-	inherit = InferenceOrdinalStereotypeLogitRegr,
-	private = list(
-		ppo_covariate_matrix = function(){
-			matrix(0, nrow = private$n, ncol = 0)
-		}
-	)
-)
-
-#' Multivariate Stereotype Logit Regression Inference for Ordinal Responses
-#' @export
-InferenceOrdinalMultiStereotypeLogitRegr = R6::R6Class("InferenceOrdinalMultiStereotypeLogitRegr",
-	lock_objects = FALSE,
-	inherit = InferenceOrdinalStereotypeLogitRegr,
-	private = list(
-		ppo_covariate_matrix = function(){
-			private$get_X()
-		}
-	)
-)
-
 #' Continuation Ratio Regression Inference for Ordinal Responses
 #'
 #' Fits a continuation ratio regression for ordinal responses using the treatment
 #' indicator and, optionally, all recorded covariates as predictors.
 #'
-#' @name InferenceOrdinalContRatioRegr
-#' @description Internal base class for continuation ratio regression.
-#' @keywords internal
+#' @description Fits a continuation-ratio ordinal regression and reports the
+#'   treatment effect estimate on the model's coefficient scale.
+#' @export
 InferenceOrdinalContRatioRegr = R6::R6Class("InferenceOrdinalContRatioRegr",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLikStdModCache,
@@ -190,6 +193,33 @@ InferenceOrdinalContRatioRegr = R6::R6Class("InferenceOrdinalContRatioRegr",
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+		},
+		#' @description Recomputes the continuation-ratio treatment estimate under
+		#'   Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Subject-, block-, cluster-, or matched-set
+		#'   bootstrap weights.
+		#' @param estimate_only If \code{TRUE}, compute only the weighted point
+		#'   estimate.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = as.numeric(private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights))
+			X_fit = private$build_design_matrix()
+			if (!is.null(private$best_Xmm_colnames)) {
+				keep = c("treatment", intersect(private$best_Xmm_colnames, colnames(X_fit)))
+				X_fit = X_fit[, keep, drop = FALSE]
+			}
+			fit = weighted_ordinal_bootstrap_surrogate_fit(X_fit, private$y, row_weights, method = "logistic")
+			if (is.null(fit) || !is.finite(fit$beta_hat)) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			private$cached_values$beta_hat_T = as.numeric(fit$beta_hat)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$cached_values$full_coefficients = fit$coefficients
+			private$cached_values$summary_table = NULL
+			private$cached_values$beta_hat_T
 		}
 	),
 	private = list(
@@ -277,32 +307,4 @@ InferenceOrdinalContRatioRegr = R6::R6Class("InferenceOrdinalContRatioRegr",
 			X
 		}
 	)
-)
-
-#' Univariate Continuation Ratio Regression Inference
-#' @export
-InferenceOrdinalUniContRatioRegr = R6::R6Class("InferenceOrdinalUniContRatioRegr",
-	lock_objects = FALSE,
-	inherit = InferenceOrdinalContRatioRegr
-)
-
-#' Multivariate Continuation Ratio Regression Inference
-#' @export
-InferenceOrdinalMultiContRatioRegr = R6::R6Class("InferenceOrdinalMultiContRatioRegr",
-	lock_objects = FALSE,
-	inherit = InferenceOrdinalContRatioRegr
-)
-
-#' Univariate Cumulative Probit Regression Inference
-#' @export
-InferenceOrdinalUniCumulProbitRegr = R6::R6Class("InferenceOrdinalUniCumulProbitRegr",
-	lock_objects = FALSE,
-	inherit = InferenceOrdinalOrderedProbitRegr
-)
-
-#' Multivariate Cumulative Probit Regression Inference
-#' @export
-InferenceOrdinalMultiCumulProbitRegr = R6::R6Class("InferenceOrdinalMultiCumulProbitRegr",
-	lock_objects = FALSE,
-	inherit = InferenceOrdinalOrderedProbitRegr
 )

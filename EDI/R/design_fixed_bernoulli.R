@@ -20,6 +20,7 @@ DesignFixedBernoulli = R6::R6Class("DesignFixedBernoulli",
 		#' @param verbose A flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
+		#' @param seed Integer seed for reproducibility.
 		#'
 		#' @return  A new `DesignFixedBernoulli` object
 		initialize = function(
@@ -27,12 +28,13 @@ DesignFixedBernoulli = R6::R6Class("DesignFixedBernoulli",
 						prob_T = 0.5,
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
-						
+
 						verbose = FALSE,
 				missingness_method = "impute",
-				model_formula = ~ .
+				model_formula = ~ .,
+				seed = NULL
 			) {
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 		},
 		#' @description Draw multiple treatment assignment vectors according to Bernoulli randomization.
 		#'
@@ -40,6 +42,7 @@ DesignFixedBernoulli = R6::R6Class("DesignFixedBernoulli",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r){
+			private$maybe_set_seed()
 			generate_permutations_bernoulli_cpp(
 				as.integer(self$get_n()),
 				as.integer(r),

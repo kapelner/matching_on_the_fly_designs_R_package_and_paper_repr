@@ -486,13 +486,9 @@ static double univariate_beta_tstat(
 
 	// Compute XtWX and get variance of beta[1]
 	Eigen::MatrixXd XtWX = weighted_crossprod(X, w_final);
-	Eigen::FullPivLU<Eigen::MatrixXd> lu(XtWX);
-	if (!lu.isInvertible()) return -1.0;
-
-	Eigen::MatrixXd cov_mat = lu.inverse();
-	if (cov_mat(1, 1) <= 0) return -1.0;
-
-	double se = std::sqrt(cov_mat(1, 1));
+	const double var_1 = compute_diagonal_inverse_entry(XtWX, 2);
+	if (!R_finite(var_1) || var_1 <= 0) return -1.0;
+	double se = std::sqrt(var_1);
 	if (!std::isfinite(se) || se <= 0) return -1.0;
 
 	return std::fabs(beta(1) / se);
@@ -583,13 +579,9 @@ static double univariate_negbin_tstat(
 	w = (mu.array() / (1.0 + mu.array() / theta)).max(1e-10).matrix();
 
 	Eigen::MatrixXd XtWX = weighted_crossprod(X, w);
-	Eigen::FullPivLU<Eigen::MatrixXd> lu(XtWX);
-	if (!lu.isInvertible()) return -1.0;
-
-	Eigen::MatrixXd cov_mat = lu.inverse();
-	if (cov_mat(1, 1) <= 0) return -1.0;
-
-	double se = std::sqrt(cov_mat(1, 1));
+	const double var_1 = compute_diagonal_inverse_entry(XtWX, 2);
+	if (!R_finite(var_1) || var_1 <= 0) return -1.0;
+	double se = std::sqrt(var_1);
 	if (!std::isfinite(se) || se <= 0) return -1.0;
 
 	return std::fabs(beta(1) / se);
@@ -827,13 +819,9 @@ static double univariate_weibull_tstat(
 	Eigen::VectorXd w = (clamp_weibull_z_kk((resid / scale).array()).exp() / (scale * scale)).matrix();
 	Eigen::MatrixXd info_mat = weighted_crossprod(X, w);
 
-	Eigen::FullPivLU<Eigen::MatrixXd> lu(info_mat);
-	if (!lu.isInvertible()) return -1.0;
-
-	Eigen::MatrixXd cov_mat = lu.inverse();
-	if (cov_mat(1, 1) <= 0) return -1.0;
-
-	double se = std::sqrt(cov_mat(1, 1));
+	const double var_1 = compute_diagonal_inverse_entry(info_mat, 2);
+	if (!R_finite(var_1) || var_1 <= 0) return -1.0;
+	double se = std::sqrt(var_1);
 	if (!std::isfinite(se) || se <= 0) return -1.0;
 
 	return std::fabs(beta(1) / se);
@@ -990,13 +978,10 @@ static double multivariate_beta_tstat(
 
 	// Compute XtWX and get variance of beta[coef_idx]
 	Eigen::MatrixXd XtWX = weighted_crossprod(X, w_final);
-	Eigen::FullPivLU<Eigen::MatrixXd> lu(XtWX);
-	if (!lu.isInvertible()) return -1.0;
-
-	Eigen::MatrixXd cov_mat = lu.inverse();
-	if (coef_idx >= p || cov_mat(coef_idx, coef_idx) <= 0) return -1.0;
-
-	double se = std::sqrt(cov_mat(coef_idx, coef_idx));
+	if (coef_idx >= p) return -1.0;
+	const double var_k = compute_diagonal_inverse_entry(XtWX, coef_idx + 1);
+	if (!R_finite(var_k) || var_k <= 0) return -1.0;
+	double se = std::sqrt(var_k);
 	if (!std::isfinite(se) || se <= 0) return -1.0;
 
 	return std::fabs(beta(coef_idx) / se);
@@ -1083,13 +1068,10 @@ static double multivariate_negbin_tstat(
 	w = (mu.array() / (1.0 + mu.array() / theta)).max(1e-10).matrix();
 
 	Eigen::MatrixXd XtWX = weighted_crossprod(X, w);
-	Eigen::FullPivLU<Eigen::MatrixXd> lu(XtWX);
-	if (!lu.isInvertible()) return -1.0;
-
-	Eigen::MatrixXd cov_mat = lu.inverse();
-	if (coef_idx >= p || cov_mat(coef_idx, coef_idx) <= 0) return -1.0;
-
-	double se = std::sqrt(cov_mat(coef_idx, coef_idx));
+	if (coef_idx >= p) return -1.0;
+	const double var_k = compute_diagonal_inverse_entry(XtWX, coef_idx + 1);
+	if (!R_finite(var_k) || var_k <= 0) return -1.0;
+	double se = std::sqrt(var_k);
 	if (!std::isfinite(se) || se <= 0) return -1.0;
 
 	return std::fabs(beta(coef_idx) / se);

@@ -54,6 +54,15 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			inf_template = self$duplicate()
 			des_template = private$des_obj$duplicate()
 			has_match_structure_local = private$has_match_structure
+			if (!is.null(private$seed)) {
+				had_seed = exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+				if (had_seed) old_seed = get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+				on.exit(
+					if (had_seed) assign(".Random.seed", old_seed, envir = .GlobalEnv) else rm(".Random.seed", envir = .GlobalEnv),
+					add = TRUE
+				)
+				set.seed(private$seed)
+			}
 			boot_draws = replicate(
 				as.integer(B),
 				private$bootstrap_sample_indices(private$n, bootstrap_type),

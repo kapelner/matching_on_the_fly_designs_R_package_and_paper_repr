@@ -91,6 +91,15 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Computes the weighted Hodges-Lehmann style bootstrap estimate.
+		#' @param subject_or_block_weights Bootstrap weights at the subject/block level.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			private$cached_values$beta_hat_T = private$weighted_hl_point_estimate(private$y, private$w, row_weights)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes a \eqn{1 - \alpha} asymptotic confidence interval based on the normal
 		#' approximation for the HL estimator.
 		#' @param alpha Significance level; default 0.05 gives a 95\% CI.
@@ -118,6 +127,27 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		max_resample_attempts = 50L,
 		hl_point_estimate = function(y_vals, w_vals){
 			wilcox_hl_point_estimate_cpp(as.integer(w_vals), as.numeric(y_vals))
+		},
+		weighted_hl_point_estimate = function(y_vals, w_vals, row_weights){
+			y_vals = as.numeric(y_vals)
+			w_vals = as.integer(w_vals)
+			row_weights = as.numeric(row_weights)
+			i_t = which(w_vals == 1L & is.finite(y_vals) & is.finite(row_weights) & row_weights > 0)
+			i_c = which(w_vals == 0L & is.finite(y_vals) & is.finite(row_weights) & row_weights > 0)
+			if (length(i_t) == 0L || length(i_c) == 0L) return(NA_real_)
+			diffs = as.numeric(outer(y_vals[i_t], y_vals[i_c], "-"))
+			wdiff = as.numeric(outer(row_weights[i_t], row_weights[i_c], "*"))
+			ok = is.finite(diffs) & is.finite(wdiff) & wdiff > 0
+			if (!any(ok)) return(NA_real_)
+			diffs = diffs[ok]
+			wdiff = wdiff[ok]
+			o = order(diffs)
+			diffs = diffs[o]
+			wdiff = wdiff[o]
+			cw = cumsum(wdiff) / sum(wdiff)
+			idx = which(cw >= 0.5)[1L]
+			if (!is.finite(idx) || is.na(idx)) return(NA_real_)
+			as.numeric(diffs[idx])
 		},
 		compute_fast_bootstrap_distr = function(B, ...) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)

@@ -113,8 +113,6 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
 
     int iterations = 0;
     for (int iter = 0; iter < maxit; iter++) {
-        iterations = iter + 1;
-        
         // mu = plogis(X*beta + eta_fixed)
         mu_map.noalias() = X_free_map * beta_free_map + eta_fixed_map;
         mu_map.array() = plogis_array_safe(mu_map.array());
@@ -134,6 +132,12 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
         Eigen::VectorXd diff = y_eigen - mu_map;
         if (use_weights) diff.array() *= weights_eigen.array();
         score_free_eigen.noalias() = X_free_map.transpose() * diff;
+        
+        if (score_free_eigen.norm() < tol) {
+            converged = true;
+            break;
+        }
+        iterations++;
 
         // XtWX = X^T * diag(w_diag) * X
         if (iter == 0 && warm_start_fisher_info.isNotNull()) {
@@ -330,23 +334,19 @@ List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen
     ModelResult res = fast_logistic_regression_internal(X, y, Eigen::VectorXd(), warm_start_beta, smart_cold_start, 100, 1e-8, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     
-    int p_free = fixed_spec.free_idx.size();
     Eigen::MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
-    std::vector<double> info_free_v(p_free * p_free);
-    for(int r=0; r<p_free; r++) for(int c=0; c<p_free; c++) info_free_v[r * p_free + c] = info_free(r, c);
 
-    Eigen::MatrixXd cov_free = Eigen::MatrixXd::Zero(p_free, p_free);
-    for(int col=0; col<p_free; col++) {
-        std::vector<double> b(p_free, 0.0);
-        b[col] = 1.0;
-        std::vector<double> x_sol(p_free);
-        solve_llt_raw(x_sol.data(), info_free_v.data(), b.data(), p_free);
-        for(int r=0; r<p_free; r++) cov_free(r, col) = x_sol[r];
-    }
-    
-    Eigen::MatrixXd vcov = expand_free_covariance(X.cols(), fixed_spec, cov_free, true);
-    res.ssq_b_j = (j > 0 && j <= X.cols()) ? vcov(j - 1, j - 1) : NA_REAL;
-    res.ssq_b_2 = (X.cols() >= 2) ? vcov(1, 1) : NA_REAL;
+    auto free_idx_of = [&](int overall_j) -> int {
+        for (int jj = 0; jj < (int)fixed_spec.free_idx.size(); ++jj)
+            if (fixed_spec.free_idx[jj] == overall_j) return jj + 1; // 1-based for compute_diagonal_inverse_entry
+        return -1;
+    };
+
+    int free_j = (j > 0 && j <= X.cols()) ? free_idx_of(j - 1) : -1;
+    res.ssq_b_j = (free_j > 0) ? compute_diagonal_inverse_entry(info_free, free_j) : NA_REAL;
+
+    int free_2 = (X.cols() >= 2) ? free_idx_of(1) : -1;
+    res.ssq_b_2 = (free_2 > 0) ? compute_diagonal_inverse_entry(info_free, free_2) : NA_REAL;
     Eigen::VectorXd score = get_logistic_regression_score_cpp(X, y, res.b);
     Eigen::MatrixXd information = res.XtWX;
     Eigen::VectorXd eta = X * res.b;
@@ -363,7 +363,6 @@ List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen
         Named("params") = res.b,
         Named("ssq_b_j") = res.ssq_b_j,
         Named("ssq_b_2") = res.ssq_b_2,
-        Named("vcov") = vcov,
         Named("score") = score,
         Named("observed_information") = information,
         Named("fisher_information") = information,

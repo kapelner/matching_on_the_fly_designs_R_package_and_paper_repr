@@ -20,6 +20,15 @@ InferenceContinKKOLSIVWC = R6::R6Class("InferenceContinKKOLSIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
+		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @param B  					Number of bootstrap samples.
+		#' @param show_progress Whether to show a progress bar.
+		#' @param debug         Whether to return diagnostics.
+		#' @param bootstrap_type Optional resampling scheme.
+		#' @return A numeric vector of bootstrap estimates.
+		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
+		},
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),

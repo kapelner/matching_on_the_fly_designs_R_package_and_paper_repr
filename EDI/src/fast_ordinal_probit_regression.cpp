@@ -177,28 +177,20 @@ List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X,
     int n_params = params.size();
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
     
-    MatrixXd cov_mat = MatrixXd::Constant(n_params, n_params, NA_REAL);
     double ssq_b_2 = NA_REAL;
     MatrixXd H = model.hessian(params);
     if (converged) {
         FixedParameterFunctor<OrdinalProbitRegression> fixed_obj(model, fixed_spec, params);
         VectorXd params_free = subset_vector(params, fixed_spec.free_idx);
         MatrixXd H_free = fixed_obj.hessian(params_free);
-        MatrixXd inv_free;
-
-        FullPivLU<MatrixXd> lu(H_free);
-        if (lu.isInvertible()) {
-            inv_free = lu.inverse();
-        } else {
-            inv_free = pseudo_inverse_symmetric_probit(H_free);
-        }
-
-        cov_mat = expand_free_covariance(n_params, fixed_spec, inv_free, true);
         const int p = X.cols();
         const int n_alpha = n_params - p;
-        ssq_b_2 = (p >= 1) ? cov_mat(n_alpha, n_alpha) : NA_REAL;
-        if (!R_finite(ssq_b_2) || ssq_b_2 <= 0) {
-            ssq_b_2 = NA_REAL;
+        int free_j = -1;
+        for (int jj = 0; jj < (int)fixed_spec.free_idx.size(); ++jj)
+            if (fixed_spec.free_idx[jj] == n_alpha) { free_j = jj + 1; break; }
+        if (p >= 1 && free_j > 0) {
+            ssq_b_2 = compute_diagonal_inverse_entry(H_free, free_j);
+            if (!R_finite(ssq_b_2) || ssq_b_2 <= 0) ssq_b_2 = NA_REAL;
         }
     }
 
@@ -207,7 +199,7 @@ List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X,
         Named("alpha") = res["alpha"],
         Named("params") = params,
         Named("neg_loglik") = res["neg_loglik"],
-        Named("vcov") = cov_mat,
+        Named("vcov") = R_NilValue,
         Named("ssq_b_j") = ssq_b_2,
         Named("converged") = converged,
         Named("iterations") = res["iterations"],

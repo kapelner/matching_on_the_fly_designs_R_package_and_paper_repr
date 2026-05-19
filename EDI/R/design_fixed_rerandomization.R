@@ -26,6 +26,7 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 		#' @param verbose  Flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
+		#' @param seed Integer seed for reproducibility.
 		#'
 		#' @return 			A new `DesignFixedRerandomization` object
 		#'
@@ -39,12 +40,13 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 				n = NULL,
 				verbose = FALSE,
 				missingness_method = "impute",
-				model_formula = ~ .
+				model_formula = ~ .,
+				seed = NULL
 			) {
 			if (!is.null(obj_val_cutoff) && !is.null(prop_acceptable)) {
 				stop("Cannot specify both obj_val_cutoff and prop_acceptable.")
 			}
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 			private$obj_val_cutoff = obj_val_cutoff
 			private$prop_acceptable = prop_acceptable
 			private$objective = objective
@@ -59,6 +61,7 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
+			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				assertCount(r, positive = TRUE)
 				self$assert_all_subjects_arrived()
@@ -80,12 +83,12 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 				}
 				X = private$X[1:n, , drop = FALSE]
 				n_draw = round(r / private$prop_acceptable)
-				seed = sample.int(.Machine$integer.max, 1L)
+				ext_seed = if (!is.null(private$seed)) private$seed else sample.int(.Machine$integer.max, 1L)
 				if (private$prob_T == 0.5) {
-					indicTs = GreedyExperimentalDesign:::complete_randomization_forced_balanced_cpp(n, n_draw, seed)
+					indicTs = GreedyExperimentalDesign:::complete_randomization_forced_balanced_cpp(n, n_draw, ext_seed)
 				} else {
 					n_T = round(n * private$prob_T)
-					indicTs = GreedyExperimentalDesign:::complete_randomization_imbalanced_cpp(n, n_T, n_draw, seed)
+					indicTs = GreedyExperimentalDesign:::complete_randomization_imbalanced_cpp(n, n_T, n_draw, ext_seed)
 				}
 				obj_vals = GreedyExperimentalDesign:::compute_objective_vals_cpp(X, indicTs, private$objective, private$S_inv)
 				ord = order(obj_vals)

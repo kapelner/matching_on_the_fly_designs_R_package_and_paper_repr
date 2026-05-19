@@ -43,12 +43,71 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			super$compute_estimate(estimate_only = estimate_only)
+		},
+		#' @description Recomputes the Cox PH treatment estimate under
+		#'   Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Subject-, block-, cluster-, or matched-set
+		#'   bootstrap weights.
+		#' @param estimate_only If \code{TRUE}, compute only the weighted point
+		#'   estimate.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			if (weights_are_effectively_constant(row_weights)) {
+				beta_hat_T = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+				if (is.finite(beta_hat_T)) return(beta_hat_T)
+			}
+			X_cov = private$get_X()
+			X_fit = if (!is.null(X_cov) && ncol(X_cov) > 0) cbind(treatment = private$w, X_cov) else matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
+			fit = weighted_cox_bootstrap_surrogate_fit(private$y, private$dead, X_fit, row_weights)
+			private$cached_values$beta_hat_T = if (is.null(fit)) NA_real_ else as.numeric(fit$beta_hat)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$beta_hat_T
 		}
 	),
 	private = list(
 		use_rcpp = TRUE,
 		supports_likelihood_tests = function(){
 			isTRUE(private$use_rcpp)
+		},
+		supports_lik_ratio_param_bootstrap = function() isTRUE(private$use_rcpp),
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			b_null = as.numeric(null_fit$b)
+			if (!all(is.finite(b_null))) return(NULL)
+			X_fit = spec$X
+			y_obs = as.numeric(private$y)
+			dead_obs = as.numeric(private$dead)
+			breslow = .breslow_hazard(y_obs, dead_obs, X_fit, b_null)
+			if (length(breslow$times) == 0L) return(NULL)
+			sim = .cox_simulate_from_breslow(breslow, y_obs, dead_obs, X_fit, b_null)
+			y_sim = sim$y_sim; dead_sim = sim$dead_sim
+			if (!all(is.finite(y_sim)) || any(y_sim <= 0)) return(NULL)
+			j = spec$j
+			full_res = tryCatch(
+				fast_coxph_regression_cpp(
+					X = X_fit, y = y_sim, dead = dead_sim,
+					estimate_only = FALSE
+				),
+				error = function(e) NULL
+			)
+			if (is.null(full_res) || !isTRUE(full_res$converged) || !is.finite(full_res$coefficients[j])) return(NULL)
+			full_fit_boot = list(b = as.numeric(full_res$coefficients), neg_loglik = as.numeric(full_res$neg_ll))
+			list(
+				full_fit = full_fit_boot,
+				fit_null = function(d, start = NULL){
+					res = tryCatch(
+						fast_coxph_regression_cpp(
+							X = X_fit, y = y_sim, dead = dead_sim,
+							warm_start_beta = start %||% as.numeric(full_res$coefficients),
+							fixed_idx = j, fixed_values = d,
+							estimate_only = FALSE
+						),
+						error = function(e) NULL
+					)
+					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
+					list(b = as.numeric(res$coefficients), neg_loglik = as.numeric(res$neg_ll))
+				},
+				neg_loglik = function(fit) as.numeric(fit$neg_loglik)
+			)
 		},
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)

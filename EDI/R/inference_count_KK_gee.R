@@ -52,7 +52,29 @@ InferenceCountPoissonKKGEE = R6::R6Class("InferenceCountPoissonKKGEE",
 		#' @param subject_or_block_weights Row weights for the bootstrap sample.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
-			private$shared_combined_bootstrap(subject_or_block_weights, estimate_only = estimate_only)
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			if (length(row_weights) > 0L && all(is.finite(row_weights)) &&
+			    (max(row_weights) - min(row_weights)) <= sqrt(.Machine$double.eps)) {
+				beta_hat_T = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+				if (is.finite(beta_hat_T)) {
+					private$cached_values$beta_hat_T = beta_hat_T
+					private$cached_values$s_beta_hat_T = NA_real_
+					private$cached_values$df = Inf
+					private$cached_values$summary_table = NULL
+					private$cached_values$nonestimable = FALSE
+					private$cached_values$nonestimable_reason = NULL
+					private$cached_values$nonestimable_stage = NULL
+					return(private$cached_values$beta_hat_T)
+				}
+			}
+			beta_hat_T = private$fit_weighted_gee_with_fallback(row_weights)
+			private$cached_values$beta_hat_T = as.numeric(beta_hat_T)[1L]
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = Inf
+			private$cached_values$summary_table = NULL
+			private$cached_values$nonestimable = !is.finite(private$cached_values$beta_hat_T)
+			private$cached_values$nonestimable_reason = if (is.finite(private$cached_values$beta_hat_T)) NULL else "weighted_gee_estimate_unavailable"
+			private$cached_values$nonestimable_stage = if (is.finite(private$cached_values$beta_hat_T)) NULL else "estimate"
 			private$cached_values$beta_hat_T
 		},
 		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
@@ -70,19 +92,4 @@ InferenceCountPoissonKKGEE = R6::R6Class("InferenceCountPoissonKKGEE",
 		gee_family        = function() stats::poisson(link = "log"),
 		shared_gee_dispatch = function(estimate_only = FALSE) private$shared_gee_default(estimate_only)
 	))
-)
-#' GEE Inference for KK Designs with Multi-Count Response
-#' @export
-InferenceCountPoissonMultiKKGEE = R6::R6Class("InferenceCountPoissonMultiKKGEE",
-	lock_objects = FALSE,
-	inherit = InferenceCountPoissonKKGEE
-)
-#' GEE Inference for KK Designs with Univariate Count Response
-#' @export
-InferenceCountPoissonUnivKKGEE = R6::R6Class("InferenceCountPoissonUnivKKGEE",
-	lock_objects = FALSE,
-	inherit = InferenceCountPoissonKKGEE,
-	private = list(
-		shared_gee_dispatch = function(estimate_only = FALSE) private$shared_gee_univariate(estimate_only)
-	)
 )

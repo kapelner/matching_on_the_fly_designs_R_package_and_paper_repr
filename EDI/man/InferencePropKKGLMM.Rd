@@ -4,14 +4,22 @@
 \alias{InferencePropKKGLMM}
 \title{KK GLMM Inference for Proportion Responses}
 \description{
-Concrete exported wrapper around the logistic KK GLMM implementation.
+KK GLMM Inference for Proportion Responses
+
+KK GLMM Inference for Proportion Responses
+}
+\details{
+Fits a logistic GLMM-style combined likelihood for KK designs with
+proportion responses, combining matched-pair and reservoir information in
+one model.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceAbstractKKClogitPlusGLMM]{EDI::InferenceAbstractKKClogitPlusGLMM}} -> \code{\link[EDI:InferenceAbstractKKLogisticGLMMOneLik]{EDI::InferenceAbstractKKLogisticGLMMOneLik}} -> \code{InferencePropKKGLMM}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{EDI::InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceAbstractKKCondLogitPlusGLMM]{EDI::InferenceAbstractKKCondLogitPlusGLMM}} -> \code{InferencePropKKGLMM}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferencePropKKGLMM-new}{\code{InferencePropKKGLMM$new()}}
 \item \href{#method-InferencePropKKGLMM-clone}{\code{InferencePropKKGLMM$clone()}}
 }
 }
@@ -33,6 +41,7 @@ Concrete exported wrapper around the logistic KK GLMM implementation.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
@@ -42,7 +51,6 @@ Concrete exported wrapper around the logistic KK GLMM implementation.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_estimate_with_bootstrap_weights"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_estimate_with_bootstrap_weights'><code>EDI::InferenceBayesianBootstrap$compute_estimate_with_bootstrap_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="approximate_jackknife_distribution_beta_hat_T"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>EDI::InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_bias_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>EDI::InferenceJackknife$compute_jackknife_bias_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_corrected_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_corrected_estimate'><code>EDI::InferenceJackknife$compute_jackknife_corrected_estimate()</code></a></span></li>
@@ -68,14 +76,51 @@ Concrete exported wrapper around the logistic KK GLMM implementation.
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>EDI::InferenceAsympLik$get_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_information_preference"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>EDI::InferenceAsympLik$set_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>EDI::InferenceAsympLik$set_testing_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClogitPlusGLMM" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceAbstractKKClogitPlusGLMM.html#method-InferenceAbstractKKClogitPlusGLMM-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceAbstractKKClogitPlusGLMM$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClogitPlusGLMM" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKClogitPlusGLMM.html#method-InferenceAbstractKKClogitPlusGLMM-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKClogitPlusGLMM$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClogitPlusGLMM" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAbstractKKClogitPlusGLMM.html#method-InferenceAbstractKKClogitPlusGLMM-compute_asymp_two_sided_pval'><code>EDI::InferenceAbstractKKClogitPlusGLMM$compute_asymp_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKClogitPlusGLMM" data-id="compute_estimate"><a href='../../EDI/html/InferenceAbstractKKClogitPlusGLMM.html#method-InferenceAbstractKKClogitPlusGLMM-compute_estimate'><code>EDI::InferenceAbstractKKClogitPlusGLMM$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKLogisticGLMMOneLik" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKLogisticGLMMOneLik.html#method-InferenceAbstractKKLogisticGLMMOneLik-initialize'><code>EDI::InferenceAbstractKKLogisticGLMMOneLik$initialize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKCondLogitPlusGLMM" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceAbstractKKCondLogitPlusGLMM.html#method-InferenceAbstractKKCondLogitPlusGLMM-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceAbstractKKCondLogitPlusGLMM$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKCondLogitPlusGLMM" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKCondLogitPlusGLMM.html#method-InferenceAbstractKKCondLogitPlusGLMM-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKCondLogitPlusGLMM$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKCondLogitPlusGLMM" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAbstractKKCondLogitPlusGLMM.html#method-InferenceAbstractKKCondLogitPlusGLMM-compute_asymp_two_sided_pval'><code>EDI::InferenceAbstractKKCondLogitPlusGLMM$compute_asymp_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKCondLogitPlusGLMM" data-id="compute_estimate"><a href='../../EDI/html/InferenceAbstractKKCondLogitPlusGLMM.html#method-InferenceAbstractKKCondLogitPlusGLMM-compute_estimate'><code>EDI::InferenceAbstractKKCondLogitPlusGLMM$compute_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKCondLogitPlusGLMM" data-id="compute_estimate_with_bootstrap_weights"><a href='../../EDI/html/InferenceAbstractKKCondLogitPlusGLMM.html#method-InferenceAbstractKKCondLogitPlusGLMM-compute_estimate_with_bootstrap_weights'><code>EDI::InferenceAbstractKKCondLogitPlusGLMM$compute_estimate_with_bootstrap_weights()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferencePropKKGLMM-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferencePropKKGLMM-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferencePropKKGLMM$new(
+  des_obj,
+  model_formula = NULL,
+  max_abs_reasonable_coef = 10000,
+  max_abs_log_sigma = 8,
+  verbose = FALSE,
+  smart_cold_start_default = TRUE,
+  optimization_alg = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object with a proportion response.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{max_abs_reasonable_coef}}{Cap for reasonable coefficient estimates.}
+
+\item{\code{max_abs_log_sigma}}{Cap for reasonable log random effect variance.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+
+\item{\code{optimization_alg}}{Character. Optimization algorithm (default "lbfgs").}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropKKGLMM-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropKKGLMM-clone}{}}}

@@ -63,6 +63,40 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = as.numeric(private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights))
+			X_full = private$build_design_matrix()
+			reduced = private$reduce_design_matrix_for_quantile(X_full, reuse_factorizations = FALSE)
+			X_fit = reduced$X
+			j_treat = reduced$j_treat
+			if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			dat = as.data.frame(X_fit)
+			dat$y__ = private$y
+			fit = tryCatch(
+				suppressWarnings(quantreg::rq(y__ ~ . - 1, tau = private$tau, data = dat, weights = row_weights)),
+				error = function(e) NULL
+			)
+			coef_vec = tryCatch(as.numeric(stats::coef(fit)), error = function(e) NULL)
+			if (is.null(coef_vec) || length(coef_vec) < j_treat || !is.finite(coef_vec[j_treat])) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			private$cached_values$beta_hat_T = as.numeric(coef_vec[j_treat])
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$cached_values$full_coefficients = stats::setNames(coef_vec, colnames(X_fit))
+			private$cached_values$beta_hat_T
+		},
 		#' @description Computes an approximate confidence interval for the treatment effect.
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.

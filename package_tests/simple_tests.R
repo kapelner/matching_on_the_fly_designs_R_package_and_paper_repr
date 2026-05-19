@@ -139,10 +139,10 @@ run_tests_for_response("incidence", list(
   list(InferenceIncidBinomialIdentityRiskDiff, model_formula = ~ .),
   list(InferenceIncidGCompRiskDiff, model_formula = ~ .),
   list(InferenceIncidGCompRiskRatio, model_formula = ~ .),
-  list(InferenceIncidKKClogitIVWC, model_formula = ~ .),
-  list(InferenceIncidKKClogitOneLik, model_formula = ~ .),
+  list(InferenceIncidKKCondLogitIVWC, model_formula = ~ .),
+  list(InferenceIncidKKCondLogitOneLik, model_formula = ~ .),
   list(InferenceIncidKKGEE, model_formula = ~ .),
-  list(InferenceIncidKKGLMM, model_formula = ~ .)
+  list(InferenceIncidKKCondLogitPlusGLMMOneLik, model_formula = ~ .)
 ))
 
 ##### response_type = proportion
@@ -158,15 +158,14 @@ run_tests_for_response("proportion", list(
 ##### response_type = count
 run_tests_for_response("count", list(
   list(InferenceCountPoisson, model_formula = ~ .),
-  list(InferenceCountNegBin, model_formula = ~ .),
-  list(InferenceCountKKCPoissonIVWC, model_formula = ~ .)
+  list(InferenceCountNegBin, model_formula = ~ .)
 ))
 
 ##### response_type = survival
 run_tests_for_response("survival", list(
   InferenceSurvivalLogRank,
   list(InferenceSurvivalCoxPHRegr, model_formula = ~ .),
-  list(InferenceSurvivalKKLWACoxIVWC, model_formula = ~ .)
+  list(InferenceSurvivalKKLWACoxPHIVWC, model_formula = ~ .)
 ))
 
 ##### response_type = ordinal

@@ -4,28 +4,26 @@
 \alias{InferenceContinKKRobustRegrOneLik}
 \title{Robust-Regression Combined-Likelihood Inference for KK Designs}
 \description{
-Fits a single stacked robust regression over matched-pair differences and
-reservoir observations for KK matching-on-the-fly designs with continuous
-responses, using the treatment indicator and, optionally, all recorded
-covariates as predictors.
+Robust-Regression Combined-Likelihood Inference for KK Designs
+
+Robust-Regression Combined-Likelihood Inference for KK Designs
 }
-\examples{
-\donttest{
-seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'continuous')
-for (i in 1:10) {
-  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
-}
-seq_des$add_all_subject_responses(rnorm(10))
-inf = InferenceContinKKRobustRegrOneLik$new(seq_des)
-inf$compute_estimate()
-}
+\details{
+Fits a single stacked robust regression over matched-pair differences and reservoir
+observations for KK matching-on-the-fly designs with continuous responses.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{\link[EDI:InferenceAbstractKKRobustRegrOneLik]{EDI::InferenceAbstractKKRobustRegrOneLik}} -> \code{InferenceContinKKRobustRegrOneLik}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{EDI::InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{\link[EDI:InferenceKKPassThroughCompound]{EDI::InferenceKKPassThroughCompound}} -> \code{InferenceContinKKRobustRegrOneLik}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceContinKKRobustRegrOneLik-new}{\code{InferenceContinKKRobustRegrOneLik$new()}}
+\item \href{#method-InferenceContinKKRobustRegrOneLik-compute_estimate}{\code{InferenceContinKKRobustRegrOneLik$compute_estimate()}}
+\item \href{#method-InferenceContinKKRobustRegrOneLik-compute_estimate_with_bootstrap_weights}{\code{InferenceContinKKRobustRegrOneLik$compute_estimate_with_bootstrap_weights()}}
+\item \href{#method-InferenceContinKKRobustRegrOneLik-compute_asymp_confidence_interval}{\code{InferenceContinKKRobustRegrOneLik$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceContinKKRobustRegrOneLik-compute_asymp_two_sided_pval}{\code{InferenceContinKKRobustRegrOneLik$compute_asymp_two_sided_pval()}}
+\item \href{#method-InferenceContinKKRobustRegrOneLik-duplicate}{\code{InferenceContinKKRobustRegrOneLik$duplicate()}}
 \item \href{#method-InferenceContinKKRobustRegrOneLik-clone}{\code{InferenceContinKKRobustRegrOneLik$clone()}}
 }
 }
@@ -46,6 +44,7 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
@@ -55,7 +54,6 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_estimate_with_bootstrap_weights"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_estimate_with_bootstrap_weights'><code>EDI::InferenceBayesianBootstrap$compute_estimate_with_bootstrap_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="approximate_jackknife_distribution_beta_hat_T"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>EDI::InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_bias_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>EDI::InferenceJackknife$compute_jackknife_bias_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_corrected_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_corrected_estimate'><code>EDI::InferenceJackknife$compute_jackknife_corrected_estimate()</code></a></span></li>
@@ -84,14 +82,157 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_confidence_interval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_two_sided_pval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceKKPassThroughCompound" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceKKPassThroughCompound.html#method-InferenceKKPassThroughCompound-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceKKPassThroughCompound$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKRobustRegrOneLik" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAbstractKKRobustRegrOneLik.html#method-InferenceAbstractKKRobustRegrOneLik-compute_asymp_confidence_interval'><code>EDI::InferenceAbstractKKRobustRegrOneLik$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKRobustRegrOneLik" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAbstractKKRobustRegrOneLik.html#method-InferenceAbstractKKRobustRegrOneLik-compute_asymp_two_sided_pval'><code>EDI::InferenceAbstractKKRobustRegrOneLik$compute_asymp_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKRobustRegrOneLik" data-id="compute_estimate"><a href='../../EDI/html/InferenceAbstractKKRobustRegrOneLik.html#method-InferenceAbstractKKRobustRegrOneLik-compute_estimate'><code>EDI::InferenceAbstractKKRobustRegrOneLik$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKRobustRegrOneLik" data-id="duplicate"><a href='../../EDI/html/InferenceAbstractKKRobustRegrOneLik.html#method-InferenceAbstractKKRobustRegrOneLik-duplicate'><code>EDI::InferenceAbstractKKRobustRegrOneLik$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAbstractKKRobustRegrOneLik" data-id="initialize"><a href='../../EDI/html/InferenceAbstractKKRobustRegrOneLik.html#method-InferenceAbstractKKRobustRegrOneLik-initialize'><code>EDI::InferenceAbstractKKRobustRegrOneLik$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceContinKKRobustRegrOneLik-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrOneLik-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKRobustRegrOneLik$new(
+  des_obj,
+  model_formula = NULL,
+  method = "MM",
+  maxit = NULL,
+  acc = NULL,
+  start_with_ols = TRUE,
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{method}}{Robust-regression fitting method for `MASS::rlm`; one of `"M"` or `"MM"`.}
+
+\item{\code{maxit}}{Maximum number of robust-regression iterations. If `NULL`, a
+data-adaptive default is chosen at fit time.}
+
+\item{\code{acc}}{Convergence tolerance for `MASS::rlm`. If `NULL`, a
+data-adaptive default is chosen at fit time.}
+
+\item{\code{start_with_ols}}{Whether to compute an OLS warm start and pass it to `MASS::rlm`
+when the fit method honors `init`. This affects the `M` path only; `MM`
+uses its own LQS-based start. Default `TRUE`.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceContinKKRobustRegrOneLik-compute_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrOneLik-compute_estimate}{}}}
+\subsection{Method \code{compute_estimate()}}{
+Returns the combined robust-regression estimate of the treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKRobustRegrOneLik$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations and use
+the faster \code{"M"} robust estimator regardless of the \code{method}
+argument passed at construction time.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceContinKKRobustRegrOneLik-compute_estimate_with_bootstrap_weights"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrOneLik-compute_estimate_with_bootstrap_weights}{}}}
+\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Recomputes the combined robust-regression estimate under
+  Bayesian-bootstrap weights.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKRobustRegrOneLik$compute_estimate_with_bootstrap_weights(
+  subject_or_block_weights,
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
+bootstrap weights.}
+
+\item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
+estimate.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceContinKKRobustRegrOneLik-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrOneLik-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes the approximate confidence interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKRobustRegrOneLik$compute_asymp_confidence_interval(
+  alpha = 0.05
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 -
+\code{alpha}. The default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceContinKKRobustRegrOneLik-compute_asymp_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrOneLik-compute_asymp_two_sided_pval}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes the approximate p-value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKRobustRegrOneLik$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. For any treatment effect at all this
+is set to zero (the default).}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceContinKKRobustRegrOneLik-duplicate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrOneLik-duplicate}{}}}
+\subsection{Method \code{duplicate()}}{
+Duplicate
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKRobustRegrOneLik$duplicate(
+  verbose = FALSE,
+  make_fork_cluster = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{verbose}}{A flag indicating whether messages should be displayed.}
+
+\item{\code{make_fork_cluster}}{Whether the duplicate should be allowed to create a fork cluster.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKRobustRegrOneLik-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrOneLik-clone}{}}}

@@ -43,6 +43,28 @@ InferenceOrdinalPartialProportionalOddsRegr = R6::R6Class(
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Recomputes the partial-proportional-odds treatment estimate
+		#'   under Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Subject-, block-, cluster-, or matched-set
+		#'   bootstrap weights.
+		#' @param estimate_only If \code{TRUE}, compute only the weighted point
+		#'   estimate.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			if (weights_are_effectively_constant(row_weights)) {
+				beta_hat_T = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+				if (is.finite(beta_hat_T)) {
+					private$cached_values$beta_hat_T = beta_hat_T
+					private$cached_values$s_beta_hat_T = NA_real_
+					return(private$cached_values$beta_hat_T)
+				}
+			}
+			X_cov = private$ppo_covariate_matrix()
+			fit = private$fit_partial_proportional_odds_from_covariates_weighted(X_cov, row_weights)
+			private$cached_values$beta_hat_T = if (is.null(fit)) NA_real_ else as.numeric(fit$beta)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$beta_hat_T
+		},
 
 		#' @description Compute a Wald-style confidence interval for the treatment effect. If the
 		#' model-based standard error is unavailable, falls back to the bootstrap
@@ -261,6 +283,40 @@ InferenceOrdinalPartialProportionalOddsRegr = R6::R6Class(
 
 			NULL
 		},
+		fit_partial_proportional_odds_from_covariates_weighted = function(X_cov, row_weights){
+			covar_names = colnames(X_cov)
+			if (is.null(covar_names)) covar_names = character(0)
+			nonparallel_covars = intersect(private$nonparallel, covar_names)
+			parallel_covars = setdiff(covar_names, nonparallel_covars)
+			if (length(nonparallel_covars) == 0){
+				fit = private$fit_fast_proportional_odds_weighted(X_cov, row_weights)
+				if (!is.null(fit)) return(fit)
+			}
+			dat = data.frame(
+				y = ordered(private$y, levels = sort(unique(private$y))),
+				treatment = private$w,
+				as.data.frame(X_cov, check.names = FALSE),
+				.bootstrap_weight__ = as.numeric(row_weights),
+				check.names = FALSE
+			)
+			ok = is.finite(dat$.bootstrap_weight__) & dat$.bootstrap_weight__ > 0
+			dat = dat[ok, , drop = FALSE]
+			if (nrow(dat) == 0L || nlevels(dat$y) < 2) return(NULL)
+			fit = private$fit_vgam_weighted(dat, parallel_covars, nonparallel_covars)
+			if (!is.null(fit)) return(fit)
+			fit = private$fit_clm_weighted(dat, parallel_covars, nonparallel_covars)
+			if (!is.null(fit)) return(fit)
+			fit = private$fit_polr_weighted(dat, parallel_covars, nonparallel_covars)
+			if (!is.null(fit)) return(fit)
+			sur = weighted_ordinal_bootstrap_surrogate_fit(
+				X = cbind(treatment = dat$treatment, as.matrix(dat[, setdiff(colnames(dat), c("y", "treatment", ".bootstrap_weight__")), drop = FALSE])),
+				y = as.integer(dat$y),
+				row_weights = dat$.bootstrap_weight__,
+				method = "logistic"
+			)
+			if (is.null(sur)) return(NULL)
+			list(beta = as.numeric(sur$beta_hat), se = NA_real_)
+		},
 
 		fit_fast_proportional_odds = function(X_cov){
 			X_fit = cbind(treatment = private$w, X_cov)
@@ -291,6 +347,31 @@ InferenceOrdinalPartialProportionalOddsRegr = R6::R6Class(
 			}
 
 			list(beta = as.numeric(res$b[1]), se = se_beta)
+		},
+		fit_fast_proportional_odds_weighted = function(X_cov, row_weights){
+			X_fit = cbind(treatment = private$w, X_cov)
+			if (is.null(dim(X_fit))){
+				X_fit = matrix(X_fit, ncol = 1)
+				colnames(X_fit) = "treatment"
+			}
+			ok = is.finite(row_weights) & row_weights > 0 & is.finite(as.numeric(private$y))
+			if (!any(ok)) return(NULL)
+			X_fit = X_fit[ok, , drop = FALSE]
+			y_fit = as.numeric(private$y[ok])
+			w_fit = as.numeric(row_weights[ok])
+			start_len = ncol(X_fit) + length(sort(unique(y_fit))) - 1L
+			res = tryCatch(
+				fast_ordinal_regression_weighted_cpp(
+					X = X_fit,
+					y = y_fit,
+					weights = w_fit,
+					warm_start_params = private$get_fit_warm_start_for_length("params", start_len),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len)
+				),
+				error = function(e) NULL
+			)
+			if (is.null(res) || length(res$b) < 1 || !is.finite(res$b[1])) return(NULL)
+			list(beta = as.numeric(res$b[1]), se = NA_real_)
 		},
 
 		main_formula = function(term_names){
@@ -344,6 +425,29 @@ InferenceOrdinalPartialProportionalOddsRegr = R6::R6Class(
 				vcov_getter = VGAM::vcov
 			)
 		},
+		fit_vgam_weighted = function(dat, parallel_covars, nonparallel_covars){
+			if (!check_package_installed("VGAM")) return(NULL)
+			all_terms = unique(c("treatment", parallel_covars, nonparallel_covars))
+			par_terms = unique(c("treatment", parallel_covars))
+			mod = tryCatch(
+				suppressWarnings(
+					VGAM::vglm(
+						formula = private$main_formula(all_terms),
+						family = VGAM::cumulative(link = "logitlink", parallel = private$parallel_formula(par_terms)),
+						data = dat,
+						weights = .bootstrap_weight__,
+						trace = FALSE,
+						model = FALSE
+					)
+				),
+				error = function(e) NULL
+			)
+			if (is.null(mod)) return(NULL)
+			out = private$extract_common_treatment_fit(mod, coef_getter = VGAM::Coef, vcov_getter = VGAM::vcov)
+			if (is.null(out)) return(NULL)
+			out$se = NA_real_
+			out
+		},
 
 		fit_clm = function(dat, parallel_covars, nonparallel_covars){
 			if (!check_package_installed("ordinal")) return(NULL)
@@ -375,6 +479,29 @@ InferenceOrdinalPartialProportionalOddsRegr = R6::R6Class(
 				vcov_getter = stats::vcov
 			)
 		},
+		fit_clm_weighted = function(dat, parallel_covars, nonparallel_covars){
+			if (!check_package_installed("ordinal")) return(NULL)
+			main_terms = unique(c("treatment", parallel_covars))
+			nominal_form = if (length(nonparallel_covars) == 0) NULL else stats::reformulate(termlabels = nonparallel_covars)
+			mod = tryCatch(
+				suppressWarnings(
+					ordinal::clm(
+						formula = private$main_formula(main_terms),
+						nominal = nominal_form,
+						data = dat,
+						link = "logit",
+						weights = dat$.bootstrap_weight__,
+						Hess = FALSE
+					)
+				),
+				error = function(e) NULL
+			)
+			if (is.null(mod)) return(NULL)
+			out = private$extract_common_treatment_fit(mod, coef_getter = stats::coef, vcov_getter = stats::vcov)
+			if (is.null(out)) return(NULL)
+			out$se = NA_real_
+			out
+		},
 
 		fit_polr = function(dat, parallel_covars, nonparallel_covars){
 			if (length(nonparallel_covars) > 0) return(NULL)
@@ -397,6 +524,27 @@ InferenceOrdinalPartialProportionalOddsRegr = R6::R6Class(
 				coef_getter = stats::coef,
 				vcov_getter = stats::vcov
 			)
+		},
+		fit_polr_weighted = function(dat, parallel_covars, nonparallel_covars){
+			if (length(nonparallel_covars) > 0) return(NULL)
+			main_terms = unique(c("treatment", parallel_covars))
+			mod = tryCatch(
+				suppressWarnings(
+					MASS::polr(
+						formula = private$main_formula(main_terms),
+						data = dat,
+						method = "logistic",
+						weights = dat$.bootstrap_weight__,
+						Hess = FALSE
+					)
+				),
+				error = function(e) NULL
+			)
+			if (is.null(mod)) return(NULL)
+			out = private$extract_common_treatment_fit(mod, coef_getter = stats::coef, vcov_getter = stats::vcov)
+			if (is.null(out)) return(NULL)
+			out$se = NA_real_
+			out
 		}
 	)
 )

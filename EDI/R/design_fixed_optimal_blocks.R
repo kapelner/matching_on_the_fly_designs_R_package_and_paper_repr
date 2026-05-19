@@ -14,6 +14,9 @@
 DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 	inherit = DesignFixed,
 	public = list(
+			#' @description Returns TRUE: simulation framework can pre-generate all
+			#'   treatment vectors for a cell (clustering is paid once in main process).
+			supports_batch_w_pregeneration = function() TRUE,
 			#' @description Initialize a fixed optimal-blocks design.
 			#' @param B Number of blocks to form. If omitted and \code{n} is supplied,
 			#'   defaults to \code{floor(sqrt(n))}, with a minimum of 1.
@@ -43,6 +46,7 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 			#' @param verbose Whether to print progress messages.
 			#' @param missingness_method How to handle missing values in covariates.
 			#' @param model_formula A formula object.
+			#' @param seed Integer seed for reproducibility.
 			#' @return A new \code{DesignFixedOptimalBlocks} object.
 			initialize = function(
 				B = NULL,
@@ -54,7 +58,8 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 				n = NULL,
 				verbose = FALSE,
 				missingness_method = "impute",
-				model_formula = ~ .
+				model_formula = ~ .,
+				seed = NULL
 			) {
 				if (should_run_asserts()) {
 					assertChoice(method, c("ompr", "greedy", "K-way"))
@@ -83,7 +88,7 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 				if (should_run_asserts()) {
 					assertCount(B, positive = TRUE)
 				}
-				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 				private$blocking_capable = TRUE
 				private$B      = as.integer(B)
 				private$method = method
@@ -98,6 +103,7 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 		#' @param r Number of assignment vectors to draw.
 		#' @return A numeric matrix with one assignment vector per column.
 		draw_ws_according_to_design = function(r = 100){
+			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				self$assert_all_subjects_arrived()
 			}

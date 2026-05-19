@@ -3,7 +3,7 @@ library(testthat)
 library(EDI)
 library(data.table)
 
-test_that("InferenceIncidenceExactBinomial matches binom.test for DesignFixedBinaryMatch", {
+test_that("InferenceIncidExactBinomial matches binom.test for DesignFixedBinaryMatch", {
 	skip_if_not_installed("GreedyExperimentalDesign")
 
 	x_dat <- data.table(
@@ -29,7 +29,7 @@ test_that("InferenceIncidenceExactBinomial matches binom.test for DesignFixedBin
 	}
 	des$add_all_subject_responses(y)
 
-	inf <- InferenceIncidenceExactBinomial$new(des, verbose = FALSE)
+	inf <- InferenceIncidExactBinomial$new(des, verbose = FALSE)
 	ref <- stats::binom.test(3L, 4L, p = 0.5)
 
 	expect_equal(inf$compute_estimate(), log((3 + 0.5) / (1 + 0.5)), tolerance = 1e-12)
@@ -37,7 +37,7 @@ test_that("InferenceIncidenceExactBinomial matches binom.test for DesignFixedBin
 	expect_equal(unname(inf$compute_exact_confidence_interval(alpha = 0.05)), stats::qlogis(ref$conf.int), tolerance = 1e-12)
 })
 
-test_that("InferenceIncidenceExactBinomial ignores KK reservoir data", {
+test_that("InferenceIncidExactBinomial ignores KK reservoir data", {
 	x_dat <- data.table(x1 = c(-3, 3, -3.01, 3.01, 0, 0.01))
 	build_inf <- function(reservoir_vals) {
 		des <- DesignSeqOneByOneKK14$new(
@@ -67,7 +67,7 @@ test_that("InferenceIncidenceExactBinomial ignores KK reservoir data", {
 		reservoir_idx <- which(m == 0L)
 		y[reservoir_idx] <- reservoir_vals
 		des$add_all_subject_responses(y)
-		InferenceIncidenceExactBinomial$new(des, verbose = FALSE)
+		InferenceIncidExactBinomial$new(des, verbose = FALSE)
 	}
 
 	inf_a <- build_inf(c(1L, 0L))
@@ -81,7 +81,7 @@ test_that("InferenceIncidenceExactBinomial ignores KK reservoir data", {
 	)
 })
 
-test_that("InferenceIncidenceExactBinomial rejects unsupported designs", {
+test_that("InferenceIncidExactBinomial rejects unsupported designs", {
 	des <- DesignSeqOneByOneBernoulli$new(n = 10, response_type = "incidence", verbose = FALSE)
 	for (i in seq_len(10)) {
 		des$add_one_subject_to_experiment_and_assign(data.table(x1 = i))
@@ -89,7 +89,7 @@ test_that("InferenceIncidenceExactBinomial rejects unsupported designs", {
 	des$add_all_subject_responses(rep(c(0L, 1L), length.out = 10))
 
 	expect_error(
-		InferenceIncidenceExactBinomial$new(des, verbose = FALSE),
+		InferenceIncidExactBinomial$new(des, verbose = FALSE),
 		"Exact binomial incidence inference requires DesignFixedBinaryMatch or KK matching designs"
 	)
 })

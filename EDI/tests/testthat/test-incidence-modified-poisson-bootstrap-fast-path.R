@@ -1,7 +1,7 @@
 test_that("Modified Poisson reusable bootstrap worker matches generic bootstrap path", {
-	SlowInferenceIncidMultiModifiedPoisson = R6::R6Class(
-		"SlowInferenceIncidMultiModifiedPoisson",
-		inherit = InferenceIncidMultiModifiedPoisson,
+	SlowInferenceIncidModifiedPoisson = R6::R6Class(
+		"SlowInferenceIncidModifiedPoisson",
+		inherit = InferenceIncidModifiedPoisson,
 		private = list(
 			supports_reusable_bootstrap_worker = function(){
 				FALSE
@@ -23,8 +23,8 @@ test_that("Modified Poisson reusable bootstrap worker matches generic bootstrap 
 	y = stats::rbinom(n, 1, stats::plogis(linpred))
 	des$add_all_subject_responses(y)
 
-	fast_inf = InferenceIncidMultiModifiedPoisson$new(des, verbose = FALSE)
-	slow_inf = SlowInferenceIncidMultiModifiedPoisson$new(des, verbose = FALSE)
+	fast_inf = InferenceIncidModifiedPoisson$new(des, verbose = FALSE)
+	slow_inf = SlowInferenceIncidModifiedPoisson$new(des, verbose = FALSE)
 	fast_inf$num_cores = 1L
 	slow_inf$num_cores = 1L
 

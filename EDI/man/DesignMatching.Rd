@@ -21,6 +21,7 @@ des = DesignMatching$new(n = 6, response_type = "continuous")
 \item \href{#method-DesignMatching-is_matching_design}{\code{DesignMatching$is_matching_design()}}
 \item \href{#method-DesignMatching-assert_matching_design}{\code{DesignMatching$assert_matching_design()}}
 \item \href{#method-DesignMatching-get_matching_cluster_ids}{\code{DesignMatching$get_matching_cluster_ids()}}
+\item \href{#method-DesignMatching-draw_ws_according_to_design}{\code{DesignMatching$draw_ws_according_to_design()}}
 \item \href{#method-DesignMatching-clone}{\code{DesignMatching$clone()}}
 }
 }
@@ -109,6 +110,26 @@ Return cluster IDs implied by the current matching structure.
 }
 \subsection{Returns}{
 Integer cluster IDs for matched pairs plus singleton reservoir units.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DesignMatching-draw_ws_according_to_design"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignMatching-draw_ws_according_to_design}{}}}
+\subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DesignMatching$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
 }
 }
 \if{html}{\out{<hr>}}

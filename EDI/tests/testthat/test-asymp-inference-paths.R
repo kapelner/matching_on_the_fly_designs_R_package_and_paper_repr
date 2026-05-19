@@ -217,6 +217,6 @@ test_that("KK Design Incidence Asymp paths", {
 		des$add_one_subject_response(i, y_i, 1)
 	}
 	
-	inf <- InferenceIncidKKClogitOneLik$new(des)
-	test_all_asymp_paths(inf, "KK Clogit OneLik")
+	inf <- InferenceIncidKKCondLogitOneLik$new(des)
+	test_all_asymp_paths(inf, "KK CondLogit OneLik")
 })

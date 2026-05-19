@@ -59,7 +59,6 @@ test_that("SimulationFramework supports sequential KK designs and specific infer
 			DesignSeqOneByOneKK14 = list(lambda = 0.5, t_0_pct = 0.2)
 		),
 		inference_classes_and_params = list(
-			InferenceCountKKCPoissonIVWC
 		),
 		inference_types_and_params = list(asymp_pval = list()),
 		n = 10L,

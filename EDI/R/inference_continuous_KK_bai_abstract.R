@@ -11,7 +11,45 @@
 InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
-	public = list(
+	public = utils::modifyList(
+		make_bai_bayesian_bootstrap_public_overrides(),
+		list(
+			#' @description Gated off for Bai.
+			#' @param subject_or_block_weights weights.
+			#' @param estimate_only flag.
+			compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
+				stop_bayesian_bootstrap_for_bai(self)
+			},
+			#' @description Gated off for Bai.
+			#' @param B replicates.
+			#' @param show_progress flag.
+			#' @param debug flag.
+			#' @param weighting_unit_type type.
+			approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL) {
+				stop_bayesian_bootstrap_for_bai(self)
+			},
+			#' @description Gated off for Bai.
+			#' @param delta null.
+			#' @param B replicates.
+			#' @param type type.
+			#' @param na.rm flag.
+			#' @param show_progress flag.
+			#' @param min_number_usable_samples count.
+			#' @param weighting_unit_type type.
+			compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+				stop_bayesian_bootstrap_for_bai(self)
+			},
+			#' @description Gated off for Bai.
+			#' @param alpha level.
+			#' @param B replicates.
+			#' @param type type.
+			#' @param na.rm flag.
+			#' @param show_progress flag.
+			#' @param min_number_usable_samples count.
+			#' @param weighting_unit_type type.
+			compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+				stop_bayesian_bootstrap_for_bai(self)
+			},
 	#' @description Initialize a sequential experimental design estimation and test object after the
 	#' sequential design is completed.
 		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
@@ -167,7 +205,7 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		 -abs(private$cached_values$beta_hat_T / private$cached_values$s_beta_hat_T)
 		) #approximate by using N(0, 1) distribution
 	}
-	),
+	)),
 	private = list(
 	convex_flag = NULL,
 	compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps) {

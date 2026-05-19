@@ -11,11 +11,11 @@
 #'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
 #' }
 #' seq_des$add_all_subject_responses(runif(10))
-#' inf = InferenceSurvivalKKLWACoxIVWC$new(seq_des)
+#' inf = InferenceSurvivalKKLWACoxPHIVWC$new(seq_des)
 #' inf$compute_estimate()
 #' }
 #' @export
-InferenceSurvivalKKLWACoxIVWC = R6::R6Class("InferenceSurvivalKKLWACoxIVWC",
+InferenceSurvivalKKLWACoxPHIVWC = R6::R6Class("InferenceSurvivalKKLWACoxPHIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKLWACoxIVWC,
 	public = list(
@@ -46,11 +46,11 @@ InferenceSurvivalKKLWACoxIVWC = R6::R6Class("InferenceSurvivalKKLWACoxIVWC",
 #'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
 #' }
 #' seq_des$add_all_subject_responses(runif(10))
-#' inf = InferenceSurvivalKKLWACoxOneLik$new(seq_des)
+#' inf = InferenceSurvivalKKLWACoxPHOneLik$new(seq_des)
 #' inf$compute_estimate()
 #' }
 #' @export
-InferenceSurvivalKKLWACoxOneLik = R6::R6Class("InferenceSurvivalKKLWACoxOneLik",
+InferenceSurvivalKKLWACoxPHOneLik = R6::R6Class("InferenceSurvivalKKLWACoxPHOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKLWACoxOneLik,
 	public = list(

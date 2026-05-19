@@ -17,6 +17,25 @@ InferenceMixinKKGLMMShared = list(
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			if (weights_are_effectively_constant(row_weights)) {
+				beta_hat_T = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+				if (is.finite(beta_hat_T)) {
+					private$cached_values$beta_hat_T = beta_hat_T
+					private$cached_values$s_beta_hat_T = NA_real_
+					private$cached_values$df = Inf
+					private$cached_values$summary_table = NULL
+					return(private$cached_values$beta_hat_T)
+				}
+			}
+			beta_hat_T = private$compute_weighted_glmm_bootstrap_estimate(row_weights)
+			private$cached_values$beta_hat_T = as.numeric(beta_hat_T)[1L]
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = Inf
+			private$cached_values$summary_table = NULL
+			private$cached_values$beta_hat_T
+		},
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -159,8 +178,15 @@ InferenceMixinKKGLMMShared = list(
 			reservoir_idx = which(group_id == 0L)
 			if (length(reservoir_idx) > 0L)
 				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
+			if (!check_package_installed("glmmTMB")){
+				return(NULL)
+			}
 			glmm_control = glmmTMB::glmmTMBControl(parallel = self$num_cores)
-			dat = data.frame(y = private$y, predictors_df, group_id = factor(group_id))
+			y_dat = private$y
+			if (identical(private$glmm_response_type(), "ordinal")) {
+				y_dat = ordered(y_dat, levels = sort(unique(y_dat)))
+			}
+			dat = data.frame(y = y_dat, predictors_df, group_id = factor(group_id))
 			fixed_terms = setdiff(colnames(dat), c("y", "group_id"))
 			glmm_formula = stats::as.formula(paste("y ~", paste(c(fixed_terms, "(1 | group_id)"), collapse = " + ")))
 			tryCatch({
@@ -179,12 +205,69 @@ InferenceMixinKKGLMMShared = list(
 				NULL
 			})
 		},
+		fit_weighted_glmm_on_data = function(predictors_df, row_weights, se = FALSE){
+			if (!check_package_installed("glmmTMB")){
+				return(NULL)
+			}
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
+			m_vec[is.na(m_vec)] = 0L
+			group_id = m_vec
+			reservoir_idx = which(group_id == 0L)
+			if (length(reservoir_idx) > 0L) {
+				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
+			}
+			ok = is.finite(row_weights) & row_weights > 0
+			if (identical(private$glmm_response_type(), "ordinal")) {
+				ok = ok & is.finite(private$y)
+			} else {
+				ok = ok & is.finite(as.numeric(private$y))
+			}
+			if (!any(ok)) return(NULL)
+			y_dat = private$y
+			if (identical(private$glmm_response_type(), "ordinal")) {
+				y_dat = ordered(y_dat, levels = sort(unique(y_dat[ok])))
+			}
+			dat = data.frame(
+				y = y_dat[ok],
+				predictors_df[ok, , drop = FALSE],
+				group_id = factor(group_id[ok]),
+				.bootstrap_weight__ = as.numeric(row_weights[ok])
+			)
+			fixed_terms = setdiff(colnames(dat), c("y", "group_id", ".bootstrap_weight__"))
+			glmm_formula = stats::as.formula(paste("y ~", paste(c(fixed_terms, "(1 | group_id)"), collapse = " + ")))
+			glmm_control = glmmTMB::glmmTMBControl(parallel = self$num_cores)
+			tryCatch({
+				utils::capture.output(mod <- suppressMessages(suppressWarnings(
+					glmmTMB::glmmTMB(
+						glmm_formula,
+						family = private$glmm_family(),
+						data = dat,
+						weights = .bootstrap_weight__,
+						control = glmm_control,
+						se = se
+					)
+				)))
+				mod
+			}, error = function(e) NULL)
+		},
 		fit_glmm = function(se = TRUE){
 			for (predictors_df in private$glmm_predictors_df_candidates()){
 				mod = private$fit_glmm_on_data(predictors_df, se = se)
 				if (private$.is_usable_glmm_fit(mod, se)) return(mod)
 			}
 			NULL
+		},
+		compute_weighted_glmm_bootstrap_estimate = function(row_weights){
+			for (predictors_df in private$glmm_predictors_df_candidates()) {
+				mod = private$fit_weighted_glmm_on_data(predictors_df, row_weights = row_weights, se = FALSE)
+				if (!private$.is_usable_glmm_fit(mod, se = FALSE)) next
+				beta = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
+				if (!is.null(beta) && "w" %in% names(beta) && is.finite(beta["w"])) {
+					return(as.numeric(beta["w"]))
+				}
+			}
+			NA_real_
 		},
 		.is_usable_glmm_fit = function(mod, se){
 			if (is.null(mod)) return(FALSE)

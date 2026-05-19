@@ -131,7 +131,8 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 			b_null = as.numeric(null_fit$b)
 			eta    = as.numeric(spec$X %*% b_null)
 			mu     = pmin(pmax(1 / (1 + exp(-eta)), 0), 1)
-			y_sim  = as.numeric(rbinom(length(mu), 1L, mu))
+			y_sim  = private$simulate_param_boot_bernoulli_y(mu)
+			if (is.null(y_sim)) return(NULL)
 			X_fit  = spec$X
 			j      = spec$j
 			

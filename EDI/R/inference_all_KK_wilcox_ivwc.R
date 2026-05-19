@@ -26,7 +26,7 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 		#' @param bootstrap_type Optional resampling scheme.
 		#' @return A numeric vector of bootstrap estimates.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
-			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
+			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
 		},
 		#' @description Override to avoid O(n^2) per-resample HL computation during the bootstrap warm-start
 		#' inside compute_rand_confidence_interval. The asymptotic MLE CI is a perfectly

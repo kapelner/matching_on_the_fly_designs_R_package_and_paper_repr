@@ -71,6 +71,7 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 		#' \code{TRUE}.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
+		#' @param seed Integer seed for reproducibility.
 		#' @param ... Extra arguments passed to the \code{DesignSeqOneByOneKK14} superclass.
 		#'
 		#' @return  A new `DesignSeqOneByOneKK21` object
@@ -86,7 +87,7 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 			prob_T = 0.5,
 			include_is_missing_as_a_new_feature = TRUE,
 			n = NULL,
-			
+
 			verbose = FALSE,
 			lambda = NULL,
 			t_0_pct = NULL,
@@ -99,9 +100,10 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 			ordinal_use_speedup = TRUE,
 			missingness_method = "impute",
 			model_formula = ~ .,
+			seed = NULL,
 			...
 		){
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p, missingness_method, model_formula, ...)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, lambda, t_0_pct, morrison, p, missingness_method, model_formula, seed = seed, ...)
 			if (is.null(num_boot)){
 				num_boot = 500
 			} else {

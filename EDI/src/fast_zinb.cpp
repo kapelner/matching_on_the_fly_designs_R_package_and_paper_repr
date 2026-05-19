@@ -13,6 +13,7 @@
 #include <RcppEigen.h>
 #include <Rmath.h>
 #include <cmath>
+#include <unordered_map>
 
 using namespace Rcpp;
 
@@ -37,12 +38,38 @@ class ZeroInflatedNegBin {
     const Eigen::MatrixXd m_Xz;
     const int m_n, m_pc, m_pz;
 
+    // Precomputed at construction from fixed data y.
+    // m_y_slot[i]: index into m_distinct_y for obs i (or -1 if y_i == 0).
+    // m_distinct_y: sorted unique positive y values (as double).
+    // m_lgamma_y1: lgamma(y+1) for each entry of m_distinct_y — constant across calls.
+    std::vector<int>    m_y_slot;
+    std::vector<double> m_distinct_y;
+    std::vector<double> m_lgamma_y1;
+
 public:
     ZeroInflatedNegBin(const Eigen::VectorXd& y,
                        const Eigen::MatrixXd& Xc,
                        const Eigen::MatrixXd& Xz)
         : m_y(y), m_Xc(Xc), m_Xz(Xz),
-          m_n(y.size()), m_pc(Xc.cols()), m_pz(Xz.cols()) {}
+          m_n(y.size()), m_pc(Xc.cols()), m_pz(Xz.cols()),
+          m_y_slot(y.size(), -1)
+    {
+        std::unordered_map<int, int> seen;
+        for (int i = 0; i < m_n; ++i) {
+            if (m_y[i] <= 0.0) continue;
+            const int yi_int = static_cast<int>(m_y[i]);
+            auto it = seen.find(yi_int);
+            if (it == seen.end()) {
+                const int slot = static_cast<int>(m_distinct_y.size());
+                seen[yi_int] = slot;
+                m_distinct_y.push_back(static_cast<double>(yi_int));
+                m_lgamma_y1.push_back(R::lgammafn(static_cast<double>(yi_int) + 1.0));
+                m_y_slot[i] = slot;
+            } else {
+                m_y_slot[i] = it->second;
+            }
+        }
+    }
 
     double operator()(const Eigen::VectorXd& par, Eigen::VectorXd& grad) {
         const Eigen::VectorXd bc  = par.head(m_pc);
@@ -55,6 +82,19 @@ public:
 
         grad.setZero(m_pc + m_pz + 1);
 
+        // Hoist theta-only special functions out of the observation loop.
+        const double digamma_theta = R::digamma(theta);
+        const double lgamma_theta  = R::lgammafn(theta);
+
+        // Build per-distinct-y tables for lgamma(y+theta) and digamma(y+theta).
+        const int nd = static_cast<int>(m_distinct_y.size());
+        std::vector<double> lgamma_yptheta(nd), digamma_yptheta(nd);
+        for (int k = 0; k < nd; ++k) {
+            const double ypt = m_distinct_y[k] + theta;
+            lgamma_yptheta[k]  = R::lgammafn(ypt);
+            digamma_yptheta[k] = R::digamma(ypt);
+        }
+
         double nll = 0.0;
         double d_log_theta = 0.0;
 
@@ -62,7 +102,11 @@ public:
             const double mu  = std::exp(std::min(eta_c[i], 700.0));
             const double pi  = sigmoid_zinb(eta_z[i]);
             const double A   = theta + mu;
-            const double p0  = std::pow(theta / A, theta);  // NB prob at y=0
+            // Replace pow(theta/A, theta) with exp(theta*(log_theta - log(A))).
+            // log_theta == log(theta) exactly; reuse log_A for all log(theta/A) terms.
+            const double log_A          = std::log(A);
+            const double log_theta_ov_A = log_theta - log_A;
+            const double p0             = std::exp(theta * log_theta_ov_A);
 
             if (m_y[i] == 0.0) {
                 // q = pi + (1-pi)*p0
@@ -77,22 +121,24 @@ public:
                 const double dz = -(1.0 - p0) * pi * (1.0 - pi) / q;
                 grad.segment(m_pc, m_pz).noalias() += dz * m_Xz.row(i).transpose();
 
-                // d/d log_theta = theta * d/d theta
-                // d p0/d theta = p0 * (log(theta/A) + mu/A)
-                const double dp0_dtheta = p0 * (std::log(theta / A) + mu / A);
+                // d p0/d theta = p0 * (log(theta/A) + mu/A)  — reuses log_theta_ov_A
+                const double dp0_dtheta = p0 * (log_theta_ov_A + mu / A);
                 const double dq_dtheta  = (1.0 - pi) * dp0_dtheta;
                 d_log_theta += -theta * dq_dtheta / q;
 
             } else {
                 // NLL_i = -log(1-pi) - lgamma(y+theta) + lgamma(theta) + lgamma(y+1)
                 //         - theta*log(theta/A) - y*log(mu/A)
-                const double yi = m_y[i];
-                nll += lse_zinb(eta_z[i])   // = -log(1-pi)
-                     - R::lgammafn(yi + theta)
-                     + R::lgammafn(theta)
-                     + R::lgammafn(yi + 1.0)
-                     - theta * std::log(theta / A)
-                     - yi * std::log(mu / A);
+                const int    slot = m_y_slot[i];
+                const double yi   = m_distinct_y[slot];
+                // log(mu/A) = eta_c[i] - log(A)  — reuses log_A
+                const double log_mu_ov_A = eta_c[i] - log_A;
+                nll += lse_zinb(eta_z[i])
+                     - lgamma_yptheta[slot]
+                     + lgamma_theta
+                     + m_lgamma_y1[slot]
+                     - theta * log_theta_ov_A
+                     - yi * log_mu_ov_A;
 
                 // d/d eta_c
                 const double dc = mu * (yi + theta) / A - yi;
@@ -101,9 +147,9 @@ public:
                 // d/d eta_z
                 grad.segment(m_pc, m_pz).noalias() += pi * m_Xz.row(i).transpose();
 
-                // d/d log_theta = theta * (digamma(theta) - digamma(yi+theta) - log(theta/A) + (yi-mu)/A)
-                const double dt = theta * (R::digamma(theta) - R::digamma(yi + theta)
-                                           - std::log(theta / A) + (yi - mu) / A);
+                // d/d log_theta — uses hoisted digamma_theta, tabulated digamma_yptheta
+                const double dt = theta * (digamma_theta - digamma_yptheta[slot]
+                                           - log_theta_ov_A + (yi - mu) / A);
                 d_log_theta += dt;
             }
         }
@@ -123,35 +169,54 @@ public:
         const Eigen::VectorXd eta_c = m_Xc * bc;
         const Eigen::VectorXd eta_z = m_Xz * bz;
 
+        // Hoist theta-only special functions.
+        const double digamma_theta  = R::digamma(theta);
+        const double trigamma_theta = R::trigamma(theta);
+
+        // Build per-distinct-y tables for digamma/trigamma/lgamma(y+theta).
+        const int nd = static_cast<int>(m_distinct_y.size());
+        std::vector<double> digamma_yptheta(nd), trigamma_yptheta(nd);
+        for (int k = 0; k < nd; ++k) {
+            const double ypt      = m_distinct_y[k] + theta;
+            digamma_yptheta[k]  = R::digamma(ypt);
+            trigamma_yptheta[k] = R::trigamma(ypt);
+        }
+
         for (int i = 0; i < m_n; ++i) {
             const double mu = std::exp(std::min(eta_c[i], 700.0));
             const double pi = sigmoid_zinb(eta_z[i]);
             const double A  = theta + mu;
-            const double p0 = std::pow(theta / A, theta);
+            // Replace pow(theta/A, theta) — reuse log_theta = log(theta).
+            const double log_A          = std::log(A);
+            const double log_theta_ov_A = log_theta - log_A;
+            const double p0             = std::exp(theta * log_theta_ov_A);
 
             const Eigen::VectorXd xc = m_Xc.row(i);
             const Eigen::VectorXd xz = m_Xz.row(i);
 
             if (m_y[i] == 0.0) {
                 const double q = std::max(pi + (1.0 - pi) * p0, 1e-300);
-                
+
                 const double dq_dmu = (1.0 - pi) * p0 * (-theta / A);
                 const double dq_detac = dq_dmu * mu;
-                
+
                 const double dpi_detaz = pi * (1.0 - pi);
                 const double dq_detaz = (1.0 - p0) * dpi_detaz;
-                
-                const double dp0_dtheta = p0 * (std::log(theta / A) + mu / A);
+
+                // dp0/dtheta reuses log_theta_ov_A.
+                const double dp0_dtheta = p0 * (log_theta_ov_A + mu / A);
                 const double dq_dtheta = (1.0 - pi) * dp0_dtheta;
                 const double dq_dlogtheta = dq_dtheta * theta;
 
                 const double d2q_dmu2 = (1.0 - pi) * p0 * (theta / (A * A)) * (theta + 1.0);
                 const double d2q_detac2 = d2q_dmu2 * mu * mu + dq_dmu * mu;
-                
+
                 const double d2pi_detaz2 = pi * (1.0 - pi) * (1.0 - 2.0 * pi);
                 const double d2q_detaz2 = (1.0 - p0) * d2pi_detaz2;
-                
-                const double d2p0_dtheta2 = p0 * (std::pow(std::log(theta / A) + mu / A, 2) + 
+
+                // (log(theta/A) + mu/A)^2 reuses log_theta_ov_A.
+                const double tmp = log_theta_ov_A + mu / A;
+                const double d2p0_dtheta2 = p0 * (tmp * tmp +
                                                (1.0 / theta - 2.0 / A + theta / (A * A)));
                 const double d2q_dtheta2 = (1.0 - pi) * d2p0_dtheta2;
                 const double d2q_dlogtheta2 = d2q_dtheta2 * theta * theta + dq_dtheta * theta;
@@ -184,11 +249,16 @@ public:
                 H(total - 1, total - 1) += h_tt;
 
             } else {
-                const double yi = m_y[i];
+                const int    slot = m_y_slot[i];
+                const double yi   = m_distinct_y[slot];
                 const double h_zz = pi * (1.0 - pi);
                 const double h_cc = theta * mu * (yi + theta) / (A * A);
-                const double dnb_dtheta = R::digamma(theta) - R::digamma(yi + theta) - std::log(theta / A) + (yi - mu) / A;
-                const double d2nb_dtheta2 = R::trigamma(theta) - R::trigamma(yi + theta) - 1.0 / theta + 2.0 / A - (yi + theta) / (A * A);
+                // Uses hoisted digamma_theta, trigamma_theta, tabulated y+theta values,
+                // and reuses log_theta_ov_A.
+                const double dnb_dtheta    = digamma_theta  - digamma_yptheta[slot]
+                                             - log_theta_ov_A + (yi - mu) / A;
+                const double d2nb_dtheta2  = trigamma_theta - trigamma_yptheta[slot]
+                                             - 1.0 / theta + 2.0 / A - (yi + theta) / (A * A);
                 const double h_tt = (d2nb_dtheta2 * theta * theta + dnb_dtheta * theta);
                 const double h_ct = (-mu * (yi - mu) / (A * A)) * theta;
 

@@ -19,6 +19,7 @@ DesignSeqOneByOneAtkinson = R6::R6Class("DesignSeqOneByOneAtkinson",
 		#' @param verbose A flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
+		#' @param seed Integer seed for reproducibility.
 		#'
 		#' @return 			A new `DesignSeqOneByOneAtkinson` object
 		#'
@@ -27,12 +28,13 @@ DesignSeqOneByOneAtkinson = R6::R6Class("DesignSeqOneByOneAtkinson",
 						prob_T = 0.5,
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
-						
+
 						verbose = FALSE,
 				missingness_method = "impute",
-				model_formula = ~ .
+				model_formula = ~ .,
+				seed = NULL
 			) {
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 			private$uses_covariates = TRUE
 		},
 		#' @description Assign the next subject to a treatment group

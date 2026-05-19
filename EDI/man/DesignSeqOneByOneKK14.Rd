@@ -96,7 +96,8 @@ Initialize a KK14 sequential experimental design
   morrison = FALSE,
   p = NULL,
   missingness_method = "impute",
-  model_formula = ~.
+  model_formula = ~.,
+  seed = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -125,6 +126,8 @@ Initialize a KK14 sequential experimental design
 \item{\code{missingness_method}}{How to handle missing values in covariates.}
 
 \item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
 }
 \if{html}{\out{</div>}}
 }

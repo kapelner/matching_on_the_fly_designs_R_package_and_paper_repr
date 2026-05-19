@@ -68,39 +68,64 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 		}
 	),
 	private = list(
-		generate_mod = function() stop(class(self)[1], " must implement generate_mod()"),
+		generate_mod = function(estimate_only = FALSE) stop(class(self)[1], " must implement generate_mod()"),
+		# Extract a vcov matrix from a model object. For R model objects (coxph, survreg, glm, etc.)
+		# vcov() is called lazily. For plain lists (Rcpp-backed models), falls back to $vcov.
+		extract_vcov = function(model_output){
+			if (!identical(class(model_output), "list")) {
+				vcov_mat = tryCatch(stats::vcov(model_output), error = function(e) NULL)
+				if (!is.null(vcov_mat)) return(as.matrix(vcov_mat))
+			}
+			model_output$vcov
+		},
+		get_standard_error = function(){
+			private$shared(estimate_only = FALSE)
+			private$cached_values$s_beta_hat_T
+		},
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$summary_table)) return(invisible(NULL))
-			model_output = private$generate_mod(estimate_only = estimate_only) # Implemented by child classes (Weibull, NegBin)
-			private$cached_mod = model_output
-			if (should_run_asserts()) {
-				if (is.null(model_output$coefficients) || (!estimate_only && is.null(model_output$vcov))){
-					stop("Model output (coefficients or vcov) is NULL or invalid from generate_mod().")
+
+			# Fit exactly once; subsequent calls reuse the cached model object.
+			if (is.null(private$cached_mod)) {
+				private$cached_mod = private$generate_mod()
+			}
+			model_output = private$cached_mod
+
+			# Extract coefficients eagerly (cheap; needed for both estimate-only and full paths).
+			if (is.null(private$cached_values$beta_hat_T)) {
+				if (should_run_asserts() && is.null(model_output$coefficients)) {
+					stop("Model output $coefficients is NULL from generate_mod() in ", class(self)[1], ".")
 				}
+				full_coefficients = model_output$coefficients
+				treatment_coef_name = "treatment"
+				if (!treatment_coef_name %in% names(full_coefficients)){
+					treatment_coef_name = names(full_coefficients)[length(full_coefficients)]
+				}
+				private$cached_values$beta_hat_T = as.numeric(full_coefficients[treatment_coef_name])
+				private$cached_values$full_coefficients = full_coefficients
+				private$cached_values$treatment_coef_name_used = treatment_coef_name
 			}
-			full_coefficients = model_output$coefficients
-			treatment_coef_name = "treatment"
-			if (!treatment_coef_name %in% names(full_coefficients)){
-				treatment_coef_name = names(full_coefficients)[length(full_coefficients)]
-			}
-			private$cached_values$beta_hat_T = as.numeric(full_coefficients[treatment_coef_name])
+
 			if (estimate_only) return(invisible(NULL))
-			# Construct summary table (as expected by this class)
-			full_vcov = model_output$vcov
+
+			# Extract vcov lazily — only reached when SE / CI / p-value is actually needed.
+			full_vcov = private$extract_vcov(model_output)
+			if (should_run_asserts() && is.null(full_vcov)) {
+				stop("Could not extract vcov from model output in ", class(self)[1], ".")
+			}
+			full_coefficients = private$cached_values$full_coefficients
+			treatment_coef_name = private$cached_values$treatment_coef_name_used
 			diag_vcov = diag(full_vcov)
-			# Ensure we don't take sqrt of negative numbers
 			full_std_errs = ifelse(diag_vcov > 0, sqrt(diag_vcov), NA_real_)
 			summary_table = matrix(NA, nrow = length(full_coefficients), ncol = 4)
 			rownames(summary_table) = names(full_coefficients)
 			colnames(summary_table) = c("Value", "Std. Error", "z value", "Pr(>|z|)")
 			summary_table[, 1] = full_coefficients
 			summary_table[, 2] = full_std_errs
-			summary_table[, 3] = full_coefficients / full_std_errs # z value
-			summary_table[, 4] = 2 * stats::pnorm(-abs(summary_table[, 3])) # p-value
+			summary_table[, 3] = full_coefficients / full_std_errs
+			summary_table[, 4] = 2 * stats::pnorm(-abs(summary_table[, 3]))
 			private$cached_values$summary_table = summary_table
-			# Populate full_coefficients and full_vcov for consistency across all inference classes
-			private$cached_values$full_coefficients = full_coefficients
 			private$cached_values$full_vcov = full_vcov
 			private$cached_values$s_beta_hat_T = as.numeric(full_std_errs[treatment_coef_name])
 		}

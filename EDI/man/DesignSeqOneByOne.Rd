@@ -93,6 +93,7 @@ Initialize a sequential one-by-one design.
   verbose = FALSE,
   missingness_method = "impute",
   model_formula = ~.,
+  seed = NULL,
   ...
 )}\if{html}{\out{</div>}}
 }
@@ -114,6 +115,8 @@ variable for it.}
 \item{\code{missingness_method}}{How to handle missing values in covariates.}
 
 \item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
 
 \item{\code{...}}{Extra arguments passed to the \code{Design} superclass.}
 }

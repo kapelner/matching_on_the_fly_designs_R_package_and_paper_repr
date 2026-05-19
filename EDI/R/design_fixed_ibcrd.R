@@ -21,6 +21,7 @@ DesignFixediBCRD = R6::R6Class("DesignFixediBCRD",
 		#' @param verbose A flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
+		#' @param seed Integer seed for reproducibility.
 		#'
 		#' @return  A new `DesignFixediBCRD` object
 		initialize = function(
@@ -28,12 +29,13 @@ DesignFixediBCRD = R6::R6Class("DesignFixediBCRD",
 						prob_T = 0.5,
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
-						
+
 						verbose = FALSE,
 				missingness_method = "impute",
-				model_formula = ~ .
+				model_formula = ~ .,
+				seed = NULL
 			) {
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 			if (!is.null(n)) {
 				private$m = rep(1L, as.integer(n))
 			}
@@ -44,6 +46,7 @@ DesignFixediBCRD = R6::R6Class("DesignFixediBCRD",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r){
+			private$maybe_set_seed()
 			generate_permutations_ibcrd_cpp(
 				as.integer(self$get_n()),
 				as.integer(r),

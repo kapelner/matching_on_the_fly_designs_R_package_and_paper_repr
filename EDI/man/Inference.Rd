@@ -44,6 +44,7 @@ Defaults to the global budget unless overridden on the object.}
 \item \href{#method-Inference-get_model_formula}{\code{Inference$get_model_formula()}}
 \item \href{#method-Inference-set_optimization_alg}{\code{Inference$set_optimization_alg()}}
 \item \href{#method-Inference-get_optimization_alg}{\code{Inference$get_optimization_alg()}}
+\item \href{#method-Inference-set_seed}{\code{Inference$set_seed()}}
 \item \href{#method-Inference-clone}{\code{Inference$clone()}}
 }
 }
@@ -58,7 +59,8 @@ Initialize an estimation and test object after the design is completed.
   verbose = FALSE,
   harden = TRUE,
   model_formula = NULL,
-  smart_cold_start_default = TRUE
+  smart_cold_start_default = TRUE,
+  seed = NULL
 )}\if{html}{\out{</div>}}
 }
 
@@ -87,6 +89,8 @@ design's imputed covariates.}
 
 \item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default for
 likelihood-based models. Explicit starts always override this object-level policy.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
 }
 \if{html}{\out{</div>}}
 }
@@ -366,6 +370,23 @@ Return the optimizer used by likelihood-based inference implementations.
 \if{html}{\out{<div class="r">}}\preformatted{Inference$get_optimization_alg()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Inference-set_seed"></a>}}
+\if{latex}{\out{\hypertarget{method-Inference-set_seed}{}}}
+\subsection{Method \code{set_seed()}}{
+Set the seed for reproducibility.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Inference$set_seed(seed)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{seed}}{Integer seed for reproducibility.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-clone"></a>}}

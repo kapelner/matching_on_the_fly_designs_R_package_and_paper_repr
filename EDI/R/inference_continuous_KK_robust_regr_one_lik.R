@@ -1,10 +1,10 @@
-#' Abstract class for Robust-Regression Combined-Likelihood Inference for KK Designs
+#' Robust-Regression Combined-Likelihood Inference for KK Designs
 #'
 #' Fits a single stacked robust regression over matched-pair differences and reservoir
 #' observations for KK matching-on-the-fly designs with continuous responses.
 #'
-#' @keywords internal
-InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegrOneLik",
+#' @export
+InferenceContinKKRobustRegrOneLik = R6::R6Class("InferenceContinKKRobustRegrOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
@@ -55,6 +55,26 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 		#'   argument passed at construction time.
 		compute_estimate = function(estimate_only = FALSE){
 			private$fit_combined(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
+		},
+		#' @description Recomputes the combined robust-regression estimate under
+		#'   Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Subject-, block-, cluster-, or matched-set
+		#'   bootstrap weights.
+		#' @param estimate_only If \code{TRUE}, compute only the weighted point
+		#'   estimate.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			if (weights_are_effectively_constant(row_weights)) {
+				beta_hat_T = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+				if (is.finite(beta_hat_T)) {
+					private$cached_values$beta_hat_T = beta_hat_T
+					private$cached_values$s_beta_hat_T = NA_real_
+					return(private$cached_values$beta_hat_T)
+				}
+			}
+			private$cached_values$beta_hat_T = private$fit_weighted_combined(row_weights)
+			private$cached_values$s_beta_hat_T = NA_real_
 			private$cached_values$beta_hat_T
 		},
 		#' @description Computes the approximate confidence interval.
@@ -304,6 +324,69 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 				}
 			}
 			invisible(NULL)
+		},
+		fit_weighted_combined = function(row_weights){
+			KKstats = private$cached_values$KKstats
+			if (is.null(KKstats)){
+				private$compute_basic_match_data()
+				KKstats = private$cached_values$KKstats
+			}
+			if (is.null(KKstats)) return(NA_real_)
+			m   = KKstats$m
+			nRT = KKstats$nRT
+			nRC = KKstats$nRC
+			nR  = nRT + nRC
+			kk_w = kk_pair_and_reservoir_bootstrap_weights(private, row_weights)
+			if (m > 0 && nRT > 0 && nRC > 0){
+				if (ncol(as.matrix(private$X)) > 0){
+					Xd_full = as.matrix(KKstats$X_matched_diffs_full)
+					p = ncol(Xd_full)
+				} else {
+					Xd_full = matrix(nrow = m, ncol = 0L)
+					p = 0L
+				}
+				X_comb = rbind(
+					if (p > 0L) cbind(0, 1, Xd_full) else matrix(c(0, 1), nrow = m, ncol = 2L, byrow = TRUE),
+					if (p > 0L) cbind(rep(1, nR), KKstats$w_reservoir, as.matrix(KKstats$X_reservoir)) else cbind(rep(1, nR), KKstats$w_reservoir)
+				)
+				y_comb = c(KKstats$y_matched_diffs, KKstats$y_reservoir)
+				w_comb = c(kk_w$pair_weights, kk_w$reservoir_weights)
+				j_treat = 2L
+			} else if (m > 0){
+				Xd = if (ncol(as.matrix(private$X)) > 0) as.matrix(KKstats$X_matched_diffs) else matrix(nrow = m, ncol = 0L)
+				X_comb = if (ncol(Xd) > 0L) cbind(1, Xd) else matrix(1, nrow = m, ncol = 1L)
+				y_comb = KKstats$y_matched_diffs
+				w_comb = kk_w$pair_weights
+				j_treat = 1L
+			} else if (nRT > 0 && nRC > 0){
+				X_r = if (ncol(as.matrix(private$X)) > 0) as.matrix(KKstats$X_reservoir) else matrix(nrow = nR, ncol = 0L)
+				X_comb = if (ncol(X_r) > 0L) cbind(rep(1, nR), KKstats$w_reservoir, X_r) else cbind(rep(1, nR), KKstats$w_reservoir)
+				y_comb = KKstats$y_reservoir
+				w_comb = kk_w$reservoir_weights
+				j_treat = 2L
+			} else {
+				return(NA_real_)
+			}
+			ok = is.finite(w_comb) & w_comb > 0 & is.finite(y_comb)
+			if (!any(ok)) return(NA_real_)
+			X_comb = X_comb[ok, , drop = FALSE]
+			y_comb = y_comb[ok]
+			w_comb = w_comb[ok]
+			reduced = private$reduce_design_matrix_once(X_comb, j_treat, cache_key = "kk_robust_combined_reduced_design_weighted")
+			X_comb = reduced$X
+			j_treat = reduced$j_treat
+			fit = tryCatch(
+				suppressWarnings(MASS::rlm(x = X_comb, y = y_comb, weights = w_comb, method = "M", maxit = 20L, acc = 1e-4)),
+				error = function(e) NULL
+			)
+			coef_vec = tryCatch(as.numeric(stats::coef(fit)), error = function(e) NULL)
+			if (!is.null(coef_vec) && length(coef_vec) >= j_treat && is.finite(coef_vec[j_treat])) {
+				return(as.numeric(coef_vec[j_treat]))
+			}
+			lm_fit = tryCatch(stats::lm.wfit(x = X_comb, y = y_comb, w = w_comb), error = function(e) NULL)
+			coef_lm = if (is.null(lm_fit)) NULL else as.numeric(lm_fit$coefficients)
+			if (is.null(coef_lm) || length(coef_lm) < j_treat || !is.finite(coef_lm[j_treat])) return(NA_real_)
+			as.numeric(coef_lm[j_treat])
 		}
 	)
 )
@@ -324,10 +407,3 @@ InferenceAbstractKKRobustRegrOneLik = R6::R6Class("InferenceAbstractKKRobustRegr
 #' inf = InferenceContinKKRobustRegrOneLik$new(seq_des)
 #' inf$compute_estimate()
 #' }
-#' @export
-InferenceContinKKRobustRegrOneLik = R6::R6Class("InferenceContinKKRobustRegrOneLik",
-	lock_objects = FALSE,
-	inherit = InferenceAbstractKKRobustRegrOneLik,
-	public = list(
-	)
-)

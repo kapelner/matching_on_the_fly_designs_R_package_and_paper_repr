@@ -2438,3 +2438,4 @@ compute_zhang_match_data_cpp <- function(X, y, w, m_vec) {
 compute_matching_wy_stats_cpp <- function(w, y, m_vec) {
     .Call(`_EDI_compute_matching_wy_stats_cpp`, w, y, m_vec)
 }
+

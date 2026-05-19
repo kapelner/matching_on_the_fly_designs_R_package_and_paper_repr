@@ -8,7 +8,7 @@
 InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
-	public = utils::modifyList(list(
+	public = list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -50,50 +50,49 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			private$rlm_start_with_ols = start_with_ols
 		},
 		#' @description Gated off for IVWC.
-		#' @param subject_or_block_weights weights.
-		#' @param estimate_only flag.
+		#' @param subject_or_block_weights Numeric vector. Row weights for bootstrap.
+		#' @param estimate_only Logical. If TRUE, skip variance component calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
 			stop_bayesian_bootstrap_for_ivwc(self)
 		},
 		#' @description Gated off for IVWC.
-		#' @param B replicates.
-		#' @param show_progress flag.
-		#' @param debug flag.
-		#' @param weighting_unit_type type.
+		#' @param B Integer. Number of bootstrap samples (default 501).
+		#' @param show_progress Logical. Whether to show a progress bar.
+		#' @param debug Logical. Whether to return diagnostics.
+		#' @param weighting_unit_type Character. Type of weighting unit.
 		approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL) {
 			stop_bayesian_bootstrap_for_ivwc(self)
 		},
 		#' @description Gated off for IVWC.
-		#' @param delta null.
-		#' @param B replicates.
-		#' @param type type.
-		#' @param na.rm flag.
-		#' @param show_progress flag.
-		#' @param min_number_usable_samples count.
-		#' @param weighting_unit_type type.
+		#' @param delta Numeric. Null treatment effect value (default 0).
+		#' @param B Integer. Number of bootstrap samples (default 501).
+		#' @param type Character. Type of bootstrap.
+		#' @param na.rm Logical. Whether to remove NA values.
+		#' @param show_progress Logical. Whether to show a progress bar.
+		#' @param min_number_usable_samples Integer. Minimum number of usable samples.
+		#' @param weighting_unit_type Character. Type of weighting unit.
 		compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
 			stop_bayesian_bootstrap_for_ivwc(self)
 		},
 		#' @description Gated off for IVWC.
-		#' @param alpha level.
-		#' @param B replicates.
-		#' @param type type.
-		#' @param na.rm flag.
-		#' @param show_progress flag.
-		#' @param min_number_usable_samples count.
-		#' @param weighting_unit_type type.
+		#' @param alpha Numeric. Significance level (default 0.05).
+		#' @param B Integer. Number of bootstrap samples (default 501).
+		#' @param type Character. Type of bootstrap.
+		#' @param na.rm Logical. Whether to remove NA values.
+		#' @param show_progress Logical. Whether to show a progress bar.
+		#' @param min_number_usable_samples Integer. Minimum number of usable samples.
+		#' @param weighting_unit_type Character. Type of weighting unit.
 		compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
 			stop_bayesian_bootstrap_for_ivwc(self)
 		},
 		#' @description Returns the estimated treatment effect.
-		#' @param estimate_only If TRUE, skip variance component calculations.
+		#' @param estimate_only Logical. If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 		#' @description Computes the approximate confidence interval.
-		#' @param alpha The confidence level in the computed confidence interval is 1 -
-		#'   \code{alpha}. The default is 0.05.
+		#' @param alpha Numeric. Significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -105,8 +104,7 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 		#' @description Computes the approximate p-value.
-		#' @param delta The null difference to test against. For any treatment effect at all this
-		#'   is set to zero (the default).
+		#' @param delta Numeric. Null treatment effect value (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
@@ -118,13 +116,13 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
 		#' @description Duplicate
-		#' @param verbose A flag indicating whether messages should be displayed.
-		#' @param make_fork_cluster Whether the duplicate should be allowed to create a fork cluster.
+		#' @param verbose Logical. A flag indicating whether messages should be displayed.
+		#' @param make_fork_cluster Logical. Whether the duplicate should be allowed to create a fork cluster.
 		duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){
 			i = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
 			i
 		}
-	), make_ivwc_bayesian_bootstrap_public_overrides()),
+	),
 	private = list(
 		rlm_method = NULL,
 		rlm_maxit = NULL,

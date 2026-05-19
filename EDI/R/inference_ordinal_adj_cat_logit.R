@@ -36,6 +36,31 @@ InferenceOrdinalAdjCatLogitRegr = R6::R6Class("InferenceOrdinalAdjCatLogitRegr",
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+		},
+		#' @description Recomputes the ordinal treatment estimate under
+		#'   Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Numeric vector. Row weights for bootstrap.
+		#' @param estimate_only Logical. If TRUE, skip variance component calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = as.numeric(private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights))
+			X_fit = private$build_design_matrix()
+			if (!is.null(private$best_Xmm_colnames)) {
+				keep = c("treatment", intersect(private$best_Xmm_colnames, colnames(X_fit)))
+				X_fit = X_fit[, keep, drop = FALSE]
+			}
+			fit = weighted_ordinal_bootstrap_surrogate_fit(X_fit, private$y, row_weights, method = "logistic")
+			if (is.null(fit) || !is.finite(fit$beta_hat)) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			private$cached_values$beta_hat_T = as.numeric(fit$beta_hat)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$cached_values$full_coefficients = fit$coefficients
+			private$cached_values$summary_table = NULL
+			private$cached_values$beta_hat_T
 		}
 	),
 	private = list(

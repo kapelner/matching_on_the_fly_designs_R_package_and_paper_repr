@@ -23,6 +23,7 @@ DesignFixedAOptimal = R6::R6Class("DesignFixedAOptimal",
 		#' @param verbose Flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
+		#' @param seed Integer seed for reproducibility.
 		#'
 		#' @return A new `DesignFixedAOptimal` object
 		#'
@@ -31,17 +32,18 @@ DesignFixedAOptimal = R6::R6Class("DesignFixedAOptimal",
 				prob_T = 0.5,
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
-				
+
 				verbose = FALSE,
 				missingness_method = "impute",
-				model_formula = ~ .
+				model_formula = ~ .,
+				seed = NULL
 			) {
 			if (should_run_asserts()) {
 				if (prob_T != 0.5){
 					stop("A-optimal exchange search currently only supports even treatment allocation (prob_T = 0.5)")
 				}
 			}
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 			private$uses_covariates = TRUE
 		},
 		#' @description Draw treatment assignments according to the A-optimal search fixed design.
@@ -50,6 +52,7 @@ DesignFixedAOptimal = R6::R6Class("DesignFixedAOptimal",
 		#'
 		#' @return A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
+			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				self$assert_all_subjects_arrived()
 			}

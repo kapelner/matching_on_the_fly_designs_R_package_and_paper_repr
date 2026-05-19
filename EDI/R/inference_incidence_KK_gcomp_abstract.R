@@ -26,6 +26,20 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 			private$shared(estimate_only = estimate_only)
 			private$get_effect_estimate()
 		},
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			if (weights_are_effectively_constant(row_weights)) {
+				beta_hat_T = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+				if (is.finite(beta_hat_T)) {
+					private$cached_values$beta_hat_T = beta_hat_T
+					private$cached_values$s_beta_hat_T = NA_real_
+					return(private$cached_values$beta_hat_T)
+				}
+			}
+			private$cached_values$beta_hat_T = private$compute_weighted_gcomp_estimate(row_weights)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Compute asymp confidence interval
 		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -109,6 +123,38 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 		get_estimand_type = function() stop(class(self)[1], " must implement get_estimand_type()."),
 		default_null_value = function(){
 			if (identical(private$get_estimand_type(), "RR")) 1 else 0
+		},
+		compute_weighted_gcomp_estimate = function(row_weights){
+			X = private$build_design_matrix()
+			if (is.null(X)) return(NA_real_)
+			X = as.matrix(X)
+			ok = is.finite(row_weights) & row_weights > 0 & is.finite(as.numeric(private$y))
+			if (!any(ok)) return(NA_real_)
+			X_fit = X[ok, , drop = FALSE]
+			y_fit = as.numeric(private$y[ok])
+			w_fit = as.numeric(row_weights[ok])
+			mod = tryCatch(
+				fast_logistic_regression_weighted_cpp(
+					X = X_fit,
+					y = y_fit,
+					weights = w_fit,
+					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
+				),
+				error = function(e) NULL
+			)
+			if (is.null(mod) || is.null(mod$b)) return(NA_real_)
+			coef_hat = as.numeric(mod$b)
+			X1 = X_fit
+			X0 = X_fit
+			X1[, 2L] = 1
+			X0[, 2L] = 0
+			risk1 = stats::weighted.mean(stats::plogis(as.numeric(X1 %*% coef_hat)), w_fit)
+			risk0 = stats::weighted.mean(stats::plogis(as.numeric(X0 %*% coef_hat)), w_fit)
+			if (!is.finite(risk1) || !is.finite(risk0)) return(NA_real_)
+			if (identical(private$get_estimand_type(), "RD")) return(risk1 - risk0)
+			if (risk1 > 0 && risk0 > 0) return(risk1 / risk0)
+			NA_real_
 		},
 		set_failed_fit_cache = function(){
 			private$cached_values$summary_table = NULL

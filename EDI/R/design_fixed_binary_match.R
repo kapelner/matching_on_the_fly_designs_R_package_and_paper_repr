@@ -13,6 +13,9 @@
 DesignFixedBinaryMatch = R6::R6Class("DesignFixedBinaryMatch",
 	inherit = DesignFixed,
 	public = list(
+		#' @description Returns TRUE: simulation framework can pre-generate all
+		#'   treatment vectors for a cell in one Java call instead of one per rep.
+		supports_batch_w_pregeneration = function() TRUE,
 		#' @description Initialize a binary match fixed experimental design
 		#'
 		#' @param response_type 	The data type of response values.
@@ -27,6 +30,7 @@ DesignFixedBinaryMatch = R6::R6Class("DesignFixedBinaryMatch",
 			#' @param verbose  Flag for verbosity.
 			#' @param missingness_method How to handle missing values in covariates.
 			#' @param model_formula A formula object.
+			#' @param seed Integer seed for reproducibility.
 		#'
 		#' @return 			A new `DesignFixedBinaryMatch` object
 		#'
@@ -39,7 +43,8 @@ DesignFixedBinaryMatch = R6::R6Class("DesignFixedBinaryMatch",
 					m = NULL,
 					verbose = FALSE,
 					missingness_method = "impute",
-					model_formula = ~ .
+					model_formula = ~ .,
+					seed = NULL
 				) {
 				if (should_run_asserts()) {
 					if (prob_T != 0.5){
@@ -52,11 +57,11 @@ DesignFixedBinaryMatch = R6::R6Class("DesignFixedBinaryMatch",
 						if (length(m) != as.integer(n)) {
 							stop("When supplying m to DesignFixedBinaryMatch$new(), length(m) must equal n.")
 						}
-					} else {
-						assert_greedy_experimental_design_installed("DesignFixedBinaryMatch")
 					}
+					# GED availability is checked lazily in ensure_matching_structure_computed so
+					# that workers using pre-computed w vectors never trigger a JVM load.
 				}
-				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+				super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 				private$blocking_capable = TRUE
 				private$matching_capable = TRUE
 				private$mahal_match = mahal_match
@@ -72,6 +77,7 @@ DesignFixedBinaryMatch = R6::R6Class("DesignFixedBinaryMatch",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
+			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				assertCount(r, positive = TRUE)
 				self$assert_all_subjects_arrived()
@@ -125,6 +131,7 @@ DesignFixedBinaryMatch = R6::R6Class("DesignFixedBinaryMatch",
 			ensure_matching_structure_computed = function(){
 				n = self$get_n()
 				if (is.null(private$bms) && !is.null(private$X) && ncol(private$X) > 0){
+				assert_greedy_experimental_design_installed("DesignFixedBinaryMatch")
 				X = private$X[1:n, , drop = FALSE]
 				private$bms = GreedyExperimentalDesign::computeBinaryMatchStructure(X, mahal_match = private$mahal_match)
 				# Build pair-ID vector m where m[i] = pair index for subject i

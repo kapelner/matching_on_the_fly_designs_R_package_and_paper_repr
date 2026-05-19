@@ -162,7 +162,8 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 		simulate_under_lik_null = function(spec, delta, null_fit){
 			b_null     = as.numeric(null_fit$b)
 			mu         = pmax(exp(as.numeric(spec$X %*% b_null)), 0)
-			y_sim      = as.numeric(rpois(length(mu), mu))
+			y_sim      = private$simulate_param_boot_poisson_y(mu)
+			if (is.null(y_sim)) return(NULL)
 			X_fit      = spec$X
 			j          = spec$j
 			

@@ -30,7 +30,6 @@ des$assign_w_to_all_subjects()
 \item \href{#method-DesignFixed-add_all_subject_responses}{\code{DesignFixed$add_all_subject_responses()}}
 \item \href{#method-DesignFixed-overwrite_all_subject_assignments}{\code{DesignFixed$overwrite_all_subject_assignments()}}
 \item \href{#method-DesignFixed-supports_resampling}{\code{DesignFixed$supports_resampling()}}
-\item \href{#method-DesignFixed-draw_ws_according_to_design}{\code{DesignFixed$draw_ws_according_to_design()}}
 \item \href{#method-DesignFixed-clone}{\code{DesignFixed$clone()}}
 }
 }
@@ -73,6 +72,7 @@ des$assign_w_to_all_subjects()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="set_m"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-set_m'><code>EDI::DesignBlocking$set_m()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="summarize_blocks"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-summarize_blocks'><code>EDI::DesignBlocking$summarize_blocks()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="DesignMatching" data-id="assert_matching_design"><a href='../../EDI/html/DesignMatching.html#method-DesignMatching-assert_matching_design'><code>EDI::DesignMatching$assert_matching_design()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignMatching" data-id="draw_ws_according_to_design"><a href='../../EDI/html/DesignMatching.html#method-DesignMatching-draw_ws_according_to_design'><code>EDI::DesignMatching$draw_ws_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="DesignMatching" data-id="get_matching_cluster_ids"><a href='../../EDI/html/DesignMatching.html#method-DesignMatching-get_matching_cluster_ids'><code>EDI::DesignMatching$get_matching_cluster_ids()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="DesignMatching" data-id="is_matching_design"><a href='../../EDI/html/DesignMatching.html#method-DesignMatching-is_matching_design'><code>EDI::DesignMatching$is_matching_design()</code></a></span></li>
 </ul>
@@ -92,6 +92,7 @@ Initialize a fixed experimental design
   verbose = FALSE,
   missingness_method = "impute",
   model_formula = ~.,
+  seed = NULL,
   ...
 )}\if{html}{\out{</div>}}
 }
@@ -113,6 +114,8 @@ Initialize a fixed experimental design
 \item{\code{missingness_method}}{How to handle missing values in covariates.}
 
 \item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
 
 \item{\code{...}}{Extra arguments passed to the \code{Design} superclass.}
 }
@@ -199,26 +202,6 @@ Check if the design supports resampling.
 
 \subsection{Returns}{
 TRUE if supported.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignFixed-draw_ws_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignFixed-draw_ws_according_to_design}{}}}
-\subsection{Method \code{draw_ws_according_to_design()}}{
-Draw multiple treatment assignment vectors.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixed$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{The number of designs to draw.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A matrix of size n x r.
 }
 }
 \if{html}{\out{<hr>}}

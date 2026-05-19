@@ -8,25 +8,8 @@ Weibull Frailty IVWC Inference for KK Designs
 
 Weibull Frailty IVWC Inference for KK Designs
 }
-\details{
-This class implements a compound estimator for KK matching-on-the-fly designs with
-survival responses using a native Rcpp Weibull AFT frailty model for matched
-pairs and a standard Weibull AFT model for the reservoir. The estimates are
-combined via IVWC.
-}
-\examples{
-\donttest{
-seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'survival')
-for (i in 1:10) {
-  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
-}
-seq_des$add_all_subject_responses(runif(10))
-inf = InferenceSurvivalKKWeibullFrailtyIVWC$new(seq_des)
-inf$compute_estimate()
-}
-}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceAbstractKKWeibullFrailtyIVWC]{EDI::InferenceAbstractKKWeibullFrailtyIVWC}} -> \code{InferenceSurvivalKKWeibullFrailtyIVWC}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{EDI::InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceAbstractKKWeibullFrailtyIVWC]{EDI::InferenceAbstractKKWeibullFrailtyIVWC}} -> \code{InferenceSurvivalKKWeibullFrailtyIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -52,6 +35,7 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
@@ -99,7 +83,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceSurvivalKKWeibullFrailtyIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKKWeibullFrailtyIVWC-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize the inference object.
+Initialize the IVWC Weibull-frailty inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKWeibullFrailtyIVWC$new(
   des_obj,
@@ -112,14 +96,13 @@ Initialize the inference object.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{des_obj}}{A completed KK design object.}
+\item{\code{des_obj}}{A completed KK survival design object.}
 
-\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default), 
-covariates from the design object are included. Use \code{~ 1} for univariate.}
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
 
 \item{\code{verbose}}{Whether to print progress messages.}
 
-\item{\code{optimization_alg}}{Optimization algorithm to use. Default is dispatched via policy.}
+\item{\code{optimization_alg}}{Optimization algorithm to use.}
 }
 \if{html}{\out{</div>}}
 }

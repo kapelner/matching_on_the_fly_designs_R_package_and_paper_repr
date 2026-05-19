@@ -37,6 +37,53 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+		},
+		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = as.numeric(private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights))
+			X_full = private$build_design_matrix()
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 1L,
+				fit_fun = function(X_fit, keep){
+					fit = tryCatch(
+						stats::glm.fit(
+							x = cbind(`(Intercept)` = 1, X_fit),
+							y = as.numeric(private$y),
+							weights = row_weights,
+							family = stats::binomial(link = "probit")
+						),
+						error = function(e) NULL
+					)
+					if (is.null(fit) || is.null(fit$coefficients) || length(fit$coefficients) < 2L) return(NULL)
+					list(
+						b = as.numeric(fit$coefficients[-1L]),
+						full_b = as.numeric(fit$coefficients),
+						j_treat = match(1L, keep),
+						params = as.numeric(fit$coefficients),
+						fisher_information = tryCatch(solve(stats::vcov(stats::glm(y ~ .,
+							data = data.frame(y = as.numeric(private$y), cbind(`(Intercept)` = 1, X_fit)[, -1, drop = FALSE]),
+							weights = row_weights,
+							family = stats::binomial(link = "probit")))), error = function(e) NULL)
+					)
+				},
+				fit_ok = function(mod, X_fit, keep){
+					!is.null(mod) && !is.na(mod$j_treat) && length(mod$b) >= mod$j_treat && is.finite(mod$b[mod$j_treat])
+				}
+			)
+			if (is.null(attempt$fit) || is.null(attempt$fit$b) || length(attempt$fit$b) < 1L || !is.finite(attempt$fit$b[1L])) {
+				private$cached_values$beta_hat_T = NA_real_
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return(NA_real_)
+			}
+			private$set_fit_warm_start(as.numeric(attempt$fit$params), "params", fisher = attempt$fit$fisher_information)
+			private$cached_values$beta_hat_T = as.numeric(attempt$fit$b[attempt$fit$j_treat])
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$df = NA_real_
+			private$cached_values$beta_hat_T
 		}
 	),
 	private = list(
@@ -90,7 +137,8 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 			kappa  = params_null[p_reg + 1L]
 			eta    = as.numeric(spec$X %*% b_null)
 			mu     = pmin(pmax(pnorm(eta - kappa), 0), 1)
-			y_sim  = as.numeric(rbinom(length(mu), 1L, mu))
+			y_sim  = private$simulate_param_boot_bernoulli_y(mu)
+			if (is.null(y_sim)) return(NULL)
 			X_fit  = spec$X
 			j      = spec$j
 			

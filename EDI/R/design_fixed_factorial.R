@@ -22,6 +22,7 @@ DesignFixedFactorial = R6::R6Class("DesignFixedFactorial",
 		#' @param verbose  Flag for verbosity.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
+		#' @param seed Integer seed for reproducibility.
 		#'
 		#' @return 			A new `DesignFixedFactorial` object
 		initialize = function(
@@ -29,17 +30,18 @@ DesignFixedFactorial = R6::R6Class("DesignFixedFactorial",
 				response_type,
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
-				
+
 				verbose = FALSE,
 				missingness_method = "impute",
-				model_formula = ~ .
+				model_formula = ~ .,
+				seed = NULL
 			) {
 			if (should_run_asserts()) {
 				assertList(factors, types = "numeric", min.len = 1)
 			}
 			# We don't use prob_T in the standard way here, as we have multiple factors
 			# But base Design needs it. We'll set it to 0.5.
-			super$initialize(response_type, 0.5, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+			super$initialize(response_type, 0.5, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 			private$factors = factors
 			
 			# Precompute all combinations
@@ -52,11 +54,12 @@ DesignFixedFactorial = R6::R6Class("DesignFixedFactorial",
 		#'
 		#' @return 		A matrix of size n x r.
 		draw_ws_according_to_design = function(r = 100){
+			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				self$assert_all_subjects_arrived()
 			}
 			n = self$get_n()
-			
+
 			# Standard balanced factorial: each combination appears n / num_combinations times
 			base_alloc = rep(1:private$num_combinations, length.out = n)
 			

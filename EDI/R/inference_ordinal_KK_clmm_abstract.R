@@ -31,13 +31,31 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Compute treatment estimate
-		#' @param estimate_only If TRUE, skip variance component calculations.
+		#' @param estimate_only Logical. If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Recomputes the KK ordinal CLMM treatment estimate under
+		#'   Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Numeric vector. Row weights for bootstrap.
+		#' @param estimate_only Logical. If TRUE, skip variance component calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			if (weights_are_effectively_constant(row_weights)) {
+				beta_hat_T = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+				if (is.finite(beta_hat_T)) {
+					private$cached_values$beta_hat_T = beta_hat_T
+					private$cached_values$s_beta_hat_T = NA_real_
+					return(private$cached_values$beta_hat_T)
+				}
+			}
+			private$cached_values$beta_hat_T = private$compute_weighted_clmm_estimate(row_weights)
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Compute asymp confidence interval
-		#' @param alpha The significance level (default 0.05).
+		#' @param alpha Numeric. Significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -49,7 +67,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 		#' @description Compute asymp two sided pval for treatment effect
-		#' @param delta The null treatment effect (default 0).
+		#' @param delta Numeric. Null treatment effect value (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
@@ -68,13 +86,13 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			}
 		},
 		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
-		#' @param B  					Number of bootstrap samples.
-		#' @param show_progress Whether to show a progress bar.
-		#' @param debug         Whether to return diagnostics.
-		#' @param bootstrap_type Optional resampling scheme.
+		#' @param B Integer. Number of bootstrap samples (default 501).
+		#' @param show_progress Logical. Whether to show a progress bar.
+		#' @param debug Logical. Whether to return diagnostics.
+		#' @param bootstrap_type Character. Optional resampling scheme.
 		#' @return A numeric vector of bootstrap estimates.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
-			InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
+			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
 		}
 	)),
 	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
@@ -134,6 +152,47 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			as.numeric(fit$b[1L])
 		},
 		clmm_link = function() stop(class(self)[1], " must implement clmm_link()"),
+		compute_weighted_clmm_estimate = function(row_weights){
+			X_fit = private$clmm_X_for_rcpp()
+			link_method = switch(
+				private$clmm_link(),
+				logit = "logistic",
+				probit = "probit",
+				cauchit = "cauchit",
+				cloglog = "cloglog",
+				"logistic"
+			)
+			if (identical(link_method, "logistic")) {
+				ok = is.finite(row_weights) & row_weights > 0 & is.finite(as.numeric(private$y))
+				if (any(ok)) {
+					X_w = X_fit[ok, , drop = FALSE]
+					y_w = as.numeric(private$y[ok])
+					w_w = as.numeric(row_weights[ok])
+					start_len = ncol(X_w) + length(sort(unique(y_w))) - 1L
+					fit_fast = tryCatch(
+						fast_ordinal_regression_weighted_cpp(
+							X = X_w,
+							y = y_w,
+							weights = w_w,
+							warm_start_params = private$get_fit_warm_start_for_length("params", start_len),
+							warm_start_fisher_info = private$get_fit_warm_start_fisher(start_len)
+						),
+						error = function(e) NULL
+					)
+					if (!is.null(fit_fast) && length(fit_fast$b) >= 1L && is.finite(fit_fast$b[1L])) {
+						return(as.numeric(fit_fast$b[1L]))
+					}
+				}
+			}
+			sur = weighted_ordinal_bootstrap_surrogate_fit(
+				X = X_fit,
+				y = private$y,
+				row_weights = row_weights,
+				method = link_method
+			)
+			if (is.null(sur)) return(NA_real_)
+			as.numeric(sur$beta_hat)
+		},
 		clmm_predictors_df = function(){
 			full_X = private$create_design_matrix()
 			private$clmm_predictors_df_from_design(full_X)
@@ -383,6 +442,9 @@ InferenceOrdinalKKCLMMProbit = R6::R6Class("InferenceOrdinalKKCLMMProbit",
 		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = TRUE){
 			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 		}
+	),
+	private = list(
+		clmm_link = function() "probit"
 	)
 )
 #' Ordinal KK CLMM (Cauchit link)

@@ -57,6 +57,7 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
@@ -168,7 +169,8 @@ Computes an approximate two-sided p-value.
 \if{html}{\out{<a id="method-InferenceOrdinalKKGEE-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalKKGEE-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
-Computes the treatment effect estimate for a bootstrap sample.
+Recomputes the KK ordinal GEE treatment estimate under
+  Bayesian-bootstrap weights.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalKKGEE$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -179,9 +181,11 @@ Computes the treatment effect estimate for a bootstrap sample.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{subject_or_block_weights}}{Row weights for the bootstrap sample.}
+\item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
+bootstrap weights.}
 
-\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+\item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
+estimate.}
 }
 \if{html}{\out{</div>}}
 }

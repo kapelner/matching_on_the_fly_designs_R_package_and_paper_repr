@@ -91,14 +91,6 @@ X[beta_T == 1 & response_type == "continuous" &
 		"InferenceContinMultGLS",
 		"InferenceContinOLSKKCombinedLikelihood",
 		"InferenceContinOLSKKIVWC",
-		"InferenceContinMultiKKLinIVWC",
-		"InferenceContinMultiKKLinCombinedLikelihood",
-		"InferenceContinUnivKKGLMM",
-		"InferenceContinMultiKKGLMM",
-		"InferenceContinUnivKKRobustRegrIVWC",
-		"InferenceContinMultiKKRobustRegrIVWC",
-		"InferenceContinUnivKKRobustRegrCombinedLikelihood",
-		"InferenceContinMultiKKRobustRegrCombinedLikelihood",
 		"InferenceContinMultKKQuantileRegrIVWC",
 		"InferenceContinMultKKQuantileRegrCombinedLikelihood"
 	),
@@ -113,7 +105,6 @@ X[beta_T == 1 &
 		"InferenceIncidExactZhang",
 		"InferenceIncidKKExactZhang",
 		"InferenceIncidRiskDiff",
-		"InferenceIncidMultiRiskDiff",
 		"InferenceIncidMiettinenNurminenRiskDiff",
 		"InferenceIncidNewcombeRiskDiff",
 		"InferenceIncidGCompRiskDiff",
@@ -131,7 +122,7 @@ X[beta_T == 1 &
 	}, by = dataset]
 
 # incidence — univariate logistic: marginal log-OR ≈ 0.767, not 1
-X[beta_T == 1 & inference_class %in% c("InferenceIncidLogRegr", "InferenceIncidUnivKKGEE"),
+X[beta_T == 1 & inference_class %in% c("InferenceIncidLogRegr", "InferenceIncidKKGEE"),
 	beta := {
 		p_c = mean(incid_p_control(dataset))
 		p_t = mean(incid_p_treated(dataset))
@@ -153,12 +144,9 @@ beta := {
 
 # incidence — modified Poisson estimands are on the log-risk-ratio scale
 X[beta_T == 1 & inference_class %in% c(
-	"InferenceIncidUnivModifiedPoisson",
-	"InferenceIncidMultiModifiedPoisson",
 	"InferenceIncidLogBinomial",
 	"InferenceIncidLogBinomial",
-	"InferenceIncidUnivKKModifiedPoisson",
-	"InferenceIncidMultiKKModifiedPoisson"
+	"InferenceIncidKKModifiedPoisson"
 ),
 beta := {
 	p_c = mean(incid_p_control(dataset))
@@ -182,7 +170,7 @@ X[beta_T == 1 & response_type == "proportion" &
 
 # proportion — KK univ GEE (logit link): marginal log-OR = logit(E[Y_T]) - logit(E[Y_C])
 X[beta_T == 1 & response_type == "proportion" &
-	inference_class %in% c("InferencePropUnivKKGEE", "InferencePropFractionalLogit"),
+inference_class %in% c("InferencePropKKGEE", "InferencePropFractionalLogit"),
 	beta := {
 		y_t = prop_y_treated(dataset)
 		y_p = datasets_and_response_models[[dataset]]$y_original$proportion
@@ -191,7 +179,7 @@ X[beta_T == 1 & response_type == "proportion" &
 
 # proportion — KK Wilcox: HL estimate ≈ median of within-pair differences
 X[beta_T == 1 & response_type == "proportion" &
-	inference_class %in% c("InferenceAllKKWilcoxIVWC", "InferenceAllKKWilcoxRegrUnivIVWC"),
+inference_class %in% c("InferenceAllKKWilcoxIVWC"),
 	beta := {
 		y_p = datasets_and_response_models[[dataset]]$y_original$proportion
 		median(e * y_p / (1 + (e - 1) * y_p) - y_p)
@@ -216,20 +204,14 @@ X[beta_T == 1 & response_type == "count" &
 		"InferenceCountQuasiPoisson",
 		"InferenceCountNegBin",
 		"InferenceCountNegBin",
-		"InferenceCountPoissonUnivKKGEE",
-		"InferenceCountPoissonMultiKKGEE",
-		"InferenceCountPoissonUnivKKCPoissonCombinedLikelihood",
-		"InferenceCountKKCPoissonOneLik",
-		"InferenceCountPoissonUnivKKCPoissonIVWC",
-		"InferenceCountPoissonMultiKKCPoissonIVWC",
-		"InferenceCountPoissonUnivKKGLMM",
-		"InferenceCountPoissonMultiKKGLMM"
+		"InferenceCountKKCondPoissonOneLik",
+		"InferenceCountKKGLMM"
 	),
 	beta := 1]
 
 # count — KK Wilcox: HL estimate ≈ (e-1) * median(Y_C)
 X[beta_T == 1 & response_type == "count" &
-	inference_class %in% c("InferenceAllKKWilcoxIVWC", "InferenceAllKKWilcoxRegrUnivIVWC"),
+inference_class %in% c("InferenceAllKKWilcoxIVWC"),
 	beta := {
 		y_c = datasets_and_response_models[[dataset]]$y_original$count
 		(e - 1) * median(y_c)
@@ -276,12 +258,7 @@ X[beta_T == 1 & response_type == "ordinal" &
 	inference_class %in% c(
 	"InferenceOrdinalAdjCatLogitRegr",
 	"InferenceOrdinalAdjCatLogitRegr",
-	"InferenceOrdinalUniCumulProbitRegr",
-	"InferenceOrdinalMultiCumulProbitRegr",
-	"InferenceOrdinalUniStereotypeLogitRegr",
-	"InferenceOrdinalMultiStereotypeLogitRegr",
-	"InferenceOrdinalUniStereotypeProbitRegr",
-	"InferenceOrdinalMultiStereotypeProbitRegr",
+	"InferenceOrdinalStereotypeLogitRegr",
 	"InferenceOrdinalPropOddsRegr",
 	"InferenceOrdinalOrderedProbitRegr",
 	"InferenceOrdinalOrderedProbitRegr",
@@ -291,15 +268,8 @@ X[beta_T == 1 & response_type == "ordinal" &
 	"InferenceOrdinalContRatioRegr",
 	"InferenceOrdinalCloglogRegr",
 	"InferenceOrdinalCloglogRegr",
-	"InferenceOrdinalUnivKKGEE",
-	"InferenceOrdinalMultiKKGEE",
-	"InferenceOrdinalUnivKKGLMM",
-	"InferenceOrdinalMultiKKGLMM",
-	"InferenceOrdinalUnivKKGLMMProbit",
-	"InferenceOrdinalMultiKKGLMMProbit",
-	"InferenceOrdinalUnivKKCondPropOddsRegr",
-	"InferenceOrdinalUnivKKCondPropOddsCombinedRegr",
-	"InferenceOrdinalUnivKKCondContRatioRegr",
+	"InferenceOrdinalKKGEE",
+	"InferenceOrdinalKKGLMM",
 	"InferenceOrdinalKKCondAdjCatLogitRegr",
 	"InferenceOrdinalRidit"
 	),
@@ -311,8 +281,6 @@ X[beta_T == 1 & response_type == "ordinal" &
 	inference_class %in% c(
 		"InferenceAllSimpleWilcox",
 		"InferenceAllKKWilcoxIVWC",
-		"InferenceAllKKWilcoxRegrUnivIVWC",
-		"InferenceAllKKWilcoxRegrMultiIVWC",
 		"InferenceOrdinalPairedSignTest",
 		"InferenceOrdinalJonckheereTerpstraTest",
 		"InferenceOrdinalRidit"
@@ -325,29 +293,21 @@ X[beta_T == 1 & response_type == "ordinal" &
 X[beta_T == 1 &
 	inference_class %in% c(
 	"InferenceIncidLogRegr",
-	"InferenceIncidUnivKKClogitCombinedLikelihood",
-	"InferenceIncidMultiKKClogitCombinedLikelihood",
-	"InferenceIncidUnivKKClogitIVWC",
-	"InferenceIncidMultiKKClogitIVWC",
-	"InferenceIncidMultiKKGEE",
-	"InferenceIncidUnivKKGLMM",
-	"InferenceIncidMultiKKGLMM",
+	"InferenceIncidKKCondLogitOneLik",
+	"InferenceIncidKKCondLogitIVWC",
+	"InferenceIncidKKGEE",
+	"InferenceIncidKKCondLogitPlusGLMMOneLik",
 	"InferencePropBetaRegr",
 	"InferencePropBetaRegr",
-	"InferencePropUnivKKGLMM",
-	"InferencePropMultiKKGEE",
-	"InferencePropMultiKKGLMM",
+	"InferencePropKKGEE",
+	"InferencePropKKGLMM",
 	"InferencePropFractionalLogit",
 	"InferencePropZeroOneInflatedBetaRegr",
 	"InferencePropZeroOneInflatedBetaRegr",
-	"InferencePropMultiKKQuantileRegrIVWC",
-	"InferencePropMultiKKQuantileRegrCombinedLikelihood",
+	"InferencePropKKQuantileRegrOneLik",
 	"InferenceCountHurdlePoisson",
 	"InferenceCountHurdlePoisson",
-	"InferenceCountUnivKKHurdlePoissonCombinedLikelihood",
-	"InferenceCountMultiKKHurdlePoissonCombinedLikelihood",
-	"InferenceCountUnivKKHurdlePoissonIVWC",
-	"InferenceCountMultiKKHurdlePoissonIVWC",
+	"InferenceCountKKHurdlePoissonOneLik",
 	"InferenceCountHurdleNegBin",
 	"InferenceCountHurdleNegBin",
 	"InferenceCountZeroInflatedPoisson",
@@ -359,31 +319,15 @@ X[beta_T == 1 &
 	"InferenceSurvivalCoxPHRegr",
 	"InferenceSurvivalStratCoxPHRegr",
 	"InferenceSurvivalStratCoxPHRegr",
-	"InferenceSurvivalUniDepCensTransformRegr",
-	"InferenceSurvivalMultiDepCensTransformRegr",
 	"InferenceSurvivalWeibullRegr",
-	"InferenceSurvivalMultiWeibullRegr",
-	"InferenceSurvivalUnivKKGEE",
-	"InferenceSurvivalMultiKKGammaGEE",
-	"InferenceSurvivalUnivKKGLMM",
-	"InferenceSurvivalMultiKKGammaGLMM",
-	"InferenceSurvivalUnivKKClaytonCopulaIVWC",
-	"InferenceSurvivalMultiKKClaytonCopulaIVWC",
-	"InferenceSurvivalUnivKKLWACoxIVWC",
-	"InferenceSurvivalMultiKKLWACoxIVWC",
-	"InferenceSurvivalKKStratCoxIVWC",
-	"InferenceSurvivalUnivKKStratCoxCombinedLikelihood",
-	"InferenceSurvivalKKStratCoxIVWC",
-	"InferenceSurvivalMultiKKStratCoxCombinedLikelihood",
-	"InferenceSurvivalUnivKKClaytonCopulaCombinedLikelihood",
-	"InferenceSurvivalMultiKKClaytonCopulaCombinedLikelihood",
-	"InferenceSurvivalUnivKKLWACoxCombinedLikelihood",
-	"InferenceSurvivalMultiKKLWACoxCombinedLikelihood",
-	"InferenceSurvivalUnivKKWeibullFrailtyIVWC",
-	"InferenceSurvivalMultiKKWeibullFrailtyIVWC",
-	"InferenceSurvivalUnivKKWeibullFrailtyCombinedLikelihood",
-	"InferenceSurvivalMultiKKWeibullFrailtyCombinedLikelihood",
-	"InferenceAllKKWilcoxRegrMultiIVWC",
+	"InferenceSurvivalKKClaytonCopulaIVWC",
+	"InferenceSurvivalKKLWACoxPHIVWC",
+	"InferenceSurvivalKKStratCoxPHIVWC",
+	"InferenceSurvivalKKStratCoxPHOneLik",
+	"InferenceSurvivalKKClaytonCopulaOneLik",
+	"InferenceSurvivalKKLWACoxPHOneLik",
+	"InferenceSurvivalKKWeibullFrailtyIVWC",
+	"InferenceSurvivalKKWeibullFrailtyOneLik",
 	"InferenceSurvivalKKRankRegrIVWC",
 	"InferenceSurvivalKKRankRegrIVWC",
 	"InferenceSurvivalGehanWilcox"
@@ -392,7 +336,7 @@ X[beta_T == 1 &
 
 # survival — KK Wilcox: censored survival times bias the HL estimate
 X[beta_T == 1 & response_type == "survival" &
-	inference_class %in% c("InferenceAllKKWilcoxIVWC", "InferenceAllKKWilcoxRegrUnivIVWC"),
+inference_class %in% c("InferenceAllKKWilcoxIVWC"),
 	beta := NA_real_]
 table(X$beta, useNA = "always")
 

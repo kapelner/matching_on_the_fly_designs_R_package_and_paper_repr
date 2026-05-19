@@ -48,6 +48,14 @@ stop_bayesian_bootstrap_for_ivwc = function(self_obj = NULL) {
   )
 }
 
+stop_bayesian_bootstrap_for_bai = function(self_obj = NULL) {
+  cls = if (is.null(self_obj)) "This Bai-adjusted KK class" else class(self_obj)[1]
+  stop(
+    cls,
+    " does not support Bayesian bootstrap functionality. The Bai matched-pair / reservoir compound path is intentionally left unimplemented for Bayesian bootstrap."
+  )
+}
+
 make_ivwc_bayesian_bootstrap_public_overrides = function() {
   list(
     compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
@@ -63,6 +71,181 @@ make_ivwc_bayesian_bootstrap_public_overrides = function() {
       stop_bayesian_bootstrap_for_ivwc(self)
     }
   )
+}
+
+make_bai_bayesian_bootstrap_public_overrides = function() {
+  list(
+    compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
+      stop_bayesian_bootstrap_for_bai(self)
+    },
+    approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL) {
+      stop_bayesian_bootstrap_for_bai(self)
+    },
+    compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+      stop_bayesian_bootstrap_for_bai(self)
+    },
+    compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
+      stop_bayesian_bootstrap_for_bai(self)
+    }
+  )
+}
+
+weighted_ordinal_bootstrap_surrogate_fit = function(X, y, row_weights, method = c("logistic", "probit", "cauchit", "cloglog")) {
+  method = match.arg(method)
+  X = as.matrix(X)
+  y_num = as.integer(y)
+  row_weights = as.numeric(row_weights)
+  ok = is.finite(row_weights) & row_weights > 0 & is.finite(y_num)
+  if (!any(ok)) return(NULL)
+  X_fit = X[ok, , drop = FALSE]
+  y_fit = y_num[ok]
+  w_fit = row_weights[ok]
+  if (is.null(colnames(X_fit))) {
+    colnames(X_fit) = paste0("x", seq_len(ncol(X_fit)))
+  }
+  if (!("treatment" %in% colnames(X_fit)) && ncol(X_fit) >= 1L) {
+    colnames(X_fit)[1L] = "treatment"
+  }
+  dat = as.data.frame(X_fit, check.names = FALSE)
+  dat$y_ord = ordered(y_fit, levels = sort(unique(y_fit)))
+  fit = tryCatch(
+    suppressWarnings(
+      MASS::polr(
+        y_ord ~ .,
+        data = dat,
+        weights = w_fit,
+        method = method,
+        Hess = FALSE
+      )
+    ),
+    error = function(e) NULL
+  )
+  coef_vec = tryCatch(stats::coef(fit), error = function(e) NULL)
+  beta_hat = if (!is.null(coef_vec) && ("treatment" %in% names(coef_vec))) as.numeric(coef_vec[["treatment"]]) else NA_real_
+  if (is.finite(beta_hat)) {
+    return(list(beta_hat = beta_hat, coefficients = coef_vec, fit_type = paste0("polr_", method)))
+  }
+  X_lm = cbind(`(Intercept)` = 1, X_fit)
+  lm_fit = tryCatch(
+    stats::lm.wfit(x = X_lm, y = as.numeric(y_fit), w = w_fit),
+    error = function(e) NULL
+  )
+  coef_lm = if (is.null(lm_fit)) NULL else as.numeric(lm_fit$coefficients)
+  names(coef_lm) = if (is.null(coef_lm)) NULL else colnames(X_lm)
+  beta_hat_lm = if (!is.null(coef_lm) && ("treatment" %in% names(coef_lm))) as.numeric(coef_lm[["treatment"]]) else NA_real_
+  if (!is.finite(beta_hat_lm)) return(NULL)
+  list(beta_hat = beta_hat_lm, coefficients = coef_lm, fit_type = "weighted_lm_surrogate")
+}
+
+weights_are_effectively_constant = function(weights, tol = sqrt(.Machine$double.eps)) {
+  weights = as.numeric(weights)
+  ok = is.finite(weights)
+  if (!any(ok)) return(FALSE)
+  weights = weights[ok]
+  (max(weights) - min(weights)) <= tol
+}
+
+kk_pair_and_reservoir_bootstrap_weights = function(private_env, row_weights) {
+  row_weights = as.numeric(row_weights)
+  m_vec = private_env$m
+  n = length(row_weights)
+  if (is.null(m_vec)) {
+    m_vec = rep(NA_integer_, n)
+  } else {
+    m_vec = as.integer(m_vec)
+    if (length(m_vec) != n) {
+      m_vec = rep_len(m_vec, n)
+    }
+  }
+  pair_ids = sort(unique(m_vec[is.finite(m_vec) & m_vec > 0L]))
+  pair_weights = if (length(pair_ids) > 0L) {
+    vapply(pair_ids, function(pid) {
+      idx = which(m_vec == pid)
+      mean(row_weights[idx], na.rm = TRUE)
+    }, numeric(1))
+  } else {
+    numeric(0)
+  }
+  reservoir_idx = which(is.na(m_vec) | m_vec <= 0L)
+  list(
+    pair_ids = pair_ids,
+    pair_weights = as.numeric(pair_weights),
+    reservoir_idx = reservoir_idx,
+    reservoir_weights = as.numeric(row_weights[reservoir_idx])
+  )
+}
+
+weighted_cox_bootstrap_surrogate_fit = function(time, dead, X, row_weights, strata = NULL, cluster = NULL) {
+  X = as.matrix(X)
+  row_weights = as.numeric(row_weights)
+  ok = is.finite(time) & is.finite(dead) & is.finite(row_weights) & row_weights > 0
+  if (!is.null(strata)) ok = ok & !is.na(strata)
+  if (!is.null(cluster)) ok = ok & !is.na(cluster)
+  if (!any(ok)) return(NULL)
+  X_fit = X[ok, , drop = FALSE]
+  if (is.null(colnames(X_fit))) colnames(X_fit) = paste0("x", seq_len(ncol(X_fit)))
+  if (!("treatment" %in% colnames(X_fit)) && ncol(X_fit) >= 1L) colnames(X_fit)[1L] = "treatment"
+  dat = as.data.frame(X_fit, check.names = FALSE)
+  dat$.time__ = as.numeric(time[ok])
+  dat$.dead__ = as.numeric(dead[ok])
+  dat$.wgt__ = as.numeric(row_weights[ok])
+  rhs_terms = colnames(X_fit)
+  if (!is.null(strata)) {
+    dat$.strata__ = factor(as.integer(strata[ok]))
+    rhs_terms = c(rhs_terms, "strata(.strata__)")
+  }
+  if (!is.null(cluster)) {
+    dat$.cluster__ = factor(as.integer(cluster[ok]))
+    rhs_terms = c(rhs_terms, "cluster(.cluster__)")
+  }
+  fit = tryCatch(
+    suppressWarnings(
+      survival::coxph(
+        stats::as.formula(paste0("survival::Surv(.time__, .dead__) ~ ", paste(rhs_terms, collapse = " + "))),
+        data = dat,
+        weights = .wgt__
+      )
+    ),
+    error = function(e) NULL
+  )
+  coef_vec = tryCatch(stats::coef(fit), error = function(e) NULL)
+  beta_hat = if (!is.null(coef_vec) && ("treatment" %in% names(coef_vec))) as.numeric(coef_vec[["treatment"]]) else NA_real_
+  if (!is.finite(beta_hat)) return(NULL)
+  list(beta_hat = beta_hat, coefficients = coef_vec, fit = fit)
+}
+
+weighted_weibull_bootstrap_surrogate_fit = function(time, dead, X, row_weights, cluster = NULL) {
+  X = as.matrix(X)
+  row_weights = as.numeric(row_weights)
+  ok = is.finite(time) & is.finite(dead) & is.finite(row_weights) & row_weights > 0
+  if (!is.null(cluster)) ok = ok & !is.na(cluster)
+  if (!any(ok)) return(NULL)
+  X_fit = X[ok, , drop = FALSE]
+  if (is.null(colnames(X_fit))) colnames(X_fit) = paste0("x", seq_len(ncol(X_fit)))
+  if (!("treatment" %in% colnames(X_fit)) && ncol(X_fit) >= 1L) colnames(X_fit)[1L] = "treatment"
+  dat = as.data.frame(X_fit, check.names = FALSE)
+  dat$.time__ = as.numeric(time[ok])
+  dat$.dead__ = as.numeric(dead[ok])
+  dat$.wgt__ = as.numeric(row_weights[ok])
+  rhs_terms = colnames(X_fit)
+  if (!is.null(cluster)) {
+    dat$.cluster__ = factor(as.integer(cluster[ok]))
+  }
+  fit = tryCatch(
+    suppressWarnings(
+      survival::survreg(
+        stats::as.formula(paste0("survival::Surv(.time__, .dead__) ~ ", paste(rhs_terms, collapse = " + "))),
+        data = dat,
+        weights = .wgt__,
+        dist = "weibull"
+      )
+    ),
+    error = function(e) NULL
+  )
+  coef_vec = tryCatch(stats::coef(fit), error = function(e) NULL)
+  beta_hat = if (!is.null(coef_vec) && ("treatment" %in% names(coef_vec))) as.numeric(coef_vec[["treatment"]]) else NA_real_
+  if (!is.finite(beta_hat)) return(NULL)
+  list(beta_hat = beta_hat, coefficients = coef_vec, fit = fit)
 }
 
 # Creates a fork cluster and caps OMP/BLAS threads on each worker to 1.
@@ -254,20 +437,10 @@ get_bootstrap_dispatch_policy = function() {
       "^InferencePropGCompMeanDiff$" = "percentile",
       "^InferenceSurvivalDepCensTransformRegr$" = "percentile",
       "^InferenceSurvivalKKRankRegrIVWC$" = "percentile",
-      "^InferenceIncidMultiKKClogitIVWC$" = "percentile",
-      "^InferenceIncidMultiKKClogitPlusGLMMIVWC$" = "percentile",
-      "^InferenceIncidMultiKKClogitOneLik$" = "percentile",
-      "^InferenceIncidMultiKKClogitPlusGLMMOneLik$" = "percentile",
-      "^InferenceOrdinalUnivKKCondPropOddsRegr$" = "percentile",
       "^InferenceOrdinalAdjCatLogitRegr$" = "percentile",
-      "^InferenceSurvivalKKStratCoxOneLik$" = "percentile",
+      "^InferenceSurvivalKKStratCoxPHOneLik$" = "percentile",
       "^InferenceCountPoisson$" = "percentile",
       "^InferenceCountQuasiPoisson$" = "percentile",
-      "^InferencePropMultiKKQuantileRegrOneLik$" = "percentile",
-      "^InferenceSurvivalMultiDepCensTransformRegr$" = "percentile",
-      "^InferencePropMultiKKQuantileRegrIVWC$" = "percentile",
-      "^InferenceOrdinalMultiCumulProbitRegr$" = "percentile",
-      "^InferenceOrdinalMultiPartialProportionalOddsRegr$" = "percentile",
       "^InferencePropZeroOneInflatedBetaRegr$" = "percentile",
       "^InferencePropFractionalLogit$" = "percentile",
       "^InferenceCountHurdleNegBin$" = "percentile",
@@ -303,12 +476,12 @@ get_optimization_dispatch_policy = function() {
       "KKWeibullFrailtyOneLik$" = "lbfgs",
       "KKHurdlePoissonIVWC$"    = "lbfgs",
       "KKHurdlePoissonOneLik$"  = "lbfgs",
-      "KKCPoissonOneLik$"       = "lbfgs",
+      "KKCondPoissonOneLik$"       = "lbfgs",
       "InferenceCountPoisson$"  = "lbfgs",
       "InferenceCountQuasiPoisson$" = "lbfgs",
       "InferenceIncidModifiedPoisson$" = "lbfgs",
       "InferenceSurvivalKKClaytonCopulaOneLik$" = "lbfgs",
-      "InferenceIncidKKClogitPlusGLMMOneLik$"   = "lbfgs"
+      "InferenceIncidKKCondLogitPlusGLMMOneLik$"   = "lbfgs"
     )
   )
 }

@@ -39,3 +39,21 @@ test_that("KK hurdle-Poisson combined-likelihood warns once before bootstrap fal
 	expect_no_warning(inf$.__enclos_env__$private$warn_bootstrap_fallback_once())
 	expect_true(isTRUE(inf$.__enclos_env__$private$cached_values$warned_bootstrap_se_unavailable))
 })
+
+test_that("KK count one-likelihood paths produce finite estimates", {
+	des = DesignFixedBinaryMatch$new(response_type = "count", n = 6, verbose = FALSE)
+	des$add_all_subjects_to_experiment(data.frame(x = c(-1, -0.5, 0.25, 0.75, 1.5, 2)))
+	des$assign_w_to_all_subjects()
+	des$add_all_subject_responses(c(1, 3, 2, 1, 4, 2))
+
+	inf_hurdle = InferenceCountKKHurdlePoissonOneLik$new(des, verbose = FALSE, use_rcpp = TRUE)
+	inf_cpois = InferenceCountKKCondPoissonOneLik$new(des, verbose = FALSE)
+
+	beta_hurdle = inf_hurdle$compute_estimate()
+	beta_cpois = inf_cpois$compute_estimate()
+
+	expect_true(is.finite(beta_hurdle))
+	expect_true(is.finite(beta_cpois))
+	expect_true("lik_ratio" %in% inf_hurdle$get_supported_testing_types())
+	expect_true("lik_ratio" %in% inf_cpois$get_supported_testing_types())
+})

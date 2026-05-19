@@ -6,13 +6,52 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 	inherit = InferenceAbstractKKMarginalIncid,
 	public = list(
 		#' @description Compute treatment estimate
-		#' @param estimate_only If TRUE, skip variance component calculations.
+		#' @param estimate_only Logical. If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Recomputes the KK marginal incidence estimate under
+		#'   Bayesian-bootstrap weights.
+		#' @param subject_or_block_weights Numeric vector. Row weights for bootstrap.
+		#' @param estimate_only Logical. If TRUE, skip variance component calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			if (weights_are_effectively_constant(row_weights)) {
+				beta_hat_T = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+				if (is.finite(beta_hat_T)) {
+					private$cached_values$beta_hat_T = beta_hat_T
+					private$cached_values$s_beta_hat_T = NA_real_
+					return(private$cached_values$beta_hat_T)
+				}
+			}
+			X = private$build_design_matrix()
+			if (is.null(X)) return(NA_real_)
+			X = as.matrix(X)
+			ok = is.finite(row_weights) & row_weights > 0 & is.finite(as.numeric(private$y))
+			if (!any(ok)) return(NA_real_)
+			X_fit = X[ok, , drop = FALSE]
+			y_fit = as.numeric(private$y[ok])
+			w_fit = as.numeric(row_weights[ok])
+			mod = tryCatch(
+				fast_poisson_regression_weighted_cpp(
+					X = X_fit,
+					y = y_fit,
+					weights = w_fit,
+					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
+					smart_cold_start = private$smart_cold_start_default,
+					optimization_alg = private$optimization_alg %||% "irls"
+				),
+				error = function(e) NULL
+			)
+			beta_hat_T = if (is.null(mod) || length(mod$b) < 2L) NA_real_ else as.numeric(mod$b[2L])
+			private$cached_values$beta_hat_T = beta_hat_T
+			private$cached_values$s_beta_hat_T = NA_real_
+			private$cached_values$beta_hat_T
+		},
 		#' @description Compute asymp confidence interval
-		#' @param alpha The significance level (default 0.05).
+		#' @param alpha Numeric. Significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
@@ -24,7 +63,7 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
 		#' @description Compute asymp two sided pval for treatment effect
-		#' @param delta The null treatment effect (default 0).
+		#' @param delta Numeric. Null treatment effect value (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)

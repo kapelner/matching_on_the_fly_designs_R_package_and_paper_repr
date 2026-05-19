@@ -25,6 +25,7 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 		#' @param p The number of covariates to use for matching.
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
+		#' @param seed Integer seed for reproducibility.
 		#'
 		#' @return  A new `DesignSeqOneByOneKK14` object
 		initialize = function(
@@ -32,16 +33,17 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 						prob_T = 0.5,
 						include_is_missing_as_a_new_feature = TRUE,
 						n = NULL,
-						
+
 						verbose = FALSE,
 						lambda = NULL,
 						t_0_pct = NULL,
 						morrison = FALSE,
 						p = NULL,
 						missingness_method = "impute",
-						model_formula = ~ .
+						model_formula = ~ .,
+						seed = NULL
 					) {
-			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula)
+			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 			private$blocking_capable = TRUE
 			private$matching_capable = TRUE
 			private$uses_covariates = TRUE

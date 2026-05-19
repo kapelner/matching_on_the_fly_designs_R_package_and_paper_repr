@@ -8,7 +8,7 @@
 #' @keywords internal
 InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 	lock_objects = FALSE,
-	inherit = InferenceAsymp,
+	inherit = InferenceMLEorKMSummaryTable,
 	public = list(
 		#' @description Computes an asymptotic confidence interval using the configured test.
 		#'

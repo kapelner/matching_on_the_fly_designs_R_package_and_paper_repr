@@ -31,6 +31,8 @@ inf$compute_estimate()
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceIncidCMH-compute_asymp_confidence_interval}{\code{InferenceIncidCMH$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceIncidCMH-compute_asymp_two_sided_pval}{\code{InferenceIncidCMH$compute_asymp_two_sided_pval()}}
 \item \href{#method-InferenceIncidCMH-new}{\code{InferenceIncidCMH$new()}}
 \item \href{#method-InferenceIncidCMH-clone}{\code{InferenceIncidCMH$clone()}}
 }
@@ -53,6 +55,7 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>EDI::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
@@ -75,8 +78,6 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_supported_testing_types"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_supported_testing_types'><code>EDI::InferenceAsymp$get_supported_testing_types()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAllSimpleMeanDiff" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceAllSimpleMeanDiff.html#method-InferenceAllSimpleMeanDiff-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceAllSimpleMeanDiff$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAllSimpleMeanDiff" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAllSimpleMeanDiff.html#method-InferenceAllSimpleMeanDiff-compute_asymp_confidence_interval'><code>EDI::InferenceAllSimpleMeanDiff$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAllSimpleMeanDiff" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAllSimpleMeanDiff.html#method-InferenceAllSimpleMeanDiff-compute_asymp_two_sided_pval'><code>EDI::InferenceAllSimpleMeanDiff$compute_asymp_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAllSimpleMeanDiff" data-id="compute_estimate"><a href='../../EDI/html/InferenceAllSimpleMeanDiff.html#method-InferenceAllSimpleMeanDiff-compute_estimate'><code>EDI::InferenceAllSimpleMeanDiff$compute_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAllSimpleMeanDiff" data-id="compute_estimate_with_bootstrap_weights"><a href='../../EDI/html/InferenceAllSimpleMeanDiff.html#method-InferenceAllSimpleMeanDiff-compute_estimate_with_bootstrap_weights'><code>EDI::InferenceAllSimpleMeanDiff$compute_estimate_with_bootstrap_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAllSimpleMeanDiff" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceAllSimpleMeanDiff.html#method-InferenceAllSimpleMeanDiff-compute_rand_confidence_interval'><code>EDI::InferenceAllSimpleMeanDiff$compute_rand_confidence_interval()</code></a></span></li>
@@ -84,12 +85,51 @@ inf$compute_estimate()
 </details>
 }}
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceIncidCMH-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidCMH-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes an approximate confidence interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidCMH$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Numeric. Significance level (default 0.05).}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceIncidCMH-compute_asymp_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidCMH-compute_asymp_two_sided_pval}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes an approximate two-sided p-value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidCMH$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Numeric. Null treatment effect value (default 0).}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidCMH-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidCMH-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize CMH blocked-design incidence inference.
+Initialize CMH incidence inference.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidCMH$new(des_obj, model_formula = NULL, verbose = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidCMH$new(
+  des_obj,
+  model_formula = NULL,
+  se_est_num_vectors = 1000L,
+  verbose = FALSE
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -97,12 +137,12 @@ Initialize CMH blocked-design incidence inference.
 \describe{
 \item{\code{des_obj}}{A completed design object.}
 
-\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
-the formula from the design object is used and its pre-computed design matrix is
-reused. If a formula is provided, a new design matrix is constructed from the
-design's imputed covariates.}
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
 
-\item{\code{verbose}}{Whether to print progress messages.}
+\item{\code{se_est_num_vectors}}{For non-block designs, the number of randomization vectors
+drawn from the design to estimate the standard error. Default \code{1000L}.}
+
+\item{\code{verbose}}{Logical. Whether to print progress messages.}
 }
 \if{html}{\out{</div>}}
 }
