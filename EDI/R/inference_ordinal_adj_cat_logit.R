@@ -16,7 +16,7 @@
 #' @export
 InferenceOrdinalAdjCatLogitRegr = R6::R6Class("InferenceOrdinalAdjCatLogitRegr",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLikStdModCache,
+	inherit = InferenceAsympLikStdModCacheNoParamBootstrap,
 	public = list(
 		#' @description Initialize an adjacent-category-logit inference object.
 		#' @param des_obj A completed \code{Design} object with an ordinal response.

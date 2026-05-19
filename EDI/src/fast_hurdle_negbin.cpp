@@ -28,6 +28,80 @@ double clamp_exp_arg_hnb(double eta) {
 
 class TruncatedNegBinCount;
 
+void validate_truncated_negbin_inputs(const MatrixXd& X,
+									  const VectorXd& y,
+									  const Nullable<NumericVector>& warm_start_params,
+									  const Nullable<NumericMatrix>& warm_start_fisher_info,
+									  const Nullable<IntegerVector>& fixed_idx,
+									  const Nullable<NumericVector>& fixed_values) {
+	if (X.rows() != y.size()) {
+		Rcpp::stop("X and y must have compatible dimensions");
+	}
+	if (!X.allFinite()) {
+		Rcpp::stop("X must contain only finite values");
+	}
+	if (!y.allFinite()) {
+		Rcpp::stop("y must contain only finite values");
+	}
+	for (int i = 0; i < y.size(); ++i) {
+		if (y[i] <= 0.0) {
+			Rcpp::stop("y must contain only positive counts for truncated negative binomial regression");
+		}
+		const double y_round = std::round(y[i]);
+		if (std::fabs(y[i] - y_round) > 1e-8) {
+			Rcpp::stop("y must contain only integer-valued counts for truncated negative binomial regression");
+		}
+	}
+
+	const int n_params = X.cols() + 1;
+	if (warm_start_params.isNotNull()) {
+		NumericVector warm = NumericVector(warm_start_params);
+		if (warm.size() != n_params) {
+			Rcpp::stop("warm_start_params must have length ncol(X) + 1");
+		}
+		for (int i = 0; i < warm.size(); ++i) {
+			if (!R_finite(warm[i])) {
+				Rcpp::stop("warm_start_params must contain only finite values");
+			}
+		}
+	}
+	if (warm_start_fisher_info.isNotNull()) {
+		NumericMatrix warm_info(warm_start_fisher_info);
+		if (warm_info.nrow() != n_params || warm_info.ncol() != n_params) {
+			Rcpp::stop("warm_start_fisher_info must be a square matrix with ncol(X) + 1 rows");
+		}
+		for (int j = 0; j < warm_info.ncol(); ++j) {
+			for (int i = 0; i < warm_info.nrow(); ++i) {
+				if (!R_finite(warm_info(i, j))) {
+					Rcpp::stop("warm_start_fisher_info must contain only finite values");
+				}
+			}
+		}
+	}
+
+	make_fixed_param_spec(n_params, fixed_idx, fixed_values);
+}
+
+bool validate_start_vector(const VectorXd& params,
+						   int expected_size,
+						   std::string* reason = nullptr) {
+	auto fail = [&](const std::string& msg) {
+		if (reason != nullptr) *reason = msg;
+		return false;
+	};
+	if (params.size() != expected_size) {
+		return fail("start vector has incompatible length");
+	}
+	if (!params.allFinite()) {
+		return fail("start vector must contain only finite values");
+	}
+	const double log_theta = params[expected_size - 1];
+	if (!std::isfinite(log_theta) || log_theta < -20.0 || log_theta > 20.0) {
+		return fail("start vector log-theta is outside the supported range");
+	}
+	return true;
+}
+
 double smart_truncated_negbin_theta_start_from_beta(const MatrixXd& X,
 													const VectorXi& y,
 													const VectorXd& beta,
@@ -139,6 +213,11 @@ LikelihoodFitResult fit_truncated_negbin_with_fallback(TruncatedNegBinCount& fun
 	best.params = params;
 	best.value = std::numeric_limits<double>::infinity();
 	std::string last_error;
+	const int expected_size = params.size();
+
+	if (!validate_start_vector(params, expected_size, &last_error)) {
+		Rcpp::stop(last_error);
+	}
 
 	auto maybe_keep = [&](const LikelihoodFitResult& candidate) {
 		if (candidate.params.size() == 0 || !candidate.params.allFinite()) return;
@@ -156,6 +235,11 @@ LikelihoodFitResult fit_truncated_negbin_with_fallback(TruncatedNegBinCount& fun
 	auto try_alg = [&](const std::string& alg_try,
 					   const VectorXd& start_try,
 					   const Eigen::MatrixXd* warm_info_try = nullptr) -> bool {
+		std::string start_reason;
+		if (!validate_start_vector(start_try, expected_size, &start_reason)) {
+			last_error = start_reason;
+			return false;
+		}
 		try {
 			LikelihoodFitResult fit = optimize_fixed_likelihood(
 				fun,
@@ -617,6 +701,7 @@ List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X,
                                                                          std::string optimization_alg = "lbfgs",
                                                                          Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
         optimization_alg = normalize_optimizer_algorithm(optimization_alg, "lbfgs", false);
+		validate_truncated_negbin_inputs(X, y, warm_start_params, warm_start_fisher_info, fixed_idx, fixed_values);
 
         List pos = build_positive_hurdle_negbin_data(X, y);
         MatrixXd X_pos = pos["X_pos"];
@@ -640,6 +725,10 @@ List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X,
                 params.setZero();
                 params[p] = std::log(1.0);
         }
+		std::string start_error;
+		if (!validate_start_vector(params, p + 1, &start_error)) {
+			Rcpp::stop(start_error);
+		}
 
         FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
         TruncatedNegBinCount fun(X_pos, y_pos);

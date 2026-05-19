@@ -165,6 +165,10 @@ compute_weighted_sqd_distances_cpp <- function(x_new, X_all_scaled_col_subset, r
     .Call(`_EDI_compute_weighted_sqd_distances_cpp`, x_new, X_all_scaled_col_subset, reservoir_indices, covariate_weights)
 }
 
+greedy_design_search_cpp <- function(X_raw, r, objective, n_iter) {
+    .Call(`_EDI_greedy_design_search_cpp`, X_raw, r, objective, n_iter)
+}
+
 efron_redraw_cpp <- function(t, prob_T, weighted_coin_prob) {
     .Call(`_EDI_efron_redraw_cpp`, t, prob_T, weighted_coin_prob)
 }

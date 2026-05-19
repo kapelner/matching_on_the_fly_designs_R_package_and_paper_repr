@@ -7,7 +7,7 @@
 #' @keywords internal
 InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIVWC",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThroughCompound,
+	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
 	public = list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).

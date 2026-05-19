@@ -6,18 +6,15 @@
 #' count-specific parameter packing, warm starts, and likelihood dispatch.
 #'
 #' @keywords internal
-InferenceCountLikelihood = R6::R6Class("InferenceCountLikelihood",
-	lock_objects = FALSE,
-	inherit = InferenceParamBootstrap,
-	public = list(
+inference_count_likelihood_public = list(
 		#' @description Computes the treatment estimate using the underlying model.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		}
-	),
-	private = list(
+	)
+inference_count_likelihood_private = list(
 		# --- Count-specific shared logic ---
 
 		# 1. Parameter packing and unpacking
@@ -117,4 +114,24 @@ InferenceCountLikelihood = R6::R6Class("InferenceCountLikelihood",
 			private$invert_test_pval_confidence_interval(alpha)
 		}
 	)
+
+InferenceCountLikelihood = R6::R6Class("InferenceCountLikelihood",
+	lock_objects = FALSE,
+	inherit = InferenceParamBootstrap,
+	public = inference_count_likelihood_public,
+	private = inference_count_likelihood_private
+)
+
+#' Count-Specific Likelihood Inference Without Parametric LR Bootstrap
+#'
+#' @name InferenceCountLikelihoodNoParamBootstrap
+#' @description Internal base class for count likelihood families that should
+#' not expose the parametric LR bootstrap API.
+#'
+#' @keywords internal
+InferenceCountLikelihoodNoParamBootstrap = R6::R6Class("InferenceCountLikelihoodNoParamBootstrap",
+	lock_objects = FALSE,
+	inherit = InferenceAsympLik,
+	public = inference_count_likelihood_public,
+	private = inference_count_likelihood_private
 )

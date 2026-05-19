@@ -579,6 +579,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				full_res$params = as.numeric(c(full_res$coefficients$cond, full_res$coefficients$zi))
 			}
 			list(
+				worker_data = list(y = as.numeric(y_sim)),
 				full_fit = full_res,
 				fit_null = function(d, start = NULL){
 					ws = start %||% private$get_fit_warm_start_for_length("params", n_params)

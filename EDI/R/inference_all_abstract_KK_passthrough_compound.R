@@ -5,10 +5,7 @@
 #' An abstract R6 class that provides relevant methods when the designs are KK matching-on-the-fly.
 #'
 #' @keywords internal
-InferenceKKPassThroughCompound = R6::R6Class("InferenceKKPassThroughCompound",
-	lock_objects = FALSE,
-	inherit = InferenceParamBootstrap,
-	public = utils::modifyList(utils::modifyList(as.list(InferenceMixinKKPassThrough$public), as.list(InferenceMixinKKPassThroughCompound$public)), list(
+inference_kk_passthrough_compound_public = utils::modifyList(utils::modifyList(as.list(InferenceMixinKKPassThrough$public), as.list(InferenceMixinKKPassThroughCompound$public)), list(
 		#' @description Initialize
 		#' @param des_obj         A DesignSeqOneByOne object.
 		#' @param model_formula   Optional formula for covariate adjustment.
@@ -28,6 +25,26 @@ InferenceKKPassThroughCompound = R6::R6Class("InferenceKKPassThroughCompound",
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
 		}
-	)),
-	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), as.list(InferenceMixinKKPassThroughCompound$private))
+	))
+inference_kk_passthrough_compound_private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), as.list(InferenceMixinKKPassThroughCompound$private))
+
+InferenceKKPassThroughCompound = R6::R6Class("InferenceKKPassThroughCompound",
+	lock_objects = FALSE,
+	inherit = InferenceParamBootstrap,
+	public = inference_kk_passthrough_compound_public,
+	private = inference_kk_passthrough_compound_private
+)
+
+#' Internal Base Class for KK Designs Without Parametric LR Bootstrap
+#'
+#' @name InferenceKKPassThroughCompoundNoParamBootstrap
+#' @description Internal method. Parallel branch for KK matching-on-the-fly
+#' designs that should not expose the parametric LR bootstrap API.
+#'
+#' @keywords internal
+InferenceKKPassThroughCompoundNoParamBootstrap = R6::R6Class("InferenceKKPassThroughCompoundNoParamBootstrap",
+	lock_objects = FALSE,
+	inherit = InferenceAsympLik,
+	public = inference_kk_passthrough_compound_public,
+	private = inference_kk_passthrough_compound_private
 )

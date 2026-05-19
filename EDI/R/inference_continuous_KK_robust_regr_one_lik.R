@@ -6,7 +6,7 @@
 #' @export
 InferenceContinKKRobustRegrOneLik = R6::R6Class("InferenceContinKKRobustRegrOneLik",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThroughCompound,
+	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
 	public = list(
 				
 		#' @description Initialize the inference object.

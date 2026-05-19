@@ -18,7 +18,7 @@
 #' @export
 InferenceContinKKOLSIVWC = R6::R6Class("InferenceContinKKOLSIVWC",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThroughCompound,
+	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
 	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
 		#' @param B  					Number of bootstrap samples.

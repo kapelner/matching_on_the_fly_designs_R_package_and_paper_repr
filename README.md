@@ -112,6 +112,47 @@ Bottom line: use `EDI_NATIVE_SPEED`/`EDI_NATIVE_LTO` to benchmark and tune the e
 ### Bootstrap diagnostics for modified Poisson incidence inference
 Trimmed versions of the `cars`/`FixedCluster` workload (e.g., `scripts/diagnose_modified_poisson_bootstrap.R`) used to hit `Bootstrap confidence interval returned NA bounds` because the reduced design matrix had as many covariates as rows. The inference object now falls back to the univariate modified Poisson fit whenever the multivariate design is underdetermined, so the bootstrap diagnostics script now reports 25/25 finite replicates and `prop_illegal_values = 0.000` while still sharing the same treatment estimate. Run that script to reproduce the failure mode and confirm the fallback path locally.
 
+### Parametric bootstrap LR workflow
+For likelihood-backed classes that support parametric-bootstrap likelihood-ratio
+calibration, the intended user-facing entry points are:
+
+- `compute_lik_ratio_bootstrap_two_sided_pval(delta = 0, B = 199, show_progress = FALSE)`
+- `compute_lik_ratio_bootstrap_confidence_interval(alpha = 0.05, B = 199, show_progress = FALSE)`
+
+These methods are available only for inference classes whose internal
+`supports_lik_ratio_param_bootstrap()` capability is enabled. Unsupported
+classes error rather than silently falling back to another procedure.
+
+A typical flow is:
+
+```r
+library(EDI)
+
+des = DesignFixedBernoulli$new(n = 80, response_type = "count", verbose = FALSE)
+des$add_all_subjects_to_experiment(data.frame(x1 = rnorm(80)))
+des$overwrite_all_subject_assignments(rep(c(1, 0), length.out = 80))
+des$add_all_subject_responses(rpois(80, lambda = exp(0.2 + 0.3 * des$get_w() + 0.2 * des$get_X()[, 1])))
+
+inf = InferenceCountPoisson$new(des, model_formula = ~ x1, verbose = FALSE)
+inf$set_seed(1)
+
+p_boot = inf$compute_lik_ratio_bootstrap_two_sided_pval(
+  delta = 0,
+  B = 199,
+  show_progress = FALSE
+)
+
+ci_boot = inf$compute_lik_ratio_bootstrap_confidence_interval(
+  alpha = 0.05,
+  B = 199,
+  show_progress = FALSE
+)
+```
+
+`delta = 0`, `B = 199`, and `show_progress = FALSE` are the standard defaults.
+These routines are materially more expensive than the asymptotic LR methods
+because they repeatedly simulate and refit null datasets.
+
 To cite please use
 
 Kapelner, A., & Krieger, A. (2023). A Matching Procedure for Sequential Experiments that Iteratively Learns which Covariates Improve Power. Biometrics. https://doi.org/10.1111/biom.13561

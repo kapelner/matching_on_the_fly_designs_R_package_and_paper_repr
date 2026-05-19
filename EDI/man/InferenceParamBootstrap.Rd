@@ -18,6 +18,17 @@ This class sits between \code{InferenceAsympLik} and
 bespoke partial-likelihood, quadrature, frailty, copula, or custom
 combined-likelihood geometry remain direct children of
 \code{InferenceAsympLik} and do not pass through here.
+
+The only operational user-facing parametric-bootstrap LR methods on this
+surface are
+\code{compute_lik_ratio_bootstrap_two_sided_pval(...)} and
+\code{compute_lik_ratio_bootstrap_confidence_interval(...)}. Diagnostic
+accessors such as \code{get_last_param_bootstrap_diagnostics()} are
+supplementary and not alternative execution entry points.
+
+Parametric-bootstrap LR calibration is available only for concrete classes
+whose private method \code{supports_lik_ratio_param_bootstrap()} returns
+\code{TRUE}. Classes that do not opt in will error on these methods.
 }
 \keyword{internal}
 \section{Super classes}{
@@ -102,11 +113,28 @@ Bootstrap-calibrated likelihood-ratio two-sided p-value.
 Fits the null model at \code{delta}, simulates \code{B} datasets from
 that fitted null, refits unrestricted and null models on each, and
 returns the empirical tail probability of the observed LR statistic.
+This is the primary user-facing entry point for bootstrap-calibrated
+likelihood-ratio p-values.
+
+This method is available only for classes whose private
+\code{supports_lik_ratio_param_bootstrap()} method returns \code{TRUE}.
+For unsupported classes it errors immediately rather than silently
+falling back to another procedure.
+
+The standard user-facing arguments are \code{delta = 0},
+\code{B = 199}, and \code{show_progress = FALSE}. The remaining
+arguments control replicate-quality thresholds and retry behavior.
+
+Runtime cost is roughly one unrestricted fit plus \code{B} simulated
+unrestricted/null refit pairs, so this is typically much more
+expensive than the asymptotic LR p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceParamBootstrap$compute_lik_ratio_bootstrap_two_sided_pval(
   delta = 0,
   B = 199,
-  show_progress = FALSE
+  show_progress = FALSE,
+  min_number_usable_samples = 5L,
+  max_attempts_per_replicate = 2L
 )}\if{html}{\out{</div>}}
 }
 
@@ -118,6 +146,12 @@ returns the empirical tail probability of the observed LR statistic.
 \item{\code{B}}{Number of bootstrap replicates. Default 199.}
 
 \item{\code{show_progress}}{Logical; show a progress bar. Default \code{FALSE}.}
+
+\item{\code{min_number_usable_samples}}{Minimum number of usable bootstrap
+replicates required to return a finite p-value. Default \code{5L}.}
+
+\item{\code{max_attempts_per_replicate}}{Maximum number of simulation/refit
+retries per bootstrap replicate. Default \code{2L}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -135,11 +169,23 @@ Inverts \code{compute_lik_ratio_bootstrap_two_sided_pval} via a
 bracket-and-bisect search seeded with the Wald interval.  Each p-value
 evaluation costs \code{B} bootstrap refits, so this method is
 substantially more expensive than the p-value alone.
+This is the primary user-facing entry point for bootstrap-calibrated
+likelihood-ratio confidence intervals.
+
+This method is available only for classes whose private
+\code{supports_lik_ratio_param_bootstrap()} method returns \code{TRUE}.
+
+The standard user-facing arguments are \code{B = 199} and
+\code{show_progress = FALSE}. Runtime cost is high because each
+confidence-interval bound requires repeated bootstrap p-value
+evaluations.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceParamBootstrap$compute_lik_ratio_bootstrap_confidence_interval(
   alpha = 0.05,
   B = 199,
-  show_progress = FALSE
+  show_progress = FALSE,
+  min_number_usable_samples = 5L,
+  max_attempts_per_replicate = 2L
 )}\if{html}{\out{</div>}}
 }
 
@@ -151,19 +197,18 @@ substantially more expensive than the p-value alone.
 \item{\code{B}}{Bootstrap replicates per p-value evaluation. Default 199.}
 
 \item{\code{show_progress}}{Logical; show a progress bar. Default \code{FALSE}.}
+
+\item{\code{min_number_usable_samples}}{Minimum number of usable bootstrap
+replicates required within each p-value evaluation. Default
+\code{5L}.}
+
+\item{\code{max_attempts_per_replicate}}{Maximum number of simulation/refit
+retries per bootstrap replicate. Default \code{2L}.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
 Named two-element numeric vector with the confidence-interval bounds.
-Simulate a bootstrap dataset under the fitted null likelihood and return
-a minimal spec list for refitting.
-
-Must be overridden by families that set supports_lik_ratio_param_bootstrap()
-to TRUE.  The returned list must contain at least:
-  - full_fit:  unrestricted fit on the simulated data
-  - fit_null:  function(delta, start) returning a constrained fit
-  - neg_loglik: function(fit) returning the neg-log-likelihood
 }
 }
 \if{html}{\out{<hr>}}

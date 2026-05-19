@@ -112,6 +112,7 @@ InferenceOrdinalCauchitRegr = R6::R6Class("InferenceOrdinalCauchitRegr",
 			full_fit_boot = list(params = as.numeric(full_res$params), neg_loglik = as.numeric(full_res$neg_loglik))
 			if (!is.finite(full_fit_boot$neg_loglik)) return(NULL)
 			list(
+				worker_data = list(y = y_sim),
 				full_fit = full_fit_boot,
 				fit_null = function(d, start = NULL){
 					res = tryCatch(

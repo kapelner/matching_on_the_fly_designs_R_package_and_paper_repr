@@ -16,11 +16,11 @@ all_classes = c(
     "InferenceAllSimpleMeanDiff", "InferenceAllSimpleMeanDiffPooledVar", "InferenceAllSimpleWilcox",
     "InferenceContinKKGLMM", "InferenceContinKKOLSIVWC", "InferenceContinKKOLSOneLik", "InferenceContinKKQuantileRegrIVWC", "InferenceContinKKQuantileRegrOneLik",
     "InferenceContinKKRobustRegrIVWC", "InferenceContinKKRobustRegrOneLik", "InferenceContinLin", "InferenceContinOLS", "InferenceContinQuantileRegr", "InferenceContinRobustRegr",
-    "InferenceCountCompositeLikelihood", "InferenceCountHurdleNegBin", "InferenceCountHurdlePoisson", "InferenceCountKKCPoissonOneLik",
+    "InferenceCountCompositeLikelihood", "InferenceCountHurdleNegBin", "InferenceCountHurdlePoisson", "InferenceCountKKCondPoissonOneLik",
     "InferenceCountKKGLMM", "InferenceCountKKHurdlePoissonIVWC", "InferenceCountKKHurdlePoissonOneLik", "InferenceCountNegBin", "InferenceCountPoisson", "InferenceCountPoissonKKGEE",
     "InferenceCountQuasiPoisson", "InferenceCountRobustPoisson", "InferenceCountZeroInflatedNegBin", "InferenceCountZeroInflatedPoisson",
     "InferenceIncidBinomialIdentityRiskDiff", "InferenceIncidExactFisher", "InferenceIncidExactZhang", 
-    "InferenceIncidGCompRiskDiff", "InferenceIncidGCompRiskRatio", "InferenceIncidKKClogitIVWC", "InferenceIncidKKClogitOneLik", 
+    "InferenceIncidGCompRiskDiff", "InferenceIncidGCompRiskRatio", "InferenceIncidKKCondLogitIVWC", "InferenceIncidKKCondLogitOneLik", 
     "InferenceIncidKKGCompRiskDiff", "InferenceIncidKKGCompRiskRatio", "InferenceIncidKKGEE", "InferenceIncidKKModifiedPoisson",
     "InferenceIncidKKNewcombeRiskDiff", "InferenceIncidLogBinomial", "InferenceIncidLogRegr", "InferenceIncidModifiedPoisson",
     "InferenceIncidNewcombeRiskDiff", "InferenceIncidProbitRegr", "InferenceIncidRiskDiff", "InferenceIncidenceWald",
@@ -61,6 +61,13 @@ generate_data = function(n, p, rt) {
     res
 }
 
+# Split paths into Normal and Heavy
+heavy_patterns = "GLMM|GEE|Clayton|Frailty|CompositeLikelihood"
+all_classes_sorted = c(
+    all_classes[!grepl(heavy_patterns, all_classes)],
+    all_classes[grepl(heavy_patterns, all_classes)]
+)
+
 results_csv = "truly_exhaustive_no_na_results.csv"
 if (file.exists(results_csv)) {
     done_paths = fread(results_csv)$Path
@@ -68,7 +75,7 @@ if (file.exists(results_csv)) {
     done_paths = c()
 }
 
-for (cls_name in all_classes) {
+for (cls_name in all_classes_sorted) {
     if (cls_name %in% done_paths) next
     
     cat(sprintf("\n>>> %s... ", cls_name)); flush.console()

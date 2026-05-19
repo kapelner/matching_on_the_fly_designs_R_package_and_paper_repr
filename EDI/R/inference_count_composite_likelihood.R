@@ -127,6 +127,7 @@ InferenceCountCompositeLikelihood = R6::R6Class("InferenceCountCompositeLikeliho
 			)
 			if (is.null(full_fit_b) || length(full_fit_b$b) < j || !is.finite(full_fit_b$b[j])) return(NULL)
 			list(
+				worker_data = list(y = y_sim),
 				full_fit = full_fit_b,
 				fit_null = function(d, start = NULL){
 					tryCatch(

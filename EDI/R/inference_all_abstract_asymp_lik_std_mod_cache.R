@@ -3,18 +3,15 @@
 #' Abstract class providing MLE/KM-based inference methods for GLM and survival models.
 #'
 #' @keywords internal
-InferenceAsympLikStdModCache = R6::R6Class("InferenceAsympLikStdModCache",
-	lock_objects = FALSE,
-	inherit = InferenceParamBootstrap,
-	public = list(
+inference_asymp_lik_std_mod_cache_public = list(
 		#' @description Computes the treatment estimate using the underlying model.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		}
-	),
-	private = list(
+	)
+inference_asymp_lik_std_mod_cache_private = list(
 		supports_likelihood_tests = function(){
 			TRUE
 		},
@@ -132,4 +129,24 @@ InferenceAsympLikStdModCache = R6::R6Class("InferenceAsympLikStdModCache",
 			private$get_optimal_warm_start_config(expected_length, expected_fisher_dim)
 		}
 	)
+
+InferenceAsympLikStdModCache = R6::R6Class("InferenceAsympLikStdModCache",
+	lock_objects = FALSE,
+	inherit = InferenceParamBootstrap,
+	public = inference_asymp_lik_std_mod_cache_public,
+	private = inference_asymp_lik_std_mod_cache_private
+)
+
+#' GLM and Kaplan-Meier Inference Without Parametric LR Bootstrap
+#'
+#' Abstract class parallel to \code{InferenceAsympLikStdModCache} that retains
+#' the same asymptotic and likelihood-test behavior while not exposing the
+#' parametric LR bootstrap API.
+#'
+#' @keywords internal
+InferenceAsympLikStdModCacheNoParamBootstrap = R6::R6Class("InferenceAsympLikStdModCacheNoParamBootstrap",
+	lock_objects = FALSE,
+	inherit = InferenceAsympLik,
+	public = inference_asymp_lik_std_mod_cache_public,
+	private = inference_asymp_lik_std_mod_cache_private
 )

@@ -226,6 +226,16 @@ inline Eigen::VectorXd subset_vector(const Eigen::VectorXd& x, const Eigen::Vect
 }
 
 inline Eigen::MatrixXd subset_matrix(const Eigen::MatrixXd& M, const Eigen::VectorXi& row_idx, const Eigen::VectorXi& col_idx) {
+    for (int i = 0; i < row_idx.size(); ++i) {
+        if (row_idx[i] < 0 || row_idx[i] >= M.rows()) {
+            Rcpp::stop("subset_matrix: row index out of bounds");
+        }
+    }
+    for (int j = 0; j < col_idx.size(); ++j) {
+        if (col_idx[j] < 0 || col_idx[j] >= M.cols()) {
+            Rcpp::stop("subset_matrix: column index out of bounds");
+        }
+    }
     Eigen::MatrixXd out(row_idx.size(), col_idx.size());
     for (int i = 0; i < row_idx.size(); ++i) {
         for (int j = 0; j < col_idx.size(); ++j) {

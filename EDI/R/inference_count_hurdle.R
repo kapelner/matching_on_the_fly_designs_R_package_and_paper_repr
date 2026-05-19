@@ -55,7 +55,7 @@ InferenceCountHurdlePoisson = R6::R6Class("InferenceCountHurdlePoisson",
 #' @export
 InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 	lock_objects = FALSE,
-	inherit = InferenceCountLikelihood,
+	inherit = InferenceCountLikelihoodNoParamBootstrap,
 	public = list(
 		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object.
@@ -253,13 +253,16 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 			X_fit = ctx$X
 			X_hurdle = ctx$X_hurdle
 			y = as.numeric(private$y)
+			pos = y > 0
+			X_pos = X_fit[pos, , drop = FALSE]
+			y_pos = y[pos]
 			j_treat = as.integer(ctx$j_treat)
 			opt_alg = private$optimization_alg %||% "lbfgs"
 			n_params = ncol(X_fit) + 1L
 			full_fit = tryCatch(
 				fast_truncated_negbin_count_cpp(
-					X = X_fit,
-					y = y,
+					X = X_pos,
+					y = y_pos,
 					warm_start_params = private$get_fit_warm_start_for_length("params", n_params),
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
 					estimate_only = FALSE,
@@ -278,8 +281,8 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 					warm_start_params = start %||% private$get_fit_warm_start_for_length("params", n_params)
 					warm_fisher = private$get_fit_warm_start_fisher(n_params)
 					fast_truncated_negbin_count_cpp(
-						X = X_fit,
-						y = y,
+						X = X_pos,
+						y = y_pos,
 						warm_start_params = warm_start_params,
 						warm_start_fisher_info = warm_fisher,
 						smart_cold_start = private$smart_cold_start_default,
@@ -375,7 +378,6 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 				return(invisible(NULL))
 			}
 		},
-		supports_lik_ratio_param_bootstrap = function() FALSE,
 		simulate_under_lik_null = function(spec, delta, null_fit){
 			X       = spec$X
 			X_hurdle = spec$X_hurdle
@@ -398,10 +400,13 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 			y_pos = as.integer(qnbinom(u_trunc, size = theta, mu = lambda))
 			y_pos = pmax(y_pos, 1L)
 			y_sim = as.integer(ifelse(u == 0L, 0L, y_pos))
+			pos = y_sim > 0
+			X_pos = X[pos, , drop = FALSE]
+			y_pos_obs = y_sim[pos]
 			n_params = ncol(X) + 1L
 			full_res = tryCatch(
 				fast_truncated_negbin_count_cpp(
-					X = X, y = y_sim,
+					X = X_pos, y = y_pos_obs,
 					smart_cold_start = private$smart_cold_start_default,
 					estimate_only = FALSE,
 					optimization_alg = private$optimization_alg %||% "lbfgs"
@@ -416,7 +421,7 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 				fit_null = function(d, start = NULL){
 					tryCatch(
 						fast_truncated_negbin_count_cpp(
-							X = X, y = y_sim,
+							X = X_pos, y = y_pos_obs,
 							warm_start_params = start %||% as.numeric(c(full_res$b, log(as.numeric(full_res$theta_hat)))),
 							smart_cold_start = private$smart_cold_start_default,
 							estimate_only = FALSE,

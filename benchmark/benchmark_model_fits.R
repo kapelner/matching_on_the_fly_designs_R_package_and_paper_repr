@@ -14,12 +14,12 @@ N_SURV = 500
 B_TIME = 3 
 
 # --- Data Generation Helper ---
-generate_data = function(n = 200, p = 5, family = "logistic", n_groups = 10) {
+generate_data = function(n = 200, p = 5, family = "logistic") {
     X = matrix(rnorm(n * p), n, p); X[, 1] = 1 
     beta = rnorm(p) * 0.1 
     eta = X %*% beta
     w = rbinom(n, 1, 0.5); eta = eta + 0.1 * w 
-    res = list(X = X, group_id = rep(1:n_groups, length.out = n), strata = rep(1:5, length.out = n), w = w)
+    res = list(X = X, w = w)
     
     if (family %in% c("logistic", "log-binomial", "identity-binomial", "glmm_logistic", "robust", "probit")) {
         prob = if (family == "log-binomial") pmin(0.5, exp(eta - 2)) else plogis(eta)
@@ -43,43 +43,95 @@ generate_data = function(n = 200, p = 5, family = "logistic", n_groups = 10) {
     res
 }
 
-# --- Mapping Table ---
+# --- Mapping Table (Targeted subset requested by user) ---
+# library() calls are used to ensure it crashes if pkgs are missing.
 bench_specs = list(
     list(cls = "InferenceIncidLogRegr", pkg = "stats", func = "glm.fit", expr = quote(glm.fit(x = X_can, y = df$y, family = binomial()))),
     list(cls = "InferenceContinOLS", pkg = "stats", func = "lm.fit", expr = quote(lm.fit(x = X_can, y = df$y))),
     list(cls = "InferenceCountPoisson", pkg = "stats", func = "glm.fit", expr = quote(glm.fit(x = X_can, y = df$y, family = poisson()))),
     list(cls = "InferenceSurvivalCoxPHRegr", pkg = "survival", func = "coxph.fit", expr = quote({
-        survival::coxph.fit(x = X_can[,-1,drop=F], y = survival::Surv(df$y, df$dead), strata=NULL, offset=NULL, init=NULL, control=survival::coxph.control(), weights=NULL, method="efron", rownames=as.character(1:nrow(df)))
+        x_vars = c("treatment", grep("^x", names(df), value=T))
+        survival::coxph.fit(x = as.matrix(df[, x_vars, drop=F]), y = survival::Surv(df$y, df$dead), strata=NULL, offset=NULL, init=NULL, control=survival::coxph.control(), weights=NULL, method="efron", rownames=as.character(1:nrow(df)))
     })),
-    list(cls = "InferenceCountNegBin", pkg = "MASS", func = "glm.nb", expr = quote(MASS::glm.nb(y ~ w + x1 + x2 + x3 + x4, data = df))),
+    list(cls = "InferenceCountNegBin", pkg = "MASS", func = "glm.nb", expr = quote(MASS::glm.nb(y ~ treatment + x1 + x2 + x3 + x4, data = df))),
     list(cls = "InferencePropBetaRegr", pkg = "betareg", func = "betareg.fit", expr = quote(betareg::betareg.fit(x = X_can, y = df$y))),
-    list(cls = "InferenceOrdinalPropOddsRegr", pkg = "ordinal", func = "clm", expr = quote(ordinal::clm(factor(y, ordered=T) ~ w + x1 + x2 + x3 + x4, data = df))),
-    list(cls = "InferenceCountHurdlePoisson", pkg = "pscl", func = "hurdle", expr = quote(pscl::hurdle(y ~ w + x1 + x2 + x3 + x4, data = df))),
-    list(cls = "InferenceCountZeroInflatedPoisson", pkg = "pscl", func = "zeroinfl", expr = quote(pscl::zeroinfl(y ~ w + x1 + x2 + x3 + x4, data = df))),
-    list(cls = "InferenceCountZeroInflatedNegBin", pkg = "pscl", func = "zeroinfl(nb)", expr = quote(pscl::zeroinfl(y ~ w + x1 + x2 + x3 + x4, data = df, dist="negbin"))),
-    list(cls = "InferenceCountHurdleNegBin", pkg = "pscl", func = "hurdle(nb)", expr = quote(pscl::hurdle(y ~ w + x1 + x2 + x3 + x4, data = df, dist="negbin"))),
+    list(cls = "InferenceOrdinalPropOddsRegr", pkg = "ordinal", func = "clm", expr = quote(ordinal::clm(factor(y, ordered=T) ~ treatment + x1 + x2 + x3 + x4, data = df))),
+    list(cls = "InferenceCountHurdlePoisson", pkg = "pscl", func = "hurdle", expr = quote(pscl::hurdle(y ~ treatment + x1 + x2 + x3 + x4, data = df))),
+    list(cls = "InferenceCountZeroInflatedPoisson", pkg = "pscl", func = "zeroinfl", expr = quote(pscl::zeroinfl(y ~ treatment + x1 + x2 + x3 + x4, data = df))),
+    list(cls = "InferenceCountZeroInflatedNegBin", pkg = "pscl", func = "zeroinfl(nb)", expr = quote(pscl::zeroinfl(y ~ treatment + x1 + x2 + x3 + x4, data = df, dist="negbin"))),
+    list(cls = "InferenceCountHurdleNegBin", pkg = "pscl", func = "hurdle(nb)", expr = quote(pscl::hurdle(y ~ treatment + x1 + x2 + x3 + x4, data = df, dist="negbin"))),
     list(cls = "InferenceCountQuasiPoisson", pkg = "stats", func = "glm.fit(quasi)", expr = quote(glm.fit(x = X_can, y = df$y, family = quasipoisson()))),
-    list(cls = "InferenceSurvivalWeibullRegr", pkg = "survival", func = "survreg", expr = quote(survival::survreg(survival::Surv(y, dead) ~ w + x1 + x2 + x3 + x4, data = df, dist="weibull"))),
+    list(cls = "InferenceSurvivalWeibullRegr", pkg = "survival", func = "survreg", expr = quote(survival::survreg(survival::Surv(y, dead) ~ treatment + x1 + x2 + x3 + x4, data = df, dist="weibull"))),
     list(cls = "InferenceContinRobustRegr", pkg = "MASS", func = "rlm", expr = quote(MASS::rlm(x = X_can, y = df$y))),
     list(cls = "InferenceContinQuantileRegr", pkg = "quantreg", func = "rq.fit", expr = quote(quantreg::rq.fit(x = X_can, y = df$y))),
     list(cls = "InferencePropFractionalLogit", pkg = "stats", func = "glm.fit(quasi)", expr = quote(glm.fit(x = X_can, y = df$y, family=quasibinomial()))),
-    list(cls = "InferenceIncidLogBinomial", pkg = "stats", func = "glm.fit(log)", expr = quote(glm.fit(x = X_can, y = df$y, family=binomial(link="log"), start=c(-2, rep(0, ncol(X_can)-1))))),
+    list(cls = "InferenceIncidLogBinomial", pkg = "stats", func = "glm.fit(log)", expr = quote({
+        glm.fit(x = X_can, y = df$y, family=binomial(link="log"), start=c(-2, rep(0, ncol(X_can)-1)))
+    })),
     list(cls = "InferenceIncidProbitRegr", pkg = "stats", func = "glm.fit(probit)", expr = quote(glm.fit(x = X_can, y = df$y, family=binomial(link="probit")))),
     list(cls = "InferenceIncidBinomialIdentityRiskDiff", pkg = "stats", func = "glm.fit(ident)", expr = quote(glm.fit(x = X_can, y = df$y, family=binomial(link="identity"), start=c(0.5, rep(0, ncol(X_can)-1))))),
-    list(cls = "InferenceOrdinalAdjCatLogitRegr", pkg = "VGAM", func = "vglm(acat)", expr = quote(VGAM::vglm(factor(y, ordered=T) ~ w + x1 + x2 + x3 + x4, VGAM::acat(), data=df))),
-    list(cls = "InferenceOrdinalContRatioRegr", pkg = "VGAM", func = "vglm(cratio)", expr = quote(VGAM::vglm(factor(y, ordered=T) ~ w + x1 + x2 + x3 + x4, VGAM::cratio(), data=df))),
-    list(cls = "InferenceOrdinalOrderedProbitRegr", pkg = "ordinal", func = "clm(probit)", expr = quote(ordinal::clm(factor(y, ordered=T) ~ w + x1 + x2 + x3 + x4, data = df, link = "probit"))),
-    list(cls = "InferenceOrdinalCloglogRegr", pkg = "ordinal", func = "clm(cll)", expr = quote(ordinal::clm(factor(y, ordered=T) ~ w + x1 + x2 + x3 + x4, data = df, link = "cloglog"))),
-    list(cls = "InferenceOrdinalCauchitRegr", pkg = "ordinal", func = "clm(cauchit)", expr = quote(ordinal::clm(factor(y, ordered=T) ~ w + x1 + x2 + x3 + x4, data = df, link = "cauchit"))),
-    list(cls = "InferenceSurvivalLogRank", pkg = "survival", func = "survdiff", expr = quote(survival::survdiff(survival::Surv(y, dead) ~ w, data = df))),
-    list(cls = "InferenceSurvivalGehanWilcox", pkg = "survival", func = "survdiff(rho=1)", expr = quote(survival::survdiff(survival::Surv(y, dead) ~ w, data = df, rho = 1))),
-    list(cls = "InferenceAllSimpleMeanDiff", pkg = "base", func = "mean diff", expr = quote(mean(df$y[df$w==1]) - mean(df$y[df$w==0]))),
-    list(cls = "InferenceAllSimpleMeanDiffPooledVar", pkg = "stats", func = "t.test(pool)", expr = quote(t.test(df$y[df$w==1], df$y[df$w==0], var.equal = TRUE))),
-    list(cls = "InferenceAllSimpleWilcox", pkg = "stats", func = "wilcox.test", expr = quote(wilcox.test(df$y[df$w==1], df$y[df$w==0])), scale = 0.5),
-    list(cls = "InferenceIncidExactFisher", pkg = "stats", func = "fisher.test", expr = quote(fisher.test(table(df$w, df$y))), scale = 0.1),
-    list(cls = "InferenceIncidCMH", pkg = "stats", func = "mantelhaen", expr = quote(mantelhaen.test(table(df$w, df$y, df$g)))),
-    list(cls = "InferenceOrdinalPairedSignTest", pkg = "stats", func = "binom.test", expr = quote(binom.test(sum(df$y[df$w==1] > df$y[df$w==0]), length(df$y)/2)))
+    list(cls = "InferenceOrdinalAdjCatLogitRegr", pkg = "VGAM", func = "vglm(acat)", expr = quote(VGAM::vglm(factor(y, ordered=T) ~ treatment + x1 + x2 + x3 + x4, VGAM::acat(), data=df))),
+    list(cls = "InferenceOrdinalContRatioRegr", pkg = "VGAM", func = "vglm(cratio)", expr = quote(VGAM::vglm(factor(y, ordered=T) ~ treatment + x1 + x2 + x3 + x4, VGAM::cratio(), data=df))),
+    list(cls = "InferenceOrdinalOrderedProbitRegr", pkg = "ordinal", func = "clm(probit)", expr = quote(ordinal::clm(factor(y, ordered=T) ~ treatment + x1 + x2 + x3 + x4, data = df, link = "probit"))),
+    list(cls = "InferenceOrdinalCloglogRegr", pkg = "ordinal", func = "clm(cll)", expr = quote(ordinal::clm(factor(y, ordered=T) ~ treatment + x1 + x2 + x3 + x4, data = df, link = "cloglog"))),
+    list(cls = "InferenceOrdinalCauchitRegr", pkg = "ordinal", func = "clm(cauchit)", expr = quote(ordinal::clm(factor(y, ordered=T) ~ treatment + x1 + x2 + x3 + x4, data = df, link = "cauchit"))),
+    list(cls = "InferenceSurvivalLogRank", pkg = "survival", func = "survdiff", expr = quote(survival::survdiff(survival::Surv(y, dead) ~ treatment, data = df))),
+    list(cls = "InferenceSurvivalGehanWilcox", pkg = "survival", func = "survdiff(rho=1)", expr = quote(survival::survdiff(survival::Surv(y, dead) ~ treatment, data = df, rho = 1))),
+    list(cls = "InferenceAllSimpleMeanDiffPooledVar", pkg = "stats", func = "t.test(pool)", expr = quote(t.test(df$y[df$treatment==1], df$y[df$treatment==0], var.equal = TRUE))),
+    list(cls = "InferenceAllSimpleWilcox", pkg = "stats", func = "wilcox.test", expr = quote(wilcox.test(df$y[df$treatment==1], df$y[df$treatment==0])), scale = 0.5),
+    list(cls = "InferenceIncidExactFisher", pkg = "stats", func = "fisher.test", expr = quote(fisher.test(table(df$treatment, df$y))), scale = 0.1),
+    list(cls = "InferenceIncidCMH", pkg = "stats", func = "mantelhaen", expr = quote(mantelhaen.test(table(df$treatment, df$y, df$g)))),
+    list(cls = "InferenceOrdinalJonckheereTerpstraTest", pkg = "clinfun", func = "jonckheere", expr = quote(clinfun::jonckheere.test(df$y, df$treatment))),
+    list(cls = "InferenceIncidMiettinenNurminenRiskDiff", pkg = "DescTools", func = "BinomDiffCI(mn)", expr = quote(DescTools::BinomDiffCI(sum(df$y[df$treatment==1]), sum(df$treatment==1), sum(df$y[df$treatment==0]), sum(df$treatment==0), method="mn"))),
+    list(cls = "InferenceIncidModifiedPoisson", pkg = "stats", func = "glm.fit(modified)", expr = quote(glm.fit(x = X_can, y = df$y, family = poisson()))),
+    list(cls = "InferenceSurvivalStratCoxPHRegr", pkg = "survival", func = "coxph.fit(strat)", expr = quote(survival::coxph.fit(x = as.matrix(df[, grep("^x", names(df)), drop=F]), y = survival::Surv(df$y, df$dead), strata=as.integer(df$g), offset=NULL, init=NULL, control=survival::coxph.control(), weights=NULL, method="efron", rownames=as.character(1:nrow(df))))),
+    list(cls = "InferenceContinLin", pkg = "stats", func = "lm.fit(interact)", expr = quote({
+        X_int = model.matrix(~ treatment * (x1 + x2 + x3 + x4), data = df)
+        lm.fit(x = X_int, y = df$y)
+    })),
+    list(cls = "InferenceIncidRiskDiff", pkg = "stats", func = "prop.test", expr = quote({
+        tab = table(df$treatment, df$y)
+        prop.test(tab)$estimate[2] - prop.test(tab)$estimate[1]
+    })),
+    list(cls = "InferenceSurvivalKMDiff", pkg = "survival", func = "survfit(median)", expr = quote({
+        fit = survival::survfit(survival::Surv(df$y, df$dead) ~ df$treatment)
+        q = stats::quantile(fit, 0.5)
+        as.numeric(q$quantile[2] - q$quantile[1])
+    })),
+    list(cls = "InferenceSurvivalRestrictedMeanDiff", pkg = "survival", func = "survfit(rmean)", expr = quote({
+        fit = survival::survfit(survival::Surv(df$y, df$dead) ~ df$treatment)
+        res = survival:::survmean(fit, rmean="common")
+        # The column name can be "*rmean" or just "rmean" depending on survival version
+        col_idx = grep("rmean", colnames(res$matrix))
+        rmst = res$matrix[, col_idx]
+        as.numeric(rmst[2] - rmst[1])
+    })),
+    list(cls = "InferenceCountRobustPoisson", pkg = "stats", func = "glm.fit", expr = quote(glm.fit(x = X_can, y = df$y, family = poisson()))),
+    list(cls = "InferenceOrdinalRidit", pkg = "stats", func = "mean(ridit)", expr = quote({
+        y = df$y
+        tab = table(y)
+        cum = cumsum(tab)
+        prev = c(0, cum[-length(cum)])
+        ridit_map = (prev + 0.5 * tab) / length(y)
+        r = as.numeric(ridit_map[as.character(y)])
+        mean(r[df$treatment==1]) - mean(r[df$treatment==0])
+    })),
+    list(cls = "InferenceIncidExactZhang", pkg = "Exact", func = "exact.test(z)", expr = quote({
+        Exact::exact.test(table(df$treatment, df$y), method="z-pooled", tsmethod="central")
+    })),
+    list(cls = "InferenceIncidNewcombeRiskDiff", pkg = "DescTools", func = "BinomDiffCI(score)", expr = quote(DescTools::BinomDiffCI(sum(df$y[df$treatment==1]), sum(df$treatment==1), sum(df$y[df$treatment==0]), sum(df$treatment==0), method="score")))
 )
+
+# Paths with no canonical mapping (None)
+no_can_specs = list(
+    list(cls = "InferencePropGCompMeanDiff", pkg = "None", func = "None", expr = NULL),
+    list(cls = "InferenceSurvivalDepCensTransformRegr", pkg = "None", func = "None", expr = NULL),
+    list(cls = "InferenceIncidGCompRiskRatio", pkg = "None", func = "None", expr = NULL),
+    list(cls = "InferenceIncidGCompRiskDiff", pkg = "None", func = "None", expr = NULL),
+    list(cls = "InferenceOrdinalGCompMeanDiff", pkg = "None", func = "None", expr = NULL),
+    list(cls = "InferencePropZeroOneInflatedBetaRegr", pkg = "None", func = "None", expr = NULL)
+)
+bench_specs = c(bench_specs, no_can_specs)
 
 # --- Benchmark Runner ---
 results = list()
@@ -88,10 +140,9 @@ run_one = function(spec) {
     cls_name = spec$cls
     cat(sprintf("Benchmarking %s...\n", cls_name))
     
-    # Improved heuristic mapping
+    # Improved heuristic mapping: Ordinal MUST come before Prop/PropOdds
     resp_type = "continuous"
     family = "continuous"
-    
     if (grepl("Ordinal|AdjCat|ContRatio|Stereotype|Jonckheere|Ridit|Sign", cls_name)) { resp_type = "ordinal"; family = "ordinal" }
     else if (grepl("Incid|Binomial|Wald|CMH|Fisher|Zhang|Robins|Newcombe|Nurminen", cls_name)) { resp_type = "incidence"; family = "logistic" }
     else if (grepl("Count|Poisson|NegBin|ZINB|ZAP|Hurdle", cls_name)) { resp_type = "count"; family = "poisson" }
@@ -112,71 +163,61 @@ run_one = function(spec) {
         des = DesignFixedBernoulli$new(n = n, response_type = resp_type)
         des$add_all_subjects_to_experiment(as.data.frame(d$X[,-1,drop=F]))
         des$overwrite_all_subject_assignments(d$w)
-        des$add_all_subject_responses(d$y, deads = d$dead)
+        des$add_all_subject_responses(d$y, deads = if(exists("dead", d)) d$dead else NULL)
         
         inf_cls = get(cls_name)
-        inf_obj = if ("smart_cold_start_default" %in% names(formals(inf_cls$public_methods$initialize))) {
-            inf_cls$new(des, smart_cold_start_default = TRUE)
+        # Robustly check for smart_cold_start_default
+        inf_obj = tryCatch(inf_cls$new(des, smart_cold_start_default = TRUE), error = function(e) inf_cls$new(des))
+        
+        # Determine the benchmark expression
+        bench_expr = if (cls_name == "InferenceAllSimpleWilcox") {
+            quote({
+                inf_obj$.__enclos_env__$private$hl_point_estimate(d$y, d$w)
+            })
         } else {
-            inf_cls$new(des)
+            quote({
+                # Clear cache to ensure pure solver execution is timed each iteration
+                inf_obj$.__enclos_env__$private$cached_mod = NULL
+                inf_obj$compute_estimate(estimate_only = TRUE)
+            })
         }
         
-        bench_expr = if (cls_name == "InferenceAllSimpleWilcox") {
-            quote(inf_obj$.__enclos_env__$private$hl_point_estimate(d$y, d$w))
-        } else {
-            quote(inf_obj$compute_estimate(estimate_only = TRUE))
-        }
+        # Warmup once
+        eval(bench_expr)
         
         median(microbenchmark(eval(bench_expr), times = B_TIME)$time) / 1e6
-    }, error = function(e) NA_real_)
+    }, error = function(e) {
+        cat("  EDI Error:", e$message, "\n")
+        NA_real_
+    })
     
-    # Timing Canonical
+    # Timing Canonical (Crashes if pkg missing)
     t_can = NA_real_
-    if (!is.null(spec$expr) && requireNamespace(spec$pkg, quietly = TRUE)) {
+    if (!is.null(spec$expr) && spec$pkg != "None") {
+        library(spec$pkg, character.only = TRUE)
         X_cols = d$X[,-1,drop=F]
         colnames(X_cols) = paste0("x", 1:ncol(X_cols))
-        df = data.frame(y = d$y, w = d$w, g = factor(d$group_id), dead = if(!is.null(d$dead)) d$dead else 1)
+        df = data.frame(y = d$y, treatment = d$w, g = factor(rep(1:10, length.out = n)), dead = if(exists("dead", d)) d$dead else 1)
         df = cbind(df, X_cols)
         X_can = cbind(`(Intercept)` = 1, treatment = d$w, as.matrix(X_cols))
         
-        t_can = tryCatch({
-            median(microbenchmark(eval(spec$expr), times = B_TIME)$time) / 1e6
-        }, error = function(e) NA_real_)
+        t_can = median(microbenchmark(eval(spec$expr), times = B_TIME)$time) / 1e6
     }
     
     results[[length(results) + 1]] <<- data.table(
         Class = cls_name, Response = resp_type, EDI_Time_ms = t_edi,
-        Canonical_Pkg = if(is.null(spec$pkg)) "None" else spec$pkg, 
-        Canonical_Func = if(is.null(spec$func)) "None" else spec$func, 
-        Canonical_Time_ms = t_can,
+        Canonical_Pkg = spec$pkg, Canonical_Func = spec$func, Canonical_Time_ms = t_can,
         Speedup = if (!is.na(t_can) && !is.na(t_edi) && t_edi > 0) t_can / t_edi else NA_real_
     )
 }
 
-add_res = function(cls, resp, t_edi, cpkg, cfunc, t_can) {
-    results[[length(results) + 1]] <<- data.table(
-        Class = cls, Response = resp, EDI_Time_ms = as.numeric(t_edi),
-        Canonical_Pkg = as.character(cpkg), Canonical_Func = as.character(cfunc), 
-        Canonical_Time_ms = as.numeric(t_can),
-        Speedup = if (!is.na(t_can) && !is.na(t_edi) && t_edi > 0) t_can / t_edi else NA_real_
-    )
-}
+# Run the requested list
+# First unique classes to avoid duplicates
+unique_specs = bench_specs[!duplicated(sapply(bench_specs, `[[`, "cls"))]
 
-# 1. Run defined specs
-covered_initial = sapply(bench_specs, `[[`, "cls")
-all_inf = grep("^Inference", getNamespaceExports("EDI"), value = TRUE)
-remaining = setdiff(all_inf[!grepl("Abstract|Mixin|Suite|IVWC|OneLik|KK", all_inf)], covered_initial)
-
-for (i in seq_along(bench_specs)) {
-    cat(sprintf("[%d/%d] ", i, length(bench_specs) + length(remaining)))
-    run_one(bench_specs[[i]])
-}
-
-# 2. Sweep remaining paths
-cat("Sweeping remaining paths...\n")
-for (i in seq_along(remaining)) {
-    cat(sprintf("[%d/%d] ", length(bench_specs) + i, length(bench_specs) + length(remaining)))
-    run_one(list(cls = remaining[i], pkg = "None", func = "None", expr = NULL))
+for (i in seq_along(unique_specs)) {
+    cat(sprintf("[%d/%d] ", i, length(unique_specs)))
+    run_one(unique_specs[[i]])
 }
 
 # Finalize
@@ -186,10 +227,34 @@ dt[, EDI_Time_ms := round(EDI_Time_ms, 2)]
 dt[, Canonical_Time_ms := round(Canonical_Time_ms, 2)]
 
 report = c(
-  "# EDI Exhaustive Model Fit Benchmarks",
+  "# EDI Exhaustive C++ Model Fit Benchmarks",
   "",
   "This report compares the performance of EDI's Rcpp-optimized model fitting paths against **low-level** canonical R implementations (e.g., `glm.fit`, `lm.fit`, `coxph.fit`) where possible.",
-  "Timings represent pure solver execution (excluding R6 object instantiation overhead) with `smart_cold_start = TRUE` enabled for EDI.",
+  "",
+  "## Benchmark Dataset Specification",
+  "",
+  "All benchmarks were performed on a synthetic clinical-trial-scale dataset generated for each response type. The data generation process ensures numerical stability and fair solver comparison by using the following parameters:",
+  "",
+  "*   **Sample Size ($N$):** 1,000 subjects for most models; 500 subjects for survival models. Exact and trend tests may use smaller scaled samples (N=100-500) as noted in the results.",
+  "*   **Predictors ($p$):** 5 total predictors, including a global intercept, a binary treatment assignment ($w \\sim \\text{Bernoulli}(0.5)$), and 4 continuous covariates ($X \\sim \\text{Normal}(0, 1)$).",
+  "*   **Effect Sizes:** Coefficients are sampled from $\\text{Normal}(0, 0.1)$ to ensure reasonable event rates and avoid separation issues in logistic/ordinal models.",
+  "*   **Response Generation:**",
+  "    *   **Continuous:** Linear model with additive $\\text{Normal}(0, 0.5)$ noise.",
+  "    *   **Incidence:** Binary outcomes via a Logistic link.",
+  "    *   **Count:** Integer outcomes via Poisson or Negative Binomial distributions with an exponential link.",
+  "    *   **Proportion:** Continuous outcomes in $(0, 1)$ via a Beta distribution with a logit link.",
+  "    *   **Survival:** Exponentially distributed event times with approximately 20% random censoring.",
+  "    *   **Ordinal:** 4-level categorical outcomes generated from a Proportional Odds model.",
+  "",
+  "## Methodology",
+  "",
+  "*   **Pure Solver Timing:** Results reflect the time taken for the core numerical optimization. We exclude R6 object instantiation, design matrix construction, and standard error estimation (which often uses different R-side matrix inversion logic) to isolate the efficiency of the underlying C++ backends.",
+  "*   **Smart Cold Starts:** EDI models were initialized with `smart_cold_start = TRUE`, utilizing package-optimized heuristic starting values.",
+  "*   **Low-Level Comparison:** Canonical R timings use the fastest available internal interfaces (e.g., `.fit` functions) to remove R's formula parsing and environment management overhead.",
+  "*   **Averaging:** All timings are medians over 3 independent iterations per model path.",
+  "*   **Constraints**: Matched-pair/KK and highly custom paths are excluded as per user request.",
+  "",
+  "## Results",
   "",
   "| Class | Response | EDI Time (ms) | Canonical Pkg | Canonical Func | Canonical Time (ms) | Speedup |",
   "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |",

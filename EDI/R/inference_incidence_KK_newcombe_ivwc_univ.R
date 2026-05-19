@@ -24,7 +24,7 @@
 #' @export
 InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThroughCompound,
+	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
 	public = utils::modifyList(list(
 		#' @description Initialize the inference object.
 		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object.

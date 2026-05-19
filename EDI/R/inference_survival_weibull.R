@@ -14,6 +14,10 @@
 #' inf = InferenceSurvivalWeibullRegr$new(seq_des)
 #' inf$compute_estimate()
 #' }
+#' \donttest{
+#' inf$set_seed(1)
+#' inf$compute_lik_ratio_bootstrap_two_sided_pval(delta = 0, B = 9, show_progress = FALSE)
+#' }
 #' @export
 InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 	lock_objects = FALSE,
@@ -148,6 +152,7 @@ InferenceSurvivalWeibullRegr = R6::R6Class("InferenceSurvivalWeibullRegr",
 				neg_loglik = as.numeric(full_res$neg_ll)
 			)
 			list(
+				worker_data = list(y = y_sim, dead = dead_sim),
 				full_fit = full_fit_boot,
 				fit_null = function(d, start = NULL){
 					res = tryCatch(

@@ -10,7 +10,7 @@
 #' @keywords internal
 InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThroughCompound,
+	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
 	public = utils::modifyList(
 		make_bai_bayesian_bootstrap_public_overrides(),
 		list(

@@ -38,7 +38,7 @@ sim = SimulationFramework$new(
                                           DesignFixedBlocking =        list(B_target = 8,  exact_num_blocks = TRUE),
                                           DesignFixedBlocking =        list(B_target = 16, exact_num_blocks = TRUE),
                                           DesignFixedBlocking =        list(B_target = 32, exact_num_blocks = TRUE),
-                                          DesignFixedGreedy =          list(),
+                                          DesignFixedGreedy =          list(objective = "abs_sum_diff"),
                                           DesignFixedRerandomization = list(prop_acceptable = 0.01) 
                                         ),
         inference_classes_and_params  = list(

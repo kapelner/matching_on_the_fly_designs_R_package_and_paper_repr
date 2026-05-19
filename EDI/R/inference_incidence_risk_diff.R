@@ -17,7 +17,7 @@
 #' @export
 InferenceIncidRiskDiff = R6::R6Class("InferenceIncidRiskDiff",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLikStdModCache,
+	inherit = InferenceAsympLikStdModCacheNoParamBootstrap,
 	public = list(
 				
 		#' @description Initialize a risk-difference inference object.

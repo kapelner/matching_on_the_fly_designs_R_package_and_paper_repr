@@ -8,7 +8,7 @@
 #' @keywords internal
 InferenceOrdinalStereotypeLogitRegr = R6::R6Class("InferenceOrdinalStereotypeLogitRegr",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLikStdModCache,
+	inherit = InferenceAsympLikStdModCacheNoParamBootstrap,
 	public = list(
 		#' @description Initialize a stereotype logit inference object.
 		#' @param des_obj A completed \code{Design} object with an ordinal response.
@@ -177,7 +177,7 @@ InferenceOrdinalStereotypeLogitRegr = R6::R6Class("InferenceOrdinalStereotypeLog
 #' @export
 InferenceOrdinalContRatioRegr = R6::R6Class("InferenceOrdinalContRatioRegr",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLikStdModCache,
+	inherit = InferenceAsympLikStdModCacheNoParamBootstrap,
 	public = list(
 		#' @description Initialize a continuation ratio inference object.
 		#' @param des_obj A completed \code{Design} object with an ordinal response.

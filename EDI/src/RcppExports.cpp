@@ -456,6 +456,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// greedy_design_search_cpp
+Rcpp::IntegerMatrix greedy_design_search_cpp(const Eigen::Map<Eigen::MatrixXd> X_raw, const int r, const std::string& objective, const int n_iter);
+RcppExport SEXP _EDI_greedy_design_search_cpp(SEXP X_rawSEXP, SEXP rSEXP, SEXP objectiveSEXP, SEXP n_iterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::Map<Eigen::MatrixXd> >::type X_raw(X_rawSEXP);
+    Rcpp::traits::input_parameter< const int >::type r(rSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type objective(objectiveSEXP);
+    Rcpp::traits::input_parameter< const int >::type n_iter(n_iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(greedy_design_search_cpp(X_raw, r, objective, n_iter));
+    return rcpp_result_gen;
+END_RCPP
+}
 // efron_redraw_cpp
 NumericVector efron_redraw_cpp(int t, double prob_T, double weighted_coin_prob);
 RcppExport SEXP _EDI_efron_redraw_cpp(SEXP tSEXP, SEXP prob_TSEXP, SEXP weighted_coin_probSEXP) {
@@ -4471,6 +4485,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_compute_all_subject_data_cpp", (DL_FUNC) &_EDI_compute_all_subject_data_cpp, 4},
     {"_EDI_compute_proportional_mahal_distances_cpp", (DL_FUNC) &_EDI_compute_proportional_mahal_distances_cpp, 4},
     {"_EDI_compute_weighted_sqd_distances_cpp", (DL_FUNC) &_EDI_compute_weighted_sqd_distances_cpp, 4},
+    {"_EDI_greedy_design_search_cpp", (DL_FUNC) &_EDI_greedy_design_search_cpp, 4},
     {"_EDI_efron_redraw_cpp", (DL_FUNC) &_EDI_efron_redraw_cpp, 3},
     {"_EDI_get_adjacent_category_logit_score_cpp", (DL_FUNC) &_EDI_get_adjacent_category_logit_score_cpp, 3},
     {"_EDI_get_adjacent_category_logit_hessian_cpp", (DL_FUNC) &_EDI_get_adjacent_category_logit_hessian_cpp, 3},

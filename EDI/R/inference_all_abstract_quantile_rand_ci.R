@@ -8,7 +8,7 @@
 #' @keywords internal
 InferenceAbstractQuantileRandCI = R6::R6Class("InferenceAbstractQuantileRandCI",
 	lock_objects = FALSE,
-	inherit = InferenceKKPassThroughCompound,
+	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
 	public = utils::modifyList(as.list(InferenceMixinQuantileRandCI$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj         A DesignSeqOneByOne object.

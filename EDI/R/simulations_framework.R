@@ -689,7 +689,14 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       # causes deadlocks when rJava is used post-fork. Force mirai (separate
       # processes) whenever rJava has already been initialised in the parent.
       java_loaded = "rJava" %in% loadedNamespaces() || "GreedyExperimentalDesign" %in% loadedNamespaces()
-      use_mirai_backend = isTRUE(num_cores > 1L) &&
+      # For fixed-X simulations with Java-backed designs (e.g. DesignFixedGreedy),
+      # w is pre-generated in the main process one-at-a-time; workers only run fast
+      # R inference. Spawning num_cores JVM-bearing workers simultaneously causes OOM
+      # on memory-limited systems (e.g. WSL). Force serial execution in this case.
+      has_pregen_designs = any(vapply(private$design_classes, function(dc)
+        !is.null(dc$public_methods$supports_batch_w_pregeneration), logical(1L)))
+      force_serial = has_pregen_designs && !isTRUE(private$random_X_draws)
+      use_mirai_backend = !force_serial && isTRUE(num_cores > 1L) &&
         (.Platform$OS.type != "unix" || !is.null(prev_global_mirai_cores) || java_loaded)
       if (use_mirai_backend) {
         if (!check_package_installed("mirai")) {
@@ -906,28 +913,31 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$progress_bar = NULL; private$use_progress_bar = FALSE
       private$total_cells = n_cells; private$last_progress_draw_time = 0
       private$current_task_label = "Des/Inf"
-      
-      # For ETA calculation, we need to know where we started in the cell hierarchy
-      private$initial_cell_in_progress_prop = if (private$progress_total > 0) private$progress_count / private$progress_total else 0
-      
+
       if (isTRUE(private$verbose)) {
         private$.print_plan_summary(planned_combos_list)
         private$use_progress_bar = TRUE
-        # Precisely set initial progress bar state based on first missing task
-        first_active_cell = which(vapply(cell_reps_to_run, length, 0L) > 0L)[1L]
-        if (!is.na(first_active_cell)) {
-          private$current_cell_idx = first_active_cell
-          private$current_rep_idx  = cell_reps_to_run[[first_active_cell]][1L]
-          private$tasks_per_rep = cell_tasks_count[first_active_cell]
+        # Set initial progress bar state to the first rep that has any work to do.
+        first_active_rep = NA_integer_
+        for (r_init in seq_len(private$Nrep)) {
+          if (any(vapply(cell_reps_to_run, function(v) r_init %in% v, FALSE))) {
+            first_active_rep = r_init; break
+          }
+        }
+        if (!is.na(first_active_rep)) {
+          private$current_rep_idx  = first_active_rep
+          first_active_cell_init   = which(vapply(cell_reps_to_run, function(v) first_active_rep %in% v, FALSE))[[1L]]
+          private$current_cell_idx = first_active_cell_init
+          private$tasks_per_rep    = cell_tasks_count[[first_active_cell_init]]
           private$current_task_in_rep_idx = 0L
         } else {
           # Everything already done
-          private$current_cell_idx = n_cells
           private$current_rep_idx  = private$Nrep
-          private$tasks_per_rep = if (length(cell_tasks_count) > 0L) cell_tasks_count[[length(cell_tasks_count)]] else 0L
+          private$current_cell_idx = n_cells
+          private$tasks_per_rep    = if (length(cell_tasks_count) > 0L) cell_tasks_count[[length(cell_tasks_count)]] else 0L
           private$current_task_in_rep_idx = private$tasks_per_rep
         }
-        # If we are going to run and use the progress bar, ensure we clean up the 
+        # If we are going to run and use the progress bar, ensure we clean up the
         # multi-line block at the end of the run().
         on.exit({
            if (!is.null(private$progress_bar_drawn)) {
@@ -947,7 +957,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       # requireNamespace inside DesignFixedGreedy$new). Re-check now: if Java is
       # loaded and we are on Unix without mirai already, upgrade to mirai to avoid
       # the fork-after-JVM-init deadlock.
-      if (!use_mirai_backend && isTRUE(num_cores > 1L) &&
+      if (!force_serial && !use_mirai_backend && isTRUE(num_cores > 1L) &&
           .Platform$OS.type == "unix" &&
           ("rJava" %in% loadedNamespaces() || "GreedyExperimentalDesign" %in% loadedNamespaces())) {
         if (check_package_installed("mirai")) {
@@ -962,39 +972,36 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           }, add = TRUE)
         }
       }
+      # Pre-build all per-cell state objects and run-required vectors so the
+      # outer rep loop can iterate cells without rebuilding them each rep.
+      all_cell_states       = vector("list", n_cells)
+      all_run_required_v    = vector("list", n_cells)
+
       for (cell_idx in seq_len(n_cells)) {
-        private$current_cell_idx = cell_idx
-        private$current_n = private$param_grid$n[[cell_idx]]
-        private$current_p = private$param_grid$p[[cell_idx]]
-        private$current_betaT = private$param_grid$betaT[[cell_idx]]
-        private$current_cond_exp_func_model = private$param_grid$cond_exp_func_model[[cell_idx]]
-        private$current_response_type = private$param_grid$response_type[[cell_idx]]
-        private$tasks_per_rep = cell_tasks_count[cell_idx]
-        
-        reps_to_run = cell_reps_to_run[[cell_idx]]
-        run_required_v = rep(FALSE, private$Nrep)
-        run_required_v[reps_to_run] = TRUE
-        # Pre-format key prefix for this cell to avoid redundant formatting in workers
-        cell_key_prefix = paste(private$current_response_type, private$current_cond_exp_func_model,
-                                private$current_n, private$current_p,
-                                private$current_betaT, sep = "|")
-        # Build a lookup set of valid (design, inference, type) keys for this cell
-        # so workers can skip combos that plan-validation already rejected (e.g.,
-        # "This design requires a blocking design.") without treating them as fatal errors.
-        cell_valid_combo_keys = {
-          cell_combos_here = planned_combos_list[[cell_idx]]
-          if (length(cell_combos_here) > 0L) {
-            vapply(cell_combos_here, function(c)
-              paste(c$design, c$inference, c$inference_type, sep = "|"), character(1L))
-          } else {
-            character(0L)
-          }
+        n_ci  = private$param_grid$n[[cell_idx]]
+        p_ci  = private$param_grid$p[[cell_idx]]
+        bt_ci = private$param_grid$betaT[[cell_idx]]
+        dt_ci = private$param_grid$cond_exp_func_model[[cell_idx]]
+        rt_ci = private$param_grid$response_type[[cell_idx]]
+
+        reps_to_run_ci = cell_reps_to_run[[cell_idx]]
+        run_req_ci = rep(FALSE, private$Nrep)
+        run_req_ci[reps_to_run_ci] = TRUE
+        all_run_required_v[[cell_idx]] = run_req_ci
+
+        cell_key_prefix_ci = paste(rt_ci, dt_ci, n_ci, p_ci, bt_ci, sep = "|")
+        cell_combos_here = planned_combos_list[[cell_idx]]
+        cell_valid_combo_keys_ci = if (length(cell_combos_here) > 0L) {
+          vapply(cell_combos_here, function(c)
+            paste(c$design, c$inference, c$inference_type, sep = "|"), character(1L))
+        } else {
+          character(0L)
         }
-        cell_state = list(
-          n = private$current_n, p = private$current_p, betaT = private$current_betaT,
-          cond_exp_func_model = private$current_cond_exp_func_model, norm_sq_beta_vec = private$norm_sq_beta_vec,
-          response_type = private$current_response_type, random_X_draws = private$random_X_draws,
-          shared_X = if (!isTRUE(private$random_X_draws)) shared_X_draws[[paste(private$current_n, private$current_p, sep = "|")]] else NULL,
+        cs = list(
+          n = n_ci, p = p_ci, betaT = bt_ci,
+          cond_exp_func_model = dt_ci, norm_sq_beta_vec = private$norm_sq_beta_vec,
+          response_type = rt_ci, random_X_draws = private$random_X_draws,
+          shared_X = if (!isTRUE(private$random_X_draws)) shared_X_draws[[paste(n_ci, p_ci, sep = "|")]] else NULL,
           X_mat = private$X_mat, cov_draw_method = private$cov_draw_method, cov_draw_method_args = private$cov_draw_method_args,
           custom_replication_data_generator = private$custom_replication_data_generator,
           custom_apply_treatment_and_noise = private$custom_apply_treatment_and_noise,
@@ -1008,336 +1015,321 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           survival_clamp = private$survival_clamp, survival_min_time = private$survival_min_time, count_min_rate = private$count_min_rate,
           count_shift = private$count_shift, prob_censoring = private$prob_censoring,
           inference_type_params = private$inference_type_params,
-          cell_key_prefix = cell_key_prefix,
-          valid_combo_keys = cell_valid_combo_keys,
+          cell_key_prefix = cell_key_prefix_ci,
+          valid_combo_keys = cell_valid_combo_keys_ci,
           stop_on_error = private$stop_on_error
         )
-        # Pre-generate w vectors for designs that support batching (e.g. DesignFixedGreedy).
-        # When X is fixed across reps, one batch call with max_designs = Nrep replaces
-        # per-rep JVM round-trips, eliminating the dominant cost for Java-backed designs.
-        if (!isTRUE(private$random_X_draws) && length(reps_to_run) > 0L) {
-          design_w_cache = list()
-          for (di in seq_along(private$design_classes)) {
-            dc = private$design_classes[[di]]
-            dl = private$design_labels[[di]]
-            dp = private$design_params[[di]]
-            if (is.null(dc$public_methods$supports_batch_w_pregeneration)) next
-            X_pregen = cell_state$shared_X
-            if (is.null(X_pregen)) next
-            r_needed = length(reps_to_run)
-            tryCatch({
-              d_pregen = do.call(dc$new, c(
-                list(response_type = private$current_response_type, n = private$current_n), dp
-              ))
-              d_pregen$add_all_subjects_to_experiment(as.data.frame(X_pregen))
-              # Use the simulation's full core budget for the batch Java search.
-              prev_nc_override = ns$edi_env$num_cores_override
-              assign("num_cores_override", num_cores, envir = ns$edi_env)
-              w_mat = d_pregen$draw_ws_according_to_design(r_needed)
-              assign("num_cores_override", prev_nc_override, envir = ns$edi_env)
-              storage.mode(w_mat) = "integer"
-              design_w_cache[[dl]] = list(
-                ws         = w_mat,
-                rep_to_col = setNames(seq_len(r_needed), as.character(reps_to_run))
-              )
-            }, error = function(e) {
-              if (isTRUE(private$verbose)) {
-                private$.message_stderr(sprintf(
-                  "Warning: w pre-generation failed for %s (falling back to per-rep draws): %s\n",
-                  dl, conditionMessage(e)
-                ))
-              }
-            })
-          }
-          if (length(design_w_cache) > 0L) cell_state$design_w_cache = design_w_cache
+        all_cell_states[[cell_idx]] = cs
+      }
+
+      # Helper: pre-generate exactly 1 w vector per supported design for one cell+rep.
+      # Using 1 Java core avoids JVM oversubscription while workers run in parallel.
+      # Called per-rep so computation is bounded to T_single_design × n_active_cells.
+      .pregen_w_for_rep = function(ci, rep) {
+        cs = all_cell_states[[ci]]
+        if (is.null(cs$shared_X)) return(invisible(NULL))
+        new_cache = list()
+        for (di in seq_along(private$design_classes)) {
+          dc = private$design_classes[[di]]
+          dl = private$design_labels[[di]]
+          dp = private$design_params[[di]]
+          if (is.null(dc$public_methods$supports_batch_w_pregeneration)) next
+          tryCatch({
+            d_pg = do.call(dc$new, c(list(response_type = cs$response_type, n = cs$n), dp))
+            d_pg$add_all_subjects_to_experiment(as.data.frame(cs$shared_X))
+            prev_use_gpu = getOption("GreedyExperimentalDesign.use_gpu")
+            options(GreedyExperimentalDesign.use_gpu = FALSE)
+            prev_nc = ns$edi_env$num_cores_override
+            assign("num_cores_override", 1L, envir = ns$edi_env)
+            w_mat = d_pg$draw_ws_according_to_design(1L)
+            assign("num_cores_override", prev_nc, envir = ns$edi_env)
+            options(GreedyExperimentalDesign.use_gpu = prev_use_gpu)
+            storage.mode(w_mat) = "integer"
+            new_cache[[dl]] = list(ws = w_mat, rep_to_col = setNames(1L, as.character(rep)))
+          }, error = function(e) NULL)
         }
-        num_cores_to_use = 1L
-        private$current_task_label = "Des/Inf"
-        if (num_cores > 1L) {
+        if (length(new_cache) > 0L) {
+          cs$design_w_cache = new_cache
+          all_cell_states[[ci]] <<- cs
+        }
+      }
+
+      # ── Main simulation loop: outer = rep, inner = DGP cell ──────────────────
+      # Each complete rep covers all (cell, design, inference) combos, so one
+      # rep gives a reliable sample of how long a single rep takes, enabling an
+      # accurate time-to-completion estimate that is updated after every rep.
+      private$rep_elapsed_times = numeric(0)
+      use_parallel_workers = !force_serial && num_cores > 1L
+      num_cores_to_use = if (use_parallel_workers) num_cores else 1L
+
+      # Helper closures for the parallel paths — declared once outside the loops.
+      is_mirai_failed = function(x) {
+        is.null(x) || inherits(x, "error") || inherits(x, "miraiError") || inherits(x, "errorValue")
+      }
+      mirai_err_msg = function(x) {
+        if (is.null(x)) return("Worker returned NULL output.")
+        if (inherits(x, "miraiError") || inherits(x, "errorValue")) {
+          msg = attr(x, "message")
+          if (!is.null(msg)) return(as.character(msg)[1L])
+          return(as.character(x)[1L])
+        }
+        conditionMessage(x)
+      }
+      seed_val = private$seed
+
+      for (rep in seq_len(private$Nrep)) {
+        # Determine which cells need work for this rep.
+        active_cells = which(vapply(all_run_required_v, `[[`, FALSE, rep))
+
+        # Fast-forward progress for fully-skipped reps (all cells already done).
+        if (length(active_cells) == 0L) {
+          private$current_rep_idx = rep
+          private$current_cell_idx = n_cells
+          private$current_task_in_rep_idx = if (n_cells > 0L) cell_tasks_count[[n_cells]] else 0L
+          private$tasks_per_rep = private$current_task_in_rep_idx
+          if (rep %% 100L == 0L || rep == private$Nrep) private$.draw_progress()
+          next
+        }
+
+        # Generate exactly 1 w per design per active cell, just-in-time for this rep.
+        if (!isTRUE(private$random_X_draws)) {
+          for (ci in active_cells) .pregen_w_for_rep(ci, rep)
+        }
+
+        rep_start_time = as.numeric(Sys.time())
+        private$current_rep_idx = rep
+        private$current_cell_idx = active_cells[[1L]]
+
+        if (use_parallel_workers) {
+          # ── Parallel paths: dispatch cells as workers within each rep ─────────
           if (use_mirai_backend) {
-            num_cores_to_use = num_cores
-            private$current_task_label = "Chunk Reps"
+            private$current_task_label = "Chunk Cells"
             chunk_size = num_cores_to_use
-            rep_chunks = split(seq_len(private$Nrep), (seq_len(private$Nrep) - 1) %/% chunk_size)
-            for (chunk in rep_chunks) {
-               active_reps = chunk[run_required_v[chunk]]
-               
-               if (length(active_reps) == 0L) {
-                  private$current_rep_idx = chunk[[length(chunk)]]
-                  private$tasks_per_rep = length(chunk)
-                  private$current_task_in_rep_idx = length(chunk)
-                  private$.draw_progress()
-                  next
-               }
-               private$current_rep_idx = chunk[[1L]]
-               private$tasks_per_rep = length(active_reps)
-               private$current_task_in_rep_idx = 0L
-               private$last_progress_draw_time = 0
-               private$.draw_progress()
-               
-               RUN_REP_DETACHED = private$.run_single_replication_in_worker; environment(RUN_REP_DETACHED) = asNamespace("EDI")
-               RUN_REP = function(rep_i) RUN_REP_DETACHED(rep_i, cell_state, progress_cb = NULL, is_forked = FALSE)
-               seed_val = private$seed
-               # mirai 2.x returns miraiError (class "miraiError"/"errorValue"/"try-error")
-               # on worker failure — NOT a standard "error" condition. Detect both.
-               is_mirai_failed = function(x) {
-                 is.null(x) || inherits(x, "error") || inherits(x, "miraiError") || inherits(x, "errorValue")
-               }
-               mirai_err_msg = function(x) {
-                 if (is.null(x)) return("Worker returned NULL output.")
-                 if (inherits(x, "miraiError") || inherits(x, "errorValue")) {
-                   msg = attr(x, "message")
-                   if (!is.null(msg)) return(as.character(msg)[1L])
-                   return(as.character(x)[1L])
-                 }
-                 conditionMessage(x)
-               }
-               jobs = lapply(active_reps, function(rep_i) {
-                 rep_seed = if (!is.null(seed_val)) seed_val + rep_i else NULL
-                 mirai::mirai({
-                   if (!is.null(rep_seed)) set.seed(rep_seed)
-                   RUN_REP(rep_i)
-                 }, RUN_REP = RUN_REP, rep_i = rep_i, rep_seed = rep_seed)
-               })
-               names(jobs) = as.character(active_reps)
-               chunk_results = vector("list", length(active_reps))
-               names(chunk_results) = as.character(active_reps)
-               completed_in_chunk = 0L
-               while (completed_in_chunk < length(active_reps)) {
-                 ready = names(jobs)[!vapply(jobs, mirai::unresolved, logical(1L))]
-                 if (length(ready) == 0L) {
-                   Sys.sleep(0.1)
-                   next
-                 }
-                 for (nm in ready) {
-                   if (is.null(chunk_results[[nm]])) {
-                     job_res = tryCatch(jobs[[nm]][], error = function(e) e)
-                     chunk_results[[nm]] = job_res
-                     if (!is_mirai_failed(job_res) &&
-                         !is.null(job_res$fatal_error)) {
-                       pending_jobs = jobs[setdiff(names(jobs), ready)]
-                       if (length(pending_jobs) > 0L) {
-                         invisible(lapply(pending_jobs, function(job) {
-                           try(mirai::stop_mirai(job), silent = TRUE)
-                         }))
-                       }
-                     }
-                     completed_in_chunk = completed_in_chunk + 1L
-                   }
-                 }
-                 jobs[ready] = NULL
-                 private$current_rep_idx = min(chunk[[length(chunk)]], chunk[[1L]] - 1L + completed_in_chunk)
-                 private$current_task_in_rep_idx = completed_in_chunk
-                 private$.draw_progress()
-               }
-               chunk_results = unname(chunk_results[as.character(active_reps)])
-               chunk_results_ok = chunk_results[!vapply(chunk_results, is_mirai_failed, logical(1L))]
-               if (length(chunk_results_ok) > 0L) {
-                 all_chunk_dt = data.table::rbindlist(lapply(chunk_results_ok, function(w) w$results_dt), use.names = TRUE, fill = TRUE)
-                 all_chunk_skipped = sum(vapply(chunk_results_ok, function(w) w$skipped_count, 0L))
-                 private$.append_errors(unlist(lapply(chunk_results_ok, `[[`, "errors"), recursive = FALSE))
-                 private$current_rep_idx = chunk[[length(chunk)]]
-                 private$current_task_in_rep_idx = length(chunk)
-                 private$.record_batch(all_chunk_dt, all_chunk_skipped)
-               }
-               fatal_errors = unlist(lapply(chunk_results_ok, function(x) {
-                 if (is.null(x$fatal_error)) list() else list(x$fatal_error)
-               }), recursive = FALSE)
-               if (length(fatal_errors) > 0L) {
-                 private$.abort_from_error_record(fatal_errors[[1L]])
-               }
-               failed_indices = which(vapply(chunk_results, is_mirai_failed, logical(1L)))
-               if (length(failed_indices) > 0L) {
-                 failed_errors = lapply(failed_indices, function(idx) {
-                   private$.make_error_record(
-                     stage = "worker_execution",
-                     rep = active_reps[[idx]],
-                     design = NA_character_,
-                     design_params = NULL,
-                     inference = NA_character_,
-                     inference_params = NULL,
-                     inference_type = NA_character_,
-                     inference_type_params = NULL,
-                     message = mirai_err_msg(chunk_results[[idx]]),
-                     metadata = list(cell_index = cell_idx, chunk_rep = active_reps[[idx]], backend = "mirai")
-                   )
-                 })
-                 private$.append_errors(failed_errors)
-                 if (isTRUE(private$stop_on_error)) {
-                   private$.abort_from_error_record(failed_errors[[1L]])
-                 }
-                 tasks_to_add = sum(cell_req[failed_indices, , drop = FALSE])
-                 private$progress_count = private$progress_count + tasks_to_add
-                 private$.draw_progress()
-               }
+            cell_chunks = split(active_cells, (seq_along(active_cells) - 1L) %/% chunk_size)
+            for (chunk_cells in cell_chunks) {
+              private$current_cell_idx = chunk_cells[[1L]]
+              private$tasks_per_rep    = length(chunk_cells)
+              private$current_task_in_rep_idx = 0L
+              private$last_progress_draw_time = 0
+              private$.draw_progress()
+
+              RUN_REP_DETACHED = private$.run_single_replication_in_worker
+              environment(RUN_REP_DETACHED) = asNamespace("EDI")
+
+              jobs = lapply(chunk_cells, function(ci) {
+                cs_i = all_cell_states[[ci]]
+                RUN_REP_ci = function(rep_i) RUN_REP_DETACHED(rep_i, cs_i, progress_cb = NULL, is_forked = FALSE)
+                rep_seed = if (!is.null(seed_val)) seed_val + rep else NULL
+                mirai::mirai({
+                  if (!is.null(rep_seed)) set.seed(rep_seed)
+                  RUN_REP_ci(rep_i)
+                }, RUN_REP_ci = RUN_REP_ci, rep_i = rep, rep_seed = rep_seed)
+              })
+              names(jobs) = as.character(chunk_cells)
+              chunk_results = vector("list", length(chunk_cells))
+              names(chunk_results) = as.character(chunk_cells)
+              completed_in_chunk = 0L
+              while (completed_in_chunk < length(chunk_cells)) {
+                ready = names(jobs)[!vapply(jobs, mirai::unresolved, logical(1L))]
+                if (length(ready) == 0L) { Sys.sleep(0.1); next }
+                for (nm in ready) {
+                  if (is.null(chunk_results[[nm]])) {
+                    job_res = tryCatch(jobs[[nm]][], error = function(e) e)
+                    chunk_results[[nm]] = job_res
+                    if (!is_mirai_failed(job_res) && !is.null(job_res$fatal_error)) {
+                      pending_jobs = jobs[setdiff(names(jobs), ready)]
+                      if (length(pending_jobs) > 0L)
+                        invisible(lapply(pending_jobs, function(job) try(mirai::stop_mirai(job), silent = TRUE)))
+                    }
+                    completed_in_chunk = completed_in_chunk + 1L
+                  }
+                }
+                jobs[ready] = NULL
+                private$current_cell_idx = chunk_cells[[min(length(chunk_cells), completed_in_chunk + 1L)]]
+                private$current_task_in_rep_idx = completed_in_chunk
+                private$.draw_progress()
+              }
+              chunk_results_ok = chunk_results[!vapply(chunk_results, is_mirai_failed, logical(1L))]
+              if (length(chunk_results_ok) > 0L) {
+                all_chunk_dt = data.table::rbindlist(lapply(chunk_results_ok, function(w) w$results_dt), use.names = TRUE, fill = TRUE)
+                all_chunk_skipped = sum(vapply(chunk_results_ok, function(w) w$skipped_count, 0L))
+                private$.append_errors(unlist(lapply(chunk_results_ok, `[[`, "errors"), recursive = FALSE))
+                private$current_cell_idx = chunk_cells[[length(chunk_cells)]]
+                private$current_task_in_rep_idx = length(chunk_cells)
+                private$.record_batch(all_chunk_dt, all_chunk_skipped)
+              }
+              fatal_errors = unlist(lapply(chunk_results_ok, function(x) {
+                if (is.null(x$fatal_error)) list() else list(x$fatal_error)
+              }), recursive = FALSE)
+              if (length(fatal_errors) > 0L) private$.abort_from_error_record(fatal_errors[[1L]])
+              failed_indices = which(vapply(chunk_results, is_mirai_failed, logical(1L)))
+              if (length(failed_indices) > 0L) {
+                failed_errors = lapply(failed_indices, function(idx) {
+                  ci = chunk_cells[[idx]]
+                  private$.make_error_record(
+                    stage = "worker_execution", rep = rep,
+                    design = NA_character_, design_params = NULL,
+                    inference = NA_character_, inference_params = NULL,
+                    inference_type = NA_character_, inference_type_params = NULL,
+                    message = mirai_err_msg(chunk_results[[idx]]),
+                    metadata = list(cell_index = ci, rep = rep, backend = "mirai")
+                  )
+                })
+                private$.append_errors(failed_errors)
+                if (isTRUE(private$stop_on_error)) private$.abort_from_error_record(failed_errors[[1L]])
+                private$progress_count = private$progress_count + length(failed_indices)
+                private$.draw_progress()
+              }
             }
           } else {
-            num_cores_to_use = num_cores
-            private$current_task_label = "Chunk Reps"
+            # mcparallel (unix fork) backend
+            private$current_task_label = "Chunk Cells"
             chunk_size = num_cores_to_use
-            rep_chunks = split(seq_len(private$Nrep), (seq_len(private$Nrep) - 1) %/% chunk_size)
-            for (chunk in rep_chunks) {
-               # Identify which reps in this chunk actually need running
-               active_reps = chunk[run_required_v[chunk]]
-               
-               if (length(active_reps) == 0L) {
-                  private$current_rep_idx = chunk[[length(chunk)]]
-                  private$tasks_per_rep = length(chunk)
-                  private$current_task_in_rep_idx = length(chunk)
-                  private$.draw_progress()
-                  next
-               }
-               private$current_rep_idx = chunk[[1L]]
-               private$tasks_per_rep = length(active_reps)
-               private$current_task_in_rep_idx = 0L
-               private$last_progress_draw_time = 0
-               private$.draw_progress()
-               
-               # Workers do NOT draw progress bars to avoid terminal corruption.
-               RUN_REP_DETACHED = private$.run_single_replication_in_worker; environment(RUN_REP_DETACHED) = asNamespace("EDI")
-               RUN_REP = function(rep_i) RUN_REP_DETACHED(rep_i, cell_state, progress_cb = NULL, is_forked = TRUE)
-               jobs = lapply(active_reps, function(rep_i) {
-                 parallel::mcparallel(
-                   RUN_REP(rep_i),
-                   name = as.character(rep_i),
-                   mc.set.seed = TRUE,
-                   silent = TRUE
-                 )
-               })
-               names(jobs) = as.character(active_reps)
-               chunk_results = vector("list", length(active_reps))
-               names(chunk_results) = as.character(active_reps)
-               completed_in_chunk = 0L
-               while (completed_in_chunk < length(active_reps)) {
-                 collected = parallel::mccollect(jobs, wait = FALSE, timeout = 0.1)
-                 if (is.null(collected) || length(collected) == 0L) next
-                 for (nm in names(collected)) {
-                   if (is.null(chunk_results[[nm]])) {
-                     chunk_results[[nm]] = collected[[nm]]
-                     if (!is.null(collected[[nm]]$fatal_error)) {
-                       pending_jobs = jobs[setdiff(names(jobs), names(collected))]
-                       if (length(pending_jobs) > 0L) {
-                         invisible(lapply(pending_jobs, function(job) {
-                           try(parallel::mckill(job), silent = TRUE)
-                         }))
-                       }
-                     }
-                     completed_in_chunk = completed_in_chunk + 1L
-                   }
-                 }
-                 jobs[names(collected)] = NULL
-                 private$current_rep_idx = min(chunk[[length(chunk)]], chunk[[1L]] - 1L + completed_in_chunk)
-                 private$current_task_in_rep_idx = completed_in_chunk
-                 private$.draw_progress()
-               }
-               chunk_results = unname(chunk_results[as.character(active_reps)])
-               chunk_results_ok = chunk_results[!vapply(chunk_results, function(x) is(x, "try-error") || is.null(x), logical(1L))]
-               if (length(chunk_results_ok) > 0L) {
-                 all_chunk_dt = data.table::rbindlist(lapply(chunk_results_ok, function(w) w$results_dt), use.names = TRUE, fill = TRUE)
-                 all_chunk_skipped = sum(vapply(chunk_results_ok, function(w) w$skipped_count, 0L))
-                 private$.append_errors(unlist(lapply(chunk_results_ok, `[[`, "errors"), recursive = FALSE))
-                 private$current_rep_idx = chunk[[length(chunk)]]
-                 private$current_task_in_rep_idx = length(chunk)
-                 private$.record_batch(all_chunk_dt, all_chunk_skipped)
-               }
-               fatal_errors = unlist(lapply(chunk_results_ok, function(x) {
-                 if (is.null(x$fatal_error)) list() else list(x$fatal_error)
-               }), recursive = FALSE)
-               if (length(fatal_errors) > 0L) {
-                 private$.abort_from_error_record(fatal_errors[[1L]])
-               }
-               failed_indices = which(vapply(chunk_results, function(x) is(x, "try-error") || is.null(x), logical(1L)))
-               if (length(failed_indices) > 0L) {
-                 failed_errors = lapply(failed_indices, function(idx) {
-                   private$.make_error_record(
-                     stage = "worker_execution",
-                     rep = active_reps[[idx]],
-                     design = NA_character_,
-                     design_params = NULL,
-                     inference = NA_character_,
-                     inference_params = NULL,
-                     inference_type = NA_character_,
-                     inference_type_params = NULL,
-                     message = if (is.null(chunk_results[[idx]])) "Worker returned NULL output." else as.character(chunk_results[[idx]]),
-                     metadata = list(cell_index = cell_idx, chunk_rep = active_reps[[idx]])
-                   )
-                 })
-                 private$.append_errors(failed_errors)
-                 if (isTRUE(private$stop_on_error)) {
-                   private$.abort_from_error_record(failed_errors[[1L]])
-                 }
-                 # For failures, we only advance progress by the number of tasks
-                 # that were actually pending for these replications (to avoid double-counting existing ones).
-                 tasks_per_rep = cell_tasks_count[cell_idx]
-                 tasks_to_add = sum(cell_req[failed_indices, , drop = FALSE])
-                 private$progress_count = private$progress_count + tasks_to_add
-                 private$.draw_progress()
-               }
+            cell_chunks = split(active_cells, (seq_along(active_cells) - 1L) %/% chunk_size)
+            for (chunk_cells in cell_chunks) {
+              private$current_cell_idx = chunk_cells[[1L]]
+              private$tasks_per_rep    = length(chunk_cells)
+              private$current_task_in_rep_idx = 0L
+              private$last_progress_draw_time = 0
+              private$.draw_progress()
+
+              RUN_REP_DETACHED = private$.run_single_replication_in_worker
+              environment(RUN_REP_DETACHED) = asNamespace("EDI")
+
+              jobs = lapply(chunk_cells, function(ci) {
+                cs_i = all_cell_states[[ci]]
+                RUN_REP_ci = function(rep_i) RUN_REP_DETACHED(rep_i, cs_i, progress_cb = NULL, is_forked = TRUE)
+                parallel::mcparallel(
+                  RUN_REP_ci(rep),
+                  name = as.character(ci),
+                  mc.set.seed = TRUE,
+                  silent = TRUE
+                )
+              })
+              names(jobs) = as.character(chunk_cells)
+              chunk_results = vector("list", length(chunk_cells))
+              names(chunk_results) = as.character(chunk_cells)
+              completed_in_chunk = 0L
+              while (completed_in_chunk < length(chunk_cells)) {
+                collected = parallel::mccollect(jobs, wait = FALSE, timeout = 0.1)
+                if (is.null(collected) || length(collected) == 0L) next
+                for (nm in names(collected)) {
+                  if (is.null(chunk_results[[nm]])) {
+                    chunk_results[[nm]] = collected[[nm]]
+                    if (!is.null(collected[[nm]]$fatal_error)) {
+                      pending_jobs = jobs[setdiff(names(jobs), names(collected))]
+                      if (length(pending_jobs) > 0L)
+                        invisible(lapply(pending_jobs, function(job) try(parallel::mckill(job), silent = TRUE)))
+                    }
+                    completed_in_chunk = completed_in_chunk + 1L
+                  }
+                }
+                jobs[names(collected)] = NULL
+                private$current_cell_idx = chunk_cells[[min(length(chunk_cells), completed_in_chunk + 1L)]]
+                private$current_task_in_rep_idx = completed_in_chunk
+                private$.draw_progress()
+              }
+              chunk_results_ok = chunk_results[!vapply(chunk_results, function(x) is(x, "try-error") || is.null(x), logical(1L))]
+              if (length(chunk_results_ok) > 0L) {
+                all_chunk_dt = data.table::rbindlist(lapply(chunk_results_ok, function(w) w$results_dt), use.names = TRUE, fill = TRUE)
+                all_chunk_skipped = sum(vapply(chunk_results_ok, function(w) w$skipped_count, 0L))
+                private$.append_errors(unlist(lapply(chunk_results_ok, `[[`, "errors"), recursive = FALSE))
+                private$current_cell_idx = chunk_cells[[length(chunk_cells)]]
+                private$current_task_in_rep_idx = length(chunk_cells)
+                private$.record_batch(all_chunk_dt, all_chunk_skipped)
+              }
+              fatal_errors = unlist(lapply(chunk_results_ok, function(x) {
+                if (is.null(x$fatal_error)) list() else list(x$fatal_error)
+              }), recursive = FALSE)
+              if (length(fatal_errors) > 0L) private$.abort_from_error_record(fatal_errors[[1L]])
+              failed_indices = which(vapply(chunk_results, function(x) is(x, "try-error") || is.null(x), logical(1L)))
+              if (length(failed_indices) > 0L) {
+                failed_errors = lapply(failed_indices, function(idx) {
+                  ci = chunk_cells[[idx]]
+                  private$.make_error_record(
+                    stage = "worker_execution", rep = rep,
+                    design = NA_character_, design_params = NULL,
+                    inference = NA_character_, inference_params = NULL,
+                    inference_type = NA_character_, inference_type_params = NULL,
+                    message = if (is.null(chunk_results[[idx]])) "Worker returned NULL output." else as.character(chunk_results[[idx]]),
+                    metadata = list(cell_index = ci, rep = rep)
+                  )
+                })
+                private$.append_errors(failed_errors)
+                if (isTRUE(private$stop_on_error)) private$.abort_from_error_record(failed_errors[[1L]])
+                private$progress_count = private$progress_count + length(failed_indices)
+                private$.draw_progress()
+              }
             }
           }
-        }
-        
-        if (num_cores_to_use == 1L) {
+        } else {
+          # ── Serial path ───────────────────────────────────────────────────────
           private$current_task_label = "Des/Inf"
-          private$tasks_per_rep = cell_tasks_count[cell_idx]
-          for (rep in seq_len(private$Nrep)) {
-            if (!run_required_v[rep]) {
-               # Fast-forward progress bar for fully skipped replications
-               if (rep %% 100L == 0L || rep == private$Nrep) {
-                  private$current_rep_idx = rep; private$current_task_in_rep_idx = 0L; private$.draw_progress()
-               }
-               next
-            }
-            private$current_rep_idx = rep; private$current_task_in_rep_idx = 0L
+          for (cell_idx in active_cells) {
+            cell_state = all_cell_states[[cell_idx]]
+            private$current_cell_idx  = cell_idx
+            private$current_n         = cell_state$n
+            private$current_p         = cell_state$p
+            private$current_betaT     = cell_state$betaT
+            private$current_cond_exp_func_model = cell_state$cond_exp_func_model
+            private$current_response_type       = cell_state$response_type
+            private$tasks_per_rep     = cell_tasks_count[[cell_idx]]
+            private$current_task_in_rep_idx = 0L
             private$last_progress_draw_time = 0
             private$.draw_progress()
             worker_out = private$.run_single_replication_in_worker(rep, cell_state, progress_cb = private$.advance_progress, is_forked = FALSE)
             if (private$keep_all_intermediate_data) {
-               rep_data = if (isTRUE(private$random_X_draws)) private$.generate_data() else private$.generate_data_from_X(shared_X_draws[[paste(private$current_n, private$current_p, sep = "|")]])
-               X = rep_data$X; y_linear_model = rep_data$y_linear_model; true_mean_diff_ate = private$compute_true_mean_diff_ate(y_linear_model); rep_slot = (cell_idx - 1L) * private$Nrep + rep
-               for (di in seq_along(private$design_classes)) {
-                 design_gen   = private$design_classes[[di]]; design_name  = private$design_labels[[di]]; design_extra = if (!is.null(private$design_params)) private$design_params[[di]] else list()
-                 des_obj = private$.build_design(design_gen, X, y_linear_model, design_extra); private$all_intermediate_data[[rep_slot]]$designs[[design_name]] = des_obj
-                 if (is.null(des_obj)) next
-                 for (ii in seq_along(private$inference_classes)) {
-                   inf_gen  = private$inference_classes[[ii]]; inf_name = private$inference_labels[[ii]]; inf_ctor_extra = private$inference_constructor_params[[ii]]
-                   inf_obj = do.call(inf_gen$new, c(list(des_obj), inf_ctor_extra)); private$all_intermediate_data[[rep_slot]]$inferences[[design_name]][[inf_name]] = inf_obj
-                 }
-               }
-               private$all_intermediate_data[[rep_slot]]$y_linear_model = y_linear_model
+              rep_data = if (isTRUE(private$random_X_draws)) private$.generate_data() else private$.generate_data_from_X(shared_X_draws[[paste(private$current_n, private$current_p, sep = "|")]])
+              X = rep_data$X; y_linear_model = rep_data$y_linear_model
+              true_mean_diff_ate = private$compute_true_mean_diff_ate(y_linear_model)
+              rep_slot = (cell_idx - 1L) * private$Nrep + rep
+              for (di in seq_along(private$design_classes)) {
+                design_gen  = private$design_classes[[di]]; design_name = private$design_labels[[di]]
+                design_extra = if (!is.null(private$design_params)) private$design_params[[di]] else list()
+                des_obj = private$.build_design(design_gen, X, y_linear_model, design_extra)
+                private$all_intermediate_data[[rep_slot]]$designs[[design_name]] = des_obj
+                if (is.null(des_obj)) next
+                for (ii in seq_along(private$inference_classes)) {
+                  inf_gen = private$inference_classes[[ii]]; inf_name = private$inference_labels[[ii]]
+                  inf_ctor_extra = private$inference_constructor_params[[ii]]
+                  inf_obj = do.call(inf_gen$new, c(list(des_obj), inf_ctor_extra))
+                  private$all_intermediate_data[[rep_slot]]$inferences[[design_name]][[inf_name]] = inf_obj
+                }
+              }
+              private$all_intermediate_data[[rep_slot]]$y_linear_model = y_linear_model
             }
             if (!is(worker_out, "try-error") && !is.null(worker_out)) {
-               private$.append_errors(worker_out$errors)
-               if (!is.null(worker_out$fatal_error)) {
-                 private$.abort_from_error_record(worker_out$fatal_error)
-               }
-               n_res = if (is.null(worker_out$results_dt)) 0L else nrow(worker_out$results_dt)
-               private$current_task_in_rep_idx = worker_out$skipped_count + n_res
-               private$.record_batch(worker_out$results_dt, worker_out$skipped_count)
+              private$.append_errors(worker_out$errors)
+              if (!is.null(worker_out$fatal_error)) private$.abort_from_error_record(worker_out$fatal_error)
+              n_res = if (is.null(worker_out$results_dt)) 0L else nrow(worker_out$results_dt)
+              private$current_task_in_rep_idx = worker_out$skipped_count + n_res
+              private$.record_batch(worker_out$results_dt, worker_out$skipped_count)
             } else {
-               worker_error = private$.make_error_record(
-                 stage = "worker_execution",
-                 rep = rep,
-                 design = NA_character_,
-                 design_params = NULL,
-                 inference = NA_character_,
-                 inference_params = NULL,
-                 inference_type = NA_character_,
-                 inference_type_params = NULL,
-                 message = if (is.null(worker_out)) "Worker returned NULL output." else as.character(worker_out),
-                 metadata = list(cell_index = cell_idx, num_cores = num_cores_to_use)
-               )
-               private$.append_errors(list(worker_error))
-               if (isTRUE(private$stop_on_error)) {
-                 private$.abort_from_error_record(worker_error)
-               }
-               # For failures, we only advance progress by the number of tasks
-               # that were actually pending for this replication.
-               tasks_to_add = sum(cell_req[rep, ])
-               private$current_task_in_rep_idx = private$tasks_per_rep; private$progress_count = private$progress_count + tasks_to_add; private$.draw_progress()
+              worker_error = private$.make_error_record(
+                stage = "worker_execution", rep = rep,
+                design = NA_character_, design_params = NULL,
+                inference = NA_character_, inference_params = NULL,
+                inference_type = NA_character_, inference_type_params = NULL,
+                message = if (is.null(worker_out)) "Worker returned NULL output." else as.character(worker_out),
+                metadata = list(cell_index = cell_idx, num_cores = num_cores_to_use)
+              )
+              private$.append_errors(list(worker_error))
+              if (isTRUE(private$stop_on_error)) private$.abort_from_error_record(worker_error)
+              private$current_task_in_rep_idx = private$tasks_per_rep
+              private$progress_count = private$progress_count + cell_tasks_count[[cell_idx]]
+              private$.draw_progress()
             }
           }
         }
+
+        # Record elapsed time for this rep and update ETA.
+        rep_elapsed = as.numeric(Sys.time()) - rep_start_time
+        private$rep_elapsed_times = c(private$rep_elapsed_times, rep_elapsed)
+        private$current_rep_idx = rep
+        private$current_cell_idx = n_cells
+        private$current_task_in_rep_idx = if (n_cells > 0L) cell_tasks_count[[n_cells]] else 0L
+        private$tasks_per_rep = private$current_task_in_rep_idx
+        private$.draw_progress()
       }
       private$.finish_run()
       invisible(self)
@@ -1575,7 +1567,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     results_filename = NULL,
     simulation_start_time = NULL,
     initial_progress_count = NULL,
-    initial_cell_in_progress_prop = NULL,
     continue_from_last_result_row = NULL,
     stop_on_error = TRUE,
     design_params    = NULL,
@@ -1605,6 +1596,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     tasks_per_rep            = 0L,
     progress_total           = 0L,
     progress_count           = 0L,
+    rep_elapsed_times        = numeric(0),
     progress_bar             = NULL,
     use_progress_bar         = FALSE,
     progress_log_interval    = 0L,
@@ -2892,45 +2884,41 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     .draw_simulation_progress_bars = function() {
       now = as.numeric(Sys.time())
       # Throttle: only redraw if 100ms have passed OR we are at 100%
-      is_done = private$current_cell_idx == private$total_cells &&
-                private$current_rep_idx == private$Nrep &&
+      is_done = private$current_rep_idx == private$Nrep &&
+                private$current_cell_idx == private$total_cells &&
                 private$current_task_in_rep_idx == private$tasks_per_rep
       if (!is_done && (now - private$last_progress_draw_time) < 0.1) return(invisible(NULL))
       private$last_progress_draw_time = now
       # Force a narrow width to prevent wrapping which breaks ANSI sequences.
       width = 60L
       task_total_display = max(private$tasks_per_rep, private$current_task_in_rep_idx)
-      # Proportions (clamped to [0,1])
+      # Proportions (clamped to [0,1]).
+      # Outer loop is rep; inner is cell; innermost is task.
       task_in_progress_prop = max(0, min(1, if (task_total_display > 0) private$current_task_in_rep_idx / task_total_display else 0))
-      rep_in_progress_prop  = max(0, min(1, if (private$Nrep > 0) (max(0, private$current_rep_idx - 1) + task_in_progress_prop) / private$Nrep else 0))
-      cell_in_progress_prop = max(0, min(1, if (private$total_cells > 0) (max(0, private$current_cell_idx - 1) + rep_in_progress_prop) / private$total_cells else 0))
-      
-      eta_str = ""
-      prop_done_this_run = (cell_in_progress_prop - private$initial_cell_in_progress_prop) / max(1e-6, 1 - private$initial_cell_in_progress_prop)
-      prop_remaining     = 1 - cell_in_progress_prop
-      
-      if (prop_done_this_run > 0 && cell_in_progress_prop < 0.9999) {
-        elapsed = now - private$simulation_start_time
-        remaining = (elapsed / prop_done_this_run) * (prop_remaining / max(1e-6, 1 - private$initial_cell_in_progress_prop))
-        
-        d = floor(remaining / 86400)
-        remaining = remaining %% 86400
-        h = floor(remaining / 3600)
-        remaining = remaining %% 3600
-        m = floor(remaining / 60)
-        s = round(remaining %% 60)
-        
+      cell_in_progress_prop = max(0, min(1, if (private$total_cells > 0) (max(0, private$current_cell_idx - 1) + task_in_progress_prop) / private$total_cells else 0))
+      rep_in_progress_prop  = max(0, min(1, if (private$Nrep > 0) (max(0, private$current_rep_idx - 1) + cell_in_progress_prop) / private$Nrep else 0))
+      # overall_prop accounts for work done before this session started.
+      overall_prop = if (private$progress_total > 0L) private$progress_count / private$progress_total else rep_in_progress_prop
+
+      # ETA: use mean time per completed rep × reps remaining (in overall terms).
+      n_elapsed = length(private$rep_elapsed_times)
+      eta_str = if (overall_prop >= 0.9999) {
+        "Status: Completed."
+      } else if (n_elapsed > 0L) {
+        secs_per_rep  = mean(private$rep_elapsed_times)
+        reps_remaining = max(0, (1 - overall_prop) * private$Nrep)
+        remaining = secs_per_rep * reps_remaining
+        d = floor(remaining / 86400); remaining = remaining %% 86400
+        h = floor(remaining / 3600);  remaining = remaining %% 3600
+        m = floor(remaining / 60);    s = round(remaining %% 60)
         parts = character()
         if (d > 0) parts = c(parts, paste0(d, "d"))
         if (h > 0) parts = c(parts, paste0(h, "h"))
         if (m > 0) parts = c(parts, paste0(m, "m"))
         parts = c(parts, paste0(s, "s"))
-        
-        eta_str = paste0("Time Left: ", paste(parts, collapse = " "))
-      } else if (cell_in_progress_prop >= 0.9999) {
-        eta_str = "Status: Completed."
+        paste0("Time Left: ", paste(parts, collapse = " "))
       } else {
-        eta_str = "Status: Estimating..."
+        "Status: Estimating..."
       }
       make_bar_line = function(label, prop, b_width, digits = 0, label_width = 25) {
         padded_label = sprintf("%-*s", label_width, substr(label, 1, label_width))
@@ -2952,8 +2940,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         }
         sprintf("%s[%s]", padded_label, full_bar)
       }
-      line1 = make_bar_line(sprintf("DGP %d/%d Overall", private$current_cell_idx, private$total_cells), cell_in_progress_prop, width, digits = 1)
-      line2 = make_bar_line(sprintf("Rep %d/%d", private$current_rep_idx, private$Nrep), rep_in_progress_prop, width)
+      # Line order: rep (outermost) → DGP cell → task
+      line1 = make_bar_line(sprintf("Rep %d/%d Overall", private$current_rep_idx, private$Nrep), overall_prop, width, digits = 1)
+      line2 = make_bar_line(sprintf("DGP %d/%d", private$current_cell_idx, private$total_cells), cell_in_progress_prop, width)
       line3 = make_bar_line(sprintf("%s %d/%d", private$current_task_label, private$current_task_in_rep_idx, task_total_display), task_in_progress_prop, width)
       # Use \r and \033[2K on EACH line for maximum robustness.
       output_block = paste0(

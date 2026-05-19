@@ -58,3 +58,50 @@ test_that("parametric bootstrap LR enforces a minimum usable replicate threshold
 		"B must be at least min_number_usable_samples"
 	)
 })
+
+test_that("parametric bootstrap worker loader stores a simulated null draw", {
+	des <- make_param_boot_logit_design(seed = 20260520L, n = 90L)
+	inf <- InferenceIncidLogRegr$new(des, model_formula = ~ x1 + x2, verbose = FALSE)
+	priv <- inf$.__enclos_env__$private
+
+	spec <- priv$get_likelihood_test_spec()
+	eval_obs <- priv$get_memoized_likelihood_test_eval(
+		delta = 0,
+		testing_type = "lik_ratio",
+		spec = spec,
+		include_full_negloglik = TRUE,
+		include_null_negloglik = TRUE
+	)
+	worker_state <- priv$create_param_bootstrap_worker_state(spec, 0, eval_obs$null_fit)
+	boot_spec <- priv$simulate_under_lik_null(worker_state$spec, 0, worker_state$null_fit)
+
+	expect_true(priv$load_param_bootstrap_draw_into_worker(worker_state, boot_spec))
+	expect_true(is.list(worker_state$state_env$current_param_bootstrap_draw))
+	expect_true(is.function(worker_state$state_env$current_param_bootstrap_draw$fit_null))
+	expect_true(is.function(worker_state$state_env$current_param_bootstrap_draw$neg_loglik))
+	expect_false(is.null(worker_state$state_env$current_param_bootstrap_draw$full_fit))
+})
+
+test_that("generic parametric bootstrap LR is serial-parallel deterministic under a fixed seed", {
+	des <- make_param_boot_logit_design(seed = 20260521L, n = 100L)
+
+	inf_serial <- InferenceIncidLogRegr$new(des, model_formula = ~ x1 + x2, verbose = FALSE)
+	inf_serial$set_seed(777)
+	inf_serial$num_cores <- 1L
+	inf_serial$.__enclos_env__$private$reusable_bootstrap_worker_enabled <- FALSE
+
+	inf_parallel <- InferenceIncidLogRegr$new(des, model_formula = ~ x1 + x2, verbose = FALSE)
+	inf_parallel$set_seed(777)
+	inf_parallel$num_cores <- 2L
+	inf_parallel$.__enclos_env__$private$reusable_bootstrap_worker_enabled <- FALSE
+
+	p_serial <- inf_serial$compute_lik_ratio_bootstrap_two_sided_pval(B = 21L, show_progress = FALSE)
+	p_parallel <- inf_parallel$compute_lik_ratio_bootstrap_two_sided_pval(B = 21L, show_progress = FALSE)
+	ci_serial <- inf_serial$compute_lik_ratio_bootstrap_confidence_interval(alpha = 0.2, B = 9L, show_progress = FALSE)
+	ci_parallel <- inf_parallel$compute_lik_ratio_bootstrap_confidence_interval(alpha = 0.2, B = 9L, show_progress = FALSE)
+
+	expect_equal(p_serial, p_parallel, tolerance = 0)
+	expect_equal(ci_serial, ci_parallel, tolerance = 0)
+	expect_true(is.finite(p_serial))
+	expect_true(all(is.finite(ci_serial)))
+})

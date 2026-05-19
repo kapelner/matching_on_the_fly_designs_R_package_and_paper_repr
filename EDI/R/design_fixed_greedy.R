@@ -1,7 +1,7 @@
 #' A Greedy Search Fixed Design
 #'
 #' An R6 Class encapsulating the data and functionality for a fixed greedy experimental design.
-#' Uses the \pkg{GreedyExperimentalDesign} package to search for balanced allocations.
+#' Uses a native C++ (RcppEigen) greedy swap search for balanced allocations.
 #'
 #' @examples
 #' \dontrun{
@@ -11,8 +11,8 @@
 DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 	inherit = DesignFixed,
 	public = list(
-		#' @description Returns TRUE: simulation framework can pre-generate all
-		#'   treatment vectors for a cell in one Java call instead of one per rep.
+		#' @description Returns TRUE: simulation framework pre-generates one
+		#'   treatment vector per rep in the main process (no JVM workers needed).
 		supports_batch_w_pregeneration = function() TRUE,
 		#' @description Initialize a greedy search fixed experimental design
 		#'
@@ -60,7 +60,6 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 			if (should_run_asserts()) {
 				assertCount(r, positive = TRUE)
 			}
-			assert_greedy_experimental_design_installed("DesignFixedGreedy")
 			if (should_run_asserts()) {
 				self$assert_all_subjects_arrived()
 			}
@@ -75,19 +74,16 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 				return(private$validate_allocation_matrix(w_mat, n = n, r = r))
 			}
 			private$covariate_impute_if_necessary_and_then_create_model_matrix()
-			X = private$X[1:n, , drop = FALSE]
-			search_obj = GreedyExperimentalDesign::initGreedyExperimentalDesignObject(
-				X          = X,
-				max_designs = r,
-				objective  = private$objective,
-				wait       = TRUE,
-				start      = TRUE,
-				num_cores  = self$num_cores,
-				verbose    = private$verbose
+			X      = private$X[1:n, , drop = FALSE]
+			n_iter = max(500L, 500L * as.integer(n))
+			w_mat  = greedy_design_search_cpp(
+				X_raw     = X,
+				r         = as.integer(r),
+				objective = private$objective,
+				n_iter    = n_iter
 			)
-			w_mat = GreedyExperimentalDesign::resultsGreedySearch(search_obj, max_vectors = r, form = "one_zero")$ending_indicTs
-			# resultsGreedySearch returns r x n; transpose to n x r
-			w_mat = t(w_mat)
+			# greedy_design_search_cpp already returns n x r
+			storage.mode(w_mat) = "numeric"
 			private$validate_allocation_matrix(w_mat, n = n, r = r)
 		}
 	),

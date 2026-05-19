@@ -361,6 +361,86 @@ All ten Easy families have `simulate_under_lik_null` and
 | Ordinal fixed-effects models | ✓ Done | `InferenceOrdinalPropOddsRegr`, `InferenceOrdinalOrderedProbitRegr`, `InferenceOrdinalCauchitRegr`, and `InferenceOrdinalCloglogRegr` now simulate ordinal categories under the constrained null fit |
 | `InferenceSurvivalWeibullRegr` | ✓ Done | Weibull event times simulated under the constrained null fit with observed censoring thresholds carried forward |
 
+## Current `InferenceParamBootstrap` Descendant Status Audit
+
+Status labels in this section mean:
+
+- **Supported now**: the class currently opts into
+  `supports_lik_ratio_param_bootstrap()`, either unconditionally or when the
+  Rcpp backend is enabled.
+- **Intentionally unsupported**: the class is intentionally kept off the
+  `InferenceParamBootstrap` branch, so bootstrap-LR is outside its current
+  supported surface and the public bootstrap-LR methods are not exposed.
+- **Disabled pending backend fixes**: the class has a bootstrap simulator path
+  but is explicitly switched off because the backend is not currently stable
+  enough to expose.
+
+Abstract / infrastructure-only bootstrap descendants omitted from the concrete
+audit: `InferenceAsympLikStdModCache`, `InferenceCountLikelihood`,
+`InferenceCountCompositeLikelihood`, `InferenceCountZeroAugmentedPoissonAbstract`,
+`InferenceKKPassThroughCompound`, `InferenceAbstractKKLWACoxOneLik`, and
+`InferenceAbstractKKWeibullFrailtyOneLik`.
+
+### Likelihood-Backed Concrete Descendants
+
+| Class | Status | Notes |
+|---|---|---|
+| `InferenceIncidLogRegr` | Supported now | Bernoulli null simulation implemented. |
+| `InferenceIncidProbitRegr` | Supported now | Bernoulli null simulation implemented via probit link. |
+| `InferenceIncidModifiedPoisson` | Supported now | Poisson null simulation implemented. |
+| `InferenceIncidLogBinomial` | Supported now | Bernoulli null simulation implemented. |
+| `InferenceIncidBinomialIdentityRiskDiff` | Supported now | Bernoulli null simulation implemented with identity-link clipping checks. |
+| `InferenceIncidKKCondLogitOneLik` | Supported now | Combined-likelihood Bernoulli simulation implemented. |
+| `InferenceCountPoisson` | Supported now | Poisson null simulation implemented. |
+| `InferenceCountRobustPoisson` | Supported now | Inherits the supported `InferenceCountCompositeLikelihood` bootstrap path. |
+| `InferenceCountQuasiPoisson` | Supported now | Inherits the supported `InferenceCountCompositeLikelihood` bootstrap path. |
+| `InferenceCountNegBin` | Supported now | Negative-binomial null simulation implemented. |
+| `InferenceCountZeroInflatedPoisson` | Supported now | Zero-inflated Poisson simulation implemented. |
+| `InferenceCountHurdlePoisson` | Supported now | Hurdle-Poisson simulation implemented. |
+| `InferenceCountZeroInflatedNegBin` | Supported now | Zero-inflated negative-binomial simulation implemented. |
+| `InferenceCountKKGLMM` | Supported now | Rcpp-backed only; `supports_lik_ratio_param_bootstrap()` is gated by `use_rcpp`. |
+| `InferenceContinKKOLSOneLik` | Supported now | Gaussian null simulation implemented. |
+| `InferenceContinKKGLMM` | Supported now | Rcpp-backed only; `supports_lik_ratio_param_bootstrap()` is gated by `use_rcpp`. |
+| `InferenceOrdinalPropOddsRegr` | Supported now | Ordinal-category simulation implemented. |
+| `InferenceOrdinalOrderedProbitRegr` | Supported now | Ordinal-category simulation implemented. |
+| `InferenceOrdinalCauchitRegr` | Supported now | Ordinal-category simulation implemented. |
+| `InferenceOrdinalCloglogRegr` | Supported now | Ordinal-category simulation implemented. |
+| `InferencePropBetaRegr` | Supported now | Beta null simulation implemented. |
+| `InferencePropZeroOneInflatedBetaRegr` | Supported now | Zero/one/beta mixture simulation implemented. |
+| `InferenceSurvivalCoxPHRegr` | Supported now | Rcpp-backed only; baseline-hazard-based simulator implemented behind `use_rcpp`. |
+| `InferenceSurvivalStratCoxPHRegr` | Supported now | Rcpp-backed only; stratified baseline-hazard simulator implemented behind `use_rcpp`. |
+| `InferenceSurvivalWeibullRegr` | Supported now | Weibull null simulation implemented. |
+| `InferenceSurvivalKKLWACoxPHOneLik` | Supported now | Combined-design Cox null simulation implemented. |
+| `InferenceSurvivalKKStratCoxPHOneLik` | Supported now | Combined-design stratified Cox null simulation implemented. |
+| `InferenceSurvivalKKWeibullFrailtyOneLik` | Supported now | Rcpp-backed only; frailty simulation implemented behind `use_rcpp`. |
+| `InferenceSurvivalKKClaytonCopulaOneLik` | Supported now | Clayton-copula survival simulation implemented. |
+| `InferenceCountHurdleNegBin` | Disabled pending backend fixes | Bootstrap simulator code exists, but the class is kept off `InferenceParamBootstrap` until the repeated null-refit path is reliable. |
+| `InferenceIncidRiskDiff` | Intentionally unsupported | Kept off `InferenceParamBootstrap`; no likelihood-null simulator hook. |
+| `InferencePropFractionalLogit` | Intentionally unsupported | Kept off `InferenceParamBootstrap`; not yet given a generative fractional-response bootstrap path. |
+| `InferenceOrdinalAdjCatLogitRegr` | Intentionally unsupported | Inherits the base `FALSE` support gate; no adjacent-category null simulator yet. |
+| `InferenceOrdinalStereotypeLogitRegr` | Intentionally unsupported | Kept off `InferenceParamBootstrap`. |
+| `InferenceOrdinalContRatioRegr` | Intentionally unsupported | Kept off `InferenceParamBootstrap`. |
+| `InferenceSurvivalDepCensTransformRegr` | Intentionally unsupported | Kept off `InferenceParamBootstrap`; the joint event/censoring simulator remains out of scope. |
+
+### Pass-Through Concrete Descendants
+
+These classes use KK pass-through layers that are intentionally kept off
+`InferenceParamBootstrap`, so they do not expose the likelihood-ratio
+parametric bootstrap methods.
+
+| Class | Status | Notes |
+|---|---|---|
+| `InferenceAllKKMeanDiffIVWC` | Intentionally unsupported | Pass-through IVWC mean-difference path; no LR bootstrap hook. |
+| `InferenceContinKKRobustRegrOneLik` | Intentionally unsupported | Robust one-likelihood path is kept off `InferenceParamBootstrap`. |
+| `InferenceContinKKRobustRegrIVWC` | Intentionally unsupported | Pass-through IVWC robust regression path; no LR bootstrap hook. |
+| `InferenceContinKKOLSIVWC` | Intentionally unsupported | IVWC OLS path does not expose a parametric LR bootstrap path. |
+| `InferenceBaiAdjustedTKK14` | Intentionally unsupported | Bai-adjusted test path is not on the current LR-bootstrap surface. |
+| `InferenceBaiAdjustedTKK21` | Intentionally unsupported | Bai-adjusted test path is not on the current LR-bootstrap surface. |
+| `InferenceContinKKQuantileRegrOneLik` | Intentionally unsupported | Quantile-regression path does not currently define a likelihood-null simulator. |
+| `InferenceContinKKQuantileRegrIVWC` | Intentionally unsupported | IVWC quantile path does not currently define a likelihood-null simulator. |
+| `InferencePropKKQuantileRegrOneLik` | Intentionally unsupported | Proportion quantile path does not currently define a likelihood-null simulator. |
+| `InferenceIncidKKNewcombeRiskDiff` | Intentionally unsupported | Newcombe-style risk-difference path is not on the LR-bootstrap surface. |
+
 ## Concrete Checklist
 
 ### Checklist A: Finish The Parametric-Bootstrap LR Architecture
@@ -381,10 +461,10 @@ All ten Easy families have `simulate_under_lik_null` and
   simulated-data failure, full-refit failure, null-refit failure, non-finite LR
 - [x] Add a retry / minimum-usable-replicates policy when too many bootstrap
   replicates return `NA`
-- [ ] Audit every `InferenceParamBootstrap` descendant and mark each one as one
+- [x] Audit every `InferenceParamBootstrap` descendant and mark each one as one
   of:
   supported now, intentionally unsupported, or disabled pending backend fixes
-- [ ] Keep `InferenceCountHurdleNegBin` disabled until the
+- [x] Keep `InferenceCountHurdleNegBin` disabled until the
   `fast_truncated_negbin_count_cpp` stability issue is fixed
 
 ### Checklist B: Add Reusable Worker Support For Parametric Null Simulation
@@ -392,45 +472,46 @@ All ten Easy families have `simulate_under_lik_null` and
 - [x] Add a parametric-bootstrap worker-state API parallel to the existing
   nonparametric worker API, likely in `InferenceParamBootstrap`:
   `create_param_bootstrap_worker_state(...)`
-- [ ] Add a worker loader for simulated null data:
+- [x] Add a worker loader for simulated null data:
   `load_param_bootstrap_draw_into_worker(worker_state, sim_data)`
 - [x] Add a worker computation method:
   `compute_param_bootstrap_worker_lrt(worker_state, delta)`
-- [ ] Make worker state hold fixed design-side objects once:
+- [x] Make worker state hold fixed design-side objects once:
   `X`, `w`, block / match structure, static metadata, base warm starts
-- [ ] On each bootstrap replicate, replace only response-side data:
+- [x] On each bootstrap replicate, replace only response-side data:
   `y`, `dead`, and any family-specific latent / mixture components
-- [ ] Refit unrestricted and null models on the worker object using the same
+- [x] Refit unrestricted and null models on the worker object using the same
   family-specific likelihood machinery already used in the generic path
 - [x] Route `compute_lik_ratio_bootstrap_two_sided_pval(...)` through the worker
   path when available, with fallback to the current per-replicate path
 - [x] Add parity tests:
   reusable-worker path vs current generic path for the same seed and `B`
-- [ ] Add serial / parallel determinism tests where exact equality is expected
+- [x] Add serial / parallel determinism tests where exact equality is expected
   under fixed seeds
-- [ ] Add smoke tests for censoring, mixture, ordinal, and GLMM-style families
+- [x] Add smoke tests for censoring, mixture, ordinal, and GLMM-style families
+  via `EDI/tests/testthat/test-parametric-bootstrap-lr-smoke-families.R`
 
 ### Checklist C: Make The Existing User-Facing API Easy To Run Reliably
 
-- [ ] Keep the existing public methods as the sole user-facing API:
+- [x] Keep the existing public methods as the sole user-facing API:
   `compute_lik_ratio_bootstrap_two_sided_pval(...)` and
   `compute_lik_ratio_bootstrap_confidence_interval(...)`
-- [ ] Standardize and document the expected user-facing arguments and defaults:
+  Diagnostic accessors remain supplementary only.
+- [x] Move intentionally unsupported families off the
+  `InferenceParamBootstrap` branch so they do not expose the parametric LR
+  bootstrap methods in the first place
+- [x] Standardize and document the expected user-facing arguments and defaults:
   `delta = 0`, `B = 199`, `show_progress = FALSE`
-- [ ] Add roxygen docs describing:
+- [x] Add roxygen docs describing:
   what each method does, when it is available, and expected runtime costs
-- [ ] Document the availability rule clearly:
+- [x] Document the availability rule clearly:
   only classes with `supports_lik_ratio_param_bootstrap() == TRUE` should
   support successful runs
-- [ ] Add examples to a few stable first-wave families:
+- [x] Add examples to a few stable first-wave families:
   `InferenceIncidLogRegr`, `InferenceCountPoisson`,
   `InferenceSurvivalWeibullRegr`, `InferenceOrdinalPropOddsRegr`
-- [ ] Add one package-level vignette / README section showing the end-user flow:
+- [x] Add one package-level vignette / README section showing the end-user flow:
   fit design -> create inference object -> call bootstrap LR p-value
-- [ ] Decide whether unsupported families should:
-  error, return `NA`, or advertise non-support via a helper
-- [ ] Optionally add a helper such as
-  `supports_bootstrap_lrt()` for easy user-side capability checks
 
 ### Checklist D: What A User Needs In Order To Run The Existing API Reliably
 

@@ -13,6 +13,10 @@
 #' inf = InferenceCountPoisson$new(seq_des)
 #' inf$compute_estimate()
 #' }
+#' \donttest{
+#' inf$set_seed(1)
+#' inf$compute_lik_ratio_bootstrap_two_sided_pval(delta = 0, B = 9, show_progress = FALSE)
+#' }
 #' @export
 InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 	lock_objects = FALSE,
@@ -181,6 +185,7 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 			)
 			if (is.null(full_fit_b) || length(full_fit_b$b) < j || !is.finite(full_fit_b$b[j])) return(NULL)
 			list(
+				worker_data = list(y = y_sim),
 				full_fit = full_fit_b,
 				fit_null = function(d, start = NULL){
 					ws_args_null = private$get_backend_warm_start_args(ncol(X_fit))

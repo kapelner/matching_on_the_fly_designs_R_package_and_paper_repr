@@ -17,7 +17,7 @@
 #' @export
 InferencePropFractionalLogit = R6::R6Class("InferencePropFractionalLogit",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLikStdModCache,
+	inherit = InferenceAsympLikStdModCacheNoParamBootstrap,
 	public = list(
 		#' @description Initialize a fractional-logit inference object.
 		#' @param des_obj A completed \code{Design} object with a proportion response.

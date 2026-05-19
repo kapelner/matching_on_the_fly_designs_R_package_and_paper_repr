@@ -10,6 +10,18 @@
 #' combined-likelihood geometry remain direct children of
 #' \code{InferenceAsympLik} and do not pass through here.
 #'
+#' The only operational user-facing parametric-bootstrap LR methods on this
+#' surface are
+#' \code{compute_lik_ratio_bootstrap_two_sided_pval(...)} and
+#' \code{compute_lik_ratio_bootstrap_confidence_interval(...)}. Diagnostic
+#' accessors such as \code{get_last_param_bootstrap_diagnostics()} are
+#' supplementary and not alternative execution entry points.
+#'
+#' Parametric-bootstrap LR calibration is available only for concrete classes
+#' that inherit from \code{InferenceParamBootstrap} and whose private method
+#' \code{supports_lik_ratio_param_bootstrap()} returns \code{TRUE}. Families
+#' that are intentionally unsupported are kept off this branch entirely.
+#'
 #' @keywords internal
 InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 	lock_objects = FALSE,
@@ -25,10 +37,29 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 		#' Fits the null model at \code{delta}, simulates \code{B} datasets from
 		#' that fitted null, refits unrestricted and null models on each, and
 		#' returns the empirical tail probability of the observed LR statistic.
+		#' This is the primary user-facing entry point for bootstrap-calibrated
+		#' likelihood-ratio p-values.
+		#'
+		#' This method is available only for classes whose private
+		#' \code{supports_lik_ratio_param_bootstrap()} method returns \code{TRUE}.
+		#' For unsupported classes it errors immediately rather than silently
+		#' falling back to another procedure.
+		#'
+		#' The standard user-facing arguments are \code{delta = 0},
+		#' \code{B = 199}, and \code{show_progress = FALSE}. The remaining
+		#' arguments control replicate-quality thresholds and retry behavior.
+		#'
+		#' Runtime cost is roughly one unrestricted fit plus \code{B} simulated
+		#' unrestricted/null refit pairs, so this is typically much more
+		#' expensive than the asymptotic LR p-value.
 		#'
 		#' @param delta        Null treatment effect. Default 0.
 		#' @param B            Number of bootstrap replicates. Default 199.
 		#' @param show_progress Logical; show a progress bar. Default \code{FALSE}.
+		#' @param min_number_usable_samples Minimum number of usable bootstrap
+		#'   replicates required to return a finite p-value. Default \code{5L}.
+		#' @param max_attempts_per_replicate Maximum number of simulation/refit
+		#'   retries per bootstrap replicate. Default \code{2L}.
 		#' @return A scalar p-value, or \code{NA_real_} if the computation fails.
 		compute_lik_ratio_bootstrap_two_sided_pval = function(delta = 0, B = 199, show_progress = FALSE, min_number_usable_samples = 5L, max_attempts_per_replicate = 2L){
 			if (!isTRUE(private$supports_lik_ratio_param_bootstrap())){
@@ -101,6 +132,10 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 				})
 			}
 
+			if (!use_worker_path) {
+				actual_cores = 1L
+			}
+
 			results = if (use_worker_path && actual_cores <= 1L) {
 				run_worker_chunk(seq_len(B))
 			} else if (!use_worker_path && actual_cores <= 1L) {
@@ -148,10 +183,25 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 		#' bracket-and-bisect search seeded with the Wald interval.  Each p-value
 		#' evaluation costs \code{B} bootstrap refits, so this method is
 		#' substantially more expensive than the p-value alone.
+		#' This is the primary user-facing entry point for bootstrap-calibrated
+		#' likelihood-ratio confidence intervals.
+		#'
+		#' This method is available only for classes whose private
+		#' \code{supports_lik_ratio_param_bootstrap()} method returns \code{TRUE}.
+		#'
+		#' The standard user-facing arguments are \code{B = 199} and
+		#' \code{show_progress = FALSE}. Runtime cost is high because each
+		#' confidence-interval bound requires repeated bootstrap p-value
+		#' evaluations.
 		#'
 		#' @param alpha        Significance level. Default 0.05.
 		#' @param B            Bootstrap replicates per p-value evaluation. Default 199.
 		#' @param show_progress Logical; show a progress bar. Default \code{FALSE}.
+		#' @param min_number_usable_samples Minimum number of usable bootstrap
+		#'   replicates required within each p-value evaluation. Default
+		#'   \code{5L}.
+		#' @param max_attempts_per_replicate Maximum number of simulation/refit
+		#'   retries per bootstrap replicate. Default \code{2L}.
 		#' @return Named two-element numeric vector with the confidence-interval bounds.
 		compute_lik_ratio_bootstrap_confidence_interval = function(alpha = 0.05, B = 199, show_progress = FALSE, min_number_usable_samples = 5L, max_attempts_per_replicate = 2L){
 			if (!isTRUE(private$supports_lik_ratio_param_bootstrap())){
@@ -362,6 +412,17 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 			if (!is.function(boot_spec$neg_loglik)) return(FALSE)
 			TRUE
 		},
+		validate_param_bootstrap_worker_data = function(worker_state, worker_data){
+			if (is.null(worker_state) || is.null(worker_data) || !is.list(worker_data)) return(FALSE)
+			y = worker_data$y
+			if (is.null(y) || !is.numeric(y) || length(y) != as.integer(worker_state$n)) return(FALSE)
+			if (!all(is.finite(y))) return(FALSE)
+			if (!is.null(worker_data$dead)) {
+				dead = as.numeric(worker_data$dead)
+				if (length(dead) != as.integer(worker_state$n) || any(!is.finite(dead))) return(FALSE)
+			}
+			TRUE
+		},
 		extract_param_bootstrap_failure_reason = function(boot_spec, default = "simulated_data_failure"){
 			if (is.null(boot_spec) || !is.list(boot_spec)) return(default)
 			reason = boot_spec$failure_reason %||% attr(boot_spec, "edi_param_boot_failure_reason", exact = TRUE)
@@ -409,13 +470,72 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 				last_result
 			})
 		},
+		load_param_bootstrap_draw_into_worker = function(worker_state, sim_data){
+			if (is.null(worker_state) || is.null(worker_state$worker_priv) || is.null(worker_state$state_env)) {
+				return(FALSE)
+			}
+			worker_priv = worker_state$worker_priv
+			worker_data = sim_data$worker_data %||% NULL
+			if (!private$validate_param_bootstrap_worker_data(worker_state, worker_data)) {
+				worker_state$state_env$current_param_bootstrap_draw = sim_data
+				return(FALSE)
+			}
+			worker_des_priv = worker_state$worker_des_priv
+			worker_priv$X = worker_state$base_X
+			worker_priv$w = worker_state$base_w
+			worker_priv$m = worker_state$base_m
+			worker_priv$n = as.integer(worker_state$n)
+			worker_priv$y = as.numeric(worker_data$y)
+			worker_priv$dead = if (is.null(worker_data$dead)) NULL else as.numeric(worker_data$dead)
+			worker_priv$any_censoring = !is.null(worker_priv$dead) && any(worker_priv$dead == 0)
+			worker_priv$y_temp = worker_priv$y
+			extra_names = setdiff(names(worker_data), c("y", "dead"))
+			for (nm in extra_names) {
+				worker_priv[[nm]] = worker_data[[nm]]
+			}
+			worker_priv$cached_values = list()
+			worker_priv$clear_likelihood_null_warm_cache()
+			worker_priv$clear_fit_warm_start()
+			worker_priv$reduced_design_keep_cache = NULL
+			worker_priv$fixed_covariate_keep_cache = NULL
+			worker_priv$best_X_colnames = NULL
+			worker_priv$best_Xmm_colnames = NULL
+			worker_priv$cached_mod = NULL
+			worker_priv$fit_warm_start = worker_state$base_fit_warm_start
+			worker_priv$fit_warm_start_type = worker_state$base_fit_warm_start_type
+			worker_priv$fit_warm_start_fisher = worker_state$base_fit_warm_start_fisher
+			if (!is.null(worker_des_priv)) {
+				worker_des_priv$Xraw = worker_state$base_Xraw
+				worker_des_priv$Ximp = worker_state$base_Ximp
+				worker_des_priv$X = worker_state$base_X
+				worker_des_priv$w = worker_state$base_w
+				worker_des_priv$y = worker_priv$y
+				worker_des_priv$dead = worker_priv$dead
+				if (!is.null(worker_state$base_m)) worker_des_priv$m = worker_state$base_m
+				worker_des_priv$n = as.integer(worker_state$n)
+				worker_des_priv$t = as.integer(worker_state$n)
+				worker_des_priv$all_subject_data_cache = list()
+				worker_des_priv$lin_centered_covariates = NULL
+				if (is.function(worker_des_priv$reset_matching_caches)) worker_des_priv$reset_matching_caches()
+			}
+			worker_state$state_env$current_param_bootstrap_draw = sim_data
+			TRUE
+		},
 		create_param_bootstrap_worker_state = function(spec, delta, null_fit){
 			worker = self$duplicate(verbose = FALSE, make_fork_cluster = FALSE)
 			worker$num_cores = 1L
 			worker_priv = worker$.__enclos_env__$private
+			worker_des = if (!is.null(worker_priv$des_obj)) worker_priv$des_obj$duplicate(verbose = FALSE) else NULL
+			worker_des_priv = if (!is.null(worker_des)) worker_des$.__enclos_env__$private else NULL
+			source_des_priv = private$des_obj_priv_int
+			if (!is.null(worker_des)) {
+				worker_priv$des_obj = worker_des
+				worker_priv$des_obj_priv_int = worker_des_priv
+			}
 			worker_priv$cached_values = list()
 			worker_priv$clear_likelihood_null_warm_cache()
 			worker_priv$clear_fit_warm_start()
+			worker_priv$X = if (!is.null(private$X)) private$X else private$get_X()
 			worker_spec = worker_priv$get_likelihood_test_spec()
 			if (is.null(worker_spec)) return(NULL)
 			worker_eval = worker_priv$get_memoized_likelihood_test_eval(
@@ -429,22 +549,75 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 			list(
 				worker = worker,
 				worker_priv = worker_priv,
+				worker_des_priv = worker_des_priv,
 				spec = worker_spec,
-				null_fit = worker_eval$null_fit
+				null_fit = worker_eval$null_fit,
+				base_fit_warm_start = private$fit_warm_start,
+				base_fit_warm_start_type = private$fit_warm_start_type,
+				base_fit_warm_start_fisher = private$fit_warm_start_fisher,
+				base_Xraw = if (!is.null(source_des_priv$Xraw)) source_des_priv$Xraw else NULL,
+				base_Ximp = if (!is.null(source_des_priv$Ximp)) source_des_priv$Ximp else NULL,
+				base_X = if (!is.null(private$X)) private$X else private$get_X(),
+				base_w = if (!is.null(source_des_priv$w)) as.numeric(source_des_priv$w) else NULL,
+				base_y = if (!is.null(source_des_priv$y)) source_des_priv$y else NULL,
+				base_dead = if (!is.null(source_des_priv$dead)) as.numeric(source_des_priv$dead) else NULL,
+				base_m = if (!is.null(source_des_priv$m)) source_des_priv$m else NULL,
+				n = private$n,
+				state_env = list2env(list(
+					current_param_bootstrap_draw = NULL
+				), parent = emptyenv())
 			)
 		},
 		compute_param_bootstrap_worker_lrt = function(worker_state, delta, seed = NULL, max_attempts_per_replicate = 1L){
 			if (is.null(worker_state) || is.null(worker_state$worker_priv)) {
 				return(private$param_boot_failure_result("simulated_data_failure"))
 			}
-			worker_state$worker_priv$compute_param_bootstrap_lr_impl(
-				spec = worker_state$spec,
-				delta = delta,
-				null_fit = worker_state$null_fit,
-				seed = seed,
-				max_attempts_per_replicate = max_attempts_per_replicate,
-				worker_priv = worker_state$worker_priv
-			)
+			private$with_param_bootstrap_seed(seed, {
+				last_result = private$param_boot_failure_result("simulated_data_failure", attempts = 0L)
+				for (attempt in seq_len(max(1L, as.integer(max_attempts_per_replicate)))) {
+					boot_spec = tryCatch(
+						worker_state$worker_priv$simulate_under_lik_null(worker_state$spec, delta, worker_state$null_fit),
+						error = function(e) NULL
+					)
+					loaded_into_worker = private$load_param_bootstrap_draw_into_worker(worker_state, boot_spec)
+					if (isTRUE(loaded_into_worker)) {
+						worker_spec = tryCatch(worker_state$worker_priv$get_likelihood_test_spec(), error = function(e) NULL)
+						if (is.null(worker_spec)) {
+							res = private$param_boot_failure_result("full_refit_failure")
+						} else {
+							worker_eval = tryCatch(
+								worker_state$worker_priv$get_memoized_likelihood_test_eval(
+									delta = delta,
+									testing_type = "lik_ratio",
+									spec = worker_spec,
+									include_full_negloglik = TRUE,
+									include_null_negloglik = TRUE
+								),
+								error = function(e) NULL
+							)
+							if (is.null(worker_eval) || isTRUE(worker_eval$invalid)) {
+								res = private$param_boot_failure_result("null_refit_failure")
+							} else if (!is.finite(worker_eval$full_negloglik)) {
+								res = private$param_boot_failure_result("full_refit_failure")
+							} else if (!is.finite(worker_eval$null_negloglik)) {
+								res = private$param_boot_failure_result("null_refit_failure")
+							} else {
+								lr_boot = 2 * (worker_eval$null_negloglik - worker_eval$full_negloglik)
+								res = if (is.finite(lr_boot)) private$param_boot_success_result(lr_boot) else private$param_boot_failure_result("non_finite_lr")
+							}
+						}
+					} else {
+						res = worker_state$worker_priv$compute_param_bootstrap_lr_from_boot_spec(
+							worker_state$state_env$current_param_bootstrap_draw,
+							delta
+						)
+					}
+					res$attempts = as.integer(attempt)
+					last_result = res
+					if (isTRUE(res$success) && is.finite(res$lr)) return(res)
+				}
+				last_result
+			})
 		},
 		summarize_param_bootstrap_diagnostics = function(results, B, min_number_usable_samples, max_attempts_per_replicate, used_reusable_worker){
 			if (is.null(results)) results = list()

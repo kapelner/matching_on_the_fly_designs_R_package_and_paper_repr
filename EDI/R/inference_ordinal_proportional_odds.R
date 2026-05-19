@@ -13,6 +13,10 @@
 #' inf = InferenceOrdinalPropOddsRegr$new(seq_des)
 #' inf$compute_estimate()
 #' }
+#' \donttest{
+#' inf$set_seed(1)
+#' inf$compute_lik_ratio_bootstrap_two_sided_pval(delta = 0, B = 9, show_progress = FALSE)
+#' }
 #' @export
 InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 	lock_objects = FALSE,
@@ -133,6 +137,7 @@ InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 			full_fit_boot = list(params = as.numeric(full_res$params), neg_loglik = as.numeric(full_res$neg_loglik))
 			if (!is.finite(full_fit_boot$neg_loglik)) return(NULL)
 			list(
+				worker_data = list(y = y_sim),
 				full_fit = full_fit_boot,
 				fit_null = function(d, start = NULL){
 					ws_args_null = private$get_backend_warm_start_args(length(params_null))
