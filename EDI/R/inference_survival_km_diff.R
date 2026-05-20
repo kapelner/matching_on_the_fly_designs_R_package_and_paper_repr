@@ -67,12 +67,8 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 		#'
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
-			get_survival_stat_diff(
-				private$y,
-				private$dead,
-				private$w,
-				"median"
-			)
+			private$shared(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
 		},
 		#' @description Computes the treatment effect estimate for a bootstrap sample.
 		#' @param subject_or_block_weights Row weights for the bootstrap sample.
@@ -104,56 +100,18 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 		#'
 		#' @return  A numeric vector of length 2 giving the (lower, upper) confidence bounds
 		#' 			for the difference in median survival times, on the original time scale.
-		#'
-		#' @examples
-		#' \dontrun{
-		#' seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "survival")
-		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(
-		#'   ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
-		#'   deads = c(1L, 0L, 1L, 1L, 0L, 1L)
-		#' )
-		#'
-		#' seq_des_inf = InferenceSurvivalKMDiff$new(seq_des)
-		#' seq_des_inf$compute_asymp_confidence_interval()
-		#' }
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
-			y    = private$y
-			dead = private$dead
-			w    = private$w
-			fit_T = tryCatch(survival::survfit(survival::Surv(y[w == 1], dead[w == 1]) ~ 1, conf.int = 1 - alpha), error = function(e) NULL)
-			fit_C = tryCatch(survival::survfit(survival::Surv(y[w == 0], dead[w == 0]) ~ 1, conf.int = 1 - alpha), error = function(e) NULL)
-			if (is.null(fit_T) || is.null(fit_C)){
+			private$shared()
+			if (is.na(private$cached_values$s_beta_hat_T)) {
 				return(self$compute_bootstrap_confidence_interval(alpha = alpha))
 			}
-			q_T = stats::quantile(fit_T, 0.5)
-			q_C = stats::quantile(fit_C, 0.5)
-			med_T = as.numeric(q_T$quantile)
-			lo_T  = as.numeric(q_T$lower)
-			hi_T  = as.numeric(q_T$upper)
-			med_C = as.numeric(q_C$quantile)
-			lo_C  = as.numeric(q_C$lower)
-			hi_C  = as.numeric(q_C$upper)
-			# Fall back to bootstrap if either median or its CI is not estimable
-			if (!is.finite(med_T) || !is.finite(med_C) || !is.finite(lo_T) || !is.finite(hi_T) || !is.finite(lo_C) || !is.finite(hi_C)){
-				return(self$compute_bootstrap_confidence_interval(alpha = alpha))
-			}
-			# Back-calculate SE for each median from the Brookmeyer-Crowley CI,
-			# then combine under independence for the difference
-			z        = stats::qnorm(1 - alpha / 2)
-			se_diff  = sqrt(((hi_T - lo_T) / (2 * z))^2 + ((hi_C - lo_C) / (2 * z))^2)
-			diff     = med_T - med_C
-			c(diff - z * se_diff, diff + z * se_diff)
+			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Computes a Wald-style 2-sided p-value by inverting the confidence interval.
+		#' @description Computes a Wald-style 2-sided p-value based on the median difference
+		#' and its back-calculated standard error.
 		#'
 		#' @param delta The null difference to test against. Default is 0.
 		#'
@@ -162,7 +120,11 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 			if (should_run_asserts()) {
 				assertNumeric(delta)
 			}
-			private$invert_ci_to_find_two_sided_pval_for_treatment_effect(delta = delta)
+			private$shared()
+			if (is.na(private$cached_values$s_beta_hat_T)) {
+				return(self$compute_bootstrap_two_sided_pval(delta = delta))
+			}
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
 		#' @description Computes a 2-sided p-value via the log rank test
 		#'
@@ -170,25 +132,6 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 		#'   treatment effect at all this is set to zero (the default).
 		#'
 		#' @return  The approximate frequentist p-value
-		#'
-		#' @examples
-		#' \dontrun{
-		#' seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "survival")
-		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
-		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
-		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
-		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
-		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
-		#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
-		#' seq_des$add_all_subject_responses(
-		#'   ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
-		#'   deads = c(1L, 0L, 1L, 1L, 0L, 1L)
-		#' )
-		#'
-		#' seq_des_inf = InferenceSurvivalKMDiff$new(seq_des)
-		#' seq_des_inf$compute_asymp_log_rank_two_sided_pval_for_treatment_effect()
-		#' }
-		#'
 		compute_asymp_log_rank_two_sided_pval_for_treatment_effect = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
@@ -214,6 +157,48 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 		}
 	),
 	private = list(
+		shared = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			
+			# Point estimate via fast Rcpp
+			private$cached_values$beta_hat_T = get_survival_stat_diff(
+				private$y,
+				private$dead,
+				private$w,
+				"median"
+			)
+			if (estimate_only) return(invisible(NULL))
+			
+			# Variance components via survfit (Brookmeyer-Crowley back-calculation)
+			y    = private$y
+			dead = private$dead
+			w    = private$w
+			alpha = 0.05 # standard anchor for SE back-calculation
+			fit_T = tryCatch(survival::survfit(survival::Surv(y[w == 1], dead[w == 1]) ~ 1, conf.int = 1 - alpha), error = function(e) NULL)
+			fit_C = tryCatch(survival::survfit(survival::Surv(y[w == 0], dead[w == 0]) ~ 1, conf.int = 1 - alpha), error = function(e) NULL)
+			
+			if (is.null(fit_T) || is.null(fit_C)){
+				private$cached_values$s_beta_hat_T = NA_real_
+				return(invisible(NULL))
+			}
+			
+			q_T = stats::quantile(fit_T, 0.5)
+			q_C = stats::quantile(fit_C, 0.5)
+			
+			lo_T  = as.numeric(q_T$lower)
+			hi_T  = as.numeric(q_T$upper)
+			lo_C  = as.numeric(q_C$lower)
+			hi_C  = as.numeric(q_C$upper)
+			
+			if (!is.finite(lo_T) || !is.finite(hi_T) || !is.finite(lo_C) || !is.finite(hi_C)){
+				private$cached_values$s_beta_hat_T = NA_real_
+				return(invisible(NULL))
+			}
+			
+			z = stats::qnorm(1 - alpha / 2)
+			private$cached_values$s_beta_hat_T = sqrt(((hi_T - lo_T) / (2 * z))^2 + ((hi_C - lo_C) / (2 * z))^2)
+		},
 		weighted_survival_stat_for_group = function(y, dead, row_weights, requested_stat = c("median", "restricted_mean")){
 			requested_stat = match.arg(requested_stat)
 			keep = is.finite(y) & is.finite(dead) & is.finite(row_weights) & row_weights > 0

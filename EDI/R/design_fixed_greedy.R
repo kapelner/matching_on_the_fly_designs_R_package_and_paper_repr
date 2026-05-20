@@ -11,9 +11,6 @@
 DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 	inherit = DesignFixed,
 	public = list(
-		#' @description Returns TRUE: simulation framework pre-generates one
-		#'   treatment vector per rep in the main process (no JVM workers needed).
-		supports_batch_w_pregeneration = function() TRUE,
 		#' @description Initialize a greedy search fixed experimental design
 		#'
 		#' @param response_type 	The data type of response values.

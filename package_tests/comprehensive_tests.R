@@ -428,6 +428,7 @@ run_inference_checks = function(seq_des_inf, response_type, design_type, dataset
 			seq_des_inf$.__enclos_env__$private$supports_lik_ratio_param_bootstrap(),
 			error = function(e) FALSE
 		))
+	exposes_parametric_bootstrap_surface = is(seq_des_inf, "InferenceParamBootstrap")
 	skip_rand      = is(seq_des_inf, "InferenceAbstractKKGEE") || is(seq_des_inf, "InferenceAbstractKKGLMM") || is(seq_des_inf, "InferenceIncidExactZhangAbstract") || is(seq_des_inf, "InferencePropGCompMeanDiff") || is(seq_des_inf, "InferencePropGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalPairedSignTest") || is(seq_des_inf, "InferenceOrdinalKKCondAdjCatLogitRegr") || is(seq_des_inf, "InferenceOrdinalGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalGCompMeanDiff") || is(seq_des_inf, "InferenceOrdinalCloglogRegr") || is(seq_des_inf, "InferenceOrdinalOrderedProbitRegr") || is(seq_des_inf, "InferenceOrdinalOrderedProbitRegr") || is(seq_des_inf, "InferenceOrdinalCauchitRegr") || is(seq_des_inf, "InferenceOrdinalCauchitRegr") || is(seq_des_inf, "InferenceOrdinalKKCondAdjCatLogitRegr")
 	skip_mle_pval  = is(seq_des_inf, "InferenceSurvivalKKWeibullFrailtyOneLik")
 	skip_rand_pval = is(seq_des_inf, "InferenceSurvivalKKWeibullFrailtyOneLik") || is(seq_des_inf, "InferenceContinMultGLS") || is(seq_des_inf, "InferencePropGCompMeanDiff") || is(seq_des_inf, "InferencePropGCompMeanDiff") || is_any_inference_class(c(
@@ -621,6 +622,8 @@ safe_call = function(label, expr){
 			is_non_fatal = grepl("not implemented", msg, fixed = TRUE) ||
 			                 grepl("must implement", msg, fixed = TRUE) ||
 			                 grepl("Exact inference is only supported for exact inference classes.", msg, fixed = TRUE) ||
+			                 grepl("does not support parametric-bootstrap LR calibration", msg, fixed = TRUE) ||
+			                 grepl("Override private\\$supports_lik_ratio_param_bootstrap\\(\\) and simulate_under_lik_null\\(\\)", msg) ||
 			                 grepl("singular matrix in 'backsolve'", msg, fixed = TRUE) ||
 			                 grepl("G-computation RD: could not compute a finite delta-method standard error.", msg, fixed = TRUE) ||
 			                 grepl("G-computation RR: could not compute a finite delta-method standard error.", msg, fixed = TRUE) ||
@@ -790,22 +793,42 @@ if (inherits(result, "edi_skip_direct")) return(invisible(NULL))
 		safe_call_debug("approximate_bayesian_bootstrap_distribution_beta_hat_T_debug",
 						seq_des_inf$approximate_bayesian_bootstrap_distribution_beta_hat_T(B = B_debug, debug = TRUE, show_progress = FALSE))
 	}
+	# Nonparametric bootstrap CI — default type first (warms the distribution cache), then extra types reuse it
 	if (!skip_slow && !skip_ci && !skip_bootstrap){
-		safe_call("compute_bootstrap_confidence_interval", seq_des_inf$compute_bootstrap_confidence_interval(B = r, na.rm = TRUE))
+		safe_call("compute_bootstrap_confidence_interval", seq_des_inf$compute_bootstrap_confidence_interval(B = r, na.rm = TRUE, show_progress = FALSE))
+		for (boot_ci_type in c("basic", "bca", "studentized")) {
+			safe_call(paste0("compute_bootstrap_confidence_interval_", boot_ci_type),
+					  seq_des_inf$compute_bootstrap_confidence_interval(B = r, type = boot_ci_type, na.rm = TRUE, show_progress = FALSE))
+		}
 	}
+	# Bayesian bootstrap CI — default type first (warms the distribution cache), then extra types reuse it
 	if (!skip_slow && !skip_ci && !skip_bayesian_bootstrap){
 		safe_call("compute_bayesian_bootstrap_confidence_interval", seq_des_inf$compute_bayesian_bootstrap_confidence_interval(B = r, na.rm = TRUE, show_progress = FALSE))
+		for (bayes_ci_type in c("basic", "wald", "bca", "studentized")) {
+			safe_call(paste0("compute_bayesian_bootstrap_confidence_interval_", bayes_ci_type),
+					  seq_des_inf$compute_bayesian_bootstrap_confidence_interval(B = r, type = bayes_ci_type, na.rm = TRUE, show_progress = FALSE))
+		}
 	}
+	# Nonparametric bootstrap p-val — default first, extra types reuse distribution cache
 	if (!skip_slow && !skip_bootstrap){
-		safe_call("compute_bootstrap_two_sided_pval", seq_des_inf$compute_bootstrap_two_sided_pval(B = r, na.rm = TRUE))
+		safe_call("compute_bootstrap_two_sided_pval", seq_des_inf$compute_bootstrap_two_sided_pval(B = r, na.rm = TRUE, show_progress = FALSE))
+		for (boot_pval_type in c("symmetric", "bca", "studentized")) {
+			safe_call(paste0("compute_bootstrap_two_sided_pval_", boot_pval_type),
+					  seq_des_inf$compute_bootstrap_two_sided_pval(B = r, type = boot_pval_type, na.rm = TRUE, show_progress = FALSE))
+		}
 	}
+	# Bayesian bootstrap p-val — default first, extra types reuse distribution cache
 	if (!skip_slow && !skip_bayesian_bootstrap){
 		safe_call("compute_bayesian_bootstrap_two_sided_pval", seq_des_inf$compute_bayesian_bootstrap_two_sided_pval(B = r, na.rm = TRUE, show_progress = FALSE))
+		for (bayes_pval_type in c("symmetric", "wald", "bca", "studentized")) {
+			safe_call(paste0("compute_bayesian_bootstrap_two_sided_pval_", bayes_pval_type),
+					  seq_des_inf$compute_bayesian_bootstrap_two_sided_pval(B = r, type = bayes_pval_type, na.rm = TRUE, show_progress = FALSE))
+		}
 	}
-	if (!skip_slow && supports_parametric_bootstrap){
+	if (!skip_slow && exposes_parametric_bootstrap_surface){
 		safe_call("compute_lik_ratio_bootstrap_two_sided_pval", seq_des_inf$compute_lik_ratio_bootstrap_two_sided_pval(B = r, show_progress = FALSE))
 	}
-	if (!skip_slow && !skip_ci && supports_parametric_bootstrap){
+	if (!skip_slow && !skip_ci && exposes_parametric_bootstrap_surface){
 		safe_call("compute_lik_ratio_bootstrap_confidence_interval", seq_des_inf$compute_lik_ratio_bootstrap_confidence_interval(B = r, show_progress = FALSE))
 	}
 	if (!skip_slow && supports_jackknife){

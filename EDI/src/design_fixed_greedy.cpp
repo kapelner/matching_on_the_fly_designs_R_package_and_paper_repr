@@ -178,6 +178,9 @@ Rcpp::IntegerMatrix greedy_design_search_cpp(
             double f    = abs_mode ? d.lpNorm<1>() : d.squaredNorm();
 
             // ── Greedy swap iterations ───────────────────────────────────────
+            // Early stopping: halt if no improvement for `patience` consecutive iters.
+            const int patience = std::max(n, 500);
+            int no_improve = 0;
             if (pair_mode) {
                 for (int it = 0; it < n_iter; it++) {
                     const int k    = pick_pair_dist(rng);
@@ -196,6 +199,9 @@ Rcpp::IntegerMatrix greedy_design_search_cpp(
                         pair_cur_t[static_cast<std::size_t>(k)] ^= 1;
                         d += delta;
                         f  = f_cand;
+                        no_improve = 0;
+                    } else if (++no_improve >= patience) {
+                        break;
                     }
                 }
             } else {
@@ -217,6 +223,9 @@ Rcpp::IntegerMatrix greedy_design_search_cpp(
                         control[static_cast<std::size_t>(ci)] = i;
                         d += delta;
                         f  = f_cand;
+                        no_improve = 0;
+                    } else if (++no_improve >= patience) {
+                        break;
                     }
                 }
             }

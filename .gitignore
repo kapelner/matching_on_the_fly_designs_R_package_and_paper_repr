@@ -229,6 +229,24 @@ package_metadata/gradient_method_comparison_outputs/*
 package_metadata/likelihood_upgrade_sweep_report.md
 package_metadata/run_gradient_method_comparison.R
 benchmark/simd_matrix/*
+comprehensive_high_precision_results.csv
+comprehensive_warm_start_lifecycle_results.csv
+debug_prop_kk_glmm.R
+final_exhaustive_results.csv
+fix_docs_batch2.R
+formatted_exhaustive_results.csv
+formatted_exhaustive_results_v2.csv
+formatted_exhaustive_results_v3.csv
+large_scale_warm_start_results.csv
+profile.out
+profile_inference.R
+test_fixed_greedy_tiny.R
+test_greedy_cpp_vs_java.R
+test_greedy_run.R
+test_greedy_run.csv
+test_rerandomization_cpp_vs_ged.R
+truly_exhaustive_no_na_results.csv
+truly_exhaustive_warm_start_results.csv
 
 
 

@@ -14,8 +14,8 @@
 DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 	inherit = DesignFixed,
 	public = list(
-			#' @description Returns TRUE: simulation framework can pre-generate all
-			#'   treatment vectors for a cell (clustering is paid once in main process).
+			#' @description Returns TRUE so the framework pre-generates all w vectors
+			#'   once per cell (paying the clustering cost once, reusing across reps).
 			supports_batch_w_pregeneration = function() TRUE,
 			#' @description Initialize a fixed optimal-blocks design.
 			#' @param B Number of blocks to form. If omitted and \code{n} is supplied,

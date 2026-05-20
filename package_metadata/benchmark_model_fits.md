@@ -7,8 +7,9 @@ This report compares the performance of EDI's Rcpp-optimized model fitting paths
 All benchmarks were performed on a synthetic clinical-trial-scale dataset generated for each response type. The data generation process ensures numerical stability and fair solver comparison by using the following parameters:
 
 *   **Sample Size ($N$):** 1,000 subjects for most models; 500 subjects for survival models. Exact and trend tests may use smaller scaled samples (N=100-500) as noted in the results.
-*   **Predictors ($p$):** 5 total predictors, including a global intercept, a binary treatment assignment ($w \sim \text{Bernoulli}(0.5)$), and 4 continuous covariates ($X \sim \text{Normal}(0, 1)$).
+*   **Predictors ($p$):** 5 total predictors, including a global intercept, a balanced binary treatment assignment from fixed `iBCRD`, and 4 continuous covariates ($X \sim \text{Normal}(0, 1)$).
 *   **Effect Sizes:** Coefficients are sampled from $\text{Normal}(0, 0.1)$ to ensure reasonable event rates and avoid separation issues in logistic/ordinal models.
+*   **EDI Design Template:** EDI benchmark objects are instantiated on a fixed `iBCRD` design.
 *   **Response Generation:**
     *   **Continuous:** Linear model with additive $\text{Normal}(0, 0.5)$ noise.
     *   **Incidence:** Binary outcomes via a Logistic link.
@@ -21,101 +22,59 @@ All benchmarks were performed on a synthetic clinical-trial-scale dataset genera
 
 *   **Pure Solver Timing:** Results reflect the time taken for the core numerical optimization. We exclude R6 object instantiation, design matrix construction, and standard error estimation (which often uses different R-side matrix inversion logic) to isolate the efficiency of the underlying C++ backends.
 *   **Smart Cold Starts:** EDI models were initialized with `smart_cold_start = TRUE`, utilizing package-optimized heuristic starting values.
+*   **Randomization Design:** EDI timings in this table correspond to `iBCRD` design objects.
 *   **Low-Level Comparison:** Canonical R timings use the fastest available internal interfaces (e.g., `.fit` functions) to remove R's formula parsing and environment management overhead.
-*   **Averaging:** All timings are medians over 3 independent iterations per model path.
+*   **Averaging:** All timings are medians over 3 warmed runs measured with adaptive batched `system.time`; paths below 0.01 ms use `microbenchmark(times = 500)` instead.
 *   **Constraints**: Matched-pair/KK and highly custom paths are excluded as per user request.
 
 ## Results
 
 | Class | Response | EDI Time (ms) | Canonical Pkg | Canonical Func | Canonical Time (ms) | Speedup |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| InferenceIncidLogRegr | incidence | 0.05 | stats | glm.fit | 2.01 | 39.14x |
-| InferenceContinOLS | continuous | 0.04 | stats | lm.fit | 0.16 | 3.95x |
-| InferenceCountPoisson | count | 0.05 | stats | glm.fit | 1.83 | 38.38x |
-| InferenceSurvivalCoxPHRegr | survival | 0.03 | survival | coxph.fit | 0.67 | 24.57x |
-| InferenceCountNegBin | count | 0.02 | MASS | glm.nb | 43.88 | 2437.99x |
-| InferencePropBetaRegr | proportion | 0.02 | betareg | betareg.fit | 34.31 | 1884.94x |
-| InferenceOrdinalPropOddsRegr | ordinal | 0.02 | ordinal | clm | 10.35 | 575.17x |
-| InferenceCountHurdlePoisson | count | 0.02 | pscl | hurdle | 21.64 | 1109.62x |
-| InferenceCountZeroInflatedPoisson | count | 0.11 | pscl | zeroinfl | 101.56 | 919.07x |
-| InferenceCountZeroInflatedNegBin | count | 0.02 | pscl | zeroinfl(nb) | 125.3 | 6202.84x |
-| InferenceCountHurdleNegBin | count | 0.02 | pscl | hurdle(nb) | 57.18 | 2917.43x |
-| InferenceCountQuasiPoisson | count | 0.05 | stats | glm.fit(quasi) | 2.72 | 55.98x |
-| InferenceSurvivalWeibullRegr | survival | 0.03 | survival | survreg | 3.6 | 143.94x |
-| InferenceContinRobustRegr | continuous | 0.04 | MASS | rlm | 1.68 | 41.05x |
-| InferenceContinQuantileRegr | continuous | 0.06 | quantreg | rq.fit | 0.93 | 15.35x |
-| InferencePropFractionalLogit | proportion | 0.02 | stats | glm.fit(quasi) | 1.14 | 57.79x |
-| InferenceIncidLogBinomial | incidence | 0.02 | stats | glm.fit(log) | 3.77 | 181.29x |
-| InferenceIncidProbitRegr | incidence | 0.04 | stats | glm.fit(probit) | 2.87 | 69.74x |
-| InferenceIncidBinomialIdentityRiskDiff | incidence | 0.02 | stats | glm.fit(ident) | 1.28 | 64.29x |
-| InferenceOrdinalAdjCatLogitRegr | ordinal | 0.02 | VGAM | vglm(acat) | 56.17 | 2794.42x |
-| InferenceOrdinalContRatioRegr | ordinal | 0.02 | VGAM | vglm(cratio) | 40.08 | 2076.49x |
-| InferenceOrdinalOrderedProbitRegr | ordinal | 0.02 | ordinal | clm(probit) | 8.78 | 466.97x |
-| InferenceOrdinalCloglogRegr | ordinal | 0.02 | ordinal | clm(cll) | 9.19 | 499.26x |
-| InferenceOrdinalCauchitRegr | ordinal | 0.04 | ordinal | clm(cauchit) | 12.45 | 293.71x |
-| InferenceSurvivalLogRank | survival | 0.04 | survival | survdiff | 1.84 | 45.02x |
-| InferenceSurvivalGehanWilcox | survival | 0.04 | survival | survdiff(rho=1) | 1.88 | 47.43x |
-| InferenceAllSimpleMeanDiffPooledVar | continuous | 0.06 | stats | t.test(pool) | 0.18 | 3.27x |
-| InferenceAllSimpleWilcox | continuous | 0.63 | stats | wilcox.test | 1.06 | 1.69x |
-| InferenceIncidExactFisher | incidence | 0.51 | stats | fisher.test | 0.66 | 1.29x |
-| InferenceIncidCMH | incidence | 0.01 | stats | mantelhaen | 1.09 | 79.86x |
-| InferenceOrdinalJonckheereTerpstraTest | ordinal | 0.04 | clinfun | jonckheere | 0.41 | 10.44x |
-| InferenceIncidMiettinenNurminenRiskDiff | incidence | 0.04 | DescTools | BinomDiffCI(mn) | 0.61 | 15.36x |
-| InferenceIncidModifiedPoisson | incidence | 0.02 | stats | glm.fit(modified) | 1.81 | 93.43x |
-| InferenceSurvivalStratCoxPHRegr | survival | 0.04 | survival | coxph.fit(strat) | 0.63 | 16.35x |
-| InferenceContinLin | continuous | 0.04 | stats | lm.fit(interact) | 0.6 | 14.38x |
-| InferenceIncidRiskDiff | incidence | 0.02 | stats | prop.test | 0.5 | 26.66x |
-| InferenceSurvivalKMDiff | survival | 0.06 | survival | survfit(median) | 4.18 | 69.39x |
-| InferenceSurvivalRestrictedMeanDiff | survival | 0.01 | survival | survfit(rmean) | 3.26 | 226.26x |
-| InferenceCountRobustPoisson | count | 0.05 | stats | glm.fit | 1.78 | 36.59x |
-| InferenceOrdinalRidit | ordinal | 0.04 | stats | mean(ridit) | 0.28 | 7.01x |
-| InferenceIncidExactZhang | incidence | 0.04 | Exact | exact.test(z) | 1608.77 | 41895.08x |
-| InferenceIncidNewcombeRiskDiff | incidence | 0.03 | DescTools | BinomDiffCI(score) | 0.86 | 26.03x |
-| InferencePropGCompMeanDiff | proportion | 0.05 | None | None | NA | NA |
-| InferenceSurvivalDepCensTransformRegr | survival | 0.04 | None | None | NA | NA |
-| InferenceIncidGCompRiskRatio | incidence | 0.05 | None | None | NA | NA |
-| InferenceIncidGCompRiskDiff | incidence | 0.02 | None | None | NA | NA |
-| InferenceOrdinalGCompMeanDiff | ordinal | 0.05 | None | None | NA | NA |
-| InferencePropZeroOneInflatedBetaRegr | proportion | 0.02 | None | None | NA | NA |
-
-## Wald Test Performance (Full Inference)
-
-This table compares the performance of **Full Inference** (Model Fit + Standard Error calculation + P-value derivation).
-Unlike the point-estimation table above, these results include the computational cost of the variance-covariance matrix (Hessian or Fisher Information) and the Wald test statistic calculation.
-
-| Class | Response | EDI Time (ms) | Canonical Pkg | Canonical Func | Canonical Time (ms) | Speedup |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| InferenceIncidLogRegr | incidence | 177.06 | stats | glm.fit+Wald | 3.87 | 0.02x |
-| InferenceContinOLS | continuous | 11.28 | stats | lm.fit+Wald | 0.33 | 0.03x |
-| InferenceCountPoisson | count | 28.02 | stats | glm.fit+Wald | 3.29 | 0.12x |
-| InferenceSurvivalCoxPHRegr | survival | 85.61 | survival | coxph.fit+Wald | 2.07 | 0.02x |
-| InferenceCountNegBin | count | 70.44 | MASS | glm.nb+summary | 38.3 | 0.54x |
-| InferencePropBetaRegr | proportion | 42.87 | betareg | betareg.fit+Wald | 83.3 | 1.94x |
-| InferenceOrdinalPropOddsRegr | ordinal | 60.67 | ordinal | clm+summary | 19.46 | 0.32x |
-| InferenceCountHurdlePoisson | count | 98.24 | pscl | hurdle+summary | 26.44 | 0.27x |
-| InferenceCountZeroInflatedPoisson | count | 9.78 | pscl | zeroinfl+summary | 97.04 | 9.92x |
-| InferenceCountZeroInflatedNegBin | count | 124.85 | pscl | zeroinfl(nb)+summary | 133.75 | 1.07x |
-| InferenceCountHurdleNegBin | count | 60.44 | pscl | hurdle(nb)+summary | 68.43 | 1.13x |
-| InferenceCountQuasiPoisson | count | 52.41 | stats | glm.fit+Wald(quasi) | 3.51 | 0.07x |
-| InferenceSurvivalWeibullRegr | survival | 39.81 | survival | survreg+summary | 9.76 | 0.25x |
-| InferenceContinRobustRegr | continuous | 3.41 | MASS | rlm+summary | 3.57 | 1.05x |
-| InferenceContinQuantileRegr | continuous | 138 | quantreg | rq+summary | 5.56 | 0.04x |
-| InferenceIncidLogBinomial | incidence | 87.11 | stats | glm.fit+Wald(log) | 2.29 | 0.03x |
-| InferenceOrdinalAdjCatLogitRegr | ordinal | 25.85 | VGAM | vglm+summary | 95.91 | 3.71x |
-| InferenceOrdinalContRatioRegr | ordinal | 59.07 | VGAM | vglm+summary | 66.72 | 1.13x |
-| InferenceSurvivalLogRank | survival | 24.56 | survival | survdiff | 2.86 | 0.12x |
-| InferenceSurvivalGehanWilcox | survival | 55.65 | survival | survdiff(rho=1) | 2.78 | 0.05x |
-| InferenceAllSimpleMeanDiffPooledVar | continuous | 29.69 | stats | t.test(pool) | 0.79 | 0.03x |
-| InferenceAllSimpleWilcox | continuous | 49.26 | stats | wilcox.test | 2.99 | 0.06x |
-| InferenceIncidExactFisher | incidence | NA | stats | fisher.test | 2.01 | NA |
-| InferenceIncidCMH | incidence | 31.27 | stats | mantelhaen | 2.11 | 0.07x |
-| InferenceOrdinalJonckheereTerpstraTest | ordinal | 3578.13 | clinfun | jonckheere | 1.09 | 0x |
-| InferenceIncidMiettinenNurminenRiskDiff | incidence | 7.07 | DescTools | BinomDiffCI(mn) | 2.86 | 0.4x |
-| InferenceSurvivalStratCoxPHRegr | survival | 121.66 | survival | coxph.fit(strat)+Wald | 1.69 | 0.01x |
-| InferenceContinLin | continuous | 33.31 | stats | lm.fit(interact)+Wald | 1.41 | 0.04x |
-| InferenceIncidRiskDiff | incidence | 57.37 | stats | prop.test | 1.08 | 0.02x |
-| InferenceSurvivalKMDiff | survival | 415.88 | survival | survfit(median)+CI | 6.38 | 0.02x |
-| InferenceCountRobustPoisson | count | 79.97 | sandwich | glm+vcovHC | 10.82 | 0.14x |
-| InferenceOrdinalRidit | ordinal | 0.54 | stats | mean(ridit) | 0.62 | 1.15x |
-| InferenceIncidExactZhang | incidence | NA | Exact | exact.test(z) | 1939.28 | NA |
-| InferenceIncidNewcombeRiskDiff | incidence | 21.07 | DescTools | BinomDiffCI(score) | 3.26 | 0.15x |
+| InferenceAllSimpleMeanDiffPooledVar | continuous | 0.05 | stats | t.test(pool) | 0.18 | 3.96x |
+| InferenceAllSimpleWilcox | continuous | 0.51 | stats | wilcox.test | 1.11 | 2.17x |
+| InferenceContinLin | continuous | 1.00 | stats | lm.fit(interact) | 0.73 | 0.73x |
+| InferenceContinOLS | continuous | 0.50 | stats | lm.fit | 0.13 | 0.25x |
+| InferenceContinQuantileRegr | continuous | 2.00 | quantreg | rq.fit | 0.93 | 0.47x |
+| InferenceContinRobustRegr | continuous | 0.50 | MASS | rlm | 2.00 | 4x |
+| InferenceIncidBinomialIdentityRiskDiff | incidence | 1.50 | stats | glm.fit(ident) | 1.73 | 1.15x |
+| InferenceIncidExactFisher | incidence | 0.67 | stats | fisher.test | 0.88 | 1.32x |
+| InferenceIncidExactZhang | incidence | 0.04 | Exact | exact.test(z) | 1980.00 | 47826.09x |
+| InferenceIncidGCompRiskDiff | incidence | 1.05 | stats | glm.fit+gcomp(RD) | 1.87 | 1.78x |
+| InferenceIncidGCompRiskRatio | incidence | 1.00 | stats | glm.fit+gcomp(RR) | 1.37 | 1.37x |
+| InferenceIncidLogBinomial | incidence | 1.00 | stats | glm.fit(log) | 1.68 | 1.68x |
+| InferenceIncidLogRegr | incidence | 1.00 | stats | glm.fit | 2.59 | 2.59x |
+| InferenceIncidMiettinenNurminenRiskDiff | incidence | 1.00 | DescTools | BinomDiffCI(mn) | 1.33 | 1.33x |
+| InferenceIncidModifiedPoisson | incidence | 1.50 | stats | glm.fit(modified) | 2.80 | 1.87x |
+| InferenceIncidNewcombeRiskDiff | incidence | 0.04 | DescTools | BinomDiffCI(score) | 1.22 | 33.26x |
+| InferenceIncidProbitRegr | incidence | 2.50 | stats | glm.fit(probit) | 1.96 | 0.78x |
+| InferenceIncidRiskDiff | incidence | 0.50 | stats | prop.test | 0.90 | 1.81x |
+| InferenceCountHurdleNegBin | count | 4.00 | pscl | hurdle(nb) | 44.00 | 11x |
+| InferenceCountHurdlePoisson | count | 3.00 | pscl | hurdle | 23.00 | 7.67x |
+| InferenceCountNegBin | count | 1.50 | MASS | glm.nb | 41.00 | 27.33x |
+| InferenceCountPoisson | count | 1.50 | stats | glm.fit | 2.00 | 1.33x |
+| InferenceCountQuasiPoisson | count | 0.50 | stats | glm.fit(quasi) | 2.19 | 4.37x |
+| InferenceCountRobustPoisson | count | 2.00 | stats | glm.fit | 2.26 | 1.13x |
+| InferenceCountZeroInflatedNegBin | count | 2.84 | pscl | zeroinfl(nb) | 171.00 | 60.17x |
+| InferenceCountZeroInflatedPoisson | count | 2.26 | pscl | zeroinfl | 92.00 | 40.65x |
+| InferencePropBetaRegr | proportion | 8.00 | betareg | betareg.fit | 37.50 | 4.69x |
+| InferencePropFractionalLogit | proportion | 2.50 | stats | glm.fit(quasi) | 1.23 | 0.49x |
+| InferencePropGCompMeanDiff | proportion | 1.00 | stats | glm.fit(quasi)+gcomp | 1.41 | 1.41x |
+| InferencePropZeroOneInflatedBetaRegr | proportion | 3.50 | None | None | NA | NA |
+| InferenceSurvivalCoxPHRegr | survival | 44.00 | survival | coxph.fit | 0.59 | 0.01x |
+| InferenceSurvivalDepCensTransformRegr | survival | 9.00 | None | None | NA | NA |
+| InferenceSurvivalGehanWilcox | survival | 5.50 | survival | survdiff(rho=1) | 2.15 | 0.39x |
+| InferenceSurvivalKMDiff | survival | 0.05 | survival | survfit(median) | 4.21 | 91.22x |
+| InferenceSurvivalLogRank | survival | 0.25 | survival | survdiff | 2.50 | 10x |
+| InferenceSurvivalRestrictedMeanDiff | survival | 0.05 | survival | survfit(rmean) | 2.87 | 55.37x |
+| InferenceSurvivalStratCoxPHRegr | survival | 82.00 | survival | coxph.fit(strat) | 1.05 | 0.01x |
+| InferenceSurvivalWeibullRegr | survival | 1.00 | survival | survreg | 3.87 | 3.87x |
+| InferenceOrdinalAdjCatLogitRegr | ordinal | 3.67 | VGAM | vglm(acat) | 50.00 | 13.64x |
+| InferenceOrdinalCauchitRegr | ordinal | 7.00 | ordinal | clm(cauchit) | 16.25 | 2.32x |
+| InferenceOrdinalCloglogRegr | ordinal | 6.00 | ordinal | clm(cll) | 11.60 | 1.93x |
+| InferenceOrdinalContRatioRegr | ordinal | 3.00 | VGAM | vglm(cratio) | 44.00 | 14.67x |
+| InferenceOrdinalGCompMeanDiff | ordinal | 6.00 | ordinal | clm+gcomp | 23.67 | 3.94x |
+| InferenceOrdinalJonckheereTerpstraTest | ordinal | 39.00 | clinfun | jonckheere | 1.32 | 0.03x |
+| InferenceOrdinalOrderedProbitRegr | ordinal | 4.50 | ordinal | clm(probit) | 9.33 | 2.07x |
+| InferenceOrdinalPropOddsRegr | ordinal | 5.50 | ordinal | clm | 11.25 | 2.05x |
+| InferenceOrdinalRidit | ordinal | 0.06 | stats | mean(ridit) | 0.32 | 5.04x |

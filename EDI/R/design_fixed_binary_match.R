@@ -13,8 +13,8 @@
 DesignFixedBinaryMatch = R6::R6Class("DesignFixedBinaryMatch",
 	inherit = DesignFixed,
 	public = list(
-		#' @description Returns TRUE: simulation framework can pre-generate all
-		#'   treatment vectors for a cell in one Java call instead of one per rep.
+		#' @description Returns TRUE so the framework pre-generates all w vectors
+		#'   once per cell (paying the nbpMatching cost once, reusing across reps).
 		supports_batch_w_pregeneration = function() TRUE,
 		#' @description Initialize a binary match fixed experimental design
 		#'
@@ -71,6 +71,13 @@ DesignFixedBinaryMatch = R6::R6Class("DesignFixedBinaryMatch",
 					private$set_binary_match_structure_from_m(m)
 				}
 			},
+		#' @description Assign treatment to all subjects. Ensures matching structure is computed
+		#'   even when a pre-computed w vector is injected (bypassing draw_ws_according_to_design).
+		#' @param w_precomputed Optional numeric vector of length n.
+		assign_w_to_all_subjects = function(w_precomputed = NULL){
+			private$ensure_matching_structure_computed()
+			super$assign_w_to_all_subjects(w_precomputed)
+		},
 		#' @description Draw multiple treatment assignment vectors according to binary matching.
 		#'
 		#' @param r 	The number of designs to draw.

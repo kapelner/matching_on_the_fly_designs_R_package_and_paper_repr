@@ -96,12 +96,20 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (estimate_only) {
+				private$cached_values$superiority = private$weighted_superiority(
+					private$y,
+					private$w,
+					rep(1, length(private$w))
+				)
+				private$cached_values$beta_hat_T = private$cached_values$superiority - 0.5
+				return(invisible(NULL))
+			}
 			
 			res = exact_jonckheere_terpstra_pval_cpp(as.integer(private$y), as.integer(private$w))
 			
 			private$cached_values$superiority = res$superiority
 			private$cached_values$beta_hat_T = res$superiority - 0.5
-			if (estimate_only) return(invisible(NULL))
 			private$cached_values$p_exact = res$p_exact
 			private$cached_values$p_lower = res$p_lower
 			private$cached_values$p_upper = res$p_upper

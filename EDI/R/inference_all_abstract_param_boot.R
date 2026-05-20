@@ -110,13 +110,15 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 			deterministic_mode = isTRUE(private$use_deterministic_param_bootstrap())
 			run_one_lr = function(b){
 				if (isTRUE(deterministic_mode)) {
-					private$compute_param_bootstrap_lr_deterministic(
-						spec = spec,
-						delta = delta,
-						null_fit = null_fit,
-						seed = replicate_seeds[[b]],
-						max_attempts_per_replicate = max_attempts_per_replicate
-					)
+					private$with_param_bootstrap_thread_budget(1L, {
+						private$compute_param_bootstrap_lr_deterministic(
+							spec = spec,
+							delta = delta,
+							null_fit = null_fit,
+							seed = replicate_seeds[[b]],
+							max_attempts_per_replicate = max_attempts_per_replicate
+						)
+					})
 				} else {
 					private$compute_param_bootstrap_lr_impl(
 						spec = spec,
@@ -398,14 +400,33 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 		use_deterministic_param_bootstrap = function(){
 			!is.null(private$seed) && is.finite(private$seed)
 		},
+		with_param_bootstrap_thread_budget = function(budget, expr){
+			budget = max(1L, as.integer(budget)[1L])
+			ns = asNamespace("EDI")
+			edi_env = ns$edi_env
+			prev_override = edi_env$num_cores_override
+			prev_threads = getOption(".edi_last_set_threads")
+			if (is.null(prev_threads) || length(prev_threads) != 1L || !is.finite(prev_threads)) {
+				prev_threads = 1L
+			}
+			assign("num_cores_override", budget, envir = edi_env)
+			ns$set_package_threads(budget)
+			on.exit({
+				assign("num_cores_override", prev_override, envir = edi_env)
+				ns$set_package_threads(prev_threads)
+			}, add = TRUE)
+			force(expr)
+		},
 		with_param_bootstrap_seed = function(seed, expr){
 			if (is.null(seed) || !is.finite(seed)) return(force(expr))
+			old_rng_kind = RNGkind()
 			had_seed = exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
 			if (had_seed) old_seed = get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
-			on.exit(
-				if (had_seed) assign(".Random.seed", old_seed, envir = .GlobalEnv) else rm(".Random.seed", envir = .GlobalEnv),
-				add = TRUE
-			)
+			on.exit({
+				do.call(RNGkind, as.list(old_rng_kind))
+				if (had_seed) assign(".Random.seed", old_seed, envir = .GlobalEnv) else rm(".Random.seed", envir = .GlobalEnv)
+			}, add = TRUE)
+			RNGkind(kind = "Mersenne-Twister", normal.kind = "Inversion", sample.kind = "Rejection")
 			set.seed(as.integer(seed)[1L])
 			force(expr)
 		},

@@ -685,11 +685,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         }
         assign("num_cores_override", prev_override, envir = ns$edi_env)
       }, add = TRUE)
-      # For fixed-X simulations with pre-generating designs, w is pre-generated in
-      # the main process one-at-a-time; workers only run fast R inference.
       has_pregen_designs = any(vapply(private$design_classes, function(dc)
         !is.null(dc$public_methods$supports_batch_w_pregeneration), logical(1L)))
-      force_serial = has_pregen_designs && !isTRUE(private$random_X_draws)
+      has_cmh_inference = "InferenceIncidCMH" %in% private$inference_labels
+      # force_serial was previously tied to has_pregen_designs to avoid JVM fork
+      # issues; Java/GED is gone so parallelism is always safe.
+      force_serial = FALSE
       use_mirai_backend = !force_serial && isTRUE(num_cores > 1L) &&
         (.Platform$OS.type != "unix" || !is.null(prev_global_mirai_cores))
       if (use_mirai_backend) {
@@ -908,40 +909,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$total_cells = n_cells; private$last_progress_draw_time = 0
       private$current_task_label = "Des/Inf"
 
-      if (isTRUE(private$verbose)) {
-        private$.print_plan_summary(planned_combos_list)
-        private$use_progress_bar = TRUE
-        # Set initial progress bar state to the first rep that has any work to do.
-        first_active_rep = NA_integer_
-        for (r_init in seq_len(private$Nrep)) {
-          if (any(vapply(cell_reps_to_run, function(v) r_init %in% v, FALSE))) {
-            first_active_rep = r_init; break
-          }
-        }
-        if (!is.na(first_active_rep)) {
-          private$current_rep_idx  = first_active_rep
-          first_active_cell_init   = which(vapply(cell_reps_to_run, function(v) first_active_rep %in% v, FALSE))[[1L]]
-          private$current_cell_idx = first_active_cell_init
-          private$tasks_per_rep    = cell_tasks_count[[first_active_cell_init]]
-          private$current_task_in_rep_idx = 0L
-        } else {
-          # Everything already done
-          private$current_rep_idx  = private$Nrep
-          private$current_cell_idx = n_cells
-          private$tasks_per_rep    = if (length(cell_tasks_count) > 0L) cell_tasks_count[[length(cell_tasks_count)]] else 0L
-          private$current_task_in_rep_idx = private$tasks_per_rep
-        }
-        # If we are going to run and use the progress bar, ensure we clean up the
-        # multi-line block at the end of the run().
-        on.exit({
-           if (!is.null(private$progress_bar_drawn)) {
-              cat("\n", file = stderr())
-              private$progress_bar_drawn = NULL
-           }
-        }, add = TRUE)
-        private$.draw_progress()
-      }
-      # Early exit if everything is already done
+      if (isTRUE(private$verbose)) private$.print_plan_summary(planned_combos_list)
+      # Early exit if everything is already done (before drawing the main progress bar)
       if (private$progress_count >= private$progress_total) {
         if (isTRUE(private$verbose)) message("Simulation already complete.")
         private$.finish_run()
@@ -1009,41 +978,150 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         )
         all_cell_states[[cell_idx]] = cs
       }
+      private$n_active_reps_total       = if (length(all_run_required_v) > 0L) sum(Reduce(`|`, all_run_required_v)) else 0L
+      private$n_total_active_work_units = if (length(all_run_required_v) > 0L) sum(vapply(all_run_required_v, sum, 0L)) else 0L
 
-      # Helper: pre-generate exactly 1 w vector per supported design for one cell+rep.
-      # Using 1 Java core avoids JVM oversubscription while workers run in parallel.
-      # Called per-rep so computation is bounded to T_single_design × n_active_cells.
-      .pregen_w_for_rep = function(ci, rep) {
-        cs = all_cell_states[[ci]]
-        if (is.null(cs$shared_X)) return(invisible(NULL))
-        new_cache = list()
-        for (di in seq_along(private$design_classes)) {
-          dc = private$design_classes[[di]]
-          dl = private$design_labels[[di]]
-          dp = private$design_params[[di]]
-          if (is.null(dc$public_methods$supports_batch_w_pregeneration)) next
-          tryCatch({
-            d_pg = do.call(dc$new, c(list(response_type = cs$response_type, n = cs$n), dp))
-            d_pg$add_all_subjects_to_experiment(as.data.frame(cs$shared_X))
-            prev_nc = ns$edi_env$num_cores_override
-            assign("num_cores_override", 1L, envir = ns$edi_env)
-            w_mat = d_pg$draw_ws_according_to_design(1L)
-            assign("num_cores_override", prev_nc, envir = ns$edi_env)
-            storage.mode(w_mat) = "integer"
-            new_cache[[dl]] = list(ws = w_mat, rep_to_col = setNames(1L, as.character(rep)))
-          }, error = function(e) NULL)
+      # Pre-generate ALL w vectors for designs whose matching/clustering structure
+      # is expensive but deterministic given X (e.g. BinaryMatch, OptimalBlocks).
+      # Called ONCE per cell at session init — pays the structural cost once,
+      # then workers skip it entirely by using the cached w column for their rep.
+      if ((has_pregen_designs || has_cmh_inference) && !isTRUE(private$random_X_draws)) {
+        if (isTRUE(private$verbose)) message("Creating cached design/SE data for cells...")
+        # Determine se_est_num_vectors from whichever inference class exposes it,
+        # respecting user-supplied constructor overrides over class defaults.
+        cmh_se_num_vectors = 1000L  # safe fallback matching InferenceIncidCMH default
+        for (ii in seq_along(private$inference_classes)) {
+          ic      = private$inference_classes[[ii]]
+          init_fn = ic$public_methods$initialize
+          if (!is.null(init_fn) && "se_est_num_vectors" %in% names(formals(init_fn))) {
+            cp  = private$inference_constructor_params[[ii]]
+            val = if (!is.null(cp[["se_est_num_vectors"]])) cp[["se_est_num_vectors"]] else formals(init_fn)[["se_est_num_vectors"]]
+            if (!is.null(val) && !is.symbol(val)) cmh_se_num_vectors = as.integer(val)
+            break
+          }
         }
-        if (length(new_cache) > 0L) {
-          cs$design_w_cache = new_cache
-          all_cell_states[[ci]] <<- cs
+        # Count cells that have active reps (denominator for the progress bar).
+        cells_needing_cache = sum(vapply(seq_len(n_cells), function(ci) {
+          cs = all_cell_states[[ci]]
+          !is.null(cs$shared_X) && any(all_run_required_v[[ci]])
+        }, logical(1L)))
+        cells_cached = 0L
+        for (ci in seq_len(n_cells)) {
+          cs = all_cell_states[[ci]]
+          if (is.null(cs$shared_X)) next
+          active_reps_ci = which(all_run_required_v[[ci]])
+          if (length(active_reps_ci) == 0L) next
+          if (isTRUE(private$verbose))
+            private$.draw_labeled_progress_bar("caching design/SE data",
+                                               cells_cached / max(1L, cells_needing_cache))
+          cell_combos_ci = planned_combos_list[[ci]]
+          new_cache = list()
+          new_cmh_se_cache = list()
+          for (di in seq_along(private$design_classes)) {
+            dc = private$design_classes[[di]]
+            dl = private$design_labels[[di]]
+            dp = private$design_params[[di]]
+            is_pregen = !is.null(dc$public_methods$supports_batch_w_pregeneration)
+            if (!is_pregen && !has_cmh_inference) next
+            # Determine which active reps still need this design — skip pregen
+            # entirely when all active reps already have every combo for dl done.
+            des_combos = Filter(function(co) co$design == dl, cell_combos_ci)
+            if (length(des_combos) == 0L) next  # design not valid in this cell
+            reps_needing_dl = active_reps_ci
+            if (n_existing > 0L) {
+              n_dc = length(des_combos)
+              nb   = length(active_reps_ci)
+              c_des  = vapply(des_combos, `[[`, "", "design")
+              c_inf  = vapply(des_combos, `[[`, "", "inference")
+              c_type = vapply(des_combos, `[[`, "", "inference_type")
+              all_ex = check_in_result_key_store_cpp(
+                rep(cs$response_type,       nb * n_dc),
+                rep(cs$cond_exp_func_model, nb * n_dc),
+                rep(as.integer(cs$n),       nb * n_dc),
+                rep(as.integer(cs$p),       nb * n_dc),
+                rep(as.numeric(cs$betaT),   nb * n_dc),
+                rep(as.integer(active_reps_ci), each = n_dc),
+                rep(c_des,  nb),
+                rep(c_inf,  nb),
+                rep(c_type, nb)
+              )
+              exists_mat     = matrix(all_ex, nrow = n_dc)   # n_dc × nb
+              reps_needing_dl = active_reps_ci[colSums(exists_mat) < n_dc]
+            }
+            if (length(reps_needing_dl) == 0L) next  # all combos already done
+            n_active_dl = length(reps_needing_dl)
+            tryCatch({
+              d_pg = do.call(dc$new, c(list(response_type = cs$response_type, n = cs$n), dp))
+              d_pg$add_all_subjects_to_experiment(as.data.frame(cs$shared_X))
+              prev_nc = ns$edi_env$num_cores_override
+              assign("num_cores_override", 1L, envir = ns$edi_env)
+              if (is_pregen) {
+                w_mat = d_pg$draw_ws_according_to_design(n_active_dl)
+                storage.mode(w_mat) = "integer"
+                new_cache[[dl]] = list(
+                  ws         = w_mat,
+                  rep_to_col = setNames(seq_len(n_active_dl), as.character(reps_needing_dl))
+                )
+              }
+              # For non-blocking designs, precompute w vectors for CMH SE estimation
+              # so workers never call draw_ws_according_to_design(se_est_num_vectors) per rep.
+              if (has_cmh_inference && !d_pg$is_blocking_design()) {
+                cmh_se_w = d_pg$draw_ws_according_to_design(cmh_se_num_vectors)
+                storage.mode(cmh_se_w) = "integer"
+                new_cmh_se_cache[[dl]] = cmh_se_w
+              }
+              assign("num_cores_override", prev_nc, envir = ns$edi_env)
+            }, error = function(e) {
+              assign("num_cores_override", prev_nc, envir = ns$edi_env)
+              NULL
+            })
+          }
+          if (length(new_cache) > 0L) cs$design_w_cache = new_cache
+          if (length(new_cmh_se_cache) > 0L) cs$cmh_se_w_cache = new_cmh_se_cache
+          all_cell_states[[ci]] = cs
+          cells_cached = cells_cached + 1L
+        }
+        if (isTRUE(private$verbose)) {
+          private$.draw_labeled_progress_bar("caching design/SE data", 1)
+          cat("\n", file = stderr())
         }
       }
 
+      # ── Set up and draw initial progress bar (after pregen, before main loop) ──
+      if (isTRUE(private$verbose)) {
+        private$use_progress_bar = TRUE
+        first_active_rep = NA_integer_
+        for (r_init in seq_len(private$Nrep)) {
+          if (any(vapply(cell_reps_to_run, function(v) r_init %in% v, FALSE))) {
+            first_active_rep = r_init; break
+          }
+        }
+        if (!is.na(first_active_rep)) {
+          private$current_rep_idx  = first_active_rep
+          first_active_cell_init   = which(vapply(cell_reps_to_run, function(v) first_active_rep %in% v, FALSE))[[1L]]
+          private$current_cell_idx = first_active_cell_init
+          private$tasks_per_rep    = cell_tasks_count[[first_active_cell_init]]
+          private$current_task_in_rep_idx = 0L
+        } else {
+          private$current_rep_idx  = private$Nrep
+          private$current_cell_idx = n_cells
+          private$tasks_per_rep    = if (length(cell_tasks_count) > 0L) cell_tasks_count[[length(cell_tasks_count)]] else 0L
+          private$current_task_in_rep_idx = private$tasks_per_rep
+        }
+        on.exit({
+           if (!is.null(private$progress_bar_drawn)) {
+              cat("\n", file = stderr())
+              private$progress_bar_drawn = NULL
+           }
+        }, add = TRUE)
+        private$.draw_progress()
+      }
+
       # ── Main simulation loop: outer = rep, inner = DGP cell ──────────────────
-      # Each complete rep covers all (cell, design, inference) combos, so one
-      # rep gives a reliable sample of how long a single rep takes, enabling an
-      # accurate time-to-completion estimate that is updated after every rep.
-      private$rep_elapsed_times = numeric(0)
+      private$rep_elapsed_times        = numeric(0)
+      private$session_work_units_done  = 0L
+      private$session_start_time       = as.numeric(Sys.time())
+      private$rep_start_capture        = private$session_start_time
       use_parallel_workers = !force_serial && num_cores > 1L
       num_cores_to_use = if (use_parallel_workers) num_cores else 1L
 
@@ -1076,12 +1154,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           next
         }
 
-        # Generate exactly 1 w per design per active cell, just-in-time for this rep.
-        if (!isTRUE(private$random_X_draws)) {
-          for (ci in active_cells) .pregen_w_for_rep(ci, rep)
-        }
-
         rep_start_time = as.numeric(Sys.time())
+        private$rep_start_capture = rep_start_time
         private$current_rep_idx = rep
         private$current_cell_idx = active_cells[[1L]]
 
@@ -1127,6 +1201,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                         invisible(lapply(pending_jobs, function(job) try(mirai::stop_mirai(job), silent = TRUE)))
                     }
                     completed_in_chunk = completed_in_chunk + 1L
+                    private$session_work_units_done = private$session_work_units_done + 1L
                   }
                 }
                 jobs[ready] = NULL
@@ -1195,25 +1270,32 @@ SimulationFramework = R6::R6Class("SimulationFramework",
               chunk_results = vector("list", length(chunk_cells))
               names(chunk_results) = as.character(chunk_cells)
               completed_in_chunk = 0L
-              while (completed_in_chunk < length(chunk_cells)) {
-                collected = parallel::mccollect(jobs, wait = FALSE, timeout = 0.1)
-                if (is.null(collected) || length(collected) == 0L) next
-                for (nm in names(collected)) {
-                  if (is.null(chunk_results[[nm]])) {
-                    chunk_results[[nm]] = collected[[nm]]
-                    if (!is.null(collected[[nm]]$fatal_error)) {
-                      pending_jobs = jobs[setdiff(names(jobs), names(collected))]
-                      if (length(pending_jobs) > 0L)
-                        invisible(lapply(pending_jobs, function(job) try(parallel::mckill(job), silent = TRUE)))
+              withCallingHandlers(
+                while (completed_in_chunk < length(chunk_cells)) {
+                  collected = parallel::mccollect(jobs, wait = FALSE, timeout = 0.1)
+                  if (is.null(collected) || length(collected) == 0L) next
+                  for (nm in names(collected)) {
+                    if (is.null(chunk_results[[nm]])) {
+                      chunk_results[[nm]] = collected[[nm]]
+                      if (!is.null(collected[[nm]]$fatal_error)) {
+                        pending_jobs = jobs[setdiff(names(jobs), names(collected))]
+                        if (length(pending_jobs) > 0L)
+                          invisible(lapply(pending_jobs, function(job) try(parallel::mckill(job), silent = TRUE)))
+                      }
+                      completed_in_chunk = completed_in_chunk + 1L
+                      private$session_work_units_done = private$session_work_units_done + 1L
                     }
-                    completed_in_chunk = completed_in_chunk + 1L
                   }
+                  jobs[names(collected)] = NULL
+                  private$current_cell_idx = chunk_cells[[min(length(chunk_cells), completed_in_chunk + 1L)]]
+                  private$current_task_in_rep_idx = completed_in_chunk
+                  private$.draw_progress()
+                },
+                interrupt = function(e) {
+                  for (job in jobs) try(parallel::mckill(job, signal = 9L), silent = TRUE)
+                  invokeRestart("abort")
                 }
-                jobs[names(collected)] = NULL
-                private$current_cell_idx = chunk_cells[[min(length(chunk_cells), completed_in_chunk + 1L)]]
-                private$current_task_in_rep_idx = completed_in_chunk
-                private$.draw_progress()
-              }
+              )
               chunk_results_ok = chunk_results[!vapply(chunk_results, function(x) is(x, "try-error") || is.null(x), logical(1L))]
               if (length(chunk_results_ok) > 0L) {
                 all_chunk_dt = data.table::rbindlist(lapply(chunk_results_ok, function(w) w$results_dt), use.names = TRUE, fill = TRUE)
@@ -1283,6 +1365,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
               }
               private$all_intermediate_data[[rep_slot]]$y_linear_model = y_linear_model
             }
+            private$session_work_units_done = private$session_work_units_done + 1L
             if (!is(worker_out, "try-error") && !is.null(worker_out)) {
               private$.append_errors(worker_out$errors)
               if (!is.null(worker_out$fatal_error)) private$.abort_from_error_record(worker_out$fatal_error)
@@ -1500,7 +1583,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     .finish_run = function() {
       private$has_run = TRUE
       if (private$.results_file_format(private$results_filename) == "csv.bz2" &&
-          file.exists(private$.results_staging_filename())) {
+          file.exists(private$.results_staging_filename()) &&
+          private$results_idx > 0L) {
+        message("Compressing results to bz2...")
         private$.sync_results_bz2_from_staging()
       }
       private$.cleanup_results_staging_file()
@@ -1581,7 +1666,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     tasks_per_rep            = 0L,
     progress_total           = 0L,
     progress_count           = 0L,
-    rep_elapsed_times        = numeric(0),
+    rep_elapsed_times           = numeric(0),
+    session_start_time          = NULL,
+    rep_start_capture           = NULL,
+    n_active_reps_total         = 0L,
+    n_total_active_work_units   = 0L,
+    session_work_units_done     = 0L,
     progress_bar             = NULL,
     use_progress_bar         = FALSE,
     progress_log_interval    = 0L,
@@ -2342,6 +2432,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
               col_j  = cache$rep_to_col[[as.character(rep_i)]]
               if (!is.null(col_j)) precomp_w = cache$ws[, col_j]
             }
+            if (!is.null(state$cmh_se_w_cache) && !is.null(state$cmh_se_w_cache[[design_name]])) {
+              d$inject_cmh_se_w_mat(state$cmh_se_w_cache[[design_name]])
+            }
             d$assign_w_to_all_subjects(precomp_w)
             w = d$get_w()
             out = apply_treatment_and_noise(y_linear_model, w)
@@ -2834,25 +2927,47 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       # overall_prop accounts for work done before this session started.
       overall_prop = if (private$progress_total > 0L) private$progress_count / private$progress_total else rep_in_progress_prop
 
-      # ETA: use mean time per completed rep × reps remaining (in overall terms).
-      n_elapsed = length(private$rep_elapsed_times)
-      eta_str = if (overall_prop >= 0.9999) {
-        "Status: Completed."
-      } else if (n_elapsed > 0L) {
-        secs_per_rep  = mean(private$rep_elapsed_times)
-        reps_remaining = max(0, (1 - overall_prop) * private$Nrep)
-        remaining = secs_per_rep * reps_remaining
-        d = floor(remaining / 86400); remaining = remaining %% 86400
-        h = floor(remaining / 3600);  remaining = remaining %% 3600
-        m = floor(remaining / 60);    s = round(remaining %% 60)
+      # ETA: rep-based once ≥1 rep has finished; task-throughput rough estimate before then.
+      .fmt_secs = function(secs) {
+        d = floor(secs / 86400); secs = secs %% 86400
+        h = floor(secs / 3600);  secs = secs %% 3600
+        m = floor(secs / 60);    s = round(secs %% 60)
         parts = character()
         if (d > 0) parts = c(parts, paste0(d, "d"))
         if (h > 0) parts = c(parts, paste0(h, "h"))
         if (m > 0) parts = c(parts, paste0(m, "m"))
         parts = c(parts, paste0(s, "s"))
-        paste0("Time Left: ", paste(parts, collapse = " "))
+        paste(parts, collapse = " ")
+      }
+      n_done = length(private$rep_elapsed_times)
+      eta_str = if (overall_prop >= 0.9999) {
+        "Status: Completed."
+      } else if (n_done > 0L && private$n_active_reps_total > 0L) {
+        # Rep-based ETA: rolling mean of last 5 reps, minus time already spent in
+        # the current in-flight rep so the countdown ticks every 100 ms.
+        secs_per_active_rep  = mean(tail(private$rep_elapsed_times, min(n_done, 5L)))
+        n_remaining          = max(0L, private$n_active_reps_total - n_done)
+        elapsed_in_rep       = if (!is.null(private$rep_start_capture)) max(0, now - private$rep_start_capture) else 0
+        elapsed_in_rep       = min(elapsed_in_rep, secs_per_active_rep)
+        remaining            = max(0, secs_per_active_rep * n_remaining - elapsed_in_rep)
+        paste0("Time Left: ", .fmt_secs(remaining))
       } else {
-        "Status: Estimating..."
+        # Cell-throughput fallback — counts worker cell completions (not result rows),
+        # so it is unaffected by deduplication that suppresses progress_count advances
+        # when resuming a nearly-finished run.
+        # Require at least one full parallel chunk before measuring throughput:
+        # mid-chunk, only the fastest workers have reported, so the apparent rate
+        # (wu_done / session_elapsed) is num_cores-fold lower than steady-state.
+        wu_done = private$session_work_units_done
+        chunk_threshold = max(1L, min(private$num_cores, private$n_total_active_work_units))
+        session_elapsed = if (!is.null(private$session_start_time)) now - private$session_start_time else 0
+        if (wu_done >= chunk_threshold && session_elapsed > 0.5) {
+          remaining_wu = max(0L, private$n_total_active_work_units - wu_done)
+          remaining = session_elapsed * remaining_wu / wu_done
+          paste0("~Time Left: ", .fmt_secs(remaining))
+        } else {
+          "Status: Estimating..."
+        }
       }
       make_bar_line = function(label, prop, b_width, digits = 0, label_width = 25) {
         padded_label = sprintf("%-*s", label_width, substr(label, 1, label_width))

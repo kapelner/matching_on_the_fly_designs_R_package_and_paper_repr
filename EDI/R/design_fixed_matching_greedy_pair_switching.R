@@ -12,9 +12,6 @@
 DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyPairSwitching",
 	inherit = DesignFixed,
 	public = list(
-		#' @description Returns TRUE: simulation framework pre-generates one
-		#'   treatment vector per rep in the main process (no JVM workers needed).
-		supports_batch_w_pregeneration = function() TRUE,
 		#' @description Initialize a fixed design that performs binary matching followed by greedy pair switching.
 		#'
 		#' @param response_type The data type of response values.
@@ -68,8 +65,10 @@ DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyP
 			}
 			private$covariate_impute_if_necessary_and_then_create_model_matrix()
 			X = private$X[1:n, , drop = FALSE]
-			bms = compute_binary_match_structure(X, mahal_match = (private$objective == "mahal_dist"))
-			pairs_mat = bms$indicies_pairs
+			if (is.null(private$bms)) {
+				private$bms = compute_binary_match_structure(X, mahal_match = (private$objective == "mahal_dist"))
+			}
+			pairs_mat = private$bms$indicies_pairs
 			storage.mode(pairs_mat) = "integer"
 			n_iter = max(500L, 500L * as.integer(n))
 			w_mat = greedy_design_search_cpp(
@@ -85,6 +84,7 @@ DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyP
 	),
 	private = list(
 		objective = NULL,
+		bms = NULL,
 		validate_allocation_matrix = function(w_mat, n, r){
 			if (is.vector(w_mat)) {
 				w_mat = matrix(w_mat, nrow = n, ncol = 1)

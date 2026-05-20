@@ -62,7 +62,12 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
 						optimization_alg = private$optimization_alg
 					)
-					list(b = res$b, fisher_information = res$fisher_information, ssq_b_2 = NA_real_)
+					ssq_b_2 = NA_real_
+					if (!estimate_only && !is.null(res$fisher_information) && is.matrix(res$fisher_information) && nrow(res$fisher_information) >= 2L) {
+						inv_fi = tryCatch(solve(res$fisher_information), error = function(e) NULL)
+						if (!is.null(inv_fi) && is.finite(inv_fi[2L, 2L]) && inv_fi[2L, 2L] > 0) ssq_b_2 = inv_fi[2L, 2L]
+					}
+					list(b = res$b, fisher_information = res$fisher_information, ssq_b_2 = ssq_b_2)
 				},
 				fit_ok = function(mod, X_fit, keep){
 					!is.null(mod) && length(mod$b) >= 2L && is.finite(mod$b[2])
@@ -75,7 +80,8 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 				return(NA_real_)
 			}
 			private$cached_values$beta_hat_T = as.numeric(attempt$fit$b[2])
-			private$cached_values$s_beta_hat_T = NA_real_
+			ssq = attempt$fit$ssq_b_2
+			private$cached_values$s_beta_hat_T = if (!is.null(ssq) && is.finite(ssq) && ssq > 0) sqrt(ssq) else NA_real_
 			private$set_fit_warm_start(
 				as.numeric(attempt$fit$b),
 				"beta",

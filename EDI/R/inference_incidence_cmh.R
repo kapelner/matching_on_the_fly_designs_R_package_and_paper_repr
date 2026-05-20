@@ -68,7 +68,8 @@ InferenceIncidCMH = R6::R6Class("InferenceIncidCMH",
 					private$des_obj_priv_int$n
 				)
 			} else {
-				w_mat = private$des_obj$draw_ws_according_to_design(private$se_est_num_vectors)
+				precomp = private$des_obj$get_cmh_se_w_mat()
+				w_mat = if (!is.null(precomp)) precomp else private$des_obj$draw_ws_according_to_design(private$se_est_num_vectors)
 				ytw = drop(private$y %*% w_mat)
 				private$cached_values$cmh_s_beta_hat_T = 2 / private$n * sqrt(sum(ytw^2) / (private$n - 1))
 			}

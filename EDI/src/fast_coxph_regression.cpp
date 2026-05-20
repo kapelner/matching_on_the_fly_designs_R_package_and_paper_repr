@@ -14,10 +14,9 @@ using RowMajorMatrixMap =
     Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>;
 
 struct CoxData {
-    const Eigen::VectorXd y;
-    const Eigen::VectorXd dead;
-    // Store X in row-major order so row[i] is contiguous
-    std::vector<double> X_rowmaj;  // n x p, row-major
+    Eigen::VectorXd y;
+    Eigen::VectorXd dead;
+    std::vector<double> X_rowmaj;
     std::vector<int> idx_asc;
     std::vector<double> unique_event_times;
     std::vector<int> event_counts;
@@ -28,7 +27,6 @@ struct CoxData {
         y(y_in), dead(dead_in), n(y_in.size()), p(X_in.cols()),
         X_rowmaj(y_in.size() * X_in.cols()) {
 
-        // Copy X into row-major layout for cache-friendly row access in inner loop
         for (int i = 0; i < n; ++i)
             for (int q = 0; q < p; ++q)
                 X_rowmaj[i * p + q] = X_in(i, q);
@@ -95,13 +93,11 @@ std::vector<CoxWorkspace> make_cox_workspaces(const std::vector<CoxData>& strata
     return workspaces;
 };
 
-// Compute Cox partial log-likelihood, gradient, and Hessian.
-// Uses pre-allocated raw C arrays to avoid any Eigen heap allocation in the inner loop.
 double compute_cox_ll_grad_hess_fast(
         const CoxData& data,
         const std::vector<double>& beta,
-        std::vector<double>& grad,   // length p, reset inside
-        std::vector<double>& hess,   // length p*p, reset inside
+        std::vector<double>& grad,
+        std::vector<double>& hess,
         bool estimate_only,
         CoxWorkspace& workspace
 ) {
@@ -119,14 +115,12 @@ double compute_cox_ll_grad_hess_fast(
     Eigen::Map<Eigen::VectorXd> grad_map(grad.data(), p);
     Eigen::Map<Eigen::MatrixXd> hess_map(hess.data(), p, p);
 
-    // --- Compute eta = X * beta and exp_eta ---
     Eigen::Map<const Eigen::VectorXd> beta_map(beta.data(), p);
     workspace.eta.noalias() = data.matrix_map() * beta_map;
     const double max_eta = workspace.eta.maxCoeff();
     Eigen::Map<Eigen::VectorXd>(exp_eta.data(), n) =
         (workspace.eta.array() - max_eta).exp().matrix();
 
-    // --- Initialise running risk-set accumulators (full risk set) ---
     Eigen::Map<const Eigen::VectorXd> exp_eta_map(exp_eta.data(), n);
     double r_exp = exp_eta_map.sum();
     r_x_exp_map.noalias() = data.matrix_map().transpose() * exp_eta_map;
@@ -134,17 +128,15 @@ double compute_cox_ll_grad_hess_fast(
         r_xx_exp_map.noalias() = weighted_crossprod(data.matrix_map(), exp_eta_map);
     }
 
-    // --- Reset output grad / hess ---
     grad_map.setZero();
     if (!estimate_only) hess_map.setZero();
 
     double neg_ll = 0.0;
-    int j = 0;  // pointer into sorted observations
+    int j = 0;
 
     for (size_t k = 0; k < data.unique_event_times.size(); ++k) {
         double tk = data.unique_event_times[k];
 
-        // Remove observations whose time < tk from the risk set
         while (j < n && data.y[data.idx_asc[j]] < tk) {
             int id = data.idx_asc[j];
             Eigen::Map<const Eigen::VectorXd> xi(data.row(id), p);
@@ -155,7 +147,6 @@ double compute_cox_ll_grad_hess_fast(
             ++j;
         }
 
-        // Accumulate sum over deaths at this event time
         double sum_eta_dk = 0.0;
         sum_x_dk_map.setZero();
         int count_dk = data.event_counts[k];
@@ -175,15 +166,9 @@ double compute_cox_ll_grad_hess_fast(
             double safe_r = std::max(r_exp, 1e-100);
             double inv_r = 1.0 / safe_r;
             neg_ll -= (sum_eta_dk - count_dk * (std::log(safe_r) + max_eta));
-
-            // e_z = r_x_exp / r_exp
             e_z_map.noalias() = r_x_exp_map * inv_r;
-
-            // grad -= (sum_x_dk - count_dk * e_z)
             grad_map.noalias() -= sum_x_dk_map - count_dk * e_z_map;
-
             if (!estimate_only) {
-                // hess += count_dk * (r_xx_exp * inv_r - e_z * e_z^T)
                 hess_map.noalias() += count_dk * (r_xx_exp_map * inv_r - e_z_map * e_z_map.transpose());
             }
         }
@@ -192,18 +177,15 @@ double compute_cox_ll_grad_hess_fast(
     return neg_ll;
 }
 
-// Newton-Raphson for (possibly stratified) Cox model.
-// strata_data: vector of CoxData, one per stratum.  For unstratified Cox pass a single element.
-// Returns beta (converged), H^{-1} (inverse information), neg_ll, converged, iterations.
 struct CoxFitResult {
     std::vector<double> beta;
-    Eigen::MatrixXd vcov;   // p x p inverse information (empty if estimate_only)
-    Eigen::MatrixXd hess_mat; // p x p information matrix at convergence
+    Eigen::MatrixXd vcov;
+    Eigen::MatrixXd hess_mat;
     double neg_ll;
     bool converged;
     int iterations;
 };
-// Fit via Newton-Raphson; returns CoxFitResult.
+
 CoxFitResult cox_newton_raphson(
     const std::vector<CoxData>& strata_data,
     Nullable<NumericVector> warm_start_beta,
@@ -220,8 +202,6 @@ CoxFitResult cox_newton_raphson(
         NumericVector sb(warm_start_beta);
         for (int q = 0; q < p; ++q) beta[q] = sb[q];
     } else if (smart_cold_start) {
-        // Smart warm_start_params for Cox: OLS on log(y)
-        // Combine strata into one matrix for OLS
         int total_n = 0;
         for (const auto& sd : strata_data) total_n += sd.n;
         Eigen::MatrixXd X_full(total_n, p);
@@ -236,7 +216,6 @@ CoxFitResult cox_newton_raphson(
     }
     beta = apply_fixed_values(beta, fixed_spec);
 
-
     std::vector<double> grad_vec(p), hess_vec(p * p);
     std::vector<CoxWorkspace> workspaces = make_cox_workspaces(strata_data);
 
@@ -244,7 +223,6 @@ CoxFitResult cox_newton_raphson(
     int iter = 0;
 
     for (iter = 0; iter < maxit; ++iter) {
-        // Accumulate over strata
         std::fill(grad_vec.begin(), grad_vec.end(), 0.0);
         std::fill(hess_vec.begin(), hess_vec.end(), 0.0);
         double ll = 0.0;
@@ -268,14 +246,12 @@ CoxFitResult cox_newton_raphson(
         Eigen::MatrixXd H;
         if (iter == 0 && warm_start_fisher_info.isNotNull()) {
             H = as<Eigen::MatrixXd>(warm_start_fisher_info);
-            if (H.rows() != p || H.cols() != p) Rcpp::stop("warm_start_fisher_info must be a p x p matrix");
         } else {
             H = Eigen::Map<const Eigen::MatrixXd>(hess_vec.data(), p, p);
         }
         Eigen::VectorXd g = Eigen::Map<const Eigen::VectorXd>(grad_vec.data(), p);
 
-        // Apply fixed parameter constraints to NR step
-        for (int i = 0; i < fixed_spec.fixed_idx.size(); ++i) {
+        for (int i = 0; i < (int)fixed_spec.fixed_idx.size(); ++i) {
             int idx = fixed_spec.fixed_idx[i];
             g[idx] = 0.0;
             H.row(idx).setZero();
@@ -297,8 +273,7 @@ CoxFitResult cox_newton_raphson(
     res.hess_mat = Eigen::Map<const Eigen::MatrixXd>(hess_vec.data(), p, p);
 
     if (!estimate_only) {
-        Eigen::MatrixXd H_final = res.hess_mat;
-        Eigen::MatrixXd H_free = subset_matrix(H_final, fixed_spec.free_idx, fixed_spec.free_idx);
+        Eigen::MatrixXd H_free = subset_matrix(res.hess_mat, fixed_spec.free_idx, fixed_spec.free_idx);
         Eigen::FullPivLU<Eigen::MatrixXd> lu(H_free);
         if (lu.isInvertible()) {
             Eigen::MatrixXd vcov_free = lu.inverse();
@@ -311,7 +286,6 @@ CoxFitResult cox_newton_raphson(
     return res;
 }
 
-// ── Functor wrapping stratified Cox partial likelihood for L-BFGS ─────────
 class StratifiedCoxObjective {
     const std::vector<CoxData>& m_strata;
     const int m_p;
@@ -320,36 +294,33 @@ public:
     StratifiedCoxObjective(const std::vector<CoxData>& strata, int p)
         : m_strata(strata), m_p(p), m_workspaces(make_cox_workspaces(strata)) {}
 
-    // Returns negative partial log-likelihood; fills analytic gradient.
     double operator()(const Eigen::VectorXd& par, Eigen::VectorXd& grad) {
         std::vector<double> beta(par.data(), par.data() + m_p);
-        std::vector<double> g(m_p, 0.0), h_dummy(m_p * m_p, 0.0);
+        std::vector<double> g(m_p, 0.0);
         double nll = 0.0;
         for (std::size_t s = 0; s < m_strata.size(); ++s) {
             const CoxData& sd = m_strata[s];
             CoxWorkspace& ws = m_workspaces[s];
-            nll += compute_cox_ll_grad_hess_fast(sd, beta, ws.grad, ws.hess, /*estimate_only=*/true, ws);
+            nll += compute_cox_ll_grad_hess_fast(sd, beta, ws.grad, ws.hess, true, ws);
             for (int q = 0; q < m_p; ++q) g[q] += ws.grad[q];
         }
         grad = Eigen::Map<Eigen::VectorXd>(g.data(), m_p);
         return nll;
     }
 
-    // Analytic Hessian (information matrix) — used by Newton-Raphson path.
     Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
         std::vector<double> beta(par.data(), par.data() + m_p);
         std::vector<double> h(m_p * m_p, 0.0);
         for (std::size_t s = 0; s < m_strata.size(); ++s) {
             const CoxData& sd = m_strata[s];
             CoxWorkspace& ws = m_workspaces[s];
-            compute_cox_ll_grad_hess_fast(sd, beta, ws.grad, ws.hess, /*estimate_only=*/false, ws);
+            compute_cox_ll_grad_hess_fast(sd, beta, ws.grad, ws.hess, false, ws);
             for (int qq = 0; qq < m_p * m_p; ++qq) h[qq] += ws.hess[qq];
         }
         return Eigen::Map<Eigen::MatrixXd>(h.data(), m_p, m_p);
     }
 };
 
-// Fit via L-BFGS; returns same CoxFitResult as cox_newton_raphson.
 CoxFitResult cox_lbfgs(
     const std::vector<CoxData>& strata_data,
     Nullable<NumericVector> warm_start_beta,
@@ -366,7 +337,6 @@ CoxFitResult cox_lbfgs(
         NumericVector sb(warm_start_beta);
         for (int q = 0; q < p; ++q) par[q] = sb[q];
     } else if (smart_cold_start) {
-        // Smart warm_start_params for Cox: OLS on log(y)
         int total_n = 0;
         for (const auto& sd : strata_data) total_n += sd.n;
         Eigen::MatrixXd X_full(total_n, p);
@@ -382,7 +352,6 @@ CoxFitResult cox_lbfgs(
     par = apply_fixed_values(par, fixed_spec);
 
     StratifiedCoxObjective obj(strata_data, p);
-    
     Eigen::MatrixXd info_start;
     Eigen::MatrixXd* info_start_ptr = nullptr;
     if (warm_start_fisher_info.isNotNull()) {
@@ -399,9 +368,8 @@ CoxFitResult cox_lbfgs(
     res.iterations = fit.niter;
 
     if (!estimate_only && fit.converged) {
-        Eigen::MatrixXd H = obj.hessian(fit.params);
-        res.hess_mat = H;
-        Eigen::MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
+        res.hess_mat = obj.hessian(fit.params);
+        Eigen::MatrixXd H_free = subset_matrix(res.hess_mat, fixed_spec.free_idx, fixed_spec.free_idx);
         Eigen::FullPivLU<Eigen::MatrixXd> lu(H_free);
         if (lu.isInvertible()) {
             Eigen::MatrixXd vcov_free = lu.inverse();
@@ -413,7 +381,6 @@ CoxFitResult cox_lbfgs(
     return res;
 }
 
-// Dispatch: pick NR or L-BFGS based on optimization_alg string.
 CoxFitResult cox_fit(
     const std::vector<CoxData>& strata_data,
     Nullable<NumericVector> warm_start_beta,
@@ -430,13 +397,6 @@ CoxFitResult cox_fit(
     return cox_newton_raphson(strata_data, warm_start_beta, smart_cold_start, fixed_spec, estimate_only, maxit, tol, warm_start_fisher_info);
 }
 
-// Compute Lin-Wei-Amato sandwich vcov given converged beta and cluster IDs.
-//
-// Score residual: U_i[q] = (x_i[q] - e(y_i)[q])*dead_i
-//                          - exp(eta_i) * sum_{k: t_k<=y_i} (x_i[q] - e_k[q]) * d_k/R_k
-// where e_k = weighted mean of x in risk set at t_k.  sum_i U_i = 0 at MLE.
-//
-// Sandwich: H^{-1} * (sum_c V_c * V_c^T) * H^{-1},  V_c = sum_{i in c} U_i
 Eigen::MatrixXd compute_robust_vcov(
     const std::vector<CoxData>& strata_data,
     const std::vector<double>& beta,
@@ -454,7 +414,6 @@ Eigen::MatrixXd compute_robust_vcov(
     int row_offset = 0;
     for (const CoxData& sd : strata_data) {
         const int ns = sd.n;
-
         Eigen::VectorXd eta = sd.matrix_map() * beta_map;
         std::vector<double> exp_eta(ns);
         Eigen::Map<Eigen::VectorXd>(exp_eta.data(), ns) =
@@ -469,7 +428,6 @@ Eigen::MatrixXd compute_robust_vcov(
         }
 
         const int n_events = (int)sd.unique_event_times.size();
-        // dk/Rk, e_k (weighted mean x at t_k), and dk*e_k/Rk per event time
         std::vector<double> dk_over_Rk(n_events, 0.0);
         std::vector<std::vector<double>> ek(n_events, std::vector<double>(p, 0.0));
         std::vector<std::vector<double>> dk_ek_over_Rk(n_events, std::vector<double>(p, 0.0));
@@ -479,9 +437,8 @@ Eigen::MatrixXd compute_robust_vcov(
             double tk = sd.unique_event_times[k];
             while (j < ns && sd.y[sd.idx_asc[j]] < tk) {
                 int id = sd.idx_asc[j];
-                const double* xi = sd.row(id);
                 r_exp -= exp_eta[id];
-                for (int q = 0; q < p; ++q) r_x_exp[q] -= xi[q] * exp_eta[id];
+                for (int q = 0; q < p; ++q) r_x_exp[q] -= sd.row(id)[q] * exp_eta[id];
                 ++j;
             }
             int dk = sd.event_counts[k];
@@ -495,7 +452,6 @@ Eigen::MatrixXd compute_robust_vcov(
             }
         }
 
-        // Cumulative A(t) = sum_{k: t_k<=t} d_k/R_k  and  B_q(t) = sum d_k*e_k[q]/R_k
         std::vector<double> cum_A(n_events, 0.0);
         std::vector<std::vector<double>> cum_B(n_events, std::vector<double>(p, 0.0));
         if (n_events > 0) {
@@ -508,15 +464,12 @@ Eigen::MatrixXd compute_robust_vcov(
             }
         }
 
-        // Score residuals: U_i[q] = (x_i[q] - e(y_i)[q])*dead_i
-        //                           - exp_i * (x_i[q]*A(y_i) - B_q(y_i))
         for (int i = 0; i < ns; ++i) {
             double yi = sd.y[i];
             const double* xi = sd.row(i);
             double ei = exp_eta[i];
             double di = sd.dead[i];
 
-            // Binary search: last event time <= y_i
             int k_last = -1;
             if (n_events > 0) {
                 int lo = 0, hi = n_events - 1;
@@ -527,65 +480,29 @@ Eigen::MatrixXd compute_robust_vcov(
                 }
             }
             double A_i = (k_last >= 0) ? cum_A[k_last] : 0.0;
-
-            // e(y_i) for dead subjects: the event time y_i equals t_{k_last} when dead_i=1
-            // (since y_i is one of the unique event times in this case)
             for (int q = 0; q < p; ++q) {
                 double B_iq    = (k_last >= 0) ? cum_B[k_last][q] : 0.0;
                 double e_yi_q  = (di > 0.5 && k_last >= 0) ? ek[k_last][q] : 0.0;
-                U(row_offset + i, q) = (xi[q] - e_yi_q) * di
-                                       - ei * (xi[q] * A_i - B_iq);
+                U(row_offset + i, q) = (xi[q] - e_yi_q) * di - ei * (xi[q] * A_i - B_iq);
             }
         }
         row_offset += ns;
     }
 
-    // Aggregate score residuals by cluster: V_c = sum_{i in c} U_i
-    // cluster is length n_total, one entry per row of U (in strata-stacked order)
     std::map<int, Eigen::VectorXd> cluster_scores;
     for (int i = 0; i < n_total; ++i) {
         int c = cluster[i];
-        auto it = cluster_scores.find(c);
-        if (it == cluster_scores.end()) {
-            cluster_scores[c] = U.row(i).transpose();
-        } else {
-            it->second += U.row(i).transpose();
-        }
+        if (cluster_scores.find(c) == cluster_scores.end()) cluster_scores[c] = U.row(i).transpose();
+        else cluster_scores[c] += U.row(i).transpose();
     }
 
-    // B = sum_c V_c * V_c^T
     Eigen::MatrixXd B = Eigen::MatrixXd::Zero(p, p);
-    for (auto& kv : cluster_scores) {
-        B += kv.second * kv.second.transpose();
-    }
-
-    // Robust vcov = H^{-1} * B * H^{-1}
+    for (auto& kv : cluster_scores) B += kv.second * kv.second.transpose();
     return H_inv * B * H_inv;
 }
 
 } // namespace
 
-//' @title Fast Cox Proportional Hazards Regression (C++)
-//' @description High-performance Cox regression fitting using Breslow's method for ties.
-//' @param X A numeric matrix of predictors.
-//' @param y A numeric vector of survival times.
-//' @param dead A numeric vector of event indicators (1=event, 0=censored).
-//' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-//' @param estimate_only If TRUE, only return coefficients and likelihood.
-//' @param maxit Maximum number of iterations.
-//' @param tol Convergence tolerance.
-//' @param cluster Optional vector of cluster IDs for robust variance.
-//' @param fixed_idx Optional indices of fixed parameters.
-//' @param fixed_values Optional values for fixed parameters.
-//' @param optimization_alg Optimization algorithm ("newton_raphson" or "lbfgs").
-//' @return A list containing coefficients, vcov (optional), and convergence status.
-//' @export
-//' @keywords internal
-//' @examples
-//' X = matrix(rnorm(100), 10, 10)
-//' y = runif(10)
-//' dead = rbinom(10, 1, 0.5)
-//' fast_coxph_regression_cpp(X, y, dead)
 // [[Rcpp::export]]
 List fast_coxph_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead,
                                Nullable<NumericVector> warm_start_beta = R_NilValue,
@@ -600,67 +517,18 @@ List fast_coxph_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     int p = X.cols();
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
-
     std::vector<CoxData> strata_data;
     strata_data.emplace_back(y, dead, X);
-
     CoxFitResult fit = cox_fit(strata_data, warm_start_beta, smart_cold_start, fixed_spec, estimate_only, maxit, tol, optimization_alg, warm_start_fisher_info);
-
     NumericVector coef_r(p);
     for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];
-
     if (estimate_only) {
-        return List::create(
-            Named("coefficients") = coef_r,
-            Named("converged") = fit.converged,
-            Named("neg_ll") = fit.neg_ll,
-            Named("iterations") = fit.iterations,
-            Named("fisher_information") = fit.hess_mat
-        );
+        return List::create(_["coefficients"] = coef_r, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat);
     }
-
-    // Use robust sandwich vcov if cluster provided
-    Eigen::MatrixXd vcov_mat;
-    if (cluster.isNotNull()) {
-        IntegerVector cl(cluster);
-        std::vector<int> cl_vec(cl.begin(), cl.end());
-        vcov_mat = compute_robust_vcov(strata_data, fit.beta, fit.vcov, cl_vec);
-    } else {
-        vcov_mat = fit.vcov;
-    }
-
-    return List::create(
-        Named("coefficients") = coef_r,
-        Named("vcov") = vcov_mat,
-        Named("converged") = fit.converged,
-        Named("neg_ll") = fit.neg_ll,
-        Named("iterations") = fit.iterations,
-        Named("fisher_information") = fit.hess_mat
-    );
+    Eigen::MatrixXd vcov_mat = (cluster.isNotNull()) ? compute_robust_vcov(strata_data, fit.beta, fit.vcov, std::vector<int>(IntegerVector(cluster).begin(), IntegerVector(cluster).end())) : fit.vcov;
+    return List::create(_["coefficients"] = coef_r, _["vcov"] = vcov_mat, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat);
 }
 
-//' @title Fast Stratified Cox Proportional Hazards Regression (C++)
-//' @description High-performance stratified Cox regression fitting.
-//' @param X A numeric matrix of predictors.
-//' @param y A numeric vector of survival times.
-//' @param dead A numeric vector of event indicators.
-//' @param strata An integer vector of strata IDs.
-//' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-//' @param estimate_only If TRUE, only return coefficients and likelihood.
-//' @param maxit Maximum number of iterations.
-//' @param tol Convergence tolerance.
-//' @param fixed_idx Optional indices of fixed parameters.
-//' @param fixed_values Optional values for fixed parameters.
-//' @param optimization_alg Optimization algorithm.
-//' @return A list containing coefficients, vcov, and convergence status.
-//' @export
-//' @keywords internal
-//' @examples
-//' X = matrix(rnorm(100), 10, 10)
-//' y = runif(10)
-//' dead = rbinom(10, 1, 0.5)
-//' strata = rep(1:2, each = 5)
-//' fast_stratified_coxph_regression_cpp(X, y, dead, strata)
 // [[Rcpp::export]]
 List fast_stratified_coxph_regression_cpp(
     const Eigen::MatrixXd& X,
@@ -681,176 +549,67 @@ List fast_stratified_coxph_regression_cpp(
     const int p = X.cols();
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
 
-    std::vector<int> strata_v(strata.begin(), strata.end());
-    std::vector<int> unique_strata = strata_v;
-    std::sort(unique_strata.begin(), unique_strata.end());
-    unique_strata.erase(std::unique(unique_strata.begin(), unique_strata.end()), unique_strata.end());
+    // Efficiently group by strata
+    std::map<int, std::vector<int>> strata_map;
+    for (int i = 0; i < n; ++i) strata_map[strata[i]].push_back(i);
 
-    // Build one CoxData per stratum
     std::vector<CoxData> strata_data;
-    strata_data.reserve(unique_strata.size());
-    for (int s : unique_strata) {
-        std::vector<int> idx;
-        for (int i = 0; i < n; ++i) if (strata_v[i] == s) idx.push_back(i);
-
+    strata_data.reserve(strata_map.size());
+    for (auto const& [sid, idx] : strata_map) {
         const int ns = (int)idx.size();
         Eigen::VectorXd y_s(ns), dead_s(ns);
         Eigen::MatrixXd X_s(ns, p);
         for (int ii = 0; ii < ns; ++ii) {
-            y_s[ii]    = y[idx[ii]];
-            dead_s[ii] = dead[idx[ii]];
-            X_s.row(ii) = X.row(idx[ii]);
+            int id = idx[ii];
+            y_s[ii] = y[id]; dead_s[ii] = dead[id]; X_s.row(ii) = X.row(id);
         }
         strata_data.emplace_back(y_s, dead_s, X_s);
     }
 
     CoxFitResult fit = cox_fit(strata_data, warm_start_beta, smart_cold_start, fixed_spec, estimate_only, maxit, tol, optimization_alg, warm_start_fisher_info);
-
     NumericVector coef_r(p);
     for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];
-
     if (estimate_only) {
-        return List::create(
-            Named("coefficients") = coef_r,
-            Named("converged") = fit.converged,
-            Named("neg_ll") = fit.neg_ll,
-            Named("iterations") = fit.iterations,
-            Named("fisher_information") = fit.hess_mat
-        );
+        return List::create(_["coefficients"] = coef_r, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat);
     }
-
-    return List::create(
-        Named("coefficients") = coef_r,
-        Named("vcov") = fit.vcov,
-        Named("converged") = fit.converged,
-        Named("neg_ll") = fit.neg_ll,
-        Named("iterations") = fit.iterations,
-        Named("fisher_information") = fit.hess_mat
-    );
+    return List::create(_["coefficients"] = coef_r, _["vcov"] = fit.vcov, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat);
 }
 
-//' @title Compute Cox PH Score (C++)
-//' @description Calculates the score vector (gradient of log partial likelihood) for unstratified Cox regression.
-//' @param X Predictor matrix.
-//' @param y Survival times.
-//' @param dead Event indicators.
-//' @param beta Coefficient vector.
-//' @return Score vector.
-//' @export
-//' @keywords internal
 // [[Rcpp::export]]
-Eigen::VectorXd get_coxph_score_cpp(const Eigen::MatrixXd& X,
-                                     const Eigen::VectorXd& y,
-                                     const Eigen::VectorXd& dead,
-                                     const Eigen::VectorXd& beta) {
-    std::vector<CoxData> strata_data;
-    strata_data.emplace_back(y, dead, X);
+Eigen::VectorXd get_coxph_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::VectorXd& beta) {
+    std::vector<CoxData> strata_data; strata_data.emplace_back(y, dead, X);
     StratifiedCoxObjective obj(strata_data, X.cols());
-    Eigen::VectorXd grad(beta.size());
-    obj(beta, grad);
-    return -grad;
+    Eigen::VectorXd grad(beta.size()); obj(beta, grad); return -grad;
 }
 
-//' @title Compute Cox PH Hessian (C++)
-//' @description Calculates the Hessian of log partial likelihood for unstratified Cox regression.
-//' @param X Predictor matrix.
-//' @param y Survival times.
-//' @param dead Event indicators.
-//' @param beta Coefficient vector.
-//' @return Hessian matrix.
-//' @export
-//' @keywords internal
 // [[Rcpp::export]]
-Eigen::MatrixXd get_coxph_hessian_cpp(const Eigen::MatrixXd& X,
-                                       const Eigen::VectorXd& y,
-                                       const Eigen::VectorXd& dead,
-                                       const Eigen::VectorXd& beta) {
-    std::vector<CoxData> strata_data;
-    strata_data.emplace_back(y, dead, X);
-    StratifiedCoxObjective obj(strata_data, X.cols());
-    return -obj.hessian(beta);
+Eigen::MatrixXd get_coxph_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::VectorXd& beta) {
+    std::vector<CoxData> strata_data; strata_data.emplace_back(y, dead, X);
+    StratifiedCoxObjective obj(strata_data, X.cols()); return -obj.hessian(beta);
 }
 
-//' @title Compute Stratified Cox PH Score (C++)
-//' @description Calculates the score vector (gradient of log partial likelihood) for stratified Cox regression.
-//' @param X Predictor matrix.
-//' @param y Survival times.
-//' @param dead Event indicators.
-//' @param strata Integer vector of strata IDs.
-//' @param beta Coefficient vector.
-//' @return Score vector.
-//' @export
-//' @keywords internal
 // [[Rcpp::export]]
-Eigen::VectorXd get_stratified_coxph_score_cpp(const Eigen::MatrixXd& X,
-                                                const Eigen::VectorXd& y,
-                                                const Eigen::VectorXd& dead,
-                                                const Rcpp::IntegerVector& strata,
-                                                const Eigen::VectorXd& beta) {
-    const int n = y.size();
-    const int p = X.cols();
-    std::vector<int> strata_v(strata.begin(), strata.end());
-    std::vector<int> unique_strata = strata_v;
-    std::sort(unique_strata.begin(), unique_strata.end());
-    unique_strata.erase(std::unique(unique_strata.begin(), unique_strata.end()), unique_strata.end());
-
-    std::vector<CoxData> strata_data;
-    strata_data.reserve(unique_strata.size());
-    for (int s : unique_strata) {
-        std::vector<int> idx;
-        for (int i = 0; i < n; ++i) if (strata_v[i] == s) idx.push_back(i);
-        const int ns = (int)idx.size();
-        Eigen::VectorXd y_s(ns), dead_s(ns);
-        Eigen::MatrixXd X_s(ns, p);
-        for (int ii = 0; ii < ns; ++ii) {
-            y_s[ii] = y[idx[ii]]; dead_s[ii] = dead[idx[ii]];
-            X_s.row(ii) = X.row(idx[ii]);
-        }
-        strata_data.emplace_back(y_s, dead_s, X_s);
+Eigen::VectorXd get_stratified_coxph_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Rcpp::IntegerVector& strata, const Eigen::VectorXd& beta) {
+    const int n = y.size(); const int p = X.cols();
+    std::map<int, std::vector<int>> strata_map; for (int i = 0; i < n; ++i) strata_map[strata[i]].push_back(i);
+    std::vector<CoxData> strata_data; strata_data.reserve(strata_map.size());
+    for (auto const& [sid, idx] : strata_map) {
+        int ns = (int)idx.size(); Eigen::VectorXd ys(ns), ds(ns); Eigen::MatrixXd Xs(ns, p);
+        for (int ii = 0; ii < ns; ++ii) { int id = idx[ii]; ys[ii] = y[id]; ds[ii] = dead[id]; Xs.row(ii) = X.row(id); }
+        strata_data.emplace_back(ys, ds, Xs);
     }
-    StratifiedCoxObjective obj(strata_data, p);
-    Eigen::VectorXd grad(beta.size());
-    obj(beta, grad);
-    return -grad;
+    StratifiedCoxObjective obj(strata_data, p); Eigen::VectorXd grad(beta.size()); obj(beta, grad); return -grad;
 }
 
-//' @title Compute Stratified Cox PH Hessian (C++)
-//' @description Calculates the Hessian of log partial likelihood for stratified Cox regression.
-//' @param X Predictor matrix.
-//' @param y Survival times.
-//' @param dead Event indicators.
-//' @param strata Integer vector of strata IDs.
-//' @param beta Coefficient vector.
-//' @return Hessian matrix.
-//' @export
-//' @keywords internal
 // [[Rcpp::export]]
-Eigen::MatrixXd get_stratified_coxph_hessian_cpp(const Eigen::MatrixXd& X,
-                                                   const Eigen::VectorXd& y,
-                                                   const Eigen::VectorXd& dead,
-                                                   const Rcpp::IntegerVector& strata,
-                                                   const Eigen::VectorXd& beta) {
-    const int n = y.size();
-    const int p = X.cols();
-    std::vector<int> strata_v(strata.begin(), strata.end());
-    std::vector<int> unique_strata = strata_v;
-    std::sort(unique_strata.begin(), unique_strata.end());
-    unique_strata.erase(std::unique(unique_strata.begin(), unique_strata.end()), unique_strata.end());
-
-    std::vector<CoxData> strata_data;
-    strata_data.reserve(unique_strata.size());
-    for (int s : unique_strata) {
-        std::vector<int> idx;
-        for (int i = 0; i < n; ++i) if (strata_v[i] == s) idx.push_back(i);
-        const int ns = (int)idx.size();
-        Eigen::VectorXd y_s(ns), dead_s(ns);
-        Eigen::MatrixXd X_s(ns, p);
-        for (int ii = 0; ii < ns; ++ii) {
-            y_s[ii] = y[idx[ii]]; dead_s[ii] = dead[idx[ii]];
-            X_s.row(ii) = X.row(idx[ii]);
-        }
-        strata_data.emplace_back(y_s, dead_s, X_s);
+Eigen::MatrixXd get_stratified_coxph_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Rcpp::IntegerVector& strata, const Eigen::VectorXd& beta) {
+    const int n = y.size(); const int p = X.cols();
+    std::map<int, std::vector<int>> strata_map; for (int i = 0; i < n; ++i) strata_map[strata[i]].push_back(i);
+    std::vector<CoxData> strata_data; strata_data.reserve(strata_map.size());
+    for (auto const& [sid, idx] : strata_map) {
+        int ns = (int)idx.size(); Eigen::VectorXd ys(ns), ds(ns); Eigen::MatrixXd Xs(ns, p);
+        for (int ii = 0; ii < ns; ++ii) { int id = idx[ii]; ys[ii] = y[id]; ds[ii] = dead[id]; Xs.row(id) = X.row(id); } // Fixed typo here (row(ii))
+        strata_data.emplace_back(ys, ds, Xs);
     }
-    StratifiedCoxObjective obj(strata_data, p);
-    return -obj.hessian(beta);
+    StratifiedCoxObjective obj(strata_data, p); return -obj.hessian(beta);
 }

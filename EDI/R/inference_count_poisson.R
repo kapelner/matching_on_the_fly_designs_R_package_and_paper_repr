@@ -83,7 +83,13 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 						warm_start_fisher_info = ws_args$warm_start_fisher_info,
 						smart_cold_start = private$smart_cold_start_default
 					)
-					list(b = res$b, XtWX = res$XtWX, ssq_b_j = NA_real_, j_treat = j_treat)
+					XtWX = res$XtWX
+					ssq_b_j = NA_real_
+					if (!estimate_only && !is.null(XtWX) && is.matrix(XtWX) && j_treat <= nrow(XtWX)) {
+						inv_XtWX = tryCatch(solve(XtWX), error = function(e) NULL)
+						if (!is.null(inv_XtWX) && is.finite(inv_XtWX[j_treat, j_treat]) && inv_XtWX[j_treat, j_treat] > 0) ssq_b_j = inv_XtWX[j_treat, j_treat]
+					}
+					list(b = res$b, XtWX = XtWX, ssq_b_j = ssq_b_j, j_treat = j_treat)
 				},
 				fit_ok = function(mod, X_fit, keep){
 					!is.null(mod) && length(mod$b) >= mod$j_treat && is.finite(mod$b[mod$j_treat])
@@ -97,7 +103,8 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 			}
 			j_treat = attempt$fit$j_treat %||% 2L
 			private$cached_values$beta_hat_T = as.numeric(attempt$fit$b[j_treat])
-			private$cached_values$s_beta_hat_T = NA_real_
+			ssq = attempt$fit$ssq_b_j
+			private$cached_values$s_beta_hat_T = if (!is.null(ssq) && is.finite(ssq) && ssq > 0) sqrt(ssq) else NA_real_
 			private$set_fit_warm_start(
 				as.numeric(attempt$fit$b),
 				"beta",

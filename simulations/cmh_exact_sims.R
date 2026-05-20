@@ -19,16 +19,17 @@ sim = SimulationFramework$new(
         design_classes_and_params     = list(
                                           DesignFixediBCRD,
                                           DesignFixedBinaryMatch,
-                                          DesignFixedOptimalBlocks =   list(B = 4),
-                                          DesignFixedOptimalBlocks =   list(B = 8),
-                                          DesignFixedOptimalBlocks =   list(B = 16),
-                                          DesignFixedOptimalBlocks =   list(B = 32),
-                                          DesignFixedBlocking =        list(B_target = 4,  exact_num_blocks = TRUE),
-                                          DesignFixedBlocking =        list(B_target = 8,  exact_num_blocks = TRUE),
-                                          DesignFixedBlocking =        list(B_target = 16, exact_num_blocks = TRUE),
-                                          DesignFixedBlocking =        list(B_target = 32, exact_num_blocks = TRUE),
-                                          DesignFixedGreedy =          list(objective = "abs_sum_diff"),
-                                          DesignFixedRerandomization = list(prop_acceptable = 0.01) 
+                                          DesignFixedOptimalBlocks =                list(B = 4),
+                                          DesignFixedOptimalBlocks =                list(B = 8),
+                                          DesignFixedOptimalBlocks =                list(B = 16),
+                                          DesignFixedOptimalBlocks =                list(B = 32),
+                                          DesignFixedBlocking =                     list(B_target = 4,  exact_num_blocks = TRUE),
+                                          DesignFixedBlocking =                     list(B_target = 8,  exact_num_blocks = TRUE),
+                                          DesignFixedBlocking =                     list(B_target = 16, exact_num_blocks = TRUE),
+                                          DesignFixedBlocking =                     list(B_target = 32, exact_num_blocks = TRUE),
+                                          DesignFixedGreedy =                       list(objective = "abs_sum_diff"),
+                                          DesignFixedMatchingGreedyPairSwitching =  list(objective = "abs_sum_diff"),
+                                          DesignFixedRerandomization =              list(prop_acceptable = 0.01) 
                                         ),
         inference_classes_and_params  = list(
                                           InferenceIncidWald,

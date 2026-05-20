@@ -336,107 +336,26 @@ fast_continuation_ratio_regression_with_var_cpp <- function(X, y, maxit = 100L, 
     .Call(`_EDI_fast_continuation_ratio_regression_with_var_cpp`, X, y, maxit, tol, warm_start_beta, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
-#' @title Fast Cox Proportional Hazards Regression (C++)
-#' @description High-performance Cox regression fitting using Breslow's method for ties.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of survival times.
-#' @param dead A numeric vector of event indicators (1=event, 0=censored).
-#' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-#' @param estimate_only If TRUE, only return coefficients and likelihood.
-#' @param maxit Maximum number of iterations.
-#' @param tol Convergence tolerance.
-#' @param cluster Optional vector of cluster IDs for robust variance.
-#' @param fixed_idx Optional indices of fixed parameters.
-#' @param fixed_values Optional values for fixed parameters.
-#' @param optimization_alg Optimization algorithm ("newton_raphson" or "lbfgs").
-#' @return A list containing coefficients, vcov (optional), and convergence status.
-#' @export
-#' @keywords internal
-#' @examples
-#' X = matrix(rnorm(100), 10, 10)
-#' y = runif(10)
-#' dead = rbinom(10, 1, 0.5)
-#' fast_coxph_regression_cpp(X, y, dead)
 fast_coxph_regression_cpp <- function(X, y, dead, warm_start_beta = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 20L, tol = 1e-9, cluster = NULL, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson", warm_start_fisher_info = NULL) {
     .Call(`_EDI_fast_coxph_regression_cpp`, X, y, dead, warm_start_beta, smart_cold_start, estimate_only, maxit, tol, cluster, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
-#' @title Fast Stratified Cox Proportional Hazards Regression (C++)
-#' @description High-performance stratified Cox regression fitting.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of survival times.
-#' @param dead A numeric vector of event indicators.
-#' @param strata An integer vector of strata IDs.
-#' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-#' @param estimate_only If TRUE, only return coefficients and likelihood.
-#' @param maxit Maximum number of iterations.
-#' @param tol Convergence tolerance.
-#' @param fixed_idx Optional indices of fixed parameters.
-#' @param fixed_values Optional values for fixed parameters.
-#' @param optimization_alg Optimization algorithm.
-#' @return A list containing coefficients, vcov, and convergence status.
-#' @export
-#' @keywords internal
-#' @examples
-#' X = matrix(rnorm(100), 10, 10)
-#' y = runif(10)
-#' dead = rbinom(10, 1, 0.5)
-#' strata = rep(1:2, each = 5)
-#' fast_stratified_coxph_regression_cpp(X, y, dead, strata)
 fast_stratified_coxph_regression_cpp <- function(X, y, dead, strata, warm_start_beta = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 20L, tol = 1e-9, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson", warm_start_fisher_info = NULL) {
     .Call(`_EDI_fast_stratified_coxph_regression_cpp`, X, y, dead, strata, warm_start_beta, smart_cold_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
-#' @title Compute Cox PH Score (C++)
-#' @description Calculates the score vector (gradient of log partial likelihood) for unstratified Cox regression.
-#' @param X Predictor matrix.
-#' @param y Survival times.
-#' @param dead Event indicators.
-#' @param beta Coefficient vector.
-#' @return Score vector.
-#' @export
-#' @keywords internal
 get_coxph_score_cpp <- function(X, y, dead, beta) {
     .Call(`_EDI_get_coxph_score_cpp`, X, y, dead, beta)
 }
 
-#' @title Compute Cox PH Hessian (C++)
-#' @description Calculates the Hessian of log partial likelihood for unstratified Cox regression.
-#' @param X Predictor matrix.
-#' @param y Survival times.
-#' @param dead Event indicators.
-#' @param beta Coefficient vector.
-#' @return Hessian matrix.
-#' @export
-#' @keywords internal
 get_coxph_hessian_cpp <- function(X, y, dead, beta) {
     .Call(`_EDI_get_coxph_hessian_cpp`, X, y, dead, beta)
 }
 
-#' @title Compute Stratified Cox PH Score (C++)
-#' @description Calculates the score vector (gradient of log partial likelihood) for stratified Cox regression.
-#' @param X Predictor matrix.
-#' @param y Survival times.
-#' @param dead Event indicators.
-#' @param strata Integer vector of strata IDs.
-#' @param beta Coefficient vector.
-#' @return Score vector.
-#' @export
-#' @keywords internal
 get_stratified_coxph_score_cpp <- function(X, y, dead, strata, beta) {
     .Call(`_EDI_get_stratified_coxph_score_cpp`, X, y, dead, strata, beta)
 }
 
-#' @title Compute Stratified Cox PH Hessian (C++)
-#' @description Calculates the Hessian of log partial likelihood for stratified Cox regression.
-#' @param X Predictor matrix.
-#' @param y Survival times.
-#' @param dead Event indicators.
-#' @param strata Integer vector of strata IDs.
-#' @param beta Coefficient vector.
-#' @return Hessian matrix.
-#' @export
-#' @keywords internal
 get_stratified_coxph_hessian_cpp <- function(X, y, dead, strata, beta) {
     .Call(`_EDI_get_stratified_coxph_hessian_cpp`, X, y, dead, strata, beta)
 }

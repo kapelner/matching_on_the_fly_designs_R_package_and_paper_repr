@@ -231,7 +231,11 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 		#' @param delta Null hypothesis value. Default 0.
 		#' @param B Number of Bayesian-bootstrap replicates. Default 501.
 		#' @param type Type of Bayesian-bootstrap p-value. Supported values are
-		#'   \code{"percentile"}, \code{"symmetric"}, and \code{"wald"}.
+		#'   \code{"percentile"} (default), \code{"symmetric"}, \code{"wald"},
+		#'   \code{"studentized"} / \code{"bootstrap-t"} (pivots by replicate SE from
+		#'   \code{compute_estimate_with_bootstrap_weights(..., estimate_only = FALSE)}),
+		#'   and \code{"bca"} (bias-corrected and accelerated via leave-one-unit-out
+		#'   Bayesian jackknife).
 		#' @param na.rm If \code{TRUE}, discard non-finite bootstrap replicates before
 		#'   computing the p-value. Otherwise, any non-finite replicate returns
 		#'   \code{NA}.
@@ -253,7 +257,23 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 			}
 			type = tolower(type %||% "percentile")
 			if (should_run_asserts()) {
-				assertChoice(type, c("percentile", "symmetric", "wald"))
+				assertChoice(type, c("percentile", "symmetric", "wald", "studentized", "bootstrap-t", "bca"))
+			}
+			est = as.numeric(self$compute_estimate())[1L]
+			if (!is.finite(est)) return(NA_real_)
+			if (type %in% c("studentized", "bootstrap-t")) {
+				boot_stats = private$approximate_bayesian_bootstrap_statistics_beta_hat_T(
+					B = B, show_progress = show_progress, na.rm = isTRUE(na.rm),
+					require_se = TRUE, weighting_unit_type = weighting_unit_type
+				)
+				ok = is.finite(boot_stats$theta) & is.finite(boot_stats$se) & boot_stats$se > 0
+				t_boot = abs(boot_stats$theta[ok] - est) / boot_stats$se[ok]
+				t_boot = t_boot[is.finite(t_boot)]
+				if (length(t_boot) < as.integer(min_number_usable_samples)) return(NA_real_)
+				se_hat = tryCatch(private$infer_original_se(), error = function(e) NA_real_)
+				if (!is.finite(se_hat) || se_hat <= 0) return(NA_real_)
+				t_obs = abs(est - delta) / se_hat
+				return(min(1, max(1 / length(t_boot), mean(t_boot >= t_obs))))
 			}
 			boot_distr = self$approximate_bayesian_bootstrap_distribution_beta_hat_T(
 				B = B,
@@ -263,8 +283,6 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 			if (isTRUE(na.rm)) boot_distr = boot_distr[is.finite(boot_distr)]
 			else if (any(!is.finite(boot_distr))) return(NA_real_)
 			if (length(boot_distr) < as.integer(min_number_usable_samples)) return(NA_real_)
-			est = as.numeric(self$compute_estimate())[1L]
-			if (!is.finite(est)) return(NA_real_)
 			if (type == "percentile") {
 				boot_null = boot_distr - mean(boot_distr) + delta
 				n_bs = length(boot_null)
@@ -279,6 +297,12 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 				n_bs = length(D_boot)
 				return(min(1, max(1 / n_bs, mean(D_boot >= D_obs))))
 			}
+			if (type == "bca") {
+				return(tryCatch(
+					private$pval_bayesian_bca(boot_distr, est, delta, weighting_unit_type = weighting_unit_type),
+					error = function(e) NA_real_
+				))
+			}
 			se_boot = stats::sd(boot_distr)
 			if (!is.finite(se_boot) || se_boot <= 0) return(NA_real_)
 			2 * stats::pnorm(-abs((est - delta) / se_boot))
@@ -289,7 +313,11 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 		#' @param alpha Significance level. Default 0.05.
 		#' @param B Number of Bayesian-bootstrap replicates. Default 501.
 		#' @param type Type of Bayesian-bootstrap interval. Supported values are
-		#'   \code{"percentile"}, \code{"basic"}, and \code{"wald"}.
+		#'   \code{"percentile"} (default), \code{"basic"}, \code{"wald"},
+		#'   \code{"studentized"} / \code{"bootstrap-t"} (pivots by replicate SE from
+		#'   \code{compute_estimate_with_bootstrap_weights(..., estimate_only = FALSE)}),
+		#'   and \code{"bca"} (bias-corrected and accelerated via leave-one-unit-out
+		#'   Bayesian jackknife).
 		#' @param na.rm If \code{TRUE}, discard non-finite bootstrap replicates before
 		#'   constructing the interval.
 		#' @param show_progress A flag indicating whether a progress bar should be displayed.
@@ -310,12 +338,22 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 			}
 			type = tolower(type %||% "percentile")
 			if (should_run_asserts()) {
-				assertChoice(type, c("percentile", "basic", "wald"))
+				assertChoice(type, c("percentile", "basic", "wald", "studentized", "bootstrap-t", "bca"))
 			}
 			est = as.numeric(self$compute_estimate())[1L]
 			ci = c(NA_real_, NA_real_)
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 			if (!is.finite(est)) return(ci)
+			if (type %in% c("studentized", "bootstrap-t")) {
+				boot_stats = private$approximate_bayesian_bootstrap_statistics_beta_hat_T(
+					B = B, show_progress = show_progress, na.rm = isTRUE(na.rm),
+					require_se = TRUE, weighting_unit_type = weighting_unit_type
+				)
+				ok = is.finite(boot_stats$theta) & is.finite(boot_stats$se) & boot_stats$se > 0
+				if (sum(ok) < as.integer(min_number_usable_samples)) return(ci)
+				ci[] = tryCatch(private$ci_studentized(boot_stats, alpha, est), error = function(e) c(NA_real_, NA_real_))
+				return(ci)
+			}
 			boot_distr = self$approximate_bayesian_bootstrap_distribution_beta_hat_T(
 				B = B,
 				show_progress = show_progress,
@@ -328,6 +366,13 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 				if (!is.finite(se_boot) || se_boot <= 0) return(ci)
 				z = stats::qnorm(1 - alpha / 2)
 				ci[] = c(est - z * se_boot, est + z * se_boot)
+				return(ci)
+			}
+			if (type == "bca") {
+				ci[] = tryCatch(
+					private$ci_bayesian_bca(boot_distr, alpha, est, weighting_unit_type = weighting_unit_type),
+					error = function(e) c(NA_real_, NA_real_)
+				)
 				return(ci)
 			}
 			ci[] = private$ci_from_boot_distribution(boot_distr, alpha, type, est = est)
@@ -434,6 +479,133 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 				return(NA_real_)
 			}
 			theta
+		},
+		approximate_bayesian_bootstrap_statistics_beta_hat_T = function(B = 501, show_progress = TRUE, na.rm = TRUE, require_se = FALSE, weighting_unit_type = NULL) {
+			if (!isTRUE(require_se)) {
+				theta = self$approximate_bayesian_bootstrap_distribution_beta_hat_T(
+					B = B, show_progress = show_progress, weighting_unit_type = weighting_unit_type
+				)
+				if (isTRUE(na.rm)) theta = theta[is.finite(theta)]
+				return(list(theta = theta, se = rep(NA_real_, length(theta))))
+			}
+			stats_cache_key = paste0("stats::", private$bayesian_bootstrap_cache_key(B, weighting_unit_type))
+			if (!is.null(private$cached_values$bayes_boot_stats_cache[[stats_cache_key]])) {
+				cached = private$cached_values$bayes_boot_stats_cache[[stats_cache_key]]
+				if (isTRUE(na.rm)) {
+					ok = is.finite(cached$theta) & is.finite(cached$se) & cached$se > 0
+					return(list(theta = cached$theta[ok], se = cached$se[ok]))
+				}
+				return(cached)
+			}
+			if (!is.null(private$seed)) {
+				had_seed = exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+				if (had_seed) old_seed = get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+				on.exit(
+					if (had_seed) assign(".Random.seed", old_seed, envir = .GlobalEnv) else rm(".Random.seed", envir = .GlobalEnv),
+					add = TRUE
+				)
+				set.seed(private$seed)
+			}
+			inf_work = self$duplicate(make_fork_cluster = FALSE)
+			inf_work$num_cores = 1L
+			stats_mat = matrix(NA_real_, nrow = B, ncol = 2L)
+			pb = if (isTRUE(show_progress) && B > 1L) {
+				pb_obj = utils::txtProgressBar(min = 0, max = B, style = 3)
+				on.exit(try(close(pb_obj), silent = TRUE), add = TRUE)
+				pb_obj
+			} else NULL
+			for (b in seq_len(B)) {
+				draw = private$bayesian_bootstrap_sample_weights(weighting_unit_type = weighting_unit_type)
+				tryCatch({
+					inf_work$.__enclos_env__$private$current_bayesian_bootstrap_context = draw$context
+					theta_b = as.numeric(inf_work$compute_estimate_with_bootstrap_weights(
+						subject_or_block_weights = draw$subject_or_block_weights,
+						estimate_only = FALSE
+					))[1L]
+					se_b = as.numeric(inf_work$.__enclos_env__$private$cached_values$s_beta_hat_T)[1L]
+					if (is.finite(theta_b)) stats_mat[b, 1L] = theta_b
+					if (is.finite(se_b) && se_b > 0) stats_mat[b, 2L] = se_b
+				}, error = function(e) NULL)
+				if (!is.null(pb)) utils::setTxtProgressBar(pb, b)
+			}
+			result = list(theta = stats_mat[, 1L], se = stats_mat[, 2L])
+			if (is.null(private$cached_values$bayes_boot_stats_cache)) private$cached_values$bayes_boot_stats_cache = list()
+			private$cached_values$bayes_boot_stats_cache[[stats_cache_key]] = result
+			if (isTRUE(na.rm)) {
+				ok = is.finite(result$theta) & is.finite(result$se) & result$se > 0
+				return(list(theta = result$theta[ok], se = result$se[ok]))
+			}
+			result
+		},
+		approximate_bayesian_jackknife_distribution_beta_hat_T = function(weighting_unit_type = NULL) {
+			jack_cache_key = weighting_unit_type %||% "default"
+			if (!is.null(private$cached_values$bayes_jack_distr_cache[[jack_cache_key]])) {
+				return(private$cached_values$bayes_jack_distr_cache[[jack_cache_key]])
+			}
+			ctx = private$build_bayesian_bootstrap_context(weighting_unit_type = weighting_unit_type)
+			n_units = ctx$n_units
+			if (n_units <= 1L) return(numeric(0))
+			unit_group_id = ctx$unit_group_id
+			group_sizes = tabulate(unit_group_id, nbins = max(unit_group_id))
+			inf_work = self$duplicate(make_fork_cluster = FALSE)
+			inf_work$num_cores = 1L
+			inf_work$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx
+			jack = vapply(seq_len(n_units), function(k) {
+				g = unit_group_id[k]
+				mg = group_sizes[g]
+				w = rep(1, n_units)
+				if (mg > 1L) {
+					w[which(unit_group_id == g)] = mg / (mg - 1)
+				}
+				w[k] = 0
+				tryCatch(
+					as.numeric(inf_work$compute_estimate_with_bootstrap_weights(
+						subject_or_block_weights = w,
+						estimate_only = TRUE
+					))[1L],
+					error = function(e) NA_real_
+				)
+			}, numeric(1))
+			if (is.null(private$cached_values$bayes_jack_distr_cache)) private$cached_values$bayes_jack_distr_cache = list()
+			private$cached_values$bayes_jack_distr_cache[[jack_cache_key]] = jack
+			jack
+		},
+		ci_bayesian_bca = function(boot_distr, alpha, est, weighting_unit_type = NULL) {
+			jack = private$approximate_bayesian_jackknife_distribution_beta_hat_T(weighting_unit_type = weighting_unit_type)
+			jack = jack[is.finite(jack)]
+			if (length(jack) < 2L) return(c(NA_real_, NA_real_))
+			p_less = mean(boot_distr < est)
+			p_less = pmin(1 - .Machine$double.eps, pmax(.Machine$double.eps, p_less))
+			z0 = stats::qnorm(p_less)
+			jack_bar = mean(jack)
+			num = sum((jack_bar - jack)^3)
+			den = 6 * (sum((jack_bar - jack)^2)^(3/2))
+			a = if (is.finite(den) && den > 0) num / den else 0
+			z_alpha = stats::qnorm(c(alpha / 2, 1 - alpha / 2))
+			adj = stats::pnorm(z0 + (z0 + z_alpha) / pmax(.Machine$double.eps, 1 - a * (z0 + z_alpha)))
+			adj = pmin(1, pmax(0, adj))
+			stats::quantile(boot_distr, probs = adj, names = FALSE, type = 8)
+		},
+		pval_bayesian_bca = function(boot_distr, est, delta, weighting_unit_type = NULL) {
+			jack = private$approximate_bayesian_jackknife_distribution_beta_hat_T(weighting_unit_type = weighting_unit_type)
+			jack = jack[is.finite(jack)]
+			if (length(jack) < 2L) return(NA_real_)
+			p_less = mean(boot_distr < est)
+			p_less = pmin(1 - .Machine$double.eps, pmax(.Machine$double.eps, p_less))
+			z0 = stats::qnorm(p_less)
+			jack_bar = mean(jack)
+			num = sum((jack_bar - jack)^3)
+			den = 6 * (sum((jack_bar - jack)^2)^(3/2))
+			a = if (is.finite(den) && den > 0) num / den else 0
+			p_delta = mean(boot_distr < delta)
+			p_delta = pmin(1 - .Machine$double.eps, pmax(.Machine$double.eps, p_delta))
+			z_delta = stats::qnorm(p_delta)
+			s = z_delta - z0
+			denom = 1 + a * s
+			if (!is.finite(denom) || abs(denom) < .Machine$double.eps) return(NA_real_)
+			adj_z = s / denom - z0
+			if (!is.finite(adj_z)) return(NA_real_)
+			min(1, 2 * min(stats::pnorm(adj_z), 1 - stats::pnorm(adj_z)))
 		},
 		compute_bayesian_bootstrap_distribution_with_reused_workers = function(draws, actual_cores, show_progress = FALSE){
 			B = length(draws)

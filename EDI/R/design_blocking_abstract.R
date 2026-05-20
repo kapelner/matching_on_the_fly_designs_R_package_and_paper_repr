@@ -20,6 +20,14 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 		is_blocking_design = function(){
 			isTRUE(private$blocking_capable) || !is.null(private$m)
 		},
+		#' @description Inject a precomputed matrix of assignment vectors for CMH SE estimation.
+		#' @param w_mat Integer matrix (n x se_est_num_vectors).
+		inject_cmh_se_w_mat = function(w_mat){
+			private$cmh_se_w_mat = w_mat
+			invisible(self)
+		},
+		#' @description Retrieve the precomputed CMH SE w_mat, or NULL if not set.
+		get_cmh_se_w_mat = function() private$cmh_se_w_mat,
 		#' @description Checks whether this design is a blocking design.
 		assert_blocking_design = function(){
 			if (should_run_asserts()) {
@@ -191,6 +199,7 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 		exact_num_blocks = FALSE,
 		equal_block_sizes = TRUE,
 		blocking_capable = FALSE,
+		cmh_se_w_mat = NULL,
 		get_strata_keys = function(){
 			n = private$t
 			if (n == 0) return(character(0))
