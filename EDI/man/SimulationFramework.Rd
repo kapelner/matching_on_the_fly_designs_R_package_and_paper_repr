@@ -7,8 +7,8 @@
 An R6 class for benchmarking experimental designs and inference methods by
 Monte Carlo simulation. Each replication generates synthetic covariates and
 responses, runs every requested \code{(design, inference)} pair, and records
-point estimates, confidence intervals, and p-values. Aggregated metrics are
-available from \code{$summarize()}.
+point estimates, confidence intervals, and p-values. Raw and aggregated
+results are available through \code{SimulationFrameworkReport}.
 }
 \details{
 Covariates are drawn independently from \eqn{\mathrm{Uniform}(0, 1)}.
@@ -64,30 +64,28 @@ sim = SimulationFramework$new(
   n = 100, p = 5, Nrep = 10, betaT = 1
 )
 sim$run()
-sim$summarize()
+report = SimulationFrameworkReport$new(sim)
+report$summarize()
 }
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-SimulationFramework-new}{\code{SimulationFramework$new()}}
-\item \href{#method-SimulationFramework-run}{\code{SimulationFramework$run()}}
-\item \href{#method-SimulationFramework-get_all_intermediate_data}{\code{SimulationFramework$get_all_intermediate_data()}}
-\item \href{#method-SimulationFramework-clear_all_intermediate_data_and_gc}{\code{SimulationFramework$clear_all_intermediate_data_and_gc()}}
-\item \href{#method-SimulationFramework-get_results}{\code{SimulationFramework$get_results()}}
-\item \href{#method-SimulationFramework-get_errors}{\code{SimulationFramework$get_errors()}}
-\item \href{#method-SimulationFramework-summarize}{\code{SimulationFramework$summarize()}}
-\item \href{#method-SimulationFramework-print}{\code{SimulationFramework$print()}}
-\item \href{#method-SimulationFramework-clone}{\code{SimulationFramework$clone()}}
-}
+  \itemize{
+    \item \href{#method-SimulationFramework-initialize}{\code{SimulationFramework$new()}}
+    \item \href{#method-SimulationFramework-run}{\code{SimulationFramework$run()}}
+    \item \href{#method-SimulationFramework-get_all_intermediate_data}{\code{SimulationFramework$get_all_intermediate_data()}}
+    \item \href{#method-SimulationFramework-clear_all_intermediate_data_and_gc}{\code{SimulationFramework$clear_all_intermediate_data_and_gc()}}
+    \item \href{#method-SimulationFramework-clone}{\code{SimulationFramework$clone()}}
+  }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SimulationFramework-new"></a>}}
-\if{latex}{\out{\hypertarget{method-SimulationFramework-new}{}}}
-\subsection{Method \code{new()}}{
-Create a new \code{SimulationFramework}.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$new(
+\if{html}{\out{<a id="method-SimulationFramework-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-SimulationFramework-initialize}{}}}
+\subsection{\code{SimulationFramework$new()}}{
+  Create a new \code{SimulationFramework}.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{SimulationFramework$new(
   response_type,
   design_classes_and_params = NULL,
   inference_classes_and_params = NULL,
@@ -129,19 +127,20 @@ Create a new \code{SimulationFramework}.
   inference_types_and_params = NULL,
   results_filename = "simulation_framework_results.csv.bz2",
   continue_from_last_result_row = TRUE,
-  stop_on_error = TRUE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{response_type}}{\strong{(required)} Character scalar or vector.  The type of
+  reuse_cache = TRUE,
+  stop_on_error = TRUE,
+  save_to_disk_every_n_rep = 50L
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{response_type}}{\strong{(required)} Character scalar or vector.  The type of
 outcome variable.  One of \code{"continuous"}, \code{"incidence"},
 \code{"proportion"}, \code{"count"}, \code{"survival"},
 \code{"ordinal"}.}
-
-\item{\code{design_classes_and_params}}{\code{NULL} (default) or a list
+      \item{\code{design_classes_and_params}}{\code{NULL} (default) or a list
   describing design classes and optional constructor parameters.
   Unnamed R6 class generators use default parameters, for example
   \code{list(DesignSeqOneByOneKK21, DesignFixedBernoulli)}.  Named
@@ -176,8 +175,7 @@ outcome variable.  One of \code{"continuous"}, \code{"incidence"},
       \code{DesignFixedBlocking} and \code{DesignFixedBlockedCluster}.}
     \item{\code{B_target}}{Target number of blocks for \code{DesignFixedBlocking}.}
   }}
-
-\item{\code{inference_classes_and_params}}{\code{NULL} (default) or a list
+      \item{\code{inference_classes_and_params}}{\code{NULL} (default) or a list
 describing inference classes and optional constructor parameters.
 Unnamed R6 class generators use default parameters, for example
 \code{list(InferenceContinOLS, InferenceContinKKOLSIVWC)}.
@@ -191,14 +189,11 @@ inference class constructor.
 \code{response_type}: several universal classes that work with any
 design, plus representative KK-specific classes (silently skipped for
 non-KK designs at runtime).}
-
-\item{\code{n}}{Integer scalar or vector.  Sample size per simulation replication.  Default
+      \item{\code{n}}{Integer scalar or vector.  Sample size per simulation replication.  Default
 \code{100}.}
-
-\item{\code{p}}{Integer scalar or vector.  Number of covariates.  Must be \eqn{\ge 5} when
+      \item{\code{p}}{Integer scalar or vector.  Number of covariates.  Must be \eqn{\ge 5} when
 \code{cond_exp_func_model = "nonlinear"}.  Default \code{5}.}
-
-\item{\code{cond_exp_func_model}}{Character scalar or vector.  How the latent continuous signal is
+      \item{\code{cond_exp_func_model}}{Character scalar or vector.  How the latent continuous signal is
 constructed before transformation to the \code{response_type} scale.
 \describe{
   \item{\code{"linear"}}{Linear combination \eqn{X\beta} with
@@ -208,137 +203,105 @@ constructed before transformation to the \code{response_type} scale.
     requires \eqn{p \ge 5}.}
 }
 Default \code{"linear"}.}
-
-\item{\code{Nrep}}{Positive integer.  Number of Monte Carlo replications.
+      \item{\code{Nrep}}{Positive integer.  Number of Monte Carlo replications.
 Default \code{100}.}
-
-\item{\code{betaT}}{Numeric scalar or vector.  True treatment effect added to treated
+      \item{\code{betaT}}{Numeric scalar or vector.  True treatment effect added to treated
 subjects' outcomes.  The scale is response-type specific: additive for
 \code{continuous}, \code{proportion}, and \code{ordinal}; on the logit
 scale for \code{incidence}; log-multiplicative for \code{count} and
 \code{survival}.  Default \code{1}.  Set \code{betaT = 0} to check
 type-I error.}
-
-\item{\code{alpha}}{Numeric in \eqn{(0,1)}.  Significance level used for all
+      \item{\code{alpha}}{Numeric in \eqn{(0,1)}.  Significance level used for all
 confidence intervals and for computing power (\eqn{p < \alpha}).
 Default \code{0.05}.}
-
-\item{\code{B_boot}}{Positive integer.  Bootstrap resamples per CI / p-value
+      \item{\code{B_boot}}{Positive integer.  Bootstrap resamples per CI / p-value
 call.  Default \code{201}.}
-
-\item{\code{r_rand}}{Positive integer.  Randomisation draws per rand p-value
+      \item{\code{r_rand}}{Positive integer.  Randomisation draws per rand p-value
 call, and per bisection step of the rand CI.  Default \code{201}.}
-
-\item{\code{pval_epsilon}}{Numeric.  Bisection convergence tolerance for
+      \item{\code{pval_epsilon}}{Numeric.  Bisection convergence tolerance for
 randomisation-based CIs (\code{compute_rand_confidence_interval}).
 Default \code{0.02}.}
-
-\item{\code{sd_noise}}{Numeric \eqn{> 0}. Standard deviation of independent
+      \item{\code{sd_noise}}{Numeric \eqn{> 0}. Standard deviation of independent
 Gaussian noise added to each subject's outcome.  Default \code{1}.}
-
-\item{\code{n_ordinal_levels}}{Positive integer. Number of ordinal categories when
+      \item{\code{n_ordinal_levels}}{Positive integer. Number of ordinal categories when
 \code{response_type = "ordinal"}. Default \code{4L}.}
-
-\item{\code{proportion_epsilon}}{Numeric scalar. Small value added to proportion
+      \item{\code{proportion_epsilon}}{Numeric scalar. Small value added to proportion
 base responses to avoid 0 and 1. Default \code{1e-6}.}
-
-\item{\code{phi_proportion}}{Positive numeric scalar. Precision parameter for
+      \item{\code{phi_proportion}}{Positive numeric scalar. Precision parameter for
 beta-distributed observed proportion outcomes. The beta mean is
 \code{y_linear_model[i] + betaT * w[i]}. Default \code{100}.}
-
-\item{\code{k_survival}}{Positive numeric scalar. Scale parameter passed to
+      \item{\code{k_survival}}{Positive numeric scalar. Scale parameter passed to
 the Weibull draw for observed survival outcomes. Default \code{2}.}
-
-\item{\code{incidence_clamp}}{Numeric scalar in \eqn{(0, 0.5)}. Clamp applied
+      \item{\code{incidence_clamp}}{Numeric scalar in \eqn{(0, 0.5)}. Clamp applied
 to the Bernoulli probability for observed incidence outcomes.
 Default \code{1e-9}.}
-
-\item{\code{proportion_clamp}}{Numeric scalar in \eqn{(0, 0.5)}. Clamp applied
+      \item{\code{proportion_clamp}}{Numeric scalar in \eqn{(0, 0.5)}. Clamp applied
 to the beta mean for observed proportion outcomes. Default \code{1e-9}.}
-
-\item{\code{count_clamp}}{Positive numeric scalar. Minimum Poisson mean for
+      \item{\code{count_clamp}}{Positive numeric scalar. Minimum Poisson mean for
 observed count outcomes. Default \code{1e-9}.}
-
-\item{\code{survival_clamp}}{Positive numeric scalar. Minimum Weibull shape for
+      \item{\code{survival_clamp}}{Positive numeric scalar. Minimum Weibull shape for
 observed survival outcomes. Default \code{1e-9}.}
-
-\item{\code{survival_min_time}}{Numeric scalar. Minimum survival time and shift
+      \item{\code{survival_min_time}}{Numeric scalar. Minimum survival time and shift
 for base responses. Default \code{0.1}.}
-
-\item{\code{count_min_rate}}{Integer scalar. Minimum baseline rate for count
+      \item{\code{count_min_rate}}{Integer scalar. Minimum baseline rate for count
 responses. Default \code{0L}.}
-
-\item{\code{count_shift}}{Numeric scalar. Constant added to counts after
+      \item{\code{count_shift}}{Numeric scalar. Constant added to counts after
 zero-centering for base responses. Default \code{0}.}
-
-\item{\code{norm_sq_beta_vec}}{Positive numeric scalar. The desired squared
+      \item{\code{norm_sq_beta_vec}}{Positive numeric scalar. The desired squared
 Euclidean norm of the latent linear coefficient vector \eqn{\beta}.
 The generated vector is scaled to match this norm. Default \code{1}.}
-
-\item{\code{X_mat}}{Numeric matrix of dimensions \code{n x p}, or \code{NULL} (default).
+      \item{\code{X_mat}}{Numeric matrix of dimensions \code{n x p}, or \code{NULL} (default).
 If provided, these fixed covariates are used for every replication.
 In this case, \code{cov_draw_method} must be \code{NULL}.}
-
-\item{\code{num_cores}}{Positive integer.  Number of worker processes for
+      \item{\code{num_cores}}{Positive integer.  Number of worker processes for
 parallel execution of Monte Carlo replications.  Note that when
 \code{num_cores > 1}, parallelization *within* individual inference
 routines (e.g. bootstrap, randomization) is automatically disabled
-to prevent thread oversubscription. On Unix-like systems the
-replication loop uses forked workers; on non-Unix systems it uses
-\pkg{mirai} when available and otherwise falls back to serial
-execution with a warning. Default \code{1}.}
-
-\item{\code{seed}}{Integer or \code{NULL} (default).  Random seed for the
+to prevent thread oversubscription. On Unix-like systems a
+\code{makeForkCluster} pool is created once at \code{run()} start
+(persistent forked workers, zero per-replication fork overhead); on
+non-Unix systems \pkg{mirai} is used when available, otherwise
+execution falls back to serial with a warning. Default \code{1}.}
+      \item{\code{seed}}{Integer or \code{NULL} (default).  Random seed for the
 entire simulation run.}
-
-\item{\code{cov_draw_method}}{A function used to draw \code{n * p} i.i.d. covariate
+      \item{\code{cov_draw_method}}{A function used to draw \code{n * p} i.i.d. covariate
 values for every replication. The function must accept the total number
 of values as its first argument, followed by arguments in
 \code{cov_draw_method_args}.  Default \code{stats::rnorm}.
 Must be \code{NULL} when \code{X_mat} is supplied.}
-
-\item{\code{cov_draw_method_args}}{Named list of additional arguments forwarded to
+      \item{\code{cov_draw_method_args}}{Named list of additional arguments forwarded to
 \code{cov_draw_method} beyond the sample-size first argument. Default is
 \code{list(mean = 0, sd = 1)}.}
-
-\item{\code{random_X_draws}}{Logical. If \code{TRUE} (default), a new set of
+      \item{\code{random_X_draws}}{Logical. If \code{TRUE} (default), a new set of
 covariates is drawn for every single replication. If \code{FALSE},
 one set is drawn per \code{(n, p)} cell and shared across its
 replications.}
-
-\item{\code{prob_censoring}}{Numeric in \eqn{[0,1]}.  Per-subject independent
+      \item{\code{prob_censoring}}{Numeric in \eqn{[0,1]}.  Per-subject independent
 censoring probability; applied only when
 \code{response_type = "survival"}.  Default \code{0.25}.}
-
-\item{\code{custom_replication_data_generator}}{Optional function for custom
+      \item{\code{custom_replication_data_generator}}{Optional function for custom
 replication data. When supplied, it is called as
 \code{fn(state, rep)} and must return a list containing at least
 \code{X} and \code{y_linear_model}.}
-
-\item{\code{custom_apply_treatment_and_noise}}{Optional function for custom
+      \item{\code{custom_apply_treatment_and_noise}}{Optional function for custom
 response generation. When supplied, it is called as
 \code{fn(y_linear_model, w, state)} and must return a list with
 components \code{y} and \code{dead}.}
-
-\item{\code{custom_true_estimand}}{Optional function for a custom true
+      \item{\code{custom_true_estimand}}{Optional function for a custom true
 estimand. When supplied, it is called as
 \code{fn(y_linear_model, state)} and must return a numeric scalar.}
-
-\item{\code{verbose}}{Logical.  If \code{TRUE}, prints a message for every
+      \item{\code{verbose}}{Logical.  If \code{TRUE}, prints a message for every
 replication and for every \code{(design, inference)} pair that is
 skipped due to an error.  Default \code{TRUE}.}
-
-\item{\code{keep_all_intermediate_data}}{Logical. If \code{TRUE}, the framework
+      \item{\code{keep_all_intermediate_data}}{Logical. If \code{TRUE}, the framework
 saves the instantiated design and inference objects for every replication.
 These can be retrieved after the run using \code{$get_all_intermediate_data()}.
 Warning: this can consume a lot of memory for many replications.
 Default \code{FALSE}.}
-
-\item{\code{turn_off_asserts_for_speed}}{Logical. If \code{TRUE} (default),
+      \item{\code{turn_off_asserts_for_speed}}{Logical. If \code{TRUE} (default),
 all \pkg{checkmate} assertions across the package are globally
 disabled during the simulation run to improve performance.}
-
-\item{\code{inference_types_and_params}}{\code{NULL} (default) or a named list
+      \item{\code{inference_types_and_params}}{\code{NULL} (default) or a named list
   from inference type to a named list of arguments for that type's function
   invocation.  The list names control which inference outputs are computed.
   Valid names are \code{"asymp_ci"}, \code{"asymp_pval"},
@@ -354,140 +317,103 @@ disabled during the simulation run to improve performance.}
   rand_pval  = list(r = 999, transform_responses = TRUE)
 )}
   When no \code{*_ci} type is requested, \code{coverage} is omitted from
-  \code{$summarize()}.  When no \code{*_pval} type is requested,
-  \code{power} is omitted.}
-
-\item{\code{results_filename}}{Character scalar. The filename for the results
+  \code{SimulationFrameworkReport$summarize()}.  When no \code{*_pval}
+  type is requested, \code{power} is omitted.}
+      \item{\code{results_filename}}{Character scalar. The filename for the results
 file. Supported extensions are \code{.csv} and \code{.csv.bz2}.
 Default \code{"simulation_framework_results.csv.bz2"}.}
-
-\item{\code{continue_from_last_result_row}}{Logical. If \code{TRUE} (default),
+      \item{\code{continue_from_last_result_row}}{Logical. If \code{TRUE} (default),
 the framework loads existing results from \code{results_filename} and
 skips previously completed replications.}
-
-\item{\code{stop_on_error}}{Logical. If \code{TRUE} (default), any error raised
+      \item{\code{reuse_cache}}{Logical. If \code{TRUE} (default), expensive
+pre-generated design / SE cache objects are loaded from disk when
+available. If \code{FALSE}, these cache objects are regenerated from
+scratch, but each regenerated object is still saved to disk for later
+restarts.}
+      \item{\code{stop_on_error}}{Logical. If \code{TRUE} (default), any error raised
 during a simulation path aborts the run immediately. If \code{FALSE},
 the framework records the error, skips the failing path, and continues
 with the remaining replications / design / inference combinations. Use
 \code{$get_errors()} after \code{$run()} to inspect the captured
 errors.}
+      \item{\code{save_to_disk_every_n_rep}}{Positive integer. Results are flushed to
+the on-disk staging file only once every this many replications, and
+always after the final replication. Larger values reduce disk I/O
+overhead at the cost of losing more progress if the run is interrupted.
+Default \code{50L}.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SimulationFramework-run"></a>}}
 \if{latex}{\out{\hypertarget{method-SimulationFramework-run}{}}}
-\subsection{Method \code{run()}}{
-Execute the simulation replications.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$run()}\if{html}{\out{</div>}}
+\subsection{\code{SimulationFramework$run()}}{
+  Execute the simulation replications.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{SimulationFramework$run()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    The \code{SimulationFramework} object itself (invisibly).
+  }
 }
 
-\subsection{Returns}{
-The \code{SimulationFramework} object itself (invisibly).
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SimulationFramework-get_all_intermediate_data"></a>}}
 \if{latex}{\out{\hypertarget{method-SimulationFramework-get_all_intermediate_data}{}}}
-\subsection{Method \code{get_all_intermediate_data()}}{
-Retrieve the stored intermediate data (design and inference objects)
+\subsection{\code{SimulationFramework$get_all_intermediate_data()}}{
+  Retrieve the stored intermediate data (design and inference objects)
 for every replication. Only available if \code{keep_all_intermediate_data = TRUE}
 was passed to the constructor.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$get_all_intermediate_data()}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{SimulationFramework$get_all_intermediate_data()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A nested list containing the intermediate data for each replication,
+  or \code{NULL} if not recorded.
+  }
 }
 
-\subsection{Returns}{
-A nested list containing the intermediate data for each replication,
-  or \code{NULL} if not recorded.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SimulationFramework-clear_all_intermediate_data_and_gc"></a>}}
 \if{latex}{\out{\hypertarget{method-SimulationFramework-clear_all_intermediate_data_and_gc}{}}}
-\subsection{Method \code{clear_all_intermediate_data_and_gc()}}{
-Release all stored intermediate data and invoke the garbage collector.
+\subsection{\code{SimulationFramework$clear_all_intermediate_data_and_gc()}}{
+  Release all stored intermediate data and invoke the garbage collector.
 Useful after inspecting intermediate results to free memory before
 further processing.  Sets the internal store to \code{NULL} and calls
 \code{gc()}.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$clear_all_intermediate_data_and_gc()}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{SimulationFramework$clear_all_intermediate_data_and_gc()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    The \code{SimulationFramework} object itself (invisibly).
+  }
 }
 
-\subsection{Returns}{
-The \code{SimulationFramework} object itself (invisibly).
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SimulationFramework-get_results"></a>}}
-\if{latex}{\out{\hypertarget{method-SimulationFramework-get_results}{}}}
-\subsection{Method \code{get_results()}}{
-Get the raw results of the simulation.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$get_results()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-A \code{data.table} containing one row per (replication, design,
-  inference class, and inference type.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SimulationFramework-get_errors"></a>}}
-\if{latex}{\out{\hypertarget{method-SimulationFramework-get_errors}{}}}
-\subsection{Method \code{get_errors()}}{
-Return all errors captured during the most recent run.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$get_errors()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-A list of named lists, one per captured error, including the
-  simulation cell metadata, replication number, design / inference path,
-  user-supplied parameters, error stage, and error message.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SimulationFramework-summarize"></a>}}
-\if{latex}{\out{\hypertarget{method-SimulationFramework-summarize}{}}}
-\subsection{Method \code{summarize()}}{
-Aggregate and summarize simulation results.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$summarize()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-A \code{data.table} with aggregated metrics (MSE, coverage,
-  power) grouped by design, inference class, and inference type.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-SimulationFramework-print"></a>}}
-\if{latex}{\out{\hypertarget{method-SimulationFramework-print}{}}}
-\subsection{Method \code{print()}}{
-Print a summary of the \code{SimulationFramework} configuration and status.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$print()}\if{html}{\out{</div>}}
-}
-
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SimulationFramework-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-SimulationFramework-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SimulationFramework$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{SimulationFramework$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{SimulationFramework$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }

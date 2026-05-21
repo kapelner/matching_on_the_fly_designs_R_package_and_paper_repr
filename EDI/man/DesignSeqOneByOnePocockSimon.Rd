@@ -4,11 +4,6 @@
 \alias{DesignSeqOneByOnePocockSimon}
 \title{Pocock & Simon's Minimization Sequential Design}
 \description{
-Pocock & Simon's Minimization Sequential Design
-
-Pocock & Simon's Minimization Sequential Design
-}
-\details{
 An R6 Class encapsulating the data and functionality for a Pocock & Simon
 sequential experimental design.
 This design minimizes the imbalance across treatments for multiple covariates.
@@ -18,74 +13,75 @@ seq_des = DesignSeqOneByOnePocockSimon$new(strata_cols = 'x1', n = 6, response_t
 seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = factor(1, levels=1:2)))
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignBlocking]{EDI::DesignBlocking}} -> \code{\link[EDI:DesignMatching]{EDI::DesignMatching}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOnePocockSimon}
+\code{Design} -> \code{DesignBlocking} -> \code{DesignMatching} -> \code{DesignSeqOneByOne} -> \code{DesignSeqOneByOnePocockSimon}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-DesignSeqOneByOnePocockSimon-new}{\code{DesignSeqOneByOnePocockSimon$new()}}
-\item \href{#method-DesignSeqOneByOnePocockSimon-assign_wt}{\code{DesignSeqOneByOnePocockSimon$assign_wt()}}
-\item \href{#method-DesignSeqOneByOnePocockSimon-draw_ws_according_to_design}{\code{DesignSeqOneByOnePocockSimon$draw_ws_according_to_design()}}
-\item \href{#method-DesignSeqOneByOnePocockSimon-clone}{\code{DesignSeqOneByOnePocockSimon$clone()}}
+  \itemize{
+    \item \href{#method-DesignSeqOneByOnePocockSimon-initialize}{\code{DesignSeqOneByOnePocockSimon$new()}}
+    \item \href{#method-DesignSeqOneByOnePocockSimon-assign_wt}{\code{DesignSeqOneByOnePocockSimon$assign_wt()}}
+    \item \href{#method-DesignSeqOneByOnePocockSimon-draw_ws_according_to_design}{\code{DesignSeqOneByOnePocockSimon$draw_ws_according_to_design()}}
+    \item \href{#method-DesignSeqOneByOnePocockSimon-clone}{\code{DesignSeqOneByOnePocockSimon$clone()}}
+  }
 }
-}
-\if{html}{\out{
-<details><summary>Inherited methods</summary>
+\if{html}{\out{<details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_all_subject_responses"><a href='../../EDI/html/Design.html#method-Design-add_all_subject_responses'><code>EDI::Design$add_all_subject_responses()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_one_subject_response"><a href='../../EDI/html/Design.html#method-Design-add_one_subject_response'><code>EDI::Design$add_one_subject_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="any_censoring"><a href='../../EDI/html/Design.html#method-Design-any_censoring'><code>EDI::Design$any_censoring()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_all_responses_recorded"><a href='../../EDI/html/Design.html#method-Design-assert_all_responses_recorded'><code>EDI::Design$assert_all_responses_recorded()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../../EDI/html/Design.html#method-Design-assert_all_subjects_arrived'><code>EDI::Design$assert_all_subjects_arrived()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_even_allocation"><a href='../../EDI/html/Design.html#method-Design-assert_even_allocation'><code>EDI::Design$assert_even_allocation()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_fixed_sample"><a href='../../EDI/html/Design.html#method-Design-assert_fixed_sample'><code>EDI::Design$assert_fixed_sample()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="check_experiment_completed"><a href='../../EDI/html/Design.html#method-Design-check_experiment_completed'><code>EDI::Design$check_experiment_completed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="duplicate"><a href='../../EDI/html/Design.html#method-Design-duplicate'><code>EDI::Design$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_X"><a href='../../EDI/html/Design.html#method-Design-get_X'><code>EDI::Design$get_X()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_X_imp"><a href='../../EDI/html/Design.html#method-Design-get_X_imp'><code>EDI::Design$get_X_imp()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_X_raw"><a href='../../EDI/html/Design.html#method-Design-get_X_raw'><code>EDI::Design$get_X_raw()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_dead"><a href='../../EDI/html/Design.html#method-Design-get_dead'><code>EDI::Design$get_dead()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_missingness_method"><a href='../../EDI/html/Design.html#method-Design-get_missingness_method'><code>EDI::Design$get_missingness_method()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_model_formula"><a href='../../EDI/html/Design.html#method-Design-get_model_formula'><code>EDI::Design$get_model_formula()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_n"><a href='../../EDI/html/Design.html#method-Design-get_n'><code>EDI::Design$get_n()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_ordinal_levels"><a href='../../EDI/html/Design.html#method-Design-get_ordinal_levels'><code>EDI::Design$get_ordinal_levels()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_original_ordinal_levels"><a href='../../EDI/html/Design.html#method-Design-get_original_ordinal_levels'><code>EDI::Design$get_original_ordinal_levels()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_prob_T"><a href='../../EDI/html/Design.html#method-Design-get_prob_T'><code>EDI::Design$get_prob_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_response_type"><a href='../../EDI/html/Design.html#method-Design-get_response_type'><code>EDI::Design$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_response_type_original"><a href='../../EDI/html/Design.html#method-Design-get_response_type_original'><code>EDI::Design$get_response_type_original()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_t"><a href='../../EDI/html/Design.html#method-Design-get_t'><code>EDI::Design$get_t()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_w"><a href='../../EDI/html/Design.html#method-Design-get_w'><code>EDI::Design$get_w()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y"><a href='../../EDI/html/Design.html#method-Design-get_y'><code>EDI::Design$get_y()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y_original"><a href='../../EDI/html/Design.html#method-Design-get_y_original'><code>EDI::Design$get_y_original()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="has_covariates"><a href='../../EDI/html/Design.html#method-Design-has_covariates'><code>EDI::Design$has_covariates()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="overwrite_all_subject_assignments"><a href='../../EDI/html/Design.html#method-Design-overwrite_all_subject_assignments'><code>EDI::Design$overwrite_all_subject_assignments()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="transform_y"><a href='../../EDI/html/Design.html#method-Design-transform_y'><code>EDI::Design$transform_y()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="add_all_subject_matched_pair_ids"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-add_all_subject_matched_pair_ids'><code>EDI::DesignBlocking$add_all_subject_matched_pair_ids()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="assert_blocking_design"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-assert_blocking_design'><code>EDI::DesignBlocking$assert_blocking_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="assert_equal_block_sizes"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-assert_equal_block_sizes'><code>EDI::DesignBlocking$assert_equal_block_sizes()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="get_block_ids"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-get_block_ids'><code>EDI::DesignBlocking$get_block_ids()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="is_blocking_design"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-is_blocking_design'><code>EDI::DesignBlocking$is_blocking_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="is_complete_blocking_design"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-is_complete_blocking_design'><code>EDI::DesignBlocking$is_complete_blocking_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="set_m"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-set_m'><code>EDI::DesignBlocking$set_m()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="summarize_blocks"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-summarize_blocks'><code>EDI::DesignBlocking$summarize_blocks()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignMatching" data-id="assert_matching_design"><a href='../../EDI/html/DesignMatching.html#method-DesignMatching-assert_matching_design'><code>EDI::DesignMatching$assert_matching_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignMatching" data-id="get_matching_cluster_ids"><a href='../../EDI/html/DesignMatching.html#method-DesignMatching-get_matching_cluster_ids'><code>EDI::DesignMatching$get_matching_cluster_ids()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignMatching" data-id="is_matching_design"><a href='../../EDI/html/DesignMatching.html#method-DesignMatching-is_matching_design'><code>EDI::DesignMatching$is_matching_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignSeqOneByOne" data-id="add_one_subject"><a href='../../EDI/html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-add_one_subject'><code>EDI::DesignSeqOneByOne$add_one_subject()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignSeqOneByOne" data-id="add_one_subject_to_experiment_and_assign"><a href='../../EDI/html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-add_one_subject_to_experiment_and_assign'><code>EDI::DesignSeqOneByOne$add_one_subject_to_experiment_and_assign()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignSeqOneByOne" data-id="print_current_subject_assignment"><a href='../../EDI/html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-print_current_subject_assignment'><code>EDI::DesignSeqOneByOne$print_current_subject_assignment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignSeqOneByOne" data-id="supports_resampling"><a href='../../EDI/html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-supports_resampling'><code>EDI::DesignSeqOneByOne$supports_resampling()</code></a></span></li>
+  <li><code>Design$add_all_subject_responses()</code></li>
+  <li><code>Design$add_one_subject_response()</code></li>
+  <li><code>Design$any_censoring()</code></li>
+  <li><code>Design$assert_all_responses_recorded()</code></li>
+  <li><code>Design$assert_all_subjects_arrived()</code></li>
+  <li><code>Design$assert_even_allocation()</code></li>
+  <li><code>Design$assert_fixed_sample()</code></li>
+  <li><code>Design$check_experiment_completed()</code></li>
+  <li><code>Design$duplicate()</code></li>
+  <li><code>Design$get_X()</code></li>
+  <li><code>Design$get_X_imp()</code></li>
+  <li><code>Design$get_X_raw()</code></li>
+  <li><code>Design$get_dead()</code></li>
+  <li><code>Design$get_missingness_method()</code></li>
+  <li><code>Design$get_model_formula()</code></li>
+  <li><code>Design$get_n()</code></li>
+  <li><code>Design$get_ordinal_levels()</code></li>
+  <li><code>Design$get_original_ordinal_levels()</code></li>
+  <li><code>Design$get_prob_T()</code></li>
+  <li><code>Design$get_response_type()</code></li>
+  <li><code>Design$get_response_type_original()</code></li>
+  <li><code>Design$get_t()</code></li>
+  <li><code>Design$get_w()</code></li>
+  <li><code>Design$get_y()</code></li>
+  <li><code>Design$get_y_original()</code></li>
+  <li><code>Design$has_covariates()</code></li>
+  <li><code>Design$is_fixed_sample_size()</code></li>
+  <li><code>Design$overwrite_all_subject_assignments()</code></li>
+  <li><code>Design$transform_y()</code></li>
+  <li><code>DesignBlocking$add_all_subject_matched_pair_ids()</code></li>
+  <li><code>DesignBlocking$assert_blocking_design()</code></li>
+  <li><code>DesignBlocking$assert_equal_block_sizes()</code></li>
+  <li><code>DesignBlocking$get_block_ids()</code></li>
+  <li><code>DesignBlocking$get_cmh_se_w_mat()</code></li>
+  <li><code>DesignBlocking$inject_cmh_se_w_mat()</code></li>
+  <li><code>DesignBlocking$is_blocking_design()</code></li>
+  <li><code>DesignBlocking$is_complete_blocking_design()</code></li>
+  <li><code>DesignBlocking$set_m()</code></li>
+  <li><code>DesignBlocking$summarize_blocks()</code></li>
+  <li><code>DesignMatching$assert_matching_design()</code></li>
+  <li><code>DesignMatching$get_matching_cluster_ids()</code></li>
+  <li><code>DesignMatching$is_matching_design()</code></li>
+  <li><code>DesignSeqOneByOne$add_one_subject()</code></li>
+  <li><code>DesignSeqOneByOne$add_one_subject_to_experiment_and_assign()</code></li>
+  <li><code>DesignSeqOneByOne$print_current_subject_assignment()</code></li>
+  <li><code>DesignSeqOneByOne$supports_resampling()</code></li>
 </ul>
-</details>
-}}
+</details>}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignSeqOneByOnePocockSimon-new"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignSeqOneByOnePocockSimon-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a Pocock & Simon sequential experimental design
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOnePocockSimon$new(
+\if{html}{\out{<a id="method-DesignSeqOneByOnePocockSimon-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignSeqOneByOnePocockSimon-initialize}{}}}
+\subsection{\code{DesignSeqOneByOnePocockSimon$new()}}{
+  Initialize a Pocock & Simon sequential experimental design
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignSeqOneByOnePocockSimon$new(
   strata_cols,
   weights = NULL,
   p_best = 0.8,
@@ -97,90 +93,87 @@ Initialize a Pocock & Simon sequential experimental design
   missingness_method = "impute",
   model_formula = ~.,
   seed = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{strata_cols}}{The names of the covariates to be used for minimization. These
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{strata_cols}}{The names of the covariates to be used for minimization. These
 must be factor or categorical variables.}
-
-\item{\code{weights}}{A numeric vector of weights for each covariate. Defaults to 1 for all.}
-
-\item{\code{p_best}}{The probability of assigning the treatment that minimizes the
+      \item{\code{weights}}{A numeric vector of weights for each covariate. Defaults to 1 for all.}
+      \item{\code{p_best}}{The probability of assigning the treatment that minimizes the
 imbalance. Defaults to 0.8.}
-
-\item{\code{response_type}}{The data type of response values.}
-
-\item{\code{prob_T}}{The probability of the treatment assignment.}
-
-\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
-
-\item{\code{n}}{The sample size.}
-
-\item{\code{verbose}}{Flag for verbosity.}
-
-\item{\code{missingness_method}}{How to handle missing values in covariates.}
-
-\item{\code{model_formula}}{A formula object.}
-
-\item{\code{seed}}{Integer seed for reproducibility.}
+      \item{\code{response_type}}{The data type of response values.}
+      \item{\code{prob_T}}{The probability of the treatment assignment.}
+      \item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+      \item{\code{n}}{The sample size.}
+      \item{\code{verbose}}{Flag for verbosity.}
+      \item{\code{missingness_method}}{How to handle missing values in covariates.}
+      \item{\code{model_formula}}{A formula object.}
+      \item{\code{seed}}{Integer seed for reproducibility.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A new `DesignSeqOneByOnePocockSimon` object
+  }
 }
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A new `DesignSeqOneByOnePocockSimon` object
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOnePocockSimon-assign_wt"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOnePocockSimon-assign_wt}{}}}
-\subsection{Method \code{assign_wt()}}{
-Assign the next subject to a treatment group using minimization.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOnePocockSimon$assign_wt()}\if{html}{\out{</div>}}
+\subsection{\code{DesignSeqOneByOnePocockSimon$assign_wt()}}{
+  Assign the next subject to a treatment group using minimization.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignSeqOneByOnePocockSimon$assign_wt()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    The treatment assignment (0 or 1)
+  }
 }
 
-\subsection{Returns}{
-The treatment assignment (0 or 1)
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOnePocockSimon-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOnePocockSimon-draw_ws_according_to_design}{}}}
-\subsection{Method \code{draw_ws_according_to_design()}}{
-Draw multiple treatment assignment vectors according to Pocock & Simon design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOnePocockSimon$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
+\subsection{\code{DesignSeqOneByOnePocockSimon$draw_ws_according_to_design()}}{
+  Draw multiple treatment assignment vectors according to Pocock & Simon design.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignSeqOneByOnePocockSimon$draw_ws_according_to_design(r = 100)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{r}}{The number of designs to draw.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A matrix of size n x r.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{The number of designs to draw.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A matrix of size n x r.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOnePocockSimon-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOnePocockSimon-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOnePocockSimon$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{DesignSeqOneByOnePocockSimon$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignSeqOneByOnePocockSimon$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }

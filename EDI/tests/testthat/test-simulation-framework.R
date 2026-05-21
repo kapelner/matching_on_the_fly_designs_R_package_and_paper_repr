@@ -356,6 +356,46 @@ test_that("SimulationFramework can write and reload csv.bz2 results", {
 	expect_equal(raw_second$estimate, raw_first$estimate)
 })
 
+test_that("SimulationFramework persists and reuses pregenerated design cache objects", {
+	results_file <- tempfile(fileext = ".csv")
+	make_sim <- function(reuse_cache) {
+		SimulationFramework$new(
+			response_type = "continuous",
+			design_classes_and_params = list(DesignFixedBinaryMatch),
+			inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
+			inference_types_and_params = list(asymp_pval = list(delta = 0)),
+			n = 8L,
+			p = 2L,
+			Nrep = 2L,
+			betaT = 0,
+			seed = 20260520L,
+			random_X_draws = FALSE,
+			results_filename = results_file,
+			continue_from_last_result_row = FALSE,
+			reuse_cache = reuse_cache,
+			verbose = FALSE,
+			turn_off_asserts_for_speed = FALSE
+		)
+	}
+
+	sim_first <- make_sim(TRUE)
+	sim_first$run()
+	cache_dir <- sim_first$.__enclos_env__$private$.simulation_cache_dir()
+	cache_files <- list.files(cache_dir, pattern = "\\.rds$", full.names = TRUE)
+	expect_length(cache_files, 1L)
+	cache_mtime_first <- file.info(cache_files)$mtime
+
+	Sys.sleep(1.1)
+	sim_reuse <- make_sim(TRUE)
+	sim_reuse$run()
+	expect_equal(file.info(cache_files)$mtime, cache_mtime_first)
+
+	Sys.sleep(1.1)
+	sim_refresh <- make_sim(FALSE)
+	sim_refresh$run()
+	expect_true(file.info(cache_files)$mtime > cache_mtime_first)
+})
+
 test_that("SimulationFramework summarize preserves raw metric precision", {
 	sim <- SimulationFramework$new(
 		response_type = "continuous",

@@ -4,11 +4,6 @@
 \alias{InferenceSurvivalCoxPHRegr}
 \title{Cox Proportional Hazards Regression Inference for Survival Responses}
 \description{
-Cox Proportional Hazards Regression Inference for Survival Responses
-
-Cox Proportional Hazards Regression Inference for Survival Responses
-}
-\details{
 Fits a Cox proportional hazards regression for survival responses using the
 treatment indicator and, optionally, all recorded covariates as predictors.
 }
@@ -24,169 +19,171 @@ inf$compute_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{EDI::InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{\link[EDI:InferenceAsympLikStdModCache]{EDI::InferenceAsympLikStdModCache}} -> \code{InferenceSurvivalCoxPHRegr}
+\code{Inference} -> \code{InferenceRand} -> \code{InferenceRandCI} -> \code{InferenceNonParamBootstrap} -> \code{InferenceBayesianBootstrap} -> \code{InferenceJackknife} -> \code{InferenceAsymp} -> \code{InferenceMLEorKMSummaryTable} -> \code{InferenceAsympLik} -> \code{InferenceParamBootstrap} -> \code{InferenceAsympLikStdModCache} -> \code{InferenceSurvivalCoxPHRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-InferenceSurvivalCoxPHRegr-new}{\code{InferenceSurvivalCoxPHRegr$new()}}
-\item \href{#method-InferenceSurvivalCoxPHRegr-compute_estimate}{\code{InferenceSurvivalCoxPHRegr$compute_estimate()}}
-\item \href{#method-InferenceSurvivalCoxPHRegr-compute_estimate_with_bootstrap_weights}{\code{InferenceSurvivalCoxPHRegr$compute_estimate_with_bootstrap_weights()}}
-\item \href{#method-InferenceSurvivalCoxPHRegr-clone}{\code{InferenceSurvivalCoxPHRegr$clone()}}
+  \itemize{
+    \item \href{#method-InferenceSurvivalCoxPHRegr-initialize}{\code{InferenceSurvivalCoxPHRegr$new()}}
+    \item \href{#method-InferenceSurvivalCoxPHRegr-compute_estimate}{\code{InferenceSurvivalCoxPHRegr$compute_estimate()}}
+    \item \href{#method-InferenceSurvivalCoxPHRegr-compute_estimate_with_bootstrap_weights}{\code{InferenceSurvivalCoxPHRegr$compute_estimate_with_bootstrap_weights()}}
+    \item \href{#method-InferenceSurvivalCoxPHRegr-clone}{\code{InferenceSurvivalCoxPHRegr$clone()}}
+  }
 }
-}
-\if{html}{\out{
-<details><summary>Inherited methods</summary>
+\if{html}{\out{<details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_analysis_data"><a href='../../EDI/html/Inference.html#method-Inference-get_analysis_data'><code>EDI::Inference$get_analysis_data()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_covariates"><a href='../../EDI/html/Inference.html#method-Inference-get_covariates'><code>EDI::Inference$get_covariates()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_design_object"><a href='../../EDI/html/Inference.html#method-Inference-get_design_object'><code>EDI::Inference$get_design_object()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_model_formula"><a href='../../EDI/html/Inference.html#method-Inference-get_model_formula'><code>EDI::Inference$get_model_formula()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_reason'><code>EDI::Inference$get_nonestimable_reason()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_stage'><code>EDI::Inference$get_nonestimable_stage()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-get_optimization_alg'><code>EDI::Inference$get_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response"><a href='../../EDI/html/Inference.html#method-Inference-get_response'><code>EDI::Inference$get_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response_type"><a href='../../EDI/html/Inference.html#method-Inference-get_response_type'><code>EDI::Inference$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>EDI::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="approximate_jackknife_distribution_beta_hat_T"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>EDI::InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_bias_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>EDI::InferenceJackknife$compute_jackknife_bias_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_corrected_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_corrected_estimate'><code>EDI::InferenceJackknife$compute_jackknife_corrected_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_estimate'><code>EDI::InferenceJackknife$compute_jackknife_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_standard_error"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_standard_error'><code>EDI::InferenceJackknife$compute_jackknife_standard_error()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_std_error"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_std_error'><code>EDI::InferenceJackknife$compute_jackknife_std_error()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_wald_confidence_interval"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_confidence_interval'><code>EDI::InferenceJackknife$compute_jackknife_wald_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_wald_two_sided_pval"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_two_sided_pval'><code>EDI::InferenceJackknife$compute_jackknife_wald_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_confidence_interval'><code>EDI::InferenceAsymp$compute_wald_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_two_sided_pval'><code>EDI::InferenceAsymp$compute_wald_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_asymp_confidence_interval'><code>EDI::InferenceAsympLik$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_asymp_two_sided_pval'><code>EDI::InferenceAsympLik$compute_asymp_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_gradient_confidence_interval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_gradient_confidence_interval'><code>EDI::InferenceAsympLik$compute_gradient_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_gradient_two_sided_pval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_gradient_two_sided_pval'><code>EDI::InferenceAsympLik$compute_gradient_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_lik_ratio_confidence_interval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_confidence_interval'><code>EDI::InferenceAsympLik$compute_lik_ratio_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_lik_ratio_two_sided_pval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_two_sided_pval'><code>EDI::InferenceAsympLik$compute_lik_ratio_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_score_confidence_interval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_score_confidence_interval'><code>EDI::InferenceAsympLik$compute_score_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_score_two_sided_pval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_score_two_sided_pval'><code>EDI::InferenceAsympLik$compute_score_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_information_preference"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_information_preference'><code>EDI::InferenceAsympLik$get_information_preference()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_information_source_used"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_information_source_used'><code>EDI::InferenceAsympLik$get_information_source_used()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_supported_information_preferences"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_supported_information_preferences'><code>EDI::InferenceAsympLik$get_supported_information_preferences()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_supported_testing_types"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_supported_testing_types'><code>EDI::InferenceAsympLik$get_supported_testing_types()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>EDI::InferenceAsympLik$get_testing_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_information_preference"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>EDI::InferenceAsympLik$set_information_preference()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>EDI::InferenceAsympLik$set_testing_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_confidence_interval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_two_sided_pval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_two_sided_pval()</code></a></span></li>
+  <li><code>Inference$compute_exact_confidence_interval()</code></li>
+  <li><code>Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
+  <li><code>Inference$duplicate()</code></li>
+  <li><code>Inference$get_analysis_data()</code></li>
+  <li><code>Inference$get_covariates()</code></li>
+  <li><code>Inference$get_design_object()</code></li>
+  <li><code>Inference$get_model_formula()</code></li>
+  <li><code>Inference$get_nonestimable_reason()</code></li>
+  <li><code>Inference$get_nonestimable_stage()</code></li>
+  <li><code>Inference$get_optimization_alg()</code></li>
+  <li><code>Inference$get_response()</code></li>
+  <li><code>Inference$get_response_type()</code></li>
+  <li><code>Inference$get_treatment()</code></li>
+  <li><code>Inference$is_nonestimable()</code></li>
+  <li><code>Inference$set_optimization_alg()</code></li>
+  <li><code>Inference$set_seed()</code></li>
+  <li><code>InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></li>
+  <li><code>InferenceRand$set_custom_randomization_statistic_function()</code></li>
+  <li><code>InferenceRandCI$compute_rand_confidence_interval()</code></li>
+  <li><code>InferenceRandCI$compute_rand_two_sided_pval()</code></li>
+  <li><code>InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></li>
+  <li><code>InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></li>
+  <li><code>InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></li>
+  <li><code>InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></li>
+  <li><code>InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></li>
+  <li><code>InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></li>
+  <li><code>InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></li>
+  <li><code>InferenceJackknife$compute_jackknife_bias_estimate()</code></li>
+  <li><code>InferenceJackknife$compute_jackknife_corrected_estimate()</code></li>
+  <li><code>InferenceJackknife$compute_jackknife_estimate()</code></li>
+  <li><code>InferenceJackknife$compute_jackknife_standard_error()</code></li>
+  <li><code>InferenceJackknife$compute_jackknife_std_error()</code></li>
+  <li><code>InferenceJackknife$compute_jackknife_wald_confidence_interval()</code></li>
+  <li><code>InferenceJackknife$compute_jackknife_wald_two_sided_pval()</code></li>
+  <li><code>InferenceAsymp$compute_wald_confidence_interval()</code></li>
+  <li><code>InferenceAsymp$compute_wald_two_sided_pval()</code></li>
+  <li><code>InferenceAsymp$get_mod()</code></li>
+  <li><code>InferenceAsymp$get_summary()</code></li>
+  <li><code>InferenceAsympLik$compute_asymp_confidence_interval()</code></li>
+  <li><code>InferenceAsympLik$compute_asymp_two_sided_pval()</code></li>
+  <li><code>InferenceAsympLik$compute_gradient_confidence_interval()</code></li>
+  <li><code>InferenceAsympLik$compute_gradient_two_sided_pval()</code></li>
+  <li><code>InferenceAsympLik$compute_lik_ratio_confidence_interval()</code></li>
+  <li><code>InferenceAsympLik$compute_lik_ratio_two_sided_pval()</code></li>
+  <li><code>InferenceAsympLik$compute_score_confidence_interval()</code></li>
+  <li><code>InferenceAsympLik$compute_score_two_sided_pval()</code></li>
+  <li><code>InferenceAsympLik$get_information_preference()</code></li>
+  <li><code>InferenceAsympLik$get_information_source_used()</code></li>
+  <li><code>InferenceAsympLik$get_supported_information_preferences()</code></li>
+  <li><code>InferenceAsympLik$get_supported_testing_types()</code></li>
+  <li><code>InferenceAsympLik$get_testing_type()</code></li>
+  <li><code>InferenceAsympLik$set_information_preference()</code></li>
+  <li><code>InferenceAsympLik$set_testing_type()</code></li>
+  <li><code>InferenceParamBootstrap$compute_lik_ratio_bootstrap_confidence_interval()</code></li>
+  <li><code>InferenceParamBootstrap$compute_lik_ratio_bootstrap_two_sided_pval()</code></li>
+  <li><code>InferenceParamBootstrap$get_last_param_bootstrap_diagnostics()</code></li>
 </ul>
-</details>
-}}
+</details>}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalCoxPHRegr-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalCoxPHRegr-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a Cox PH inference object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalCoxPHRegr$new(
+\if{html}{\out{<a id="method-InferenceSurvivalCoxPHRegr-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalCoxPHRegr-initialize}{}}}
+\subsection{\code{InferenceSurvivalCoxPHRegr$new()}}{
+  Initialize a Cox PH inference object.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceSurvivalCoxPHRegr$new(
   des_obj,
   model_formula = NULL,
   use_rcpp = TRUE,
   verbose = FALSE,
   smart_cold_start_default = TRUE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed \code{Design} object with a survival response.}
-
-\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{des_obj}}{A completed \code{Design} object with a survival response.}
+      \item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
 the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
-
-\item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), use internal Rcpp.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-
-\item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default.}
+      \item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), use internal Rcpp.}
+      \item{\code{verbose}}{Whether to print progress messages.}
+      \item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalCoxPHRegr-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalCoxPHRegr-compute_estimate}{}}}
-\subsection{Method \code{compute_estimate()}}{
-Computes the Cox PH estimate of the treatment effect.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalCoxPHRegr$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceSurvivalCoxPHRegr$compute_estimate()}}{
+  Computes the Cox PH estimate of the treatment effect.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceSurvivalCoxPHRegr$compute_estimate(estimate_only = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalCoxPHRegr-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalCoxPHRegr-compute_estimate_with_bootstrap_weights}{}}}
-\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
-Recomputes the Cox PH treatment estimate under
+\subsection{\code{InferenceSurvivalCoxPHRegr$compute_estimate_with_bootstrap_weights()}}{
+  Recomputes the Cox PH treatment estimate under
   Bayesian-bootstrap weights.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalCoxPHRegr$compute_estimate_with_bootstrap_weights(
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceSurvivalCoxPHRegr$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
   estimate_only = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
 bootstrap weights.}
-
-\item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
+      \item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
 estimate.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalCoxPHRegr-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalCoxPHRegr-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalCoxPHRegr$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceSurvivalCoxPHRegr$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceSurvivalCoxPHRegr$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }

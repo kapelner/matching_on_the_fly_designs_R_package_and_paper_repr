@@ -680,6 +680,11 @@ edi_optimization_dispatch_policy = function(inference_class) {
 set_package_threads = function(num_cores) {
   # Ensure it's an integer
   num_cores = as.integer(num_cores)
+  # Skip all expensive syscalls if threads are already set to this value.
+  # Sys.setenv and the BLAS/OMP setters are relatively slow; calling them on
+  # every serial replication causes a visible pause between reps.
+  last = getOption(".edi_last_set_threads")
+  if (identical(last, num_cores)) return(invisible(NULL))
   # R packages with global thread setters
 	  if (check_package_installed("data.table")) {
 	    data.table::setDTthreads(num_cores)

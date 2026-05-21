@@ -5,8 +5,6 @@
 \title{Exact Fisher Incidence Inference}
 \description{
 Exact Fisher Incidence Inference
-
-Exact Fisher Incidence Inference
 }
 \examples{
 \dontrun{
@@ -14,139 +12,139 @@ Exact Fisher Incidence Inference
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceExact]{EDI::InferenceExact}} -> \code{InferenceIncidExactFisher}
+\code{Inference} -> \code{InferenceExact} -> \code{InferenceIncidExactFisher}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-InferenceIncidExactFisher-new}{\code{InferenceIncidExactFisher$new()}}
-\item \href{#method-InferenceIncidExactFisher-compute_estimate}{\code{InferenceIncidExactFisher$compute_estimate()}}
-\item \href{#method-InferenceIncidExactFisher-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceIncidExactFisher$approximate_bootstrap_distribution_beta_hat_T()}}
-\item \href{#method-InferenceIncidExactFisher-clone}{\code{InferenceIncidExactFisher$clone()}}
+  \itemize{
+    \item \href{#method-InferenceIncidExactFisher-initialize}{\code{InferenceIncidExactFisher$new()}}
+    \item \href{#method-InferenceIncidExactFisher-compute_estimate}{\code{InferenceIncidExactFisher$compute_estimate()}}
+    \item \href{#method-InferenceIncidExactFisher-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceIncidExactFisher$approximate_bootstrap_distribution_beta_hat_T()}}
+    \item \href{#method-InferenceIncidExactFisher-clone}{\code{InferenceIncidExactFisher$clone()}}
+  }
 }
-}
-\if{html}{\out{
-<details><summary>Inherited methods</summary>
+\if{html}{\out{<details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_analysis_data"><a href='../../EDI/html/Inference.html#method-Inference-get_analysis_data'><code>EDI::Inference$get_analysis_data()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_covariates"><a href='../../EDI/html/Inference.html#method-Inference-get_covariates'><code>EDI::Inference$get_covariates()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_design_object"><a href='../../EDI/html/Inference.html#method-Inference-get_design_object'><code>EDI::Inference$get_design_object()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_model_formula"><a href='../../EDI/html/Inference.html#method-Inference-get_model_formula'><code>EDI::Inference$get_model_formula()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_reason'><code>EDI::Inference$get_nonestimable_reason()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_stage'><code>EDI::Inference$get_nonestimable_stage()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-get_optimization_alg'><code>EDI::Inference$get_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response"><a href='../../EDI/html/Inference.html#method-Inference-get_response'><code>EDI::Inference$get_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response_type"><a href='../../EDI/html/Inference.html#method-Inference-get_response_type'><code>EDI::Inference$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceExact" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/InferenceExact.html#method-InferenceExact-compute_exact_confidence_interval'><code>EDI::InferenceExact$compute_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceExact" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/InferenceExact.html#method-InferenceExact-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::InferenceExact$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+  <li><code>Inference$duplicate()</code></li>
+  <li><code>Inference$get_analysis_data()</code></li>
+  <li><code>Inference$get_covariates()</code></li>
+  <li><code>Inference$get_design_object()</code></li>
+  <li><code>Inference$get_model_formula()</code></li>
+  <li><code>Inference$get_nonestimable_reason()</code></li>
+  <li><code>Inference$get_nonestimable_stage()</code></li>
+  <li><code>Inference$get_optimization_alg()</code></li>
+  <li><code>Inference$get_response()</code></li>
+  <li><code>Inference$get_response_type()</code></li>
+  <li><code>Inference$get_treatment()</code></li>
+  <li><code>Inference$is_nonestimable()</code></li>
+  <li><code>Inference$set_optimization_alg()</code></li>
+  <li><code>Inference$set_seed()</code></li>
+  <li><code>InferenceExact$compute_exact_confidence_interval()</code></li>
+  <li><code>InferenceExact$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
 </ul>
-</details>
-}}
+</details>}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidExactFisher-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidExactFisher-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize exact Fisher inference for incidence outcomes.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExactFisher$new(
+\if{html}{\out{<a id="method-InferenceIncidExactFisher-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidExactFisher-initialize}{}}}
+\subsection{\code{InferenceIncidExactFisher$new()}}{
+  Initialize exact Fisher inference for incidence outcomes.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceIncidExactFisher$new(
   des_obj,
   model_formula = NULL,
   verbose = FALSE,
   smart_cold_start_default = TRUE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed design object.}
-
-\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{des_obj}}{A completed design object.}
+      \item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
 the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
+      \item{\code{verbose}}{Whether to print progress messages.}
+      \item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A new \code{InferenceIncidExactFisher} object.
+  }
+}
 
-\item{\code{verbose}}{Whether to print progress messages.}
-
-\item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A new \code{InferenceIncidExactFisher} object.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidExactFisher-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidExactFisher-compute_estimate}{}}}
-\subsection{Method \code{compute_estimate()}}{
-Compute the Fisher exact treatment estimate on the log-odds scale.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExactFisher$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceIncidExactFisher$compute_estimate()}}{
+  Compute the Fisher exact treatment estimate on the log-odds scale.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceIncidExactFisher$compute_estimate(estimate_only = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{estimate_only}}{Ignored for this estimator.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    The treatment estimate.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{Ignored for this estimator.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The treatment estimate.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidExactFisher-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidExactFisher-approximate_bootstrap_distribution_beta_hat_T}{}}}
-\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
-Creates the bootstrap distribution of the estimate for the treatment effect.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExactFisher$approximate_bootstrap_distribution_beta_hat_T(
+\subsection{\code{InferenceIncidExactFisher$approximate_bootstrap_distribution_beta_hat_T()}}{
+  Creates the bootstrap distribution of the estimate for the treatment effect.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceIncidExactFisher$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
   show_progress = TRUE,
   debug = FALSE,
   bootstrap_type = NULL
-)}\if{html}{\out{</div>}}
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{B}}{Number of bootstrap samples.}
+      \item{\code{show_progress}}{Whether to show a progress bar.}
+      \item{\code{debug}}{Whether to return diagnostics.}
+      \item{\code{bootstrap_type}}{Optional resampling scheme.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A numeric vector of bootstrap estimates.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{B}}{Number of bootstrap samples.}
-
-\item{\code{show_progress}}{Whether to show a progress bar.}
-
-\item{\code{debug}}{Whether to return diagnostics.}
-
-\item{\code{bootstrap_type}}{Optional resampling scheme.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A numeric vector of bootstrap estimates.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidExactFisher-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidExactFisher-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExactFisher$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceIncidExactFisher$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceIncidExactFisher$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }

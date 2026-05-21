@@ -130,6 +130,7 @@ InferenceCountLikelihood = R6::R6Class("InferenceCountLikelihood",
 #' not expose the parametric LR bootstrap API.
 #'
 #' @keywords internal
+#' @noRd
 InferenceCountLikelihoodNoParamBootstrap = R6::R6Class("InferenceCountLikelihoodNoParamBootstrap",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,

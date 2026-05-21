@@ -23,7 +23,7 @@
 #     inference_types_and_params = list(asymp_pval = list(delta = 0))
 #   )
 #   sim$run()
-#   sim$summarize()
+#   SimulationFrameworkReport$new(sim)$summarize()
 #' Generate Synthetic Simulation Covariates and Continuous Response
 #'
 #' @description A helper function to generate synthetic covariates and a latent continuous response
@@ -168,8 +168,8 @@ get_r6_init_fn = function(r6gen) {
 #' @description An R6 class for benchmarking experimental designs and inference methods by
 #' Monte Carlo simulation. Each replication generates synthetic covariates and
 #' responses, runs every requested \code{(design, inference)} pair, and records
-#' point estimates, confidence intervals, and p-values. Aggregated metrics are
-#' available from \code{$summarize()}.
+#' point estimates, confidence intervals, and p-values. Raw and aggregated
+#' results are available through \code{SimulationFrameworkReport}.
 #'
 #' @details
 #' Covariates are drawn independently from \eqn{\mathrm{Uniform}(0, 1)}.
@@ -225,7 +225,8 @@ get_r6_init_fn = function(r6gen) {
 #'   n = 100, p = 5, Nrep = 10, betaT = 1
 #' )
 #' sim$run()
-#' sim$summarize()
+#' report = SimulationFrameworkReport$new(sim)
+#' report$summarize()
 #' }
 #' @export
 SimulationFramework = R6::R6Class("SimulationFramework",
@@ -431,10 +432,11 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   parallel execution of Monte Carlo replications.  Note that when
     #'   \code{num_cores > 1}, parallelization *within* individual inference
     #'   routines (e.g. bootstrap, randomization) is automatically disabled
-    #'   to prevent thread oversubscription. On Unix-like systems the
-    #'   replication loop uses forked workers; on non-Unix systems it uses
-    #'   \pkg{mirai} when available and otherwise falls back to serial
-    #'   execution with a warning. Default \code{1}.
+    #'   to prevent thread oversubscription. On Unix-like systems a
+    #'   \code{makeForkCluster} pool is created once at \code{run()} start
+    #'   (persistent forked workers, zero per-replication fork overhead); on
+    #'   non-Unix systems \pkg{mirai} is used when available, otherwise
+    #'   execution falls back to serial with a warning. Default \code{1}.
     #'
     #' @param results_filename Character scalar. The filename for the results
     #'   file. Supported extensions are \code{.csv} and \code{.csv.bz2}.
@@ -444,12 +446,24 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   the framework loads existing results from \code{results_filename} and
     #'   skips previously completed replications.
     #'
+    #' @param reuse_cache Logical. If \code{TRUE} (default), expensive
+    #'   pre-generated design / SE cache objects are loaded from disk when
+    #'   available. If \code{FALSE}, these cache objects are regenerated from
+    #'   scratch, but each regenerated object is still saved to disk for later
+    #'   restarts.
+    #'
     #' @param stop_on_error Logical. If \code{TRUE} (default), any error raised
     #'   during a simulation path aborts the run immediately. If \code{FALSE},
     #'   the framework records the error, skips the failing path, and continues
     #'   with the remaining replications / design / inference combinations. Use
     #'   \code{$get_errors()} after \code{$run()} to inspect the captured
     #'   errors.
+    #'
+    #' @param save_to_disk_every_n_rep Positive integer. Results are flushed to
+    #'   the on-disk staging file only once every this many replications, and
+    #'   always after the final replication. Larger values reduce disk I/O
+    #'   overhead at the cost of losing more progress if the run is interrupted.
+    #'   Default \code{25L}.
     #'
     #' @param inference_types_and_params \code{NULL} (default) or a named list
     #'   from inference type to a named list of arguments for that type's function
@@ -467,8 +481,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   rand_pval  = list(r = 999, transform_responses = TRUE)
     #' )}
     #'   When no \code{*_ci} type is requested, \code{coverage} is omitted from
-    #'   \code{$summarize()}.  When no \code{*_pval} type is requested,
-    #'   \code{power} is omitted.
+    #'   \code{SimulationFrameworkReport$summarize()}.  When no \code{*_pval}
+    #'   type is requested, \code{power} is omitted.
     initialize = function(
       response_type,
       design_classes_and_params = NULL,
@@ -511,7 +525,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       inference_types_and_params = NULL,
       results_filename      = "simulation_framework_results.csv.bz2",
       continue_from_last_result_row = TRUE,
-      stop_on_error         = TRUE
+      reuse_cache           = TRUE,
+      stop_on_error         = TRUE,
+      save_to_disk_every_n_rep = 25L
     ) {
       valid_rt = c("continuous", "incidence", "proportion",
                    "count", "survival", "ordinal")
@@ -604,7 +620,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$keep_all_intermediate_data = keep_all_intermediate_data
       private$results_filename     = results_filename
       private$continue_from_last_result_row = continue_from_last_result_row
+      private$reuse_cache          = isTRUE(reuse_cache)
       private$stop_on_error        = isTRUE(stop_on_error)
+      checkmate::assertCount(save_to_disk_every_n_rep, positive = TRUE)
+      private$save_to_disk_every_n_rep = as.integer(save_to_disk_every_n_rep)
       private$inf_types        = inf_types
       private$inference_type_params = inf_type_spec
       private$param_grid       = private$.build_param_grid(
@@ -691,14 +710,23 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       # force_serial was previously tied to has_pregen_designs to avoid JVM fork
       # issues; Java/GED is gone so parallelism is always safe.
       force_serial = FALSE
-      use_mirai_backend = !force_serial && isTRUE(num_cores > 1L) &&
-        (.Platform$OS.type != "unix" || !is.null(prev_global_mirai_cores))
+      use_fork_cluster  = !force_serial && isTRUE(num_cores > 1L) && .Platform$OS.type == "unix"
+      use_mirai_backend = !force_serial && isTRUE(num_cores > 1L) && !use_fork_cluster
+      cl_cache = NULL  # fork cluster used only for cache building phase
+      cl_rep   = NULL  # fork cluster for rep execution, created AFTER cell states are populated
+      if (use_fork_cluster) {
+        cl_cache = parallel::makeForkCluster(num_cores)
+      }
+      on.exit({
+        if (!is.null(cl_cache)) try(parallel::stopCluster(cl_cache), silent = TRUE)
+        if (!is.null(cl_rep))   try(parallel::stopCluster(cl_rep),   silent = TRUE)
+      }, add = TRUE)
       if (use_mirai_backend) {
         if (!check_package_installed("mirai")) {
           use_mirai_backend = FALSE
           if (isTRUE(private$verbose)) {
             private$.message_stderr(
-              "Warning: Parallelism (num_cores > 1) requires the 'mirai' package on non-Unix systems. Serial execution used for this run.\n"
+              "Warning: Parallelism (num_cores > 1) requires the 'mirai' package. Serial execution used for this run.\n"
             )
           }
         } else {
@@ -777,6 +805,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$seen_combo_keys      = character(0L)
       private$exact_warned_classes = character(0L)
       private$error_log            = list()
+      private$pending_file_rows    = list()
       if (isTRUE(private$verbose)) {
         message(sprintf(
           "simulations: CEF_mod=%s  n=%s  p=%s  Nrep=%d  betaT=%s designs=%d inferences=%d num_cores=%d",
@@ -916,19 +945,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         private$.finish_run()
         return(invisible(self))
       }
-      if (FALSE) {  # dead branch — retained for structure; no Java-backed designs remain
-        if (check_package_installed("mirai")) {
-          use_mirai_backend = TRUE
-          private$.ensure_mirai_daemons(num_cores)
-          on.exit({
-            if (!is.null(prev_global_mirai_cores)) {
-              private$.ensure_mirai_daemons(prev_global_mirai_cores)
-            } else {
-              tryCatch(mirai::daemons(0), error = function(e) invisible(NULL))
-            }
-          }, add = TRUE)
-        }
-      }
       # Pre-build all per-cell state objects and run-required vectors so the
       # outer rep loop can iterate cells without rebuilding them each rep.
       all_cell_states       = vector("list", n_cells)
@@ -980,13 +996,14 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       private$n_active_reps_total       = if (length(all_run_required_v) > 0L) sum(Reduce(`|`, all_run_required_v)) else 0L
       private$n_total_active_work_units = if (length(all_run_required_v) > 0L) sum(vapply(all_run_required_v, sum, 0L)) else 0L
+      use_parallel_workers = !force_serial && num_cores > 1L
+      num_cores_to_use = if (use_parallel_workers) num_cores else 1L
 
       # Pre-generate ALL w vectors for designs whose matching/clustering structure
       # is expensive but deterministic given X (e.g. BinaryMatch, OptimalBlocks).
       # Called ONCE per cell at session init — pays the structural cost once,
       # then workers skip it entirely by using the cached w column for their rep.
       if ((has_pregen_designs || has_cmh_inference) && !isTRUE(private$random_X_draws)) {
-        if (isTRUE(private$verbose)) message("Creating cached design/SE data for cells...")
         # Determine se_est_num_vectors from whichever inference class exposes it,
         # respecting user-supplied constructor overrides over class defaults.
         cmh_se_num_vectors = 1000L  # safe fallback matching InferenceIncidCMH default
@@ -1000,91 +1017,245 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             break
           }
         }
-        # Count cells that have active reps (denominator for the progress bar).
-        cells_needing_cache = sum(vapply(seq_len(n_cells), function(ci) {
-          cs = all_cell_states[[ci]]
-          !is.null(cs$shared_X) && any(all_run_required_v[[ci]])
-        }, logical(1L)))
-        cells_cached = 0L
+        cache_jobs = list()
         for (ci in seq_len(n_cells)) {
           cs = all_cell_states[[ci]]
           if (is.null(cs$shared_X)) next
           active_reps_ci = which(all_run_required_v[[ci]])
           if (length(active_reps_ci) == 0L) next
-          if (isTRUE(private$verbose))
-            private$.draw_labeled_progress_bar("caching design/SE data",
-                                               cells_cached / max(1L, cells_needing_cache))
           cell_combos_ci = planned_combos_list[[ci]]
-          new_cache = list()
-          new_cmh_se_cache = list()
           for (di in seq_along(private$design_classes)) {
             dc = private$design_classes[[di]]
             dl = private$design_labels[[di]]
             dp = private$design_params[[di]]
             is_pregen = !is.null(dc$public_methods$supports_batch_w_pregeneration)
             if (!is_pregen && !has_cmh_inference) next
-            # Determine which active reps still need this design — skip pregen
-            # entirely when all active reps already have every combo for dl done.
             des_combos = Filter(function(co) co$design == dl, cell_combos_ci)
-            if (length(des_combos) == 0L) next  # design not valid in this cell
+            if (length(des_combos) == 0L) next
+            # Use active_reps_ci directly — avoids 312 expensive check_in_result_key_store_cpp
+            # batches (18M C++ lookups) that caused a multi-second pause at startup.
+            # active_reps_ci already filters to reps where any combo for this cell is
+            # incomplete, which is a valid superset of per-design reps_needing.
             reps_needing_dl = active_reps_ci
-            if (n_existing > 0L) {
-              n_dc = length(des_combos)
-              nb   = length(active_reps_ci)
-              c_des  = vapply(des_combos, `[[`, "", "design")
-              c_inf  = vapply(des_combos, `[[`, "", "inference")
-              c_type = vapply(des_combos, `[[`, "", "inference_type")
-              all_ex = check_in_result_key_store_cpp(
-                rep(cs$response_type,       nb * n_dc),
-                rep(cs$cond_exp_func_model, nb * n_dc),
-                rep(as.integer(cs$n),       nb * n_dc),
-                rep(as.integer(cs$p),       nb * n_dc),
-                rep(as.numeric(cs$betaT),   nb * n_dc),
-                rep(as.integer(active_reps_ci), each = n_dc),
-                rep(c_des,  nb),
-                rep(c_inf,  nb),
-                rep(c_type, nb)
+            if (length(reps_needing_dl) == 0L) next
+            # Stripped cs: only what _run_simulation_cache_job needs.
+            # Avoids serializing cs$design_classes / cs$inference_classes (R6 generators)
+            # when jobs are dispatched to fork cluster workers via clusterApply.
+            cs_cache = list(n = cs$n, response_type = cs$response_type, shared_X = cs$shared_X)
+            if (is_pregen) {
+              cache_file = private$.simulation_cache_file(
+                cs, dl, dp, "design_w", cmh_se_num_vectors = cmh_se_num_vectors
               )
-              exists_mat     = matrix(all_ex, nrow = n_dc)   # n_dc × nb
-              reps_needing_dl = active_reps_ci[colSums(exists_mat) < n_dc]
+              cache_jobs[[length(cache_jobs) + 1L]] = list(
+                cell_idx = ci,
+                design_idx = di,
+                cs = cs_cache,
+                design_gen_class = dc$classname,
+                design_label = dl,
+                design_params = dp,
+                cache_type = "design_w",
+                reps_needing = reps_needing_dl,
+                cache_file = cache_file,
+                ready = isTRUE(private$reuse_cache) && file.exists(cache_file)
+              )
             }
-            if (length(reps_needing_dl) == 0L) next  # all combos already done
-            n_active_dl = length(reps_needing_dl)
-            tryCatch({
-              d_pg = do.call(dc$new, c(list(response_type = cs$response_type, n = cs$n), dp))
-              d_pg$add_all_subjects_to_experiment(as.data.frame(cs$shared_X))
-              prev_nc = ns$edi_env$num_cores_override
-              assign("num_cores_override", 1L, envir = ns$edi_env)
-              if (is_pregen) {
-                w_mat = d_pg$draw_ws_according_to_design(n_active_dl)
-                storage.mode(w_mat) = "integer"
-                new_cache[[dl]] = list(
-                  ws         = w_mat,
-                  rep_to_col = setNames(seq_len(n_active_dl), as.character(reps_needing_dl))
-                )
-              }
-              # For non-blocking designs, precompute w vectors for CMH SE estimation
-              # so workers never call draw_ws_according_to_design(se_est_num_vectors) per rep.
-              if (has_cmh_inference && !d_pg$is_blocking_design()) {
-                cmh_se_w = d_pg$draw_ws_according_to_design(cmh_se_num_vectors)
-                storage.mode(cmh_se_w) = "integer"
-                new_cmh_se_cache[[dl]] = cmh_se_w
-              }
-              assign("num_cores_override", prev_nc, envir = ns$edi_env)
-            }, error = function(e) {
-              assign("num_cores_override", prev_nc, envir = ns$edi_env)
-              NULL
-            })
+            if (has_cmh_inference) {
+              cache_file = private$.simulation_cache_file(
+                cs, dl, dp, "cmh_se_w", cmh_se_num_vectors = cmh_se_num_vectors
+              )
+              cache_jobs[[length(cache_jobs) + 1L]] = list(
+                cell_idx = ci,
+                design_idx = di,
+                cs = cs_cache,
+                design_gen_class = dc$classname,
+                design_label = dl,
+                design_params = dp,
+                cache_type = "cmh_se_w",
+                reps_needing = reps_needing_dl,
+                cache_file = cache_file,
+                ready = isTRUE(private$reuse_cache) && file.exists(cache_file)
+              )
+            }
           }
-          if (length(new_cache) > 0L) cs$design_w_cache = new_cache
-          if (length(new_cmh_se_cache) > 0L) cs$cmh_se_w_cache = new_cmh_se_cache
-          all_cell_states[[ci]] = cs
-          cells_cached = cells_cached + 1L
+        }
+        n_cache_jobs = length(cache_jobs)
+        attach_cache_job = function(job) {
+          cs = all_cell_states[[job$cell_idx]]
+          obj = private$.load_simulation_cache_object(
+            cs,
+            private$design_labels[[job$design_idx]],
+            private$design_params[[job$design_idx]],
+            job$cache_type,
+            reps_needing = job$reps_needing,
+            cmh_se_num_vectors = cmh_se_num_vectors,
+            restore_rng = FALSE,
+            cache_file = job$cache_file
+          )
+          if (is.null(obj)) return(FALSE)
+          dl = private$design_labels[[job$design_idx]]
+          if (identical(job$cache_type, "design_w")) {
+            if (is.null(cs$design_w_cache)) cs$design_w_cache = list()
+            cs$design_w_cache[[dl]] = obj
+          } else if (identical(job$cache_type, "cmh_se_w")) {
+            if (is.list(obj) && isTRUE(obj$blocking_design)) {
+              # sentinel for blocking designs — no w matrix to inject
+            } else {
+              if (is.null(cs$cmh_se_w_cache)) cs$cmh_se_w_cache = list()
+              cs$cmh_se_w_cache[[dl]] = obj
+            }
+          }
+          all_cell_states[[job$cell_idx]] <<- cs
+          TRUE
+        }
+        mark_cache_job_done = function(job) {
+          attached = attach_cache_job(job)
+          cache_jobs_done <<- cache_jobs_done + 1L
+          if (isTRUE(private$verbose)) private$.draw_labeled_progress_bar(
+            "caching design/SE data",
+            cache_jobs_done / max(1L, n_cache_jobs)
+          )
+          attached
+        }
+        ready_cache_jobs = cache_jobs[vapply(cache_jobs, function(job) isTRUE(job$ready), logical(1L))]
+        pending_cache_jobs = cache_jobs[!vapply(cache_jobs, function(job) isTRUE(job$ready), logical(1L))]
+        if (isTRUE(private$verbose) && length(ready_cache_jobs) > 0L) {
+          message(sprintf("Loading %d cached design/SE objects from disk...", length(ready_cache_jobs)))
+        }
+        invisible(lapply(ready_cache_jobs, attach_cache_job))
+        cache_jobs_done = length(ready_cache_jobs)
+        if (isTRUE(private$verbose) && n_cache_jobs > 0L) {
+          private$.draw_labeled_progress_bar(
+            "caching design/SE data",
+            cache_jobs_done / max(1L, n_cache_jobs)
+          )
+        }
+
+        if (length(pending_cache_jobs) > 0L) {
+          RUN_CACHE_JOB_DETACHED = private$.run_simulation_cache_job
+          environment(RUN_CACHE_JOB_DETACHED) = asNamespace("EDI")
+          cache_seed = private$seed
+          cache_job_seed = function(job_idx) {
+            if (is.null(cache_seed)) NULL else as.integer(cache_seed + 1000003L + job_idx)
+          }
+          # Build a minimal dispatch environment so run_cache_job_local and its
+          # callers don't capture the full run() call frame when serialized by clusterApply.
+          cache_dispatch_env = new.env(parent = asNamespace("EDI"))
+          cache_dispatch_env$RUN_FN   = RUN_CACHE_JOB_DETACHED
+          cache_dispatch_env$CMH_N    = cmh_se_num_vectors
+          cache_dispatch_env$SEED_VAL = private$seed
+          run_cache_job_local = function(job, job_idx) {
+            seed = if (is.null(SEED_VAL)) NULL else as.integer(SEED_VAL + 1000003L + job_idx)
+            RUN_FN(job = job, cmh_se_num_vectors = CMH_N, seed = seed)
+          }
+          environment(run_cache_job_local) = cache_dispatch_env
+          # Worker wrapper with baseenv() closure — avoids serializing the run() frame.
+          fork_cache_worker_fn = function(fn) tryCatch(fn(), error = function(e) e)
+          environment(fork_cache_worker_fn) = baseenv()
+          if (use_parallel_workers && use_mirai_backend) {
+            chunk_size = num_cores_to_use
+            cache_chunks = split(seq_along(pending_cache_jobs), (seq_along(pending_cache_jobs) - 1L) %/% chunk_size)
+            for (chunk_idxs in cache_chunks) {
+              jobs = lapply(chunk_idxs, function(jj) {
+                job_j = pending_cache_jobs[[jj]]
+                mirai::mirai({
+                  RUN_CACHE_JOB_DETACHED(
+                    job = job_j,
+                    cmh_se_num_vectors = cmh_se_num_vectors,
+                    seed = seed_j
+                  )
+                },
+                RUN_CACHE_JOB_DETACHED = RUN_CACHE_JOB_DETACHED,
+                job_j = job_j,
+                cmh_se_num_vectors = cmh_se_num_vectors,
+                seed_j = cache_job_seed(jj))
+              })
+              names(jobs) = as.character(chunk_idxs)
+              completed = 0L
+              while (completed < length(chunk_idxs)) {
+                ready = names(jobs)[!vapply(jobs, mirai::unresolved, logical(1L))]
+                if (length(ready) == 0L) { Sys.sleep(0.1); next }
+                for (nm in ready) {
+                  job_res = tryCatch(jobs[[nm]][], error = function(e) e)
+                  job_idx = as.integer(nm)
+                  if (!inherits(job_res, "error") &&
+                      !inherits(job_res, "miraiError") &&
+                      !inherits(job_res, "errorValue")) {
+                    mark_cache_job_done(pending_cache_jobs[[job_idx]])
+                  } else {
+                    cache_jobs_done = cache_jobs_done + 1L
+                    if (isTRUE(private$verbose)) private$.draw_labeled_progress_bar(
+                      "caching design/SE data",
+                      cache_jobs_done / max(1L, n_cache_jobs)
+                    )
+                  }
+                  completed = completed + 1L
+                }
+                jobs[ready] = NULL
+              }
+            }
+          } else if (use_parallel_workers) {
+            # fork cluster path (Unix persistent workers)
+            chunk_size = num_cores_to_use
+            cache_chunks = split(seq_along(pending_cache_jobs), (seq_along(pending_cache_jobs) - 1L) %/% chunk_size)
+            for (chunk_idxs in cache_chunks) {
+              chunk_fns = lapply(chunk_idxs, function(jj) {
+                # Clean closure env: only job + index + the detached fn.
+                # Prevents clusterApply from serializing the entire run() call frame.
+                e = new.env(parent = asNamespace("EDI"))
+                e$job_j    = pending_cache_jobs[[jj]]
+                e$jj_j     = jj
+                e$local_fn = run_cache_job_local
+                f = function() local_fn(job_j, jj_j)
+                environment(f) = e
+                f
+              })
+              results = parallel::clusterApply(cl_cache, chunk_fns, fork_cache_worker_fn)
+              for (k in seq_along(chunk_idxs)) {
+                jj = chunk_idxs[[k]]
+                job_res = results[[k]]
+                if (!inherits(job_res, "error") && !is.null(job_res)) {
+                  mark_cache_job_done(pending_cache_jobs[[jj]])
+                } else {
+                  cache_jobs_done = cache_jobs_done + 1L
+                  if (isTRUE(private$verbose)) private$.draw_labeled_progress_bar(
+                    "caching design/SE data",
+                    cache_jobs_done / max(1L, n_cache_jobs)
+                  )
+                }
+              }
+            }
+          } else {
+            for (jj in seq_along(pending_cache_jobs)) {
+              tryCatch(run_cache_job_local(pending_cache_jobs[[jj]], jj), error = function(e) NULL)
+              mark_cache_job_done(pending_cache_jobs[[jj]])
+            }
+          }
         }
         if (isTRUE(private$verbose)) {
           private$.draw_labeled_progress_bar("caching design/SE data", 1)
           cat("\n", file = stderr())
         }
+      }
+
+      # ── Create fork cluster for rep execution (AFTER cell states + caches are populated) ──
+      # Workers inherit all_cell_states via copy-on-write at fork time, so per-rep dispatch
+      # items are tiny (just ci + rep_i + rep_seed) — no large matrix serialization.
+      if (use_fork_cluster) {
+        if (!is.null(cl_cache)) {
+          try(parallel::stopCluster(cl_cache), silent = TRUE)
+          cl_cache = NULL
+        }
+        RUN_REP_DETACHED_G = private$.run_single_replication_in_worker
+        environment(RUN_REP_DETACHED_G) = asNamespace("EDI")
+        assign(".edi_sim_cell_states", all_cell_states, envir = .GlobalEnv)
+        assign(".edi_sim_run_fn",      RUN_REP_DETACHED_G, envir = .GlobalEnv)
+        on.exit(suppressWarnings(
+          rm(list = intersect(
+               c(".edi_sim_cell_states", ".edi_sim_run_fn"),
+               ls(envir = .GlobalEnv, all.names = TRUE)
+             ), envir = .GlobalEnv, inherits = FALSE)
+        ), add = TRUE)
+        cl_rep = parallel::makeForkCluster(num_cores)
       }
 
       # ── Set up and draw initial progress bar (after pregen, before main loop) ──
@@ -1122,13 +1293,30 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$session_work_units_done  = 0L
       private$session_start_time       = as.numeric(Sys.time())
       private$rep_start_capture        = private$session_start_time
+      # inter_rep_start tracks the wall-clock moment after the previous active rep's
+      # post-processing (flush, draw_progress) so that dead space is included in the
+      # NEXT rep's elapsed measurement and the ETA is not biased downward.
+      inter_rep_start = private$session_start_time
       use_parallel_workers = !force_serial && num_cores > 1L
       num_cores_to_use = if (use_parallel_workers) num_cores else 1L
 
       # Helper closures for the parallel paths — declared once outside the loops.
+      # Fork cluster worker wrapper: baseenv() closure stops serialization chain.
+      # Workers look up cell state + run function from globals inherited at fork time
+      # (assigned to .GlobalEnv before makeForkCluster — copy-on-write, no serialization).
+      fork_rep_worker_fn = function(item) {
+        tryCatch({
+          if (!is.null(item$rep_seed)) set.seed(item$rep_seed)
+          states = get(".edi_sim_cell_states", envir = globalenv())
+          run_fn = get(".edi_sim_run_fn",      envir = globalenv())
+          run_fn(item$rep_i, states[[item$ci]], progress_cb = NULL, is_forked = TRUE)
+        }, error = function(e) e)
+      }
+      environment(fork_rep_worker_fn) = baseenv()
       is_mirai_failed = function(x) {
         is.null(x) || inherits(x, "error") || inherits(x, "miraiError") || inherits(x, "errorValue")
       }
+      is_fork_failed = function(x) is.null(x) || inherits(x, "error")
       mirai_err_msg = function(x) {
         if (is.null(x)) return("Worker returned NULL output.")
         if (inherits(x, "miraiError") || inherits(x, "errorValue")) {
@@ -1154,8 +1342,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           next
         }
 
-        rep_start_time = as.numeric(Sys.time())
-        private$rep_start_capture = rep_start_time
+        private$rep_start_capture = inter_rep_start
         private$current_rep_idx = rep
         private$current_cell_idx = active_cells[[1L]]
 
@@ -1242,7 +1429,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
               }
             }
           } else {
-            # mcparallel (unix fork) backend
+            # fork cluster path (Unix, persistent workers — fork once at run() start)
             private$current_task_label = "Chunk Cells"
             chunk_size = num_cores_to_use
             cell_chunks = split(active_cells, (seq_along(active_cells) - 1L) %/% chunk_size)
@@ -1253,73 +1440,44 @@ SimulationFramework = R6::R6Class("SimulationFramework",
               private$last_progress_draw_time = 0
               private$.draw_progress()
 
-              RUN_REP_DETACHED = private$.run_single_replication_in_worker
-              environment(RUN_REP_DETACHED) = asNamespace("EDI")
-
-              jobs = lapply(chunk_cells, function(ci) {
-                cs_i = all_cell_states[[ci]]
-                RUN_REP_ci = function(rep_i) RUN_REP_DETACHED(rep_i, cs_i, progress_cb = NULL, is_forked = TRUE)
-                parallel::mcparallel(
-                  RUN_REP_ci(rep),
-                  name = as.character(ci),
-                  mc.set.seed = TRUE,
-                  silent = TRUE
-                )
+              # Workers already have all_cell_states via .edi_sim_cell_states (inherited at fork).
+              # Send only tiny items: ci + rep_i + rep_seed — no matrix serialization.
+              chunk_fns = lapply(chunk_cells, function(ci) {
+                rep_seed = if (!is.null(seed_val)) seed_val + rep else NULL
+                list(ci = ci, rep_i = rep, rep_seed = rep_seed)
               })
-              names(jobs) = as.character(chunk_cells)
-              chunk_results = vector("list", length(chunk_cells))
-              names(chunk_results) = as.character(chunk_cells)
-              completed_in_chunk = 0L
-              withCallingHandlers(
-                while (completed_in_chunk < length(chunk_cells)) {
-                  collected = parallel::mccollect(jobs, wait = FALSE, timeout = 0.1)
-                  if (is.null(collected) || length(collected) == 0L) next
-                  for (nm in names(collected)) {
-                    if (is.null(chunk_results[[nm]])) {
-                      chunk_results[[nm]] = collected[[nm]]
-                      if (!is.null(collected[[nm]]$fatal_error)) {
-                        pending_jobs = jobs[setdiff(names(jobs), names(collected))]
-                        if (length(pending_jobs) > 0L)
-                          invisible(lapply(pending_jobs, function(job) try(parallel::mckill(job), silent = TRUE)))
-                      }
-                      completed_in_chunk = completed_in_chunk + 1L
-                      private$session_work_units_done = private$session_work_units_done + 1L
-                    }
-                  }
-                  jobs[names(collected)] = NULL
-                  private$current_cell_idx = chunk_cells[[min(length(chunk_cells), completed_in_chunk + 1L)]]
-                  private$current_task_in_rep_idx = completed_in_chunk
-                  private$.draw_progress()
-                },
-                interrupt = function(e) {
-                  for (job in jobs) try(parallel::mckill(job, signal = 9L), silent = TRUE)
-                  invokeRestart("abort")
-                }
-              )
-              chunk_results_ok = chunk_results[!vapply(chunk_results, function(x) is(x, "try-error") || is.null(x), logical(1L))]
+
+              chunk_results_list = parallel::clusterApply(cl_rep, chunk_fns, fork_rep_worker_fn)
+              names(chunk_results_list) = as.character(chunk_cells)
+
+              private$session_work_units_done = private$session_work_units_done + length(chunk_cells)
+              private$current_cell_idx = chunk_cells[[length(chunk_cells)]]
+              private$current_task_in_rep_idx = length(chunk_cells)
+              private$.draw_progress()
+
+              chunk_results_ok = chunk_results_list[!vapply(chunk_results_list, is_fork_failed, logical(1L))]
               if (length(chunk_results_ok) > 0L) {
                 all_chunk_dt = data.table::rbindlist(lapply(chunk_results_ok, function(w) w$results_dt), use.names = TRUE, fill = TRUE)
                 all_chunk_skipped = sum(vapply(chunk_results_ok, function(w) w$skipped_count, 0L))
                 private$.append_errors(unlist(lapply(chunk_results_ok, `[[`, "errors"), recursive = FALSE))
-                private$current_cell_idx = chunk_cells[[length(chunk_cells)]]
-                private$current_task_in_rep_idx = length(chunk_cells)
                 private$.record_batch(all_chunk_dt, all_chunk_skipped)
               }
               fatal_errors = unlist(lapply(chunk_results_ok, function(x) {
                 if (is.null(x$fatal_error)) list() else list(x$fatal_error)
               }), recursive = FALSE)
               if (length(fatal_errors) > 0L) private$.abort_from_error_record(fatal_errors[[1L]])
-              failed_indices = which(vapply(chunk_results, function(x) is(x, "try-error") || is.null(x), logical(1L)))
+              failed_indices = which(vapply(chunk_results_list, is_fork_failed, logical(1L)))
               if (length(failed_indices) > 0L) {
                 failed_errors = lapply(failed_indices, function(idx) {
                   ci = chunk_cells[[idx]]
+                  res = chunk_results_list[[idx]]
                   private$.make_error_record(
                     stage = "worker_execution", rep = rep,
                     design = NA_character_, design_params = NULL,
                     inference = NA_character_, inference_params = NULL,
                     inference_type = NA_character_, inference_type_params = NULL,
-                    message = if (is.null(chunk_results[[idx]])) "Worker returned NULL output." else as.character(chunk_results[[idx]]),
-                    metadata = list(cell_index = ci, rep = rep)
+                    message = if (is.null(res)) "Worker returned NULL output." else conditionMessage(res),
+                    metadata = list(cell_index = ci, rep = rep, backend = "fork_cluster")
                   )
                 })
                 private$.append_errors(failed_errors)
@@ -1391,13 +1549,17 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         }
 
         # Record elapsed time for this rep and update ETA.
-        rep_elapsed = as.numeric(Sys.time()) - rep_start_time
-        private$rep_elapsed_times = c(private$rep_elapsed_times, rep_elapsed)
+        # flush and draw_progress happen AFTER recording so they're included in the
+        # NEXT rep's inter_rep_start measurement rather than being dead space.
         private$current_rep_idx = rep
         private$current_cell_idx = n_cells
         private$current_task_in_rep_idx = if (n_cells > 0L) cell_tasks_count[[n_cells]] else 0L
         private$tasks_per_rep = private$current_task_in_rep_idx
         private$.draw_progress()
+        if (rep %% private$save_to_disk_every_n_rep == 0L) private$.flush_pending_to_disk()
+        rep_elapsed = as.numeric(Sys.time()) - inter_rep_start
+        private$rep_elapsed_times = c(private$rep_elapsed_times, rep_elapsed)
+        inter_rep_start = as.numeric(Sys.time())
       }
       private$.finish_run()
       invisible(self)
@@ -1424,16 +1586,16 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$all_intermediate_data = NULL
       gc()
       invisible(self)
-    },
+    }
   ),
   # ── private ────────────────────────────────────────────────────────────────
   private = list(
     .finish_run = function() {
       private$has_run = TRUE
+      private$.flush_pending_to_disk()
       if (private$.results_file_format(private$results_filename) == "csv.bz2" &&
           file.exists(private$.results_staging_filename()) &&
           private$results_idx > 0L) {
-        message("Compressing results to bz2...")
         private$.sync_results_bz2_from_staging()
       }
       private$.cleanup_results_staging_file()
@@ -1486,7 +1648,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     simulation_start_time = NULL,
     initial_progress_count = NULL,
     continue_from_last_result_row = NULL,
+    reuse_cache = TRUE,
     stop_on_error = TRUE,
+    save_to_disk_every_n_rep = 50L,
+    pending_file_rows = NULL,
     design_params    = NULL,
     inference_constructor_params = NULL,
     inference_type_params = NULL,
@@ -1858,6 +2023,206 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       } else {
         file.path(getwd(), private$results_filename)
       }
+    },
+    .simulation_cache_dir = function() {
+      path = private$.results_output_path()
+      stem = sub("\\.csv(\\.bz2)?$", "", basename(path), ignore.case = TRUE)
+      file.path(dirname(path), paste0(stem, "__cache"))
+    },
+    .safe_cache_component = function(x) {
+      x = gsub("[^A-Za-z0-9_.=-]+", "_", as.character(x))
+      x = gsub("^_+|_+$", "", x)
+      if (!nzchar(x)) "cache" else x
+    },
+    .hash_object = function(x) {
+      digest::digest(x, algo = "md5")
+    },
+    .simulation_cache_file = function(cs, design_label, design_params,
+                                      cache_type, cmh_se_num_vectors = NULL) {
+      cache_key = private$.hash_object(list(
+        cache_format_version = 1L,
+        cache_type = cache_type,
+        response_type = cs$response_type,
+        cond_exp_func_model = cs$cond_exp_func_model,
+        n = as.integer(cs$n),
+        p = as.integer(cs$p),
+        betaT = as.numeric(cs$betaT),
+        Nrep = as.integer(private$Nrep),
+        seed = private$seed,
+        random_X_draws = private$random_X_draws,
+        shared_X = cs$shared_X,
+        X_mat = cs$X_mat,
+        cov_draw_method_args = cs$cov_draw_method_args,
+        norm_sq_beta_vec = cs$norm_sq_beta_vec,
+        design_label = design_label,
+        design_params = design_params,
+        cmh_se_num_vectors = cmh_se_num_vectors
+      ))
+      filename = paste(
+        private$.safe_cache_component(cache_type),
+        private$.safe_cache_component(cs$response_type),
+        private$.safe_cache_component(cs$cond_exp_func_model),
+        paste0("n", cs$n),
+        paste0("p", cs$p),
+        private$.safe_cache_component(design_label),
+        cache_key,
+        sep = "__"
+      )
+      file.path(private$.simulation_cache_dir(), paste0(filename, ".rds"))
+    },
+    .load_simulation_cache_object = function(cs, design_label, design_params,
+                                             cache_type, reps_needing,
+                                             cmh_se_num_vectors = NULL,
+                                             restore_rng = FALSE,
+                                             cache_file = NULL) {
+      if (is.null(cache_file)) {
+        cache_file = private$.simulation_cache_file(
+          cs, design_label, design_params, cache_type, cmh_se_num_vectors
+        )
+      }
+      if (!file.exists(cache_file)) return(NULL)
+      cache_record = tryCatch(readRDS(cache_file), error = function(e) NULL)
+      if (is.null(cache_record)) return(NULL)
+      obj = if (is.list(cache_record) &&
+                identical(cache_record$cache_format_version, 1L) &&
+                !is.null(cache_record$value)) {
+        cache_record$value
+      } else {
+        cache_record
+      }
+      if (identical(cache_type, "design_w")) {
+        if (!is.list(obj) || is.null(obj$ws) || is.null(obj$rep_to_col)) return(NULL)
+        rep_names = names(obj$rep_to_col)
+        if (is.null(rep_names) ||
+            any(!as.character(reps_needing) %in% rep_names)) return(NULL)
+        if (!is.matrix(obj$ws) || nrow(obj$ws) != as.integer(cs$n)) return(NULL)
+      } else if (identical(cache_type, "cmh_se_w")) {
+        if (is.list(obj) && isTRUE(obj$blocking_design)) return(obj)
+        if (!is.matrix(obj) || nrow(obj) != as.integer(cs$n)) return(NULL)
+      } else {
+        return(NULL)
+      }
+      if (isTRUE(restore_rng) &&
+          is.list(cache_record) &&
+          identical(cache_record$cache_format_version, 1L) &&
+          !is.null(cache_record$rng_after)) {
+        assign(".Random.seed", cache_record$rng_after, envir = .GlobalEnv)
+      }
+      obj
+    },
+    .save_simulation_cache_object = function(obj, cs, design_label, design_params,
+                                             cache_type, cmh_se_num_vectors = NULL) {
+      cache_dir = private$.simulation_cache_dir()
+      if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+      cache_file = private$.simulation_cache_file(
+        cs, design_label, design_params, cache_type, cmh_se_num_vectors
+      )
+      tmp = tempfile(
+        paste0(".", basename(cache_file), "."),
+        tmpdir = dirname(cache_file),
+        fileext = ".tmp"
+      )
+      on.exit(unlink(tmp, force = TRUE), add = TRUE)
+      cache_record = list(
+        cache_format_version = 1L,
+        value = obj,
+        rng_after = if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+          get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+        } else NULL
+      )
+      saveRDS(cache_record, tmp, version = 2)
+      if (!file.rename(tmp, cache_file)) {
+        file.copy(tmp, cache_file, overwrite = TRUE)
+        unlink(tmp, force = TRUE)
+      }
+      invisible(cache_file)
+    },
+    .run_simulation_cache_job = function(job, cmh_se_num_vectors, seed = NULL) {
+      if (!is.null(seed)) set.seed(seed)
+      ns = asNamespace("EDI")
+      prev_nc = ns$edi_env$num_cores_override
+      on.exit(assign("num_cores_override", prev_nc, envir = ns$edi_env), add = TRUE)
+      assign("num_cores_override", 1L, envir = ns$edi_env)
+
+      save_cache_record = function(obj, cache_file) {
+        cache_dir = dirname(cache_file)
+        if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+        tmp = tempfile(
+          paste0(".", basename(cache_file), "."),
+          tmpdir = cache_dir,
+          fileext = ".tmp"
+        )
+        on.exit(unlink(tmp, force = TRUE), add = TRUE)
+        cache_record = list(
+          cache_format_version = 1L,
+          value = obj,
+          rng_after = if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+            get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+          } else NULL
+        )
+        saveRDS(cache_record, tmp, version = 2)
+        if (!file.rename(tmp, cache_file)) {
+          file.copy(tmp, cache_file, overwrite = TRUE)
+          unlink(tmp, force = TRUE)
+        }
+        invisible(cache_file)
+      }
+
+      cs = job$cs
+      design_gen = asNamespace("EDI")[[job$design_gen_class]]
+      d_pg = do.call(
+        design_gen$new,
+        c(list(response_type = cs$response_type, n = cs$n), job$design_params)
+      )
+      d_pg$add_all_subjects_to_experiment(as.data.frame(cs$shared_X))
+
+      if (identical(job$cache_type, "design_w")) {
+        w_mat = d_pg$draw_ws_according_to_design(length(job$reps_needing))
+        storage.mode(w_mat) = "integer"
+        obj = list(
+          ws = w_mat,
+          rep_to_col = setNames(seq_along(job$reps_needing), as.character(job$reps_needing))
+        )
+        save_cache_record(obj, job$cache_file)
+        return(list(status = "created", cache_file = job$cache_file))
+      }
+
+      if (identical(job$cache_type, "cmh_se_w")) {
+        if (d_pg$is_blocking_design()) {
+          save_cache_record(list(blocking_design = TRUE), job$cache_file)
+          return(list(status = "skipped_blocking_design", cache_file = job$cache_file))
+        }
+        cmh_se_w = d_pg$draw_ws_according_to_design(cmh_se_num_vectors)
+        storage.mode(cmh_se_w) = "integer"
+        save_cache_record(cmh_se_w, job$cache_file)
+        return(list(status = "created", cache_file = job$cache_file))
+      }
+
+      list(status = "skipped_unknown_cache_type", cache_file = job$cache_file)
+    },
+    .reps_needing_design_cache = function(active_reps, des_combos, cs, n_existing) {
+      reps_needing = active_reps
+      if (n_existing > 0L) {
+        n_dc = length(des_combos)
+        nb   = length(active_reps)
+        c_des  = vapply(des_combos, `[[`, "", "design")
+        c_inf  = vapply(des_combos, `[[`, "", "inference")
+        c_type = vapply(des_combos, `[[`, "", "inference_type")
+        all_ex = check_in_result_key_store_cpp(
+          rep(cs$response_type,       nb * n_dc),
+          rep(cs$cond_exp_func_model, nb * n_dc),
+          rep(as.integer(cs$n),       nb * n_dc),
+          rep(as.integer(cs$p),       nb * n_dc),
+          rep(as.numeric(cs$betaT),   nb * n_dc),
+          rep(as.integer(active_reps), each = n_dc),
+          rep(c_des,  nb),
+          rep(c_inf,  nb),
+          rep(c_type, nb)
+        )
+        exists_mat = matrix(all_ex, nrow = n_dc)
+        reps_needing = active_reps[colSums(exists_mat) < n_dc]
+      }
+      reps_needing
     },
     .copy_binary_stream = function(from, to, chunk_size = 1024L * 1024L) {
       repeat {
@@ -2273,12 +2638,35 @@ SimulationFramework = R6::R6Class("SimulationFramework",
               d$add_one_subject_response(t, out$y, out$dead)
             }
           } else {
-            d$add_all_subjects_to_experiment(X)
+            # Check for precomp_w BEFORE building the design so we can skip the
+            # expensive add_all_subjects_to_experiment (ILP/matching) when cached.
             precomp_w = NULL
             if (!is.null(state$design_w_cache) && !is.null(state$design_w_cache[[design_name]])) {
-              cache  = state$design_w_cache[[design_name]]
-              col_j  = cache$rep_to_col[[as.character(rep_i)]]
-              if (!is.null(col_j)) precomp_w = cache$ws[, col_j]
+              cache = state$design_w_cache[[design_name]]
+              col_j = cache$rep_to_col[as.character(rep_i)]
+              if (!is.na(col_j)) precomp_w = cache$ws[, col_j]
+            }
+            if (!is.null(precomp_w)) {
+              # Fast path: bypass ILP/matching — populate minimum state directly.
+              priv = d$.__enclos_env__$private
+              priv$Xraw = data.table::as.data.table(X)
+              priv$Ximp = data.table::copy(priv$Xraw)
+              priv$X    = X
+              priv$t    = as.integer(state$n)
+              # Block / strata IDs needed by CMH, ExtendedRobins, etc.
+              if (inherits(d, "DesignFixedBinaryMatch") &&
+                  exists("ensure_matching_structure_computed", envir = priv, inherits = FALSE)) {
+                priv$ensure_matching_structure_computed()
+              } else if (inherits(d, "DesignFixedOptimalBlocks") &&
+                         exists("get_or_compute_block_ids", envir = priv, inherits = FALSE)) {
+                priv$m = as.integer(priv$get_or_compute_block_ids())
+              } else if (!is.null(priv$strata_cols) && length(priv$strata_cols) > 0L &&
+                         exists("get_strata_keys", envir = priv, inherits = FALSE)) {
+                strata_keys = priv$get_strata_keys()
+                if (length(strata_keys) == state$n) priv$m = match(strata_keys, unique(strata_keys))
+              }
+            } else {
+              d$add_all_subjects_to_experiment(X)
             }
             if (!is.null(state$cmh_se_w_cache) && !is.null(state$cmh_se_w_cache[[design_name]])) {
               d$inject_cmh_se_w_mat(state$cmh_se_w_cache[[design_name]])
@@ -2743,8 +3131,11 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         sprintf("[%s]", full_bar)
       }
       
-      msg = sprintf("\r%s %s", label, make_bar(prop, bar_width))
-      cat(substr(msg, 1, width), file = stderr())
+      content = sprintf("%s %s", label, make_bar(prop, bar_width))
+      content = substr(content, 1, width - 1L)
+      n_pad = (width - 1L) - nchar(content)
+      if (n_pad > 0L) content = paste0(content, strrep(" ", n_pad))
+      cat(paste0("\r", content), file = stderr())
       if (exists("flush.console")) utils::flush.console()
     },
     .message_stderr = function(msg) {
@@ -2873,6 +3264,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       invisible(NULL)
     },
     .sync_results_bz2_from_staging = function(staging_filename = private$.results_staging_filename()) {
+      message("Compressing results into a bz2 file...")
       if (!file.exists(staging_filename)) {
         stop("Cannot update compressed results because staging CSV is missing: ", staging_filename)
       }
@@ -3204,6 +3596,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       des_obj
     },
+    .flush_pending_to_disk = function() {
+      if (length(private$pending_file_rows) == 0L) return(invisible(NULL))
+      combined = data.table::rbindlist(private$pending_file_rows, use.names = TRUE, fill = TRUE)
+      private$pending_file_rows = list()
+      private$.append_result_row_to_file(combined)
+      invisible(NULL)
+    },
     # Append multiple rows to raw_results and write to disk in one go.
     .record_batch = function(rows, skipped_count = 0L, keys = NULL) {
       is_dt = data.table::is.data.table(rows)
@@ -3250,8 +3649,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             vapply(rows, `[[`, "", "inference_type")
           )
         }
-        # 3. Batch write to disk
-        private$.append_result_row_to_file(rows)
+        # 3. Buffer for periodic disk flush
+        private$pending_file_rows[[length(private$pending_file_rows) + 1L]] = rows
       }
       # 4. Advance progress count
       # ONLY add n_rows (the new ones).

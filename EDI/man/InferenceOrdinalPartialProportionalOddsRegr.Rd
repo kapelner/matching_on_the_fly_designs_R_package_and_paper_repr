@@ -11,238 +11,244 @@ general R fitters.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{InferenceOrdinalPartialProportionalOddsRegr}
+\code{Inference} -> \code{InferenceRand} -> \code{InferenceRandCI} -> \code{InferenceNonParamBootstrap} -> \code{InferenceBayesianBootstrap} -> \code{InferenceJackknife} -> \code{InferenceAsymp} -> \code{InferenceOrdinalPartialProportionalOddsRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-InferenceOrdinalPartialProportionalOddsRegr-new}{\code{InferenceOrdinalPartialProportionalOddsRegr$new()}}
-\item \href{#method-InferenceOrdinalPartialProportionalOddsRegr-compute_estimate}{\code{InferenceOrdinalPartialProportionalOddsRegr$compute_estimate()}}
-\item \href{#method-InferenceOrdinalPartialProportionalOddsRegr-compute_estimate_with_bootstrap_weights}{\code{InferenceOrdinalPartialProportionalOddsRegr$compute_estimate_with_bootstrap_weights()}}
-\item \href{#method-InferenceOrdinalPartialProportionalOddsRegr-compute_asymp_confidence_interval}{\code{InferenceOrdinalPartialProportionalOddsRegr$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceOrdinalPartialProportionalOddsRegr-compute_asymp_two_sided_pval}{\code{InferenceOrdinalPartialProportionalOddsRegr$compute_asymp_two_sided_pval()}}
-\item \href{#method-InferenceOrdinalPartialProportionalOddsRegr-benchmark_asymp_two_sided_pval_breakdown}{\code{InferenceOrdinalPartialProportionalOddsRegr$benchmark_asymp_two_sided_pval_breakdown()}}
-\item \href{#method-InferenceOrdinalPartialProportionalOddsRegr-clone}{\code{InferenceOrdinalPartialProportionalOddsRegr$clone()}}
+  \itemize{
+    \item \href{#method-InferenceOrdinalPartialProportionalOddsRegr-initialize}{\code{InferenceOrdinalPartialProportionalOddsRegr$new()}}
+    \item \href{#method-InferenceOrdinalPartialProportionalOddsRegr-compute_estimate}{\code{InferenceOrdinalPartialProportionalOddsRegr$compute_estimate()}}
+    \item \href{#method-InferenceOrdinalPartialProportionalOddsRegr-compute_estimate_with_bootstrap_weights}{\code{InferenceOrdinalPartialProportionalOddsRegr$compute_estimate_with_bootstrap_weights()}}
+    \item \href{#method-InferenceOrdinalPartialProportionalOddsRegr-compute_asymp_confidence_interval}{\code{InferenceOrdinalPartialProportionalOddsRegr$compute_asymp_confidence_interval()}}
+    \item \href{#method-InferenceOrdinalPartialProportionalOddsRegr-compute_asymp_two_sided_pval}{\code{InferenceOrdinalPartialProportionalOddsRegr$compute_asymp_two_sided_pval()}}
+    \item \href{#method-InferenceOrdinalPartialProportionalOddsRegr-benchmark_asymp_two_sided_pval_breakdown}{\code{InferenceOrdinalPartialProportionalOddsRegr$benchmark_asymp_two_sided_pval_breakdown()}}
+    \item \href{#method-InferenceOrdinalPartialProportionalOddsRegr-clone}{\code{InferenceOrdinalPartialProportionalOddsRegr$clone()}}
+  }
 }
-}
-\if{html}{\out{
-<details><summary>Inherited methods</summary>
+\if{html}{\out{<details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_analysis_data"><a href='../../EDI/html/Inference.html#method-Inference-get_analysis_data'><code>EDI::Inference$get_analysis_data()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_covariates"><a href='../../EDI/html/Inference.html#method-Inference-get_covariates'><code>EDI::Inference$get_covariates()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_design_object"><a href='../../EDI/html/Inference.html#method-Inference-get_design_object'><code>EDI::Inference$get_design_object()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_model_formula"><a href='../../EDI/html/Inference.html#method-Inference-get_model_formula'><code>EDI::Inference$get_model_formula()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_reason'><code>EDI::Inference$get_nonestimable_reason()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_stage'><code>EDI::Inference$get_nonestimable_stage()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-get_optimization_alg'><code>EDI::Inference$get_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response"><a href='../../EDI/html/Inference.html#method-Inference-get_response'><code>EDI::Inference$get_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response_type"><a href='../../EDI/html/Inference.html#method-Inference-get_response_type'><code>EDI::Inference$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>EDI::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="approximate_jackknife_distribution_beta_hat_T"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>EDI::InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_bias_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>EDI::InferenceJackknife$compute_jackknife_bias_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_corrected_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_corrected_estimate'><code>EDI::InferenceJackknife$compute_jackknife_corrected_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_estimate'><code>EDI::InferenceJackknife$compute_jackknife_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_standard_error"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_standard_error'><code>EDI::InferenceJackknife$compute_jackknife_standard_error()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_std_error"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_std_error'><code>EDI::InferenceJackknife$compute_jackknife_std_error()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_wald_confidence_interval"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_confidence_interval'><code>EDI::InferenceJackknife$compute_jackknife_wald_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_wald_two_sided_pval"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_two_sided_pval'><code>EDI::InferenceJackknife$compute_jackknife_wald_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_confidence_interval'><code>EDI::InferenceAsymp$compute_wald_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_two_sided_pval'><code>EDI::InferenceAsymp$compute_wald_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_supported_testing_types"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_supported_testing_types'><code>EDI::InferenceAsymp$get_supported_testing_types()</code></a></span></li>
+  <li><code>Inference$compute_exact_confidence_interval()</code></li>
+  <li><code>Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
+  <li><code>Inference$duplicate()</code></li>
+  <li><code>Inference$get_analysis_data()</code></li>
+  <li><code>Inference$get_covariates()</code></li>
+  <li><code>Inference$get_design_object()</code></li>
+  <li><code>Inference$get_model_formula()</code></li>
+  <li><code>Inference$get_nonestimable_reason()</code></li>
+  <li><code>Inference$get_nonestimable_stage()</code></li>
+  <li><code>Inference$get_optimization_alg()</code></li>
+  <li><code>Inference$get_response()</code></li>
+  <li><code>Inference$get_response_type()</code></li>
+  <li><code>Inference$get_treatment()</code></li>
+  <li><code>Inference$is_nonestimable()</code></li>
+  <li><code>Inference$set_optimization_alg()</code></li>
+  <li><code>Inference$set_seed()</code></li>
+  <li><code>InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></li>
+  <li><code>InferenceRand$set_custom_randomization_statistic_function()</code></li>
+  <li><code>InferenceRandCI$compute_rand_confidence_interval()</code></li>
+  <li><code>InferenceRandCI$compute_rand_two_sided_pval()</code></li>
+  <li><code>InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></li>
+  <li><code>InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></li>
+  <li><code>InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></li>
+  <li><code>InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></li>
+  <li><code>InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></li>
+  <li><code>InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></li>
+  <li><code>InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></li>
+  <li><code>InferenceJackknife$compute_jackknife_bias_estimate()</code></li>
+  <li><code>InferenceJackknife$compute_jackknife_corrected_estimate()</code></li>
+  <li><code>InferenceJackknife$compute_jackknife_estimate()</code></li>
+  <li><code>InferenceJackknife$compute_jackknife_standard_error()</code></li>
+  <li><code>InferenceJackknife$compute_jackknife_std_error()</code></li>
+  <li><code>InferenceJackknife$compute_jackknife_wald_confidence_interval()</code></li>
+  <li><code>InferenceJackknife$compute_jackknife_wald_two_sided_pval()</code></li>
+  <li><code>InferenceAsymp$compute_wald_confidence_interval()</code></li>
+  <li><code>InferenceAsymp$compute_wald_two_sided_pval()</code></li>
+  <li><code>InferenceAsymp$get_mod()</code></li>
+  <li><code>InferenceAsymp$get_summary()</code></li>
+  <li><code>InferenceAsymp$get_supported_testing_types()</code></li>
 </ul>
-</details>
-}}
+</details>}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceOrdinalPartialProportionalOddsRegr-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceOrdinalPartialProportionalOddsRegr-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize the internal PPO base object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsRegr$new(
+\if{html}{\out{<a id="method-InferenceOrdinalPartialProportionalOddsRegr-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalPartialProportionalOddsRegr-initialize}{}}}
+\subsection{\code{InferenceOrdinalPartialProportionalOddsRegr$new()}}{
+  Initialize the internal PPO base object.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceOrdinalPartialProportionalOddsRegr$new(
   des_obj,
   verbose = FALSE,
   harden = TRUE,
   model_formula = NULL,
   nonparallel = character(0),
   smart_cold_start_default = TRUE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with an ordinal
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with an ordinal
 response.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-
-\item{\code{harden}}{Whether to apply robustness measures.}
-
-\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+      \item{\code{verbose}}{Whether to print progress messages.}
+      \item{\code{harden}}{Whether to apply robustness measures.}
+      \item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
 the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
+      \item{\code{nonparallel}}{Covariate names that may vary across thresholds.}
+      \item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default.}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
 
-\item{\code{nonparallel}}{Covariate names that may vary across thresholds.}
-
-\item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPartialProportionalOddsRegr-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPartialProportionalOddsRegr-compute_estimate}{}}}
-\subsection{Method \code{compute_estimate()}}{
-Retrieve the estimated treatment log-odds shift.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsRegr$compute_estimate(
+\subsection{\code{InferenceOrdinalPartialProportionalOddsRegr$compute_estimate()}}{
+  Retrieve the estimated treatment log-odds shift.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceOrdinalPartialProportionalOddsRegr$compute_estimate(
   estimate_only = FALSE
-)}\if{html}{\out{</div>}}
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    The estimated treatment effect.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The estimated treatment effect.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPartialProportionalOddsRegr-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPartialProportionalOddsRegr-compute_estimate_with_bootstrap_weights}{}}}
-\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
-Recomputes the partial-proportional-odds treatment estimate
+\subsection{\code{InferenceOrdinalPartialProportionalOddsRegr$compute_estimate_with_bootstrap_weights()}}{
+  Recomputes the partial-proportional-odds treatment estimate
   under Bayesian-bootstrap weights.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsRegr$compute_estimate_with_bootstrap_weights(
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceOrdinalPartialProportionalOddsRegr$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
   estimate_only = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
 bootstrap weights.}
-
-\item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
+      \item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
 estimate.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPartialProportionalOddsRegr-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPartialProportionalOddsRegr-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-Compute a Wald-style confidence interval for the treatment effect. If the
+\subsection{\code{InferenceOrdinalPartialProportionalOddsRegr$compute_asymp_confidence_interval()}}{
+  Compute a Wald-style confidence interval for the treatment effect. If the
 model-based standard error is unavailable, falls back to the bootstrap
 interval.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsRegr$compute_asymp_confidence_interval(
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceOrdinalPartialProportionalOddsRegr$compute_asymp_confidence_interval(
   alpha = 0.05
-)}\if{html}{\out{</div>}}
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{alpha}}{Significance level for the interval.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A confidence interval for the treatment effect.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{Significance level for the interval.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A confidence interval for the treatment effect.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPartialProportionalOddsRegr-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPartialProportionalOddsRegr-compute_asymp_two_sided_pval}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval()}}{
-Compute a Wald-style two-sided p-value for the treatment effect. If the
+\subsection{\code{InferenceOrdinalPartialProportionalOddsRegr$compute_asymp_two_sided_pval()}}{
+  Compute a Wald-style two-sided p-value for the treatment effect. If the
 model-based standard error is unavailable, falls back to the bootstrap
 p-value.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsRegr$compute_asymp_two_sided_pval(
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceOrdinalPartialProportionalOddsRegr$compute_asymp_two_sided_pval(
   delta = 0
-)}\if{html}{\out{</div>}}
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{delta}}{Null treatment effect to test.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A two-sided p-value.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{Null treatment effect to test.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A two-sided p-value.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPartialProportionalOddsRegr-benchmark_asymp_two_sided_pval_breakdown"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPartialProportionalOddsRegr-benchmark_asymp_two_sided_pval_breakdown}{}}}
-\subsection{Method \code{benchmark_asymp_two_sided_pval_breakdown()}}{
-Benchmark the asymptotic p-value path with a timing breakdown.
+\subsection{\code{InferenceOrdinalPartialProportionalOddsRegr$benchmark_asymp_two_sided_pval_breakdown()}}{
+  Benchmark the asymptotic p-value path with a timing breakdown.
 
 This is a diagnostic helper for performance investigation. It separates
 the model fit, cache/SE materialization, and final p-value arithmetic.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsRegr$benchmark_asymp_two_sided_pval_breakdown(
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceOrdinalPartialProportionalOddsRegr$benchmark_asymp_two_sided_pval_breakdown(
   delta = 0
-)}\if{html}{\out{</div>}}
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{delta}}{Null treatment effect to test.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A named list with timing and result details.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{Null treatment effect to test.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A named list with timing and result details.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPartialProportionalOddsRegr-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPartialProportionalOddsRegr-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsRegr$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceOrdinalPartialProportionalOddsRegr$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceOrdinalPartialProportionalOddsRegr$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }

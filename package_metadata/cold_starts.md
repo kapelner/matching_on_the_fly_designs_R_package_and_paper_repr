@@ -13,7 +13,8 @@ Strategies marked with "(R Standard)" have been aligned with core R functions li
 | **Logistic Regression** | **OLS on $\text{logit}(\frac{y + 0.5}{2})$**: (R Standard) Shrinks 0/1 response toward 0.5 to provide a robust initial separation plane. | N/A |
 | **Poisson Regression** | **OLS on $\ln(y + 0.1)$**: (R Standard) Uses a small offset for zero counts to allow log-linear initialization. | N/A |
 | **Negative Binomial** | **OLS on $\ln(y + 1)$**: Log-linear approximation using OLS. | $\ln(\theta) = 0$ (initial dispersion set to 1). |
-| **Weibull AFT** | **OLS on $\ln(y) + 0.572$**: (R Standard) Uses uncensored observations with a Gumbel mean shift. | **Moment-based scale**: $\ln(\sigma) = 0.5 \ln(\text{resid\_var} / 1.64)$. |
+| **Weibull AFT** | **OLS on $\ln(y) + 0.572$**: (R
+ Standard) Uses uncensored observations with a Gumbel mean shift. | **Moment-based scale**: $\ln(\sigma) = 0.5 \ln(\text{resid\_var} / 1.64)$. |
 | **Beta Regression** | **OLS on $\text{logit}(y)$**: Maps (0,1) response to real line via logit. | $\ln(\phi) = 2.0$. |
 | **Ordinal Regression** | **OLS on $y$**: Uses ordinal levels as a continuous response for $\beta$. | **Quantile Mapping**: $\alpha$ intercepts set by mapping sample quantiles. |
 

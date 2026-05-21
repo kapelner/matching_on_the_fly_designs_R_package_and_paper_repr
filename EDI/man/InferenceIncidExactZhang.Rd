@@ -5,8 +5,6 @@
 \title{Exact Zhang Incidence Inference}
 \description{
 Exact Zhang Incidence Inference
-
-Exact Zhang Incidence Inference
 }
 \examples{
 \dontrun{
@@ -14,157 +12,160 @@ Exact Zhang Incidence Inference
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{InferenceIncidExactZhang}
+\code{Inference} -> \code{InferenceRand} -> \code{InferenceRandCI} -> \code{InferenceIncidExactZhang}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-InferenceIncidExactZhang-new}{\code{InferenceIncidExactZhang$new()}}
-\item \href{#method-InferenceIncidExactZhang-compute_estimate}{\code{InferenceIncidExactZhang$compute_estimate()}}
-\item \href{#method-InferenceIncidExactZhang-compute_exact_confidence_interval}{\code{InferenceIncidExactZhang$compute_exact_confidence_interval()}}
-\item \href{#method-InferenceIncidExactZhang-compute_exact_two_sided_pval_for_treatment_effect}{\code{InferenceIncidExactZhang$compute_exact_two_sided_pval_for_treatment_effect()}}
-\item \href{#method-InferenceIncidExactZhang-clone}{\code{InferenceIncidExactZhang$clone()}}
+  \itemize{
+    \item \href{#method-InferenceIncidExactZhang-initialize}{\code{InferenceIncidExactZhang$new()}}
+    \item \href{#method-InferenceIncidExactZhang-compute_estimate}{\code{InferenceIncidExactZhang$compute_estimate()}}
+    \item \href{#method-InferenceIncidExactZhang-compute_exact_confidence_interval}{\code{InferenceIncidExactZhang$compute_exact_confidence_interval()}}
+    \item \href{#method-InferenceIncidExactZhang-compute_exact_two_sided_pval_for_treatment_effect}{\code{InferenceIncidExactZhang$compute_exact_two_sided_pval_for_treatment_effect()}}
+    \item \href{#method-InferenceIncidExactZhang-clone}{\code{InferenceIncidExactZhang$clone()}}
+  }
 }
-}
-\if{html}{\out{
-<details><summary>Inherited methods</summary>
+\if{html}{\out{<details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_analysis_data"><a href='../../EDI/html/Inference.html#method-Inference-get_analysis_data'><code>EDI::Inference$get_analysis_data()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_covariates"><a href='../../EDI/html/Inference.html#method-Inference-get_covariates'><code>EDI::Inference$get_covariates()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_design_object"><a href='../../EDI/html/Inference.html#method-Inference-get_design_object'><code>EDI::Inference$get_design_object()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_model_formula"><a href='../../EDI/html/Inference.html#method-Inference-get_model_formula'><code>EDI::Inference$get_model_formula()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_reason'><code>EDI::Inference$get_nonestimable_reason()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_stage'><code>EDI::Inference$get_nonestimable_stage()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-get_optimization_alg'><code>EDI::Inference$get_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response"><a href='../../EDI/html/Inference.html#method-Inference-get_response'><code>EDI::Inference$get_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response_type"><a href='../../EDI/html/Inference.html#method-Inference-get_response_type'><code>EDI::Inference$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>EDI::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
+  <li><code>Inference$duplicate()</code></li>
+  <li><code>Inference$get_analysis_data()</code></li>
+  <li><code>Inference$get_covariates()</code></li>
+  <li><code>Inference$get_design_object()</code></li>
+  <li><code>Inference$get_model_formula()</code></li>
+  <li><code>Inference$get_nonestimable_reason()</code></li>
+  <li><code>Inference$get_nonestimable_stage()</code></li>
+  <li><code>Inference$get_optimization_alg()</code></li>
+  <li><code>Inference$get_response()</code></li>
+  <li><code>Inference$get_response_type()</code></li>
+  <li><code>Inference$get_treatment()</code></li>
+  <li><code>Inference$is_nonestimable()</code></li>
+  <li><code>Inference$set_optimization_alg()</code></li>
+  <li><code>Inference$set_seed()</code></li>
+  <li><code>InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></li>
+  <li><code>InferenceRand$set_custom_randomization_statistic_function()</code></li>
+  <li><code>InferenceRandCI$compute_rand_confidence_interval()</code></li>
+  <li><code>InferenceRandCI$compute_rand_two_sided_pval()</code></li>
 </ul>
-</details>
-}}
+</details>}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidExactZhang-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidExactZhang-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize exact Zhang incidence inference.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExactZhang$new(des_obj, model_formula = NULL, verbose = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed design object.}
-
-\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+\if{html}{\out{<a id="method-InferenceIncidExactZhang-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceIncidExactZhang-initialize}{}}}
+\subsection{\code{InferenceIncidExactZhang$new()}}{
+  Initialize exact Zhang incidence inference.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceIncidExactZhang$new(des_obj, model_formula = NULL, verbose = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{des_obj}}{A completed design object.}
+      \item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
 the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
+      \item{\code{verbose}}{Whether to print progress messages.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A new \code{InferenceIncidExactZhang} object.
+  }
+}
 
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A new \code{InferenceIncidExactZhang} object.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidExactZhang-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidExactZhang-compute_estimate}{}}}
-\subsection{Method \code{compute_estimate()}}{
-Compute the Zhang incidence treatment estimate.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExactZhang$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceIncidExactZhang$compute_estimate()}}{
+  Compute the Zhang incidence treatment estimate.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceIncidExactZhang$compute_estimate(estimate_only = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{estimate_only}}{Ignored for this estimator.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    The treatment estimate.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{Ignored for this estimator.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The treatment estimate.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidExactZhang-compute_exact_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidExactZhang-compute_exact_confidence_interval}{}}}
-\subsection{Method \code{compute_exact_confidence_interval()}}{
-Compute an exact Zhang confidence interval.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExactZhang$compute_exact_confidence_interval(
+\subsection{\code{InferenceIncidExactZhang$compute_exact_confidence_interval()}}{
+  Compute an exact Zhang confidence interval.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceIncidExactZhang$compute_exact_confidence_interval(
   alpha = 0.05,
   pval_epsilon = 0.005,
   args_for_type = NULL
-)}\if{html}{\out{</div>}}
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{alpha}}{Significance level.}
+      \item{\code{pval_epsilon}}{Bisection tolerance for the inversion routine.}
+      \item{\code{args_for_type}}{Optional arguments keyed by exact type.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A confidence interval.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{Significance level.}
-
-\item{\code{pval_epsilon}}{Bisection tolerance for the inversion routine.}
-
-\item{\code{args_for_type}}{Optional arguments keyed by exact type.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A confidence interval.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidExactZhang-compute_exact_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidExactZhang-compute_exact_two_sided_pval_for_treatment_effect}{}}}
-\subsection{Method \code{compute_exact_two_sided_pval_for_treatment_effect()}}{
-Compute the exact Zhang two-sided p-value for a treatment effect.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExactZhang$compute_exact_two_sided_pval_for_treatment_effect(
+\subsection{\code{InferenceIncidExactZhang$compute_exact_two_sided_pval_for_treatment_effect()}}{
+  Compute the exact Zhang two-sided p-value for a treatment effect.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceIncidExactZhang$compute_exact_two_sided_pval_for_treatment_effect(
   delta = 0,
   args_for_type = NULL
-)}\if{html}{\out{</div>}}
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{delta}}{Null treatment effect value.}
+      \item{\code{args_for_type}}{Optional arguments keyed by exact type.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A two-sided p-value.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{Null treatment effect value.}
-
-\item{\code{args_for_type}}{Optional arguments keyed by exact type.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A two-sided p-value.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidExactZhang-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidExactZhang-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExactZhang$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceIncidExactZhang$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceIncidExactZhang$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }

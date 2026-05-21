@@ -144,6 +144,7 @@ InferenceAsympLikStdModCache = R6::R6Class("InferenceAsympLikStdModCache",
 #' parametric LR bootstrap API.
 #'
 #' @keywords internal
+#' @noRd
 InferenceAsympLikStdModCacheNoParamBootstrap = R6::R6Class("InferenceAsympLikStdModCacheNoParamBootstrap",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,

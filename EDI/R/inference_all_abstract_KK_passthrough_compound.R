@@ -42,6 +42,7 @@ InferenceKKPassThroughCompound = R6::R6Class("InferenceKKPassThroughCompound",
 #' designs that should not expose the parametric LR bootstrap API.
 #'
 #' @keywords internal
+#' @noRd
 InferenceKKPassThroughCompoundNoParamBootstrap = R6::R6Class("InferenceKKPassThroughCompoundNoParamBootstrap",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
