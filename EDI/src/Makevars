@@ -28,17 +28,14 @@ ifeq ($(EDI_NATIVE_SPEED),1)
 PKG_CXXFLAGS += -O3
 endif
 
-# LTO is disabled by default with -fno-lto to guard against system-level -flto
-# flags and a known GCC 15 LTO internal compiler error.
-# Enable explicitly with: EDI_NATIVE_LTO=1 R CMD INSTALL EDI
-EDI_NATIVE_LTO ?= 0
+# LTO is enabled by default. Keep compile and link flags consistent: mixing
+# R-devel's CXX20FLAGS=-flto with a package-level final -fno-lto link flag
+# makes ld.bfd see LTO objects without the GCC linker plugin.
+# Disable explicitly only for debugging: EDI_NATIVE_LTO=0 R CMD INSTALL EDI
+EDI_NATIVE_LTO ?= 1
 ifeq ($(EDI_NATIVE_LTO),1)
 PKG_CXXFLAGS += -flto
 PKG_LIBS += -flto
 else
 PKG_CXXFLAGS += -fno-lto
-PKG_LIBS += -fno-lto
-# Robustness: also append to CXXFLAGS to ensure it wins against system-level
-# -flto flags that might appear in CXX20 command or at the end of CXXFLAGS.
-CXXFLAGS += -fno-lto
 endif
