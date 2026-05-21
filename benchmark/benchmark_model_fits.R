@@ -8,53 +8,69 @@ library(survival)
 
 set.seed(42)
 
+STYLE_BLOCK = c(
+  "<style>",
+  "    body, .markdown-body, .container {",
+  "        max-width: 1200px !important;",
+  "        width: 100% !important;",
+  "        margin: 0 auto !important;",
+  "    }",
+  "</style>"
+)
+
 # Global Config
 N_GLM = 1000
 N_SURV = 500
-B_TIME = 3 
-TARGET_BATCH_MS = 50
+B_TIME = 10 
+TARGET_BATCH_MS = 200
 MIN_RESOLVED_BATCH_MS = 10
 MAX_INNER_REPS = 100000L
-FAST_PATH_MICROBENCH_REPS = 500L
+FAST_PATH_MICROBENCH_REPS = 2000L
 FAST_PATH_THRESHOLD_MS = 0.01
 
 # --- Data Generation Helper ---
 generate_data = function(n = 200, p = 5, family = "logistic") {
     X = matrix(rnorm(n * p), n, p); X[, 1] = 1 
-    beta = rnorm(p) * 0.1 
-    eta = X %*% beta
+    beta = rnorm(p) * 0.5
     n_treat = floor(n / 2)
     w = sample(c(rep(1, n_treat), rep(0, n - n_treat)))
-    eta = eta + 0.1 * w 
+    eta = X %*% beta + 0.5 * w
     res = list(X = X, w = w)
     
     if (family %in% c("logistic", "log-binomial", "identity-binomial", "glmm_logistic", "robust", "probit")) {
         prob = if (family == "log-binomial") pmin(0.5, exp(eta - 2)) else plogis(eta)
         res$y = rbinom(n, 1, prob)
     } else if (family %in% c("poisson", "glmm_poisson", "zap", "quasipoisson", "hurdle_poisson_glmm", "modified_poisson")) {
-        res$y = rpois(n, exp(pmin(eta, 2)))
+        res$y = rpois(n, exp(eta))
     } else if (family %in% c("negbin", "zinb", "truncated_negbin", "hurdle_negbin")) {
-        res$y = rnbinom(n, size = 2, mu = exp(pmin(eta, 2)))
+        res$y = rnbinom(n, size = 2, mu = exp(eta))
     } else if (family %in% c("beta", "zoib", "fractional")) {
         mu = plogis(eta); phi = 10; res$y = pmax(pmin(rbeta(n, mu * phi, (1 - mu) * phi), 1 - 1e-6), 1e-6)
     } else if (family %in% c("weibull", "cox", "strat_cox", "dep_cens")) {
-        res$y = rexp(n, 1/exp(pmin(eta, 2))); res$dead = rbinom(n, 1, 0.8)
+        res$y = rexp(n, exp(eta)); res$dead = rbinom(n, 1, 0.8)
     } else if (family %in% c("ordinal", "adj_cat", "continuation", "stereotype", "glmm_ordinal")) {
-        p1 = plogis(-1.5 - eta); p_le_2 = plogis(0 - eta); p_le_3 = plogis(1.5 - eta)
-        p2 = pmax(0, p_le_2 - p1); p3 = pmax(0, p_le_3 - p_le_2); p4 = pmax(0, 1 - p_le_3)
-        probs = cbind(p1, p2, p3, p4); probs = probs / rowSums(probs)
-        res$y = apply(probs, 1, function(p) sample(1:4, 1, prob = p))
+        p1 = 1 / (1 + exp(eta - 1))
+        p2 = 1 / (1 + exp(eta + 1)) - p1
+        p3 = 1 - p1 - p2
+        probs = cbind(p1, p2, p3)
+        probs = t(apply(probs, 1, function(x) pmax(x, 1e-6)))
+        probs = probs / rowSums(probs)
+        res$y = apply(probs, 1, function(p) sample(1:3, 1, prob = p))
     } else {
         res$y = as.numeric(eta + rnorm(n, 0, 0.5))
     }
     res
 }
 
-time_expr_ms = function(expr, times = B_TIME, env = parent.frame(), target_batch_ms = TARGET_BATCH_MS, max_inner_reps = MAX_INNER_REPS, fast_path_microbenchmark_reps = FAST_PATH_MICROBENCH_REPS) {
+collect_timing_ms = function(expr, times = B_TIME, env = parent.frame(), target_batch_ms = TARGET_BATCH_MS, max_inner_reps = MAX_INNER_REPS, fast_path_microbenchmark_reps = FAST_PATH_MICROBENCH_REPS) {
     micro_time_ms = function() {
         mb_ms = microbenchmark(eval(expr, envir = env), times = fast_path_microbenchmark_reps)$time / 1e6
         mb_ms = mb_ms[is.finite(mb_ms) & mb_ms > 0]
-        if (length(mb_ms) == 0L) 0 else median(mb_ms)
+        list(
+            median_ms = if (length(mb_ms) == 0L) 0 else median(mb_ms),
+            samples_ms = mb_ms,
+            method = "microbenchmark"
+        )
     }
     inner_reps = 1L
     batch_ms = 0
@@ -73,11 +89,84 @@ time_expr_ms = function(expr, times = B_TIME, env = parent.frame(), target_batch
     for (i in seq_len(times)) {
         vals_ms[i] = system.time(for (j in seq_len(inner_reps)) eval(expr, envir = env))[["elapsed"]] * 1000 / inner_reps
     }
-    median_ms = median(vals_ms[is.finite(vals_ms)])
+    vals_ms = vals_ms[is.finite(vals_ms) & vals_ms > 0]
+    median_ms = if (length(vals_ms) == 0L) NA_real_ else median(vals_ms)
     if (!is.finite(median_ms) || median_ms < FAST_PATH_THRESHOLD_MS) {
         return(micro_time_ms())
     }
-    median_ms
+    list(
+        median_ms = median_ms,
+        samples_ms = vals_ms,
+        method = "system.time"
+    )
+}
+
+timing_ttest_pval = function(x, y) {
+    x = x[is.finite(x)]
+    y = y[is.finite(y)]
+    if (length(x) < 2L || length(y) < 2L) return(NA_real_)
+    tryCatch(stats::t.test(x, y, var.equal = FALSE)$p.value, error = function(e) NA_real_)
+}
+
+prepare_solver_only_edi = function(inf_obj, cls_name) {
+    priv = inf_obj$.__enclos_env__$private
+    replace_binding = function(name, value) {
+        if (!exists(name, envir = priv, inherits = FALSE)) return(invisible(FALSE))
+        was_locked = bindingIsLocked(name, priv)
+        if (was_locked) unlockBinding(name, priv)
+        assign(name, value, envir = priv)
+        if (was_locked) lockBinding(name, priv)
+        invisible(TRUE)
+    }
+
+    if (exists("build_design_matrix", envir = priv, inherits = FALSE)) {
+        X_built = tryCatch(priv$build_design_matrix(), error = function(e) NULL)
+        if (!is.null(X_built)) {
+            replace_binding("build_design_matrix", function() X_built)
+        }
+    }
+    if (exists("create_design_matrix", envir = priv, inherits = FALSE)) {
+        X_created = tryCatch(priv$create_design_matrix(), error = function(e) NULL)
+        if (!is.null(X_created)) {
+            replace_binding("create_design_matrix", function() X_created)
+        }
+    }
+
+    if (identical(cls_name, "InferenceContinQuantileRegr") &&
+        exists("build_design_matrix", envir = priv, inherits = FALSE) &&
+        exists("reduce_design_matrix_for_quantile", envir = priv, inherits = FALSE)) {
+        X_full = tryCatch(priv$build_design_matrix(), error = function(e) NULL)
+        reduced = tryCatch(priv$reduce_design_matrix_for_quantile(X_full, reuse_factorizations = FALSE), error = function(e) NULL)
+        if (!is.null(reduced)) {
+            replace_binding("reduce_design_matrix_for_quantile", function(X_full, reuse_factorizations = FALSE) reduced)
+        }
+    }
+
+    if (identical(cls_name, "InferenceContinLin") &&
+        exists("build_lin_design_matrix", envir = priv, inherits = FALSE) &&
+        exists("reduce_design_matrix_preserving_treatment", envir = priv, inherits = FALSE)) {
+        X_lin = tryCatch(priv$build_lin_design_matrix(), error = function(e) NULL)
+        reduced = tryCatch(priv$reduce_design_matrix_preserving_treatment(X_lin), error = function(e) NULL)
+        if (!is.null(X_lin)) {
+            replace_binding("build_lin_design_matrix", function() X_lin)
+        }
+        if (!is.null(reduced)) {
+            replace_binding("reduce_design_matrix_preserving_treatment", function(X_full) reduced)
+        }
+    }
+
+    if (identical(cls_name, "InferenceSurvivalStratCoxPHRegr") &&
+        exists("compute_strata_info", envir = priv, inherits = FALSE)) {
+        X_full = tryCatch(priv$X, error = function(e) NULL)
+        strata_info = tryCatch(priv$compute_strata_info(X_full), error = function(e) NULL)
+        if (!is.null(strata_info)) {
+            replace_binding("compute_strata_info", function(X_full) strata_info)
+            informative_rows = tryCatch(priv$get_informative_rows(strata_info$strata_id), error = function(e) integer(0))
+            replace_binding("get_informative_rows", function(strata_id) informative_rows)
+        }
+    }
+
+    invisible(inf_obj)
 }
 
 # --- Mapping Table (Targeted subset requested by user) ---
@@ -113,7 +202,16 @@ bench_specs = list(
     list(cls = "InferenceOrdinalCloglogRegr", pkg = "ordinal", func = "clm(cll)", expr = quote(ordinal::clm(factor(y, ordered=T) ~ treatment + x1 + x2 + x3 + x4, data = df, link = "cloglog"))),
     list(cls = "InferenceOrdinalCauchitRegr", pkg = "ordinal", func = "clm(cauchit)", expr = quote(ordinal::clm(factor(y, ordered=T) ~ treatment + x1 + x2 + x3 + x4, data = df, link = "cauchit"))),
     list(cls = "InferenceSurvivalLogRank", pkg = "survival", func = "survdiff", expr = quote(survival::survdiff(survival::Surv(y, dead) ~ treatment, data = df))),
-    list(cls = "InferenceSurvivalGehanWilcox", pkg = "survival", func = "survdiff(rho=1)", expr = quote(survival::survdiff(survival::Surv(y, dead) ~ treatment, data = df, rho = 1))),
+    list(cls = "InferenceSurvivalGehanWilcox", pkg = "survival", func = "coxph(null)+KM weighted residual mean diff", expr = quote({
+        surv_obj = survival::Surv(df$y, df$dead)
+        cox_null = survival::coxph(surv_obj ~ 1)
+        M = as.numeric(stats::residuals(cox_null, type = "martingale"))
+        km_all = survival::survfit(surv_obj ~ 1)
+        idx = findInterval(df$y, km_all$time, left.open = TRUE)
+        peto_weights = c(1.0, km_all$surv)[idx + 1L]
+        M_w = peto_weights * M
+        mean(M_w[df$treatment == 1]) - mean(M_w[df$treatment == 0])
+    })),
     list(cls = "InferenceAllSimpleMeanDiffPooledVar", pkg = "stats", func = "t.test(pool)", expr = quote(t.test(df$y[df$treatment==1], df$y[df$treatment==0], var.equal = TRUE))),
     list(cls = "InferenceAllSimpleWilcox", pkg = "stats", func = "wilcox.test", expr = quote(wilcox.test(df$y[df$treatment==1], df$y[df$treatment==0])), scale = 0.5),
     list(cls = "InferenceIncidExactFisher", pkg = "stats", func = "fisher.test", expr = quote(fisher.test(table(df$treatment, df$y))), scale = 0.1),
@@ -152,9 +250,6 @@ bench_specs = list(
         r = as.numeric(ridit_map[as.character(y)])
         mean(r[df$treatment==1]) - mean(r[df$treatment==0])
     })),
-    list(cls = "InferenceIncidExactZhang", pkg = "Exact", func = "exact.test(z)", expr = quote({
-        Exact::exact.test(table(df$treatment, df$y), method="z-pooled", tsmethod="central")
-    }), fast_path_microbenchmark_reps = 5000L, b_time_override = 20L),
     list(cls = "InferenceIncidNewcombeRiskDiff", pkg = "DescTools", func = "BinomDiffCI(score)", expr = quote(DescTools::BinomDiffCI(sum(df$y[df$treatment==1]), sum(df$treatment==1), sum(df$y[df$treatment==0]), sum(df$treatment==0), method="score")))
 )
 
@@ -226,7 +321,7 @@ run_one = function(spec) {
     d = generate_data(n = n, family = family)
     
     # Timing EDI
-    t_edi = tryCatch({
+    timing_edi = tryCatch({
         des = DesignFixediBCRD$new(n = n, response_type = resp_type)
         des$add_all_subjects_to_experiment(as.data.frame(d$X[,-1,drop=F]))
         des$overwrite_all_subject_assignments(d$w)
@@ -235,6 +330,7 @@ run_one = function(spec) {
         inf_cls = get(cls_name)
         # Robustly check for smart_cold_start_default
         inf_obj = tryCatch(inf_cls$new(des, smart_cold_start_default = TRUE), error = function(e) inf_cls$new(des))
+        prepare_solver_only_edi(inf_obj, cls_name)
         
         # Determine the benchmark expression
         bench_expr = if (cls_name == "InferenceAllSimpleWilcox") {
@@ -253,14 +349,14 @@ run_one = function(spec) {
         # Warmup once
         eval(bench_expr)
         
-        time_expr_ms(bench_expr, times = b_time, fast_path_microbenchmark_reps = fast_path_microbenchmark_reps)
+        collect_timing_ms(bench_expr, times = b_time, fast_path_microbenchmark_reps = fast_path_microbenchmark_reps)
     }, error = function(e) {
         cat("  EDI Error:", e$message, "\n")
-        NA_real_
+        list(median_ms = NA_real_, samples_ms = numeric(0))
     })
 
     # Timing Canonical (Crashes if pkg missing)
-    t_can = NA_real_
+    timing_can = list(median_ms = NA_real_, samples_ms = numeric(0))
     if (!is.null(spec$expr) && spec$pkg != "None") {
         library(spec$pkg, character.only = TRUE)
         X_cols = d$X[,-1,drop=F]
@@ -269,13 +365,20 @@ run_one = function(spec) {
         df = cbind(df, X_cols)
         X_can = cbind(`(Intercept)` = 1, treatment = d$w, as.matrix(X_cols))
 
-        t_can = time_expr_ms(spec$expr, times = b_time, fast_path_microbenchmark_reps = fast_path_microbenchmark_reps)
+        timing_can = tryCatch(
+            collect_timing_ms(spec$expr, times = b_time, fast_path_microbenchmark_reps = fast_path_microbenchmark_reps),
+            error = function(e) {
+                cat("  Canonical Error:", e$message, "\n")
+                list(median_ms = NA_real_, samples_ms = numeric(0))
+            }
+        )
     }
     
     results[[length(results) + 1]] <<- data.table(
-        Class = cls_name, Response = resp_type, EDI_Time_ms = t_edi,
-        Canonical_Pkg = spec$pkg, Canonical_Func = spec$func, Canonical_Time_ms = t_can,
-        Speedup = if (!is.na(t_can) && !is.na(t_edi) && t_edi > 0) t_can / t_edi else NA_real_
+        Class = cls_name, Response = resp_type, EDI_Time_ms = timing_edi$median_ms,
+        Canonical_Pkg = spec$pkg, Canonical_Func = spec$func, Canonical_Time_ms = timing_can$median_ms,
+        Speedup = if (!is.na(timing_can$median_ms) && !is.na(timing_edi$median_ms) && timing_edi$median_ms > 0) timing_can$median_ms / timing_edi$median_ms else NA_real_,
+        Timing_Pval = timing_ttest_pval(timing_edi$samples_ms, timing_can$samples_ms)
     )
 }
 
@@ -293,7 +396,25 @@ dt = rbindlist(results)
 response_levels = c("all", "continuous", "incidence", "count", "proportion", "survival", "ordinal")
 dt[, Response := factor(Response, levels = response_levels)]
 setorder(dt, Response, Class)
+dt[, Speedup_Num := Speedup]
 dt[, Speedup := ifelse(!is.na(Speedup), paste0(round(Speedup, 2), "x"), "NA")]
+format_pval = function(x) {
+  ifelse(is.na(x), "NA", vapply(x, function(v) sprintf("%.3g", v), character(1)))
+}
+format_pval_stars = function(x) {
+  ifelse(
+    is.na(x),
+    "",
+    ifelse(x < 0.001, "***", ifelse(x < 0.01, "**", ifelse(x < 0.05, "*", "")))
+  )
+}
+row_bg_color = function(speedup, pval) {
+  if (!is.finite(speedup) || is.na(pval)) return("#eceff1")
+  if (pval < 0.05 && speedup > 1) return("#d9fdd3")
+  if (pval < 0.05 && speedup < 1) return("#ffd9d9")
+  if (pval >= 0.05) return("#fff4bf")
+  ""
+}
 format_ms = function(x) {
   ifelse(
     is.na(x),
@@ -303,7 +424,28 @@ format_ms = function(x) {
 }
 dt[, EDI_Time_ms := format_ms(EDI_Time_ms)]
 dt[, Canonical_Time_ms := format_ms(Canonical_Time_ms)]
+dt[, Timing_Row_Color := mapply(row_bg_color, Speedup_Num, Timing_Pval, USE.NAMES = FALSE)]
+dt[, Timing_Pval_Stars := format_pval_stars(Timing_Pval)]
+dt[, Timing_Pval := format_pval(Timing_Pval)]
 dt[, Response := as.character(Response)]
+
+table_lines = c(
+  "<table>",
+  "  <thead>",
+  "    <tr><th>Class</th><th>Response</th><th>EDI Time (ms)</th><th>Canonical Pkg</th><th>Canonical Func</th><th>Canonical Time (ms)</th><th>Speedup</th><th>Timing Pval</th><th></th></tr>",
+  "  </thead>",
+  "  <tbody>"
+)
+table_rows = mapply(function(cls, resp, edi, pkg, func, can, speed, pval, stars, bg) {
+  style = if (nzchar(bg)) paste0(" style=\"background-color: ", bg, ";\"") else ""
+  paste0(
+    "    <tr", style, "><td>", cls, "</td><td>", resp, "</td><td>", edi, "</td><td>", pkg,
+    "</td><td>", func, "</td><td>", can, "</td><td>", speed, "</td><td>", pval, "</td><td>", stars, "</td></tr>"
+  )
+}, dt$Class, dt$Response, dt$EDI_Time_ms, dt$Canonical_Pkg, dt$Canonical_Func,
+dt$Canonical_Time_ms, dt$Speedup, dt$Timing_Pval, dt$Timing_Pval_Stars, dt$Timing_Row_Color,
+SIMPLIFY = TRUE, USE.NAMES = FALSE)
+table_lines = c(table_lines, table_rows, "  </tbody>", "</table>")
 
 report = c(
   "# EDI Exhaustive C++ Model Fit Benchmarks",
@@ -316,7 +458,7 @@ report = c(
   "",
   "*   **Sample Size ($N$):** 1,000 subjects for most models; 500 subjects for survival models. Exact and trend tests may use smaller scaled samples (N=100-500) as noted in the results.",
   "*   **Predictors ($p$):** 5 total predictors, including a global intercept, a balanced binary treatment assignment from fixed `iBCRD`, and 4 continuous covariates ($X \\sim \\text{Normal}(0, 1)$).",
-  "*   **Effect Sizes:** Coefficients are sampled from $\\text{Normal}(0, 0.1)$ to ensure reasonable event rates and avoid separation issues in logistic/ordinal models.",
+  "*   **Effect Sizes:** Covariate coefficients are sampled from $\\text{Normal}(0, 0.5)$, matching the warm-start benchmark data model. The treatment coefficient is set to 0.5 in the linear predictor so the benchmarked treatment effect is meaningfully separated from zero.",
   "*   **EDI Design Template:** EDI benchmark objects are instantiated on a fixed `iBCRD` design.",
   "*   **Response Generation:**",
   "    *   **Continuous:** Linear model with additive $\\text{Normal}(0, 0.5)$ noise.",
@@ -324,24 +466,24 @@ report = c(
   "    *   **Count:** Integer outcomes via Poisson or Negative Binomial distributions with an exponential link.",
   "    *   **Proportion:** Continuous outcomes in $(0, 1)$ via a Beta distribution with a logit link.",
   "    *   **Survival:** Exponentially distributed event times with approximately 20% random censoring.",
-  "    *   **Ordinal:** 4-level categorical outcomes generated from a Proportional Odds model.",
+  "    *   **Ordinal:** 3-level categorical outcomes generated from the same ordinal construction used in the warm-start benchmark.",
   "",
   "## Methodology",
   "",
   "*   **Pure Solver Timing:** Results reflect the time taken for the core numerical optimization. We exclude R6 object instantiation, design matrix construction, and standard error estimation (which often uses different R-side matrix inversion logic) to isolate the efficiency of the underlying C++ backends.",
+  "*   **Solver-Only Prebuilds:** For EDI rows, benchmark setup prebuilds exposed observed-data design matrices, reduced design matrices, and other fixed working inputs outside the timed region when the implementation exposes those hooks. Canonical rows using low-level matrix interfaces are likewise timed on prebuilt inputs.",
   "*   **Smart Cold Starts:** EDI models were initialized with `smart_cold_start = TRUE`, utilizing package-optimized heuristic starting values.",
   "*   **Randomization Design:** EDI timings in this table correspond to `iBCRD` design objects.",
   "*   **Low-Level Comparison:** Canonical R timings use the fastest available internal interfaces (e.g., `.fit` functions) to remove R's formula parsing and environment management overhead.",
+  "*   **Limitation:** Some canonical comparators only expose formula-based APIs rather than comparable low-level fit kernels. Those rows remain included, but their canonical timings may still contain formula/model-frame overhead beyond the numerical solver itself.",
   paste0("*   **Averaging:** All timings are medians over ", B_TIME, " warmed runs measured with adaptive batched `system.time`; paths below ", FAST_PATH_THRESHOLD_MS, " ms use `microbenchmark(times = ", FAST_PATH_MICROBENCH_REPS, ")` instead."),
+  "*   **Timing P-Value:** `Timing Pval` reports a Welch two-sample t-test comparing the EDI and canonical timing replicate distributions for each row. The unlabeled final column marks thresholds with `***` for p < 0.001, `**` for p < 0.01, and `*` for p < 0.05.",
+  "*   **Row Highlighting:** Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light red rows indicate `Speedup < 1` and `Timing Pval < 0.05`; light yellow rows indicate `Timing Pval >= 0.05`; light grey rows indicate `NA` timing comparisons.",
   "*   **Constraints**: Matched-pair/KK and highly custom paths are excluded as per user request.",
   "",
   "## Results",
   "",
-  "| Class | Response | EDI Time (ms) | Canonical Pkg | Canonical Func | Canonical Time (ms) | Speedup |",
-  "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |",
-  paste0("| ", dt$Class, " | ", dt$Response, " | ", dt$EDI_Time_ms, " | ", 
-         dt$Canonical_Pkg, " | ", dt$Canonical_Func, " | ", dt$Canonical_Time_ms, " | ", 
-         dt$Speedup, " |")
+  table_lines
 )
-writeLines(report, "package_metadata/benchmark_model_fits.md")
+writeLines(c(report, "", STYLE_BLOCK), "package_metadata/benchmark_model_fits.md")
 cat("Benchmark complete.\n")

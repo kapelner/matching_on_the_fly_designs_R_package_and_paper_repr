@@ -1,7 +1,7 @@
 pacman::p_load(data.table, R.utils, ggplot2, gridExtra, xtable)
 
 Nrep = 10000
-raw_results_dt = data.table::fread(sprintf("cmh_exact_sims_results_Nrep_%d.csv.bz2", Nrep))
+raw_results_dt = data.table::fread(sprintf("cmh_exact_sims_plus_greedy_results_Nrep_%d.csv.bz2", Nrep))
 raw_results_dt[, reject := pval < 0.05]
 raw_results_dt[, covers := ci_lo <= true_estimand & true_estimand <= ci_hi]
 raw_results_dt[, ci_length := ci_hi - ci_lo]

@@ -86,6 +86,7 @@ inference_count_likelihood_private = list(
 
 		# --- Likelihood test support ---
 
+		supports_lik_ratio_param_bootstrap = function() TRUE,
 		supports_likelihood_tests = function(){
 			TRUE
 		},

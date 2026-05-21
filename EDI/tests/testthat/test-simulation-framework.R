@@ -31,8 +31,9 @@ test_that("SimulationFramework accepts merged design classes and params", {
 	)
 
 	sim$run()
-	raw <- sim$get_results()
-	sm <- sim$summarize()
+	report <- SimulationFrameworkReport$new(sim)
+	raw <- report$get_results()
+	sm <- report$summarize()
 
 	expect_true("ci_lo" %in% names(raw))
 	expect_true("ci_hi" %in% names(raw))

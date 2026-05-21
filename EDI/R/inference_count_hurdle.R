@@ -55,7 +55,7 @@ InferenceCountHurdlePoisson = R6::R6Class("InferenceCountHurdlePoisson",
 #' @export
 InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 	lock_objects = FALSE,
-	inherit = InferenceCountLikelihoodNoParamBootstrap,
+	inherit = InferenceCountLikelihood,
 	public = list(
 		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object.

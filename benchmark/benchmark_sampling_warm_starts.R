@@ -7,9 +7,9 @@ library(data.table)
 
 set.seed(42)
 
-# Parameters
-N_SIZE = 150; P_SIZE = 10
-RAND_ITERS = 50; BOOT_ITERS = 50; JK_ITERS = 10; PBOOT_ITERS = 50
+# HIGH LOAD Parameters for noise-free results
+N_VAL = 500; P_VAL = 20
+R_VAL = 10; B_VAL = 10; J_VAL = 5; PB_VAL = 10
 
 all_classes = c(
     "InferenceAllSimpleMeanDiff", "InferenceAllSimpleMeanDiffPooledVar", "InferenceAllSimpleWilcox",
@@ -26,7 +26,14 @@ all_classes = c(
     "InferencePropBetaRegr", "InferencePropFractionalLogit", "InferencePropGCompMeanDiff", 
     "InferencePropZeroOneInflatedBetaRegr",
     "InferenceSurvivalCoxPHRegr", "InferenceSurvivalGehanWilcox", 
-    "InferenceSurvivalKMDiff", "InferenceSurvivalLogRank", "InferenceSurvivalRestrictedMeanDiff", "InferenceSurvivalStratCoxPHRegr", "InferenceSurvivalWeibullRegr"
+    "InferenceSurvivalKMDiff", "InferenceSurvivalLogRank", "InferenceSurvivalRestrictedMeanDiff", "InferenceSurvivalStratCoxPHRegr", "InferenceSurvivalWeibullRegr",
+    "InferenceContinKKOLSIVWC", "InferenceContinKKOLSOneLik", "InferenceContinKKQuantileRegrIVWC", "InferenceContinKKQuantileRegrOneLik",
+    "InferenceContinKKRobustRegrIVWC", "InferenceContinKKRobustRegrOneLik", "InferenceCountKKCondPoissonOneLik",
+    "InferenceCountKKHurdlePoissonOneLik", "InferenceCountPoissonKKGEE",
+    "InferenceIncidKKCondLogitIVWC", "InferenceIncidKKCondLogitOneLik", "InferenceIncidKKGCompRiskDiff", "InferenceIncidKKGCompRiskRatio", "InferenceIncidKKGEE", "InferenceIncidKKModifiedPoisson",
+    "InferenceIncidKKNewcombeRiskDiff", "InferenceOrdinalKKCondAdjCatLogitRegr", "InferenceOrdinalKKGEE",
+    "InferencePropKKGEE", "InferencePropKKQuantileRegrIVWC", "InferencePropKKQuantileRegrOneLik",
+    "InferenceSurvivalKKClaytonCopulaIVWC", "InferenceSurvivalKKClaytonCopulaOneLik", "InferenceSurvivalKKRankRegrIVWC"
 )
 
 infer_metadata = function(class_name) {
@@ -61,30 +68,47 @@ for (cls_name in all_classes) {
     cat(sprintf("\n>>> %s... ", cls_name)); flush.console()
     tryCatch({
         meta = infer_metadata(cls_name)
-        raw_data = generate_data(N_SIZE, P_SIZE, meta$rt)
-        formula_str = paste("~", paste(paste0("x", 1:(P_SIZE-1)), collapse = " + "))
-        des_obj = DesignFixedBernoulli$new(response_type = meta$rt, n = N_SIZE, model_formula = as.formula(formula_str))
-        X_df = as.data.frame(raw_data$X[, -1, drop = FALSE]); colnames(X_df) = paste0("x", 1:(P_SIZE-1))
+        raw_data = generate_data(N_VAL, P_VAL, meta$rt)
+        formula_str = paste("~", paste(paste0("x", 1:(P_VAL-1)), collapse = " + "))
+        des_obj = DesignFixedBinaryMatch$new(response_type = meta$rt, n = N_VAL, model_formula = as.formula(formula_str))
+        ord_levels = if (meta$rt == "ordinal") as.character(1:4) else NULL
+        if (!is.null(ord_levels)) des_obj$.__enclos_env__$private$ordinal_levels = ord_levels
+        
+        X_df = as.data.frame(raw_data$X[, -1, drop = FALSE]); colnames(X_df) = paste0("x", 1:(P_VAL-1))
         des_obj$add_all_subjects_to_experiment(X_df); des_obj$assign_w_to_all_subjects()
         des_obj$add_all_subject_responses(raw_data$y, deads = raw_data$dead)
+        
         inf_obj = get(cls_name)$new(des_obj)
-        inf_cold = inf_obj$clone(deep = TRUE); inf_cold$.__enclos_env__$private$fit_warm_start_enabled = FALSE; inf_cold$.__enclos_env__$private$smart_cold_start_default = FALSE
-        inf_warm = inf_obj$clone(deep = TRUE); inf_warm$.__enclos_env__$private$fit_warm_start_enabled = TRUE; inf_warm$.__enclos_env__$private$smart_cold_start_default = TRUE
-        mock_ctx = list(n_units = N_SIZE, row_to_unit = 1:N_SIZE)
+        inf_cold = inf_obj$clone(deep = TRUE); inf_cold$.__enclos_env__$private$fit_warm_start_enabled = FALSE
+        inf_warm = inf_obj$clone(deep = TRUE); inf_warm$.__enclos_env__$private$fit_warm_start_enabled = TRUE
+        
+        # MLE Anchor
+        mle_fit = tryCatch(inf_warm$compute_estimate(), error = function(e) NULL)
+        if (!is.null(mle_fit)) {
+            pw = inf_warm$.__enclos_env__$private
+            if (is.list(mle_fit)) { pw$fit_warm_start = mle_fit$b %||% mle_fit$params; pw$fit_warm_start_fisher = mle_fit$fisher_information }
+            else { pw$fit_warm_start = as.numeric(mle_fit) }
+        }
+        
+        mock_ctx = list(n_units = N_VAL, row_to_unit = 1:N_VAL)
         inf_cold$.__enclos_env__$private$current_bayesian_bootstrap_context = mock_ctx
         inf_warm$.__enclos_env__$private$current_bayesian_bootstrap_context = mock_ctx
 
-        t_rc = tryCatch(system.time({ inf_cold$compute_rand_two_sided_pval(r = RAND_ITERS, show_progress = FALSE) })["elapsed"], error = function(e) NA_real_)
-        t_rw = tryCatch(system.time({ inf_warm$compute_rand_two_sided_pval(r = RAND_ITERS, show_progress = FALSE) })["elapsed"], error = function(e) NA_real_)
-        t_bc = tryCatch(system.time({ inf_cold$compute_bootstrap_confidence_interval(B = BOOT_ITERS, show_progress = FALSE) })["elapsed"], error = function(e) NA_real_)
-        t_bw = tryCatch(system.time({ inf_warm$compute_bootstrap_confidence_interval(B = BOOT_ITERS, show_progress = FALSE) })["elapsed"], error = function(e) NA_real_)
-        t_jc = tryCatch(system.time({ for (k in 1:JK_ITERS) { w_jk=rep(1,N_SIZE); w_jk[k]=0; inf_cold$compute_estimate_with_bootstrap_weights(w_jk, TRUE) } })["elapsed"], error = function(e) NA_real_)
-        tryCatch(inf_warm$compute_estimate(), error = function(e) NULL)
-        t_jw = tryCatch(system.time({ for (k in 1:JK_ITERS) { w_jk=rep(1,N_SIZE); w_jk[k]=0; inf_warm$compute_estimate_with_bootstrap_weights(w_jk, TRUE) } })["elapsed"], error = function(e) NA_real_)
+        t_rc = tryCatch(system.time({ inf_cold$compute_rand_two_sided_pval(r = R_VAL, show_progress = FALSE) })["elapsed"], error = function(e) NA_real_)
+        t_rw = tryCatch(system.time({ inf_warm$compute_rand_two_sided_pval(r = R_VAL, show_progress = FALSE) })["elapsed"], error = function(e) NA_real_)
+        
+        t_bc = tryCatch(system.time({ inf_cold$compute_bootstrap_confidence_interval(B = B_VAL, show_progress = FALSE) })["elapsed"], error = function(e) NA_real_)
+        t_bw = tryCatch(system.time({ inf_warm$compute_bootstrap_confidence_interval(B = B_VAL, show_progress = FALSE) })["elapsed"], error = function(e) NA_real_)
+        
+        t_jc = tryCatch(system.time({ for (k in 1:J_VAL) { w_jk=rep(1,N_VAL); w_jk[k]=0; inf_cold$compute_estimate_with_bootstrap_weights(w_jk, TRUE) } })["elapsed"], error = function(e) NA_real_)
+        t_jw = tryCatch(system.time({ for (k in 1:J_VAL) { w_jk=rep(1,N_VAL); w_jk[k]=0; inf_warm$compute_estimate_with_bootstrap_weights(w_jk, TRUE) } })["elapsed"], error = function(e) NA_real_)
+        
         t_pc = NA_real_; t_pw = NA_real_
-        if (inf_obj$supports_lik_ratio_param_bootstrap()) {
-            t_pc = tryCatch(system.time({ inf_cold$compute_lik_ratio_bootstrap_confidence_interval(B = PBOOT_ITERS, show_progress = FALSE) })["elapsed"], error = function(e) NA_real_)
-            t_pw = tryCatch(system.time({ inf_warm$compute_lik_ratio_bootstrap_confidence_interval(B = PBOOT_ITERS, show_progress = FALSE) })["elapsed"], error = function(e) NA_real_)
+        # CRITICAL: Use correct method check to avoid "non-function" crash
+        has_pb = "supports_lik_ratio_param_bootstrap" %in% names(inf_obj)
+        if (has_pb && inf_obj$supports_lik_ratio_param_bootstrap()) {
+            t_pc = tryCatch(system.time({ inf_cold$compute_lik_ratio_bootstrap_two_sided_pval(B = PB_VAL, show_progress = FALSE) })["elapsed"], error = function(e) NA_real_)
+            t_pw = tryCatch(system.time({ inf_warm$compute_lik_ratio_bootstrap_two_sided_pval(B = PB_VAL, show_progress = FALSE) })["elapsed"], error = function(e) NA_real_)
         }
         res = data.table(Path = cls_name, Rand_C = t_rc, Rand_W = t_rw, Boot_C = t_bc, Boot_W = t_bw, JK_C = t_jc, JK_W = t_jw, PB_C = t_pc, PB_W = t_pw)
         fwrite(res, results_csv, append = file.exists(results_csv), col.names = !file.exists(results_csv))

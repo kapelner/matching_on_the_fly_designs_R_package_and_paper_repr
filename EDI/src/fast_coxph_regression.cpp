@@ -233,7 +233,7 @@ CoxFitResult cox_newton_raphson(
         for (std::size_t s = 0; s < strata_data.size(); ++s) {
             const CoxData& sd = strata_data[s];
             CoxWorkspace& ws = workspaces[s];
-            ll += compute_cox_ll_grad_hess_fast(sd, beta_vec, ws.grad, ws.hess, false, ws);
+            ll += compute_cox_ll_grad_hess_fast(sd, beta_vec, ws.grad, ws.hess, estimate_only, ws);
             for (int q = 0; q < p; ++q) grad_vec[q] += ws.grad[q];
             if (iter > 0 || warm_start_fisher_info.isNull()) {
                 for (int qq = 0; qq < p * p; ++qq) hess_vec[qq] += ws.hess[qq];
