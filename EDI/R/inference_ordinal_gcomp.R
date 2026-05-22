@@ -170,12 +170,23 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			if (!is.null(private$cached_values$md)) return(invisible(NULL))
+			if (estimate_only && !is.null(private$cached_values$md)) return(invisible(NULL))
 			X_full = private$build_design_matrix()
 			X_fit = X_full[, -1, drop = FALSE]
 			j_treat = 1
 			fit = tryCatch(
-				fast_ordinal_regression_with_var_cpp(X = X_fit, y = as.numeric(private$y)),
+				if (estimate_only) {
+					n_params = ncol(X_fit) + length(sort(unique(private$y))) - 1L
+					fast_ordinal_regression_cpp(
+						X = X_fit,
+						y = as.numeric(private$y),
+						warm_start_params = private$get_fit_warm_start_for_length("params", n_params),
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
+						smart_cold_start = private$smart_cold_start_default
+					)
+				} else {
+					fast_ordinal_regression_with_var_cpp(X = X_fit, y = as.numeric(private$y))
+				},
 				error = function(e) NULL
 			)
 			if (is.null(fit) || length(fit$b) == 0 || is.null(fit$alpha)){
@@ -197,6 +208,12 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 			private$cached_values$mean1 = res$mean1
 			private$cached_values$mean0 = res$mean0
 			private$cached_values$md = res$md
+			if (estimate_only) {
+				private$cached_values$beta_hat_T = private$cached_values$md
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$set_fit_warm_start(fit$params, "params", fisher = fit$fisher_information)
+				return(invisible(NULL))
+			}
 			theta = c(alpha_hat, coef_hat)
 			vcov_mat = if (!is.null(fit$vcov)) as.matrix(fit$vcov) else NULL
 			if (!is.null(vcov_mat) && length(theta) > 0L &&
@@ -207,6 +224,8 @@ InferenceOrdinalGCompMeanDiff = R6::R6Class("InferenceOrdinalGCompMeanDiff",
 			} else {
 				private$cached_values$se_md = NA_real_
 			}
+			private$cached_values$beta_hat_T = private$cached_values$md
+			private$cached_values$s_beta_hat_T = private$cached_values$se_md
 		},
 		compute_md_gradient = function(X_fit, theta, n_alpha, j_treat, base_step = 1e-6){
 			n_params = length(theta)

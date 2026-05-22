@@ -262,33 +262,10 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			ctrl
 		},
 		normalize_exact_inference_args = function(type, args_for_type = NULL, pval_epsilon = NULL){
-			if (should_run_asserts()) {
-				assertChoice(type, c("Zhang"))
-				assertList(args_for_type, null.ok = TRUE)
-			}
-			default_args = list(combination_method = "Fisher")
-			if (!is.null(pval_epsilon)) default_args$pval_epsilon = pval_epsilon
-			utils::modifyList(setNames(list(default_args), type), if (is.null(args_for_type)) list() else args_for_type)
+			zhang_normalize_exact_inference_args(type, args_for_type = args_for_type, pval_epsilon = pval_epsilon)
 		},
 		assert_exact_inference_params = function(type, args_for_type){
-			if (should_run_asserts()) {
-				assertChoice(type, c("Zhang"))
-				assertList(args_for_type)
-				if (!(type %in% names(args_for_type))) stop("args_for_type must contain a list for ", type)
-			}
-			args = args_for_type[[type]]
-			if (should_run_asserts()) {
-				assertList(args)
-			}
-				is_bernoulli = is(private$des_obj, "DesignSeqOneByOneBernoulli") || is(private$des_obj, "DesignFixedBernoulli")
-				if (should_run_asserts()) {
-					if (!is_bernoulli && !private$has_match_structure) stop("Zhang randomization inference requires Bernoulli or matching designs.")
-				assertResponseType(private$des_obj$get_response_type(), "incidence")
-				assertNoCensoring(private$any_censoring)
-				assertChoice(args$combination_method, c("Fisher", "Stouffer", "min_p"))
-				if (!is.null(args$pval_epsilon)) assertNumeric(args$pval_epsilon, lower = .Machine$double.xmin, upper = 1)
-				}
-			invisible(args)
+			zhang_assert_exact_inference_params(self, type, args_for_type)
 		},
 		compute_exact_confidence_interval_rand = function(type, alpha, args_for_type){
 			if (should_run_asserts()) {
@@ -297,7 +274,8 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				private$assert_exact_inference_params(type, args_for_type)
 			}
 			switch(type,
-				Zhang = private$ci_exact_zhang_combined(
+				Zhang = zhang_ci_exact_combined(
+					self,
 					alpha = alpha,
 					pval_epsilon = args_for_type[[type]]$pval_epsilon,
 					combination_method = args_for_type[[type]]$combination_method
@@ -311,119 +289,13 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				private$assert_exact_inference_params(type, args_for_type)
 			}
 			switch(type,
-				Zhang = private$pval_exact_zhang_combined(
+				Zhang = zhang_pval_exact_combined(
+					self,
 					delta_0 = delta,
 					combination_method = args_for_type[[type]]$combination_method
 				)
 			)
 		},
-		pval_exact_zhang_combined = function(delta_0, combination_method = "Fisher"){
-			exact_stats = private$get_exact_zhang_stats()
-			p_M = if (exact_stats$m > 0) private$compute_exact_pval_matched_pairs(delta_0) else NA_real_
-			p_R = if (exact_stats$nRT > 0 && exact_stats$nRC > 0) private$compute_exact_pval_reservoir(delta_0) else NA_real_
-			zhang_combine_exact_pvals(p_M, p_R, exact_stats$m, exact_stats$nRT, exact_stats$nRC, combination_method)
-		},
-		compute_exact_pval_matched_pairs = function(delta_0) {
-				if (!private$has_match_structure) return(NA_real_)
-			exact_stats = private$get_exact_zhang_stats()
-			if (exact_stats$m == 0L || exact_stats$d_plus + exact_stats$d_minus == 0L) return(NA_real_)
-			zhang_exact_binom_pval_cpp(exact_stats$d_plus, exact_stats$d_minus, delta_0)
-		},
-		compute_exact_pval_reservoir = function(delta_0){
-			exact_stats = private$get_exact_zhang_stats()
-			if (exact_stats$nRT == 0L || exact_stats$nRC == 0L) return(NA_real_)
-			if (exact_stats$n11 + exact_stats$n01 == 0L || exact_stats$n10 + exact_stats$n00 == 0L) return(NA_real_)
-			zhang_exact_fisher_pval_cpp(exact_stats$n11, exact_stats$n10, exact_stats$n01, exact_stats$n00, delta_0)
-		},
-		get_exact_zhang_stats = function(){
-			if (!is.null(private$cached_values$incid_exact_zhang_stats)) return(private$cached_values$incid_exact_zhang_stats)
-				if (private$has_match_structure){
-				if (is.null(private$cached_values$KKstats)){
-					private$m = private$des_obj_priv_int$m
-					m_vec = if (is.null(private$m)) rep(0, private$n) else private$m
-					m_vec[is.na(m_vec)] = 0
-					private$cached_values$KKstats = compute_zhang_match_data_cpp(private$get_X(), private$y, private$w, m_vec)
-				}
-				KKstats = private$cached_values$KKstats
-				exact_stats = list(
-					m = as.integer(KKstats$m),
-					nRT = as.integer(KKstats$nRT),
-					nRC = as.integer(KKstats$nRC),
-					d_plus = as.integer(KKstats$d_plus),
-					d_minus = as.integer(KKstats$d_minus),
-					n11 = as.integer(KKstats$n11),
-					n10 = as.integer(KKstats$n10),
-					n01 = as.integer(KKstats$n01),
-					n00 = as.integer(KKstats$n00)
-				)
-			} else {
-				nRT = sum(private$w == 1L, na.rm = TRUE)
-				nRC = sum(private$w == 0L, na.rm = TRUE)
-				n11 = sum(private$y[private$w == 1L])
-				n01 = sum(private$y[private$w == 0L])
-				exact_stats = list(
-					m = 0L,
-					nRT = as.integer(nRT),
-					nRC = as.integer(nRC),
-					d_plus = 0L,
-					d_minus = 0L,
-					n11 = as.integer(n11),
-					n10 = as.integer(nRT - n11),
-					n01 = as.integer(n01),
-					n00 = as.integer(nRC - n01)
-				)
-			}
-			private$cached_values$incid_exact_zhang_stats = exact_stats
-			exact_stats
-		},
-		ci_exact_zhang_combined = function(alpha, pval_epsilon, combination_method = "Fisher"){
-			exact_stats = private$get_exact_zhang_stats()
-			est = zhang_incid_treatment_estimate(exact_stats)
-			if (should_run_asserts()) {
-				if (!is.finite(est)) stop("Cannot compute exact CI: point estimate is not finite.")
-			}
-			mle_ci = zhang_incid_mle_ci(exact_stats, alpha * 2)
-			ci_width = mle_ci[2] - mle_ci[1]
-			lo_bound = mle_ci[1] - 0.5 * ci_width
-			hi_bound = mle_ci[2] + 0.5 * ci_width
-			if (self$num_cores > 1L) {
-				private$compute_zhang_ci_bounds_parallel(est, lo_bound, hi_bound, alpha, pval_epsilon, combination_method)
-			} else {
-				p_fn = function(delta_0){
-					p_M = if (exact_stats$m > 0) private$compute_exact_pval_matched_pairs(delta_0) else NA_real_
-					p_R = if (exact_stats$nRT > 0 && exact_stats$nRC > 0) private$compute_exact_pval_reservoir(delta_0) else NA_real_
-					zhang_combine_exact_pvals(p_M, p_R, exact_stats$m, exact_stats$nRT, exact_stats$nRC, combination_method)
-				}
-				c(
-					zhang_bisect_ci_boundary(p_fn, inside = est, outside = lo_bound, pval_th = alpha, tol = pval_epsilon),
-					zhang_bisect_ci_boundary(p_fn, inside = est, outside = hi_bound, pval_th = alpha, tol = pval_epsilon)
-				)
-			}
-		},
-			compute_zhang_ci_bounds_parallel = function(est, lo_bound, hi_bound, alpha, pval_epsilon, combination_method){
-				bound_specs = list(list(inside = est, outside = lo_bound), list(inside = est, outside = hi_bound))
-				n_cores_ci = min(2L, self$num_cores)
-				child_budget = max(1L, as.integer(floor(self$num_cores / n_cores_ci)))
-				inf_template = self$duplicate()
-				results = private$par_lapply(bound_specs, function(spec){
-					worker_inf = inf_template$duplicate(make_fork_cluster = FALSE)
-					worker_private = worker_inf$.__enclos_env__$private
-					exact_stats = worker_private$get_exact_zhang_stats()
-					p_fn = function(delta_0){
-						p_M = if (exact_stats$m > 0) worker_private$compute_exact_pval_matched_pairs(delta_0) else NA_real_
-						p_R = if (exact_stats$nRT > 0 && exact_stats$nRC > 0) worker_private$compute_exact_pval_reservoir(delta_0) else NA_real_
-						zhang_combine_exact_pvals(p_M, p_R, exact_stats$m, exact_stats$nRT, exact_stats$nRC, combination_method)
-					}
-					zhang_bisect_ci_boundary(p_fn, inside = spec$inside, outside = spec$outside, pval_th = alpha, tol = pval_epsilon)
-				}, n_cores = n_cores_ci, budget = child_budget,
-				export_list = list(
-					inf_template = inf_template,
-					combination_method = combination_method,
-					alpha = alpha,
-					pval_epsilon = pval_epsilon
-				))
-				c(results[[1]], results[[2]])
-			},
 		build_randomization_ci_search_bounds = function(inf_obj, r, alpha, transform_arg, permutations, ci_search_control, ci_pval_cache){
 			normalize_ci = function(ci){
 				ci = as.numeric(ci)
@@ -542,74 +414,6 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				iter = iter + 1
 				if (isTRUE(show_progress)) cat(sprintf("\r%s iter=%d pval_span=%.6g (target<=%.6g)", progress_label, iter, pval_span, tol))
 			}
-		}
-	)
-)
-#' Exact Zhang Incidence Inference
-#'
-#' @examples
-#' \dontrun{
-#' # Example for InferenceIncidExactZhang
-#' }
-#' @export
-InferenceIncidExactZhang = R6::R6Class("InferenceIncidExactZhang",
-	lock_objects = FALSE,
-	inherit = InferenceRandCI,
-	public = list(
-		#' @description Initialize exact Zhang incidence inference.
-		#' @param des_obj A completed design object.
-		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
-		#'   the formula from the design object is used and its pre-computed design matrix is
-		#'   reused. If a formula is provided, a new design matrix is constructed from the
-		#'   design's imputed covariates.
-		#' @param verbose Whether to print progress messages.
-		#' @return A new \code{InferenceIncidExactZhang} object.
-		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
-			if (should_run_asserts()) {
-				assertResponseType(des_obj$get_response_type(), "incidence")
-			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
-			if (should_run_asserts()) {
-				assertNoCensoring(private$any_censoring)
-			}
-		},
-		#' @description Compute the Zhang incidence treatment estimate.
-		#' @param estimate_only Ignored for this estimator.
-		#' @return The treatment estimate.
-		compute_estimate = function(estimate_only = FALSE){
-			stats = private$get_exact_zhang_stats()
-			zhang_incid_treatment_estimate(stats)
-		},
-		#' @description Compute an exact Zhang confidence interval.
-		#' @param alpha Significance level.
-		#' @param pval_epsilon Bisection tolerance for the inversion routine.
-		#' @param args_for_type Optional arguments keyed by exact type.
-		#' @return A confidence interval.
-		compute_exact_confidence_interval = function(alpha = 0.05, pval_epsilon = 0.005, args_for_type = NULL){
-			if (should_run_asserts()) {
-				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-				assertNumeric(pval_epsilon, lower = .Machine$double.xmin, upper = 1)
-			}
-			exact_args = private$normalize_exact_inference_args(
-				"Zhang",
-				args_for_type = args_for_type,
-				pval_epsilon = pval_epsilon
-			)
-			private$compute_exact_confidence_interval_rand("Zhang", alpha, exact_args)
-		},
-		#' @description Compute the exact Zhang two-sided p-value for a treatment effect.
-		#' @param delta Null treatment effect value.
-		#' @param args_for_type Optional arguments keyed by exact type.
-		#' @return A two-sided p-value.
-		compute_exact_two_sided_pval_for_treatment_effect = function(delta = 0, args_for_type = NULL){
-			if (should_run_asserts()) {
-				assertNumeric(delta, len = 1)
-			}
-			exact_args = private$normalize_exact_inference_args(
-				"Zhang",
-				args_for_type = args_for_type
-			)
-			private$compute_exact_two_sided_pval_rand("Zhang", delta, exact_args)
 		}
 	)
 )

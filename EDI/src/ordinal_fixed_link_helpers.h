@@ -106,6 +106,9 @@ private:
     const Link m_link;
     const double m_eta_sign;
     const bool m_use_weights;
+    mutable Eigen::VectorXd m_scratch_dq;
+    mutable Eigen::MatrixXd m_scratch_d2q;
+    mutable Eigen::VectorXd m_scratch_v;
 
     inline double obs_weight(int i) const {
         return m_use_weights ? std::max(m_weights[i], 0.0) : 1.0;
@@ -126,16 +129,14 @@ private:
                                   const Eigen::RowVectorXd& x,
                                   Eigen::VectorXd& dq,
                                   Eigen::MatrixXd& d2q) const {
-        const int n_alpha = m_K - 1;
-        const int n_params = n_alpha + m_p;
-        Eigen::VectorXd v = Eigen::VectorXd::Zero(n_params);
-        v[alpha_idx] = 1.0;
-        v.tail(m_p) = m_eta_sign * x.transpose();
+        m_scratch_v.setZero();
+        m_scratch_v[alpha_idx] = 1.0;
+        m_scratch_v.tail(m_p) = m_eta_sign * x.transpose();
 
         const double f = pdf(m_link, z);
         const double fp = pdf_derivative(m_link, z);
-        dq.noalias() += endpoint_sign * f * v;
-        d2q.noalias() += endpoint_sign * fp * (v * v.transpose());
+        dq.noalias() += endpoint_sign * f * m_scratch_v;
+        d2q.noalias() += endpoint_sign * fp * (m_scratch_v * m_scratch_v.transpose());
     }
 
     void add_endpoint_gradient(int alpha_idx,
@@ -156,7 +157,10 @@ public:
                            double eta_sign,
                            const Eigen::VectorXd& weights = Eigen::VectorXd()) :
         m_X(X), m_y(y), m_weights(weights), m_levels(init_levels(y)), m_n(X.rows()), m_p(X.cols()),
-        m_K(m_levels.size()), m_link(link), m_eta_sign(eta_sign), m_use_weights(weights.size() == X.rows()) {}
+        m_K(m_levels.size()), m_link(link), m_eta_sign(eta_sign), m_use_weights(weights.size() == X.rows()),
+        m_scratch_dq((m_K - 1) + m_p),
+        m_scratch_d2q((m_K - 1) + m_p, (m_K - 1) + m_p),
+        m_scratch_v((m_K - 1) + m_p) {}
 
     static std::vector<double> init_levels_static(const Eigen::VectorXd& y) {
         return init_levels(y);
@@ -199,17 +203,17 @@ public:
             const double p_upper = (yi_idx == m_K - 1) ? 1.0 : cdf(m_link, alpha[yi_idx] + m_eta_sign * eta[i]);
             const double p_lower = (yi_idx == 0) ? 0.0 : cdf(m_link, alpha[yi_idx - 1] + m_eta_sign * eta[i]);
             const double prob = std::max(1e-12, p_upper - p_lower);
-            Eigen::VectorXd dq = Eigen::VectorXd::Zero(n_params);
+            m_scratch_dq.setZero();
             const double wi = obs_weight(i);
 
             if (yi_idx < m_K - 1) {
-                add_endpoint_gradient(yi_idx, alpha[yi_idx] + m_eta_sign * eta[i], 1.0, m_X.row(i), dq);
+                add_endpoint_gradient(yi_idx, alpha[yi_idx] + m_eta_sign * eta[i], 1.0, m_X.row(i), m_scratch_dq);
             }
             if (yi_idx > 0) {
-                add_endpoint_gradient(yi_idx - 1, alpha[yi_idx - 1] + m_eta_sign * eta[i], -1.0, m_X.row(i), dq);
+                add_endpoint_gradient(yi_idx - 1, alpha[yi_idx - 1] + m_eta_sign * eta[i], -1.0, m_X.row(i), m_scratch_dq);
             }
             nll -= wi * std::log(prob);
-            grad.noalias() -= wi * dq / prob;
+            grad.noalias() -= wi * m_scratch_dq / prob;
         }
         return nll;
     }
@@ -234,17 +238,17 @@ public:
             const double p_upper = (yi_idx == m_K - 1) ? 1.0 : cdf(m_link, alpha[yi_idx] + m_eta_sign * eta[i]);
             const double p_lower = (yi_idx == 0) ? 0.0 : cdf(m_link, alpha[yi_idx - 1] + m_eta_sign * eta[i]);
             const double prob = std::max(1e-12, p_upper - p_lower);
-            Eigen::VectorXd dq = Eigen::VectorXd::Zero(n_params);
-            Eigen::MatrixXd d2q = Eigen::MatrixXd::Zero(n_params, n_params);
+            m_scratch_dq.setZero();
+            m_scratch_d2q.setZero();
             const double wi = obs_weight(i);
 
             if (yi_idx < m_K - 1) {
-                add_endpoint_derivatives(yi_idx, alpha[yi_idx] + m_eta_sign * eta[i], 1.0, m_X.row(i), dq, d2q);
+                add_endpoint_derivatives(yi_idx, alpha[yi_idx] + m_eta_sign * eta[i], 1.0, m_X.row(i), m_scratch_dq, m_scratch_d2q);
             }
             if (yi_idx > 0) {
-                add_endpoint_derivatives(yi_idx - 1, alpha[yi_idx - 1] + m_eta_sign * eta[i], -1.0, m_X.row(i), dq, d2q);
+                add_endpoint_derivatives(yi_idx - 1, alpha[yi_idx - 1] + m_eta_sign * eta[i], -1.0, m_X.row(i), m_scratch_dq, m_scratch_d2q);
             }
-            H.noalias() += wi * ((dq * dq.transpose()) / (prob * prob) - d2q / prob);
+            H.noalias() += wi * ((m_scratch_dq * m_scratch_dq.transpose()) / (prob * prob) - m_scratch_d2q / prob);
         }
         return 0.5 * (H + H.transpose());
     }

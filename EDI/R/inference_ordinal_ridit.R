@@ -157,7 +157,9 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$beta_hat_T) && is.null(private$cached_values$s_beta_hat_T)) {
+				private$cached_values$beta_hat_T = NULL
+			}
 			res = fast_ridit_analysis_cpp(
 				w = as.integer(private$w),
 				y = as.integer(private$y),
@@ -170,7 +172,7 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 			private$cached_values$mean_ridit_t = res$mean_ridit_t
 			private$cached_values$mean_ridit_c = res$mean_ridit_c
 			private$cached_values$beta_hat_T   = res$estimate
-			private$cached_values$s_beta_hat_T = res$se
+			private$cached_values$s_beta_hat_T = if (estimate_only) NA_real_ else res$se
 			private$cached_values$scores       = res$scores
 		},
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){

@@ -70,8 +70,10 @@ InferenceIncidCMH = R6::R6Class("InferenceIncidCMH",
 			} else {
 				precomp = private$des_obj$get_cmh_se_w_mat()
 				w_mat = if (!is.null(precomp)) precomp else private$des_obj$draw_ws_according_to_design(private$se_est_num_vectors)
-				ytw = drop(private$y %*% w_mat)
-				private$cached_values$cmh_s_beta_hat_T = 2 / private$n * sqrt(sum(ytw^2) / (private$n - 1))
+				ytw      = drop(private$y %*% w_mat)
+				# E[y·W] = (n/2)·ȳ is known exactly — use it rather than mean(ytw).
+				eytw_sq  = ((private$n / 2L) * mean(private$y))^2
+				private$cached_values$cmh_s_beta_hat_T = 4 / private$n * sqrt(sum(ytw^2) / (length(ytw) - 1L) - eytw_sq)
 			}
 			private$cached_values$s_beta_hat_T = private$cached_values$cmh_s_beta_hat_T
 			private$cached_values$df = NA_real_

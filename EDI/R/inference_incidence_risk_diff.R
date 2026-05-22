@@ -135,8 +135,8 @@ InferenceIncidRiskDiff = R6::R6Class("InferenceIncidRiskDiff",
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
 					if (estimate_only) {
-						res = fast_ols_cpp(X = X_fit, y = private$y)
-						list(b = res$b, ssq_b_j = NA_real_, j_treat = j_treat)
+						res = stats::lm.fit(x = X_fit, y = as.numeric(private$y))
+						list(b = as.numeric(stats::coef(res)), ssq_b_j = NA_real_, j_treat = j_treat)
 					} else {
 						res = fast_ols_with_var_cpp(X = X_fit, y = private$y, j = j_treat)
 						res$j_treat = j_treat

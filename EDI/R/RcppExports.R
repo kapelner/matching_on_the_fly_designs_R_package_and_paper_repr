@@ -336,6 +336,14 @@ fast_continuation_ratio_regression_with_var_cpp <- function(X, y, maxit = 100L, 
     .Call(`_EDI_fast_continuation_ratio_regression_with_var_cpp`, X, y, maxit, tol, warm_start_beta, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
+build_cox_data_cache_cpp <- function(X, y, dead) {
+    .Call(`_EDI_build_cox_data_cache_cpp`, X, y, dead)
+}
+
+fast_coxph_regression_prebuilt_cpp <- function(cox_data_xptr, warm_start_beta = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 20L, tol = 1e-9, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson", warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_coxph_regression_prebuilt_cpp`, cox_data_xptr, warm_start_beta, smart_cold_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
+}
+
 fast_coxph_regression_cpp <- function(X, y, dead, warm_start_beta = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 20L, tol = 1e-9, cluster = NULL, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson", warm_start_fisher_info = NULL) {
     .Call(`_EDI_fast_coxph_regression_cpp`, X, y, dead, warm_start_beta, smart_cold_start, estimate_only, maxit, tol, cluster, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
@@ -1417,6 +1425,89 @@ fast_quasipoisson_regression_with_var_cpp <- function(X, y, j = 2L, warm_start_b
 #' @return Numeric vector of length nsim with treatment coefficients.
 compute_poisson_distr_parallel_cpp <- function(X, y, w_mat, delta, log_transform, num_cores) {
     .Call(`_EDI_compute_poisson_distr_parallel_cpp`, X, y, w_mat, delta, log_transform, num_cores)
+}
+
+#' @title Compute Probit Regression Score
+#' @description Score vector (gradient of log-likelihood) for a probit regression model.
+#' @param X Numeric matrix of predictors (including intercept column).
+#' @param y Binary numeric vector of responses.
+#' @param beta Numeric vector of coefficients.
+#' @return Numeric vector representing the score.
+#' @export
+#' @keywords internal
+get_probit_regression_score_cpp <- function(X, y, beta) {
+    .Call(`_EDI_get_probit_regression_score_cpp`, X, y, beta)
+}
+
+#' @title Compute Probit Regression Hessian
+#' @description Hessian matrix (second derivatives of log-likelihood) for a probit regression model.
+#' @param X Numeric matrix of predictors (including intercept column).
+#' @param beta Numeric vector of coefficients.
+#' @return Numeric matrix representing the Hessian (negative Fisher information).
+#' @export
+#' @keywords internal
+get_probit_regression_hessian_cpp <- function(X, beta) {
+    .Call(`_EDI_get_probit_regression_hessian_cpp`, X, beta)
+}
+
+#' @title Fast Probit Regression (C++)
+#' @description High-performance probit regression fitting using IRLS.
+#' @param X Numeric matrix of predictors (including intercept column).
+#' @param y Binary numeric vector of responses.
+#' @param warm_start_beta Optional starting values for coefficients.
+#' @param smart_cold_start Logical. If TRUE, use a probit-transformed OLS guess on cold start.
+#' @param maxit Maximum number of IRLS iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional 1-based indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Accepted for API consistency; IRLS is always used.
+#' @param warm_start_weights Accepted for API consistency; ignored for probit.
+#' @param warm_start_fisher_info Optional initial Fisher information matrix for the first iteration.
+#' @return A list with coefficients \code{b}, IRLS weights \code{w}, and \code{fisher_information}.
+#' @export
+#' @keywords internal
+fast_probit_regression_cpp <- function(X, y, warm_start_beta = NULL, smart_cold_start = TRUE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_probit_regression_cpp`, X, y, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
+}
+
+#' @title Fast Weighted Probit Regression (C++)
+#' @description High-performance weighted probit regression fitting using IRLS.
+#' @param X Numeric matrix of predictors (including intercept column).
+#' @param y Binary numeric vector of responses.
+#' @param weights Numeric vector of observation weights.
+#' @param warm_start_beta Optional starting values for coefficients.
+#' @param smart_cold_start Logical. If TRUE, use a probit-transformed OLS guess on cold start.
+#' @param maxit Maximum number of IRLS iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional 1-based indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Accepted for API consistency; IRLS is always used.
+#' @param warm_start_weights Accepted for API consistency; ignored for probit.
+#' @param warm_start_fisher_info Optional initial Fisher information matrix.
+#' @return A list with coefficients, fitted values \code{mu}, and \code{fisher_information}.
+#' @export
+#' @keywords internal
+fast_probit_regression_weighted_cpp <- function(X, y, weights, warm_start_beta = NULL, smart_cold_start = TRUE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_probit_regression_weighted_cpp`, X, y, weights, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
+}
+
+#' @title Fast Probit Regression with Variance (C++)
+#' @description Probit regression with full variance-covariance matrix and likelihood statistics.
+#' @param X Numeric matrix of predictors (including intercept column).
+#' @param y Binary numeric vector of responses.
+#' @param j 1-based index of the parameter for which to return the specific variance.
+#' @param warm_start_beta Optional starting values for coefficients.
+#' @param smart_cold_start Logical. If TRUE, use a probit-transformed OLS guess on cold start.
+#' @param fixed_idx Optional 1-based indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Accepted for API consistency; IRLS is always used.
+#' @param warm_start_weights Accepted for API consistency; ignored for probit.
+#' @param warm_start_fisher_info Optional initial Fisher information matrix.
+#' @return A list with coefficients, variance components, score, and likelihood statistics.
+#' @export
+#' @keywords internal
+fast_probit_regression_with_var_cpp <- function(X, y, j = 2L, warm_start_beta = NULL, smart_cold_start = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_probit_regression_with_var_cpp`, X, y, j, warm_start_beta, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
 }
 
 fast_ridit_scores_cpp <- function(y, ref_idx) {

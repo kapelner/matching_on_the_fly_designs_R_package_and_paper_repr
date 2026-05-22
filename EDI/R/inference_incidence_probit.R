@@ -32,63 +32,62 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 				assertResponseType(des_obj$get_response_type(), "incidence")
 				assertFormula(model_formula, null.ok = TRUE)
 			}
-			self$set_optimization_alg(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
+			self$set_optimization_alg(optimization_alg, allow_irls = TRUE, default = "lbfgs")
 			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
-		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
+		#' @description Computes the treatment effect estimate for a bootstrap sample.
+		#' @param subject_or_block_weights Row weights for the bootstrap sample.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
-			row_weights = as.numeric(private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights))
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
 			X_full = private$build_design_matrix()
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
-				required_cols = 1L,
-				fit_fun = function(X_fit, keep){
-					fit = tryCatch(
-						stats::glm.fit(
-							x = cbind(`(Intercept)` = 1, X_fit),
-							y = as.numeric(private$y),
-							weights = row_weights,
-							family = stats::binomial(link = "probit")
-						),
-						error = function(e) NULL
+				required_cols = 2L,
+				fit_fun = function(X_fit){
+					res = fast_probit_regression_weighted_cpp(
+						X = X_fit,
+						y = private$y,
+						weights = row_weights,
+						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						smart_cold_start = private$smart_cold_start_default,
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
+						optimization_alg = private$optimization_alg
 					)
-					if (is.null(fit) || is.null(fit$coefficients) || length(fit$coefficients) < 2L) return(NULL)
-					list(
-						b = as.numeric(fit$coefficients[-1L]),
-						full_b = as.numeric(fit$coefficients),
-						j_treat = match(1L, keep),
-						params = as.numeric(fit$coefficients),
-						fisher_information = tryCatch(solve(stats::vcov(stats::glm(y ~ .,
-							data = data.frame(y = as.numeric(private$y), cbind(`(Intercept)` = 1, X_fit)[, -1, drop = FALSE]),
-							weights = row_weights,
-							family = stats::binomial(link = "probit")))), error = function(e) NULL)
-					)
+					ssq_b_2 = NA_real_
+					if (!estimate_only && !is.null(res$fisher_information) && is.matrix(res$fisher_information) && nrow(res$fisher_information) >= 2L) {
+						inv_fi = tryCatch(solve(res$fisher_information), error = function(e) NULL)
+						if (!is.null(inv_fi) && is.finite(inv_fi[2L, 2L]) && inv_fi[2L, 2L] > 0) ssq_b_2 = inv_fi[2L, 2L]
+					}
+					list(b = res$b, fisher_information = res$fisher_information, ssq_b_2 = ssq_b_2)
 				},
 				fit_ok = function(mod, X_fit, keep){
-					!is.null(mod) && !is.na(mod$j_treat) && length(mod$b) >= mod$j_treat && is.finite(mod$b[mod$j_treat])
+					!is.null(mod) && length(mod$b) >= 2L && is.finite(mod$b[2])
 				}
 			)
-			if (is.null(attempt$fit) || is.null(attempt$fit$b) || length(attempt$fit$b) < 1L || !is.finite(attempt$fit$b[1L])) {
+			private$cached_mod = attempt$fit
+			if (is.null(attempt$fit) || is.null(attempt$fit$b) || length(attempt$fit$b) < 2L || !is.finite(attempt$fit$b[2])) {
 				private$cached_values$beta_hat_T = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
-				private$cached_values$df = NA_real_
 				return(NA_real_)
 			}
-			private$set_fit_warm_start(as.numeric(attempt$fit$params), "params", fisher = attempt$fit$fisher_information)
-			private$cached_values$beta_hat_T = as.numeric(attempt$fit$b[attempt$fit$j_treat])
-			private$cached_values$s_beta_hat_T = NA_real_
-			private$cached_values$df = NA_real_
+			private$cached_values$beta_hat_T = as.numeric(attempt$fit$b[2])
+			ssq = attempt$fit$ssq_b_2
+			private$cached_values$s_beta_hat_T = if (!is.null(ssq) && is.finite(ssq) && ssq > 0) sqrt(ssq) else NA_real_
+			private$set_fit_warm_start(
+				as.numeric(attempt$fit$b),
+				"beta",
+				fisher = attempt$fit$fisher_information
+			)
 			private$cached_values$beta_hat_T
 		}
 	),
 	private = list(
 		best_X_colnames = NULL,
-		get_complexity_tier = function() "heavy",
+		get_complexity_tier = function() "medium",
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
 				private$shared(estimate_only = TRUE)
@@ -99,27 +98,23 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 			X_cols = private$best_X_colnames
 			X_data = private$get_X()
 			if (length(X_cols) == 0L){
-				X = matrix(private$w, ncol = 1L)
-				colnames(X) = "treatment"
+				X = cbind(1, private$w)
 			} else {
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
-				X = cbind(treatment = private$w, X_cov)
+				X = cbind(1, treatment = private$w, X_cov)
 			}
-			n_params = ncol(X) + 1L
-			ws_args = private$get_backend_warm_start_args(n_params)
-			res = fast_ordinal_probit_regression_cpp(
-				X = X,
-				y = as.numeric(private$y),
-				warm_start_params = ws_args$start_params,
-				warm_start_fisher_info = ws_args$warm_start_fisher_info,
+			res = fast_probit_regression_cpp(
+				X = X, y = as.numeric(private$y),
+				warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
 				smart_cold_start = private$smart_cold_start_default,
+				warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X)),
 				optimization_alg = private$optimization_alg
 			)
-			if (is.null(res) || length(res$b) < 1L || !is.finite(res$b[1L])){
+			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
-			private$set_fit_warm_start(as.numeric(res$params), "params", fisher = res$fisher_information)
-			as.numeric(res$b[1L])
+			private$set_fit_warm_start(res$b, "beta", fisher = res$fisher_information)
+			as.numeric(res$b[2])
 		},
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
@@ -130,106 +125,100 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 		supports_likelihood_tests = function(){
 			TRUE
 		},
+		supports_fisher_information = function(){
+			TRUE
+		},
 		simulate_under_lik_null = function(spec, delta, null_fit){
-			params_null = as.numeric(null_fit$params)
-			p_reg  = ncol(spec$X)
-			b_null = params_null[seq_len(p_reg)]
-			kappa  = params_null[p_reg + 1L]
+			b_null = as.numeric(null_fit$b)
 			eta    = as.numeric(spec$X %*% b_null)
-			mu     = pmin(pmax(pnorm(eta - kappa), 0), 1)
+			mu     = pmin(pmax(pnorm(eta), 0), 1)
 			y_sim  = private$simulate_param_boot_bernoulli_y(mu)
 			if (is.null(y_sim)) return(NULL)
 			X_fit  = spec$X
 			j      = spec$j
-			
-			# Parametric bootstrap: use observed fit as anchor
-			ws_args = private$get_backend_warm_start_args(ncol(X_fit) + 1L)
-			full_b = tryCatch(
-				fast_ordinal_probit_regression_cpp(
+
+			ws_args = private$get_backend_warm_start_args(ncol(X_fit))
+			full_fit_b = tryCatch(
+				fast_probit_regression_cpp(
 					X = X_fit, y = y_sim,
-					warm_start_params = ws_args$start_params,
+					warm_start_beta = ws_args$warm_start_beta,
+					warm_start_weights = ws_args$warm_start_weights,
 					warm_start_fisher_info = ws_args$warm_start_fisher_info,
-					smart_cold_start = TRUE,
+					smart_cold_start = private$smart_cold_start_default,
 					optimization_alg = private$optimization_alg
 				),
 				error = function(e) NULL
 			)
-			if (is.null(full_b) || length(full_b) == 0L) return(NULL)
-			full_fit_boot = list(params = as.numeric(full_b$params), neg_loglik = as.numeric(full_b$neg_loglik))
-			if (!is.finite(full_fit_boot$neg_loglik)) return(NULL)
+			if (is.null(full_fit_b) || length(full_fit_b$b) < j || !is.finite(full_fit_b$b[j])) return(NULL)
 			list(
 				worker_data = list(y = y_sim),
-				full_fit = full_fit_boot,
+				full_fit = full_fit_b,
 				fit_null = function(d, start = NULL){
-					ws_args_null = private$get_backend_warm_start_args(ncol(X_fit) + 1L)
-					res = tryCatch(
-						fast_ordinal_probit_regression_cpp(
-							X = X_fit, y = y_sim,
-							warm_start_params = start %||% full_fit_boot$params,
+					ws_args_null = private$get_backend_warm_start_args(ncol(X_fit))
+					tryCatch(
+						fast_probit_regression_with_var_cpp(
+							X = X_fit, y = y_sim, j = j,
+							warm_start_beta = start %||% full_fit_b$b,
+							warm_start_weights = ws_args_null$warm_start_weights,
 							warm_start_fisher_info = ws_args_null$warm_start_fisher_info,
+							fixed_idx = j, fixed_values = d,
 							smart_cold_start = TRUE,
-							optimization_alg = private$optimization_alg,
-							fixed_idx = j, fixed_values = d
+							optimization_alg = private$optimization_alg
 						),
 						error = function(e) NULL
 					)
-					if (is.null(res) || length(res) == 0L) return(NULL)
-					list(params = as.numeric(res$params), neg_loglik = as.numeric(res$neg_loglik))
 				},
-				neg_loglik = function(fit) as.numeric(fit$neg_loglik)
+				neg_loglik = function(fit){
+					eta_f = as.numeric(X_fit %*% as.numeric(fit$b))
+					-sum(y_sim * pnorm(eta_f, log.p = TRUE) + (1 - y_sim) * pnorm(-eta_f, log.p = TRUE))
+				}
 			)
-		},
-		supports_fisher_information = function(){
-			TRUE
 		},
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
 			ctx = private$cached_values$likelihood_test_context
-			if (is.null(ctx)) return(NULL)
+			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
 			X_fit = ctx$X
 			y = as.numeric(private$y)
 			j_treat = as.integer(ctx$j_treat)
-			full_fit = list(params = ctx$full_params, neg_loglik = ctx$full_neg_loglik)
 			list(
 				X = X_fit,
 				y = y,
 				j = j_treat,
-				full_fit = full_fit,
+				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
-					ws_args = private$get_backend_warm_start_args(length(ctx$full_params))
-					res = tryCatch(
-						fast_ordinal_probit_regression_cpp(
-							X_fit,
-							y,
-							warm_start_params = start %||% ws_args$start_params,
-							warm_start_fisher_info = ws_args$warm_start_fisher_info,
-							smart_cold_start = private$smart_cold_start_default,
-							optimization_alg = private$optimization_alg,
-							fixed_idx = j_treat,
-							fixed_values = delta
-						),
-						error = function(e) NULL
+					ws_args = private$get_backend_warm_start_args(ncol(X_fit))
+					fast_probit_regression_with_var_cpp(
+						X = X_fit,
+						y = y,
+						j = j_treat,
+						warm_start_beta = start %||% ws_args$warm_start_beta,
+						smart_cold_start = private$smart_cold_start_default,
+						warm_start_weights = ws_args$warm_start_weights,
+						warm_start_fisher_info = ws_args$warm_start_fisher_info,
+						fixed_idx = j_treat,
+						fixed_values = delta,
+						optimization_alg = private$optimization_alg
 					)
-					if (is.null(res) || length(res) == 0L) return(NULL)
-					list(params = as.numeric(res$params), neg_loglik = as.numeric(res$neg_loglik), fisher_information = res$fisher_information)
 				},
 				extract_start = function(fit){
-					as.numeric(fit$params)
+					as.numeric(fit$b)
 				},
 				score = function(fit){
-					get_ordinal_probit_regression_score_cpp(X_fit, y, as.numeric(fit$params))
+					get_probit_regression_score_cpp(X_fit, y, as.numeric(fit$b))
 				},
 				observed_information = function(fit){
-					-get_ordinal_probit_regression_hessian_cpp(X_fit, y, as.numeric(fit$params))
+					-get_probit_regression_hessian_cpp(X_fit, as.numeric(fit$b))
 				},
 				fisher_information = function(fit){
-					-get_ordinal_probit_regression_hessian_cpp(X_fit, y, as.numeric(fit$params))
+					-get_probit_regression_hessian_cpp(X_fit, as.numeric(fit$b))
 				},
 				information = function(fit){
-					-get_ordinal_probit_regression_hessian_cpp(X_fit, y, as.numeric(fit$params))
+					-get_probit_regression_hessian_cpp(X_fit, as.numeric(fit$b))
 				},
 				neg_loglik = function(fit){
-					as.numeric(fit$neg_loglik)
+					eta = as.numeric(X_fit %*% as.numeric(fit$b))
+					-sum(y * pnorm(eta, log.p = TRUE) + (1 - y) * pnorm(-eta, log.p = TRUE))
 				}
 			)
 		},
@@ -237,83 +226,54 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 			X_full = private$build_design_matrix()
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
-				required_cols = 1L,
-				fit_fun = function(X_fit, keep){
-					j_treat = match(1L, keep)
-					n_params = ncol(X_fit) + 1L
-					ws_args = private$get_backend_warm_start_args(n_params)
+				required_cols = 2L, # intercept and treatment
+				fit_fun = function(X_fit){
+					ws_args = private$get_backend_warm_start_args(ncol(X_fit))
 					if (estimate_only) {
-						res = fast_ordinal_probit_regression_cpp(
-							X = X_fit,
-							y = as.numeric(private$y),
-							warm_start_params = ws_args$start_params,
+						res = fast_probit_regression_cpp(
+							X_fit, private$y,
+							warm_start_beta = ws_args$warm_start_beta,
+							warm_start_weights = ws_args$warm_start_weights,
 							warm_start_fisher_info = ws_args$warm_start_fisher_info,
 							smart_cold_start = private$smart_cold_start_default,
 							optimization_alg = private$optimization_alg
 						)
-						if (is.null(res) || length(res) == 0L) return(NULL)
-						list(
-							b = as.numeric(res$b),
-							ssq_b_j = NA_real_,
-							j_treat = j_treat,
-							params = as.numeric(res$params),
-							neg_loglik = as.numeric(res$neg_loglik),
-							fisher_information = res$fisher_information
-						)
+						list(b = res$b, fisher_information = res$fisher_information, ssq_b_2 = NA_real_)
 					} else {
-						res = fast_ordinal_probit_regression_with_var_cpp(
-							X = X_fit,
-							y = as.numeric(private$y),
-							warm_start_params = ws_args$start_params,
+						fast_probit_regression_with_var_cpp(
+							X_fit, private$y,
+							warm_start_beta = ws_args$warm_start_beta,
+							warm_start_weights = ws_args$warm_start_weights,
 							warm_start_fisher_info = ws_args$warm_start_fisher_info,
 							smart_cold_start = private$smart_cold_start_default,
 							optimization_alg = private$optimization_alg
-						)
-						if (is.null(res) || length(res$b) == 0L || is.na(res$b[1L])) return(NULL)
-						list(
-							b = as.numeric(res$b),
-							ssq_b_j = as.numeric(res$ssq_b_j),
-							j_treat = j_treat,
-							params = as.numeric(res$params),
-							neg_loglik = as.numeric(res$neg_loglik),
-							fisher_information = res$fisher_information
 						)
 					}
 				},
 				fit_ok = function(mod, X_fit, keep){
-					j_treat = mod$j_treat
-					if (is.null(mod) || is.na(j_treat) || length(mod$b) < j_treat || !is.finite(mod$b[j_treat])) return(FALSE)
+					if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
 					if (estimate_only) return(TRUE)
-					is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
+					is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
 				}
 			)
 			if (!is.null(attempt$fit)){
-				private$set_fit_warm_start(as.numeric(attempt$fit$params), "params")
-				private$best_X_colnames = setdiff(colnames(attempt$X), "treatment")
-				n_alpha = length(attempt$fit$params) - ncol(attempt$X)
-				j_treat = n_alpha + match(1L, attempt$keep)
+				private$set_fit_warm_start(attempt$fit$b, "beta", fisher = attempt$fit$fisher_information, weights = attempt$fit$w)
+				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(
 					X = attempt$X,
-					j_treat = as.integer(j_treat),
-					full_params = as.numeric(attempt$fit$params),
-					full_neg_loglik = as.numeric(attempt$fit$neg_loglik)
-				)
-				list(
-					b = c(0, as.numeric(attempt$fit$b[attempt$fit$j_treat])),
-					ssq_b_2 = as.numeric(attempt$fit$ssq_b_j)
+					j_treat = match(2L, attempt$keep)
 				)
 			} else {
 				private$cached_values$likelihood_test_context = NULL
-				NULL
 			}
+			attempt$fit
 		},
 		build_design_matrix = function(){
 			X_cov = private$X
 			if (is.null(X_cov) || ncol(X_cov) == 0) {
-				X = matrix(private$w, ncol = 1L)
-				colnames(X) = "treatment"
+				X = cbind(`(Intercept)` = 1, treatment = private$w)
 			} else {
-				X = cbind(treatment = private$w, X_cov)
+				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
 			}
 			X
 		}

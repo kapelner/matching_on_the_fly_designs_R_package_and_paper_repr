@@ -37,10 +37,10 @@ results_dt[, `:=`(
 )]
 
 # Shorten labels
-results_dt[, design_short    := gsub("FixedDesign", "", design)]
+results_dt[, design_short    := gsub("DesignFixed", "", design)]
+table(results_dt$design_short)
 results_dt[, inference_short := inference]
 results_dt[, inference_short := gsub("InferenceIncidence", "", inference_short)]
-results_dt[, inference_short := gsub("InferenceIncid",     "", inference_short)]
 
 # Row 1: iBCRD, OptimalBlocks B=4/8/16/32; Row 2: BinaryMatch, Blocking B_target=4/8/16/32
 design_levels = c(
@@ -53,7 +53,10 @@ design_levels = c(
   "Blocking (B_target=8, exact_num_blocks=TRUE)",  
   "Blocking (B_target=16, exact_num_blocks=TRUE)",    
   "Blocking (B_target=32, exact_num_blocks=TRUE)",   
-  "BinaryMatch"
+  "BinaryMatch",
+  "Rerandomization (prop_acceptable=0.01)",
+  'Greedy (objective=""abs_sum_diff"")',
+  'MatchingGreedyPairSwitching (objective=""abs_sum_diff"")'
 )
 design_labels = c(
   "iBCRD",                    
@@ -65,7 +68,10 @@ design_labels = c(
   "B=8",  
   "B=16",    
   "B=32",   
-  "BinaryMatch"
+  "BinaryMatch",
+  "Rerandomization",
+  "Greedy",
+  "BinaryMatchThenGreedy"
 )
 
 results_dt[, design_short := factor(design_short, levels = design_levels, labels = design_labels)]

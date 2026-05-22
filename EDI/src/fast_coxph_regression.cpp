@@ -84,6 +84,37 @@ struct CoxWorkspace {
         hess(p * p) {}
 };
 
+double compute_cox_neg_ll_only(const CoxData& data, const std::vector<double>& beta, CoxWorkspace& workspace) {
+    const int n = data.n;
+    const int p = data.p;
+    Eigen::Map<const Eigen::VectorXd> beta_map(beta.data(), p);
+    workspace.eta.noalias() = data.matrix_map() * beta_map;
+    const double max_eta = workspace.eta.maxCoeff();
+    Eigen::Map<Eigen::VectorXd>(workspace.exp_eta.data(), n) =
+        (workspace.eta.array() - max_eta).exp().matrix();
+    double r_exp = Eigen::Map<const Eigen::VectorXd>(workspace.exp_eta.data(), n).sum();
+    double neg_ll = 0.0;
+    int j = 0;
+    for (size_t k = 0; k < data.unique_event_times.size(); ++k) {
+        const double tk = data.unique_event_times[k];
+        while (j < n && data.y[data.idx_asc[j]] < tk) {
+            r_exp -= workspace.exp_eta[data.idx_asc[j]];
+            ++j;
+        }
+        double sum_eta_dk = 0.0;
+        const int count_dk = data.event_counts[k];
+        for (int m = j; m < n && data.y[data.idx_asc[m]] == tk; ++m) {
+            int id = data.idx_asc[m];
+            if (data.dead[id] > 0.5) sum_eta_dk += workspace.eta[id];
+        }
+        if (count_dk > 0) {
+            const double safe_r = std::max(r_exp, 1e-100);
+            neg_ll -= (sum_eta_dk - count_dk * (std::log(safe_r) + max_eta));
+        }
+    }
+    return neg_ll;
+}
+
 std::vector<CoxWorkspace> make_cox_workspaces(const std::vector<CoxData>& strata_data) {
     std::vector<CoxWorkspace> workspaces;
     workspaces.reserve(strata_data.size());
@@ -212,12 +243,14 @@ CoxFitResult cox_newton_raphson(
             for (int i = 0; i < sd.n; ++i) log_y[offset + i] = std::log(std::max(sd.y[i], 1e-8));
             offset += sd.n;
         }
-        beta = safe_ols_solve(X_full, log_y);
+        beta = -safe_ols_solve(X_full, log_y);
     }
     beta = apply_fixed_values(beta, fixed_spec);
 
     std::vector<double> grad_vec(p), hess_vec(p * p);
     std::vector<CoxWorkspace> workspaces = make_cox_workspaces(strata_data);
+    Eigen::VectorXd beta_candidate(p);
+    std::vector<double> beta_cand_vec(p);
 
     double old_ll = 1e300;
     int iter = 0;
@@ -233,7 +266,9 @@ CoxFitResult cox_newton_raphson(
         for (std::size_t s = 0; s < strata_data.size(); ++s) {
             const CoxData& sd = strata_data[s];
             CoxWorkspace& ws = workspaces[s];
-            ll += compute_cox_ll_grad_hess_fast(sd, beta_vec, ws.grad, ws.hess, estimate_only, ws);
+            // estimate_only skips vcov materialization, but Newton-Raphson still
+            // needs the Hessian to update the coefficients correctly.
+            ll += compute_cox_ll_grad_hess_fast(sd, beta_vec, ws.grad, ws.hess, false, ws);
             for (int q = 0; q < p; ++q) grad_vec[q] += ws.grad[q];
             if (iter > 0 || warm_start_fisher_info.isNull()) {
                 for (int qq = 0; qq < p * p; ++qq) hess_vec[qq] += ws.hess[qq];
@@ -261,8 +296,30 @@ CoxFitResult cox_newton_raphson(
 
         Eigen::LDLT<Eigen::MatrixXd> ldlt(H);
         if (ldlt.info() != Eigen::Success) break;
-        Eigen::VectorXd delta = ldlt.solve(g);
-        beta -= delta;
+        const Eigen::VectorXd delta = ldlt.solve(g);
+
+        // Step-halving line search: ensure the neg log-likelihood decreases.
+        // Each halving costs ~1/3 of a full iteration (eta + exp + event scan,
+        // no gradient or Hessian), so up to 10 halvings is cheap.
+        static const int kMaxHalvings = 10;
+        auto eval_ll_candidate = [&](double step) -> double {
+            for (int q = 0; q < p; ++q) beta_candidate[q] = beta[q] - step * delta[q];
+            for (int fi = 0; fi < (int)fixed_spec.fixed_idx.size(); ++fi)
+                beta_candidate[fixed_spec.fixed_idx[fi]] = fixed_spec.fixed_values[fi];
+            for (int q = 0; q < p; ++q) beta_cand_vec[q] = beta_candidate[q];
+            double ll_c = 0.0;
+            for (std::size_t s = 0; s < strata_data.size(); ++s)
+                ll_c += compute_cox_neg_ll_only(strata_data[s], beta_cand_vec, workspaces[s]);
+            return ll_c;
+        };
+
+        double step = 1.0;
+        double ll_candidate = eval_ll_candidate(step);
+        for (int h = 0; h < kMaxHalvings && ll_candidate >= ll; ++h) {
+            step *= 0.5;
+            ll_candidate = eval_ll_candidate(step);
+        }
+        beta = beta_candidate;
     }
 
     CoxFitResult res;
@@ -347,7 +404,7 @@ CoxFitResult cox_lbfgs(
             for (int i = 0; i < sd.n; ++i) log_y[offset + i] = std::log(std::max(sd.y[i], 1e-8));
             offset += sd.n;
         }
-        par = safe_ols_solve(X_full, log_y);
+        par = -safe_ols_solve(X_full, log_y);
     }
     par = apply_fixed_values(par, fixed_spec);
 
@@ -502,6 +559,39 @@ Eigen::MatrixXd compute_robust_vcov(
 }
 
 } // namespace
+
+// [[Rcpp::export]]
+SEXP build_cox_data_cache_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead) {
+    auto* data = new std::vector<CoxData>();
+    data->emplace_back(y, dead, X);
+    return Rcpp::XPtr<std::vector<CoxData>>(data, true);
+}
+
+// [[Rcpp::export]]
+List fast_coxph_regression_prebuilt_cpp(
+    SEXP cox_data_xptr,
+    Nullable<NumericVector> warm_start_beta = R_NilValue,
+    bool smart_cold_start = true,
+    bool estimate_only = false,
+    int maxit = 20,
+    double tol = 1e-9,
+    Nullable<IntegerVector> fixed_idx = R_NilValue,
+    Nullable<NumericVector> fixed_values = R_NilValue,
+    std::string optimization_alg = "newton_raphson",
+    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
+{
+    Rcpp::XPtr<std::vector<CoxData>> data_ptr(cox_data_xptr);
+    const std::vector<CoxData>& strata_data = *data_ptr;
+    const int p = strata_data[0].p;
+    FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
+    CoxFitResult fit = cox_fit(strata_data, warm_start_beta, smart_cold_start, fixed_spec, estimate_only, maxit, tol, optimization_alg, warm_start_fisher_info);
+    NumericVector coef_r(p);
+    for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];
+    if (estimate_only) {
+        return List::create(_["coefficients"] = coef_r, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat);
+    }
+    return List::create(_["coefficients"] = coef_r, _["vcov"] = fit.vcov, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat);
+}
 
 // [[Rcpp::export]]
 List fast_coxph_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead,

@@ -432,11 +432,22 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   parallel execution of Monte Carlo replications.  Note that when
     #'   \code{num_cores > 1}, parallelization *within* individual inference
     #'   routines (e.g. bootstrap, randomization) is automatically disabled
-    #'   to prevent thread oversubscription. On Unix-like systems a
-    #'   \code{makeForkCluster} pool is created once at \code{run()} start
-    #'   (persistent forked workers, zero per-replication fork overhead); on
-    #'   non-Unix systems \pkg{mirai} is used when available, otherwise
-    #'   execution falls back to serial with a warning. Default \code{1}.
+    #'   to prevent thread oversubscription.
+    #'
+    #'   \strong{Unix/Linux (recommended):} A \code{makeForkCluster} pool is
+    #'   created once at \code{run()} start.  Workers inherit all pre-generated
+    #'   design and SE caches via copy-on-write with zero serialization overhead.
+    #'   Parallelism operates at the \emph{replication} level: \code{num_cores}
+    #'   replications run simultaneously, each executing all DGP cells serially.
+    #'   This eliminates the per-batch dispatch overhead that would arise from
+    #'   cycling through cells within every replication, and keeps all cores
+    #'   fully subscribed regardless of the number of DGP cells.  For best
+    #'   performance, run on a Unix/Linux machine and set \code{num_cores} to
+    #'   the number of physical cores available.
+    #'
+    #'   \strong{Non-Unix (Windows/macOS):} \pkg{mirai} is used when available
+    #'   (parallelism at the DGP-cell level within each replication), otherwise
+    #'   execution falls back to serial with a warning.  Default \code{1}.
     #'
     #' @param results_filename Character scalar. The filename for the results
     #'   file. Supported extensions are \code{.csv} and \code{.csv.bz2}.
@@ -765,7 +776,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$raw_results = vector("list", 1L + private$Nrep * n_cells)
       private$results_idx = 0L
       # Use C++ ResultKeyStore for O(1) key lookups without R string interning overhead
-      init_result_key_store_cpp(n_existing + 1000L) # Reserve extra space for new results
+      init_result_key_store_cpp(n_existing + private$Nrep * n_cells)
       if (n_existing > 0L) {
         # Optimization: Store the entire data.table as the first element instead of row-by-row lists
         private$raw_results[[1L]] = existing_results
@@ -1247,11 +1258,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         }
         RUN_REP_DETACHED_G = private$.run_single_replication_in_worker
         environment(RUN_REP_DETACHED_G) = asNamespace("EDI")
-        assign(".edi_sim_cell_states", all_cell_states, envir = .GlobalEnv)
-        assign(".edi_sim_run_fn",      RUN_REP_DETACHED_G, envir = .GlobalEnv)
+        assign(".edi_sim_cell_states",  all_cell_states,    envir = .GlobalEnv)
+        assign(".edi_sim_run_fn",       RUN_REP_DETACHED_G, envir = .GlobalEnv)
+        assign(".edi_sim_run_required", all_run_required_v, envir = .GlobalEnv)
         on.exit(suppressWarnings(
           rm(list = intersect(
-               c(".edi_sim_cell_states", ".edi_sim_run_fn"),
+               c(".edi_sim_cell_states", ".edi_sim_run_fn", ".edi_sim_run_required"),
                ls(envir = .GlobalEnv, all.names = TRUE)
              ), envir = .GlobalEnv, inherits = FALSE)
         ), add = TRUE)
@@ -1289,7 +1301,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
 
       # ── Main simulation loop: outer = rep, inner = DGP cell ──────────────────
-      private$rep_elapsed_times        = numeric(0)
+      private$rep_elapsed_times        = numeric(private$Nrep)
+      private$rep_elapsed_idx          = 0L
       private$session_work_units_done  = 0L
       private$session_start_time       = as.numeric(Sys.time())
       private$rep_start_capture        = private$session_start_time
@@ -1304,12 +1317,27 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       # Fork cluster worker wrapper: baseenv() closure stops serialization chain.
       # Workers look up cell state + run function from globals inherited at fork time
       # (assigned to .GlobalEnv before makeForkCluster — copy-on-write, no serialization).
+      # Fork workers run all DGP cells for one replication serially, returning a
+      # named list {ci → worker_out}.  Each cell is wrapped in its own tryCatch so
+      # a single failing cell does not kill the other cells in the same rep.
       fork_rep_worker_fn = function(item) {
         tryCatch({
           if (!is.null(item$rep_seed)) set.seed(item$rep_seed)
-          states = get(".edi_sim_cell_states", envir = globalenv())
-          run_fn = get(".edi_sim_run_fn",      envir = globalenv())
-          run_fn(item$rep_i, states[[item$ci]], progress_cb = NULL, is_forked = TRUE)
+          states  = get(".edi_sim_cell_states",  envir = globalenv())
+          run_req = get(".edi_sim_run_required", envir = globalenv())
+          run_fn  = get(".edi_sim_run_fn",       envir = globalenv())
+          active_ci = which(vapply(run_req, `[[`, FALSE, item$rep_i))
+          if (length(active_ci) == 0L) return(list())
+          out = vector("list", length(active_ci))
+          names(out) = as.character(active_ci)
+          for (k in seq_along(active_ci)) {
+            ci = active_ci[[k]]
+            out[[k]] = tryCatch(
+              run_fn(item$rep_i, states[[ci]], progress_cb = NULL, is_forked = TRUE),
+              error = function(e) e
+            )
+          }
+          out
         }, error = function(e) e)
       }
       environment(fork_rep_worker_fn) = baseenv()
@@ -1328,7 +1356,109 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       seed_val = private$seed
 
-      for (rep in seq_len(private$Nrep)) {
+      # ── Fork path: rep-level parallelism ─────────────────────────────────────
+      # num_cores reps are dispatched simultaneously; each worker runs all DGP
+      # cells for its rep serially.  Workers inherit all_cell_states and
+      # all_run_required_v via copy-on-write at fork time — no serialization.
+      if (use_fork_cluster) {
+        private$current_task_label = "Rep"
+        rep_chunks = split(seq_len(private$Nrep),
+                           (seq_len(private$Nrep) - 1L) %/% num_cores_to_use)
+        for (rep_chunk in rep_chunks) {
+          chunk_items = lapply(rep_chunk, function(rep_i) {
+            rep_seed = if (!is.null(seed_val)) seed_val + rep_i else NULL
+            list(rep_i = rep_i, rep_seed = rep_seed)
+          })
+          chunk_wall_start   = as.numeric(Sys.time())
+          chunk_results_list = parallel::clusterApply(cl_rep, chunk_items, fork_rep_worker_fn)
+          chunk_wall_elapsed = as.numeric(Sys.time()) - chunk_wall_start
+
+          # Estimate per-rep elapsed as chunk wall time divided by active rep count.
+          n_active_in_chunk = sum(vapply(rep_chunk, function(r)
+            any(vapply(all_run_required_v, `[[`, FALSE, r)), logical(1L)))
+          elapsed_per_rep = if (n_active_in_chunk > 0L)
+            chunk_wall_elapsed / n_active_in_chunk else 0
+
+          for (k in seq_along(rep_chunk)) {
+            rep             = rep_chunk[[k]]
+            worker_out_list = chunk_results_list[[k]]
+            active_cells_rep = which(vapply(all_run_required_v, `[[`, FALSE, rep))
+
+            if (length(active_cells_rep) == 0L) {
+              private$current_rep_idx = rep
+              private$current_cell_idx = n_cells
+              private$current_task_in_rep_idx = if (n_cells > 0L) cell_tasks_count[[n_cells]] else 0L
+              private$tasks_per_rep = private$current_task_in_rep_idx
+              if (rep %% 100L == 0L || rep == private$Nrep) private$.draw_progress()
+              next
+            }
+
+            if (is_fork_failed(worker_out_list)) {
+              failed_error = private$.make_error_record(
+                stage = "worker_execution", rep = rep,
+                design = NA_character_, design_params = NULL,
+                inference = NA_character_, inference_params = NULL,
+                inference_type = NA_character_, inference_type_params = NULL,
+                message = if (is.null(worker_out_list)) "Worker returned NULL output."
+                          else conditionMessage(worker_out_list),
+                metadata = list(rep = rep, backend = "fork_cluster")
+              )
+              private$.append_errors(list(failed_error))
+              if (isTRUE(private$stop_on_error)) private$.abort_from_error_record(failed_error)
+              private$progress_count = private$progress_count + length(active_cells_rep)
+              private$.draw_progress()
+            } else {
+              cell_dts   = list()
+              total_skip = 0L
+              for (ci_nm in names(worker_out_list)) {
+                cell_out = worker_out_list[[ci_nm]]
+                if (is_fork_failed(cell_out)) {
+                  ci = as.integer(ci_nm)
+                  cell_err = private$.make_error_record(
+                    stage = "worker_execution", rep = rep,
+                    design = NA_character_, design_params = NULL,
+                    inference = NA_character_, inference_params = NULL,
+                    inference_type = NA_character_, inference_type_params = NULL,
+                    message = if (is.null(cell_out)) "Worker returned NULL output."
+                              else conditionMessage(cell_out),
+                    metadata = list(cell_index = ci, rep = rep, backend = "fork_cluster")
+                  )
+                  private$.append_errors(list(cell_err))
+                  if (isTRUE(private$stop_on_error)) private$.abort_from_error_record(cell_err)
+                  private$progress_count = private$progress_count + 1L
+                } else {
+                  private$.append_errors(cell_out$errors)
+                  if (!is.null(cell_out$fatal_error))
+                    private$.abort_from_error_record(cell_out$fatal_error)
+                  if (!is.null(cell_out$results_dt) && nrow(cell_out$results_dt) > 0L)
+                    cell_dts[[length(cell_dts) + 1L]] = cell_out$results_dt
+                  total_skip = total_skip + cell_out$skipped_count
+                }
+              }
+              if (length(cell_dts) > 0L) {
+                all_rep_dt = data.table::rbindlist(cell_dts, use.names = TRUE, fill = TRUE)
+                private$.record_batch(all_rep_dt, total_skip)
+              } else if (total_skip > 0L) {
+                private$.record_batch(NULL, total_skip)
+              }
+              private$session_work_units_done =
+                private$session_work_units_done + length(active_cells_rep)
+            }
+
+            private$current_rep_idx = rep
+            private$current_cell_idx = n_cells
+            private$current_task_in_rep_idx = if (n_cells > 0L) cell_tasks_count[[n_cells]] else 0L
+            private$tasks_per_rep = private$current_task_in_rep_idx
+            private$.draw_progress()
+            if (rep %% private$save_to_disk_every_n_rep == 0L) private$.flush_pending_to_disk()
+            private$rep_elapsed_idx = private$rep_elapsed_idx + 1L
+            private$rep_elapsed_times[[private$rep_elapsed_idx]] = elapsed_per_rep
+          }
+        }
+      }
+
+      # ── Mirai / serial path ───────────────────────────────────────────────────
+      if (!use_fork_cluster) for (rep in seq_len(private$Nrep)) {
         # Determine which cells need work for this rep.
         active_cells = which(vapply(all_run_required_v, `[[`, FALSE, rep))
 
@@ -1346,9 +1476,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         private$current_rep_idx = rep
         private$current_cell_idx = active_cells[[1L]]
 
-        if (use_parallel_workers) {
-          # ── Parallel paths: dispatch cells as workers within each rep ─────────
-          if (use_mirai_backend) {
+        if (use_mirai_backend) {
             private$current_task_label = "Chunk Cells"
             chunk_size = num_cores_to_use
             cell_chunks = split(active_cells, (seq_along(active_cells) - 1L) %/% chunk_size)
@@ -1428,65 +1556,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                 private$.draw_progress()
               }
             }
-          } else {
-            # fork cluster path (Unix, persistent workers — fork once at run() start)
-            private$current_task_label = "Chunk Cells"
-            chunk_size = num_cores_to_use
-            cell_chunks = split(active_cells, (seq_along(active_cells) - 1L) %/% chunk_size)
-            for (chunk_cells in cell_chunks) {
-              private$current_cell_idx = chunk_cells[[1L]]
-              private$tasks_per_rep    = length(chunk_cells)
-              private$current_task_in_rep_idx = 0L
-              private$last_progress_draw_time = 0
-              private$.draw_progress()
-
-              # Workers already have all_cell_states via .edi_sim_cell_states (inherited at fork).
-              # Send only tiny items: ci + rep_i + rep_seed — no matrix serialization.
-              chunk_fns = lapply(chunk_cells, function(ci) {
-                rep_seed = if (!is.null(seed_val)) seed_val + rep else NULL
-                list(ci = ci, rep_i = rep, rep_seed = rep_seed)
-              })
-
-              chunk_results_list = parallel::clusterApply(cl_rep, chunk_fns, fork_rep_worker_fn)
-              names(chunk_results_list) = as.character(chunk_cells)
-
-              private$session_work_units_done = private$session_work_units_done + length(chunk_cells)
-              private$current_cell_idx = chunk_cells[[length(chunk_cells)]]
-              private$current_task_in_rep_idx = length(chunk_cells)
-              private$.draw_progress()
-
-              chunk_results_ok = chunk_results_list[!vapply(chunk_results_list, is_fork_failed, logical(1L))]
-              if (length(chunk_results_ok) > 0L) {
-                all_chunk_dt = data.table::rbindlist(lapply(chunk_results_ok, function(w) w$results_dt), use.names = TRUE, fill = TRUE)
-                all_chunk_skipped = sum(vapply(chunk_results_ok, function(w) w$skipped_count, 0L))
-                private$.append_errors(unlist(lapply(chunk_results_ok, `[[`, "errors"), recursive = FALSE))
-                private$.record_batch(all_chunk_dt, all_chunk_skipped)
-              }
-              fatal_errors = unlist(lapply(chunk_results_ok, function(x) {
-                if (is.null(x$fatal_error)) list() else list(x$fatal_error)
-              }), recursive = FALSE)
-              if (length(fatal_errors) > 0L) private$.abort_from_error_record(fatal_errors[[1L]])
-              failed_indices = which(vapply(chunk_results_list, is_fork_failed, logical(1L)))
-              if (length(failed_indices) > 0L) {
-                failed_errors = lapply(failed_indices, function(idx) {
-                  ci = chunk_cells[[idx]]
-                  res = chunk_results_list[[idx]]
-                  private$.make_error_record(
-                    stage = "worker_execution", rep = rep,
-                    design = NA_character_, design_params = NULL,
-                    inference = NA_character_, inference_params = NULL,
-                    inference_type = NA_character_, inference_type_params = NULL,
-                    message = if (is.null(res)) "Worker returned NULL output." else conditionMessage(res),
-                    metadata = list(cell_index = ci, rep = rep, backend = "fork_cluster")
-                  )
-                })
-                private$.append_errors(failed_errors)
-                if (isTRUE(private$stop_on_error)) private$.abort_from_error_record(failed_errors[[1L]])
-                private$progress_count = private$progress_count + length(failed_indices)
-                private$.draw_progress()
-              }
-            }
-          }
         } else {
           # ── Serial path ───────────────────────────────────────────────────────
           private$current_task_label = "Des/Inf"
@@ -1557,9 +1626,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         private$tasks_per_rep = private$current_task_in_rep_idx
         private$.draw_progress()
         if (rep %% private$save_to_disk_every_n_rep == 0L) private$.flush_pending_to_disk()
-        rep_elapsed = as.numeric(Sys.time()) - inter_rep_start
-        private$rep_elapsed_times = c(private$rep_elapsed_times, rep_elapsed)
-        inter_rep_start = as.numeric(Sys.time())
+        inter_rep_now = as.numeric(Sys.time())
+        private$rep_elapsed_idx = private$rep_elapsed_idx + 1L
+        private$rep_elapsed_times[[private$rep_elapsed_idx]] = inter_rep_now - inter_rep_start
+        inter_rep_start = inter_rep_now
       }
       private$.finish_run()
       invisible(self)
@@ -1680,6 +1750,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     progress_total           = 0L,
     progress_count           = 0L,
     rep_elapsed_times           = numeric(0),
+    rep_elapsed_idx             = 0L,
     session_start_time          = NULL,
     rep_start_capture           = NULL,
     n_active_reps_total         = 0L,
@@ -3178,13 +3249,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         parts = c(parts, paste0(s, "s"))
         paste(parts, collapse = " ")
       }
-      n_done = length(private$rep_elapsed_times)
+      n_done = private$rep_elapsed_idx
       eta_str = if (overall_prop >= 0.9999) {
         "Status: Completed."
       } else if (n_done > 0L && private$n_active_reps_total > 0L) {
         # Rep-based ETA: rolling mean of last 5 reps, minus time already spent in
         # the current in-flight rep so the countdown ticks every 100 ms.
-        secs_per_active_rep  = mean(tail(private$rep_elapsed_times, min(n_done, 5L)))
+        secs_per_active_rep  = mean(private$rep_elapsed_times[seq(max(1L, n_done - 4L), n_done)])
         n_remaining          = max(0L, private$n_active_reps_total - n_done)
         elapsed_in_rep       = if (!is.null(private$rep_start_capture)) max(0, now - private$rep_start_capture) else 0
         elapsed_in_rep       = min(elapsed_in_rep, secs_per_active_rep)
@@ -3713,7 +3784,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           InferenceIncidKKCondLogitOneLik,
           InferenceIncidCMH,
           InferenceIncidExtendedRobins,
-          InferenceIncidExactZhang,
+          InferenceIncidenceExactZhang,
           InferenceIncidExactFisher,
           InferenceIncidExactBinomial
         ),

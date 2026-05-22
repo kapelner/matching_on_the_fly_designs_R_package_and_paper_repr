@@ -66,6 +66,8 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 	),
 	private = list(
 		use_rcpp = TRUE,
+		cox_data_cache = NULL,
+		cox_w_cache = NULL,
 		supports_likelihood_tests = function(){
 			isTRUE(private$use_rcpp)
 		},
@@ -163,17 +165,39 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 				matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
 			}
 			if (private$use_rcpp) {
-				fit = tryCatch(
-					fast_coxph_regression(
-						X_fit, private$y, private$dead, 
-						use_rcpp = TRUE, 
+				if (is.null(private$cox_data_cache) || !identical(private$w, private$cox_w_cache)) {
+					private$cox_data_cache = build_cox_data_cache_cpp(X_fit, private$y, private$dead)
+					private$cox_w_cache = private$w
+				}
+				optimization_alg = .normalize_optimizer_algorithm(NULL, allow_irls = FALSE, default = "newton_raphson")
+				raw_res = tryCatch(
+					fast_coxph_regression_prebuilt_cpp(
+						private$cox_data_cache,
 						estimate_only = estimate_only,
+						optimization_alg = optimization_alg,
 						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
 						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
 						smart_cold_start = private$smart_cold_start_default
 					),
 					error = function(e) NULL
 				)
+				fit = if (!is.null(raw_res) && isTRUE(raw_res$converged)) {
+					b = as.numeric(raw_res$coefficients)
+					names(b) = colnames(X_fit)
+					list(b = b, coefficients = b, vcov = if (estimate_only) NULL else raw_res$vcov,
+					     neg_log_lik = as.numeric(raw_res$neg_ll), fisher_information = raw_res$fisher_information)
+				} else NULL
+				fit = if (is.null(fit)) tryCatch(
+					fast_coxph_regression(
+						X_fit, private$y, private$dead,
+						use_rcpp = TRUE,
+						estimate_only = estimate_only,
+						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
+						smart_cold_start = private$smart_cold_start_default
+					),
+					error = function(e) NULL
+				) else fit
 				if (is.null(fit)) {
 					private$cached_values$likelihood_test_context = NULL
 					return(list(b = rep(NA_real_, ncol(X_fit)), vcov = matrix(NA_real_, ncol(X_fit), ncol(X_fit))))

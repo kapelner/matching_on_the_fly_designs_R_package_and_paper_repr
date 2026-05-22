@@ -44,15 +44,16 @@ public:
         VectorXd scores = VectorXd::Zero(m_K);
         VectorXd probs = VectorXd::Zero(m_K);
         VectorXd cdf = VectorXd::Zero(m_K - 1);
+        VectorXd y_levels = VectorXd::LinSpaced(m_K, 1.0, static_cast<double>(m_K));
 
         for (int i = 0; i < m_n; ++i) {
             const double eta = (m_p > 0) ? m_X.row(i).dot(beta) : 0.0;
-            
+
             for (int j = 0; j < m_K - 1; ++j) {
                 scores[j] = alpha_suffix[j] - static_cast<double>(m_K - 1 - j) * eta;
             }
             scores[m_K - 1] = 0.0;
-            
+
             const double max_score = scores.maxCoeff();
             probs = (scores.array() - max_score).exp().matrix();
             const double denom = probs.sum();
@@ -62,7 +63,7 @@ public:
             neg_ll -= (scores[y_i - 1] - max_score - std::log(denom));
 
             double running_cdf = 0.0;
-            double ey = probs.dot(VectorXd::LinSpaced(m_K, 1.0, static_cast<double>(m_K)));
+            double ey = probs.dot(y_levels);
             for (int j = 0; j < m_K; ++j) {
                 if (j < m_K - 1) {
                     running_cdf += probs[j];
@@ -97,6 +98,7 @@ public:
         VectorXd probs = VectorXd::Zero(m_K);
         VectorXd cdf = VectorXd::Zero(m_K - 1);
         VectorXd prefix_first_moment = VectorXd::Zero(m_K - 1);
+        VectorXd cross(m_p);
 
         for (int i = 0; i < m_n; ++i) {
             const double eta = (m_p > 0) ? m_X.row(i).dot(beta) : 0.0;
@@ -136,7 +138,7 @@ public:
             if (m_p > 0) {
                 for (int j = 0; j < m_K - 1; ++j) {
                     double cov_ind_y = prefix_first_moment[j] - ey * cdf[j];
-                    VectorXd cross = m_X.row(i).transpose() * cov_ind_y;
+                    cross.noalias() = m_X.row(i).transpose() * cov_ind_y;
                     hess.block(j, n_alpha, 1, m_p) += cross.transpose();
                     hess.block(n_alpha, j, m_p, 1) += cross;
                 }

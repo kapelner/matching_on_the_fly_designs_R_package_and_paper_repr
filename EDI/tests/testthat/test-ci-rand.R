@@ -204,8 +204,8 @@ test_that("Zhang incidence inference is available through randomization and exac
 
 	inf_rand_serial <- InferenceIncidLogRegr$new(des, verbose = FALSE)
 	inf_rand_parallel <- InferenceIncidLogRegr$new(des, verbose = FALSE)
-	inf_serial <- InferenceIncidExactZhang$new(des, verbose = FALSE)
-	inf_parallel <- InferenceIncidExactZhang$new(des, verbose = FALSE)
+	inf_serial <- InferenceIncidenceExactZhang$new(des, verbose = FALSE)
+	inf_parallel <- InferenceIncidenceExactZhang$new(des, verbose = FALSE)
 
 	ci_rand_serial <- inf_rand_serial$compute_rand_confidence_interval(alpha = 0.10, pval_epsilon = 0.01, show_progress = FALSE)
 	ci_rand_parallel <- inf_rand_parallel$compute_rand_confidence_interval(alpha = 0.10, pval_epsilon = 0.01, show_progress = FALSE)

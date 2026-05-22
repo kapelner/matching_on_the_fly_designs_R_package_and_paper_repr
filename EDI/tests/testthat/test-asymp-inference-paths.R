@@ -100,6 +100,31 @@ test_that("Ordinal Asymp paths", {
 	test_all_asymp_paths(inf, "Ordinal")
 })
 
+test_that("Jonckheere-Terpstra asymptotic p-value matches clinfun normal approximation", {
+	skip_if_not_installed("clinfun")
+	set.seed(105)
+	n <- 140
+	X <- data.frame(x1 = rnorm(n))
+	des <- DesignFixedBernoulli$new(n = n, response_type = "ordinal", verbose = FALSE)
+	des$add_all_subjects_to_experiment(X)
+	des$assign_w_to_all_subjects()
+	y_latent <- 0.6 * des$get_w() + 0.35 * X$x1 + rnorm(n)
+	y <- as.integer(cut(y_latent, breaks = c(-Inf, -0.8, -0.1, 0.5, Inf), labels = FALSE))
+	des$add_all_subject_responses(y)
+
+	inf <- InferenceOrdinalJonckheereTerpstraTest$new(des, verbose = FALSE)
+	p_pkg <- inf$compute_asymp_two_sided_pval(delta = 0)
+	p_ref <- suppressWarnings(clinfun::jonckheere.test(y, des$get_w(), alternative = "two.sided")$p.value)
+	ci <- inf$compute_asymp_confidence_interval(alpha = 0.05)
+
+	expect_true(is.finite(p_pkg))
+	expect_equal(p_pkg, p_ref, tolerance = 1e-12)
+	expect_length(ci, 2L)
+	expect_true(all(is.finite(ci)))
+	expect_true(ci[1] <= inf$compute_estimate())
+	expect_true(inf$compute_estimate() <= ci[2])
+})
+
 test_that("Beta Asymp paths", {
 	set.seed(6)
 	n <- 100

@@ -1,6 +1,4 @@
 
-if (!requireNamespace("pkgload", quietly = TRUE)) stop("The 'pkgload' package is required.")
-pkgload::load_all("EDI", quiet = TRUE)
 library(EDI)
 library(microbenchmark)
 library(data.table)
@@ -169,15 +167,57 @@ prepare_solver_only_edi = function(inf_obj, cls_name) {
     invisible(inf_obj)
 }
 
+build_strat_cox_canonical_inputs = function(d) {
+    X_cov = d$X[, -1, drop = FALSE]
+    strata_info = EDI:::compute_survival_strata_ids_cpp(as.matrix(X_cov))
+    X_linear = matrix(numeric(0), nrow = nrow(X_cov), ncol = 0)
+    if (!is.null(X_cov) && ncol(X_cov) > 0) {
+        keep_cols = setdiff(seq_len(ncol(X_cov)), as.integer(strata_info$selected_cols))
+        if (length(keep_cols) > 0) {
+            full_design = cbind(w = d$w, X_cov[, keep_cols, drop = FALSE])
+            reduced = EDI:::drop_linearly_dependent_cols(full_design)$M
+            if ("w" %in% colnames(reduced)) {
+                X_linear = reduced[, colnames(reduced) != "w", drop = FALSE]
+            }
+        }
+    }
+    strata_id = as.integer(strata_info$strata_id)
+    informative_rows = integer(0)
+    for (s in unique(strata_id)) {
+        i_s = which(strata_id == s)
+        if (length(i_s) < 2L) next
+        if (length(unique(d$w[i_s])) < 2L) next
+        if (!any(d$dead[i_s] == 1, na.rm = TRUE)) next
+        informative_rows = c(informative_rows, i_s)
+    }
+    informative_rows = sort(unique(informative_rows))
+    if (length(informative_rows) >= 4L) {
+        x = if (ncol(X_linear) > 0) cbind(w = d$w[informative_rows], X_linear[informative_rows, , drop = FALSE]) else matrix(d$w[informative_rows], ncol = 1L, dimnames = list(NULL, "w"))
+        return(list(
+            X = as.matrix(x),
+            y = as.numeric(d$y[informative_rows]),
+            dead = as.numeric(d$dead[informative_rows]),
+            strata = as.integer(strata_id[informative_rows])
+        ))
+    }
+    x = if (ncol(X_linear) > 0) cbind(w = d$w, X_linear) else matrix(d$w, ncol = 1L, dimnames = list(NULL, "w"))
+    list(
+        X = as.matrix(x),
+        y = as.numeric(d$y),
+        dead = as.numeric(d$dead),
+        strata = NULL
+    )
+}
+
 # --- Mapping Table (Targeted subset requested by user) ---
 # library() calls are used to ensure it crashes if pkgs are missing.
 bench_specs = list(
     list(cls = "InferenceIncidLogRegr", pkg = "stats", func = "glm.fit", expr = quote(glm.fit(x = X_can, y = df$y, family = binomial()))),
     list(cls = "InferenceContinOLS", pkg = "stats", func = "lm.fit", expr = quote(lm.fit(x = X_can, y = df$y))),
     list(cls = "InferenceCountPoisson", pkg = "stats", func = "glm.fit", expr = quote(glm.fit(x = X_can, y = df$y, family = poisson()))),
-    list(cls = "InferenceSurvivalCoxPHRegr", pkg = "survival", func = "coxph.fit", expr = quote({
+    list(cls = "InferenceSurvivalCoxPHRegr", pkg = "survival", func = "coxph.fit(breslow)", expr = quote({
         x_vars = c("treatment", grep("^x", names(df), value=T))
-        survival::coxph.fit(x = as.matrix(df[, x_vars, drop=F]), y = survival::Surv(df$y, df$dead), strata=NULL, offset=NULL, init=NULL, control=survival::coxph.control(), weights=NULL, method="efron", rownames=as.character(1:nrow(df)))
+        survival::coxph.fit(x = as.matrix(df[, x_vars, drop=F]), y = survival::Surv(df$y, df$dead), strata=NULL, offset=NULL, init=NULL, control=survival::coxph.control(), weights=NULL, method="breslow", rownames=as.character(1:nrow(df)))
     })),
     list(cls = "InferenceCountNegBin", pkg = "MASS", func = "glm.nb", expr = quote(MASS::glm.nb(y ~ treatment + x1 + x2 + x3 + x4, data = df))),
     list(cls = "InferencePropBetaRegr", pkg = "betareg", func = "betareg.fit", expr = quote(betareg::betareg.fit(x = X_can, y = df$y))),
@@ -188,7 +228,7 @@ bench_specs = list(
     list(cls = "InferenceCountHurdleNegBin", pkg = "pscl", func = "hurdle(nb)", expr = quote(pscl::hurdle(y ~ treatment + x1 + x2 + x3 + x4, data = df, dist="negbin"))),
     list(cls = "InferenceCountQuasiPoisson", pkg = "stats", func = "glm.fit(quasi)", expr = quote(glm.fit(x = X_can, y = df$y, family = quasipoisson()))),
     list(cls = "InferenceSurvivalWeibullRegr", pkg = "survival", func = "survreg", expr = quote(survival::survreg(survival::Surv(y, dead) ~ treatment + x1 + x2 + x3 + x4, data = df, dist="weibull"))),
-    list(cls = "InferenceContinRobustRegr", pkg = "MASS", func = "rlm", expr = quote(MASS::rlm(x = X_can, y = df$y))),
+    list(cls = "InferenceContinRobustRegr", pkg = "MASS", func = "rlm(MM)", expr = quote(MASS::rlm(x = X_can, y = df$y, method = "MM"))),
     list(cls = "InferenceContinQuantileRegr", pkg = "quantreg", func = "rq.fit", expr = quote(quantreg::rq.fit(x = X_can, y = df$y))),
     list(cls = "InferencePropFractionalLogit", pkg = "stats", func = "glm.fit(quasi)", expr = quote(glm.fit(x = X_can, y = df$y, family=quasibinomial()))),
     list(cls = "InferenceIncidLogBinomial", pkg = "stats", func = "glm.fit(log)", expr = quote({
@@ -199,7 +239,7 @@ bench_specs = list(
     list(cls = "InferenceOrdinalAdjCatLogitRegr", pkg = "VGAM", func = "vglm(acat)", expr = quote(VGAM::vglm(factor(y, ordered=T) ~ treatment + x1 + x2 + x3 + x4, VGAM::acat(), data=df))),
     list(cls = "InferenceOrdinalContRatioRegr", pkg = "VGAM", func = "vglm(cratio)", expr = quote(VGAM::vglm(factor(y, ordered=T) ~ treatment + x1 + x2 + x3 + x4, VGAM::cratio(), data=df))),
     list(cls = "InferenceOrdinalOrderedProbitRegr", pkg = "ordinal", func = "clm(probit)", expr = quote(ordinal::clm(factor(y, ordered=T) ~ treatment + x1 + x2 + x3 + x4, data = df, link = "probit"))),
-    list(cls = "InferenceOrdinalCloglogRegr", pkg = "ordinal", func = "clm(cll)", expr = quote(ordinal::clm(factor(y, ordered=T) ~ treatment + x1 + x2 + x3 + x4, data = df, link = "cloglog"))),
+    list(cls = "InferenceOrdinalCloglogRegr", pkg = "ordinal", func = "clm(cloglog)", expr = quote(ordinal::clm(factor(y, ordered=T) ~ treatment + x1 + x2 + x3 + x4, data = df, link = "cloglog"))),
     list(cls = "InferenceOrdinalCauchitRegr", pkg = "ordinal", func = "clm(cauchit)", expr = quote(ordinal::clm(factor(y, ordered=T) ~ treatment + x1 + x2 + x3 + x4, data = df, link = "cauchit"))),
     list(cls = "InferenceSurvivalLogRank", pkg = "survival", func = "survdiff", expr = quote(survival::survdiff(survival::Surv(y, dead) ~ treatment, data = df))),
     list(cls = "InferenceSurvivalGehanWilcox", pkg = "survival", func = "coxph(null)+KM weighted residual mean diff", expr = quote({
@@ -213,19 +253,34 @@ bench_specs = list(
         mean(M_w[df$treatment == 1]) - mean(M_w[df$treatment == 0])
     })),
     list(cls = "InferenceAllSimpleMeanDiffPooledVar", pkg = "stats", func = "t.test(pool)", expr = quote(t.test(df$y[df$treatment==1], df$y[df$treatment==0], var.equal = TRUE))),
-    list(cls = "InferenceAllSimpleWilcox", pkg = "stats", func = "wilcox.test", expr = quote(wilcox.test(df$y[df$treatment==1], df$y[df$treatment==0])), scale = 0.5),
+    list(cls = "InferenceAllSimpleWilcox", pkg = "stats", func = "HL median pairwise diff", expr = quote({
+        y_t = df$y[df$treatment == 1]
+        y_c = df$y[df$treatment == 0]
+        stats::median(as.numeric(outer(y_t, y_c, "-")))
+    }), scale = 0.5),
     list(cls = "InferenceIncidExactFisher", pkg = "stats", func = "fisher.test", expr = quote(fisher.test(table(df$treatment, df$y))), scale = 0.1),
-    list(cls = "InferenceOrdinalJonckheereTerpstraTest", pkg = "clinfun", func = "jonckheere", expr = quote(clinfun::jonckheere.test(df$y, df$treatment))),
     list(cls = "InferenceIncidMiettinenNurminenRiskDiff", pkg = "DescTools", func = "BinomDiffCI(mn)", expr = quote(DescTools::BinomDiffCI(sum(df$y[df$treatment==1]), sum(df$treatment==1), sum(df$y[df$treatment==0]), sum(df$treatment==0), method="mn"))),
     list(cls = "InferenceIncidModifiedPoisson", pkg = "stats", func = "glm.fit(modified)", expr = quote(glm.fit(x = X_can, y = df$y, family = poisson()))),
-    list(cls = "InferenceSurvivalStratCoxPHRegr", pkg = "survival", func = "coxph.fit(strat)", expr = quote(survival::coxph.fit(x = as.matrix(df[, grep("^x", names(df)), drop=F]), y = survival::Surv(df$y, df$dead), strata=as.integer(df$g), offset=NULL, init=NULL, control=survival::coxph.control(), weights=NULL, method="efron", rownames=as.character(1:nrow(df))))),
+    list(cls = "InferenceSurvivalStratCoxPHRegr", pkg = "survival", func = "coxph.fit(strat)", expr = quote({
+        survival::coxph.fit(
+            x = X_can_strat,
+            y = survival::Surv(y_can_strat, dead_can_strat),
+            strata = strata_can,
+            offset = NULL,
+            init = NULL,
+            control = survival::coxph.control(),
+            weights = NULL,
+            method = "breslow",
+            rownames = as.character(seq_along(y_can_strat))
+        )
+    })),
     list(cls = "InferenceContinLin", pkg = "stats", func = "lm.fit(interact)", expr = quote({
         X_int = model.matrix(~ treatment * (x1 + x2 + x3 + x4), data = df)
         lm.fit(x = X_int, y = df$y)
     })),
-    list(cls = "InferenceIncidRiskDiff", pkg = "stats", func = "prop.test", expr = quote({
-        tab = table(df$treatment, df$y)
-        prop.test(tab)$estimate[2] - prop.test(tab)$estimate[1]
+    list(cls = "InferenceIncidRiskDiff", pkg = "stats", func = "lm.fit(LPM)", expr = quote({
+        fit = lm.fit(x = X_can, y = df$y)
+        as.numeric(stats::coef(fit)[2L])
     })),
     list(cls = "InferenceSurvivalKMDiff", pkg = "survival", func = "survfit(median)", expr = quote({
         fit = survival::survfit(survival::Surv(df$y, df$dead) ~ df$treatment)
@@ -241,14 +296,14 @@ bench_specs = list(
         as.numeric(rmst[2] - rmst[1])
     })),
     list(cls = "InferenceCountRobustPoisson", pkg = "stats", func = "glm.fit", expr = quote(glm.fit(x = X_can, y = df$y, family = poisson()))),
-    list(cls = "InferenceOrdinalRidit", pkg = "stats", func = "mean(ridit)", expr = quote({
+    list(cls = "InferenceOrdinalRidit", pkg = "stats", func = "mean(ridit; ref=control)", expr = quote({
         y = df$y
-        tab = table(y)
+        tab = table(y[df$treatment == 0])
         cum = cumsum(tab)
         prev = c(0, cum[-length(cum)])
-        ridit_map = (prev + 0.5 * tab) / length(y)
+        ridit_map = (prev + 0.5 * tab) / sum(tab)
         r = as.numeric(ridit_map[as.character(y)])
-        mean(r[df$treatment==1]) - mean(r[df$treatment==0])
+        mean(r[df$treatment == 1]) - 0.5
     })),
     list(cls = "InferenceIncidNewcombeRiskDiff", pkg = "DescTools", func = "BinomDiffCI(score)", expr = quote(DescTools::BinomDiffCI(sum(df$y[df$treatment==1]), sum(df$treatment==1), sum(df$y[df$treatment==0]), sum(df$treatment==0), method="score")))
 )
@@ -262,7 +317,6 @@ no_can_specs = list(
         X0[, "treatment"] = 0
         mean(stats::plogis(drop(X1 %*% mod$coefficients))) - mean(stats::plogis(drop(X0 %*% mod$coefficients)))
     })),
-    list(cls = "InferenceSurvivalDepCensTransformRegr", pkg = "None", func = "None", expr = NULL),
     list(cls = "InferenceIncidGCompRiskRatio", pkg = "stats", func = "glm.fit+gcomp(RR)", expr = quote({
         mod = glm.fit(x = X_can, y = df$y, family = binomial())
         X1 = X_can; X0 = X_can
@@ -288,8 +342,7 @@ no_can_specs = list(
         p0 = predict(mod, newdata = df0, type = "prob")$fit
         score = seq_len(ncol(p1))
         mean(drop(p1 %*% score)) - mean(drop(p0 %*% score))
-    })),
-    list(cls = "InferencePropZeroOneInflatedBetaRegr", pkg = "None", func = "None", expr = NULL)
+    }))
 )
 bench_specs = c(bench_specs, no_can_specs)
 
@@ -364,6 +417,13 @@ run_one = function(spec) {
         df = data.frame(y = d$y, treatment = d$w, g = factor(rep(1:10, length.out = n)), dead = if(exists("dead", d)) d$dead else 1)
         df = cbind(df, X_cols)
         X_can = cbind(`(Intercept)` = 1, treatment = d$w, as.matrix(X_cols))
+        if (identical(cls_name, "InferenceSurvivalStratCoxPHRegr")) {
+            strat_inputs = build_strat_cox_canonical_inputs(d)
+            X_can_strat = strat_inputs$X
+            y_can_strat = strat_inputs$y
+            dead_can_strat = strat_inputs$dead
+            strata_can = strat_inputs$strata
+        }
 
         timing_can = tryCatch(
             collect_timing_ms(spec$expr, times = b_time, fast_path_microbenchmark_reps = fast_path_microbenchmark_reps),

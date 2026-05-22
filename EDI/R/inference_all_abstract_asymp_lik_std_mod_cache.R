@@ -94,7 +94,8 @@ inference_asymp_lik_std_mod_cache_private = list(
 			
 			# Abstract function implemented by daughter classes.
 			# Should return a list with 'b' (coeff vector), 'params' (full vector if diff from b),
-			# 'fisher_information' (Hessian matrix), and 'ssq_b_2' (variance of treatment effect).
+			# 'fisher_information' (Hessian matrix), and either 'ssq_b_2' or 'ssq_b_j'
+			# for the treatment-effect variance.
 			model_output = private$generate_mod(estimate_only = estimate_only) 
 			
 			private$cached_mod = model_output
@@ -104,7 +105,7 @@ inference_asymp_lik_std_mod_cache_private = list(
 				private$cached_values$df = NA_real_
 				return(invisible(NULL))
 			}
-			private$cached_values$beta_hat_T = model_output$b[2]
+			private$cached_values$beta_hat_T = model_output$beta_hat_T %||% model_output$b[2]
 			
 			if (!is.null(model_output$b)) {
 				private$set_fit_warm_start(
@@ -116,7 +117,7 @@ inference_asymp_lik_std_mod_cache_private = list(
 			}
 
 			if (estimate_only) return(invisible(NULL))
-			ssq = model_output$ssq_b_2
+			ssq = model_output$ssq_b_2 %||% model_output$ssq_b_j
 			if (!is.null(ssq) && !is.na(ssq) && ssq > 0) {
 				private$cached_values$s_beta_hat_T = sqrt(ssq)
 			} else {

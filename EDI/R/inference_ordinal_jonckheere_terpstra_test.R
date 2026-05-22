@@ -46,7 +46,7 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 		#' @description Returns the estimated treatment effect (JT superiority measure).
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
-			private$shared(estimate_only = estimate_only)
+			private$compute_asymptotic_jt_components(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
 		#' @description Returns the weighted JT superiority estimate for Bayesian-bootstrap re-estimation.
@@ -60,18 +60,30 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 		},
 		#' @description Returns the exact two-sided p-value.
 		compute_exact_two_sided_pval_for_treatment_effect = function(){
-			private$shared()
+			private$compute_exact_jt_components()
 			private$cached_values$p_exact
 		},
-		#' @description Not applicable: JT test is exact, not asymptotic. Returns NA.
+		#' @description Computes the asymptotic normal confidence interval using the same
+		#' null-variance approximation as \code{clinfun::jonckheere.test()}.
 		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			c(NA_real_, NA_real_)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
+			private$compute_asymptotic_jt_components()
+			if (!is.finite(private$cached_values$s_beta_hat_T)) return(c(NA_real_, NA_real_))
+			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Not applicable: JT test is exact. Use compute_exact_two_sided_pval_for_treatment_effect().
+		#' @description Computes the asymptotic normal two-sided p-value using the same
+		#' \eqn{Z}-approximation as \code{clinfun::jonckheere.test()}.
 		#' @param delta The null treatment effect (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
-			NA_real_
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
+			private$compute_asymptotic_jt_components()
+			if (!is.finite(private$cached_values$s_beta_hat_T)) return(NA_real_)
+			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
 	private = list(
@@ -92,27 +104,51 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 			if (!is.finite(den) || den <= 0) return(NA_real_)
 			sum(comp * w_pair) / den
 		},
-		shared = function(estimate_only = FALSE){
+		compute_asymptotic_jt_components = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (estimate_only) {
-				private$cached_values$superiority = private$weighted_superiority(
-					private$y,
-					private$w,
-					rep(1, length(private$w))
-				)
-				private$cached_values$beta_hat_T = private$cached_values$superiority - 0.5
+			y = as.integer(private$y)
+			w = as.integer(private$w)
+			ok = is.finite(y) & is.finite(w)
+			y = y[ok]
+			w = w[ok]
+			n_treat = sum(w == 1L)
+			n_control = sum(w == 0L)
+			if (n_treat == 0L || n_control == 0L) {
+				private$cache_nonestimable_estimate("jt_empty_treatment_arm")
 				return(invisible(NULL))
 			}
-			
+			levs = sort(unique(y))
+			treat_counts = tabulate(match(y[w == 1L], levs), nbins = length(levs))
+			control_counts = tabulate(match(y[w == 0L], levs), nbins = length(levs))
+			control_below = cumsum(c(0, head(control_counts, -1L)))
+			u_stat = sum(treat_counts * (control_below + 0.5 * control_counts))
+			superiority = u_stat / (n_treat * n_control)
+			private$cached_values$superiority = superiority
+			private$cached_values$beta_hat_T = superiority - 0.5
+			private$cached_values$jt_u_stat = u_stat
+			private$cached_values$jt_n_treat = n_treat
+			private$cached_values$jt_n_control = n_control
+			if (estimate_only) return(invisible(NULL))
+			jtvar = n_treat * n_control * (n_treat + n_control + 1) / 12
+			se = sqrt(jtvar) / (n_treat * n_control)
+			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+			private$cached_values$df = NA_real_
+			invisible(NULL)
+		},
+		compute_exact_jt_components = function(){
+			if (!is.null(private$cached_values$p_exact)) return(invisible(NULL))
 			res = exact_jonckheere_terpstra_pval_cpp(as.integer(private$y), as.integer(private$w))
-			
+			if (is.null(private$cached_values$s_beta_hat_T)) {
+				private$compute_asymptotic_jt_components()
+			}
 			private$cached_values$superiority = res$superiority
 			private$cached_values$beta_hat_T = res$superiority - 0.5
 			private$cached_values$p_exact = res$p_exact
 			private$cached_values$p_lower = res$p_lower
 			private$cached_values$p_upper = res$p_upper
+			private$cached_values$jt_stat2 = res$stat2
+			invisible(NULL)
 		}
 	)
 )

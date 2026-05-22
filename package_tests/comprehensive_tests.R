@@ -715,7 +715,7 @@ if (inherits(result, "edi_skip_direct")) return(invisible(NULL))
 		return(invisible(NULL))
 	}
 
-	supports_exact_inference = is(seq_des_inf, "InferenceExact") || is(seq_des_inf, "InferenceIncidExactZhang")
+	supports_exact_inference = is(seq_des_inf, "InferenceExact") || is(seq_des_inf, "InferenceIncidenceExactZhang") || is(seq_des_inf, "InferenceIncidExactZhang")
 	if (response_type == "incidence" && supports_exact_inference){
 		safe_call("compute_exact_two_sided_pval_for_treatment_effect", seq_des_inf$compute_exact_two_sided_pval_for_treatment_effect())
 		safe_call("compute_exact_confidence_interval", seq_des_inf$compute_exact_confidence_interval(args_for_type = list(Zhang = list(combination_method = "Fisher", pval_epsilon = pval_epsilon))))

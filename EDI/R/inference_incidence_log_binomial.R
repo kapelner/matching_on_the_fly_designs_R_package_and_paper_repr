@@ -274,6 +274,7 @@ InferenceIncidLogBinomial = R6::R6Class("InferenceIncidLogBinomial",
 				}
 			)
 			if (!is.null(attempt$fit)){
+				attempt$fit$ssq_b_2 = attempt$fit$ssq_b_2 %||% attempt$fit$ssq_b_j
 				private$set_fit_warm_start(attempt$fit$b, "beta", fisher = attempt$fit$fisher_information)
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(

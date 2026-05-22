@@ -1,7 +1,5 @@
 
-if (!requireNamespace("pkgload", quietly = TRUE)) stop("The 'pkgload' package is required.")
 compiler::enableJIT(0) # Disable JIT to prevent R6 on-the-fly compilation overhead
-pkgload::load_all("EDI", quiet = TRUE)
 library(EDI)
 library(microbenchmark)
 library(data.table)
@@ -169,6 +167,48 @@ prepare_solver_only_edi = function(inf_obj, cls_name) {
     invisible(inf_obj)
 }
 
+build_strat_cox_canonical_inputs = function(d) {
+    X_cov = d$X[, -1, drop = FALSE]
+    strata_info = EDI:::compute_survival_strata_ids_cpp(as.matrix(X_cov))
+    X_linear = matrix(numeric(0), nrow = nrow(X_cov), ncol = 0)
+    if (!is.null(X_cov) && ncol(X_cov) > 0) {
+        keep_cols = setdiff(seq_len(ncol(X_cov)), as.integer(strata_info$selected_cols))
+        if (length(keep_cols) > 0) {
+            full_design = cbind(w = d$w, X_cov[, keep_cols, drop = FALSE])
+            reduced = EDI:::drop_linearly_dependent_cols(full_design)$M
+            if ("w" %in% colnames(reduced)) {
+                X_linear = reduced[, colnames(reduced) != "w", drop = FALSE]
+            }
+        }
+    }
+    strata_id = as.integer(strata_info$strata_id)
+    informative_rows = integer(0)
+    for (s in unique(strata_id)) {
+        i_s = which(strata_id == s)
+        if (length(i_s) < 2L) next
+        if (length(unique(d$w[i_s])) < 2L) next
+        if (!any(d$dead[i_s] == 1, na.rm = TRUE)) next
+        informative_rows = c(informative_rows, i_s)
+    }
+    informative_rows = sort(unique(informative_rows))
+    if (length(informative_rows) >= 4L) {
+        x = if (ncol(X_linear) > 0) cbind(w = d$w[informative_rows], X_linear[informative_rows, , drop = FALSE]) else matrix(d$w[informative_rows], ncol = 1L, dimnames = list(NULL, "w"))
+        return(list(
+            X = as.matrix(x),
+            y = as.numeric(d$y[informative_rows]),
+            dead = as.numeric(d$dead[informative_rows]),
+            strata = as.integer(strata_id[informative_rows])
+        ))
+    }
+    x = if (ncol(X_linear) > 0) cbind(w = d$w, X_linear) else matrix(d$w, ncol = 1L, dimnames = list(NULL, "w"))
+    list(
+        X = as.matrix(x),
+        y = as.numeric(d$y),
+        dead = as.numeric(d$dead),
+        strata = NULL
+    )
+}
+
 compute_binary_gcomp_effect = function(beta, X_base, effect = c("RD", "RR")) {
     effect = match.arg(effect)
     X1 = X_base
@@ -243,9 +283,9 @@ bench_specs = list(
         p = ncol(X_can); R = res$qr$qr[1:p, 1:p, drop=FALSE]; R[lower.tri(R)] = 0
         v = chol2inv(R); 2 * pnorm(-abs(res$coefficients[2] / sqrt(v[2,2])))
     })),
-    list(cls = "InferenceSurvivalCoxPHRegr", pkg = "survival", func = "coxph.fit+Wald", expr = quote({
+    list(cls = "InferenceSurvivalCoxPHRegr", pkg = "survival", func = "coxph.fit(breslow)+Wald", expr = quote({
         x_vars = c("treatment", grep("^x", names(df), value=T))
-        res = survival::coxph.fit(x = as.matrix(df[, x_vars, drop=F]), y = survival::Surv(df$y, df$dead), strata=NULL, offset=NULL, init=NULL, control=survival::coxph.control(), weights=NULL, method="efron", rownames=as.character(1:nrow(df)))
+        res = survival::coxph.fit(x = as.matrix(df[, x_vars, drop=F]), y = survival::Surv(df$y, df$dead), strata=NULL, offset=NULL, init=NULL, control=survival::coxph.control(), weights=NULL, method="breslow", rownames=as.character(1:nrow(df)))
         2 * pnorm(-abs(res$coefficients[1] / sqrt(res$var[1,1])))
     })),
     list(cls = "InferenceCountNegBin", pkg = "MASS", func = "glm.nb+summary", expr = quote({
@@ -327,8 +367,18 @@ bench_specs = list(
     list(cls = "InferenceIncidCMH", pkg = "stats", func = "mantelhaen", expr = quote(mantelhaen.test(table(df$treatment, df$y, df$g))$p.value)),
     list(cls = "InferenceOrdinalJonckheereTerpstraTest", pkg = "clinfun", func = "jonckheere", expr = quote(clinfun::jonckheere.test(df$y, df$treatment)$p.value)),
     list(cls = "InferenceIncidMiettinenNurminenRiskDiff", pkg = "DescTools", func = "BinomDiffCI(mn)", expr = quote(DescTools::BinomDiffCI(sum(df$y[df$treatment==1]), sum(df$treatment==1), sum(df$y[df$treatment==0]), sum(df$treatment==0), method="mn"))),
-    list(cls = "InferenceSurvivalStratCoxPHRegr", pkg = "survival", func = "coxph.fit(strat)+Wald", expr = quote({
-        res = survival::coxph.fit(x = as.matrix(df[, grep("^x", names(df)), drop=F]), y = survival::Surv(df$y, df$dead), strata=as.integer(df$g), offset=NULL, init=NULL, control=survival::coxph.control(), weights=NULL, method="efron", rownames=as.character(1:nrow(df)))
+    list(cls = "InferenceSurvivalStratCoxPHRegr", pkg = "survival", func = "coxph.fit(strat,breslow)+Wald", expr = quote({
+        res = survival::coxph.fit(
+            x = X_can_strat,
+            y = survival::Surv(y_can_strat, dead_can_strat),
+            strata = strata_can,
+            offset = NULL,
+            init = NULL,
+            control = survival::coxph.control(),
+            weights = NULL,
+            method = "breslow",
+            rownames = as.character(seq_along(y_can_strat))
+        )
         2 * pnorm(-abs(res$coefficients[1] / sqrt(res$var[1,1])))
     })),
     list(cls = "InferenceContinLin", pkg = "stats", func = "lm.fit(interact)+Wald", expr = quote({
@@ -365,7 +415,6 @@ no_can_specs = list(
         se = sqrt(drop(t(eff$grad) %*% vc %*% eff$grad))
         2 * stats::pnorm(-abs(eff$est / se))
     })),
-    list(cls = "InferenceSurvivalDepCensTransformRegr", pkg = "None", func = "None", expr = NULL),
     list(cls = "InferenceIncidGCompRiskRatio", pkg = "stats", func = "glm+gcomp(RR)+Wald", expr = quote({
         mod = glm(y ~ treatment + x1 + x2 + x3 + x4, family = binomial(), data = df)
         beta = stats::coef(mod)
@@ -392,8 +441,7 @@ no_can_specs = list(
         grad = finite_diff_grad(fn, theta)
         se = sqrt(drop(t(grad) %*% vc %*% grad))
         2 * stats::pnorm(-abs(est / se))
-    })),
-    list(cls = "InferencePropZeroOneInflatedBetaRegr", pkg = "None", func = "None", expr = NULL)
+    }))
 )
 bench_specs = c(bench_specs, no_can_specs)
 
@@ -436,8 +484,6 @@ run_one = function(spec) {
         des = DesignFixediBCRD$new(n = n, response_type = resp_type)
         X_df = as.data.frame(d$X[,-1,drop=F])
         colnames(X_df) = paste0("x", 1:ncol(X_df))
-        if (cls_name == "InferenceSurvivalStratCoxPHRegr") X_df$g = factor(rep(1:10, length.out = n))
-        
         des$add_all_subjects_to_experiment(X_df)
         des$overwrite_all_subject_assignments(d$w)
         des$add_all_subject_responses(d$y, deads = if(exists("dead", d)) d$dead else NULL)
@@ -461,6 +507,8 @@ run_one = function(spec) {
                     priv_env$cached_mod = NULL
                     priv_env$cached_values = list()
                     inf_obj$compute_estimate(estimate_only = FALSE)
+                    ci = inf_obj$compute_asymp_confidence_interval()
+                    if (any(!is.finite(ci))) stop("Non-finite EDI confidence interval.")
                     p = inf_obj$compute_asymp_two_sided_pval(delta = pval_delta)
                     if (!is.finite(p)) stop("Non-finite EDI p-value.")
                     p
@@ -495,6 +543,13 @@ run_one = function(spec) {
             X_cols = d$X[,-1,drop=F]; colnames(X_cols) = paste0("x", 1:ncol(X_cols))
             df = data.frame(y = d$y, treatment = d$w, g = factor(rep(1:10, length.out = n)), dead = if(exists("dead", d)) d$dead else 1)
             df = cbind(df, X_cols); X_can = cbind(`(Intercept)` = 1, treatment = d$w, as.matrix(X_cols))
+            if (identical(cls_name, "InferenceSurvivalStratCoxPHRegr")) {
+                strat_inputs = build_strat_cox_canonical_inputs(d)
+                X_can_strat = strat_inputs$X
+                y_can_strat = strat_inputs$y
+                dead_can_strat = strat_inputs$dead
+                strata_can = strat_inputs$strata
+            }
             
             eval(spec$expr)
             collect_timing_ms(spec$expr)
@@ -592,7 +647,7 @@ header = c(
   "EDI timings in this table correspond to fixed `iBCRD` design objects.",
   "EDI regression models (Logistic, Poisson) are benchmarked using the **IRLS** optimizer for these Wald tests.",
   "**Note on Coverage**: `InferenceIncidCMH` is retained for coverage, but under `iBCRD` its EDI asymptotic p-value may be non-finite, in which case the row is reported as `NA`.",
-  "**Note on Slowdowns**: For some non-parametric tests (e.g. Jonckheere-Terpstra), EDI computes an **exact** p-value while R's counterpart uses a normal approximation for $N=200$, leading to a speedup < 1x.",
+  "**Note on Accessors**: EDI asymptotic Wald timings in this table explicitly call both `compute_asymp_confidence_interval()` and `compute_asymp_two_sided_pval()` so the benchmark includes the full asymptotic inference accessor path.",
   "**Solver-Only Prebuilds**: Benchmark setup prebuilds exposed observed-data design matrices, reduced design matrices, strata IDs, and other fixed working inputs outside the timed region when the implementation exposes those hooks. The timed region then measures the full-inference kernel on those fixed inputs.",
   "**Limitation**: Some canonical comparators only expose formula-based APIs rather than comparable low-level fit kernels. Those rows remain included, but their canonical timings may still contain formula/model-frame overhead beyond the numerical solver, variance, and p-value work itself.",
   paste0("**Timing Note**: All timings are medians over ", B_TIME, " warmed runs measured with adaptive batched `system.time`; paths below ", FAST_PATH_THRESHOLD_MS, " ms use `microbenchmark(times = ", FAST_PATH_MICROBENCH_REPS, ")` instead."),

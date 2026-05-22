@@ -53,6 +53,10 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
 			private$shared()
+			se = private$get_standard_error()
+			if (is.finite(se) && se > 0) {
+				private$cached_values$s_beta_hat_T = se
+			}
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				warning(private$za_description(), ": falling back to bootstrap because standard error is unavailable.")
 				return(self$compute_bootstrap_confidence_interval(alpha = alpha))
@@ -66,6 +70,10 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				assertNumeric(delta)
 			}
 			private$shared()
+			se = private$get_standard_error()
+			if (is.finite(se) && se > 0) {
+				private$cached_values$s_beta_hat_T = se
+			}
 			if (!is.finite(private$cached_values$s_beta_hat_T) || private$cached_values$s_beta_hat_T <= 0){
 				warning(private$za_description(), ": falling back to bootstrap because standard error is unavailable.")
 				return(self$compute_bootstrap_two_sided_pval(delta = delta, na.rm = TRUE))

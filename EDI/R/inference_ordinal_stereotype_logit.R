@@ -279,7 +279,12 @@ InferenceOrdinalContRatioRegr = R6::R6Class("InferenceOrdinalContRatioRegr",
 							warm_start_beta = ws_args$warm_start_beta,
 							warm_start_fisher_info = ws_args$warm_start_fisher_info
 						)
-						list(b = res$b, ssq_b_j = res$ssq_b_1, fisher_information = res$fisher_information)
+						list(
+							b = res$b,
+							ssq_b_j = res$ssq_b_j %||% res$ssq_b_1,
+							ssq_b_2 = res$ssq_b_2 %||% res$ssq_b_j %||% res$ssq_b_1,
+							fisher_information = res$fisher_information
+						)
 					}
 				},
 				fit_ok = function(mod, X_fit, keep){
@@ -291,7 +296,10 @@ InferenceOrdinalContRatioRegr = R6::R6Class("InferenceOrdinalContRatioRegr",
 			if (!is.null(attempt$fit)){
 				private$set_fit_warm_start(attempt$fit$b, "beta", fisher = attempt$fit$fisher_information)
 				private$best_Xmm_colnames = setdiff(colnames(attempt$X), "treatment")
-				list(b = c(0, attempt$fit$b[1]), ssq_b_2 = attempt$fit$ssq_b_j)
+				list(
+					b = c(0, attempt$fit$b[1]),
+					ssq_b_2 = attempt$fit$ssq_b_2 %||% attempt$fit$ssq_b_j
+				)
 			} else {
 				NULL
 			}

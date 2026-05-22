@@ -307,11 +307,13 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 					} else {
 						NA_real_
 					}
-					list(
-						b = as.numeric(res$b),
-						ssq_b_j = ssq_b_j,
-						j_treat = j_treat,
-						params = as.numeric(res$params),
+						list(
+							b = as.numeric(res$b),
+							beta_hat_T = as.numeric(res$b[j_treat]),
+							ssq_b_2 = ssq_b_j,
+							ssq_b_j = ssq_b_j,
+							j_treat = j_treat,
+							params = as.numeric(res$params),
 						neg_loglik = as.numeric(res$neg_loglik),
 						X_zero_one = X_zero_one
 					)

@@ -220,7 +220,7 @@ InferenceOrdinalCauchitRegr = R6::R6Class("InferenceOrdinalCauchitRegr",
 					full_params = attempt$fit$params,
 					full_neg_loglik = attempt$fit$neg_loglik
 				)
-				list(b = c(0, attempt$fit$b[length(attempt$fit$b)]), ssq_b_2 = attempt$fit$ssq_b_j)
+				list(b = c(0, attempt$fit$b[1]), ssq_b_2 = attempt$fit$ssq_b_j)
 			} else {
 				private$cached_values$likelihood_test_context = NULL
 				NULL

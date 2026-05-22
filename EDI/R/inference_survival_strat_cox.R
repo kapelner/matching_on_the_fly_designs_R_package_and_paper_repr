@@ -103,8 +103,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			mod = private$generate_mod()
+			mod = private$generate_mod(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T = as.numeric(mod$b[2])
 			if (estimate_only) return(invisible(NULL))
 			se = if (is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0) sqrt(mod$ssq_b_2) else NA_real_
@@ -340,7 +339,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 			}
 			list(y = y_r, dead = dead_r, X = as.matrix(X_mat))
 		},
-		fit_rcpp_stratified = function(rows, X_linear, strata_id){
+		fit_rcpp_stratified = function(rows, X_linear, strata_id, estimate_only = FALSE){
 			inp  = private$build_rcpp_inputs(rows, X_linear)
 			strata_sub = as.integer(strata_id[rows])
 			fit = tryCatch(
@@ -352,7 +351,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 					warm_start_beta    = private$get_fit_warm_start_for_length("params", ncol(inp$X)),
 					smart_cold_start   = private$smart_cold_start_default,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(inp$X)),
-					estimate_only = FALSE,
+					estimate_only = estimate_only,
 					optimization_alg = private$optimization_alg
 				),
 				error = function(e) NULL
@@ -361,7 +360,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 			list(fit = fit, X = inp$X, y = inp$y, dead = inp$dead, strata = strata_sub, stratified = TRUE)
 		},
 
-		fit_rcpp_unstratified = function(rows, X_linear){
+		fit_rcpp_unstratified = function(rows, X_linear, estimate_only = FALSE){
 			inp = private$build_rcpp_inputs(rows, X_linear)
 			fit = tryCatch(
 				fast_coxph_regression_cpp(
@@ -371,7 +370,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 					warm_start_beta    = private$get_fit_warm_start_for_length("params", ncol(inp$X)),
 					smart_cold_start   = private$smart_cold_start_default,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(inp$X)),
-					estimate_only = FALSE,
+					estimate_only = estimate_only,
 					optimization_alg = private$optimization_alg
 				),
 				error = function(e) NULL
@@ -403,7 +402,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 			}
 			if (length(informative_rows) >= 4){
 				if (private$use_rcpp){
-					res = private$fit_rcpp_stratified(informative_rows, X_linear, strata_info$strata_id)
+					res = private$fit_rcpp_stratified(informative_rows, X_linear, strata_info$strata_id, estimate_only = estimate_only)
 					if (!is.null(res) && isTRUE(res$fit$converged)){
 						private$cached_mod = res$fit
 						private$set_fit_warm_start(as.numeric(res$fit$coefficients), "params", fisher = res$fit$fisher_information)
@@ -417,7 +416,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 						)
 						return(private$format_rcpp_output(res$fit))
 					}
-					res = private$fit_rcpp_unstratified(informative_rows, X_linear)
+					res = private$fit_rcpp_unstratified(informative_rows, X_linear, estimate_only = estimate_only)
 					if (!is.null(res) && isTRUE(res$fit$converged)){
 						private$cached_mod = res$fit
 						private$set_fit_warm_start(as.numeric(res$fit$coefficients), "params", fisher = res$fit$fisher_information)
@@ -474,7 +473,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 			}
 			all_rows = seq_len(length(private$y))
 			if (private$use_rcpp){
-				res = private$fit_rcpp_unstratified(all_rows, X_linear)
+				res = private$fit_rcpp_unstratified(all_rows, X_linear, estimate_only = estimate_only)
 				if (!is.null(res) && isTRUE(res$fit$converged)){
 					private$cached_mod = res$fit
 					private$cached_values$likelihood_test_context = list(
