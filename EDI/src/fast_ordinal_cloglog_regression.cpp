@@ -33,6 +33,10 @@ public:
     MatrixXd hessian(const VectorXd& params) const {
         return m_model.hessian(params);
     }
+
+    MatrixXd expected_hessian(const VectorXd& params) const {
+        return m_model.expected_hessian(params);
+    }
 };
 
 // [[Rcpp::export]]
@@ -83,10 +87,11 @@ List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X,
                                           bool smart_cold_start = true,
                                           int maxit = 100, 
                                           double tol = 1e-6, 
-                                          std::string optimization_alg = "newton_raphson",
+                                          std::string optimization_alg = "lbfgs",
                                           Nullable<IntegerVector> fixed_idx = R_NilValue,
                                           Nullable<NumericVector> fixed_values = R_NilValue,
-                                          Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+                                          Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                          bool estimate_only = false) {
     OrdinalCLLRegression model(X, y);
     int p = X.cols();
     int K = OrdinalCLLRegression::init_levels(y).size();
@@ -121,8 +126,19 @@ List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X,
         info_start_ptr = &info_start;
     }
 
-    LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, info_start_ptr);
+    LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_start_ptr);
     params = fit.params;
+
+    if (estimate_only) {
+        return List::create(
+            Named("b") = params.tail(p),
+            Named("alpha") = params.head(n_alpha),
+            Named("n_params") = n_params,
+            Named("params") = params,
+            Named("converged") = fit.converged,
+            Named("iterations") = fit.niter
+        );
+    }
 
     return List::create(
         Named("b") = params.tail(p),
@@ -132,7 +148,10 @@ List fast_ordinal_cloglog_regression_cpp(const Eigen::MatrixXd& X,
         Named("neg_loglik") = fit.value,
         Named("converged") = fit.converged,
         Named("iterations") = fit.niter,
-        Named("fisher_information") = model.hessian(params)
+        Named("observed_information") = model.hessian(params),
+        Named("fisher_information") = model.expected_hessian(params),
+        Named("information") = model.expected_hessian(params),
+        Named("information_type") = "fisher"
     );
 }
 
@@ -154,7 +173,7 @@ List fast_ordinal_cloglog_regression_with_var_cpp(const Eigen::MatrixXd& X,
                                                    const Eigen::VectorXd& y, 
                                                    Nullable<NumericVector> warm_start_params = R_NilValue,
                                                    bool smart_cold_start = true,
-                                                   std::string optimization_alg = "newton_raphson",
+                                                   std::string optimization_alg = "lbfgs",
                                                    Nullable<IntegerVector> fixed_idx = R_NilValue,
                                                    Nullable<NumericVector> fixed_values = R_NilValue,
                                                    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
@@ -168,11 +187,11 @@ List fast_ordinal_cloglog_regression_with_var_cpp(const Eigen::MatrixXd& X,
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
     
     double ssq_b_2 = NA_REAL;
-    MatrixXd H = model.hessian(params);
+    MatrixXd H = model.expected_hessian(params);
     if (converged) {
         FixedParameterFunctor<OrdinalCLLRegression> fixed_obj(model, fixed_spec, params);
         VectorXd params_free = subset_vector(params, fixed_spec.free_idx);
-        MatrixXd H_free = fixed_obj.hessian(params_free);
+        MatrixXd H_free = fixed_obj.expected_hessian(params_free);
         int p = X.cols();
         int n_alpha = n_params - p;
         int free_j = -1;

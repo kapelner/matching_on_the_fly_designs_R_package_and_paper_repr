@@ -17,7 +17,7 @@ InferenceIncidKKCondLogitOneLik = R6::R6Class("InferenceIncidKKCondLogitOneLik",
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
 		#' @param smart_cold_start_default   Whether to use smart optimizer start values.
-		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
@@ -387,7 +387,7 @@ InferenceIncidKKCondLogitIVWC = R6::R6Class("InferenceIncidKKCondLogitIVWC",
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
 		#' @param smart_cold_start_default   Whether to use smart cold start values.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
@@ -402,13 +402,6 @@ InferenceIncidKKCondLogitIVWC = R6::R6Class("InferenceIncidKKCondLogitIVWC",
 			compute_estimate = function(estimate_only = FALSE){
 				private$shared(estimate_only = estimate_only)
 				private$cached_values$beta_hat_T
-			},
-			#' @description IVWC KK clogit does not support Bayesian-bootstrap
-			#'   weighted estimation.
-			#' @param subject_or_block_weights Numeric vector. Row weights for bootstrap.
-			#' @param estimate_only Logical. If TRUE, skip variance component calculations.
-			compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
-				stop_bayesian_bootstrap_for_ivwc(self)
 			},
 			#' @description Computes an approximate confidence interval.
 			#' @param alpha Numeric. Significance level (default 0.05).
@@ -430,37 +423,6 @@ InferenceIncidKKCondLogitIVWC = R6::R6Class("InferenceIncidKKCondLogitIVWC",
 			#' @return A numeric vector of bootstrap estimates.
 			approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 				eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
-			},
-			#' @description IVWC KK clogit does not support Bayesian-bootstrap
-			#'   replicate generation.
-			#' @param B Integer. Number of bootstrap samples (default 501).
-			#' @param show_progress Logical. Whether to show a progress bar.
-			#' @param debug Logical. Whether to return diagnostics.
-			#' @param weighting_unit_type Character. Type of weighting unit.
-			approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL){
-				stop_bayesian_bootstrap_for_ivwc(self)
-			},
-			#' @description IVWC KK clogit does not support Bayesian-bootstrap p-values.
-			#' @param delta Numeric. Null treatment effect value (default 0).
-			#' @param B Integer. Number of bootstrap samples (default 501).
-			#' @param type Character. Type of bootstrap.
-			#' @param na.rm Logical. Whether to remove NA values.
-			#' @param show_progress Logical. Whether to show a progress bar.
-			#' @param min_number_usable_samples Integer. Minimum number of usable samples.
-			#' @param weighting_unit_type Character. Type of weighting unit.
-			compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL){
-				stop_bayesian_bootstrap_for_ivwc(self)
-			},
-			#' @description IVWC KK clogit does not support Bayesian-bootstrap confidence intervals.
-			#' @param alpha Numeric. Significance level (default 0.05).
-			#' @param B Integer. Number of bootstrap samples (default 501).
-			#' @param type Character. Type of bootstrap.
-			#' @param na.rm Logical. Whether to remove NA values.
-			#' @param show_progress Logical. Whether to show a progress bar.
-			#' @param min_number_usable_samples Integer. Minimum number of usable samples.
-			#' @param weighting_unit_type Character. Type of weighting unit.
-			compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL){
-				stop_bayesian_bootstrap_for_ivwc(self)
 			}
 		))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(

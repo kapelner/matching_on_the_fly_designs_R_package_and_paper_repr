@@ -16,7 +16,7 @@ InferenceOrdinalStereotypeLogitRegr = R6::R6Class("InferenceOrdinalStereotypeLog
 		#' @param verbose Whether to print progress messages.
 		#' @param harden Whether to apply robustness measures.
 		#' @param smart_cold_start_default Whether to use smart cold starts.
-		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
 			}
@@ -77,19 +77,20 @@ InferenceOrdinalStereotypeLogitRegr = R6::R6Class("InferenceOrdinalStereotypeLog
 			if (length(sort(unique(private$y))) >= 3) n_params = n_params + (length(sort(unique(private$y))) - 2L)
 			
 			ws_args = private$get_backend_warm_start_args(n_params)
-			
+			ws_fisher = ws_args$warm_start_fisher_info
 			res = tryCatch(
 				fast_stereotype_logit_cpp(
 					X = X, y = as.numeric(private$y),
 					warm_start_params = ws_args$start_params,
-					warm_start_fisher_info = ws_args$warm_start_fisher_info
+					warm_start_fisher_info = ws_fisher,
+					estimate_only = TRUE
 				),
 				error = function(e) NULL
 			)
 			if (is.null(res) || length(res$b) < 1L || !is.finite(res$b[1])){
 				return(NA_real_)
 			}
-			private$set_fit_warm_start(res$params, "params", fisher = res$fisher_information)
+			private$set_fit_warm_start(as.numeric(res$params), "params", fisher = ws_fisher)
 			as.numeric(res$b[1])
 		},
 		supports_reusable_bootstrap_worker = function(){
@@ -185,7 +186,7 @@ InferenceOrdinalContRatioRegr = R6::R6Class("InferenceOrdinalContRatioRegr",
 		#' @param verbose Whether to print progress messages.
 		#' @param harden Whether to apply robustness measures.
 		#' @param smart_cold_start_default Whether to use smart cold starts.
-		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
 			}

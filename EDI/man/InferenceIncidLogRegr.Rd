@@ -105,7 +105,7 @@ inf$compute_lik_ratio_bootstrap_two_sided_pval(delta = 0, B = 9, show_progress =
   des_obj,
   model_formula = NULL,
   verbose = FALSE,
-  smart_cold_start_default = TRUE,
+  smart_cold_start_default = FALSE,
   optimization_alg = NULL
 )}
     \if{html}{\out{</div>}}

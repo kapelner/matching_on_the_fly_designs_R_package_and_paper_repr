@@ -160,7 +160,7 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 					y_r = fn(KKstats$y_reservoir)
 					w_r = KKstats$w_reservoir
 					X_r = as.matrix(KKstats$X_reservoir)
-					X_pairs = if (p > 0) cbind(0, 1, Xd) else matrix(c(0, 1), nrow = m, ncol = 2, byrow = TRUE)
+					X_pairs = if (p > 0) cbind(0, 1, Xd) else cbind(numeric(m), rep(1.0, m))
 					X_res   = if (p > 0) cbind(1, w_r, X_r) else cbind(1, w_r)
 					X_stack  = rbind(X_pairs, X_res)
 					y_stack  = c(yd, y_r)
@@ -252,7 +252,7 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 					y_r = fn(KKstats$y_reservoir)
 					w_r = KKstats$w_reservoir
 					X_r = as.matrix(KKstats$X_reservoir)
-					X_pairs = if (p > 0) cbind(0, 1, Xd) else matrix(c(0, 1), nrow = m, ncol = 2, byrow = TRUE)
+					X_pairs = if (p > 0) cbind(0, 1, Xd) else cbind(numeric(m), rep(1.0, m))
 					X_res = if (p > 0) cbind(1, w_r, X_r) else cbind(1, w_r)
 					X_stack = rbind(X_pairs, X_res)
 					y_stack = c(yd, y_r)

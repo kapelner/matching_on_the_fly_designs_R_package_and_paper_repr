@@ -251,6 +251,7 @@ CoxFitResult cox_newton_raphson(
     std::vector<CoxWorkspace> workspaces = make_cox_workspaces(strata_data);
     Eigen::VectorXd beta_candidate(p);
     std::vector<double> beta_cand_vec(p);
+    std::vector<double> beta_vec(p);
 
     double old_ll = 1e300;
     int iter = 0;
@@ -260,7 +261,6 @@ CoxFitResult cox_newton_raphson(
         std::fill(hess_vec.begin(), hess_vec.end(), 0.0);
         double ll = 0.0;
 
-        std::vector<double> beta_vec(p);
         for (int q = 0; q < p; ++q) beta_vec[q] = beta[q];
 
         for (std::size_t s = 0; s < strata_data.size(); ++s) {
@@ -577,7 +577,7 @@ List fast_coxph_regression_prebuilt_cpp(
     double tol = 1e-9,
     Nullable<IntegerVector> fixed_idx = R_NilValue,
     Nullable<NumericVector> fixed_values = R_NilValue,
-    std::string optimization_alg = "newton_raphson",
+    std::string optimization_alg = "lbfgs",
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
 {
     Rcpp::XPtr<std::vector<CoxData>> data_ptr(cox_data_xptr);
@@ -603,7 +603,7 @@ List fast_coxph_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
                                Nullable<IntegerVector> cluster = R_NilValue,
                                Nullable<IntegerVector> fixed_idx = R_NilValue,
                                Nullable<NumericVector> fixed_values = R_NilValue,
-                               std::string optimization_alg = "newton_raphson",
+                               std::string optimization_alg = "lbfgs",
                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     int p = X.cols();
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
@@ -632,7 +632,7 @@ List fast_stratified_coxph_regression_cpp(
     double tol = 1e-9,
     Nullable<IntegerVector> fixed_idx = R_NilValue,
     Nullable<NumericVector> fixed_values = R_NilValue,
-    std::string optimization_alg = "newton_raphson",
+    std::string optimization_alg = "lbfgs",
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
 {
     const int n = y.size();
@@ -698,7 +698,7 @@ Eigen::MatrixXd get_stratified_coxph_hessian_cpp(const Eigen::MatrixXd& X, const
     std::vector<CoxData> strata_data; strata_data.reserve(strata_map.size());
     for (auto const& [sid, idx] : strata_map) {
         int ns = (int)idx.size(); Eigen::VectorXd ys(ns), ds(ns); Eigen::MatrixXd Xs(ns, p);
-        for (int ii = 0; ii < ns; ++ii) { int id = idx[ii]; ys[ii] = y[id]; ds[ii] = dead[id]; Xs.row(id) = X.row(id); } // Fixed typo here (row(ii))
+        for (int ii = 0; ii < ns; ++ii) { int id = idx[ii]; ys[ii] = y[id]; ds[ii] = dead[id]; Xs.row(ii) = X.row(id); }
         strata_data.emplace_back(ys, ds, Xs);
     }
     StratifiedCoxObjective obj(strata_data, p); return -obj.hessian(beta);

@@ -44,6 +44,10 @@ public:
     MatrixXd hessian(const VectorXd& params) const {
         return m_model.hessian(params);
     }
+
+    MatrixXd expected_hessian(const VectorXd& params) const {
+        return m_model.expected_hessian(params);
+    }
 };
 
 } // namespace
@@ -98,8 +102,9 @@ Eigen::MatrixXd get_ordinal_regression_hessian_cpp(const Eigen::MatrixXd& X, con
 List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params = R_NilValue, bool smart_cold_start = true, int maxit = 100, double tol = 1e-6,
                                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                  std::string optimization_alg = "newton_raphson",
-                                  Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+                                  std::string optimization_alg = "lbfgs",
+                                  Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                  bool estimate_only = false) {
     OrdinalRegression model(X, y);
     int p = X.cols();
     int K = OrdinalRegression::init_levels(y).size();
@@ -133,7 +138,8 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 
     Eigen::MatrixXd H_start;
     const Eigen::MatrixXd* h_ptr = nullptr;
-    if (warm_start_fisher_info.isNotNull()) {
+    bool has_warm_fisher = warm_start_fisher_info.isNotNull();
+    if (has_warm_fisher) {
         H_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
         h_ptr = &H_start;
     } else if (smart_cold_start) {
@@ -141,8 +147,19 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
         h_ptr = &H_start;
     }
 
-    LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, h_ptr);
+    LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, h_ptr);
     params = fit.params;
+
+    if (estimate_only) {
+        return List::create(
+            Named("b") = params.tail(p),
+            Named("alpha") = params.head(n_alpha),
+            Named("n_params") = n_params,
+            Named("params") = params,
+            Named("converged") = fit.converged,
+            Named("iterations") = fit.niter
+        );
+    }
 
     return List::create(
         Named("b") = params.tail(p),
@@ -152,7 +169,10 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
         Named("neg_loglik") = fit.value,
         Named("converged") = fit.converged,
         Named("iterations") = fit.niter,
-        Named("fisher_information") = model.hessian(params)
+        Named("observed_information") = model.hessian(params),
+        Named("fisher_information") = model.expected_hessian(params),
+        Named("information") = model.expected_hessian(params),
+        Named("information_type") = "fisher"
     );
 }
 
@@ -177,7 +197,7 @@ List fast_ordinal_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen:
                                           Nullable<NumericVector> warm_start_params = R_NilValue, bool smart_cold_start = true, int maxit = 100, double tol = 1e-6,
                                           Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                           Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                          std::string optimization_alg = "newton_raphson",
+                                          std::string optimization_alg = "lbfgs",
                                           Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     if (weights.size() != X.rows()) {
         stop("weights must have length equal to nrow(X)");
@@ -223,7 +243,7 @@ List fast_ordinal_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen:
         h_ptr = &H_start;
     }
 
-    LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, h_ptr);
+    LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, h_ptr);
     params = fit.params;
 
     return List::create(
@@ -234,7 +254,10 @@ List fast_ordinal_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen:
         Named("neg_loglik") = fit.value,
         Named("converged") = fit.converged,
         Named("iterations") = fit.niter,
-        Named("fisher_information") = model.hessian(params)
+        Named("observed_information") = model.hessian(params),
+        Named("fisher_information") = model.expected_hessian(params),
+        Named("information") = model.expected_hessian(params),
+        Named("information_type") = "fisher"
     );
 }
 
@@ -260,13 +283,13 @@ List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
                                            int maxit = 100, double tol = 1e-6,
                                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                            Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                           std::string optimization_alg = "newton_raphson",
+                                           std::string optimization_alg = "lbfgs",
                                            Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     List res = fast_ordinal_regression_cpp(X, y, warm_start_params, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
     VectorXd params = res["params"];
     bool converged = res["converged"];
     OrdinalRegression model(X, y);
-    MatrixXd H = model.hessian(params);
+    MatrixXd H = model.expected_hessian(params);
     
     int n_params = params.size();
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
@@ -336,7 +359,7 @@ List ordinal_gcomp_post_fit_cpp(const Eigen::MatrixXd& X_fit,
     params.tail(p) = coef_hat;
 
     OrdinalRegression model(X_fit, y);
-    MatrixXd H = model.hessian(params);
+    MatrixXd H = model.expected_hessian(params);
     FullPivLU<MatrixXd> lu(H);
     if (!lu.isInvertible()) {
         stop("failed to invert ordinal Hessian");

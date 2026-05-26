@@ -89,6 +89,8 @@ public:
 		double mixture_loglik = 0.0;
 		Eigen::VectorXd grad_gamma0 = Eigen::VectorXd::Zero(m_p_zero_one);
 		Eigen::VectorXd grad_gamma1 = Eigen::VectorXd::Zero(m_p_zero_one);
+		double* g0 = grad_gamma0.data();
+		double* g1 = grad_gamma1.data();
 		for (int i = 0; i < m_n; ++i){
 			double max_logit = std::max(std::max(eta0[i], eta1[i]), 0.0);
 			double e0 = std::exp(eta0[i] - max_logit);
@@ -98,19 +100,28 @@ public:
 			pi0[i] = e0 / denom;
 			pi1[i] = e1 / denom;
 			pib[i] = eb / denom;
-			const Eigen::VectorXd xzi = m_X_zero_one.row(i).transpose();
+			const double* xzi_ptr = m_X_zero_one.data() + i;  // xzi_ptr[j * m_n] == X_zero_one(i,j)
 			if (m_y[i] <= 0){
 				mixture_loglik += std::log(pi0[i]);
-				grad_gamma0.noalias() += xzi * (1.0 - pi0[i]);
-				grad_gamma1.noalias() -= xzi * pi1[i];
+				for (int j = 0; j < m_p_zero_one; ++j) {
+					const double xj = xzi_ptr[j * m_n];
+					g0[j] += xj * (1.0 - pi0[i]);
+					g1[j] -= xj * pi1[i];
+				}
 			} else if (m_y[i] >= 1){
 				mixture_loglik += std::log(pi1[i]);
-				grad_gamma0.noalias() -= xzi * pi0[i];
-				grad_gamma1.noalias() += xzi * (1.0 - pi1[i]);
+				for (int j = 0; j < m_p_zero_one; ++j) {
+					const double xj = xzi_ptr[j * m_n];
+					g0[j] -= xj * pi0[i];
+					g1[j] += xj * (1.0 - pi1[i]);
+				}
 			} else {
 				mixture_loglik += std::log(pib[i]);
-				grad_gamma0.noalias() -= xzi * pi0[i];
-				grad_gamma1.noalias() -= xzi * pi1[i];
+				for (int j = 0; j < m_p_zero_one; ++j) {
+					const double xj = xzi_ptr[j * m_n];
+					g0[j] -= xj * pi0[i];
+					g1[j] -= xj * pi1[i];
+				}
 			}
 		}
 
@@ -175,6 +186,9 @@ public:
 
 			double d_neg_ll_d_phi = -m_n_beta * R::digamma(phi);
 			double d2_neg_ll_d_phi2 = -m_n_beta * R::trigamma(phi);
+			// total_H is the full H matrix column stride
+			const int total_H = m_p + 1 + 2 * m_p_zero_one;
+			double* H_data = H.data();
 
 			for (int i = 0; i < m_n_beta; ++i){
 				const double mu = mu_beta[i];
@@ -194,10 +208,17 @@ public:
 					phi * (dc_dmu * dmu_deta * dmu_deta + c * d2mu_deta2);
 				const double dscore_eta_dlogphi =
 					phi * dmu_deta * (c + phi * dc_dphi);
-				const Eigen::VectorXd x = m_X_beta.row(i).transpose();
+				const double* xi = m_X_beta.data() + i;  // xi[j * m_n_beta] == X_beta(i,j)
 
-				H.topLeftCorner(m_p, m_p).noalias() += dscore_eta_deta * (x * x.transpose());
-				H.topRightCorner(m_p, 1).noalias() += dscore_eta_dlogphi * x;
+				// Rank-1 update into top-left m_p x m_p block (upper triangle)
+				for (int col = 0; col < m_p; ++col) {
+					const double wxi_c = dscore_eta_deta * xi[col * m_n_beta];
+					for (int row = 0; row <= col; ++row)
+						H_data[row + col * total_H] += wxi_c * xi[row * m_n_beta];
+				}
+				// Vector update into top-right column m_p
+				for (int row = 0; row < m_p; ++row)
+					H_data[row + m_p * total_H] += dscore_eta_dlogphi * xi[row * m_n_beta];
 
 				d_neg_ll_d_phi +=
 					mu * digamma_a +
@@ -210,6 +231,10 @@ public:
 			}
 
 			H(m_p, m_p) = phi * d_neg_ll_d_phi + phi * phi * d2_neg_ll_d_phi2;
+			// Reflect upper triangle to lower for the beta block (top-left (m_p+1) x (m_p+1))
+			for (int col = 0; col < m_p + 1; ++col)
+				for (int row = 0; row < col; ++row)
+					H_data[col + row * total_H] = H_data[row + col * total_H];
 		}
 
 		Eigen::VectorXd gamma0 = params.segment(m_p + 1, m_p_zero_one);
@@ -219,6 +244,9 @@ public:
 		Eigen::MatrixXd H01 = Eigen::MatrixXd::Zero(m_p_zero_one, m_p_zero_one);
 		Eigen::VectorXd eta0 = m_X_zero_one * gamma0;
 		Eigen::VectorXd eta1 = m_X_zero_one * gamma1;
+		double* h00 = H00.data();
+		double* h11 = H11.data();
+		double* h01 = H01.data();
 		for (int i = 0; i < m_n; ++i){
 			double max_logit = std::max(std::max(eta0[i], eta1[i]), 0.0);
 			double e0 = std::exp(eta0[i] - max_logit);
@@ -227,11 +255,114 @@ public:
 			double denom = e0 + e1 + eb;
 			double pi0 = e0 / denom;
 			double pi1 = e1 / denom;
-			const Eigen::VectorXd xzi = m_X_zero_one.row(i).transpose();
-			H00.noalias() += pi0 * (1.0 - pi0) * (xzi * xzi.transpose());
-			H11.noalias() += pi1 * (1.0 - pi1) * (xzi * xzi.transpose());
-			H01.noalias() += (-pi0 * pi1) * (xzi * xzi.transpose());
+			const double* xzi_ptr = m_X_zero_one.data() + i;  // xzi_ptr[j * m_n] == X_zero_one(i,j)
+			const double w00 = pi0 * (1.0 - pi0);
+			const double w11 = pi1 * (1.0 - pi1);
+			const double w01 = -pi0 * pi1;
+			for (int c = 0; c < m_p_zero_one; ++c) {
+				const double xj_c = xzi_ptr[c * m_n];
+				for (int r = 0; r <= c; ++r) {
+					const double xj_r = xzi_ptr[r * m_n];
+					h00[r + c * m_p_zero_one] += w00 * xj_r * xj_c;
+					h11[r + c * m_p_zero_one] += w11 * xj_r * xj_c;
+					h01[r + c * m_p_zero_one] += w01 * xj_r * xj_c;
+				}
+			}
 		}
+		// Reflect upper triangle to lower for H00, H11, H01
+		for (int c = 0; c < m_p_zero_one; ++c)
+			for (int r = 0; r < c; ++r) {
+				h00[c + r * m_p_zero_one] = h00[r + c * m_p_zero_one];
+				h11[c + r * m_p_zero_one] = h11[r + c * m_p_zero_one];
+				h01[c + r * m_p_zero_one] = h01[r + c * m_p_zero_one];
+			}
+		const int g0_start = m_p + 1;
+		const int g1_start = m_p + 1 + m_p_zero_one;
+		H.block(g0_start, g0_start, m_p_zero_one, m_p_zero_one) = H00;
+		H.block(g1_start, g1_start, m_p_zero_one, m_p_zero_one) = H11;
+		H.block(g0_start, g1_start, m_p_zero_one, m_p_zero_one) = H01;
+		H.block(g1_start, g0_start, m_p_zero_one, m_p_zero_one) = H01.transpose();
+		return H;
+	}
+
+	Eigen::MatrixXd expected_hessian(const Eigen::VectorXd& params){
+		Eigen::MatrixXd H(m_p + 1 + 2 * m_p_zero_one, m_p + 1 + 2 * m_p_zero_one);
+		H.setZero();
+		const int total_H = m_p + 1 + 2 * m_p_zero_one;
+		double* H_data = H.data();
+
+		Eigen::VectorXd beta = params.head(m_p);
+		double phi = std::exp(params[m_p]);
+		Eigen::VectorXd gamma0 = params.segment(m_p + 1, m_p_zero_one);
+		Eigen::VectorXd gamma1 = params.tail(m_p_zero_one);
+		Eigen::VectorXd eta = m_X * beta;
+		Eigen::VectorXd mu_vec = logistic(eta);
+		clamp_probs(mu_vec);
+		Eigen::VectorXd eta0 = m_X_zero_one * gamma0;
+		Eigen::VectorXd eta1 = m_X_zero_one * gamma1;
+
+		Eigen::MatrixXd H00 = Eigen::MatrixXd::Zero(m_p_zero_one, m_p_zero_one);
+		Eigen::MatrixXd H11 = Eigen::MatrixXd::Zero(m_p_zero_one, m_p_zero_one);
+		Eigen::MatrixXd H01 = Eigen::MatrixXd::Zero(m_p_zero_one, m_p_zero_one);
+		double* h00 = H00.data();
+		double* h11 = H11.data();
+		double* h01 = H01.data();
+
+		for (int i = 0; i < m_n; ++i){
+			double max_logit = std::max(std::max(eta0[i], eta1[i]), 0.0);
+			double e0 = std::exp(eta0[i] - max_logit);
+			double e1 = std::exp(eta1[i] - max_logit);
+			double eb = std::exp(-max_logit);
+			double denom = e0 + e1 + eb;
+			double pi0 = e0 / denom;
+			double pi1 = e1 / denom;
+			double pib = eb / denom;
+
+			const double mu = mu_vec[i];
+			const double one_minus_mu = 1.0 - mu;
+			const double dmu_deta = mu * one_minus_mu;
+			const double a = mu * phi;
+			const double b = one_minus_mu * phi;
+			const double trigamma_a = R::trigamma(a);
+			const double trigamma_b = R::trigamma(b);
+			const double h_beta = pib * phi * phi * (trigamma_a + trigamma_b) * dmu_deta * dmu_deta;
+			const double h_cross = pib * phi * (a * trigamma_a - b * trigamma_b) * dmu_deta;
+			const double h_logphi = pib * phi * phi * (
+				-R::trigamma(phi) + mu * mu * trigamma_a + one_minus_mu * one_minus_mu * trigamma_b
+			);
+			const double* xi = m_X.data() + i;
+			for (int col = 0; col < m_p; ++col) {
+				const double wxi_c = h_beta * xi[col * m_n];
+				for (int row = 0; row <= col; ++row)
+					H_data[row + col * total_H] += wxi_c * xi[row * m_n];
+				H_data[col + m_p * total_H] += h_cross * xi[col * m_n];
+			}
+			H(m_p, m_p) += h_logphi;
+
+			const double* xzi_ptr = m_X_zero_one.data() + i;
+			const double w00 = pi0 * (1.0 - pi0);
+			const double w11 = pi1 * (1.0 - pi1);
+			const double w01 = -pi0 * pi1;
+			for (int c = 0; c < m_p_zero_one; ++c) {
+				const double xj_c = xzi_ptr[c * m_n];
+				for (int r = 0; r <= c; ++r) {
+					const double xj_r = xzi_ptr[r * m_n];
+					h00[r + c * m_p_zero_one] += w00 * xj_r * xj_c;
+					h11[r + c * m_p_zero_one] += w11 * xj_r * xj_c;
+					h01[r + c * m_p_zero_one] += w01 * xj_r * xj_c;
+				}
+			}
+		}
+
+		for (int col = 0; col < m_p + 1; ++col)
+			for (int row = 0; row < col; ++row)
+				H_data[col + row * total_H] = H_data[row + col * total_H];
+		for (int c = 0; c < m_p_zero_one; ++c)
+			for (int r = 0; r < c; ++r) {
+				h00[c + r * m_p_zero_one] = h00[r + c * m_p_zero_one];
+				h11[c + r * m_p_zero_one] = h11[r + c * m_p_zero_one];
+				h01[c + r * m_p_zero_one] = h01[r + c * m_p_zero_one];
+			}
 		const int g0_start = m_p + 1;
 		const int g1_start = m_p + 1 + m_p_zero_one;
 		H.block(g0_start, g0_start, m_p_zero_one, m_p_zero_one) = H00;
@@ -304,11 +435,13 @@ List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
 									 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
 									 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
 									 std::string optimization_alg = "lbfgs",
-                                     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue){
+									 Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+									 bool estimate_only = false){
+
 	Eigen::VectorXd y_eigen = Rcpp::as<Eigen::VectorXd>(y);
 	int p = X.cols();
-	int p_zo = X_zero_one.cols();
-	int total = p + 1 + 2 * p_zo;
+	int p_zero_one = X_zero_one.cols();
+	int total = p + 1 + 2 * p_zero_one;
 	Eigen::VectorXd params(total);
 	
 	if (warm_start_params.isNotNull()) {
@@ -334,8 +467,8 @@ List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
 		// Zero/One components: OLS on indicators
 		Eigen::VectorXd y_is_zero = (y_eigen.array() == 0.0).cast<double>();
 		Eigen::VectorXd y_is_one  = (y_eigen.array() == 1.0).cast<double>();
-		params.segment(p + 1, p_zo) = ols_smart_cold_start_beta(X_zero_one, y_is_zero);
-		params.tail(p_zo)           = ols_smart_cold_start_beta(X_zero_one, y_is_one);
+		params.segment(p + 1, p_zero_one) = ols_smart_cold_start_beta(X_zero_one, y_is_zero);
+		params.tail(p_zero_one)           = ols_smart_cold_start_beta(X_zero_one, y_is_one);
 	} else {
 		params.setZero();
 		params[p] = 2.0;
@@ -354,12 +487,26 @@ List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
 	LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, 1500, 1e-6, optimization_alg, "lbfgs", 0, info_start_ptr);
 	params = fit.params;
 
-	Eigen::MatrixXd H = fun.hessian(params);
+	if (estimate_only) {
+		return List::create(
+			Named("b") = params.head(p),
+			Named("log_phi") = params[p],
+			Named("zero_one_b0") = params.segment(p + 1, p_zero_one),
+			Named("zero_one_b1") = params.tail(p_zero_one),
+			Named("params") = params,
+			Named("neg_loglik") = fit.value,
+			Named("converged") = fit.converged
+		);
+	}
+
+	Eigen::MatrixXd observed_information = fun.hessian(params);
+
+	Eigen::MatrixXd fisher_information = fun.expected_hessian(params);
 	int dim = params.size();
 	NumericMatrix vcov_mat(dim, dim);
 	bool has_vcov = false;
-	if (H.rows() == dim && H.cols() == dim && H.allFinite()){
-		Eigen::MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
+	if (fisher_information.rows() == dim && fisher_information.cols() == dim && fisher_information.allFinite()){
+		Eigen::MatrixXd H_free = subset_matrix(fisher_information, fixed_spec.free_idx, fixed_spec.free_idx);
 		Eigen::FullPivLU<Eigen::MatrixXd> lu(H_free);
 		if (lu.isInvertible()){
 			Eigen::MatrixXd inv_free = lu.inverse();
@@ -380,7 +527,6 @@ List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
 		}
 	}
 
-	int p_zero_one = X_zero_one.cols();
 	return List::create(
 		Named("b") = params.head(p),
 		Named("log_phi") = params[p],
@@ -389,6 +535,10 @@ List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
 		Named("params") = params,
 		Named("vcov") = vcov_mat,
 		Named("neg_loglik") = fit.value,
-		Named("fisher_information") = H
+		Named("observed_information") = observed_information,
+		Named("fisher_information") = fisher_information,
+		Named("information") = fisher_information,
+		Named("information_type") = "fisher",
+		Named("hessian") = -observed_information
 	);
 }

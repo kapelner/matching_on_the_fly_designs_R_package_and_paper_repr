@@ -25,7 +25,7 @@ InferenceIncidKKGEE = R6::R6Class("InferenceIncidKKGEE",
 		#' @param verbose Whether to print progress messages.
 		#' @param use_rcpp Whether to use the internal Rcpp solver.
 		#' @param smart_cold_start_default Whether to use smart cold start values.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = NULL){
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$init_kk_gee_shared(des_obj, use_rcpp = use_rcpp, model_formula = model_formula)
 		},
@@ -106,7 +106,7 @@ InferenceAbstractKKCondLogitPlusGLMMOneLik = R6::R6Class("InferenceAbstractKKCon
 		#' @param max_abs_log_sigma Cap for reasonable log random effect variance.
 		#' @param verbose Whether to print progress messages.
 		#' @param smart_cold_start_default   Whether to use smart cold start values.
-		initialize = function(des_obj, model_formula = NULL, max_abs_reasonable_coef = 1e4, max_abs_log_sigma = 8, verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, max_abs_reasonable_coef = 1e4, max_abs_log_sigma = 8, verbose = FALSE, smart_cold_start_default = NULL){
 			super$initialize(des_obj, model_formula = model_formula, max_abs_reasonable_coef = max_abs_reasonable_coef, max_abs_log_sigma = max_abs_log_sigma, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 		}
 	),

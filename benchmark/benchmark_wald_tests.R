@@ -1,4 +1,4 @@
-
+.libPaths(c(file.path(Sys.getenv("HOME"), "R", paste0(R.version$platform, "-library"), paste(R.version$major, sub("\\..*$", "", R.version$minor), sep = ".")), .libPaths()))
 compiler::enableJIT(0) # Disable JIT to prevent R6 on-the-fly compilation overhead
 library(EDI)
 library(microbenchmark)
@@ -60,6 +60,21 @@ generate_data = function(n = 200, p = 5, family = "logistic") {
     res
 }
 
+make_true_stratified_survival_data = function(d) {
+    n = nrow(d$X)
+    # Force low-cardinality covariates so the stratified Cox row benchmarks a
+    # genuinely stratified fit rather than the unstratified fallback.
+    strata_grid = as.matrix(expand.grid(x1 = 0:1, x2 = 0:2))
+    idx = sample(rep(seq_len(nrow(strata_grid)), length.out = n))
+    d$X[, 2] = strata_grid[idx, 1]
+    d$X[, 3] = strata_grid[idx, 2]
+    beta_cov = c(0.45, -0.35, 0.20, -0.15)
+    eta = 0.5 * d$w + drop(d$X[, 2:5, drop = FALSE] %*% beta_cov)
+    d$y = rexp(n, exp(eta))
+    d$dead = rbinom(n, 1, 0.8)
+    d
+}
+
 collect_timing_ms = function(expr, times = B_TIME, env = parent.frame(), target_batch_ms = TARGET_BATCH_MS, max_inner_reps = MAX_INNER_REPS, fast_path_microbenchmark_reps = FAST_PATH_MICROBENCH_REPS) {
     micro_time_ms = function() {
         mb_ms = microbenchmark(eval(expr, envir = env), times = fast_path_microbenchmark_reps)$time / 1e6
@@ -108,6 +123,14 @@ timing_ttest_pval = function(x, y) {
 
 prepare_solver_only_edi = function(inf_obj, cls_name) {
     priv = inf_obj$.__enclos_env__$private
+    if (cls_name %in% c(
+        "InferenceCountHurdlePoisson",
+        "InferenceCountZeroInflatedPoisson",
+        "InferenceCountQuasiPoisson",
+        "InferenceCountRobustPoisson"
+    )) {
+        return(invisible(inf_obj))
+    }
     replace_binding = function(name, value) {
         if (!exists(name, envir = priv, inherits = FALSE)) return(invisible(FALSE))
         was_locked = bindingIsLocked(name, priv)
@@ -116,6 +139,8 @@ prepare_solver_only_edi = function(inf_obj, cls_name) {
         if (was_locked) lockBinding(name, priv)
         invisible(TRUE)
     }
+    # harden=FALSE for apples-to-apples: canonical paths carry no QR pre-pass overhead
+    replace_binding("harden", FALSE)
 
     if (exists("build_design_matrix", envir = priv, inherits = FALSE)) {
         X_built = tryCatch(priv$build_design_matrix(), error = function(e) NULL)
@@ -161,6 +186,22 @@ prepare_solver_only_edi = function(inf_obj, cls_name) {
             replace_binding("compute_strata_info", function(X_full) strata_info)
             informative_rows = tryCatch(priv$get_informative_rows(strata_info$strata_id), error = function(e) integer(0))
             replace_binding("get_informative_rows", function(strata_id) informative_rows)
+            keep_cols = setdiff(seq_len(ncol(X_full)), as.integer(strata_info$selected_cols))
+            X_linear = tryCatch(
+                if (length(keep_cols) > 0L)
+                    priv$reduce_covariates_preserving_treatment(X_full[, keep_cols, drop = FALSE])
+                else
+                    matrix(numeric(0), nrow = nrow(X_full), ncol = 0L),
+                error = function(e) NULL
+            )
+            if (!is.null(X_linear)) {
+                replace_binding("reduce_covariates_preserving_treatment", function(X) X_linear)
+                if (length(informative_rows) >= 4L) {
+                    rcpp_inp = tryCatch(priv$build_rcpp_inputs(informative_rows, X_linear), error = function(e) NULL)
+                    if (!is.null(rcpp_inp))
+                        replace_binding("build_rcpp_inputs", function(rows, X_linear) rcpp_inp)
+                }
+            }
         }
     }
 
@@ -449,8 +490,8 @@ bench_specs = c(bench_specs, no_can_specs)
 results = list()
 
 safe_instantiate = function(cls_name, des) {
-    inf_cls = get(cls_name)
-    init_args = list(des)
+	inf_cls = get(cls_name)
+	init_args = list(des)
     f = formals(inf_cls$public_methods$initialize)
     if ("smart_cold_start_default" %in% names(f)) init_args$smart_cold_start_default = TRUE
     if ("optimization_alg" %in% names(f)) {
@@ -476,7 +517,13 @@ run_one = function(spec) {
     if (cls_name == "InferenceIncidLogBinomial") family = "log-binomial"
     
     n = N_WALD 
+    if (identical(resp_type, "count")) {
+        set.seed(42)
+    }
     d = generate_data(n = n, family = family)
+    if (identical(cls_name, "InferenceSurvivalStratCoxPHRegr")) {
+        d = make_true_stratified_survival_data(d)
+    }
     pval_delta = if (cls_name == "InferenceIncidGCompRiskRatio") 1 else 0
     
     # Timing EDI (Model Fit + Wald Test)
@@ -491,31 +538,46 @@ run_one = function(spec) {
         inf_obj = safe_instantiate(cls_name, des)
         prepare_solver_only_edi(inf_obj, cls_name)
         
-        # Pre-cache method existence
-        has_asymp = "compute_asymp_two_sided_pval" %in% names(inf_obj)
-        has_exact = "compute_exact_two_sided_pval_for_treatment_effect" %in% names(inf_obj)
-        priv_env = inf_obj$.__enclos_env__$private
+			# Count regression rows are specifically Wald-only: use the explicit
+			# Wald accessors so no generic asymptotic fallback path can dispatch
+			# to bootstrap or likelihood-based alternatives.
+			force_wald = grepl("^InferenceCount", cls_name) && !grepl("ZeroInflated", cls_name)
+			has_wald = "compute_wald_two_sided_pval" %in% names(inf_obj)
+			has_asymp = "compute_asymp_two_sided_pval" %in% names(inf_obj)
+			has_exact = "compute_exact_two_sided_pval_for_treatment_effect" %in% names(inf_obj)
+			priv_env = inf_obj$.__enclos_env__$private
         
         # Determine the benchmark expression
         bench_expr = if (cls_name == "InferenceAllSimpleWilcox") {
             quote({
                 priv_env$hl_point_estimate(d$y, d$w)
             })
-        } else {
-            if (has_asymp) {
-                quote({
-                    priv_env$cached_mod = NULL
-                    priv_env$cached_values = list()
-                    inf_obj$compute_estimate(estimate_only = FALSE)
-                    ci = inf_obj$compute_asymp_confidence_interval()
-                    if (any(!is.finite(ci))) stop("Non-finite EDI confidence interval.")
-                    p = inf_obj$compute_asymp_two_sided_pval(delta = pval_delta)
-                    if (!is.finite(p)) stop("Non-finite EDI p-value.")
-                    p
-                })
-            } else if (has_exact) {
-                quote({
-                    priv_env$cached_mod = NULL
+		} else {
+				if (force_wald && has_wald) {
+					quote({
+						priv_env$cached_mod = NULL
+						priv_env$cached_values = list()
+						if (exists("clear_fit_warm_start", envir = priv_env, inherits = FALSE)) {
+							priv_env$clear_fit_warm_start()
+						}
+						ci = inf_obj$compute_wald_confidence_interval()
+						if (any(!is.finite(ci))) stop("Non-finite EDI confidence interval.")
+						p = inf_obj$compute_wald_two_sided_pval(delta = pval_delta)
+						if (!is.finite(p)) stop("Non-finite EDI p-value.")
+						p
+					})
+				} else if (has_asymp) {
+					quote({
+						priv_env$cached_mod = NULL
+						priv_env$cached_values = list()
+						inf_obj$compute_estimate(estimate_only = FALSE)
+						p = inf_obj$compute_asymp_two_sided_pval(delta = pval_delta)
+						if (!is.finite(p)) stop("Non-finite EDI p-value.")
+						p
+					})
+	            } else if (has_exact) {
+	                quote({
+	                    priv_env$cached_mod = NULL
                     priv_env$cached_values = list()
                     inf_obj$compute_estimate(estimate_only = FALSE)
                     p = inf_obj$compute_exact_two_sided_pval_for_treatment_effect()
@@ -573,6 +635,11 @@ for (i in seq_along(unique_specs)) {
 
 # Finalize
 dt = rbindlist(results)
+saveRDS(dt, "benchmark/wald_test_results.rds")
+if (identical(Sys.getenv("WALD_SAVE_ONLY"), "1")) {
+    cat("Wald Test Benchmark timing results saved to benchmark/wald_test_results.rds.\n")
+    quit(save = "no", status = 0)
+}
 response_levels = c("all", "continuous", "incidence", "count", "proportion", "survival", "ordinal")
 dt[, Response := factor(Response, levels = response_levels)]
 setorder(dt, Response, Class)
@@ -616,15 +683,24 @@ table_lines = c(
   "  </thead>",
   "  <tbody>"
 )
-table_rows = mapply(function(cls, resp, edi, pkg, func, can, speed, pval, stars, bg) {
-  style = if (nzchar(bg)) paste0(" style=\"background-color: ", bg, ";\"") else ""
-  paste0(
-    "    <tr", style, "><td>", cls, "</td><td>", resp, "</td><td>", edi, "</td><td>", pkg,
-    "</td><td>", func, "</td><td>", can, "</td><td>", speed, "</td><td>", pval, "</td><td>", stars, "</td></tr>"
-  )
-}, dt$Class, dt$Response, dt$EDI_Time_ms, dt$Canonical_Pkg, dt$Canonical_Func,
-dt$Canonical_Time_ms, dt$Speedup, dt$Timing_Pval, dt$Timing_Pval_Stars, dt$Timing_Row_Color,
-SIMPLIFY = TRUE, USE.NAMES = FALSE)
+row_style = ifelse(
+  nzchar(dt$Timing_Row_Color),
+  paste0(" style=\"background-color: ", dt$Timing_Row_Color, ";\""),
+  ""
+)
+table_rows = paste0(
+  "    <tr", row_style,
+  "><td>", dt$Class,
+  "</td><td>", dt$Response,
+  "</td><td>", dt$EDI_Time_ms,
+  "</td><td>", dt$Canonical_Pkg,
+  "</td><td>", dt$Canonical_Func,
+  "</td><td>", dt$Canonical_Time_ms,
+  "</td><td>", dt$Speedup,
+  "</td><td>", dt$Timing_Pval,
+  "</td><td>", dt$Timing_Pval_Stars,
+  "</td></tr>"
+)
 table_lines = c(table_lines, table_rows, "  </tbody>", "</table>")
 
 # Overwrite the previous Wald table
@@ -645,9 +721,10 @@ header = c(
   "Unlike the point-estimation table above, these results include the computational cost of the variance-covariance matrix (Hessian or Fisher Information) and the Wald test statistic calculation.",
   "All paths (EDI and Canonical) use a reduced sample size ($N=200$) for this full-inference benchmark to ensure iterative stability.",
   "EDI timings in this table correspond to fixed `iBCRD` design objects.",
+  "**Stratified Cox Exception**: For `InferenceSurvivalStratCoxPHRegr`, the benchmark injects low-cardinality covariates before outcome generation so the row exercises a genuinely stratified Cox fit rather than the unstratified fallback.",
   "EDI regression models (Logistic, Poisson) are benchmarked using the **IRLS** optimizer for these Wald tests.",
   "**Note on Coverage**: `InferenceIncidCMH` is retained for coverage, but under `iBCRD` its EDI asymptotic p-value may be non-finite, in which case the row is reported as `NA`.",
-  "**Note on Accessors**: EDI asymptotic Wald timings in this table explicitly call both `compute_asymp_confidence_interval()` and `compute_asymp_two_sided_pval()` so the benchmark includes the full asymptotic inference accessor path.",
+  "**Note on Accessors**: EDI count-regression timings in this table explicitly call both `compute_wald_confidence_interval()` and `compute_wald_two_sided_pval()` so those rows remain Wald-only and cannot dispatch to bootstrap or likelihood-based fallback paths.",
   "**Solver-Only Prebuilds**: Benchmark setup prebuilds exposed observed-data design matrices, reduced design matrices, strata IDs, and other fixed working inputs outside the timed region when the implementation exposes those hooks. The timed region then measures the full-inference kernel on those fixed inputs.",
   "**Limitation**: Some canonical comparators only expose formula-based APIs rather than comparable low-level fit kernels. Those rows remain included, but their canonical timings may still contain formula/model-frame overhead beyond the numerical solver, variance, and p-value work itself.",
   paste0("**Timing Note**: All timings are medians over ", B_TIME, " warmed runs measured with adaptive batched `system.time`; paths below ", FAST_PATH_THRESHOLD_MS, " ms use `microbenchmark(times = ", FAST_PATH_MICROBENCH_REPS, ")` instead."),

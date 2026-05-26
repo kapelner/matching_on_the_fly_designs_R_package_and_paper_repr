@@ -282,7 +282,7 @@ InferenceContinKKRobustRegrOneLik = R6::R6Class("InferenceContinKKRobustRegrOneL
 					p = 0L
 				}
 				X_comb = rbind(
-					if (p > 0L) cbind(0, 1, Xd_full) else matrix(c(0, 1), nrow = m, ncol = 2L, byrow = TRUE),
+					if (p > 0L) cbind(0, 1, Xd_full) else cbind(numeric(m), rep(1.0, m)),
 					if (p > 0L) cbind(rep(1, nR), KKstats$w_reservoir, as.matrix(KKstats$X_reservoir)) else cbind(rep(1, nR), KKstats$w_reservoir)
 				)
 				y_comb = c(KKstats$y_matched_diffs, KKstats$y_reservoir)
@@ -346,7 +346,7 @@ InferenceContinKKRobustRegrOneLik = R6::R6Class("InferenceContinKKRobustRegrOneL
 					p = 0L
 				}
 				X_comb = rbind(
-					if (p > 0L) cbind(0, 1, Xd_full) else matrix(c(0, 1), nrow = m, ncol = 2L, byrow = TRUE),
+					if (p > 0L) cbind(0, 1, Xd_full) else cbind(numeric(m), rep(1.0, m)),
 					if (p > 0L) cbind(rep(1, nR), KKstats$w_reservoir, as.matrix(KKstats$X_reservoir)) else cbind(rep(1, nR), KKstats$w_reservoir)
 				)
 				y_comb = c(KKstats$y_matched_diffs, KKstats$y_reservoir)

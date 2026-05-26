@@ -27,7 +27,7 @@ InferenceAllSimpleMeanDiffPooledVar = R6::R6Class("InferenceAllSimpleMeanDiffPoo
 		#' @param verbose Whether to print progress messages.
 		#' @param smart_cold_start_default Whether to use smart cold start values.
 		#' @return A new \code{InferenceAllSimpleMeanDiffPooledVar} object.
-		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE, smart_cold_start_default = NULL){
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
@@ -41,12 +41,26 @@ InferenceAllSimpleMeanDiffPooledVar = R6::R6Class("InferenceAllSimpleMeanDiffPoo
 		#' @description Computes an approximate confidence interval.
 		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			super$compute_asymp_confidence_interval(alpha = alpha)
+			if (should_run_asserts()) {
+				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
+			}
+			pooled_stats = private$compute_direct_pooled_t_components()
+			if (!is.finite(pooled_stats$estimate) || !is.finite(pooled_stats$se) || pooled_stats$se <= 0) return(c(NA_real_, NA_real_))
+			critical_val = stats::qt(1 - alpha / 2, df = pooled_stats$df)
+			ci = c(pooled_stats$estimate - critical_val * pooled_stats$se, pooled_stats$estimate + critical_val * pooled_stats$se)
+			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
+			ci
 		},
 		#' @description Computes an approximate two-sided p-value.
 		#' @param delta Null treatment effect value.
 		compute_asymp_two_sided_pval = function(delta = 0){
-			super$compute_asymp_two_sided_pval(delta = delta)
+			if (should_run_asserts()) {
+				assertNumeric(delta)
+			}
+			pooled_stats = private$compute_direct_pooled_t_components()
+			if (!is.finite(pooled_stats$estimate) || !is.finite(pooled_stats$se) || pooled_stats$se <= 0) return(NA_real_)
+			t_stat = (pooled_stats$estimate - delta) / pooled_stats$se
+			2 * stats::pt(-abs(t_stat), df = pooled_stats$df)
 		},
 		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
 		#' @param B  					Number of bootstrap samples.
@@ -72,6 +86,13 @@ InferenceAllSimpleMeanDiffPooledVar = R6::R6Class("InferenceAllSimpleMeanDiffPoo
 			private$cached_values$simple_mean_diff_pooled_df
 		},
 		compute_simple_mean_diff_pooled_components = function(){
+			private$compute_direct_pooled_t_components()
+			invisible(NULL)
+		},
+		compute_direct_pooled_t_components = function(){
+			if (!is.null(private$cached_values$simple_mean_diff_pooled_t_components)) {
+				return(private$cached_values$simple_mean_diff_pooled_t_components)
+			}
 			if (is.null(private$cached_values$beta_hat_T)) {
 				self$compute_estimate()
 			}
@@ -82,22 +103,26 @@ InferenceAllSimpleMeanDiffPooledVar = R6::R6Class("InferenceAllSimpleMeanDiffPoo
 			if (n_t <= 1L || n_c <= 1L) {
 				private$cached_values$simple_mean_diff_pooled_se = NA_real_
 				private$cached_values$simple_mean_diff_pooled_df = NA_real_
-				return(invisible(NULL))
+				out = list(estimate = NA_real_, se = NA_real_, df = NA_real_)
+				private$cached_values$simple_mean_diff_pooled_t_components = out
+				return(out)
 			}
 			s2_t = stats::var(y_t)
 			s2_c = stats::var(y_c)
 			df = n_t + n_c - 2L
 			s2_pooled = ((n_t - 1L) * s2_t + (n_c - 1L) * s2_c) / df
 			var_hat = s2_pooled * (1 / n_t + 1 / n_c)
-			private$cached_values$simple_mean_diff_pooled_se =
-				if (is.finite(var_hat) && var_hat >= 0) sqrt(var_hat) else NA_real_
-			private$cached_values$simple_mean_diff_pooled_df =
-				if (is.finite(var_hat) && is.finite(df) && df > 0) {
-					as.numeric(df)
-				} else {
-					NA_real_
-				}
-			invisible(NULL)
+			se = if (is.finite(var_hat) && var_hat >= 0) sqrt(var_hat) else NA_real_
+			df = if (is.finite(var_hat) && is.finite(df) && df > 0) as.numeric(df) else NA_real_
+			out = list(
+				estimate = private$cached_values$beta_hat_T,
+				se = se,
+				df = df
+			)
+			private$cached_values$simple_mean_diff_pooled_se = se
+			private$cached_values$simple_mean_diff_pooled_df = df
+			private$cached_values$simple_mean_diff_pooled_t_components = out
+			out
 		}
 	)
 )

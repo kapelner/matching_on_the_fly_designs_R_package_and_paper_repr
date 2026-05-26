@@ -28,7 +28,7 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
 		#' @param smart_cold_start_default Whether to use smart starting values for the optimizer.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 			}
@@ -119,7 +119,8 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 					X = X, y = as.numeric(private$y),
 					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
 					smart_cold_start = private$smart_cold_start_default,
-					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X))
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X)),
+					estimate_only = TRUE
 				),
 				error = function(e) NULL
 			)
@@ -148,7 +149,8 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 					X = X_fit, y = as.numeric(private$y),
 					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
 					smart_cold_start = private$smart_cold_start_default,
-					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
+					estimate_only = estimate_only
 				),
 				error = function(e) NULL
 			)
@@ -161,71 +163,27 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat))
 			}
 			
+			b_full = rep(NA_real_, ncol(X))
+			b_full[reduced$keep] = coef_hat
+			names(b_full) = colnames(X)
 			if (estimate_only){
-				b_full = rep(NA_real_, ncol(X))
-				b_full[reduced$keep] = coef_hat
-				names(b_full) = colnames(X)
 				return(list(b = b_full, ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod, XtWX = mod$XtWX))
 			}
-			mu_hat = as.numeric(exp(X_fit %*% coef_hat))
-			if (length(mu_hat) != nrow(X_fit) || any(!is.finite(mu_hat)) || any(mu_hat <= 0)){
-				return(list(b = b_full, ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod, XtWX = mod$XtWX))
-			}
-			bread = NULL
-			var_keep = seq_len(ncol(X_fit))
-			X_var = X_fit
-			cross_mat = tryCatch(
-				crossprod(X_fit, X_fit * mu_hat),
-				error = function(e) NULL
-			)
-			if (!is.null(cross_mat)) {
-				bread = tryCatch(solve(cross_mat), error = function(e) NULL)
-			}
-			if (is.null(bread)) {
-				sqrt_mu = sqrt(mu_hat)
-				X_weighted = X_fit * sqrt_mu
-				reduced_weighted = private$reduce_design_matrix_preserving_treatment(X_weighted)
-				keep_sub = as.integer(reduced_weighted$keep)
-				if (length(keep_sub) == 0L) {
-					return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod, XtWX = mod$XtWX))
-				}
-				X_var_candidate = as.matrix(X_fit[, keep_sub, drop = FALSE])
-				cross_mat = tryCatch(
-					crossprod(X_var_candidate, X_var_candidate * mu_hat),
-					error = function(e) NULL
-				)
-				if (!is.null(cross_mat)) {
-					bread = tryCatch(solve(cross_mat), error = function(e) NULL)
-					if (!is.null(bread)) {
-						var_keep = keep_sub
-						X_var = X_var_candidate
-					}
-				}
-			}
+			
+			cross_mat = mod$XtWX
+			bread = tryCatch(solve(cross_mat), error = function(e) NULL)
 			if (is.null(bread)){
-				return(list(b = rep(NA_real_, ncol(X)), ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod, XtWX = mod$XtWX))
+				return(list(b = b_full, ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod, XtWX = mod$XtWX))
 			}
+			mu_hat = as.numeric(mod$mu)
 			resid = as.numeric(private$y) - mu_hat
-			meat = crossprod(X_var, X_var * (resid^2))
-			vcov_trim = bread %*% meat %*% bread
-			vcov_full = matrix(NA_real_, ncol(X_fit), ncol(X_fit))
-			if (length(var_keep) == ncol(X_fit)) {
-				vcov_full = vcov_trim
-			} else {
-				for (i in seq_along(var_keep)){
-					for (j in seq_along(var_keep)){
-						vcov_full[var_keep[i], var_keep[j]] = vcov_trim[i, j]
-					}
-				}
-			}
-			vcov_robust = (vcov_full + t(vcov_full)) / 2
+			meat = crossprod(X_fit, X_fit * (resid^2))
+			vcov_robust = bread %*% meat %*% bread
+			
 			ssq_b_j = as.numeric(vcov_robust[j_treat, j_treat])
 			if (!is.finite(ssq_b_j) || ssq_b_j < 0){
 				ssq_b_j = NA_real_
 			}
-			b_full = rep(NA_real_, ncol(X))
-			b_full[reduced$keep] = coef_hat
-			names(b_full) = colnames(X)
 			list(b = b_full, ssq_b_2 = ssq_b_j, mod = mod, XtWX = mod$XtWX, X_fit = X_fit, j_treat = j_treat)
 		},
 		generate_mod = function(estimate_only = FALSE){

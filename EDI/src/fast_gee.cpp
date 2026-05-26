@@ -18,7 +18,8 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
                                               Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                               std::string optimization_alg = "irls",
                                               Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-                                              Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue);
+                                              Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                              bool estimate_only = false);
 ModelResult fast_poisson_regression_internal(const Eigen::MatrixXd& X,
                                              const Eigen::VectorXd& y,
                                              const Eigen::VectorXd& weights = Eigen::VectorXd(),
@@ -30,7 +31,8 @@ ModelResult fast_poisson_regression_internal(const Eigen::MatrixXd& X,
                                              Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                              std::string optimization_alg = "lbfgs",
                                              Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-                                             Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue);
+                                             Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                             bool estimate_only = false);
 
 enum class GEEFamily { GAUSSIAN, BINOMIAL, POISSON };
 

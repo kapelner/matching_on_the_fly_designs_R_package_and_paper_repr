@@ -22,42 +22,6 @@ InferenceIncidKKCondLogitPlusGLMMIVWC = R6::R6Class("InferenceIncidKKCondLogitPl
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKCondLogitPlusGLMM,
 	public = list(
-		#' @description Gated off for IVWC.
-		#' @param subject_or_block_weights weights.
-		#' @param estimate_only flag.
-		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
-			stop_bayesian_bootstrap_for_ivwc(self)
-		},
-		#' @description Gated off for IVWC.
-		#' @param B replicates.
-		#' @param show_progress flag.
-		#' @param debug flag.
-		#' @param weighting_unit_type type.
-		approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL) {
-			stop_bayesian_bootstrap_for_ivwc(self)
-		},
-		#' @description Gated off for IVWC.
-		#' @param delta null.
-		#' @param B replicates.
-		#' @param type type.
-		#' @param na.rm flag.
-		#' @param show_progress flag.
-		#' @param min_number_usable_samples count.
-		#' @param weighting_unit_type type.
-		compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
-			stop_bayesian_bootstrap_for_ivwc(self)
-		},
-		#' @description Gated off for IVWC.
-		#' @param alpha level.
-		#' @param B replicates.
-		#' @param type type.
-		#' @param na.rm flag.
-		#' @param show_progress flag.
-		#' @param min_number_usable_samples count.
-		#' @param weighting_unit_type type.
-		compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
-			stop_bayesian_bootstrap_for_ivwc(self)
-		}
 	),
 	private = list(
 		combine_reservoir_into_glmm = function() FALSE
@@ -94,7 +58,7 @@ InferenceIncidKKCondLogitPlusGLMMOneLik = R6::R6Class("InferenceIncidKKCondLogit
 		#' @param verbose Whether to print progress messages.
 		#' @param smart_cold_start_default   Whether to use smart optimizer start values.
 		#' @param optimization_alg Character. Optimization algorithm (default "lbfgs").
-		initialize = function(des_obj, model_formula = NULL, max_abs_reasonable_coef = 1e4, max_abs_log_sigma = 8, verbose = FALSE, smart_cold_start_default = TRUE, optimization_alg = NULL){
+		initialize = function(des_obj, model_formula = NULL, max_abs_reasonable_coef = 1e4, max_abs_log_sigma = 8, verbose = FALSE, smart_cold_start_default = NULL, optimization_alg = NULL){
 			super$initialize(des_obj, model_formula = model_formula, max_abs_reasonable_coef = max_abs_reasonable_coef, max_abs_log_sigma = max_abs_log_sigma, verbose = verbose, smart_cold_start_default = smart_cold_start_default, optimization_alg = optimization_alg)
 		}
 	),

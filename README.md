@@ -120,8 +120,10 @@ calibration, the intended user-facing entry points are:
 - `compute_lik_ratio_bootstrap_confidence_interval(alpha = 0.05, B = 199, show_progress = FALSE)`
 
 These methods are available only for inference classes whose internal
-`supports_lik_ratio_param_bootstrap()` capability is enabled. Unsupported
+\`supports_lik_ratio_param_bootstrap()\` capability is enabled. Unsupported
 classes error rather than silently falling back to another procedure.
+
+For a detailed performance report on the "Warm Start" acceleration strategies used during these resampling loops, see [Warm Start Strategies in EDI](package_metadata/warm_starts.md).
 
 A typical flow is:
 

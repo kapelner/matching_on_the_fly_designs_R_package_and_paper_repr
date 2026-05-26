@@ -1,14 +1,8 @@
-#' Simple Mean Difference Inference based on Maximum Likelihood
+#' Mean Difference Inference for Continuous Responses
 #'
-#' The methods that support confidence intervals and testing for the mean difference
-#' in all response types (except Weibull with censoring)
-#' sequential experimental design estimation and test object
-#' after the sequential design is completed.
-#' For incidence responses coded as 0/1, the asymptotic inference is numerically
-#' equivalent to Welch-Satterthwaite unpooled two-sample inference.
+#' Fits a simple mean difference for continuous responses using the treatment
+#' indicator.
 #'
-#'
-#' @export
 #' @examples
 #' \dontrun{
 #' seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous")
@@ -20,15 +14,15 @@
 #' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
 #' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 #'
-#' seq_des_inf = InferenceAllSimpleMeanDiff$
-#'   new(seq_des)
+#' seq_des_inf = InferenceAllSimpleMeanDiff$new(seq_des)
 #' seq_des_inf$compute_estimate()
 #' seq_des_inf$compute_asymp_confidence_interval()
 #' seq_des_inf$compute_asymp_two_sided_pval()
 #' }
+#' @export
 InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 	lock_objects = FALSE,
-	inherit = InferenceAsymp,
+	inherit = InferenceParamBootstrap,
 	public = list(
 		#' @description Initialize a simple mean-difference inference object.
 		#' @param des_obj A DesignSeqOneByOne object whose entire n subjects are assigned
@@ -43,11 +37,11 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 		#'   fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
 		#'   Must be a positive integer. Default \code{50L}.
 		#' @param smart_cold_start_default Whether to use smart cold start values.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, max_resample_attempts = 50L, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, max_resample_attempts = 50L, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertCount(max_resample_attempts, positive = TRUE)
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
+			super$initialize(des_obj = des_obj, verbose = verbose, harden = TRUE, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$max_resample_attempts = max_resample_attempts
 		},
 		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
@@ -99,43 +93,14 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 				private$cached_values$s_beta_hat_T = NA_real_
 				return(NA_real_)
 			}
-			y = private$y[keep]
-			w = private$w[keep]
-			row_weights = as.numeric(row_weights[keep])
-			w_t = row_weights[w == 1]
-			w_c = row_weights[w == 0]
-			y_t = y[w == 1]
-			y_c = y[w == 0]
-			if (!length(y_t) || !length(y_c) || sum(w_t) <= 0 || sum(w_c) <= 0) {
-				private$cached_values$beta_hat_T = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
-				return(NA_real_)
-			}
-			private$cached_values$yTs = y_t
-			private$cached_values$yCs = y_c
-			private$cached_values$beta_hat_T =
-				sum(w_t * y_t) / sum(w_t) - sum(w_c * y_c) / sum(w_c)
-			private$cached_values$s_beta_hat_T = NA_real_
-			private$cached_values$df = NA_real_
-			private$cached_values$beta_hat_T
-		},
-		#' @description Computes a 1-alpha level frequentist confidence interval for the randomization test
-		#'
-		#' @param alpha The confidence level in the computed confidence
-		#'   interval is 1 - \code{alpha}. The default is 0.05.
-		#' @param r    The number of randomization vectors. The default is 501.
-		#' @param pval_epsilon    The bisection algorithm tolerance. The default is 0.005.
-		#' @param show_progress    Show a text progress indicator.
-		#' @param ci_search_control Optional randomization-CI search control list passed through 
-		#'   to the base method.
-		#' @return    A 1 - alpha sized frequentist confidence interval
-		compute_rand_confidence_interval = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
-			if (should_run_asserts()) {
-				if (private$des_obj_priv_int$response_type %in% c("proportion", "count", "survival")) {
-					stop("Randomization confidence intervals are not supported for InferenceAllSimpleMeanDiff with proportion, count, or survival response types due to inconsistent estimator units on the transformed scale.")
-				}
-			}
-			super$compute_rand_confidence_interval(alpha = alpha, r = r, pval_epsilon = pval_epsilon, show_progress = show_progress, ci_search_control = ci_search_control)
+			y_w = private$y[keep]
+			w_w = private$w[keep]
+			rw_w = row_weights[keep]
+			
+			mean_t = sum(y_w[w_w == 1] * rw_w[w_w == 1]) / sum(rw_w[w_w == 1])
+			mean_c = sum(y_w[w_w == 0] * rw_w[w_w == 0]) / sum(rw_w[w_w == 0])
+			
+			mean_t - mean_c
 		}
 	),
 	private = list(
@@ -159,11 +124,8 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 		},
 		compute_fast_bootstrap_distr = function(B, ...) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
-			# KK designs use design-aware resampling not available via these args; fall back to R loop.
 			if (private$is_KK) return(NULL)
-			# Simple (non-KK) bootstrap: args = (n, y, dead, w)
 			args = list(...)
-			max_resample_attempts = private$max_resample_attempts
 			n = args[[1]]
 			y = args[[2]]
 			dead = args[[3]]
@@ -181,26 +143,23 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 						if (any(dead_b_temp[w_b == 1] == 1) && any(dead_b_temp[w_b == 0] == 1) && min(y[i_b]) > 0) break
 					}
 					attempt = attempt + 1
-					if (attempt > max_resample_attempts) break
+					if (attempt > private$max_resample_attempts) break
 				}
-				if (attempt <= max_resample_attempts) {
+				if (attempt <= private$max_resample_attempts) {
 					y_mat[, b] = y[i_b]
 					w_mat[, b] = w_b
 				}
 			}
-			# Vectorized mean-diff per bootstrap sample: mean(y_b[w_b==1]) - mean(y_b[w_b==0])
-			is_T = (w_mat == 1L)
-			has_val = !is.na(w_mat)
-			nT = colSums(is_T, na.rm = TRUE)
-			nC = colSums(!is_T & has_val, na.rm = TRUE)
-			sum_yT = colSums(y_mat * is_T, na.rm = TRUE)
-			sum_yC = colSums(y_mat * (!is_T) * has_val, na.rm = TRUE)
-			res = ifelse(nT > 0 & nC > 0, sum_yT / nT - sum_yC / nC, NA_real_)
+			res = numeric(B)
+			for (b in 1:B) {
+				wb = w_mat[, b]
+				yb = y_mat[, b]
+				res[b] = mean(yb[wb == 1], na.rm = TRUE) - mean(yb[wb == 0], na.rm = TRUE)
+			}
 			return(res)
 		},
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
-			# Optimization: w_mat is already pre-computed in generate_permutations
 			w_mat = permutations$w_mat
 			res = compute_simple_mean_diff_parallel_cpp(as.numeric(y), w_mat, as.numeric(delta), private$n_cpp_threads(ncol(w_mat)))
 			return(res)
@@ -208,22 +167,68 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-					if (is.null(private$cached_values$beta_hat_T)){
-						self$compute_estimate()
-					}
-	                # Check for insufficient samples for variance calculation
-					nT = length(private$cached_values$yTs)
-					nC = length(private$cached_values$yCs)
-	                if (nT <= 1 || nC <= 1) { # Need at least 2 samples for variance
-	                    private$cached_values$s_beta_hat_T = NA_real_
-	                    private$cached_values$df = NA_real_
-	                    return() # Exit early
-	                }
-					s_1_sq = var(private$cached_values$yTs) / nT
-					s_2_sq = var(private$cached_values$yCs) / nC
-					private$cached_values$s_beta_hat_T = sqrt(s_1_sq + s_2_sq)
-					private$cached_values$df = (s_1_sq + s_2_sq)^2 / (
-													s_1_sq^2 / (nT - 1) + s_2_sq^2 / (nC - 1)
-												) #Welch-Satterthwaite formula
+			
+			if (is.null(private$cached_values$beta_hat_T)){
+				self$compute_estimate()
+			}
+			nT = length(private$cached_values$yTs)
+			nC = length(private$cached_values$yCs)
+			if (nT <= 1 || nC <= 1) { 
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+				return() 
+			}
+			s_1_sq = var(private$cached_values$yTs) / nT
+			s_2_sq = var(private$cached_values$yCs) / nC
+			private$cached_values$s_beta_hat_T = sqrt(s_1_sq + s_2_sq)
+			private$cached_values$df = (s_1_sq + s_2_sq)^2 / (s_1_sq^2 / (nT - 1) + s_2_sq^2 / (nC - 1))
+			
+			private$cached_values$likelihood_test_context = list(
+				X = cbind(1, private$w),
+				j = 2L,
+				full_fit = list(b = c(mean(private$cached_values$yCs), private$cached_values$beta_hat_T), 
+								vt = var(private$cached_values$yTs), vc = var(private$cached_values$yCs))
+			)
+		},
+		supports_lik_ratio_param_bootstrap = function() TRUE,
+		supports_likelihood_tests = function() TRUE,
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			b_null = as.numeric(null_fit$b)
+			vt = spec$full_fit$vt; vc = spec$full_fit$vc
+			w = spec$X[, 2]; n = length(w)
+			y_sim = numeric(n)
+			y_sim[w == 1] = b_null[1] + b_null[2] + rnorm(sum(w == 1), 0, sqrt(vt))
+			y_sim[w == 0] = b_null[1] + rnorm(sum(w == 0), 0, sqrt(vc))
+			
+			list(
+				full_fit = list(b = c(mean(y_sim[w==0]), mean(y_sim[w==1]) - mean(y_sim[w==0])), vt = var(y_sim[w==1]), vc = var(y_sim[w==0])),
+				fit_null = function(d, start = NULL){
+					m_joint = mean(y_sim - w * d)
+					list(b = c(m_joint, d), vt = var(y_sim[w==1]), vc = var(y_sim[w==0]))
+				},
+				neg_loglik = function(fit){
+					mu = fit$b[1] + fit$b[2]*w
+					sum((y_sim - mu)^2)
 				}
-			))
+			)
+		},
+		get_likelihood_test_spec = function(){
+			private$shared(estimate_only = FALSE)
+			ctx = private$cached_values$likelihood_test_context
+			if (is.null(ctx)) return(NULL)
+			y = as.numeric(private$y); w = ctx$X[, 2]
+			list(
+				X = ctx$X, y = y, j = 2L,
+				full_fit = ctx$full_fit,
+				fit_null = function(delta, start = NULL){
+					m0 = mean(y - w * delta)
+					list(b = c(m0, delta))
+				},
+				neg_loglik = function(fit){
+					mu = fit$b[1] + fit$b[2]*w
+					sum((y - mu)^2)
+				}
+			)
+		}
+	)
+)

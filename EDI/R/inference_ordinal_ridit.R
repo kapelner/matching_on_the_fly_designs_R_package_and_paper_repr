@@ -179,11 +179,12 @@ InferenceOrdinalRidit = R6::R6Class("InferenceOrdinalRidit",
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			if (delta != 0 || transform_responses != "none") return(NULL)
 			compute_ridit_distr_parallel_cpp(
-				permutations$w_mat,
-				as.integer(y),
-				private$reference,
-				private$n_cpp_threads(ncol(permutations$w_mat))
+			        as.integer(y),
+			        matrix(as.integer(permutations$w_mat), nrow = nrow(permutations$w_mat)),
+			        private$reference,
+			        private$n_cpp_threads(ncol(permutations$w_mat))
 			)
+
 		},
 		compute_fast_bootstrap_distr = function(B, ...){
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)

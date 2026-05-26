@@ -27,7 +27,7 @@ InferenceOrdinalAdjCatLogitRegr = R6::R6Class("InferenceOrdinalAdjCatLogitRegr",
 		#' @param verbose Whether to print progress messages.
 		#' @param harden Whether to apply robustness measures.
 		#' @param smart_cold_start_default Whether to use smart cold starts.
-		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
 				assertFormula(model_formula, null.ok = TRUE)

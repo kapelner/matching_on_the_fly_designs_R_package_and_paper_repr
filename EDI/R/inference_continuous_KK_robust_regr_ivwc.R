@@ -25,7 +25,7 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 		#'   uses its own LQS-based start. Default `TRUE`.
 		#' @param verbose  		Whether to print progress messages.
 		#' @param smart_cold_start_default Whether to use smart starting values for the optimizer.
-		initialize = function(des_obj, model_formula = NULL, method = "MM", maxit = NULL, acc = NULL, start_with_ols = TRUE, verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, method = "MM", maxit = NULL, acc = NULL, start_with_ols = TRUE, verbose = FALSE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
 				assertFormula(model_formula, null.ok = TRUE)
@@ -48,42 +48,6 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 			private$rlm_maxit = maxit
 			private$rlm_acc = acc
 			private$rlm_start_with_ols = start_with_ols
-		},
-		#' @description Gated off for IVWC.
-		#' @param subject_or_block_weights Numeric vector. Row weights for bootstrap.
-		#' @param estimate_only Logical. If TRUE, skip variance component calculations.
-		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
-			stop_bayesian_bootstrap_for_ivwc(self)
-		},
-		#' @description Gated off for IVWC.
-		#' @param B Integer. Number of bootstrap samples (default 501).
-		#' @param show_progress Logical. Whether to show a progress bar.
-		#' @param debug Logical. Whether to return diagnostics.
-		#' @param weighting_unit_type Character. Type of weighting unit.
-		approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL) {
-			stop_bayesian_bootstrap_for_ivwc(self)
-		},
-		#' @description Gated off for IVWC.
-		#' @param delta Numeric. Null treatment effect value (default 0).
-		#' @param B Integer. Number of bootstrap samples (default 501).
-		#' @param type Character. Type of bootstrap.
-		#' @param na.rm Logical. Whether to remove NA values.
-		#' @param show_progress Logical. Whether to show a progress bar.
-		#' @param min_number_usable_samples Integer. Minimum number of usable samples.
-		#' @param weighting_unit_type Character. Type of weighting unit.
-		compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
-			stop_bayesian_bootstrap_for_ivwc(self)
-		},
-		#' @description Gated off for IVWC.
-		#' @param alpha Numeric. Significance level (default 0.05).
-		#' @param B Integer. Number of bootstrap samples (default 501).
-		#' @param type Character. Type of bootstrap.
-		#' @param na.rm Logical. Whether to remove NA values.
-		#' @param show_progress Logical. Whether to show a progress bar.
-		#' @param min_number_usable_samples Integer. Minimum number of usable samples.
-		#' @param weighting_unit_type Character. Type of weighting unit.
-		compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
-			stop_bayesian_bootstrap_for_ivwc(self)
 		},
 		#' @description Returns the estimated treatment effect.
 		#' @param estimate_only Logical. If TRUE, skip variance component calculations.

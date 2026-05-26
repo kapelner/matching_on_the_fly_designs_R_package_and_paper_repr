@@ -438,8 +438,8 @@ fast_logistic_regression_with_var = function(X, y, j = 2, optimization_alg = "lb
 #' dead = rbinom(100, 1, 0.5)
 #' fast_weibull_regression(y, dead, X)
 #' @export
-fast_weibull_regression = function(y, dead, X, use_rcpp = TRUE, estimate_only = FALSE, optimization_alg = "newton_raphson", warm_start_params = NULL, warm_start_fisher_info = NULL){
-	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
+fast_weibull_regression = function(y, dead, X, use_rcpp = TRUE, estimate_only = FALSE, optimization_alg = "lbfgs", warm_start_params = NULL, warm_start_fisher_info = NULL){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	X = as.matrix(X)
 	
 	if (use_rcpp) {
@@ -596,8 +596,8 @@ sanitize_beta_response = function(y){
 #' y = runif(100)
 #' fast_beta_regression(X, y)
 #' @export
-fast_beta_regression = function(X, y, start_phi = 10, optimization_alg = "newton_raphson", warm_start_beta = NULL, warm_start_fisher_info = NULL){
-	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
+fast_beta_regression = function(X, y, start_phi = 10, optimization_alg = "lbfgs", warm_start_beta = NULL, warm_start_fisher_info = NULL){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	y = sanitize_beta_response(y)
 	tryCatch({
 	res = fast_beta_regression_cpp(X, y, start_phi = start_phi, optimization_alg = optimization_alg, warm_start_beta = warm_start_beta, warm_start_fisher_info = warm_start_fisher_info)
@@ -662,8 +662,8 @@ fast_beta_regression = function(X, y, start_phi = 10, optimization_alg = "newton
 #' y = runif(10)
 #' fast_beta_regression_with_var(X, y)
 #' @export
-fast_beta_regression_with_var = function(X, y, start_phi = 10, j = 2, optimization_alg = "newton_raphson", warm_start_beta = NULL, warm_start_fisher_info = NULL){
-	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
+fast_beta_regression_with_var = function(X, y, start_phi = 10, j = 2, optimization_alg = "lbfgs", warm_start_beta = NULL, warm_start_fisher_info = NULL){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	y = sanitize_beta_response(y)
 	tryCatch({
 	mod = fast_beta_regression_with_var_cpp(X, y, start_phi = start_phi, optimization_alg = optimization_alg, warm_start_beta = warm_start_beta)
@@ -736,8 +736,8 @@ fast_beta_regression_with_var = function(X, y, start_phi = 10, j = 2, optimizati
 #' dead = rbinom(100, 1, 0.5)
 #' fast_coxph_regression(y, dead, X)
 #' @export
-fast_coxph_regression = function(X, y, dead, use_rcpp = TRUE, estimate_only = FALSE, optimization_alg = "newton_raphson", warm_start_beta = NULL, warm_start_fisher_info = NULL, smart_cold_start = TRUE){
-	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
+fast_coxph_regression = function(X, y, dead, use_rcpp = TRUE, estimate_only = FALSE, optimization_alg = "lbfgs", warm_start_beta = NULL, warm_start_fisher_info = NULL, smart_cold_start = TRUE){
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	if (use_rcpp) {
 		X = as.matrix(X)
 		res = tryCatch(
@@ -794,8 +794,8 @@ fast_coxph_regression = function(X, y, dead, use_rcpp = TRUE, estimate_only = FA
 #' y = rpois(10, 2)
 #' fast_negbin_regression(X, y)
 #' @export
-fast_negbin_regression <- function(X, y, optimization_alg = "newton_raphson", warm_start_params = NULL, warm_start_fisher_info = NULL) {
-	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
+fast_negbin_regression <- function(X, y, optimization_alg = "lbfgs", warm_start_params = NULL, warm_start_fisher_info = NULL) {
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	X_full = as.matrix(X)
 	X_fit = X_full
 	
@@ -869,8 +869,8 @@ fast_negbin_regression <- function(X, y, optimization_alg = "newton_raphson", wa
 #' y = rpois(10, 2)
 #' fast_negbin_regression_with_var(X, y)
 #' @export
-fast_negbin_regression_with_var <- function(X, y, j = 2, optimization_alg = "newton_raphson") {
-	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "newton_raphson")
+fast_negbin_regression_with_var <- function(X, y, j = 2, optimization_alg = "lbfgs") {
+	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = FALSE, default = "lbfgs")
 	X_full = as.matrix(X)
 	X_curr = X_full
 	if (ncol(X_full) > 2L) {

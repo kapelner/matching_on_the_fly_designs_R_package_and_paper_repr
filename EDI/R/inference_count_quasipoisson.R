@@ -26,12 +26,13 @@ InferenceCountQuasiPoisson = R6::R6Class("InferenceCountQuasiPoisson",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
+		#' @param harden  		Whether to apply robustness measures.
 		#' @param smart_cold_start_default Whether to use smart cold start values.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = NULL, harden = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
+			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -123,7 +124,7 @@ InferenceCountQuasiPoisson = R6::R6Class("InferenceCountQuasiPoisson",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(1, treatment = private$w, X_cov)
 			}
-			res = tryCatch(fast_poisson_regression_cpp(X = X, y = as.numeric(private$y)), error = function(e) NULL)
+			res = tryCatch(fast_poisson_regression_cpp(X = X, y = as.numeric(private$y), estimate_only = TRUE), error = function(e) NULL)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
@@ -138,11 +139,25 @@ InferenceCountQuasiPoisson = R6::R6Class("InferenceCountQuasiPoisson",
 				X_full = private$build_design_matrix(),
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
+					ws_args = private$get_backend_warm_start_args(ncol(X_fit))
 					if (estimate_only) {
-						res = fast_poisson_regression_cpp(X = X_fit, y = private$y)
-						list(b = res$b, ssq_b_j = NA_real_, j_treat = j_treat)
+						res = fast_poisson_regression_cpp(
+							X = X_fit, y = private$y,
+							warm_start_beta = ws_args$warm_start_beta,
+							warm_start_weights = ws_args$warm_start_weights,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default,
+							estimate_only = TRUE
+						)
+						list(b = res$b, XtWX = res$XtWX, w = res$w, ssq_b_j = NA_real_, j_treat = j_treat)
 					} else {
-						res = fast_quasipoisson_regression_with_var_cpp(X = X_fit, y = private$y, j = j_treat)
+						res = fast_quasipoisson_regression_with_var_cpp(
+							X = X_fit, y = private$y, j = j_treat,
+							warm_start_beta = ws_args$warm_start_beta,
+							warm_start_weights = ws_args$warm_start_weights,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default
+						)
 						res$j_treat = j_treat
 						res
 					}

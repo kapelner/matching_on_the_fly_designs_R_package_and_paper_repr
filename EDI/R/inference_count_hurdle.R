@@ -28,7 +28,7 @@ InferenceCountHurdlePoisson = R6::R6Class("InferenceCountHurdlePoisson",
 		#' @param verbose Whether to print progress messages.
 		#' @param smart_cold_start_default   Whether to use smart cold start values.
 		#' @param optimization_alg Optimization algorithm. Default is dispatched via policy.
-		initialize = function(des_obj, model_formula = NULL, model_formula_hurdle = ~ ., use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = TRUE, optimization_alg = NULL){
+		initialize = function(des_obj, model_formula = NULL, model_formula_hurdle = ~ ., use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = NULL, optimization_alg = NULL){
 			super$initialize(des_obj, model_formula = model_formula, model_formula_zero = model_formula_hurdle, use_rcpp = use_rcpp, verbose = verbose, smart_cold_start_default = smart_cold_start_default, optimization_alg = optimization_alg)
 		}
 	),
@@ -64,7 +64,7 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 		#'   \code{~ .}, meaning treatment plus all available covariates.
 		#' @param verbose A flag indicating whether messages should be displayed.
 		#' @param smart_cold_start_default   Whether to use smart cold start values.
-		initialize = function(des_obj, model_formula = NULL, model_formula_hurdle = ~ ., verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, model_formula_hurdle = ~ ., verbose = FALSE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 				assertFormula(model_formula_hurdle, null.ok = FALSE)
@@ -224,7 +224,8 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 						X_f, private$y, X_hurdle = X_hurdle,
 						warm_start_params = warm_start_params,
 						smart_cold_start = private$smart_cold_start_default,
-						warm_start_fisher_info = warm_fisher
+						warm_start_fisher_info = warm_fisher,
+						estimate_only = TRUE
 					)
 				} else {
 					fast_hurdle_negbin_with_var_cpp(
@@ -300,13 +301,13 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 					as.numeric(fit$score %||% get_hurdle_negbin_count_score_cpp(X_fit, y, params))
 				},
 				observed_information = function(fit){
-					as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% -get_hurdle_negbin_count_hessian_cpp(X_fit, y, as.numeric(fit$params %||% c(as.numeric(fit$b), log(as.numeric(fit$theta_hat))))))
+					as.matrix(fit$observed_information %||% -get_hurdle_negbin_count_hessian_cpp(X_fit, y, as.numeric(fit$params %||% c(as.numeric(fit$b), log(as.numeric(fit$theta_hat))))))
 				},
 				fisher_information = function(fit){
 					as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% -get_hurdle_negbin_count_hessian_cpp(X_fit, y, as.numeric(fit$params %||% c(as.numeric(fit$b), log(as.numeric(fit$theta_hat))))))
 				},
 				information = function(fit){
-					as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% -get_hurdle_negbin_count_hessian_cpp(X_fit, y, as.numeric(fit$params %||% c(as.numeric(fit$b), log(as.numeric(fit$theta_hat))))))
+					as.matrix(fit$information %||% fit$fisher_information %||% fit$observed_information %||% -get_hurdle_negbin_count_hessian_cpp(X_fit, y, as.numeric(fit$params %||% c(as.numeric(fit$b), log(as.numeric(fit$theta_hat))))))
 				},
 				neg_loglik = function(fit){
 					as.numeric(fit$neg_loglik %||% fit$neg_ll)

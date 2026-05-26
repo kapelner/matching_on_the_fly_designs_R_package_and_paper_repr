@@ -277,6 +277,52 @@ public:
         }
         return H;
     }
+
+    Eigen::MatrixXd expected_hessian(const Eigen::VectorXd& par) {
+        const int total = m_pc + m_pz + 1;
+        Eigen::MatrixXd H = Eigen::MatrixXd::Zero(total, total);
+
+        const Eigen::VectorXd bc  = par.head(m_pc);
+        const Eigen::VectorXd bz  = par.segment(m_pc, m_pz);
+        const double log_theta    = par[m_pc + m_pz];
+        const double theta        = std::exp(std::min(log_theta, 700.0));
+        const Eigen::VectorXd eta_c = m_Xc * bc;
+        const Eigen::VectorXd eta_z = m_Xz * bz;
+
+        for (int i = 0; i < m_n; ++i) {
+            const double mu = std::exp(std::min(eta_c[i], 700.0));
+            const double pi = sigmoid_zinb(eta_z[i]);
+            const double p0_nb = std::exp(theta * (log_theta - std::log(theta + mu)));
+            const double p_zero = pi + (1.0 - pi) * p0_nb;
+
+            Eigen::MatrixXd Xi(1, m_pc);
+            Eigen::MatrixXd Xzi(1, m_pz);
+            Xi.row(0) = m_Xc.row(i);
+            Xzi.row(0) = m_Xz.row(i);
+            Eigen::VectorXd yi0(1);
+            yi0[0] = 0.0;
+            ZeroInflatedNegBin fun0(yi0, Xi, Xzi);
+            H.noalias() += p_zero * fun0.hessian(par);
+
+            double cum_positive = 0.0;
+            const double positive_mass = std::max(0.0, (1.0 - pi) * (1.0 - p0_nb));
+            const double sd = std::sqrt(mu + mu * mu / theta);
+            const int soft_min_y = std::max(20, static_cast<int>(std::ceil(mu + 12.0 * sd)));
+            const int max_y = std::max(soft_min_y, 10000);
+            for (int yv = 1; yv <= max_y; ++yv) {
+                const double prob = (1.0 - pi) * R::dnbinom_mu(static_cast<double>(yv), theta, mu, false);
+                if (prob > 0.0 && std::isfinite(prob)) {
+                    Eigen::VectorXd yi(1);
+                    yi[0] = static_cast<double>(yv);
+                    ZeroInflatedNegBin fun_y(yi, Xi, Xzi);
+                    H.noalias() += prob * fun_y.hessian(par);
+                    cum_positive += prob;
+                }
+                if (yv >= soft_min_y && positive_mass - cum_positive < 1e-10) break;
+            }
+        }
+        return (H + H.transpose()) / 2.0;
+    }
 };
 
 } // namespace
@@ -335,7 +381,7 @@ List fast_zinb_cpp(
     bool estimate_only = false,
     int maxit = 1000,
     double tol = 1e-6,
-    std::string optimization_alg = "newton_raphson",
+    std::string optimization_alg = "lbfgs",
     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
     Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
@@ -370,14 +416,11 @@ List fast_zinb_cpp(
     
     LikelihoodFitResult fit;
     try {
-        fit = optimize_fixed_likelihood(fun, par, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, h_ptr);
+        fit = optimize_fixed_likelihood(fun, par, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, h_ptr);
     } catch (...) {
         return List::create(Named("converged") = false);
     }
     par = fit.params;
-    Eigen::VectorXd score = get_zinb_score_cpp(X, y, Xzi, par);
-    Eigen::MatrixXd information = fun.hessian(par);
-
     if (estimate_only) {
         return List::create(
             Named("params") = par,
@@ -388,12 +431,14 @@ List fast_zinb_cpp(
             Named("converged") = fit.converged,
             Named("neg_ll")    = fit.value,
             Named("neg_loglik") = fit.value,
-            Named("loglik") = R_finite(fit.value) ? -fit.value : NA_REAL,
-            Named("fisher_information") = information
+            Named("loglik") = R_finite(fit.value) ? -fit.value : NA_REAL
         );
     }
 
-    Eigen::MatrixXd vcov = expand_free_covariance(total, fixed_spec, covariance_from_information(subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx)), true);
+    Eigen::VectorXd score = get_zinb_score_cpp(X, y, Xzi, par);
+    Eigen::MatrixXd observed_information = fun.hessian(par);
+    Eigen::MatrixXd fisher_information = fun.expected_hessian(par);
+    Eigen::MatrixXd vcov = expand_free_covariance(total, fixed_spec, covariance_from_information(subset_matrix(fisher_information, fixed_spec.free_idx, fixed_spec.free_idx)), true);
 
     return List::create(
         Named("params") = par,
@@ -403,14 +448,14 @@ List fast_zinb_cpp(
         ),
         Named("vcov")      = vcov,
         Named("score")     = score,
-        Named("observed_information") = information,
-        Named("information") = information,
-        Named("information_type") = "observed",
-        Named("hessian")   = -information,
+        Named("observed_information") = observed_information,
+        Named("information") = fisher_information,
+        Named("information_type") = "fisher",
+        Named("hessian")   = -observed_information,
         Named("converged") = fit.converged,
         Named("neg_ll")    = fit.value,
         Named("neg_loglik") = fit.value,
         Named("loglik") = R_finite(fit.value) ? -fit.value : NA_REAL,
-        Named("fisher_information") = information
+        Named("fisher_information") = fisher_information
     );
 }

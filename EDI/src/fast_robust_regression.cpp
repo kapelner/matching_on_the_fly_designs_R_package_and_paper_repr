@@ -53,7 +53,8 @@ RobustModelResult fast_robust_regression_internal(
     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
     Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
     Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
+    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+    bool estimate_only = false
 ) {
     int n = X.rows();
     int p = X.cols();
@@ -144,7 +145,7 @@ RobustModelResult fast_robust_regression_internal(
         // Check convergence
         if ((b_free - b_old).norm() / (b_free.norm() + 1e-10) < tol) {
             res.converged = true;
-            res.XtWX = expand_free_covariance(p, fixed_spec, XtWX, false);
+            if (!estimate_only) res.XtWX = expand_free_covariance(p, fixed_spec, XtWX, false);
             break;
         }
         b_old = b_free;
@@ -184,11 +185,21 @@ List fast_robust_regression_cpp(
     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
     Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
     Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
+    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+    bool estimate_only = false
 ) {
-    RobustModelResult res = fast_robust_regression_internal(X, y, warm_start_beta, smart_cold_start, method, c, 4.685, maxit, tol, -1.0, fixed_idx, fixed_values, warm_start_weights, warm_start_fisher_info);
+    RobustModelResult res = fast_robust_regression_internal(X, y, warm_start_beta, smart_cold_start, method, c, 4.685, maxit, tol, -1.0, fixed_idx, fixed_values, warm_start_weights, warm_start_fisher_info, estimate_only);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     
+    if (estimate_only) {
+        return List::create(
+            Named("coefficients") = res.b,
+            Named("scale") = res.scale,
+            Named("converged") = res.converged,
+            Named("iterations") = res.iterations
+        );
+    }
+
     if (!res.converged && res.XtWX.rows() == 0) {
         Eigen::MatrixXd XtWX_free = weighted_crossprod(res.X_free, res.w);
         res.XtWX = expand_free_covariance(X.cols(), fixed_spec, XtWX_free, false);

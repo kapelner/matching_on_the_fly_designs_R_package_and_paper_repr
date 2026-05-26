@@ -223,7 +223,8 @@ List fast_cpoisson_combined_with_var_cpp(
 	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
 	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
 	Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
-	Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue
+	Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
+	bool estimate_only = false
 ) {
 	const int nd = (int)yT_v.size();
 	const int nR = (int)y_r.size();
@@ -361,6 +362,14 @@ List fast_cpoisson_combined_with_var_cpp(
 			converged = true;
 			break;
 		}
+	}
+
+	if (estimate_only) {
+		return List::create(
+			Named("b")         = params,
+			Named("params")    = params,
+			Named("converged") = converged
+		);
 	}
 
 	// ---- Extract Var(beta_T) from H^{-1}[1,1] (1-based index 2) ---------

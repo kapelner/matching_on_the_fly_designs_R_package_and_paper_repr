@@ -29,12 +29,13 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
+		#' @param harden  		Whether to apply robustness measures.
 		#' @param smart_cold_start_default Whether to use smart cold start values by default.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = NULL, harden = TRUE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
+			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -148,7 +149,8 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 					warm_start_beta = ws_args$warm_start_beta,
 					warm_start_weights = ws_args$warm_start_weights,
 					warm_start_fisher_info = ws_args$warm_start_fisher_info,
-					smart_cold_start = private$smart_cold_start_default
+					smart_cold_start = private$smart_cold_start_default,
+					estimate_only = TRUE
 				),
 				error = function(e) NULL
 			)
@@ -281,7 +283,8 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 							warm_start_beta = ws_args$warm_start_beta,
 							warm_start_weights = ws_args$warm_start_weights,
 							warm_start_fisher_info = ws_args$warm_start_fisher_info,
-							smart_cold_start = private$smart_cold_start_default
+							smart_cold_start = private$smart_cold_start_default,
+							estimate_only = TRUE
 						)
 						list(b = res$b, XtWX = res$XtWX, w = res$w, ssq_b_j = NA_real_, j_treat = j_treat)
 					} else {

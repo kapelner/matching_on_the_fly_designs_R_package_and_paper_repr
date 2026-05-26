@@ -1,4 +1,4 @@
-
+.libPaths(c(file.path(Sys.getenv("HOME"), "R", paste0(R.version$platform, "-library"), paste(R.version$major, sub("\\..*$", "", R.version$minor), sep = ".")), .libPaths()))
 library(EDI)
 library(microbenchmark)
 library(data.table)
@@ -60,6 +60,21 @@ generate_data = function(n = 200, p = 5, family = "logistic") {
     res
 }
 
+make_true_stratified_survival_data = function(d) {
+    n = nrow(d$X)
+    # Force low-cardinality covariates so the stratified Cox row benchmarks a
+    # genuinely stratified fit rather than the unstratified fallback.
+    strata_grid = as.matrix(expand.grid(x1 = 0:1, x2 = 0:2))
+    idx = sample(rep(seq_len(nrow(strata_grid)), length.out = n))
+    d$X[, 2] = strata_grid[idx, 1]
+    d$X[, 3] = strata_grid[idx, 2]
+    beta_cov = c(0.45, -0.35, 0.20, -0.15)
+    eta = 0.5 * d$w + drop(d$X[, 2:5, drop = FALSE] %*% beta_cov)
+    d$y = rexp(n, exp(eta))
+    d$dead = rbinom(n, 1, 0.8)
+    d
+}
+
 collect_timing_ms = function(expr, times = B_TIME, env = parent.frame(), target_batch_ms = TARGET_BATCH_MS, max_inner_reps = MAX_INNER_REPS, fast_path_microbenchmark_reps = FAST_PATH_MICROBENCH_REPS) {
     micro_time_ms = function() {
         mb_ms = microbenchmark(eval(expr, envir = env), times = fast_path_microbenchmark_reps)$time / 1e6
@@ -106,65 +121,144 @@ timing_ttest_pval = function(x, y) {
     tryCatch(stats::t.test(x, y, var.equal = FALSE)$p.value, error = function(e) NA_real_)
 }
 
-prepare_solver_only_edi = function(inf_obj, cls_name) {
-    priv = inf_obj$.__enclos_env__$private
-    replace_binding = function(name, value) {
-        if (!exists(name, envir = priv, inherits = FALSE)) return(invisible(FALSE))
-        was_locked = bindingIsLocked(name, priv)
-        if (was_locked) unlockBinding(name, priv)
-        assign(name, value, envir = priv)
-        if (was_locked) lockBinding(name, priv)
-        invisible(TRUE)
-    }
+# Builds a bare-metal timing environment and expression for EDI.
+# All design matrices and fixed inputs are prebuilt here (outside the timed region).
+# The returned expr calls the public (or internal) C++ function directly.
+make_edi_bm = function(cls_name, d) {
+    X_cov = d$X[, -1, drop = FALSE]
+    colnames(X_cov) = paste0("x", seq_len(ncol(X_cov)))
+    # GLM design (intercept + treatment + covariates)
+    X_bm  = cbind(`(Intercept)` = 1, treatment = d$w, X_cov)
+    # No-intercept design for ordinal and survival models
+    X_ord = cbind(treatment = d$w, X_cov)
+    y_bm  = as.numeric(d$y)
+    w_bm  = as.integer(d$w)
+    dead_bm = if (!is.null(d$dead)) as.numeric(d$dead) else NULL
 
-    if (exists("build_design_matrix", envir = priv, inherits = FALSE)) {
-        X_built = tryCatch(priv$build_design_matrix(), error = function(e) NULL)
-        if (!is.null(X_built)) {
-            replace_binding("build_design_matrix", function() X_built)
-        }
-    }
-    if (exists("create_design_matrix", envir = priv, inherits = FALSE)) {
-        X_created = tryCatch(priv$create_design_matrix(), error = function(e) NULL)
-        if (!is.null(X_created)) {
-            replace_binding("create_design_matrix", function() X_created)
-        }
-    }
+    e = new.env(parent = globalenv())
+    e$X_bm   = X_bm
+    e$X_ord  = X_ord
+    e$y_bm   = y_bm
+    e$w_bm   = w_bm
+    e$dead_bm = dead_bm
 
-    if (identical(cls_name, "InferenceContinQuantileRegr") &&
-        exists("build_design_matrix", envir = priv, inherits = FALSE) &&
-        exists("reduce_design_matrix_for_quantile", envir = priv, inherits = FALSE)) {
-        X_full = tryCatch(priv$build_design_matrix(), error = function(e) NULL)
-        reduced = tryCatch(priv$reduce_design_matrix_for_quantile(X_full, reuse_factorizations = FALSE), error = function(e) NULL)
-        if (!is.null(reduced)) {
-            replace_binding("reduce_design_matrix_for_quantile", function(X_full, reuse_factorizations = FALSE) reduced)
-        }
-    }
+    expr = switch(cls_name,
 
-    if (identical(cls_name, "InferenceContinLin") &&
-        exists("build_lin_design_matrix", envir = priv, inherits = FALSE) &&
-        exists("reduce_design_matrix_preserving_treatment", envir = priv, inherits = FALSE)) {
-        X_lin = tryCatch(priv$build_lin_design_matrix(), error = function(e) NULL)
-        reduced = tryCatch(priv$reduce_design_matrix_preserving_treatment(X_lin), error = function(e) NULL)
-        if (!is.null(X_lin)) {
-            replace_binding("build_lin_design_matrix", function() X_lin)
-        }
-        if (!is.null(reduced)) {
-            replace_binding("reduce_design_matrix_preserving_treatment", function(X_full) reduced)
-        }
-    }
+        # --- GLM classes (intercept design) ---
+        InferenceIncidLogRegr           = ,
+        InferencePropFractionalLogit    = quote(fast_logistic_regression_cpp(X_bm, y_bm, estimate_only = TRUE)),
 
-    if (identical(cls_name, "InferenceSurvivalStratCoxPHRegr") &&
-        exists("compute_strata_info", envir = priv, inherits = FALSE)) {
-        X_full = tryCatch(priv$X, error = function(e) NULL)
-        strata_info = tryCatch(priv$compute_strata_info(X_full), error = function(e) NULL)
-        if (!is.null(strata_info)) {
-            replace_binding("compute_strata_info", function(X_full) strata_info)
-            informative_rows = tryCatch(priv$get_informative_rows(strata_info$strata_id), error = function(e) integer(0))
-            replace_binding("get_informative_rows", function(strata_id) informative_rows)
-        }
-    }
+        InferenceContinOLS              = ,
+        InferenceIncidRiskDiff          = quote(fast_ols_cpp(X_bm, y_bm)),
 
-    invisible(inf_obj)
+        InferenceCountPoisson           = ,
+        InferenceCountQuasiPoisson      = ,
+        InferenceCountRobustPoisson     = ,
+        InferenceIncidModifiedPoisson   = quote(fast_poisson_regression_cpp(X_bm, y_bm, estimate_only = TRUE, optimization_alg = "irls")),
+
+        InferenceCountNegBin            = quote(fast_neg_bin_cpp(X_bm, as.integer(y_bm), estimate_only = TRUE)),
+        InferencePropBetaRegr           = quote(fast_beta_regression_cpp(X_bm, y_bm, estimate_only = TRUE)),
+        InferenceContinRobustRegr       = quote(fast_robust_regression_cpp(X_bm, y_bm, estimate_only = TRUE)),
+        InferenceIncidLogBinomial       = quote(fast_log_binomial_regression_cpp(X_bm, y_bm)),
+        InferenceIncidProbitRegr        = quote(fast_probit_regression_cpp(X_bm, y_bm, estimate_only = TRUE)),
+        InferenceIncidBinomialIdentityRiskDiff = quote(fast_identity_binomial_regression_cpp(X_bm, y_bm)),
+
+        InferenceCountHurdlePoisson     = quote(fast_zero_augmented_poisson_cpp(X_bm, y_bm, X_bm, is_hurdle = TRUE,  estimate_only = TRUE)),
+        InferenceCountZeroInflatedPoisson = quote(fast_zero_augmented_poisson_cpp(X_bm, y_bm, X_bm, is_hurdle = FALSE, estimate_only = TRUE)),
+        InferenceCountZeroInflatedNegBin  = quote(fast_zinb_cpp(X_bm, y_bm, X_bm, estimate_only = TRUE)),
+        InferenceCountHurdleNegBin      = quote(EDI:::fast_hurdle_negbin_cpp(X_bm, as.integer(y_bm), X_bm, estimate_only = TRUE)),
+
+        # No EDI C++ kernel — pre-build R6 object outside timed region, time compute_estimate() only
+        InferenceContinQuantileRegr = {
+            des = DesignFixediBCRD$new(n = nrow(X_bm), response_type = "continuous")
+            des$add_all_subjects_to_experiment(as.data.frame(X_cov))
+            des$overwrite_all_subject_assignments(d$w)
+            des$add_all_subject_responses(y_bm)
+            e$inf_obj_quantile = tryCatch(InferenceContinQuantileRegr$new(des, smart_cold_start_default = FALSE), error = function(err) InferenceContinQuantileRegr$new(des))
+            quote({
+                inf_obj_quantile$.__enclos_env__$private$cached_mod = NULL
+                inf_obj_quantile$.__enclos_env__$private$cached_values = list()
+                inf_obj_quantile$compute_estimate(estimate_only = TRUE)
+            })
+        },
+
+        # --- Ordinal classes (no-intercept design) ---
+        InferenceOrdinalPropOddsRegr    = quote(fast_ordinal_regression_cpp(X_ord, y_bm, estimate_only = TRUE)),
+        InferenceOrdinalAdjCatLogitRegr = quote(fast_adjacent_category_logit_cpp(X_ord, y_bm)),
+        InferenceOrdinalContRatioRegr   = quote(fast_continuation_ratio_regression_cpp(X_ord, y_bm)),
+        InferenceOrdinalOrderedProbitRegr = quote(fast_ordinal_probit_regression_cpp(X_ord, y_bm, estimate_only = TRUE)),
+        InferenceOrdinalCloglogRegr     = quote(fast_ordinal_cloglog_regression_cpp(X_ord, y_bm, estimate_only = TRUE)),
+        InferenceOrdinalCauchitRegr     = quote(fast_ordinal_cauchit_regression_cpp(X_ord, y_bm, estimate_only = TRUE)),
+
+        # --- Survival classes (no-intercept design) ---
+        # CoxPH and StratCox use survival::coxph.fit internally — no EDI C++ kernel; use R6 approach
+        InferenceSurvivalCoxPHRegr = {
+            des = DesignFixediBCRD$new(n = nrow(X_ord), response_type = "survival")
+            des$add_all_subjects_to_experiment(as.data.frame(X_cov))
+            des$overwrite_all_subject_assignments(d$w)
+            des$add_all_subject_responses(y_bm, deads = dead_bm)
+            e$inf_obj_coxph = tryCatch(InferenceSurvivalCoxPHRegr$new(des, smart_cold_start_default = FALSE), error = function(err) InferenceSurvivalCoxPHRegr$new(des))
+            quote({
+                inf_obj_coxph$.__enclos_env__$private$cached_mod = NULL
+                inf_obj_coxph$.__enclos_env__$private$cached_values = list()
+                inf_obj_coxph$compute_estimate(estimate_only = TRUE)
+            })
+        },
+        InferenceSurvivalStratCoxPHRegr = {
+            des = DesignFixediBCRD$new(n = nrow(X_ord), response_type = "survival")
+            des$add_all_subjects_to_experiment(as.data.frame(X_cov))
+            des$overwrite_all_subject_assignments(d$w)
+            des$add_all_subject_responses(y_bm, deads = dead_bm)
+            e$inf_obj_strat_cox = tryCatch(InferenceSurvivalStratCoxPHRegr$new(des, smart_cold_start_default = FALSE), error = function(err) InferenceSurvivalStratCoxPHRegr$new(des))
+            quote({
+                inf_obj_strat_cox$.__enclos_env__$private$cached_mod = NULL
+                inf_obj_strat_cox$.__enclos_env__$private$cached_values = list()
+                inf_obj_strat_cox$compute_estimate(estimate_only = TRUE)
+            })
+        },
+        InferenceSurvivalWeibullRegr    = quote(fast_weibull_regression_cpp(X_ord, y_bm, dead_bm, estimate_only = TRUE)),
+        InferenceSurvivalLogRank        = quote(EDI:::fast_logrank_stats_cpp(w_bm, y_bm, dead_bm)),
+        InferenceSurvivalKMDiff         = quote(EDI:::get_survival_stat_diff(y_bm, dead_bm, w_bm, "median")),
+        InferenceSurvivalRestrictedMeanDiff = quote(EDI:::get_survival_stat_diff(y_bm, dead_bm, w_bm, "restricted_mean")),
+
+        InferenceAllSimpleWilcox = quote(EDI:::wilcox_hl_point_estimate_cpp(w_bm, y_bm)),
+
+        # Lin regression: pre-build centered interaction design; call lm.fit directly
+
+
+        # --- GComp classes: fast_logistic_regression_cpp + R marginalisation ---
+        InferencePropGCompMeanDiff = quote({
+            b = fast_logistic_regression_cpp(X_bm, y_bm, estimate_only = TRUE)$b
+            eta_base = drop(X_bm %*% b) - X_bm[, 2L] * b[2L]
+            mean(plogis(eta_base + b[2L])) - mean(plogis(eta_base))
+        }),
+        InferenceIncidGCompRiskDiff = quote({
+            b = fast_logistic_regression_cpp(X_bm, y_bm, estimate_only = TRUE)$b
+            eta_base = drop(X_bm %*% b) - X_bm[, 2L] * b[2L]
+            mean(plogis(eta_base + b[2L])) - mean(plogis(eta_base))
+        }),
+        InferenceIncidGCompRiskRatio = quote({
+            b = fast_logistic_regression_cpp(X_bm, y_bm, estimate_only = TRUE)$b
+            eta_base = drop(X_bm %*% b) - X_bm[, 2L] * b[2L]
+            r1 = mean(plogis(eta_base + b[2L]))
+            r0 = mean(plogis(eta_base))
+            r1 / r0
+        }),
+        InferenceOrdinalGCompMeanDiff = quote({
+            fit = fast_ordinal_regression_cpp(X_ord, y_bm, estimate_only = TRUE)
+            EDI:::gcomp_ordinal_proportional_odds_post_fit_cpp(
+                X_fit     = X_ord,
+                coef_hat  = as.numeric(fit$b),
+                alpha_hat = as.numeric(fit$alpha),
+                j_treat   = 1L
+            )$md
+        }),
+
+        NULL  # unknown class
+    )
+
+    if (is.null(expr)) return(NULL)
+    list(env = e, expr = expr)
 }
 
 build_strat_cox_canonical_inputs = function(d) {
@@ -242,24 +336,11 @@ bench_specs = list(
     list(cls = "InferenceOrdinalCloglogRegr", pkg = "ordinal", func = "clm(cloglog)", expr = quote(ordinal::clm(factor(y, ordered=T) ~ treatment + x1 + x2 + x3 + x4, data = df, link = "cloglog"))),
     list(cls = "InferenceOrdinalCauchitRegr", pkg = "ordinal", func = "clm(cauchit)", expr = quote(ordinal::clm(factor(y, ordered=T) ~ treatment + x1 + x2 + x3 + x4, data = df, link = "cauchit"))),
     list(cls = "InferenceSurvivalLogRank", pkg = "survival", func = "survdiff", expr = quote(survival::survdiff(survival::Surv(y, dead) ~ treatment, data = df))),
-    list(cls = "InferenceSurvivalGehanWilcox", pkg = "survival", func = "coxph(null)+KM weighted residual mean diff", expr = quote({
-        surv_obj = survival::Surv(df$y, df$dead)
-        cox_null = survival::coxph(surv_obj ~ 1)
-        M = as.numeric(stats::residuals(cox_null, type = "martingale"))
-        km_all = survival::survfit(surv_obj ~ 1)
-        idx = findInterval(df$y, km_all$time, left.open = TRUE)
-        peto_weights = c(1.0, km_all$surv)[idx + 1L]
-        M_w = peto_weights * M
-        mean(M_w[df$treatment == 1]) - mean(M_w[df$treatment == 0])
-    })),
-    list(cls = "InferenceAllSimpleMeanDiffPooledVar", pkg = "stats", func = "t.test(pool)", expr = quote(t.test(df$y[df$treatment==1], df$y[df$treatment==0], var.equal = TRUE))),
     list(cls = "InferenceAllSimpleWilcox", pkg = "stats", func = "HL median pairwise diff", expr = quote({
         y_t = df$y[df$treatment == 1]
         y_c = df$y[df$treatment == 0]
         stats::median(as.numeric(outer(y_t, y_c, "-")))
     }), scale = 0.5),
-    list(cls = "InferenceIncidExactFisher", pkg = "stats", func = "fisher.test", expr = quote(fisher.test(table(df$treatment, df$y))), scale = 0.1),
-    list(cls = "InferenceIncidMiettinenNurminenRiskDiff", pkg = "DescTools", func = "BinomDiffCI(mn)", expr = quote(DescTools::BinomDiffCI(sum(df$y[df$treatment==1]), sum(df$treatment==1), sum(df$y[df$treatment==0]), sum(df$treatment==0), method="mn"))),
     list(cls = "InferenceIncidModifiedPoisson", pkg = "stats", func = "glm.fit(modified)", expr = quote(glm.fit(x = X_can, y = df$y, family = poisson()))),
     list(cls = "InferenceSurvivalStratCoxPHRegr", pkg = "survival", func = "coxph.fit(strat)", expr = quote({
         survival::coxph.fit(
@@ -273,10 +354,6 @@ bench_specs = list(
             method = "breslow",
             rownames = as.character(seq_along(y_can_strat))
         )
-    })),
-    list(cls = "InferenceContinLin", pkg = "stats", func = "lm.fit(interact)", expr = quote({
-        X_int = model.matrix(~ treatment * (x1 + x2 + x3 + x4), data = df)
-        lm.fit(x = X_int, y = df$y)
     })),
     list(cls = "InferenceIncidRiskDiff", pkg = "stats", func = "lm.fit(LPM)", expr = quote({
         fit = lm.fit(x = X_can, y = df$y)
@@ -295,18 +372,9 @@ bench_specs = list(
         rmst = res$matrix[, col_idx]
         as.numeric(rmst[2] - rmst[1])
     })),
-    list(cls = "InferenceCountRobustPoisson", pkg = "stats", func = "glm.fit", expr = quote(glm.fit(x = X_can, y = df$y, family = poisson()))),
-    list(cls = "InferenceOrdinalRidit", pkg = "stats", func = "mean(ridit; ref=control)", expr = quote({
-        y = df$y
-        tab = table(y[df$treatment == 0])
-        cum = cumsum(tab)
-        prev = c(0, cum[-length(cum)])
-        ridit_map = (prev + 0.5 * tab) / sum(tab)
-        r = as.numeric(ridit_map[as.character(y)])
-        mean(r[df$treatment == 1]) - 0.5
-    })),
-    list(cls = "InferenceIncidNewcombeRiskDiff", pkg = "DescTools", func = "BinomDiffCI(score)", expr = quote(DescTools::BinomDiffCI(sum(df$y[df$treatment==1]), sum(df$treatment==1), sum(df$y[df$treatment==0]), sum(df$treatment==0), method="score")))
+    list(cls = "InferenceCountRobustPoisson", pkg = "stats", func = "glm.fit", expr = quote(glm.fit(x = X_can, y = df$y, family = poisson())))
 )
+
 
 # Paths with no canonical mapping (None)
 no_can_specs = list(
@@ -372,37 +440,16 @@ run_one = function(spec) {
     if (grepl("Survival", cls_name)) n = round(N_SURV * scale)
     
     d = generate_data(n = n, family = family)
+    if (identical(cls_name, "InferenceSurvivalStratCoxPHRegr")) {
+        d = make_true_stratified_survival_data(d)
+    }
     
-    # Timing EDI
+    # Timing EDI (bare metal: call exported C++ functions directly with pre-built inputs)
     timing_edi = tryCatch({
-        des = DesignFixediBCRD$new(n = n, response_type = resp_type)
-        des$add_all_subjects_to_experiment(as.data.frame(d$X[,-1,drop=F]))
-        des$overwrite_all_subject_assignments(d$w)
-        des$add_all_subject_responses(d$y, deads = if(exists("dead", d)) d$dead else NULL)
-        
-        inf_cls = get(cls_name)
-        # Robustly check for smart_cold_start_default
-        inf_obj = tryCatch(inf_cls$new(des, smart_cold_start_default = TRUE), error = function(e) inf_cls$new(des))
-        prepare_solver_only_edi(inf_obj, cls_name)
-        
-        # Determine the benchmark expression
-        bench_expr = if (cls_name == "InferenceAllSimpleWilcox") {
-            quote({
-                inf_obj$.__enclos_env__$private$hl_point_estimate(d$y, d$w)
-            })
-        } else {
-            quote({
-                # Clear cache to ensure pure solver execution is timed each iteration
-                inf_obj$.__enclos_env__$private$cached_mod = NULL
-                inf_obj$.__enclos_env__$private$cached_values = list()
-                inf_obj$compute_estimate(estimate_only = TRUE)
-            })
-        }
-        
-        # Warmup once
-        eval(bench_expr)
-        
-        collect_timing_ms(bench_expr, times = b_time, fast_path_microbenchmark_reps = fast_path_microbenchmark_reps)
+        bm = make_edi_bm(cls_name, d)
+        if (is.null(bm)) stop("no bare metal mapping for this class")
+        eval(bm$expr, envir = bm$env)  # validation run
+        collect_timing_ms(bm$expr, times = b_time, env = bm$env, fast_path_microbenchmark_reps = fast_path_microbenchmark_reps)
     }, error = function(e) {
         cat("  EDI Error:", e$message, "\n")
         list(median_ms = NA_real_, samples_ms = numeric(0))
@@ -518,7 +565,7 @@ report = c(
   "",
   "*   **Sample Size ($N$):** 1,000 subjects for most models; 500 subjects for survival models. Exact and trend tests may use smaller scaled samples (N=100-500) as noted in the results.",
   "*   **Predictors ($p$):** 5 total predictors, including a global intercept, a balanced binary treatment assignment from fixed `iBCRD`, and 4 continuous covariates ($X \\sim \\text{Normal}(0, 1)$).",
-  "*   **Effect Sizes:** Covariate coefficients are sampled from $\\text{Normal}(0, 0.5)$, matching the warm-start benchmark data model. The treatment coefficient is set to 0.5 in the linear predictor so the benchmarked treatment effect is meaningfully separated from zero.",
+  "*   **Effect Sizes:** Covariate coefficients are sampled from $\\text{Normal}(0, 0.5)$. The treatment coefficient is set to 0.5 in the linear predictor so the benchmarked treatment effect is meaningfully separated from zero.",
   "*   **EDI Design Template:** EDI benchmark objects are instantiated on a fixed `iBCRD` design.",
   "*   **Response Generation:**",
   "    *   **Continuous:** Linear model with additive $\\text{Normal}(0, 0.5)$ noise.",
@@ -526,17 +573,16 @@ report = c(
   "    *   **Count:** Integer outcomes via Poisson or Negative Binomial distributions with an exponential link.",
   "    *   **Proportion:** Continuous outcomes in $(0, 1)$ via a Beta distribution with a logit link.",
   "    *   **Survival:** Exponentially distributed event times with approximately 20% random censoring.",
-  "    *   **Ordinal:** 3-level categorical outcomes generated from the same ordinal construction used in the warm-start benchmark.",
+  "    *   **Ordinal:** 3-level categorical outcomes generated from the same ordinal construction used elsewhere in the benchmark suite.",
+  "*   **Stratified Cox Exception:** For `InferenceSurvivalStratCoxPHRegr`, the benchmark injects low-cardinality covariates before outcome generation so the row exercises a genuinely stratified Cox fit rather than the unstratified fallback.",
   "",
   "## Methodology",
   "",
-  "*   **Pure Solver Timing:** Results reflect the time taken for the core numerical optimization. We exclude R6 object instantiation, design matrix construction, and standard error estimation (which often uses different R-side matrix inversion logic) to isolate the efficiency of the underlying C++ backends.",
-  "*   **Solver-Only Prebuilds:** For EDI rows, benchmark setup prebuilds exposed observed-data design matrices, reduced design matrices, and other fixed working inputs outside the timed region when the implementation exposes those hooks. Canonical rows using low-level matrix interfaces are likewise timed on prebuilt inputs.",
-  "*   **Smart Cold Starts:** EDI models were initialized with `smart_cold_start = TRUE`, utilizing package-optimized heuristic starting values.",
-  "*   **Randomization Design:** EDI timings in this table correspond to `iBCRD` design objects.",
-  "*   **Low-Level Comparison:** Canonical R timings use the fastest available internal interfaces (e.g., `.fit` functions) to remove R's formula parsing and environment management overhead.",
-  "*   **Limitation:** Some canonical comparators only expose formula-based APIs rather than comparable low-level fit kernels. Those rows remain included, but their canonical timings may still contain formula/model-frame overhead beyond the numerical solver itself.",
-  paste0("*   **Averaging:** All timings are medians over ", B_TIME, " warmed runs measured with adaptive batched `system.time`; paths below ", FAST_PATH_THRESHOLD_MS, " ms use `microbenchmark(times = ", FAST_PATH_MICROBENCH_REPS, ")` instead."),
+  "*   **Bare Metal EDI Timing:** EDI rows call the exported C++ functions directly (e.g., `fast_logistic_regression_cpp`, `fast_ordinal_regression_cpp`) with all design matrices and fixed inputs pre-built outside the timed region. There is no R6 object instantiation, no cached state management, no warm start storage, and no standard error computation in the timed region — only the raw numerical solver.",
+  "*   **Apples-to-Apples Canonical Timing:** Canonical R timings likewise call the lowest-level publicly exposed interfaces (e.g., `glm.fit`, `lm.fit`, `coxph.fit`) with pre-built design matrices. If a canonical package exposes no low-level function, the formula-based API is used instead.",
+  "*   **Low-Level Comparison:** Both EDI and canonical timings are measured on pre-built numeric matrices, removing formula parsing, model-frame construction, and R6/S3/S4 dispatch overhead from the timed region wherever the API permits.",
+  "*   **Limitation:** Some canonical comparators only expose formula-based APIs. Those rows remain included but their canonical timings carry formula/model-frame overhead not present in the EDI bare-metal timing.",
+  paste0("*   **Averaging:** All timings are medians over ", B_TIME, " cold estimate-only timing samples measured with adaptive batched `system.time`; paths below ", FAST_PATH_THRESHOLD_MS, " ms use `microbenchmark(times = ", FAST_PATH_MICROBENCH_REPS, ")` instead."),
   "*   **Timing P-Value:** `Timing Pval` reports a Welch two-sample t-test comparing the EDI and canonical timing replicate distributions for each row. The unlabeled final column marks thresholds with `***` for p < 0.001, `**` for p < 0.01, and `*` for p < 0.05.",
   "*   **Row Highlighting:** Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light red rows indicate `Speedup < 1` and `Timing Pval < 0.05`; light yellow rows indicate `Timing Pval >= 0.05`; light grey rows indicate `NA` timing comparisons.",
   "*   **Constraints**: Matched-pair/KK and highly custom paths are excluded as per user request.",

@@ -76,6 +76,21 @@ test_that("Simple incidence proportion difference uses pooled-variance t inferen
 	expect_true(is.finite(inf_cont$compute_asymp_two_sided_pval()))
 })
 
+test_that("Simple mean difference pooled-variance inference matches pooled t.test", {
+	des <- DesignFixed$new(n = 9, response_type = "continuous", verbose = FALSE)
+	des$add_all_subjects_to_experiment(data.frame(x = 1:9))
+	w <- c(1, 1, 1, 1, 0, 0, 0, 0, 0)
+	y <- c(2.2, 2.6, 1.8, 3.1, 0.9, 1.0, 1.4, 0.8, 1.2)
+	des$overwrite_all_subject_assignments(w)
+	des$add_all_subject_responses(y)
+
+	inf <- InferenceAllSimpleMeanDiffPooledVar$new(des, verbose = FALSE)
+	tt <- stats::t.test(y[w == 1], y[w == 0], var.equal = TRUE)
+
+	expect_equal(inf$compute_asymp_two_sided_pval(), tt$p.value, tolerance = 1e-12)
+	expect_equal(as.numeric(inf$compute_asymp_confidence_interval()), as.numeric(tt$conf.int), tolerance = 1e-12)
+})
+
 test_that("CMH inference is gated to blocked incidence designs", {
 	des <- DesignFixedBlocking$new(
 		strata_cols = "stratum",

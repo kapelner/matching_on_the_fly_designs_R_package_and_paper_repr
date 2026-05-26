@@ -18,7 +18,7 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
 		#' @param smart_cold_start_default   Whether to use smart cold start values.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
@@ -94,42 +94,6 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 		duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){
 			inf_obj = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
 			inf_obj
-		},
-		#' @description Gated off for IVWC.
-		#' @param subject_or_block_weights weights.
-		#' @param estimate_only flag.
-		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
-			stop_bayesian_bootstrap_for_ivwc(self)
-		},
-		#' @description Gated off for IVWC.
-		#' @param B replicates.
-		#' @param show_progress flag.
-		#' @param debug flag.
-		#' @param weighting_unit_type type.
-		approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL) {
-			stop_bayesian_bootstrap_for_ivwc(self)
-		},
-		#' @description Gated off for IVWC.
-		#' @param delta null.
-		#' @param B replicates.
-		#' @param type type.
-		#' @param na.rm flag.
-		#' @param show_progress flag.
-		#' @param min_number_usable_samples count.
-		#' @param weighting_unit_type type.
-		compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
-			stop_bayesian_bootstrap_for_ivwc(self)
-		},
-		#' @description Gated off for IVWC.
-		#' @param alpha level.
-		#' @param B replicates.
-		#' @param type type.
-		#' @param na.rm flag.
-		#' @param show_progress flag.
-		#' @param min_number_usable_samples count.
-		#' @param weighting_unit_type type.
-		compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
-			stop_bayesian_bootstrap_for_ivwc(self)
 		}
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
@@ -351,7 +315,7 @@ InferenceSurvivalKKClaytonCopulaOneLik = R6::R6Class("InferenceSurvivalKKClayton
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
 		#' @param smart_cold_start_default   Whether to use smart cold start values.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}

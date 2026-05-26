@@ -10,6 +10,7 @@
 #include <limits>
 #include <cmath>
 #include <string>
+#include <type_traits>
 #include <Rmath.h>
 
 using Eigen::VectorXd;
@@ -100,31 +101,13 @@ inline Eigen::MatrixXd weighted_crossprod(const Eigen::MatrixBase<XDerived>& X,
                                           const Eigen::MatrixBase<WDerived>& w) {
     const int n = X.rows();
     const int p = X.cols();
-    if (w.rows() != n || (w.cols() != 1 && w.rows() != 0)) {
+    if (w.rows() != n) {
         Rcpp::stop("weighted_crossprod: weight vector has incompatible dimensions");
     }
 
-    // For tiny n (e.g. matched pairs in GLMMs), Eigen's general matrix product
-    // can be slower than a specialized manual loop or rank-1 updates.
-    if (n <= 16 || p <= 4) {
-        Eigen::MatrixXd out = Eigen::MatrixXd::Zero(p, p);
-        for (int i = 0; i < n; ++i) {
-            const double wi = w(i);
-            if (wi == 0.0) continue;
-            for (int r = 0; r < p; ++r) {
-                const double xir_w = X(i, r) * wi;
-                for (int c = 0; c <= r; ++c) {
-                    out(r, c) += xir_w * X(i, c);
-                }
-            }
-        }
-        out.template triangularView<Eigen::StrictlyUpper>() =
-            out.transpose().template triangularView<Eigen::StrictlyUpper>();
-        return out;
-    }
-
-    // For larger matrices, leverage Eigen's highly optimized specialization for
-    // Matrix^T * Diagonal * Matrix, which is fully SIMD-vectorized and multi-threaded.
+    // X.transpose() * w.asDiagonal() * X is Eigen's idiomatic way to do this.
+    // It is SIMD-vectorized and does NOT materialize the N x N diagonal matrix.
+    // For small p, it's very efficient.
     return X.transpose() * w.asDiagonal() * X;
 }
 
@@ -306,11 +289,17 @@ inline double dplogis_safe(double x) {
 }
 
 inline Eigen::ArrayXd plogis_array_safe(const Eigen::ArrayXd& x) {
-    const Eigen::Array<bool, Eigen::Dynamic, 1> nonnegative = (x >= 0.0);
-    const Eigen::ArrayXd pos = 1.0 / (1.0 + (-x).exp());
-    const Eigen::ArrayXd neg_exp = x.exp();
-    const Eigen::ArrayXd neg = neg_exp / (1.0 + neg_exp);
-    return nonnegative.select(pos, neg);
+    Eigen::ArrayXd res(x.size());
+    for (int i = 0; i < x.size(); ++i) {
+        if (x[i] >= 0.0) {
+            const double z = std::exp(-x[i]);
+            res[i] = 1.0 / (1.0 + z);
+        } else {
+            const double z = std::exp(x[i]);
+            res[i] = z / (1.0 + z);
+        }
+    }
+    return res;
 }
 
 inline double log1pexp_safe(double x) {
@@ -319,10 +308,15 @@ inline double log1pexp_safe(double x) {
 }
 
 inline Eigen::ArrayXd log1pexp_array_safe(const Eigen::ArrayXd& x) {
-    const Eigen::Array<bool, Eigen::Dynamic, 1> positive = (x > 0.0);
-    const Eigen::ArrayXd pos = x + (-x).exp().log1p();
-    const Eigen::ArrayXd neg = x.exp().log1p();
-    return positive.select(pos, neg);
+    Eigen::ArrayXd res(x.size());
+    for (int i = 0; i < x.size(); ++i) {
+        if (x[i] > 0.0) {
+            res[i] = x[i] + std::log1p(std::exp(-x[i]));
+        } else {
+            res[i] = std::log1p(std::exp(x[i]));
+        }
+    }
+    return res;
 }
 
 inline bool try_safe_ols_solve(const Eigen::MatrixXd& X,
@@ -540,13 +534,6 @@ inline OrdinalStart ordinal_smart_cold_start(const Eigen::MatrixXd& X,
     out.alpha = Eigen::VectorXd::Zero(n_alpha);
     if (n_alpha == 0) return out;
 
-    out.beta = safe_ols_solve(X, y);
-    if (!out.beta.allFinite()) out.beta = Eigen::VectorXd::Zero(p);
-
-    const Eigen::VectorXd eta = X * out.beta;
-    const double eta_location = (eta.size() > 0 && eta.allFinite()) ? eta.mean() : 0.0;
-    const double eta_sign = ordinal_eta_sign(link);
-
     std::vector<int> counts(K, 0);
     for (int i = 0; i < n; ++i) {
         for (int k = 0; k < K; ++k) {
@@ -560,7 +547,7 @@ inline OrdinalStart ordinal_smart_cold_start(const Eigen::MatrixXd& X,
     for (int k = 0; k < n_alpha; ++k) {
         cumulative_count += counts[k];
         const double p_k = static_cast<double>(cumulative_count) / static_cast<double>(n);
-        out.alpha[k] = ordinal_link_quantile(link, p_k) - eta_sign * eta_location;
+        out.alpha[k] = ordinal_link_quantile(link, p_k);
     }
     for (int k = 1; k < n_alpha; ++k) {
         if (!(out.alpha[k] > out.alpha[k - 1])) {
@@ -827,6 +814,14 @@ public:
         return subset_matrix(H_full, m_spec.free_idx, m_spec.free_idx);
     }
 
+    template <typename F = FullFunctor>
+    auto expected_hessian(const Eigen::VectorXd& free_params)
+        -> decltype(std::declval<F&>().expected_hessian(std::declval<const Eigen::VectorXd&>())) {
+        Eigen::VectorXd full_params = expand_free_params(free_params, m_full_template, m_spec);
+        Eigen::MatrixXd H_full = m_fun.expected_hessian(full_params);
+        return subset_matrix(H_full, m_spec.free_idx, m_spec.free_idx);
+    }
+
     Eigen::VectorXd expand(const Eigen::VectorXd& free_params) const {
         return expand_free_params(free_params, m_full_template, m_spec);
     }
@@ -840,8 +835,12 @@ inline LikelihoodFitResult optimize_likelihood_lbfgs(LikelihoodFunctor& fun,
                                                      int max_linesearch = 0) {
     LBFGSpp::LBFGSParam<double> lbfgs_params;
     lbfgs_params.epsilon = tol;
+    lbfgs_params.epsilon_rel = tol;
+    lbfgs_params.past = 1;
+    lbfgs_params.delta = tol;
     lbfgs_params.max_iterations = maxit;
     lbfgs_params.max_linesearch = (max_linesearch > 0) ? max_linesearch : 100;
+    lbfgs_params.linesearch = LBFGSpp::LBFGS_LINESEARCH_BACKTRACKING_STRONG_WOLFE;
 
     LBFGSpp::LBFGSSolver<double> solver(lbfgs_params);
     LikelihoodFitResult fit;
@@ -851,12 +850,37 @@ inline LikelihoodFitResult optimize_likelihood_lbfgs(LikelihoodFunctor& fun,
     return fit;
 }
 
+template <class T, class = void>
+struct has_expected_hessian : std::false_type {};
+
+template <class T>
+struct has_expected_hessian<T, decltype(void(
+    std::declval<T&>().expected_hessian(std::declval<const Eigen::VectorXd&>())
+))> : std::true_type {};
+
+template <class F>
+inline Eigen::MatrixXd hessian_for_opt(F& fun, const Eigen::VectorXd& params) {
+    // Newton-Raphson uses local observed curvature. Expected information belongs
+    // to Fisher scoring/IRLS and inference, not generic Newton updates.
+    return fun.hessian(params);
+}
+
+inline bool is_valid_warm_start_information(const Eigen::MatrixXd& H, int expected_dim) {
+    if (H.rows() != expected_dim || H.cols() != expected_dim || !H.allFinite()) {
+        return false;
+    }
+    Eigen::MatrixXd sym = (H + H.transpose()) / 2.0;
+    Eigen::LLT<Eigen::MatrixXd> llt(sym);
+    return llt.info() == Eigen::Success;
+}
+
 template <typename LikelihoodFunctor>
 inline LikelihoodFitResult optimize_likelihood_newton(LikelihoodFunctor& fun,
                                                       Eigen::VectorXd params,
                                                       int maxit,
                                                       double tol,
                                                       const Eigen::MatrixXd* warm_start_hessian = nullptr) {
+    (void)warm_start_hessian;
     LikelihoodFitResult fit;
     fit.params = params;
 
@@ -872,15 +896,7 @@ inline LikelihoodFitResult optimize_likelihood_newton(LikelihoodFunctor& fun,
             return fit;
         }
 
-        Eigen::MatrixXd H;
-        if (iter == 0 && warm_start_hessian != nullptr) {
-            if (warm_start_hessian->rows() != params.size() || warm_start_hessian->cols() != params.size()) {
-                Rcpp::stop("warm_start_hessian has incorrect dimensions");
-            }
-            H = *warm_start_hessian;
-        } else {
-            H = fun.hessian(params);
-        }
+        Eigen::MatrixXd H = hessian_for_opt(fun, params);
         
         if (!H.allFinite()) break;
         Eigen::FullPivLU<Eigen::MatrixXd> lu(H);
@@ -975,7 +991,9 @@ inline LikelihoodFitResult optimize_fixed_likelihood_newton(FullFunctor& fun,
     const Eigen::MatrixXd* h_ptr = nullptr;
     if (warm_start_hessian != nullptr) {
         H_free = subset_matrix(*warm_start_hessian, fixed_spec.free_idx, fixed_spec.free_idx);
-        h_ptr = &H_free;
+        if (is_valid_warm_start_information(H_free, params_free.size())) {
+            h_ptr = &H_free;
+        }
     }
     
     LikelihoodFitResult fit = optimize_likelihood_newton(fixed_fun, params_free, maxit, tol, h_ptr);
@@ -1005,7 +1023,9 @@ inline LikelihoodFitResult optimize_fixed_likelihood(FullFunctor& fun,
     const Eigen::MatrixXd* h_ptr = nullptr;
     if (warm_start_hessian != nullptr) {
         H_free = subset_matrix(*warm_start_hessian, fixed_spec.free_idx, fixed_spec.free_idx);
-        h_ptr = &H_free;
+        if (is_valid_warm_start_information(H_free, params_free.size())) {
+            h_ptr = &H_free;
+        }
     }
 
     LikelihoodFitResult fit = optimize_likelihood_newton_then_lbfgs(fixed_fun, params_free, maxit, tol, max_linesearch, h_ptr);

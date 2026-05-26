@@ -31,14 +31,15 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
 		#' @param smart_cold_start_default Whether to use smart cold start values by default.
+		#' @param harden  		Whether to apply robustness measures.
 		#' @param optimization_alg  Optimization algorithm to use. Default is dispatched via policy.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE, optimization_alg = NULL){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = FALSE, harden = TRUE, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 				assertFormula(model_formula, null.ok = TRUE)
 			}
-			self$set_optimization_alg(optimization_alg, allow_irls = TRUE, default = "lbfgs")
-			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
+			self$set_optimization_alg(optimization_alg, allow_irls = TRUE)
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, harden = harden, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -117,6 +118,7 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 				warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
 				smart_cold_start = private$smart_cold_start_default,
 				warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X)),
+				estimate_only = TRUE,
 				optimization_alg = private$optimization_alg
 			)
 			if (is.null(res) || !is.finite(res$b[2])){
@@ -249,6 +251,7 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 							warm_start_weights = ws_args$warm_start_weights,
 							warm_start_fisher_info = ws_args$warm_start_fisher_info,
 							smart_cold_start = private$smart_cold_start_default,
+							estimate_only = TRUE,
 							optimization_alg = private$optimization_alg
 						)
 						list(b = res$b, fisher_information = res$fisher_information, ssq_b_2 = NA_real_)

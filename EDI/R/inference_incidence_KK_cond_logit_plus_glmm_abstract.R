@@ -17,7 +17,7 @@ InferenceAbstractKKCondLogitPlusGLMM = R6::R6Class("InferenceAbstractKKCondLogit
 		#' @param verbose Logical. Whether to print progress messages.
 		#' @param smart_cold_start_default Logical. Whether to use smart starting values for the optimizer.
 		#' @param optimization_alg Character. Optimization algorithm (default "lbfgs").
-		initialize = function(des_obj, model_formula = NULL, max_abs_reasonable_coef = 1e4, max_abs_log_sigma = 8, verbose = FALSE, smart_cold_start_default = TRUE, optimization_alg = NULL){
+		initialize = function(des_obj, model_formula = NULL, max_abs_reasonable_coef = 1e4, max_abs_log_sigma = 8, verbose = FALSE, smart_cold_start_default = NULL, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), c("incidence", "proportion"))
 			}

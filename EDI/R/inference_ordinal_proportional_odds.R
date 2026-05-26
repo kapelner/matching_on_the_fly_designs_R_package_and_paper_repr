@@ -30,7 +30,7 @@ InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
 		#' @param smart_cold_start_default Whether to use smart cold start values by default.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "ordinal")
 				assertFormula(model_formula, null.ok = TRUE)
@@ -94,16 +94,18 @@ InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 			}
 			n_params = ncol(X) + length(sort(unique(private$y))) - 1L
 			ws_args = private$get_backend_warm_start_args(n_params)
+			ws_fisher = ws_args$warm_start_fisher_info
 			res = fast_ordinal_regression_cpp(
 				X = X, y = as.numeric(private$y),
 				warm_start_params = ws_args$start_params,
-				warm_start_fisher_info = ws_args$warm_start_fisher_info,
-				smart_cold_start = private$smart_cold_start_default
+				warm_start_fisher_info = ws_fisher,
+				smart_cold_start = private$smart_cold_start_default,
+				estimate_only = TRUE
 			)
 			if (is.null(res) || length(res$b) < 1L || !is.finite(res$b[length(res$b)])){
 				return(NA_real_)
 			}
-			private$set_fit_warm_start(res$params, "params", fisher = res$fisher_information)
+			private$set_fit_warm_start(res$params, "params", fisher = ws_fisher)
 			as.numeric(res$b[length(res$b)])
 		},
 		supports_reusable_bootstrap_worker = function(){
@@ -193,10 +195,10 @@ InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 					-get_ordinal_regression_hessian_cpp(X_fit, y, as.numeric(fit$params))
 				},
 				fisher_information = function(fit){
-					-get_ordinal_regression_hessian_cpp(X_fit, y, as.numeric(fit$params))
+					fit$fisher_information %||% -get_ordinal_regression_hessian_cpp(X_fit, y, as.numeric(fit$params))
 				},
 				information = function(fit){
-					-get_ordinal_regression_hessian_cpp(X_fit, y, as.numeric(fit$params))
+					fit$information %||% fit$fisher_information %||% -get_ordinal_regression_hessian_cpp(X_fit, y, as.numeric(fit$params))
 				},
 				neg_loglik = function(fit){ as.numeric(fit$neg_loglik) }
 			)
@@ -210,16 +212,18 @@ InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 					n_params = ncol(X_fit) + length(sort(unique(private$y))) - 1L
 					ws_args = private$get_backend_warm_start_args(n_params)
 					if (estimate_only) {
+						ws_fisher = ws_args$warm_start_fisher_info
 						res = tryCatch(
 							fast_ordinal_regression_cpp(
 								X_fit, private$y,
 								warm_start_params = ws_args$start_params,
-								warm_start_fisher_info = ws_args$warm_start_fisher_info,
-								smart_cold_start = private$smart_cold_start_default
+								warm_start_fisher_info = ws_fisher,
+								smart_cold_start = private$smart_cold_start_default,
+								estimate_only = TRUE
 							),
 							error = function(e) NULL
 						)
-						list(b = res$b, ssq_b_j = NA_real_, params = res$params, neg_loglik = res$neg_loglik, fisher_information = res$fisher_information)
+						list(b = res$b, ssq_b_j = NA_real_, params = res$params, fisher_information = ws_fisher)
 					} else {
 						res = tryCatch(
 							fast_ordinal_regression_with_var_cpp(
@@ -243,13 +247,15 @@ InferenceOrdinalPropOddsRegr = R6::R6Class("InferenceOrdinalPropOddsRegr",
 			if (!is.null(attempt$fit)){
 				private$set_fit_warm_start(attempt$fit$params, "params", fisher = attempt$fit$fisher_information)
 				private$best_X_colnames = setdiff(colnames(attempt$X), "treatment")
-				n_alpha = length(attempt$fit$params) - ncol(attempt$X)
-				private$cached_values$likelihood_test_context = list(
-					X = attempt$X,
-					j_treat = as.integer(n_alpha + 1L),
-					full_params = as.numeric(attempt$fit$params),
-					full_neg_loglik = as.numeric(attempt$fit$neg_loglik)
-				)
+				if (!estimate_only) {
+					n_alpha = length(attempt$fit$params) - ncol(attempt$X)
+					private$cached_values$likelihood_test_context = list(
+						X = attempt$X,
+						j_treat = as.integer(n_alpha + 1L),
+						full_params = as.numeric(attempt$fit$params),
+						full_neg_loglik = as.numeric(attempt$fit$neg_loglik)
+					)
+				}
 				list(b = c(0, attempt$fit$b[1]), ssq_b_2 = attempt$fit$ssq_b_j)
 			} else {
 				private$cached_values$likelihood_test_context = NULL

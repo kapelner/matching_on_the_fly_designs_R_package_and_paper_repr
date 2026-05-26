@@ -77,17 +77,23 @@ public:
         double theta = std::exp(params[m_p]);
         Eigen::VectorXd eta = m_X * beta;
 
+        double* H_data = H.data();
         for (int i = 0; i < m_n; ++i) {
             double mu_i = std::exp(eta[i]);
             double yi = m_y[i];
             double denom = theta + mu_i;
-            Eigen::VectorXd x = m_X.row(i).transpose();
+            const double* xi = m_X.data() + i;  // xi[j * m_n] == X(i,j)
 
             double w_beta = mu_i * theta * (yi + theta) / (denom * denom);
-            H.topLeftCorner(m_p, m_p).noalias() += w_beta * (x * x.transpose());
+            for (int c = 0; c < m_p; ++c) {
+                const double wxi_c = w_beta * xi[c * m_n];
+                for (int r = 0; r <= c; ++r)
+                    H_data[r + c * total_p] += wxi_c * xi[r * m_n];
+            }
 
             double d_score_beta_d_log_theta = theta * mu_i * (yi - mu_i) / (denom * denom);
-            H.topRightCorner(m_p, 1).noalias() -= d_score_beta_d_log_theta * x;
+            for (int r = 0; r < m_p; ++r)
+                H_data[r + m_p * total_p] -= d_score_beta_d_log_theta * xi[r * m_n];
 
             double A = R::digamma(yi + theta) - R::digamma(theta) +
                 std::log(theta) - std::log(denom) + 1.0 - (yi + theta) / denom;
@@ -95,8 +101,64 @@ public:
                 1.0 / theta - 1.0 / denom + (yi - mu_i) / (denom * denom);
             H(m_p, m_p) -= theta * A + theta * theta * dA_dtheta;
         }
-        H.bottomLeftCorner(1, m_p) = H.topRightCorner(m_p, 1).transpose();
+        for (int c = 0; c < total_p; ++c)
+            for (int r = 0; r < c; ++r)
+                H_data[c + r * total_p] = H_data[r + c * total_p];
         return H;
+    }
+
+    Eigen::MatrixXd expected_hessian(const Eigen::VectorXd& params) {
+        int total_p = m_p + 1;
+        Eigen::MatrixXd H = Eigen::MatrixXd::Zero(total_p, total_p);
+        Eigen::VectorXd beta = params.head(m_p);
+        double theta = std::exp(params[m_p]);
+        Eigen::VectorXd eta = m_X * beta;
+
+        double* H_data = H.data();
+        for (int i = 0; i < m_n; ++i) {
+            double mu_i = std::exp(eta[i]);
+            double denom = theta + mu_i;
+            const double* xi = m_X.data() + i;
+
+            double w_beta = mu_i * theta / denom;
+            for (int c = 0; c < m_p; ++c) {
+                const double wxi_c = w_beta * xi[c * m_n];
+                for (int r = 0; r <= c; ++r)
+                    H_data[r + c * total_p] += wxi_c * xi[r * m_n];
+            }
+
+            const double e_trigamma = expected_trigamma_y_plus_theta(mu_i, theta);
+            H(m_p, m_p) += -theta * theta * (
+                e_trigamma - R::trigamma(theta) + 1.0 / theta - 1.0 / denom
+            );
+        }
+
+        for (int c = 0; c < total_p; ++c)
+            for (int r = 0; r < c; ++r)
+                H_data[c + r * total_p] = H_data[r + c * total_p];
+        return H;
+    }
+
+private:
+    static double expected_trigamma_y_plus_theta(double mu, double theta) {
+        const double prob_success = theta / (theta + mu);
+        double pk = std::exp(theta * std::log(prob_success));
+        double sum = pk * R::trigamma(theta);
+        double cdf = pk;
+        const double ratio_base = mu / (theta + mu);
+        const double mean = mu;
+        const double sd = std::sqrt(mu + mu * mu / theta);
+        const int min_iter = static_cast<int>(std::ceil(mean + 10.0 * sd));
+        const int max_iter = 100000;
+
+        for (int k = 0; k < max_iter; ++k) {
+            pk *= (static_cast<double>(k) + theta) / static_cast<double>(k + 1) * ratio_base;
+            const int y = k + 1;
+            sum += pk * R::trigamma(static_cast<double>(y) + theta);
+            cdf += pk;
+            if (y > min_iter && pk < 1e-14 && 1.0 - cdf < 1e-12) break;
+        }
+        return sum;
     }
 };
 
@@ -105,11 +167,12 @@ ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X,
                                   Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
                                   bool smart_cold_start = true,
                                   int maxit = 1000,
-                                  double eps_g = 1e-5,
+                                  double eps_g = 1e-6,
                                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                  std::string optimization_alg = "newton_raphson",
-                                  Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+                                  std::string optimization_alg = "lbfgs",
+                                  Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                  bool estimate_only = false) {
     int p = X.cols();
     ModelResult res;
     Eigen::VectorXd params = Eigen::VectorXd::Zero(p + 1);
@@ -150,12 +213,12 @@ ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X,
         h_ptr = &H_start_val;
     }
     
-    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, eps_g, optimization_alg, "newton_raphson", 0, h_ptr);
+    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, h_ptr);
     params = fit.params;
 
     res.b = params.head(p);
     res.dispersion = std::exp(params[p]); // theta
-    res.XtWX = fun.hessian(params); // Hessian
+    res.XtWX = estimate_only ? Eigen::MatrixXd::Zero(p+1, p+1) : fun.expected_hessian(params);
     res.iterations = fit.niter;
     res.converged = fit.converged;
     res.sigma2_hat = -fit.value; // using sigma2_hat to store logLik temporarily
@@ -225,12 +288,13 @@ List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
                                 bool smart_cold_start = false,
                                 int maxit = 1000,
                                 double eps_f = 1e-8,
-                                double eps_g = 1e-5,
+                                double eps_g = 1e-6,
                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                std::string optimization_alg = "newton_raphson",
-                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-    ModelResult res = fast_neg_bin_internal(X, y, warm_start_params, smart_cold_start, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
+                                std::string optimization_alg = "lbfgs",
+                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                bool estimate_only = false) {
+    ModelResult res = fast_neg_bin_internal(X, y, warm_start_params, smart_cold_start, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols() + 1, fixed_idx, fixed_values);
     Eigen::MatrixXd H_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
     Eigen::MatrixXd cov_free = H_free.inverse();
@@ -273,12 +337,13 @@ List fast_neg_bin_cpp(Eigen::MatrixXd X,
                         bool smart_cold_start = false,
                         int maxit = 1000,
                         double eps_f = 1e-8,
-                        double eps_g = 1e-5,
+                        double eps_g = 1e-6,
                         Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                         Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                        std::string optimization_alg = "newton_raphson",
-                        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-    ModelResult res = fast_neg_bin_internal(X, y, warm_start_params, smart_cold_start, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
+                        std::string optimization_alg = "lbfgs",
+                        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                        bool estimate_only = false) {
+    ModelResult res = fast_neg_bin_internal(X, y, warm_start_params, smart_cold_start, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only);
     return List::create(
         Named("b") = res.b,
         Named("theta_hat") = res.dispersion,

@@ -104,6 +104,10 @@ InferenceCountCompositeLikelihood = R6::R6Class("InferenceCountCompositeLikeliho
 			private$cached_values$df %||% Inf
 		},
 
+		get_backend_warm_start_args = function(expected_length, expected_fisher_dim = expected_length) {
+			private$get_optimal_warm_start_config(expected_length, expected_fisher_dim)
+		},
+
 		supports_likelihood_tests = function(){
 			TRUE
 		},

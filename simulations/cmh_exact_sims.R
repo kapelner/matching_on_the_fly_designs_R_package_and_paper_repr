@@ -5,7 +5,7 @@ Nrep = 10000L   # Monte Carlo replications per cell
 
 sim = SimulationFramework$new(
         Nrep                          = Nrep,
-        num_cores                     = 2L,
+        num_cores                     = 10L,
         results_filename              = sprintf("simulations/cmh_exact_sims_plus_greedy_results_Nrep_%d.csv.bz2", Nrep),
         continue_from_last_result_row = TRUE,
         response_type                 = "incidence",
@@ -27,8 +27,8 @@ sim = SimulationFramework$new(
                                           DesignFixedBlocking =                     list(B_target = 8,  exact_num_blocks = TRUE),
                                           DesignFixedBlocking =                     list(B_target = 16, exact_num_blocks = TRUE),
                                           DesignFixedBlocking =                     list(B_target = 32, exact_num_blocks = TRUE),
-                                          DesignFixedGreedy =                       list(objective = "abs_sum_diff"),
-                                          DesignFixedMatchingGreedyPairSwitching =  list(objective = "abs_sum_diff"),
+                                          DesignFixedGreedy =                       list(objective = "mahal_dist"),
+                                          DesignFixedMatchingGreedyPairSwitching =  list(objective = "mahal_dist"),
                                           DesignFixedRerandomization =              list(prop_acceptable = 0.01) 
                                         ),
         inference_classes_and_params  = list(

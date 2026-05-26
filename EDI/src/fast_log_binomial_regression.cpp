@@ -40,13 +40,15 @@ double loglik_constrained_binomial(const Eigen::MatrixXd& X,
   Eigen::VectorXd eta = X * beta;
   double ll = 0.0;
   for (int i = 0; i < n; ++i) {
+    double ei = eta[i];
     if (link_type == BinomialConstrainedLink::kLog) {
-      if (eta[i] >= kMaxEtaLog) return R_NegInf;
+      if (ei >= kMaxEtaLog) return R_NegInf;
+      const double mu = std::exp(ei);
+      ll += y[i] * ei + (1.0 - y[i]) * std::log1p(-mu);
     } else {
-      if (eta[i] <= kMinMu || eta[i] >= kMaxMu) return R_NegInf;
+      if (ei <= kMinMu || ei >= kMaxMu) return R_NegInf;
+      ll += y[i] * std::log(ei) + (1.0 - y[i]) * std::log1p(-ei);
     }
-    const double mu = safe_mu_from_eta(eta[i], link_type);
-    ll += y[i] * std::log(mu) + (1.0 - y[i]) * std::log1p(-mu);
   }
   return ll;
 }
@@ -57,18 +59,20 @@ double weighted_loglik_constrained_binomial(const Eigen::MatrixXd& X,
                                             const Eigen::VectorXd& beta,
                                             BinomialConstrainedLink link_type) {
   const int n = X.rows();
-  if (obs_weights.size() != n) stop("weights length mismatch in constrained binomial regression");
   Eigen::VectorXd eta = X * beta;
   double ll = 0.0;
   for (int i = 0; i < n; ++i) {
-    if (!R_finite(obs_weights[i]) || obs_weights[i] < 0.0) return R_NegInf;
+    const double wi = obs_weights[i];
+    if (!R_finite(wi) || wi < 0.0) return R_NegInf;
+    double ei = eta[i];
     if (link_type == BinomialConstrainedLink::kLog) {
-      if (eta[i] >= kMaxEtaLog) return R_NegInf;
+      if (ei >= kMaxEtaLog) return R_NegInf;
+      const double mu = std::exp(ei);
+      ll += wi * (y[i] * ei + (1.0 - y[i]) * std::log1p(-mu));
     } else {
-      if (eta[i] <= kMinMu || eta[i] >= kMaxMu) return R_NegInf;
+      if (ei <= kMinMu || ei >= kMaxMu) return R_NegInf;
+      ll += wi * (y[i] * std::log(ei) + (1.0 - y[i]) * std::log1p(-ei));
     }
-    const double mu = safe_mu_from_eta(eta[i], link_type);
-    ll += obs_weights[i] * (y[i] * std::log(mu) + (1.0 - y[i]) * std::log1p(-mu));
   }
   return ll;
 }
@@ -105,7 +109,7 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
   if (y.size() != n) stop("dimension mismatch in constrained binomial regression");
   FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
   const int p_free = fixed_spec.free_idx.size();
-  Eigen::MatrixXd X_free(n, p_free);
+  RowMajorMatrixXd X_free(n, p_free);
   for (int j = 0; j < p_free; ++j) X_free.col(j) = X.col(fixed_spec.free_idx[j]);
   Eigen::VectorXd eta_fixed = Eigen::VectorXd::Zero(n);
   for (int j = 0; j < fixed_spec.fixed_idx.size(); ++j) {
@@ -132,37 +136,31 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
   bool converged = false;
   Eigen::VectorXd mu = Eigen::VectorXd::Constant(n, y.mean());
   Eigen::VectorXd w = Eigen::VectorXd::Constant(n, 1.0);
+  Eigen::VectorXd z_adj(n);
 
   int iterations = 0;
   for (int iter = 0; iter < maxit; ++iter) {
     iterations = iter + 1;
     Eigen::VectorXd eta = eta_fixed + X_free * beta_free;
-    if (link_type == BinomialConstrainedLink::kLog) {
-      eta = eta.array().min(kMaxEtaLog).matrix();
-      mu = eta.array().exp().matrix();
-      if (iter == 0 && warm_start_weights.isNotNull()) {
-        Eigen::VectorXd ww = as<Eigen::VectorXd>(warm_start_weights);
-        if (ww.size() != n) stop("warm_start_weights must have length equal to nrow(X)");
-        w = ww;
-      } else {
-        w = (mu.array() / (1.0 - mu.array()).max(kEps)).max(kEps).matrix();
-      }
-    } else {
-      eta = eta.array().max(kMinMu).min(kMaxMu).matrix();
-      mu = eta;
-      if (iter == 0 && warm_start_weights.isNotNull()) {
-        Eigen::VectorXd ww = as<Eigen::VectorXd>(warm_start_weights);
-        if (ww.size() != n) stop("warm_start_weights must have length equal to nrow(X)");
-        w = ww;
-      } else {
-        w = (1.0 / (mu.array() * (1.0 - mu.array())).max(kEps)).max(kEps).matrix();
-      }
+    
+    // In-place update of mu and w to avoid temporary arrays
+    for (int i = 0; i < n; ++i) {
+        double ei = eta[i];
+        if (link_type == BinomialConstrainedLink::kLog) {
+            if (ei > kMaxEtaLog) ei = kMaxEtaLog;
+            double mui = std::exp(ei);
+            if (mui < kEps) mui = kEps;
+            mu[i] = mui;
+            w[i] = std::max(mui / std::max(1.0 - mui, kEps), kEps);
+            z_adj[i] = ei + (y[i] - mui) / mui - eta_fixed[i];
+        } else {
+            if (ei < kMinMu) ei = kMinMu;
+            if (ei > kMaxMu) ei = kMaxMu;
+            mu[i] = ei;
+            w[i] = 1.0 / std::max(ei * (1.0 - ei), kEps);
+            z_adj[i] = y[i] - eta_fixed[i];
+        }
     }
-
-    Eigen::VectorXd z = (link_type == BinomialConstrainedLink::kLog) ?
-      eta + (y - mu).cwiseQuotient(mu.array().max(kEps).matrix()) :
-      y;
-    Eigen::VectorXd z_adj = z - eta_fixed;
 
     Eigen::MatrixXd XtWX;
     if (iter == 0 && warm_start_fisher_info.isNotNull()) {
@@ -249,7 +247,7 @@ List fit_constrained_binomial_weighted_cpp_impl(const Eigen::MatrixXd& X,
   if (obs_weights.size() != n) stop("weights length mismatch in constrained binomial regression");
   FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
   const int p_free = fixed_spec.free_idx.size();
-  Eigen::MatrixXd X_free(n, p_free);
+  RowMajorMatrixXd X_free(n, p_free);
   for (int j = 0; j < p_free; ++j) X_free.col(j) = X.col(fixed_spec.free_idx[j]);
   Eigen::VectorXd eta_fixed = Eigen::VectorXd::Zero(n);
   for (int j = 0; j < fixed_spec.fixed_idx.size(); ++j) {
@@ -406,7 +404,7 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& X,
   }
 
   FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
-  Eigen::MatrixXd X_free(X.rows(), fixed_spec.free_idx.size());
+  RowMajorMatrixXd X_free(X.rows(), fixed_spec.free_idx.size());
   for (int col = 0; col < fixed_spec.free_idx.size(); ++col) X_free.col(col) = X.col(fixed_spec.free_idx[col]);
   Eigen::MatrixXd XtWX_free = weighted_crossprod(X_free, w);
   Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX_free);

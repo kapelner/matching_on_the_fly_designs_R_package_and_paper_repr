@@ -546,21 +546,23 @@ List fast_clayton_weibull_aft_optim_cpp(
         Named("neg_ll") = fit.value,
         Named("loglik") = R_finite(fit.value) ? -fit.value : NA_REAL,
         Named("niter") = fit.niter,
-        Named("converged") = fit.converged,
-        Named("fisher_information") = fun.hessian(params)
+        Named("converged") = fit.converged
     );
 
-    if (!estimate_only && fit.converged) {
-        Eigen::VectorXd score = get_clayton_weibull_aft_score_cpp(X, y, dead, pair_idx, singleton_rows, params);
-        Eigen::MatrixXd observed_information = fun.hessian(params);
-        Eigen::MatrixXd vcov = covariance_from_information(observed_information);
-        out["score"] = score;
-        out["observed_information"] = observed_information;
-        out["information"] = observed_information;
-        out["information_type"] = "observed";
-        out["hessian"] = -observed_information;
-        out["vcov"] = vcov;
+    if (estimate_only) {
+        return out;
     }
+
+    Eigen::MatrixXd observed_information = fun.hessian(params);
+    Eigen::VectorXd score = get_clayton_weibull_aft_score_cpp(X, y, dead, pair_idx, singleton_rows, params);
+    Eigen::MatrixXd vcov = covariance_from_information(observed_information);
+    out["score"] = score;
+    out["observed_information"] = observed_information;
+    out["information"] = observed_information;
+    out["information_type"] = "observed";
+    out["hessian"] = -observed_information;
+    out["fisher_information"] = observed_information;
+    out["vcov"] = vcov;
 
     return out;
 }
@@ -629,21 +631,23 @@ List fast_dep_cens_transform_optim_cpp(
         Named("neg_ll") = fit.value,
         Named("loglik") = R_finite(fit.value) ? -fit.value : NA_REAL,
         Named("niter") = fit.niter,
-        Named("converged") = fit.converged,
-        Named("fisher_information") = fun.hessian(params)
+        Named("converged") = fit.converged
     );
 
-    if (!estimate_only && fit.converged) {
-        Eigen::VectorXd score = get_dep_cens_transform_score_cpp(X, y, dead, params);
-        Eigen::MatrixXd observed_information = fun.hessian(params);
-        Eigen::MatrixXd vcov = covariance_from_information(observed_information);
-        out["score"] = score;
-        out["observed_information"] = observed_information;
-        out["information"] = observed_information;
-        out["information_type"] = "observed";
-        out["hessian"] = -observed_information;
-        out["vcov"] = vcov;
+    if (estimate_only) {
+        return out;
     }
+
+    Eigen::MatrixXd observed_information = fun.hessian(params);
+    Eigen::VectorXd score = get_dep_cens_transform_score_cpp(X, y, dead, params);
+    Eigen::MatrixXd vcov = covariance_from_information(observed_information);
+    out["score"] = score;
+    out["observed_information"] = observed_information;
+    out["information"] = observed_information;
+    out["information_type"] = "observed";
+    out["hessian"] = -observed_information;
+    out["fisher_information"] = observed_information;
+    out["vcov"] = vcov;
 
     return out;
 }

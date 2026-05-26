@@ -100,6 +100,7 @@ public:
 		Eigen::VectorXd tri_a = a.unaryExpr(TrigammaFunctor());
 		Eigen::VectorXd tri_b = b.unaryExpr(TrigammaFunctor());
 
+		double* H_data = H.data();
 		for (int i = 0; i < m_n; ++i) {
 			double mui = mu[i];
 			double dmu = mui * (1.0 - mui);
@@ -108,12 +109,18 @@ public:
 			double B = phi * C;
 			double B_mu = phi * phi * (tri_a[i] + tri_b[i]);
 			double w_beta = B_mu * dmu * dmu + B * d2mu;
-			Eigen::VectorXd x = m_X.row(i).transpose();
+			const double* xi = m_X.data() + i;  // xi[j * m_n] == X(i,j)
 
-			H.topLeftCorner(m_p, m_p).noalias() += w_beta * (x * x.transpose());
+			for (int c = 0; c < m_p; ++c) {
+				const double wxi_c = w_beta * xi[c * m_n];
+				for (int r = 0; r <= c; ++r)
+					H_data[r + c * total_p] += wxi_c * xi[r * m_n];
+			}
 
 			double B_log_phi = phi * (C + a[i] * tri_a[i] - b[i] * tri_b[i]);
-			H.topRightCorner(m_p, 1).noalias() += B_log_phi * dmu * x;
+			const double s = B_log_phi * dmu;
+			for (int r = 0; r < m_p; ++r)
+				H_data[r + m_p * total_p] += s * xi[r * m_n];
 		}
 
 		double D = -m_n * R::digamma(phi);
@@ -125,7 +132,53 @@ public:
 			D_phi += mui * mui * tri_a[i] + (1.0 - mui) * (1.0 - mui) * tri_b[i];
 		}
 		H(m_p, m_p) = phi * D + phi * phi * D_phi;
-		H.bottomLeftCorner(1, m_p) = H.topRightCorner(m_p, 1).transpose();
+		for (int c = 0; c < total_p; ++c)
+			for (int r = 0; r < c; ++r)
+				H_data[c + r * total_p] = H_data[r + c * total_p];
+		return H;
+	}
+
+	Eigen::MatrixXd expected_hessian(const Eigen::VectorXd& params) {
+		int total_p = m_p + 1;
+		Eigen::MatrixXd H = Eigen::MatrixXd::Zero(total_p, total_p);
+		Eigen::VectorXd beta = params.head(m_p);
+		double phi = std::exp(params[m_p]);
+		Eigen::VectorXd eta = m_X * beta;
+		Eigen::VectorXd mu = (1.0 / (1.0 + (-eta).array().exp())).matrix();
+		double epsilon = 1e-8;
+		for (int i = 0; i < m_n; ++i) {
+			if (mu[i] < epsilon) mu[i] = epsilon;
+			if (mu[i] > 1.0 - epsilon) mu[i] = 1.0 - epsilon;
+		}
+
+		Eigen::VectorXd a = mu.array() * phi;
+		Eigen::VectorXd b = (1.0 - mu.array()) * phi;
+		Eigen::VectorXd tri_a = a.unaryExpr(TrigammaFunctor());
+		Eigen::VectorXd tri_b = b.unaryExpr(TrigammaFunctor());
+
+		double* H_data = H.data();
+		for (int i = 0; i < m_n; ++i) {
+			const double mui = mu[i];
+			const double dmu = mui * (1.0 - mui);
+			const double w_beta = phi * phi * (tri_a[i] + tri_b[i]) * dmu * dmu;
+			const double cross = phi * (a[i] * tri_a[i] - b[i] * tri_b[i]) * dmu;
+			const double* xi = m_X.data() + i;
+
+			for (int c = 0; c < m_p; ++c) {
+				const double wxi_c = w_beta * xi[c * m_n];
+				for (int r = 0; r <= c; ++r)
+					H_data[r + c * total_p] += wxi_c * xi[r * m_n];
+			}
+			for (int r = 0; r < m_p; ++r)
+				H_data[r + m_p * total_p] += cross * xi[r * m_n];
+			H(m_p, m_p) += phi * phi * (
+				-R::trigamma(phi) + mui * mui * tri_a[i] + (1.0 - mui) * (1.0 - mui) * tri_b[i]
+			);
+		}
+
+		for (int c = 0; c < total_p; ++c)
+			for (int r = 0; r < c; ++r)
+				H_data[c + r * total_p] = H_data[r + c * total_p];
 		return H;
 	}
 };
@@ -137,8 +190,9 @@ ModelResult fast_beta_regression_internal(const Eigen::MatrixXd& X,
                                         double start_phi = 10.0,
                                         Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                         Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                        std::string optimization_alg = "newton_raphson",
-                                        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+                                        std::string optimization_alg = "lbfgs",
+                                        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                        bool estimate_only = false) {
     int p = X.cols();
     ModelResult res;
     Eigen::VectorXd params = Eigen::VectorXd::Zero(p + 1);
@@ -170,12 +224,12 @@ ModelResult fast_beta_regression_internal(const Eigen::MatrixXd& X,
         h_ptr = &H_start;
     }
     
-    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, 1000, 1e-6, optimization_alg, "newton_raphson", 0, h_ptr);
+    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, 1000, 1e-6, optimization_alg, "lbfgs", 0, h_ptr);
     params = fit.params;
 
     res.b = params.head(p);
     res.dispersion = std::exp(params[p]); // phi
-    res.XtWX = fun.hessian(params); // This is actually the Hessian H
+    res.XtWX = estimate_only ? Eigen::MatrixXd::Zero(p+1, p+1) : fun.expected_hessian(params);
     res.converged = fit.converged;
     return res;
 }
@@ -244,8 +298,9 @@ List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
                                 bool compute_std_errs = false,
                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                std::string optimization_alg = "newton_raphson",
-                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+                                std::string optimization_alg = "lbfgs",
+                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                bool estimate_only = false) {
 
 	Eigen::VectorXd y_eigen = as<Eigen::VectorXd>(y);
     Eigen::VectorXd sb;
@@ -255,7 +310,7 @@ List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
         sb_ptr = &sb;
     }
 
-    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, smart_cold_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
+    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, smart_cold_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only);
 
     Eigen::VectorXd params_full(fit.b.size() + 1);
     params_full.head(fit.b.size()) = fit.b;
@@ -301,7 +356,7 @@ List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
                                      bool compute_std_errs = true,
                                      Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                      Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                     std::string optimization_alg = "newton_raphson",
+                                     std::string optimization_alg = "lbfgs",
                                      Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
 
 	Eigen::VectorXd y_eigen = as<Eigen::VectorXd>(y);
@@ -336,4 +391,3 @@ List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
         Named("fisher_information") = fit.XtWX
 		);
 	}
-

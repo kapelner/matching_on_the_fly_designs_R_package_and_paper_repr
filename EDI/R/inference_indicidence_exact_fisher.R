@@ -18,7 +18,7 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 		#' @param verbose Whether to print progress messages.
 		#' @param smart_cold_start_default Whether to use smart cold start values by default.
 		#' @return A new \code{InferenceIncidExactFisher} object.
-		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
@@ -207,12 +207,11 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 			matrix(
 				c(
 					sum(y_idx[i_t] == 1L, na.rm = TRUE),
-					sum(y_idx[i_t] == 0L, na.rm = TRUE),
 					sum(y_idx[i_c] == 1L, na.rm = TRUE),
+					sum(y_idx[i_t] == 0L, na.rm = TRUE),
 					sum(y_idx[i_c] == 0L, na.rm = TRUE)
 				),
 				nrow = 2,
-				byrow = TRUE,
 				dimnames = list(c("treated", "control"), c("case", "noncase"))
 			)
 		},

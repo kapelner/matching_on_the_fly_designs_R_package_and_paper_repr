@@ -71,8 +71,9 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#'   Can be overridden per-call in \code{approximate_bootstrap_distribution_beta_hat_T}.
 		#'   Must be a positive integer. Default \code{50L}.
 		#' @param smart_cold_start_default Whether to use smart cold start values.
+		#' @param harden  		Whether to apply robustness measures.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, prob_clip_eps = 1e-6, prob_clip_strong_eps = 1e-4,
-			max_resample_attempts = 50L, smart_cold_start_default = TRUE,
+			max_resample_attempts = 50L, smart_cold_start_default = NULL, harden = TRUE,
 			variance_fallback_methods = c(
 				"robust", "stabilized_robust", "model_based",
 				"stabilized_robust_fd", "model_based_fd",
@@ -95,7 +96,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				))
 				assertCount(max_resample_attempts, positive = TRUE)
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
+			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -439,7 +440,9 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 						X = X_fit, 
 						y = as.numeric(private$y),
 						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
-						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
+						smart_cold_start = private$smart_cold_start_default,
+						estimate_only = estimate_only
 					),
 					error = function(e) NULL
 				)
@@ -840,6 +843,22 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		},
 		shared = function(estimate_only = FALSE){
 			if (!is.null(private$cached_values$md) && (estimate_only || !is.null(private$cached_values$summary_table))) return(invisible(NULL))
+			if (estimate_only && isFALSE(private$harden)) {
+				X = private$build_design_matrix()
+				b = glm.fit(x = X, y = as.numeric(private$y), family = quasibinomial())$coefficients
+				if (length(b) >= 2L && all(is.finite(b))) {
+					eta_base = drop(X %*% b) - X[, 2L] * b[2L]
+					mean1 = mean(plogis(eta_base + b[2L]))
+					mean0 = mean(plogis(eta_base))
+					private$gcomp_design_colnames = setdiff(colnames(X), c("(Intercept)", "treatment"))
+					private$gcomp_design_j_treat = 2L
+					private$cached_values$mean1 = mean1
+					private$cached_values$mean0 = mean0
+					private$cached_values$md = as.numeric(mean1 - mean0)
+					private$cached_values$se_md = NA_real_
+					return(invisible(NULL))
+				}
+			}
 			X_full = private$build_named_design_matrix()
 			fit = private$fit_fractional_logit_with_sandwich(X_full, estimate_only = estimate_only)
 			if (!is.null(fit)) {

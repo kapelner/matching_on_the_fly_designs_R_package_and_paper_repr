@@ -28,7 +28,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 		#' @param verbose  		Whether to print progress messages.
 		#' @param smart_cold_start_default Whether to use smart optimizer start values by default.
 		#' @param optimization_alg  Optimization algorithm to use. Default is dispatched via policy.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE, optimization_alg = NULL){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = NULL, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "count")
 			}
@@ -248,12 +248,16 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 					-get_negbin_regression_hessian_cpp(X_fit, y, params)
 				},
 				fisher_information = function(fit){
-					params = c(as.numeric(fit$b), log(as.numeric(fit$theta_hat)))
-					-get_negbin_regression_hessian_cpp(X_fit, y, params)
+					fit$fisher_information %||% {
+						params = c(as.numeric(fit$b), log(as.numeric(fit$theta_hat)))
+						-get_negbin_regression_hessian_cpp(X_fit, y, params)
+					}
 				},
 				information = function(fit){
-					params = c(as.numeric(fit$b), log(as.numeric(fit$theta_hat)))
-					-get_negbin_regression_hessian_cpp(X_fit, y, params)
+					fit$information %||% fit$fisher_information %||% {
+						params = c(as.numeric(fit$b), log(as.numeric(fit$theta_hat)))
+						-get_negbin_regression_hessian_cpp(X_fit, y, params)
+					}
 				},
 				neg_loglik = function(fit){ as.numeric(fit$neg_loglik) }
 			)

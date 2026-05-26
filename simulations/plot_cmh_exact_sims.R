@@ -1,3 +1,4 @@
+rm(list = ls())
 pacman::p_load(data.table, R.utils, ggplot2, gridExtra, xtable)
 
 Nrep = 10000
@@ -5,6 +6,7 @@ raw_results_dt = data.table::fread(sprintf("cmh_exact_sims_plus_greedy_results_N
 raw_results_dt[, reject := pval < 0.05]
 raw_results_dt[, covers := ci_lo <= true_estimand & true_estimand <= ci_hi]
 raw_results_dt[, ci_length := ci_hi - ci_lo]
+table(raw_results_dt$design)
 results_dt = raw_results_dt[,
   .(
     pow_avg = mean(reject, na.rm = TRUE), 
@@ -40,7 +42,7 @@ results_dt[, `:=`(
 results_dt[, design_short    := gsub("DesignFixed", "", design)]
 table(results_dt$design_short)
 results_dt[, inference_short := inference]
-results_dt[, inference_short := gsub("InferenceIncidence", "", inference_short)]
+results_dt[, inference_short := gsub("InferenceIncid", "", inference_short)]
 
 # Row 1: iBCRD, OptimalBlocks B=4/8/16/32; Row 2: BinaryMatch, Blocking B_target=4/8/16/32
 design_levels = c(
@@ -56,7 +58,9 @@ design_levels = c(
   "BinaryMatch",
   "Rerandomization (prop_acceptable=0.01)",
   'Greedy (objective=""abs_sum_diff"")',
-  'MatchingGreedyPairSwitching (objective=""abs_sum_diff"")'
+  'MatchingGreedyPairSwitching (objective=""abs_sum_diff"")',
+  'Greedy (objective=""mahal_dist"")',
+  'MatchingGreedyPairSwitching (objective=""mahal_dist"")'
 )
 design_labels = c(
   "iBCRD",                    
@@ -70,12 +74,16 @@ design_labels = c(
   "B=32",   
   "BinaryMatch",
   "Rerandomization",
-  "Greedy",
-  "BinaryMatchThenGreedy"
+  "GreedyAbs",
+  "BinaryMatchThenGreedyAbs",
+  "GreedyMD",
+  "BinaryMatchThenGreedyMD"
 )
 
 results_dt[, design_short := factor(design_short, levels = design_levels, labels = design_labels)]
+results_dt = results_dt[!(design_short %in% c("GreedyAbs", "BinaryMatchThenGreedyAbs"))]
 table(results_dt$design_short)
+#results_dt = results_dt[design_short %in% c("Rerandomization", "Greedy", "BinaryMatchThenGreedy")]
 
 extract_legend = function(plot_obj) {
   plot_grob = ggplotGrob(plot_obj)
@@ -234,31 +242,31 @@ for (p_ in unique(results_dt$p)) {
     sub_beta1 = sub[betaT == 1]
     sub_beta0 = sub[betaT == 0]
 
-    if (nrow(sub_beta1) > 0L) {
-      stem_pow = sprintf("plot_power_p%s_%s_Nrep_%d",     p_, dt_val, Nrep)
-      stem_cov = sprintf("plot_coverage_p%s_%s_Nrep_%d",  p_, dt_val, Nrep)
-      stem_len = sprintf("plot_ci_length_p%s_%s_Nrep_%d", p_, dt_val, Nrep)
-      make_original_plot(sub_beta1, "pow_avg", "Power", 0.05,
-        sprintf("Power (betaT=1) | p=%s, log_odds_model=%s", p_, dt_val), stem_pow,
-        save_PDF = TRUE, plot = FALSE
-      )
-      make_original_plot(sub_beta1, "cov_avg", "Coverage", 0.95,
-        sprintf("Coverage (betaT=1) | p=%s, log_odds_model=%s", p_, dt_val), stem_cov,
-        save_PDF = TRUE, plot = FALSE
-      )
-      make_original_plot(sub_beta1, "len_avg", "Confidence Interval Length", NULL,
-        sprintf("Confidence Interval Length (betaT=1) | p=%s, log_odds_model=%s", p_, dt_val), stem_len,
-        save_PDF = TRUE, plot = FALSE, free_y = TRUE
-      )
-    }
-
-    if (nrow(sub_beta0) > 0L) {
-      stem_size = sprintf("plot_size_p%s_%s_Nrep_%d", p_, dt_val, Nrep)
-      make_original_plot(sub_beta0, "pow_avg", "Size", 0.05,
-        sprintf("Size (betaT=0) | p=%s, log_odds_model=%s", p_, dt_val), stem_size,
-        save_PDF = TRUE, plot = FALSE, hline_linetype = "dotted"
-      )
-    }
+    # if (nrow(sub_beta1) > 0L) {
+    #   stem_pow = sprintf("plot_power_p%s_%s_Nrep_%d",     p_, dt_val, Nrep)
+    #   stem_cov = sprintf("plot_coverage_p%s_%s_Nrep_%d",  p_, dt_val, Nrep)
+    #   stem_len = sprintf("plot_ci_length_p%s_%s_Nrep_%d", p_, dt_val, Nrep)
+    #   make_original_plot(sub_beta1, "pow_avg", "Power", 0.05,
+    #     sprintf("Power (betaT=1) | p=%s, log_odds_model=%s", p_, dt_val), stem_pow,
+    #     save_PDF = TRUE, plot = FALSE
+    #   )
+    #   make_original_plot(sub_beta1, "cov_avg", "Coverage", 0.95,
+    #     sprintf("Coverage (betaT=1) | p=%s, log_odds_model=%s", p_, dt_val), stem_cov,
+    #     save_PDF = TRUE, plot = FALSE
+    #   )
+    #   make_original_plot(sub_beta1, "len_avg", "Confidence Interval Length", NULL,
+    #     sprintf("Confidence Interval Length (betaT=1) | p=%s, log_odds_model=%s", p_, dt_val), stem_len,
+    #     save_PDF = TRUE, plot = FALSE, free_y = TRUE
+    #   )
+    # }
+    # 
+    # if (nrow(sub_beta0) > 0L) {
+    #   stem_size = sprintf("plot_size_p%s_%s_Nrep_%d", p_, dt_val, Nrep)
+    #   make_original_plot(sub_beta0, "pow_avg", "Size", 0.05,
+    #     sprintf("Size (betaT=0) | p=%s, log_odds_model=%s", p_, dt_val), stem_size,
+    #     save_PDF = TRUE, plot = FALSE, hline_linetype = "dotted"
+    #   )
+    # }
 
     if (nrow(sub_beta1) > 0L) {
       stem_cov_len = sprintf("plot_coverage_ci_length_p%s_%s_Nrep_%d", p_, dt_val, Nrep)
@@ -361,3 +369,4 @@ print(
   sanitize.text.function = identity,
   file = sprintf("tab_results_n_%s_p_%s_%s.tex", n_, p_, cond_exp_func_model_)
 )
+

@@ -10,7 +10,7 @@ fast_beta_regression_cpp(
   warm_start_beta = NULL,
   smart_cold_start = TRUE,
   start_phi = 10,
-  compute_std_errs = FALSE,
+  compute_std_errs = TRUE,
   fixed_idx = NULL,
   fixed_values = NULL,
   optimization_alg = "newton_raphson",
@@ -28,7 +28,7 @@ fast_beta_regression_cpp(
 
 \item{start_phi}{Optional starting value for precision parameter phi.}
 
-\item{compute_std_errs}{Deprecated.}
+\item{compute_std_errs}{Deprecated. If FALSE, return only estimate-only fields and skip final likelihood/information calculations.}
 
 \item{fixed_idx}{Optional indices of fixed parameters.}
 

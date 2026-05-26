@@ -18,7 +18,8 @@ ModelResult fast_logistic_regression_internal(
 	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
 	std::string optimization_alg = "lbfgs",
 	Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue);
+	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+	bool estimate_only = false);
 
 namespace {
 
@@ -415,6 +416,39 @@ public:
 		H.bottomLeftCorner(1, m_p) = H.topRightCorner(m_p, 1).transpose();
 		return H;
 	}
+
+	MatrixXd expected_hessian(const VectorXd& params) {
+		const int total_p = m_p + 1;
+		MatrixXd H = MatrixXd::Zero(total_p, total_p);
+		const VectorXd beta = params.head(m_p);
+		const double r = std::exp(params[m_p]);
+		VectorXd eta = (m_X * beta).array().min(700.0).matrix();
+
+		for (int i = 0; i < m_n; ++i) {
+			const double mu_i = std::max(std::exp(eta[i]), 1e-10);
+			const double p0 = std::pow(r / (r + mu_i), r);
+			const double q_pos = std::max(1.0 - p0, 1e-12);
+			const double sd = std::sqrt(mu_i + mu_i * mu_i / r);
+			const int soft_min_y = std::max(20, static_cast<int>(std::ceil(mu_i + 12.0 * sd)));
+			const int max_y = std::max(soft_min_y, 10000);
+			double cum = 0.0;
+
+			MatrixXd Xi(1, m_p);
+			Xi.row(0) = m_X.row(i);
+			for (int yv = 1; yv <= max_y; ++yv) {
+				const double prob = R::dnbinom_mu(static_cast<double>(yv), r, mu_i, false) / q_pos;
+				if (prob > 0.0 && std::isfinite(prob)) {
+					VectorXi yi(1);
+					yi[0] = yv;
+					TruncatedNegBinCount one_row(Xi, yi);
+					H.noalias() += prob * one_row.hessian(params);
+					cum += prob;
+				}
+				if (yv >= soft_min_y && 1.0 - cum < 1e-10) break;
+			}
+		}
+		return (H + H.transpose()) / 2.0;
+	}
 };
 
 }
@@ -473,7 +507,8 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 						   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
 						   std::string optimization_alg = "lbfgs",
 						   Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
-						   Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_hurdle_fisher_info = R_NilValue) {
+						   Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_hurdle_fisher_info = R_NilValue,
+						   bool estimate_only = false) {
 	const int n = X.rows();
 	const int p = X.cols();
 	const int p_hurdle = X_hurdle.cols();
@@ -485,7 +520,7 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 	bool hurdle_converged = false;
     
 	if (y_pos_ind.minCoeff() < y_pos_ind.maxCoeff()) {
-        ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, R_NilValue, R_NilValue, alg, R_NilValue, warm_start_hurdle_fisher_info);
+        ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, R_NilValue, R_NilValue, alg, R_NilValue, warm_start_hurdle_fisher_info, estimate_only);
 		hurdle_b = hurdle_res.b;
 		hurdle_converged = hurdle_res.converged;
 	}
@@ -556,13 +591,31 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 	VectorXd beta = params.head(p);
 	double theta_hat = std::exp(params[p]);
 
+	if (estimate_only) {
+		return List::create(
+			Named("b") = beta,
+			Named("theta_hat") = theta_hat,
+			Named("converged") = converged,
+			Named("hurdle_b") = hurdle_b,
+			Named("hurdle_converged") = hurdle_converged,
+			Named("neg_ll") = neg_ll
+		);
+	}
+
+	MatrixXd observed_information = fun.hessian(params);
+	MatrixXd fisher_information = fun.expected_hessian(params);
+
 	return List::create(
 		Named("b") = beta,
 		Named("theta_hat") = theta_hat,
 		Named("converged") = converged,
 		Named("hurdle_b") = hurdle_b,
 		Named("hurdle_converged") = hurdle_converged,
-		Named("fisher_information") = fun.hessian(params)
+		Named("observed_information") = observed_information,
+		Named("fisher_information") = fisher_information,
+		Named("information") = fisher_information,
+		Named("information_type") = "fisher",
+		Named("hessian") = -observed_information
 	);
 }
 
@@ -647,7 +700,7 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X,
 				params[p] = std::log(theta_hat);
 
 				TruncatedNegBinCount fun(X_pos, y_pos);
-				MatrixXd H = fun.hessian(params);
+				MatrixXd H = fun.expected_hessian(params);
 				if (H.allFinite()) {
 					FixedParamSpec count_fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
 					MatrixXd H_free = subset_matrix(H, count_fixed_spec.free_idx, count_fixed_spec.free_idx);
@@ -772,22 +825,33 @@ List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X,
 
         params = fit.params;
         VectorXd beta = params.head(p);
+        if (estimate_only) {
+                return List::create(
+                        Named("b") = beta,
+                        Named("params") = params,
+                        Named("converged") = fit.converged,
+                        Named("neg_ll") = fit.value
+                );
+        }
+
+        MatrixXd observed_information = fun.hessian(params);
+        MatrixXd fisher_information = fun.expected_hessian(params);
         List out = List::create(
                 Named("b") = beta,
                 Named("params") = params,
                 Named("converged") = fit.converged,
                 Named("neg_ll") = fit.value,
-                Named("fisher_information") = fun.hessian(params)
+                Named("observed_information") = observed_information,
+                Named("fisher_information") = fisher_information,
+                Named("information") = fisher_information,
+                Named("information_type") = "fisher",
+                Named("hessian") = -observed_information
         );
-        if (estimate_only || !fit.converged){
+        if (!fit.converged){
                 return out;
         }
 
         VectorXd score = get_hurdle_negbin_count_score_cpp(X, y, params);
-        MatrixXd H = fun.hessian(params);
         out["score"] = score;
-        out["observed_information"] = H;
-        out["information"] = H;
-        out["hessian"] = -H;
         return out;
 }

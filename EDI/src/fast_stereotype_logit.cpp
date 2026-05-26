@@ -267,17 +267,119 @@ public:
             VectorXd mean_grad = VectorXd::Zero(d);
             MatrixXd mean_hess = MatrixXd::Zero(d, d);
             MatrixXd mean_outer = MatrixXd::Zero(d, d);
+            double* mo = mean_outer.data();
             for (int j = 0; j < m_K; ++j) {
                 mean_grad.noalias() += probs[j] * logit_grad[j];
                 mean_hess.noalias() += probs[j] * logit_hess[j];
-                mean_outer.noalias() += probs[j] * (logit_grad[j] * logit_grad[j].transpose());
+                // Raw pointer accumulation for mean_outer (upper triangle only)
+                const double* gj = logit_grad[j].data();
+                const double pj = probs[j];
+                for (int c = 0; c < d; ++c) {
+                    const double s = pj * gj[c];
+                    for (int r = 0; r <= c; ++r)
+                        mo[r + c * d] += s * gj[r];
+                }
             }
+            // Reflect mean_outer upper triangle to lower
+            for (int c = 0; c < d; ++c)
+                for (int r = 0; r < c; ++r)
+                    mo[c + r * d] = mo[r + c * d];
 
             const int yi = m_y[i] - 1;
-            H.noalias() += logit_hess[yi] - mean_hess - mean_outer + mean_grad * mean_grad.transpose();
+            // Build delta = logit_hess[yi] - mean_hess - mean_outer, then add mean_grad outer product
+            Eigen::MatrixXd delta = logit_hess[yi] - mean_hess - mean_outer;
+            double* d_data = delta.data();
+            const double* mg = mean_grad.data();
+            // Add mean_grad * mean_grad.T (upper triangle only)
+            for (int c = 0; c < d; ++c) {
+                const double mg_c = mg[c];
+                for (int r = 0; r <= c; ++r)
+                    d_data[r + c * d] += mg_c * mg[r];
+            }
+            // Reflect delta upper triangle to lower
+            for (int c = 0; c < d; ++c)
+                for (int r = 0; r < c; ++r)
+                    d_data[c + r * d] = d_data[r + c * d];
+            H.noalias() += delta;
         }
 
         return 0.5 * (H + H.transpose());
+    }
+
+    // Fisher information: E[-d2LL/dθ2] = Σ_i [Σ_j p_j z_j z_j^T - mean_z mean_z^T]
+    // No d2score/dgamma2 needed — cheap and always PSD.
+    MatrixXd expected_hessian(const VectorXd& params) const {
+        const int n_alpha = num_alpha();
+        const int n_gamma = num_gamma();
+        const int d = num_params();
+
+        const VectorXd beta  = params.segment(n_alpha, m_p);
+        const VectorXd gamma = (n_gamma > 0) ? params.tail(n_gamma) : VectorXd(0);
+
+        std::vector<double> score_vals;
+        MatrixXd dscore_dgamma;
+        compute_scores(gamma, score_vals, dscore_dgamma);
+
+        MatrixXd I = MatrixXd::Zero(d, d);
+        double* I_data = I.data();
+        std::vector<double> z(d), mean_grad(d), logits(m_K);
+
+        for (int i = 0; i < m_n; ++i) {
+            const double eta = (m_p > 0) ? m_X.row(i).dot(beta) : 0.0;
+            const double* xi = m_X.data() + i; // column-major: xi[j*m_n] = X(i,j)
+
+            // Compute logits and softmax probabilities
+            logits[0] = 0.0;
+            for (int cat = 1; cat < m_K; ++cat)
+                logits[cat] = params[cat - 1] + score_vals[cat] * eta;
+            double max_l = *std::max_element(logits.begin(), logits.end());
+            std::vector<double> probs(m_K);
+            double sp = 0.0;
+            for (int cat = 0; cat < m_K; ++cat) { probs[cat] = std::exp(logits[cat] - max_l); sp += probs[cat]; }
+            for (int cat = 0; cat < m_K; ++cat) probs[cat] /= sp;
+
+            // Accumulate mean_grad = Σ_j p_j * z_j
+            for (int jj = 0; jj < d; ++jj) mean_grad[jj] = 0.0;
+            for (int cat = 1; cat < m_K; ++cat) {
+                const double pj = probs[cat];
+                const double sv = score_vals[cat];
+                mean_grad[cat - 1] += pj;
+                for (int b = 0; b < m_p; ++b)
+                    mean_grad[n_alpha + b] += pj * sv * xi[b * m_n];
+                for (int r = 0; r < n_gamma; ++r)
+                    mean_grad[n_alpha + m_p + r] += pj * eta * dscore_dgamma(cat, r);
+            }
+
+            // Accumulate Σ_j p_j * z_j * z_j^T (upper triangle)
+            for (int cat = 1; cat < m_K; ++cat) {
+                const double pj = probs[cat];
+                const double sv = score_vals[cat];
+                for (int jj = 0; jj < d; ++jj) z[jj] = 0.0;
+                z[cat - 1] = 1.0;
+                for (int b = 0; b < m_p; ++b) z[n_alpha + b] = sv * xi[b * m_n];
+                for (int r = 0; r < n_gamma; ++r) z[n_alpha + m_p + r] = eta * dscore_dgamma(cat, r);
+                for (int c = 0; c < d; ++c) {
+                    if (z[c] == 0.0) continue;
+                    const double pz = pj * z[c];
+                    for (int r = 0; r <= c; ++r)
+                        I_data[r + c * d] += pz * z[r];
+                }
+            }
+
+            // Subtract mean_grad * mean_grad^T (upper triangle)
+            for (int c = 0; c < d; ++c) {
+                if (mean_grad[c] == 0.0) continue;
+                const double mg = mean_grad[c];
+                for (int r = 0; r <= c; ++r)
+                    I_data[r + c * d] -= mg * mean_grad[r];
+            }
+        }
+
+        // Reflect upper triangle to lower
+        for (int c = 0; c < d; ++c)
+            for (int r = 0; r < c; ++r)
+                I_data[c + r * d] = I_data[r + c * d];
+        return I;
     }
 };
 
@@ -576,6 +678,10 @@ struct StereotypeObjective {
     MatrixXd hessian(const VectorXd& params) const {
         return -model.loglik_hessian(params);
     }
+
+    MatrixXd expected_hessian(const VectorXd& params) const {
+        return model.expected_hessian(params);
+    }
 };
 
 //' @title Compute Stereotype Logit Score
@@ -632,7 +738,8 @@ List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
                                 std::string optimization_alg = "newton_raphson",
                                 Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
                                 Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
-                                Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue) {
+                                Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
+                                bool estimate_only = false) {
     StereotypeLogitRegression model(X, y);
     if (model.num_categories() < 2) {
         stop("Stereotype logistic regression requires at least two observed outcome categories.");
@@ -651,12 +758,9 @@ List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
         if (sb.size() == p) {
             params.segment(n_alpha, p) = sb;
         }
-    } else if (smart_cold_start) {
-        // Smart warm_start_params for Stereotype: OLS on y (or simplified representation)
-        // Here we use a basic OLS warm_start_params for the beta part
-        params.segment(n_alpha, p) = ols_smart_cold_start_beta(X, y);
     }
-    
+    // smart_cold_start: alpha from initialize_params() empirical log-ratios; beta/gamma = 0
+
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
     StereotypeObjective obj(model);
 
@@ -670,6 +774,15 @@ List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
     LikelihoodFitResult fit = optimize_fixed_likelihood(obj, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, info_start_ptr);
     params = fit.params;
 
+    if (estimate_only) {
+        return List::create(
+            Named("b") = params.segment(n_alpha, p),
+            Named("alpha") = params.head(n_alpha),
+            Named("scores_raw") = (model.num_gamma() > 0) ? params.tail(model.num_gamma()) : VectorXd(0),
+            Named("params") = params,
+            Named("converged") = fit.converged
+        );
+    }
     return List::create(
         Named("b") = params.segment(n_alpha, p),
         Named("alpha") = params.head(n_alpha),
@@ -703,7 +816,9 @@ List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::V
                                          std::string optimization_alg = "newton_raphson",
                                          Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
                                          Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
-                                         Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue) {
+                                         Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
+                                         bool estimate_only = false) {
+
     StereotypeLogitRegression model(X, y);
     if (model.num_categories() < 2) {
         stop("Stereotype logistic regression requires at least two observed outcome categories.");
@@ -720,10 +835,8 @@ List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::V
         if (sb.size() == X.cols()) {
             params.segment(model.num_alpha(), X.cols()) = sb;
         }
-    } else if (smart_cold_start) {
-        // Smart warm_start_params: OLS on y
-        params.segment(model.num_alpha(), X.cols()) = ols_smart_cold_start_beta(X, y);
     }
+    // smart_cold_start: alpha from initialize_params() empirical log-ratios; beta/gamma = 0
 
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
     StereotypeObjective obj(model);

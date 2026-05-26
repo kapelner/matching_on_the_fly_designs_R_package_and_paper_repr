@@ -29,8 +29,12 @@ Inference = R6::R6Class("Inference",
 		#'   design's imputed covariates.
 		#' @param smart_cold_start_default Whether to use smart cold start values by default for
 		#'   likelihood-based models. Explicit starts always override this object-level policy.
+		#'   \code{NULL} (default) consults the global cold-start dispatch policy.
 		#' @param seed Integer seed for reproducibility.
-		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_cold_start_default = TRUE, seed = NULL){
+		initialize = function(des_obj, verbose = FALSE, harden = TRUE, model_formula = NULL, smart_cold_start_default = NULL, seed = NULL){
+			if (is.null(smart_cold_start_default)) {
+				smart_cold_start_default = edi_cold_start_dispatch_policy(class(self)[1])
+			}
 			if (should_run_asserts()) {
 				assertClass(des_obj, "Design")
 				assertFormula(model_formula, null.ok = TRUE)
@@ -304,7 +308,7 @@ Inference = R6::R6Class("Inference",
 		y_temp = NULL,
 		X = NULL,
 		model_formula = NULL,
-		smart_cold_start_default = TRUE,
+		smart_cold_start_default = NULL,
 		optimization_alg = NULL,
 		optimization_alg_allow_irls = FALSE,
 		optimization_alg_default = "lbfgs",
@@ -376,7 +380,12 @@ Inference = R6::R6Class("Inference",
 			if (!is.null(fisher) && is.matrix(fisher)) {
 				fisher = as.matrix(fisher)
 				if (nrow(fisher) == length(start) && ncol(fisher) == length(start) && all(is.finite(fisher))) {
-					private$fit_warm_start_fisher = fisher
+					fisher = (fisher + t(fisher)) / 2
+					is_pd = isTRUE(tryCatch({
+						chol(fisher)
+						TRUE
+					}, error = function(e) FALSE))
+					private$fit_warm_start_fisher = if (is_pd) fisher else NULL
 				} else {
 					private$fit_warm_start_fisher = NULL
 				}

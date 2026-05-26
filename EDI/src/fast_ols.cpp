@@ -7,28 +7,59 @@ using namespace Rcpp;
 ModelResult fast_ols_internal(const Eigen::MatrixXd& X,
                               const Eigen::VectorXd& y,
                               Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-                              Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
+                              Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                              bool estimate_only = false) {
+    const int n = X.rows();
     const int p = X.cols();
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
     const int p_free = fixed_spec.free_idx.size();
-    Eigen::MatrixXd X_free(X.rows(), p_free);
-    for (int j = 0; j < p_free; ++j) X_free.col(j) = X.col(fixed_spec.free_idx[j]);
+    
     Eigen::VectorXd y_adj = y;
     for (int j = 0; j < fixed_spec.fixed_idx.size(); ++j) {
         y_adj.noalias() -= X.col(fixed_spec.fixed_idx[j]) * fixed_spec.fixed_values[j];
     }
 
     ModelResult res;
-    Eigen::MatrixXd XtX_free = X_free.transpose() * X_free;
-    Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X_free);
-    Eigen::VectorXd beta_free = cod.solve(y_adj);
     res.b = Eigen::VectorXd::Zero(p);
-    for (int j = 0; j < p_free; ++j) res.b[fixed_spec.free_idx[j]] = beta_free[j];
     for (int j = 0; j < fixed_spec.fixed_idx.size(); ++j) res.b[fixed_spec.fixed_idx[j]] = fixed_spec.fixed_values[j];
+
+    if (p_free > 0) {
+        // Build XtX and Xty directly to avoid X_free allocation
+        Eigen::MatrixXd XtX_free = Eigen::MatrixXd::Zero(p_free, p_free);
+        Eigen::VectorXd Xty_free = Eigen::VectorXd::Zero(p_free);
+        
+        for (int j = 0; j < p_free; ++j) {
+            int col_j = fixed_spec.free_idx[j];
+            Xty_free[j] = X.col(col_j).dot(y_adj);
+            for (int i = 0; i <= j; ++i) {
+                int col_i = fixed_spec.free_idx[i];
+                double val = X.col(col_j).dot(X.col(col_i));
+                XtX_free(i, j) = val;
+                if (i != j) XtX_free(j, i) = val;
+            }
+        }
+
+        Eigen::LDLT<Eigen::MatrixXd> ldlt(XtX_free);
+        Eigen::VectorXd beta_free;
+        if (ldlt.info() == Eigen::Success) {
+            beta_free = ldlt.solve(Xty_free);
+        } else {
+            // Fall back to COD if XtX is not well-behaved
+            Eigen::MatrixXd X_free(n, p_free);
+            for (int j = 0; j < p_free; ++j) X_free.col(j) = X.col(fixed_spec.free_idx[j]);
+            Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X_free);
+            beta_free = cod.solve(y_adj);
+        }
+        
+        for (int j = 0; j < p_free; ++j) res.b[fixed_spec.free_idx[j]] = beta_free[j];
+        if (!estimate_only) res.XtWX = expand_free_covariance(p, fixed_spec, XtX_free, false);
+    } else {
+        if (!estimate_only) res.XtWX = Eigen::MatrixXd::Zero(p, p);
+    }
+
     if (!res.b.allFinite()) {
         res.b = Eigen::VectorXd::Constant(p, NA_REAL);
     }
-    res.XtWX = expand_free_covariance(p, fixed_spec, XtX_free, false);
     return res;
 }
 
@@ -50,10 +81,9 @@ List fast_ols_cpp(const Eigen::MatrixXd& X,
                   const Eigen::VectorXd& y,
                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
-    ModelResult res = fast_ols_internal(X, y, fixed_idx, fixed_values);
+    ModelResult res = fast_ols_internal(X, y, fixed_idx, fixed_values, true);
     return List::create(
-        Named("b") = res.b,
-        Named("XtX") = res.XtWX
+        Named("b") = res.b
     );
 }
 

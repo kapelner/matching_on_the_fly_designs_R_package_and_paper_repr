@@ -28,7 +28,7 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 		#' @param smart_cold_start_default Whether to use smart cold start values by default.
 		#' @param optimization_alg Character scalar specifying the optimization algorithm. 
 		#'   Default is dispatched via policy.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE, optimization_alg = NULL){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = NULL, optimization_alg = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "proportion")
 				assertFormula(model_formula, null.ok = TRUE)
@@ -153,6 +153,7 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 				X = X, y = as.numeric(private$y),
 				warm_start_beta = ws_args$start_beta,
 				warm_start_fisher_info = ws_args$warm_start_fisher_info,
+				compute_std_errs = FALSE,
 				smart_cold_start = private$smart_cold_start_default,
 				optimization_alg = private$optimization_alg
 			)
@@ -256,12 +257,16 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 					-get_beta_regression_hessian_cpp(X_fit, y, params)
 				},
 				fisher_information = function(fit){
-					params = c(as.numeric(fit$b), log(as.numeric(fit$phi)))
-					-get_beta_regression_hessian_cpp(X_fit, y, params)
+					fit$fisher_information %||% {
+						params = c(as.numeric(fit$b), log(as.numeric(fit$phi)))
+						-get_beta_regression_hessian_cpp(X_fit, y, params)
+					}
 				},
 				information = function(fit){
-					params = c(as.numeric(fit$b), log(as.numeric(fit$phi)))
-					-get_beta_regression_hessian_cpp(X_fit, y, params)
+					fit$information %||% fit$fisher_information %||% {
+						params = c(as.numeric(fit$b), log(as.numeric(fit$phi)))
+						-get_beta_regression_hessian_cpp(X_fit, y, params)
+					}
 				},
 				neg_loglik = function(fit){ as.numeric(fit$neg_loglik) }
 			)
@@ -279,6 +284,7 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 							X_fit, private$y,
 							warm_start_beta = ws_args$start_beta,
 							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							compute_std_errs = FALSE,
 							smart_cold_start = private$smart_cold_start_default,
 							optimization_alg = private$optimization_alg
 						)

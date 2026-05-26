@@ -16,7 +16,7 @@
 #' @export
 InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 	lock_objects = FALSE,
-	inherit = InferenceAsymp,
+	inherit = InferenceParamBootstrap,
 	public = list(
 		#' @description Initialize an OLS inference object.
 		#' @param des_obj A completed \code{Design} object with a continuous response.
@@ -27,12 +27,14 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 		#' @param verbose Whether to print progress messages.
 		#' @param max_resample_attempts Maximum number of times a single bootstrap replicate
 		#'   may be redrawn when the drawn sample fails validity screening. Default \code{50L}.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, max_resample_attempts = 50L){
+		#' @param harden  		Whether to apply robustness measures.
+		#' @param smart_cold_start_default Flag for consistent API.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, max_resample_attempts = 50L, harden = TRUE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
 				assertCount(max_resample_attempts, positive = TRUE)
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj = des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -114,26 +116,109 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 			X_full = private$build_design_matrix()
 			
-			fit = tryCatch(stats::lm.fit(X_full, private$y), error = function(e) NULL)
-			if (is.null(fit) || !is.finite(stats::coef(fit)[2])){
+			attempt = private$fit_with_hardened_qr_column_dropping(
+				X_full = X_full,
+				required_cols = 2L,
+				fit_fun = function(X_fit){
+					if (estimate_only) {
+						res = fast_ols_cpp(X_fit, private$y)
+						list(b = res$b, XtX = res$XtX, ssq_b_2 = NA_real_)
+					} else {
+						fast_ols_with_var_cpp(X_fit, private$y, j = 2L)
+					}
+				},
+				fit_ok = function(mod, X_fit, keep){
+					!is.null(mod) && length(mod$b) >= 2L && is.finite(mod$b[2])
+				}
+			)
+			if (is.null(attempt$fit) || !is.finite(attempt$fit$b[2])){
 				private$cached_values$beta_hat_T = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$df = NA_real_
 				return(invisible(NULL))
 			}
-			private$cached_values$beta_hat_T = as.numeric(stats::coef(fit)[2])
+			private$cached_values$beta_hat_T = as.numeric(attempt$fit$b[2])
 			if (estimate_only) return(invisible(NULL))
-			# Standard OLS variance calculation
-			res = stats::residuals(fit)
-			rss = sum(res^2)
-			df  = nrow(X_full) - ncol(X_full)
-			sig2 = rss / df
+
+			private$cached_values$s_beta_hat_T = if (is.finite(attempt$fit$ssq_b_2)) sqrt(attempt$fit$ssq_b_2) else NA_real_
+			private$cached_values$df = nrow(attempt$X) - ncol(attempt$X)
 			
-			# (X'X)^-1
-			v_cov = sig2 * chol2inv(fit$qr$qr[seq_len(fit$rank), seq_len(fit$rank), drop = FALSE])
+			private$cached_values$likelihood_test_context = list(
+				X = attempt$X,
+				j_treat = 2L,
+				full_fit = attempt$fit
+			)
+			private$cached_mod = attempt$fit
+		},
+		supports_lik_ratio_param_bootstrap = function() TRUE,
+		supports_likelihood_tests = function() TRUE,
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			b_null = as.numeric(null_fit$b)
+			# Residual variance estimate from full fit
+			y_orig = as.numeric(private$y)
+			X_orig = spec$X
+			# Sigma_hat^2 = RSS / (n - p)
+			rss = sum((y_orig - as.numeric(X_orig %*% as.numeric(spec$full_fit$b)))^2)
+			sigma = sqrt(rss / (nrow(X_orig) - ncol(X_orig)))
 			
-			private$cached_values$s_beta_hat_T = sqrt(v_cov[2, 2])
-			private$cached_values$df = df
+			mu = as.numeric(spec$X %*% b_null)
+			y_sim = mu + rnorm(length(mu), mean = 0, sd = sigma)
+			
+			X_fit = spec$X
+			j = spec$j
+			
+			full_fit_boot = fast_ols_cpp(X_fit, y_sim)
+			
+			list(
+				full_fit = full_fit_boot,
+				fit_null = function(d, start = NULL){
+					# OLS null fit is just OLS on (y - X_j * d) with X_j dropped
+					y_null = y_sim - as.numeric(X_fit[, j] * d)
+					res = fast_ols_cpp(X_fit[, -j, drop = FALSE], y_null)
+					# Reconstruct b for full X
+					b_full = numeric(ncol(X_fit))
+					b_full[j] = d
+					b_full[-j] = as.numeric(res$b)
+					list(b = b_full, rss = sum((y_null - as.numeric(X_fit[, -j, drop = FALSE] %*% res$b))^2))
+				},
+				neg_loglik = function(fit){
+					# For OLS, neg loglik proportional to RSS
+					if (is.null(fit$rss)) {
+						# full fit from fast_ols_cpp has XtX etc but not rss directly in old versions?
+						# fast_ols_cpp usually returns b, XtX, Xty
+						fit_b = as.numeric(fit$b)
+						rss_val = sum((y_sim - as.numeric(X_fit %*% fit_b))^2)
+						return(rss_val)
+					}
+					fit$rss
+				}
+			)
+		},
+		get_likelihood_test_spec = function(){
+			private$shared(estimate_only = FALSE)
+			ctx = private$cached_values$likelihood_test_context
+			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+			X_fit = ctx$X
+			y = as.numeric(private$y)
+			j_treat = as.integer(ctx$j_treat)
+			list(
+				X = X_fit,
+				y = y,
+				j = j_treat,
+				full_fit = private$cached_mod,
+				fit_null = function(delta, start = NULL){
+					y_null = y - as.numeric(X_fit[, j_treat] * delta)
+					res = fast_ols_cpp(X_fit[, -j_treat, drop = FALSE], y_null)
+					b_full = numeric(ncol(X_fit))
+					b_full[j_treat] = delta
+					b_full[-j_treat] = as.numeric(res$b)
+					list(b = b_full, rss = sum((y_null - as.numeric(X_fit[, -j_treat, drop = FALSE] %*% res$b))^2))
+				},
+				neg_loglik = function(fit){
+					if (!is.null(fit$rss)) return(fit$rss)
+					sum((y - as.numeric(X_fit %*% as.numeric(fit$b)))^2)
+				}
+			)
 		}
 	)
 )

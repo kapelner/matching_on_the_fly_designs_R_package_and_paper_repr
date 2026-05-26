@@ -134,7 +134,7 @@ List fast_weibull_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
                                  double tol = 1e-6,
                                  Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                  Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                 std::string optimization_alg = "newton_raphson",
+                                 std::string optimization_alg = "lbfgs",
                                  Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     int p = X.cols();
     Eigen::VectorXd params(p + 1);
@@ -160,7 +160,7 @@ List fast_weibull_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
         info_start_ptr = &info_start;
     }
     try {
-        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, info_start_ptr);
+        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_start_ptr);
     } catch (...) {
         return List::create(Named("converged") = false);
     }
@@ -172,8 +172,7 @@ List fast_weibull_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
             Named("log_sigma") = params[p],
             Named("converged") = fit.converged,
             Named("iterations") = fit.niter,
-            Named("neg_ll") = fit.value,
-            Named("fisher_information") = fun.hessian(params)
+            Named("neg_ll") = fit.value
         );
     }
 

@@ -37,7 +37,7 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 		#'   Defaults to \code{~ .}, meaning treatment plus all available covariates.
 		#' @param verbose Whether to print progress messages.
 		#' @param smart_cold_start_default Whether to use smart cold start values.
-		initialize = function(des_obj, model_formula = NULL, model_formula_zero_one = ~ ., verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, model_formula_zero_one = ~ ., verbose = FALSE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "proportion")
 				assertFormula(model_formula_zero_one, null.ok = FALSE)
@@ -260,13 +260,13 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 					get_zero_one_inflated_beta_score_cpp(X_fit, X_zero_one, y, as.numeric(fit$params))
 				},
 				observed_information = function(fit){
-					as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% -get_zero_one_inflated_beta_hessian_cpp(X_fit, X_zero_one, y, as.numeric(fit$params)))
+					as.matrix(fit$observed_information %||% -get_zero_one_inflated_beta_hessian_cpp(X_fit, X_zero_one, y, as.numeric(fit$params)))
 				},
 				fisher_information = function(fit){
 					as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% -get_zero_one_inflated_beta_hessian_cpp(X_fit, X_zero_one, y, as.numeric(fit$params)))
 				},
 				information = function(fit){
-					as.matrix(fit$fisher_information %||% fit$information %||% fit$observed_information %||% -get_zero_one_inflated_beta_hessian_cpp(X_fit, X_zero_one, y, as.numeric(fit$params)))
+					as.matrix(fit$information %||% fit$fisher_information %||% fit$observed_information %||% -get_zero_one_inflated_beta_hessian_cpp(X_fit, X_zero_one, y, as.numeric(fit$params)))
 				},
 				neg_loglik = function(fit){ as.numeric(fit$neg_loglik) }
 			)

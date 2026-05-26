@@ -33,7 +33,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 		#'   \eqn{mu(1-mu)} is bounded away from zero. Must be in \code{[0, 0.5)}.
 		#'   Default \code{.Machine$double.eps} (essentially no clamping).
 		#' @param smart_cold_start_default Whether to use smart cold start values.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, prob_clip_eps = .Machine$double.eps, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, prob_clip_eps = .Machine$double.eps, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 				assertFormula(model_formula, null.ok = TRUE)
@@ -519,6 +519,26 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && (!is.null(private$cached_values$rd) || !is.null(private$cached_values$rr))) return(invisible(NULL))
 			if (!estimate_only && (!is.null(private$cached_values$se_rd) || !is.null(private$cached_values$se_log_rr))) return(invisible(NULL))
+			if (estimate_only && isFALSE(private$harden)) {
+				X = private$build_design_matrix()
+				if (!is.null(dim(X)) && is.null(colnames(X))) {
+					colnames(X) = c("(Intercept)", "treatment", if (ncol(X) > 2L) private$get_covariate_names() else NULL)
+				}
+				b = glm.fit(x = X, y = as.numeric(private$y), family = binomial())$coefficients
+				if (length(b) >= 2L && all(is.finite(b))) {
+					eta_base = drop(X %*% b) - X[, 2L] * b[2L]
+					risk1 = mean(plogis(eta_base + b[2L]))
+					risk0 = mean(plogis(eta_base))
+					private$best_X_colnames = setdiff(colnames(X), c("(Intercept)", "treatment"))
+					private$cached_values$risk1 = risk1
+					private$cached_values$risk0 = risk0
+					private$cached_values$rd = as.numeric(risk1 - risk0)
+					private$cached_values$rr = as.numeric(risk1 / risk0)
+					private$cached_values$log_rr = log(private$cached_values$rr)
+					private$cached_values$beta_hat_T = if (identical(private$get_estimand_type(), "RD")) private$cached_values$rd else private$cached_values$rr
+					return(invisible(NULL))
+				}
+			}
 			X_full = private$build_design_matrix()
 			if (is.null(dim(X_full))){
 				X_full = matrix(X_full, ncol = 2L)

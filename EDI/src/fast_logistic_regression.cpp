@@ -1,5 +1,7 @@
 #include "_helper_functions.h"
 #include <RcppEigen.h>
+// [[Rcpp::depends(RcppNumerical)]]
+#include <RcppNumerical.h>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -15,9 +17,45 @@ inline double plogis_manual(double x) {
 }
 
 inline Eigen::ArrayXd plogis_array_manual(const Eigen::ArrayXd& x) {
-    const Eigen::ArrayXd x_clamped = x.max(-20.0).min(20.0);
-    return 1.0 / (1.0 + (-x_clamped).exp());
+    return plogis_array_safe(x);
 }
+
+inline double log1pexp_stable(double x) {
+    return (x > 0.0) ? x + std::log1p(std::exp(-x)) : std::log1p(std::exp(x));
+}
+
+class LogisticLbfgsObjective : public Numer::MFuncGrad {
+private:
+    const RowMajorMatrixXd& X;
+    const Eigen::VectorXd& y;
+    const Eigen::VectorXd& weights;
+    const Eigen::VectorXd& eta_fixed;
+    const bool use_weights;
+
+public:
+    LogisticLbfgsObjective(const RowMajorMatrixXd& X_,
+                           const Eigen::VectorXd& y_,
+                           const Eigen::VectorXd& weights_,
+                           const Eigen::VectorXd& eta_fixed_,
+                           bool use_weights_) :
+        X(X_), y(y_), weights(weights_), eta_fixed(eta_fixed_), use_weights(use_weights_) {}
+
+    double f_grad(Numer::Constvec& beta, Numer::Refvec grad) {
+        Eigen::VectorXd eta = X * beta + eta_fixed;
+        Eigen::VectorXd resid(eta.size());
+        double f = 0.0;
+
+        for (int i = 0; i < eta.size(); ++i) {
+            const double wi = use_weights ? weights[i] : 1.0;
+            const double mui = plogis_manual(eta[i]);
+            f += wi * (log1pexp_stable(eta[i]) - y[i] * eta[i]);
+            resid[i] = wi * (mui - y[i]);
+        }
+
+        grad.noalias() = X.transpose() * resid;
+        return f;
+    }
+};
 
 // Manual LLT (Cholesky) decomposition and solver to avoid Eigen templates
 // A is p*p symmetric, positive definite. b is p*1.
@@ -57,14 +95,15 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
                                               const Eigen::VectorXd& y_eigen, 
                                               const Eigen::VectorXd& weights_eigen = Eigen::VectorXd(),
                                               Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
-                                              bool smart_cold_start = true,
+                                              bool smart_cold_start = false,
                                               int maxit = 100, 
                                               double tol = 1e-8,
                                               Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                               Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                               std::string optimization_alg = "irls",
                                               Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-                                              Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+                                              Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                              bool estimate_only = false) {
     int n = X_eigen.rows();
     int p = X_eigen.cols();
     bool use_weights = (weights_eigen.size() == n);
@@ -92,79 +131,121 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
         for(int i=0; i<n; i++) eta_fixed[i] += X_eigen(i, idx) * val;
     }
 
-    std::vector<double> X_free_raw(n * p_free);
-    for (int j = 0; j < p_free; ++j) {
-        int col_idx = fixed_spec.free_idx[j];
-        for(int i=0; i<n; i++) X_free_raw[i * p_free + j] = X_eigen(i, col_idx);
+    if (optimization_alg == "lbfgs") {
+        RowMajorMatrixXd X_free_eigen(n, p_free);
+        for (int j = 0; j < p_free; ++j) {
+            X_free_eigen.col(j) = X_eigen.col(fixed_spec.free_idx[j]);
+        }
+
+        Eigen::VectorXd beta_free_eigen(p_free);
+        for (int j = 0; j < p_free; ++j) {
+            beta_free_eigen[j] = beta_free[j];
+        }
+        Eigen::VectorXd eta_fixed_eigen = Eigen::Map<const Eigen::VectorXd>(eta_fixed.data(), n);
+
+        bool converged = true;
+        int status = 0;
+        double fopt = NA_REAL;
+        if (p_free > 0) {
+            LogisticLbfgsObjective nll(X_free_eigen, y_eigen, weights_eigen, eta_fixed_eigen, use_weights);
+            status = Numer::optim_lbfgs(nll, beta_free_eigen, fopt, maxit, tol, tol);
+            converged = (status >= 0) && beta_free_eigen.allFinite();
+        }
+
+        ModelResult res;
+        res.b = beta_start;
+        for (int j = 0; j < p_free; ++j) {
+            res.b[fixed_spec.free_idx[j]] = beta_free_eigen[j];
+        }
+
+        if (!estimate_only) {
+            Eigen::VectorXd eta = X_eigen * res.b;
+            res.mu = plogis_array_safe(eta.array()).matrix();
+            Eigen::VectorXd w_diag = res.mu.array() * (1.0 - res.mu.array());
+            if (use_weights) w_diag.array() *= weights_eigen.array();
+            w_diag.array() = w_diag.array().max(1e-10);
+
+            Eigen::MatrixXd info_free(p_free, p_free);
+            if (p_free > 0) {
+                info_free.noalias() = X_free_eigen.transpose() * w_diag.asDiagonal() * X_free_eigen;
+            } else {
+                info_free.resize(0, 0);
+            }
+            res.XtWX = expand_free_covariance(p, fixed_spec, info_free, false);
+        }
+        res.iterations = NA_INTEGER;
+        res.converged = converged;
+        return res;
     }
 
-    std::vector<double> mu(n);
-    std::vector<double> w_diag(n);
+    RowMajorMatrixXd X_free(n, p_free);
+    for (int j = 0; j < p_free; ++j) {
+        X_free.col(j) = X_eigen.col(fixed_spec.free_idx[j]);
+    }
+
+    Eigen::VectorXd mu(n);
+    Eigen::VectorXd w_diag(n);
+    Eigen::VectorXd beta_free_vec = Eigen::Map<Eigen::VectorXd>(beta_free.data(), p_free);
+    Eigen::VectorXd eta_fixed_vec = Eigen::Map<Eigen::VectorXd>(eta_fixed.data(), n);
     bool converged = false;
 
-    Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> X_free_map(X_free_raw.data(), n, p_free);
-    Eigen::Map<Eigen::VectorXd> mu_map(mu.data(), n);
-    Eigen::Map<Eigen::VectorXd> w_diag_map(w_diag.data(), n);
-    Eigen::Map<Eigen::VectorXd> beta_free_map(beta_free.data(), p_free);
-    Eigen::Map<const Eigen::VectorXd> eta_fixed_map(eta_fixed.data(), n);
-
-    Eigen::MatrixXd final_XtWX_eigen(p_free, p_free);
-    Eigen::VectorXd score_free_eigen(p_free);
-
+    Eigen::MatrixXd XtWX = Eigen::MatrixXd::Zero(p_free, p_free);
     int iterations = 0;
     for (int iter = 0; iter < maxit; iter++) {
+        iterations++;
+        
         // mu = plogis(X*beta + eta_fixed)
-        mu_map.noalias() = X_free_map * beta_free_map + eta_fixed_map;
-        mu_map.array() = plogis_array_safe(mu_map.array());
+        Eigen::VectorXd eta = X_free * beta_free_vec + eta_fixed_vec;
+        mu.array() = plogis_array_safe(eta.array());
 
         // w_diag = weights * mu * (1-mu)
         if (iter == 0 && warm_start_weights.isNotNull()) {
             Eigen::VectorXd ww = as<Eigen::VectorXd>(warm_start_weights);
-            if (ww.size() != n) Rcpp::stop("warm_start_weights must have length equal to nrow(X)");
-            w_diag_map = ww;
+            if (ww.size() == n) w_diag = ww;
+            else w_diag.array() = mu.array() * (1.0 - mu.array());
         } else {
-            w_diag_map.array() = mu_map.array() * (1.0 - mu_map.array());
-            if (use_weights) w_diag_map.array() *= weights_eigen.array();
-            w_diag_map.array() = w_diag_map.array().max(1e-10);
+            w_diag.array() = mu.array() * (1.0 - mu.array());
         }
+        if (use_weights) w_diag.array() *= weights_eigen.array();
+        w_diag.array() = w_diag.array().max(1e-10);
 
         // score = X^T * (weights * (y - mu))
-        Eigen::VectorXd diff = y_eigen - mu_map;
+        Eigen::VectorXd diff = y_eigen - mu;
         if (use_weights) diff.array() *= weights_eigen.array();
-        score_free_eigen.noalias() = X_free_map.transpose() * diff;
         
-        if (score_free_eigen.norm() < tol) {
+        Eigen::VectorXd score = X_free.transpose() * diff;
+        if (score.norm() < tol) {
             converged = true;
-            break;
         }
-        iterations++;
 
         // XtWX = X^T * diag(w_diag) * X
         if (iter == 0 && warm_start_fisher_info.isNotNull()) {
             Eigen::MatrixXd info_full = as<Eigen::MatrixXd>(warm_start_fisher_info);
-            if (info_full.rows() != p || info_full.cols() != p) Rcpp::stop("warm_start_fisher_info must be a p x p matrix");
-            final_XtWX_eigen = subset_matrix(info_full, fixed_spec.free_idx, fixed_spec.free_idx);
+            XtWX = subset_matrix(info_full, fixed_spec.free_idx, fixed_spec.free_idx);
         } else if (iter == 0 && smart_cold_start && warm_start_beta.isNull()) {
-            Eigen::MatrixXd H_full = edi_opt::logistic_smart_hessian(X_eigen, beta_start);
-            final_XtWX_eigen = subset_matrix(H_full, fixed_spec.free_idx, fixed_spec.free_idx);
+            XtWX = subset_matrix(edi_opt::logistic_smart_hessian(X_eigen, beta_start), fixed_spec.free_idx, fixed_spec.free_idx);
         } else {
-            final_XtWX_eigen.noalias() = X_free_map.transpose() * w_diag_map.asDiagonal() * X_free_map;
+            XtWX = weighted_crossprod(X_free, w_diag);
         }
 
-        Eigen::LDLT<Eigen::MatrixXd> ldlt(final_XtWX_eigen);
+        if (converged) break;
+
+        Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
         if (ldlt.info() != Eigen::Success) break;
-        Eigen::VectorXd delta = ldlt.solve(score_free_eigen);
+        Eigen::VectorXd delta = ldlt.solve(score);
         if (!delta.allFinite()) break;
 
-        beta_free_map += delta;
+        beta_free_vec += delta;
         if (delta.norm() < tol) { converged = true; break; }
     }
 
     ModelResult res;
-    res.b = beta_start; // Copy fixed values
-    for(int j=0; j<p_free; j++) res.b[fixed_spec.free_idx[j]] = beta_free_map[j];
-    res.mu = mu_map;
-    res.XtWX = expand_free_covariance(p, fixed_spec, final_XtWX_eigen, false);
+    res.b = beta_start;
+    for(int j=0; j<p_free; j++) res.b[fixed_spec.free_idx[j]] = beta_free_vec[j];
+    if (!estimate_only) {
+        res.mu = mu;
+        res.XtWX = expand_free_covariance(p, fixed_spec, XtWX, false);
+    }
     res.iterations = iterations;
     res.converged = converged;
     return res;
@@ -229,7 +310,7 @@ Eigen::MatrixXd get_logistic_regression_weighted_hessian_cpp(const Eigen::Matrix
 }
 
 //' @title Fast Logistic Regression (C++)
-//' @description High-performance logistic regression fitting using IRLS.
+//' @description High-performance logistic regression fitting using L-BFGS or IRLS.
 //' @param X A numeric matrix of predictors.
 //' @param y A binary numeric vector of responses.
 //' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
@@ -247,18 +328,29 @@ Eigen::MatrixXd get_logistic_regression_weighted_hessian_cpp(const Eigen::Matrix
 //' y = rbinom(10, 1, 0.5)
 //' fast_logistic_regression_cpp(X, y)
 // [[Rcpp::export]]
-List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y,
+List fast_logistic_regression_cpp(SEXP X_sexp, SEXP y_sexp,
                                   Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
-                                  bool smart_cold_start = true,
+                                  bool smart_cold_start = false,
                                   int maxit = 100, double tol = 1e-8,
                                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                   std::string optimization_alg = "irls",
                                   Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-                                  Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-    ModelResult res = fast_logistic_regression_internal(X, y, Eigen::VectorXd(), warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
-    Eigen::VectorXd weights_vec(X.rows());
-    for(int i=0; i<X.rows(); i++) weights_vec[i] = res.mu[i] * (1.0 - res.mu[i]);
+                                  Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                  bool estimate_only = false) {
+    Eigen::MatrixXd X = as<Eigen::MatrixXd>(X_sexp);
+    Eigen::VectorXd y = as<Eigen::VectorXd>(y_sexp);
+
+    ModelResult res = fast_logistic_regression_internal(X, y, Eigen::VectorXd(), warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info, estimate_only);
+    
+    if (estimate_only) {
+        return List::create(
+            Named("b") = res.b,
+            Named("converged") = res.converged,
+            Named("iterations") = res.iterations
+        );
+    }
+    Eigen::VectorXd weights_vec = res.mu.array() * (1.0 - res.mu.array());
     return List::create(
         Named("b") = res.b,
         Named("w") = weights_vec,
@@ -268,7 +360,7 @@ List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorX
 }
 
 //' @title Fast Weighted Logistic Regression (C++)
-//' @description High-performance weighted logistic regression fitting using IRLS.
+//' @description High-performance weighted logistic regression fitting using L-BFGS or IRLS.
 //' @param X A numeric matrix of predictors.
 //' @param y A binary numeric vector of responses.
 //' @param weights A numeric vector of weights.
@@ -285,15 +377,18 @@ List fast_logistic_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorX
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_logistic_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights,
+List fast_logistic_regression_weighted_cpp(SEXP X_sexp, SEXP y_sexp, SEXP weights_sexp,
                                            Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
-                                           bool smart_cold_start = true,
+                                           bool smart_cold_start = false,
                                            int maxit = 100, double tol = 1e-8,
                                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                            Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                            std::string optimization_alg = "irls",
                                            Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
                                            Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+    Eigen::MatrixXd X = as<Eigen::MatrixXd>(X_sexp);
+    Eigen::VectorXd y = as<Eigen::VectorXd>(y_sexp);
+    Eigen::VectorXd weights = as<Eigen::VectorXd>(weights_sexp);
     ModelResult res = fast_logistic_regression_internal(X, y, weights, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
     return List::create(
         Named("b") = res.b,
@@ -323,14 +418,16 @@ List fast_logistic_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen
 //' y = rbinom(10, 1, 0.5)
 //' fast_logistic_regression_with_var_cpp(X, y)
 // [[Rcpp::export]]
-List fast_logistic_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j = 2,
+List fast_logistic_regression_with_var_cpp(SEXP X_sexp, SEXP y_sexp, int j = 2,
                                            Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
-                                           bool smart_cold_start = true,
+                                           bool smart_cold_start = false,
                                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                            Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                            std::string optimization_alg = "irls",
                                            Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
                                            Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+    Eigen::MatrixXd X = as<Eigen::MatrixXd>(X_sexp);
+    Eigen::VectorXd y = as<Eigen::VectorXd>(y_sexp);
     ModelResult res = fast_logistic_regression_internal(X, y, Eigen::VectorXd(), warm_start_beta, smart_cold_start, 100, 1e-8, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     

@@ -76,7 +76,8 @@ ModelResult fast_probit_regression_internal(
         Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
         std::string optimization_alg = "irls",
         Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+        bool estimate_only = false) {
 
     const int n = X_eigen.rows();
     const int p = X_eigen.cols();
@@ -177,8 +178,10 @@ ModelResult fast_probit_regression_internal(
     ModelResult res;
     res.b = beta_start;
     for (int j = 0; j < p_free; ++j) res.b[fixed_spec.free_idx[j]] = beta_free_map[j];
-    res.mu = mu_map;
-    res.XtWX = expand_free_covariance(p, fixed_spec, final_XtWX, false);
+    if (!estimate_only) {
+        res.mu = mu_map;
+        res.XtWX = expand_free_covariance(p, fixed_spec, final_XtWX, false);
+    }
     res.iterations = iterations;
     res.converged = converged;
     return res;
@@ -252,10 +255,18 @@ List fast_probit_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd&
         Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
         std::string optimization_alg = "irls",
         Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+        bool estimate_only = false) {
     ModelResult res = fast_probit_regression_internal(X, y, Eigen::VectorXd(), warm_start_beta,
         smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg,
-        warm_start_weights, warm_start_fisher_info);
+        warm_start_weights, warm_start_fisher_info, estimate_only);
+    if (estimate_only) {
+        return List::create(
+            Named("b") = res.b,
+            Named("converged") = res.converged,
+            Named("iterations") = res.iterations
+        );
+    }
     // Compute IRLS weights phi^2/(mu*(1-mu)) at the solution
     const int n = X.rows();
     const Eigen::VectorXd eta = X * res.b;

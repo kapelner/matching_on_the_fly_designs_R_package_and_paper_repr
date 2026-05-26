@@ -2,203 +2,91 @@
 if (!requireNamespace("pkgload", quietly = TRUE)) {
     stop("The 'pkgload' package is required.")
 }
-pkgload::load_all("EDI", quiet = TRUE)
-library(EDI)
+pkgload::load_all("/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI", quiet = TRUE)
 library(data.table)
 
 set.seed(42)
 
-# Helper to generate data
-generate_data = function(n = 500, p = 5, family = "logistic", n_groups = 20) {
-    X = matrix(rnorm(n * p), n, p)
-    X[, 1] = 1 
-    beta = rnorm(p) * 2.0
-    eta = X %*% beta
-    group_id = rep(1:n_groups, length.out = n)
-    
-    if (family == "logistic") {
-        mu = 1 / (1 + exp(-eta))
-        y = rbinom(n, 1, mu)
-    } else if (family == "poisson") {
-        mu = exp(eta)
-        y = rpois(n, mu)
-    } else if (family == "glmm_logistic") {
-        re = rnorm(n_groups)[group_id]
-        mu = 1 / (1 + exp(-(eta + re)))
-        y = rbinom(n, 1, mu)
-    } else if (family == "negbin" || family == "zinb") {
-        mu = exp(eta)
-        y = rnbinom(n, size = 2, mu = mu)
-        if (family == "zinb") {
-            z = rbinom(n, 1, 0.2)
-            y[z == 1] = 0
-        }
-    } else if (family == "beta") {
-        mu = 1 / (1 + exp(-eta))
-        phi = 10
-        y = rbeta(n, mu * phi, (1 - mu) * phi)
-        y = pmax(pmin(y, 1 - 1e-6), 1e-6)
-    } else if (family == "weibull" || family == "cox") {
-        mu = exp(eta)
-        y = rexp(n, 1/mu) 
-        dead = rbinom(n, 1, 0.8)
-        return(list(X = X, y = y, dead = dead, group_id = group_id))
-    } else if (family == "ordinal") {
-        p1 = 1 / (1 + exp(-(-1 - eta)))
-        p_le_2 = 1 / (1 + exp(-(1 - eta)))
-        p2 = pmax(0, p_le_2 - p1)
-        p3 = pmax(0, 1 - p_le_2)
-        probs = cbind(p1, p2, p3)
-        probs = probs / rowSums(probs)
-        y = apply(probs, 1, function(p) sample(1:3, 1, prob = p))
-    }
-    
-    list(X = X, y = y, group_id = group_id)
-}
+# HIGH SIGNAL Parameters
+N_AUD = 1000; P_AUD = 30
+R_AUD = 100; B_AUD = 100; J_AUD = 20; PB_AUD = 50
 
-# Heuristic starts using fast_ols_cpp
-get_reasonable_starts = function(data, family_name) {
-    X = data$X; y = data$y; n = nrow(X); p = ncol(X)
-    b_ols = NULL; w = NULL; info = NULL
-    
-    if (family_name == "Logistic (IRLS)" || family_name == "LogisticGLMM") {
-        p_avg = mean(y)
-        mu = rep(p_avg, n)
-        w = mu * (1 - mu)
-        b_ols = fast_ols_cpp(X, qlogis((y + 0.5)/2))$coefficients
-        if (family_name == "LogisticGLMM") b_ols = c(b_ols, 0)
-        info = t(X) %*% (X * w)
-    } else if (family_name == "Poisson (IRLS)" || family_name == "ZAP") {
-        eta = log(y + 0.1)
-        b_ols = fast_ols_cpp(X, eta)$coefficients
-        w = exp(eta)
-        info = t(X) %*% (X * w)
-        if (family_name == "ZAP") b_ols = c(b_ols, b_ols) 
-    } else if (family_name == "NegBin" || family_name == "ZINB") {
-        eta = log(y + 0.1)
-        b_ols = c(fast_ols_cpp(X, eta)$coefficients, 0) 
-        w = exp(eta) / 2 
-        info = t(X) %*% (X * w)
-        if (family_name == "ZINB") {
-            # Better ZINB start: Zero-part OLS on I(y==0)
-            y0 = as.numeric(y == 0)
-            b0 = fast_ols_cpp(X, qlogis((y0 + 0.5)/2))$coefficients
-            b_ols = c(b_ols[1:p], b0, 0)
-        }
-    } else if (family_name == "Weibull (AFT)") {
-        idx = which(data$dead == 1)
-        if (length(idx) > p) {
-            X_f = X[idx, ]; y_f_log = log(y[idx] + 0.1)
-            b_ols = c(fast_ols_cpp(X_f, y_f_log)$coefficients, log(sd(y_f_log)*sqrt(6)/pi))
-        } else {
-            b_ols = c(fast_ols_cpp(X, log(y + 0.1))$coefficients, 0)
-        }
-        info = diag(length(b_ols))
-    } else if (family_name == "Beta") {
-        eta = qlogis(pmax(pmin(y, 0.99), 0.01))
-        b_ols = c(fast_ols_cpp(X, eta)$coefficients, log(10))
-        info = diag(length(b_ols))
-    } else if (family_name == "Ordinal") {
-        K = length(unique(y))
-        b_ols = c(seq(-1, 1, length.out = K-1), rep(0, p))
-        info = diag(length(b_ols))
-    }
-    list(b = b_ols, w = w, info = info)
-}
-
-all_results = list()
-
-run_comprehensive_warm_benchmark = function(family_name, fit_fun, data, alg = NULL, extra_args = list()) {
-    cat(sprintf("Benchmarking %s... ", family_name))
-    args_base = list(X = data$X, y = data$y)
-    if ("dead" %in% names(formals(fit_fun))) args_base$dead = data$dead
-    if ("group_id" %in% names(formals(fit_fun))) args_base$group_id = data$group_id
-    if ("j_T" %in% names(formals(fit_fun))) args_base$j_T = 2L
-    if (!is.null(alg)) args_base$optimization_alg = alg
-    if (family_name %in% c("ZINB", "ZAP")) {
-        args_base$Xzi = data$X
-        if (family_name == "ZAP") args_base$is_hurdle = TRUE
-    }
-    args_base = c(args_base, extra_args)
-    
-    # 1. Naive (smart off)
-    fit_naive = function() {
-        a = args_base
-        if ("smart_cold_start" %in% names(formals(fit_fun))) a$smart_cold_start = FALSE
-        if ("smart_cold_start_default" %in% names(formals(fit_fun))) a$smart_cold_start_default = FALSE
-        do.call(fit_fun, a)
-    }
-    
-    # 2. Internal Smart (all in C++)
-    fit_internal_smart = function() {
-        a = args_base
-        if ("smart_cold_start" %in% names(formals(fit_fun))) a$smart_cold_start = TRUE
-        if ("smart_cold_start_default" %in% names(formals(fit_fun))) a$smart_cold_start_default = TRUE
-        do.call(fit_fun, a)
-    }
-
-    # 3. R-side Heuristic (Explicit Warm Flow)
-    fit_r_warm = function() {
-        starts = get_reasonable_starts(data, family_name)
-        a = args_base
-        if ("smart_cold_start" %in% names(formals(fit_fun))) a$smart_cold_start = FALSE
-        if ("smart_cold_start_default" %in% names(formals(fit_fun))) a$smart_cold_start_default = FALSE
-        
-        if (family_name == "Logistic (IRLS)") {
-            a$warm_start_weights = starts$w
-            # By setting smart_cold_start = FALSE and passing weights, we mimic glm.fit
-        } else {
-            if ("start_params" %in% names(formals(fit_fun))) a$start_params = starts$b
-            else if ("start_beta" %in% names(formals(fit_fun))) a$start_beta = starts$b
-            else if ("start_par" %in% names(formals(fit_fun))) a$start_par = starts$b
-            else if ("start" %in% names(formals(fit_fun))) a$start = starts$b
-            if (!is.null(starts$w) && "warm_start_weights" %in% names(formals(fit_fun))) a$warm_start_weights = starts$w
-            if (!is.null(starts$info) && "warm_start_fisher_info" %in% names(formals(fit_fun))) a$warm_start_fisher_info = starts$info
-        }
-        do.call(fit_fun, a)
-    }
-    
-    # Iteration counts
-    it_naive = tryCatch(fit_naive()$iterations %||% 0, error = function(e) NA)
-    it_smart = tryCatch(fit_internal_smart()$iterations %||% 0, error = function(e) NA)
-    it_warm  = tryCatch(fit_r_warm()$iterations %||% 0, error = function(e) NA)
-
-    n_rep = 25
-    t_naive = system.time(replicate(n_rep, fit_naive()))["elapsed"] / n_rep * 1000
-    t_smart = system.time(replicate(n_rep, fit_internal_smart()))["elapsed"] / n_rep * 1000
-    t_warm  = system.time(replicate(n_rep, fit_r_warm()))["elapsed"] / n_rep * 1000
-    
-    cat("Done.\n")
-    
-    all_results[[family_name]] <<- data.table(
-        family = family_name,
-        Naive_Time = t_naive,
-        Naive_Its = it_naive,
-        Smart_Time = t_smart,
-        Smart_Its = it_smart,
-        Warm_Time = t_warm,
-        Warm_Its = it_warm
-    )
-}
-
-families = list(
-    list(name = "Logistic (IRLS)", fun = fast_logistic_regression_with_var_cpp, family = "logistic", alg = "irls"),
-    list(name = "Poisson (IRLS)", fun = fast_poisson_regression_with_var_cpp, family = "poisson", alg = "irls"),
-    list(name = "NegBin", fun = fast_neg_bin_with_var_cpp, family = "negbin"),
-    list(name = "Beta", fun = fast_beta_regression_with_var_cpp, family = "beta"),
-    list(name = "Weibull (AFT)", fun = fast_weibull_regression_cpp, family = "weibull"),
-    list(name = "LogisticGLMM", fun = fast_logistic_glmm_cpp, family = "glmm_logistic"),
-    list(name = "ZINB", fun = fast_zinb_cpp, family = "negbin"),
-    list(name = "ZAP", fun = fast_zero_augmented_poisson_cpp, family = "poisson")
+# Problematic classes identified for investigation
+problematic_classes = c(
+    "InferenceAllSimpleMeanDiff", "InferenceAllSimpleWilcox", "InferenceContinOLS",
+    "InferenceIncidLogRegr", "InferenceIncidProbitRegr", "InferencePropGCompMeanDiff",
+    "InferenceOrdinalRidit", "InferenceSurvivalKMDiff", "InferenceSurvivalLogRank"
 )
 
-for (f in families) {
-    data = generate_data(family = f$family)
-    run_comprehensive_warm_benchmark(f$name, f$fun, data, alg = f$alg)
-}
+results_csv = "high_precision_audit_results.csv"
+if (file.exists(results_csv)) file.remove(results_csv)
 
-final_tab = rbindlist(all_results)
-cat("\n\n### END-TO-END SMART START PERFORMANCE (N=500, Strong Signal) ###\n")
-# Calculate speedup of Smart over Naive
-final_tab[, Speedup_Smart := (Naive_Time - Smart_Time) / Naive_Time * 100]
-print(final_tab)
+for (cls_name in problematic_classes) {
+    cat(sprintf("\n>>> %s... ", cls_name)); flush.console()
+    tryCatch({
+        X = matrix(rnorm(N_AUD * P_AUD), N_AUD, P_AUD); X[, 1] = 1; beta = rnorm(P_AUD) * 0.05; eta = X %*% beta
+        rt = if (grepl("Incid", cls_name)) "incidence" else if (grepl("Count", cls_name)) "count" else if (grepl("Prop", cls_name)) "proportion" else if (grepl("Survival", cls_name)) "survival" else if (grepl("Ordinal", cls_name)) "ordinal" else "continuous"
+        
+        y = if (rt == "incidence") rbinom(N_AUD, 1, plogis(eta)) 
+            else if (rt == "count") rpois(N_AUD, exp(pmin(pmax(eta, -2), 2))) 
+            else if (rt == "proportion") pmax(pmin(rbeta(N_AUD, 10, 10), 1-1e-6), 1e-6) 
+            else if (rt == "survival") rexp(N_AUD, 1) 
+            else if (rt == "ordinal") sample(1:4, N_AUD, replace=TRUE) 
+            else as.numeric(eta + rnorm(N_AUD))
+        
+        formula_str = paste("~", paste(paste0("V", 2:P_AUD), collapse = " + "))
+        des_obj = DesignFixedBinaryMatch$new(response_type = rt, n = N_AUD, model_formula = as.formula(formula_str))
+        if (rt == "ordinal") des_obj$.__enclos_env__$private$ordinal_levels = as.character(1:4)
+        
+        X_df = as.data.frame(X[, -1, drop = FALSE]); colnames(X_df) = paste0("V", 2:P_AUD)
+        des_obj$add_all_subjects_to_experiment(X_df); des_obj$assign_w_to_all_subjects()
+        des_obj$add_all_subject_responses(y, deads = rep(1, N_AUD))
+        
+        inf_w = get(cls_name)$new(des_obj)
+        inf_w$.__enclos_env__$private$fit_warm_start_enabled = TRUE
+        
+        # Prime for solution anchor
+        mle = tryCatch(inf_w$compute_estimate(), error = function(e) NULL)
+        if (!is.null(mle)) {
+            pw = inf_w$.__enclos_env__$private
+            if (is.list(mle)) {
+                pw$fit_warm_start = mle$b %||% mle$params
+                pw$fit_warm_start_fisher = mle$fisher_information
+                pw$fit_warm_start_type = if (!is.null(mle$params)) "params" else "beta"
+            } else {
+                pw$fit_warm_start = as.numeric(mle)
+            }
+        }
+        
+        inf_c = inf_w$clone(deep = TRUE)
+        inf_c$.__enclos_env__$private$fit_warm_start_enabled = FALSE
+        
+        mock_ctx = list(n_units = N_AUD, row_to_unit = 1:N_AUD)
+        inf_c$.__enclos_env__$private$current_bayesian_bootstrap_context = mock_ctx
+        inf_w$.__enclos_env__$private$current_bayesian_bootstrap_context = mock_ctx
+
+        cat("R "); flush.console()
+        t_rc = system.time({ inf_c$compute_rand_two_sided_pval(r = R_AUD, show_progress = FALSE) })["elapsed"]
+        t_rw = system.time({ inf_w$compute_rand_two_sided_pval(r = R_AUD, show_progress = FALSE) })["elapsed"]
+        
+        cat("B "); flush.console()
+        t_bc = system.time({ inf_c$compute_bootstrap_confidence_interval(B = B_AUD, show_progress = FALSE) })["elapsed"]
+        t_bw = system.time({ inf_w$compute_bootstrap_confidence_interval(B = B_AUD, show_progress = FALSE) })["elapsed"]
+        
+        cat("J "); flush.console()
+        t_jc = system.time({ for (k in 1:J_AUD) { w_jk=rep(1,N_AUD); w_jk[k]=0; inf_c$compute_estimate_with_bootstrap_weights(w_jk, TRUE) } })["elapsed"]
+        t_jw = system.time({ for (k in 1:J_AUD) { w_jk=rep(1,N_AUD); w_jk[k]=0; inf_w$compute_estimate_with_bootstrap_weights(w_jk, TRUE) } })["elapsed"]
+        
+        cat("P "); flush.console()
+        t_pc = NA_real_; t_pw = NA_real_
+        is_pb_sup = tryCatch(inf_w$supports_lik_ratio_param_bootstrap(), error = function(e) FALSE)
+        if (isTRUE(is_pb_sup)) {
+            t_pc = system.time({ inf_c$compute_lik_ratio_bootstrap_two_sided_pval(B = PB_AUD, show_progress = FALSE) })["elapsed"]
+            t_pw = system.time({ inf_w$compute_lik_ratio_bootstrap_two_sided_pval(B = PB_AUD, show_progress = FALSE) })["elapsed"]
+        }
+        
+        res = data.table(Path = cls_name, Rand_C = t_rc, Rand_W = t_rw, Boot_C = t_bc, Boot_W = t_bw, JK_C = t_jc, JK_W = t_jw, PB_C = t_pc, PB_W = t_pw)
+        fwrite(res, results_csv, append = file.exists(results_csv), col.names = !file.exists(results_csv))
+        cat("Done."); flush.console()
+    }, error = function(e) { cat(sprintf("Failed: %s ", conditionMessage(e))) })
+}

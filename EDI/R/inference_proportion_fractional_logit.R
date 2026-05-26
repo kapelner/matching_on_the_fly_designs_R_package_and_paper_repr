@@ -26,15 +26,36 @@ InferencePropFractionalLogit = R6::R6Class("InferencePropFractionalLogit",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+		#' @param harden  		Whether to apply robustness measures.
+		#' @param smart_cold_start_default Whether to use smart cold start values.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, harden = TRUE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "proportion")
 				assertFormula(model_formula, null.ok = TRUE)
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
+		},
+		#' @description Compute the treatment effect estimate.
+		#' @param estimate_only If TRUE, skip variance component calculations.
+		compute_estimate = function(estimate_only = FALSE){
+			if (estimate_only) {
+				if (!is.null(private$cached_values$beta_hat_T)) return(private$cached_values$beta_hat_T)
+				if (isFALSE(private$harden)) {
+					X = private$build_design_matrix()
+					fit = glm.fit(x = X, y = as.numeric(private$y), family = quasibinomial())
+					b = fit$coefficients
+					private$cached_values$beta_hat_T = if (length(b) >= 2L && is.finite(b[2L])) {
+						private$best_X_colnames = setdiff(colnames(X), c("(Intercept)", "treatment"))
+						as.numeric(b[2L])
+					} else NA_real_
+					return(private$cached_values$beta_hat_T)
+				}
+			}
+			private$shared(estimate_only = estimate_only)
+			private$cached_values$beta_hat_T
 		},
 		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
 		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
@@ -99,7 +120,7 @@ InferencePropFractionalLogit = R6::R6Class("InferencePropFractionalLogit",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
 			}
-			res = fast_logistic_regression_cpp(X = X, y = as.numeric(private$y))
+			res = fast_logistic_regression_cpp(X = X, y = as.numeric(private$y), estimate_only = TRUE)
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
@@ -115,11 +136,27 @@ InferencePropFractionalLogit = R6::R6Class("InferencePropFractionalLogit",
 				X_full = X_full,
 				required_cols = 2L,
 				fit_fun = function(X_fit){
+					ws_args = private$get_backend_warm_start_args(ncol(X_fit))
 					if (estimate_only) {
-						res = fast_logistic_regression_cpp(X_fit, private$y)
+						res = fast_logistic_regression_cpp(
+							X = X_fit, 
+							y = private$y, 
+							warm_start_beta = ws_args$warm_start_beta,
+							warm_start_weights = ws_args$warm_start_weights,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default,
+							estimate_only = TRUE
+						)
 						list(b = res$b, ssq_b_2 = NA_real_)
 					} else {
-						fast_logistic_regression_with_var_cpp(X_fit, private$y)
+						fast_logistic_regression_with_var_cpp(
+							X = X_fit, 
+							y = private$y,
+							warm_start_beta = ws_args$warm_start_beta,
+							warm_start_weights = ws_args$warm_start_weights,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default
+						)
 					}
 				},
 				fit_ok = function(mod, X_fit, keep){

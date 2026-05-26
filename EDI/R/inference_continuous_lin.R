@@ -18,7 +18,7 @@
 #' @export
 InferenceContinLin = R6::R6Class("InferenceContinLin",
 	lock_objects = FALSE,
-	inherit = InferenceAsymp,
+	inherit = InferenceParamBootstrap,
 	public = list(
 		#' @description Initialize a Lin (2013) inference object.
 		#' @param des_obj A completed \code{Design} object with a continuous response.
@@ -27,12 +27,14 @@ InferenceContinLin = R6::R6Class("InferenceContinLin",
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE){
+		#' @param harden Flag for consistent API.
+		#' @param smart_cold_start_default Flag for consistent API.
+		initialize = function(des_obj, model_formula = NULL,  verbose = FALSE, harden = TRUE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
 				assertFormula(model_formula, null.ok = TRUE)
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj = des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -220,6 +222,75 @@ InferenceContinLin = R6::R6Class("InferenceContinLin",
 			)
 			private$cached_values$summary_table = summary_table
 			private$cached_values$lin_full_complete = TRUE
+
+			private$cached_values$likelihood_test_context = list(
+				X = X_fit,
+				j_treat = j_treat,
+				full_fit = list(b = coef_hat)
+			)
+			private$cached_mod = list(b = coef_hat)
+		},
+		supports_lik_ratio_param_bootstrap = function() TRUE,
+		supports_likelihood_tests = function() TRUE,
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			# Using OLS as generative model for Lin PB
+			b_null = as.numeric(null_fit$b)
+			y_orig = as.numeric(private$y)
+			X_orig = spec$X
+			rss = sum((y_orig - as.numeric(X_orig %*% as.numeric(spec$full_fit$b)))^2)
+			sigma = sqrt(rss / (nrow(X_orig) - ncol(X_orig)))
+			
+			mu = as.numeric(spec$X %*% b_null)
+			y_sim = mu + rnorm(length(mu), mean = 0, sd = sigma)
+			
+			X_fit = spec$X
+			j = spec$j
+			
+			# full fit for simulated data
+			mod_boot = stats::lm.fit(X_fit, y_sim)
+			full_fit_boot = list(b = as.numeric(mod_boot$coefficients))
+			
+			list(
+				full_fit = full_fit_boot,
+				fit_null = function(d, start = NULL){
+					y_null = y_sim - as.numeric(X_fit[, j] * d)
+					res = stats::lm.fit(X_fit[, -j, drop = FALSE], y_null)
+					b_full = numeric(ncol(X_fit))
+					b_full[j] = d
+					b_full[-j] = as.numeric(res$coefficients)
+					list(b = b_full, rss = sum((y_null - as.numeric(X_fit[, -j, drop = FALSE] %*% res$coefficients))^2))
+				},
+				neg_loglik = function(fit){
+					if (!is.null(fit$rss)) return(fit$rss)
+					sum((y_sim - as.numeric(X_fit %*% as.numeric(fit$b)))^2)
+				}
+			)
+		},
+		get_likelihood_test_spec = function(){
+			private$shared(estimate_only = FALSE)
+			ctx = private$cached_values$likelihood_test_context
+			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
+			X_fit = ctx$X
+			y = as.numeric(private$y)
+			j_treat = as.integer(ctx$j_treat)
+			list(
+				X = X_fit,
+				y = y,
+				j = j_treat,
+				full_fit = private$cached_mod,
+				fit_null = function(delta, start = NULL){
+					y_null = y - as.numeric(X_fit[, j_treat] * delta)
+					res = stats::lm.fit(X_fit[, -j_treat, drop = FALSE], y_null)
+					b_full = numeric(ncol(X_fit))
+					b_full[j_treat] = delta
+					b_full[-j_treat] = as.numeric(res$coefficients)
+					list(b = b_full, rss = sum((y_null - as.numeric(X_fit[, -j_treat, drop = FALSE] %*% res$coefficients))^2))
+				},
+				neg_loglik = function(fit){
+					if (!is.null(fit$rss)) return(fit$rss)
+					sum((y - as.numeric(X_fit %*% as.numeric(fit$b)))^2)
+				}
+			)
 		}
 	)
 )

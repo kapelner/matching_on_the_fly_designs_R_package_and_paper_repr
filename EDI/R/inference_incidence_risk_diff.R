@@ -28,7 +28,7 @@ InferenceIncidRiskDiff = R6::R6Class("InferenceIncidRiskDiff",
 		#'   design's imputed covariates.
 		#' @param verbose  		Whether to print progress messages.
 		#' @param smart_cold_start_default   Whether to use smart cold start values.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
@@ -40,6 +40,20 @@ InferenceIncidRiskDiff = R6::R6Class("InferenceIncidRiskDiff",
 		#' @description Compute the treatment effect estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
+			if (estimate_only) {
+				if (!is.null(private$cached_values$beta_hat_T)) return(private$cached_values$beta_hat_T)
+				if (isFALSE(private$harden)) {
+					X = private$build_design_matrix()
+					fit = stats::lm.fit(x = X, y = as.numeric(private$y))
+					b = stats::coef(fit)
+					j = 2L
+					private$cached_values$beta_hat_T = if (length(b) >= j && is.finite(b[j])) {
+						private$best_X_colnames = setdiff(colnames(X), c("(Intercept)", "treatment"))
+						as.numeric(b[j])
+					} else NA_real_
+					return(private$cached_values$beta_hat_T)
+				}
+			}
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -129,7 +143,6 @@ InferenceIncidRiskDiff = R6::R6Class("InferenceIncidRiskDiff",
 			TRUE
 		},
 		generate_mod = function(estimate_only = FALSE){
-			# Use the common GLM fitting pattern
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = private$build_design_matrix(),
 				fit_fun = function(X_fit, keep){

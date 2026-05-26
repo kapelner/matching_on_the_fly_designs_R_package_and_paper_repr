@@ -723,6 +723,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       force_serial = FALSE
       use_fork_cluster  = !force_serial && isTRUE(num_cores > 1L) && .Platform$OS.type == "unix"
       use_mirai_backend = !force_serial && isTRUE(num_cores > 1L) && !use_fork_cluster
+      # Rep/DGP bars always show 100% under fork parallelism because workers
+      # return complete reps; suppress them to avoid misleading output.
+      private$n_progress_lines = if (use_fork_cluster) 3L else 5L
       cl_cache = NULL  # fork cluster used only for cache building phase
       cl_rep   = NULL  # fork cluster for rep execution, created AFTER cell states are populated
       if (use_fork_cluster) {
@@ -752,9 +755,17 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         }
       }
       # Handle cleanup/setup
+      elapsed_f = private$.elapsed_file()
       if (!isTRUE(private$continue_from_last_result_row)) {
         if (file.exists(private$results_filename)) unlink(private$results_filename)
         private$.cleanup_results_staging_file()
+        cache_dir = private$.simulation_cache_dir()
+        if (dir.exists(cache_dir)) unlink(cache_dir, recursive = TRUE)
+        if (file.exists(elapsed_f)) unlink(elapsed_f)
+        private$prior_elapsed_secs = 0
+      } else {
+        prior = tryCatch(readRDS(elapsed_f), error = function(e) 0)
+        private$prior_elapsed_secs = if (is.numeric(prior) && length(prior) >= 1L && is.finite(prior[[1L]])) prior[[1L]] else 0
       }
       
       private$simulation_start_time = as.numeric(Sys.time())
@@ -1669,6 +1680,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         private$.sync_results_bz2_from_staging()
       }
       private$.cleanup_results_staging_file()
+      total_elapsed = private$prior_elapsed_secs + (as.numeric(Sys.time()) - private$simulation_start_time)
+      tryCatch(saveRDS(total_elapsed, private$.elapsed_file()), error = function(e) NULL)
       clear_result_key_store_cpp() # Free memory
       if (isTRUE(private$use_progress_bar)) {
         private$current_cell_idx = private$total_cells
@@ -1751,6 +1764,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     progress_count           = 0L,
     rep_elapsed_times           = numeric(0),
     rep_elapsed_idx             = 0L,
+    prior_elapsed_secs          = 0,
     session_start_time          = NULL,
     rep_start_capture           = NULL,
     n_active_reps_total         = 0L,
@@ -1760,6 +1774,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     use_progress_bar         = FALSE,
     progress_log_interval    = 0L,
     progress_bar_drawn       = NULL,
+    n_progress_lines         = 5L,
     .ensure_mirai_daemons = function(n) {
       s = tryCatch(mirai::status(), error = function(e) list(connections = 0L))
       n_running = if (is.numeric(s$connections) && length(s$connections) == 1L) as.integer(s$connections) else 0L
@@ -2099,6 +2114,11 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       path = private$.results_output_path()
       stem = sub("\\.csv(\\.bz2)?$", "", basename(path), ignore.case = TRUE)
       file.path(dirname(path), paste0(stem, "__cache"))
+    },
+    .elapsed_file = function() {
+      path = private$.results_output_path()
+      stem = sub("\\.csv(\\.bz2)?$", "", basename(path), ignore.case = TRUE)
+      file.path(dirname(path), paste0(stem, "__elapsed.rds"))
     },
     .safe_cache_component = function(x) {
       x = gsub("[^A-Za-z0-9_.=-]+", "_", as.character(x))
@@ -3211,8 +3231,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     },
     .message_stderr = function(msg) {
       if (isTRUE(private$progress_bar_drawn)) {
-        # Move up 4 lines and clear them to end of screen
-        cat("\033[4A\r\033[J", file = stderr())
+        cat(sprintf("\033[%dA\r\033[J", private$n_progress_lines), file = stderr())
         private$progress_bar_drawn = NULL
       }
       cat(msg, file = stderr())
@@ -3299,23 +3318,34 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         }
         sprintf("%s[%s]", padded_label, full_bar)
       }
-      # Line order: rep (outermost) → DGP cell → task
+      total_elapsed = private$prior_elapsed_secs + (now - private$simulation_start_time)
+      line5 = paste0("Time elapsed: ", .fmt_secs(total_elapsed))
       line1 = make_bar_line(sprintf("Rep %d/%d Overall", private$current_rep_idx, private$Nrep), overall_prop, width, digits = 1)
-      line2 = make_bar_line(sprintf("DGP %d/%d", private$current_cell_idx, private$total_cells), cell_in_progress_prop, width)
-      line3 = make_bar_line(sprintf("%s %d/%d", private$current_task_label, private$current_task_in_rep_idx, task_total_display), task_in_progress_prop, width)
       # Use \r and \033[2K on EACH line for maximum robustness.
-      output_block = paste0(
-        "\r\033[2K", eta_str, "\n",
-        "\r\033[2K", line1, "\n",
-        "\r\033[2K", line2, "\n",
-        "\r\033[2K", line3, "\n"
-      )
+      # Under fork parallelism workers return whole reps at once, so DGP/Task bars
+      # always read 100% and are suppressed; only the Rep bar is meaningful.
+      if (private$n_progress_lines == 5L) {
+        line2 = make_bar_line(sprintf("DGP %d/%d", private$current_cell_idx, private$total_cells), cell_in_progress_prop, width)
+        line3 = make_bar_line(sprintf("%s %d/%d", private$current_task_label, private$current_task_in_rep_idx, task_total_display), task_in_progress_prop, width)
+        output_block = paste0(
+          "\r\033[2K", eta_str, "\n",
+          "\r\033[2K", line1, "\n",
+          "\r\033[2K", line2, "\n",
+          "\r\033[2K", line3, "\n",
+          "\r\033[2K", line5, "\n"
+        )
+      } else {
+        output_block = paste0(
+          "\r\033[2K", eta_str, "\n",
+          "\r\033[2K", line1, "\n",
+          "\r\033[2K", line5, "\n"
+        )
+      }
       if (is.null(private$progress_bar_drawn)) {
          cat(output_block, sep = "", file = stderr())
          private$progress_bar_drawn = TRUE
       } else {
-         # Move up 4 lines, and print the block which clears each line as it goes.
-         cat("\033[4A", output_block, sep = "", file = stderr())
+         cat(sprintf("\033[%dA", private$n_progress_lines), output_block, sep = "", file = stderr())
       }
       if (exists("flush.console")) utils::flush.console()
     },

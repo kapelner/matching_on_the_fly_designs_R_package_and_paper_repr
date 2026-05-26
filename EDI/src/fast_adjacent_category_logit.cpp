@@ -98,7 +98,8 @@ public:
         VectorXd probs = VectorXd::Zero(m_K);
         VectorXd cdf = VectorXd::Zero(m_K - 1);
         VectorXd prefix_first_moment = VectorXd::Zero(m_K - 1);
-        VectorXd cross(m_p);
+        const int total_p = params.size();
+        double* H_data = hess.data();
 
         for (int i = 0; i < m_n; ++i) {
             const double eta = (m_p > 0) ? m_X.row(i).dot(beta) : 0.0;
@@ -136,14 +137,30 @@ public:
             }
 
             if (m_p > 0) {
+                const double* xi = m_X.data() + i;  // xi[b * m_n] == X(i,b)
+                // Cross block: alpha-beta and beta-alpha (both triangles filled directly)
                 for (int j = 0; j < m_K - 1; ++j) {
                     double cov_ind_y = prefix_first_moment[j] - ey * cdf[j];
-                    cross.noalias() = m_X.row(i).transpose() * cov_ind_y;
-                    hess.block(j, n_alpha, 1, m_p) += cross.transpose();
-                    hess.block(n_alpha, j, m_p, 1) += cross;
+                    for (int b = 0; b < m_p; ++b) {
+                        double val = cov_ind_y * xi[b * m_n];
+                        H_data[j + (n_alpha + b) * total_p] += val;  // hess(j, n_alpha+b)
+                        H_data[(n_alpha + b) + j * total_p] += val;  // hess(n_alpha+b, j)
+                    }
                 }
-                hess.block(n_alpha, n_alpha, m_p, m_p).noalias() += var_y * (m_X.row(i).transpose() * m_X.row(i));
+                // Beta-beta block (upper triangle only)
+                for (int c = 0; c < m_p; ++c) {
+                    const double s = var_y * xi[c * m_n];
+                    for (int r = 0; r <= c; ++r)
+                        H_data[(n_alpha + r) + (n_alpha + c) * total_p] += s * xi[r * m_n];
+                }
             }
+        }
+
+        // Reflect upper triangle to lower for beta-beta block only
+        if (m_p > 0) {
+            for (int c = 0; c < m_p; ++c)
+                for (int r = 0; r < c; ++r)
+                    H_data[(n_alpha + c) + (n_alpha + r) * total_p] = H_data[(n_alpha + r) + (n_alpha + c) * total_p];
         }
 
         return hess;
@@ -214,7 +231,7 @@ List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::Vec
                                         bool smart_cold_start = true,
                                         Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                         Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                        std::string optimization_alg = "newton_raphson",
+                                        std::string optimization_alg = "lbfgs",
                                         Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
                                         Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
                                         Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue) {
@@ -255,7 +272,7 @@ List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::Vec
         info_start_ptr = &info_start;
     }
     
-    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, info_start_ptr);
+    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_start_ptr);
 
     return List::create(
         Named("b") = fit.params.tail(X.cols()),
@@ -286,7 +303,7 @@ List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const E
                                                 bool smart_cold_start = true,
                                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                                std::string optimization_alg = "newton_raphson",
+                                                std::string optimization_alg = "lbfgs",
                                                 Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
                                                 Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
                                                 Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue) {
@@ -327,7 +344,7 @@ List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const E
         info_start_ptr = &info_start;
     }
     
-    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, info_start_ptr);
+    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_start_ptr);
 
     MatrixXd info = fun.hessian(fit.params);
     MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);

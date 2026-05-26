@@ -1,34 +1,26 @@
-#' Wilcoxon Rank-Sum Inference for Any Sequential Design
+#' Wilcoxon Rank-Sum Inference
 #'
-#' Non-parametric inference based on the two-sample Wilcoxon rank-sum test
-#' (Mann-Whitney U) for any sequential experimental design (Bernoulli, Efron, iBCRD,
-#' or KK). The treatment effect estimate is the Hodges-Lehmann pseudo-median of
-#' all pairwise treatment-minus-control response differences. Inference uses the
-#' asymptotic normal approximation for the HL estimator.
-#'
-#' This class supports \code{continuous}, \code{count}, \code{proportion}, and
-#' uncensored \code{survival} response types. It throws an informative error for
-#' \code{incidence} (binary) responses and for censored survival data.
-#'
-#' The HL estimator satisfies the exact linearity property
-#' \eqn{\hat{\Delta}(\mathbf{y}_T - \delta) = \hat{\Delta}(\mathbf{y}_T) - \delta},
-#' so the randomization confidence interval inversion is exact (not approximate)
-#' on the original response scale for continuous responses.
+#' Fits a Wilcoxon rank-sum (Hodges-Lehmann) inference for continuous responses
+#' using the treatment indicator.
 #'
 #' @examples
-#' \donttest{
-#' seq_des = DesignSeqOneByOneBernoulli$new(n = 10, response_type = 'continuous')
-#' for (i in 1:10) {
-#'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
-#' }
-#' seq_des$add_all_subject_responses(rnorm(10))
-#' inf = InferenceAllSimpleWilcox$new(seq_des)
-#' inf$compute_estimate()
+#' \dontrun{
+#' seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "continuous")
+#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+#' seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+#'
+#' seq_des_inf = InferenceAllSimpleWilcox$new(seq_des)
+#' seq_des_inf$compute_estimate()
 #' }
 #' @export
 InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 	lock_objects = FALSE,
-	inherit = InferenceAsymp,
+	inherit = InferenceParamBootstrap,
 	public = list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  A completed \code{DesignSeqOneByOne} object.
@@ -41,22 +33,8 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		#'   may be redrawn when the drawn sample fails validity screening. If all attempts
 		#'   fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
 		#'   Must be a positive integer. Default \code{50L}.
-		#' @examples
-		#' set.seed(1)
-		#' x_dat <- data.frame(
-		#'   x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
-		#'   x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
-		#' )
-		#' seq_des <- DesignSeqOneByOneBernoulli$new(n = nrow(x_dat), response_type = "continuous",
-#'   verbose = FALSE)
-		#' for (i in seq_len(nrow(x_dat))) {
-		#'   seq_des$add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
-		#' }
-		#' seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
-		#' infer <- InferenceAllSimpleWilcox$new(seq_des, verbose = FALSE)
-		#' infer
-		#'
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, max_resample_attempts = 50L){
+		#' @param smart_cold_start_default Flag for consistent API.
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, max_resample_attempts = 50L, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertCount(max_resample_attempts, positive = TRUE)
 			}
@@ -73,7 +51,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 			if (should_run_asserts()) {
 				assertResponseType(res_type, c("continuous", "count", "proportion", "survival", "ordinal"))
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj = des_obj, verbose = verbose, harden = TRUE, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$max_resample_attempts = max_resample_attempts
 			if (should_run_asserts()) {
 				if (private$any_censoring){
@@ -96,39 +74,16 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
 			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
-			private$cached_values$beta_hat_T = private$weighted_hl_point_estimate(private$y, private$w, row_weights)
-			private$cached_values$s_beta_hat_T = NA_real_
-			private$cached_values$beta_hat_T
-		},
-		#' @description Computes a \eqn{1 - \alpha} asymptotic confidence interval based on the normal
-		#' approximation for the HL estimator.
-		#' @param alpha Significance level; default 0.05 gives a 95\% CI.
-		compute_asymp_confidence_interval = function(alpha = 0.05){
-			if (should_run_asserts()) {
-				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			}
-			private$shared()
-			if (!is.finite(private$cached_values$s_beta_hat_T)) return(c(NA_real_, NA_real_))
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
-		},
-		#' @description Returns a two-sided p-value for \eqn{H_0: \Delta = \delta} using the asymptotic
-		#' normal approximation for the HL estimator.
-		#' @param delta Null value; default 0.
-		compute_asymp_two_sided_pval = function(delta = 0){
-			if (should_run_asserts()) {
-				assertNumeric(delta)
-			}
-			private$shared()
-			if (!is.finite(private$cached_values$s_beta_hat_T)) return(NA_real_)
-			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+			private$hl_point_estimate(private$y, private$w, row_weights)
 		}
 	),
 	private = list(
 		max_resample_attempts = 50L,
-		hl_point_estimate = function(y_vals, w_vals){
-			wilcox_hl_point_estimate_cpp(as.integer(w_vals), as.numeric(y_vals))
-		},
-		weighted_hl_point_estimate = function(y_vals, w_vals, row_weights){
+		hl_point_estimate = function(y_vals, w_vals, row_weights = NULL){
+			if (is.null(row_weights)) {
+				return(wilcox_hl_point_estimate_cpp(as.integer(w_vals), as.numeric(y_vals)))
+			}
+			# Weighted implementation
 			y_vals = as.numeric(y_vals)
 			w_vals = as.integer(w_vals)
 			row_weights = as.numeric(row_weights)
@@ -151,15 +106,9 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		},
 		compute_fast_bootstrap_distr = function(B, ...) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
-			# KK designs use design-aware resampling not available via these args; fall back to R loop.
 			if (private$is_KK) return(NULL)
-			# Simple (non-KK) bootstrap: args = (n, y, dead, w)
 			args = list(...)
-			max_resample_attempts = private$max_resample_attempts
-			n = args[[1]]
-			y = args[[2]]
-			dead = args[[3]]
-			w = args[[4]]
+			n = args[[1]]; y = args[[2]]; dead = args[[3]]; w = args[[4]]
 			indices_mat = matrix(-1L, nrow = n, ncol = B)
 			for (b in seq_len(B)) {
 				attempt = 1L
@@ -171,40 +120,16 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 						break
 					}
 					attempt = attempt + 1L
-					if (attempt > max_resample_attempts) break
+					if (attempt > private$max_resample_attempts) break
 				}
 			}
-			compute_wilcox_hl_bootstrap_parallel_cpp(
-				as.integer(private$w),
-				as.numeric(private$y),
-				indices_mat,
-				private$n_cpp_threads(B)
-			)
+			compute_wilcox_hl_distr_parallel_cpp(as.numeric(y), as.integer(w), matrix(as.integer(indices_mat), nrow=n), private$n_cpp_threads(B))
 		},
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
-			# Optimization: w_mat is already pre-computed in generate_permutations
 			w_mat = permutations$w_mat
-			nsim = ncol(w_mat)
-			y_sim = as.numeric(y)
-			# Map transform_responses to transform_code
-			t_code = 0L # none
-			if (transform_responses == "log") {
-				t_code = 1L
-			} else if (transform_responses == "logit") {
-				t_code = 2L
-			} else if (transform_responses == "log1p") {
-				t_code = 3L
-			}
-			res = compute_wilcox_hl_distr_parallel_cpp(w_mat, y_sim, as.numeric(delta), t_code, as.numeric(zero_one_logit_clamp), private$n_cpp_threads(nsim))
+			res = compute_wilcox_hl_rand_distr_parallel_cpp(as.numeric(y), matrix(as.integer(w_mat), nrow=length(y)), as.numeric(delta), private$n_cpp_threads(ncol(w_mat)))
 			return(res)
-		},
-		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE, ...){
-			if (is.null(private$custom_randomization_statistic_function)) {
-				private$hl_point_estimate(private$y, private$w)
-			} else {
-				private$custom_randomization_statistic_function()
-			}
 		},
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
@@ -216,24 +141,62 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 				private$cache_nonestimable_estimate("wilcox_empty_treatment_arm")
 				return(invisible(NULL))
 			}
-			mod = tryCatch(
-				stats::wilcox.test(yT, yC, conf.int = TRUE),
-				error = function(e) NULL
-			)
+			mod = tryCatch(stats::wilcox.test(yT, yC, conf.int = TRUE), error = function(e) NULL)
 			if (is.null(mod)){
 				private$cache_nonestimable_estimate("wilcox_fit_unavailable")
 				return(invisible(NULL))
 			}
 			beta = private$hl_point_estimate(private$y, private$w)
-			ci   = mod$conf.int  # 95% CI by default (conf.level = 0.95)
+			ci   = mod$conf.int
 			se   = if (length(ci) == 2L) (ci[2] - ci[1]) / (2 * 1.96) else NA_real_
 			private$cached_values$beta_hat_T   = if (length(beta) == 1L && is.finite(beta)) beta else NA_real_
 			private$cached_values$s_beta_hat_T = if (length(se)   == 1L && is.finite(se) && se > 0) se else NA_real_
+
+			private$cached_values$likelihood_test_context = list(
+				X = cbind(1, private$w),
+				j = 2L,
+				full_fit = list(b = c(mean(yC), private$cached_values$beta_hat_T), vt = var(yT), vc = var(yC))
+			)
 		},
-		assert_finite_se = function(){
-			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				return(invisible(NULL))
-			}
+		supports_lik_ratio_param_bootstrap = function() TRUE,
+		supports_likelihood_tests = function() TRUE,
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			b_null = as.numeric(null_fit$b)
+			vt = spec$full_fit$vt; vc = spec$full_fit$vc
+			w = spec$X[, 2]; n = length(w)
+			y_sim = numeric(n)
+			y_sim[w == 1] = b_null[1] + b_null[2] + rnorm(sum(w == 1), 0, sqrt(vt))
+			y_sim[w == 0] = b_null[1] + rnorm(sum(w == 0), 0, sqrt(vc))
+			
+			list(
+				full_fit = list(b = c(mean(y_sim[w==0]), private$hl_point_estimate(y_sim, w)), vt = var(y_sim[w==1]), vc = var(y_sim[w==0])),
+				fit_null = function(d, start = NULL){
+					m_joint = mean(y_sim - w * d)
+					list(b = c(m_joint, d), vt = var(y_sim[w==1]), vc = var(y_sim[w==0]))
+				},
+				neg_loglik = function(fit){
+					mu = fit$b[1] + fit$b[2]*w
+					sum((y_sim - mu)^2)
+				}
+			)
+		},
+		get_likelihood_test_spec = function(){
+			private$shared(estimate_only = FALSE)
+			ctx = private$cached_values$likelihood_test_context
+			if (is.null(ctx)) return(NULL)
+			y = as.numeric(private$y); w = ctx$X[, 2]
+			list(
+				X = ctx$X, y = y, j = 2L,
+				full_fit = ctx$full_fit,
+				fit_null = function(delta, start = NULL){
+					m0 = mean(y - w * delta)
+					list(b = c(m0, delta))
+				},
+				neg_loglik = function(fit){
+					mu = fit$b[1] + fit$b[2]*w
+					sum((y - mu)^2)
+				}
+			)
 		}
 	)
 )

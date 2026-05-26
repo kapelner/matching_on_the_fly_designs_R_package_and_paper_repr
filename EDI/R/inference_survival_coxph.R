@@ -1,3 +1,179 @@
+# Internal survival::coxph.fit adapters used by Cox inference classes.
+.fit_survival_coxph_kernel = function(X, y, dead, strata = NULL, offset = NULL, estimate_only = FALSE){
+	X = as.matrix(X)
+	y = as.numeric(y)
+	dead = as.numeric(dead)
+	if (is.null(colnames(X))) colnames(X) = paste0("x", seq_len(ncol(X)))
+	strata_arg = if (is.null(strata)) NULL else as.integer(strata)
+	offset_arg = if (is.null(offset)) NULL else as.numeric(offset)
+	fit = tryCatch(
+		suppressWarnings(survival::coxph.fit(
+			x = X,
+			y = survival::Surv(y, dead),
+			strata = strata_arg,
+			offset = offset_arg,
+			init = NULL,
+			control = survival::coxph.control(),
+			weights = NULL,
+			method = "breslow",
+			rownames = as.character(seq_along(y)),
+			resid = FALSE
+		)),
+		error = function(e) NULL
+	)
+	if (is.null(fit)) return(NULL)
+	b = as.numeric(fit$coefficients %||% numeric(0))
+	if (ncol(X) > 0L) {
+		if (length(b) != ncol(X) || !all(is.finite(b))) return(NULL)
+		names(b) = colnames(X)
+	}
+	if (estimate_only) {
+		return(list(b = b, coefficients = b, vcov = NULL, var = NULL,
+			neg_ll = NA_real_, neg_loglik = NA_real_, neg_log_lik = NA_real_,
+			fisher_information = NULL, converged = TRUE))
+	}
+	vcov = if (ncol(X) > 0L) {
+		v = as.matrix(fit$var)
+		dimnames(v) = list(colnames(X), colnames(X))
+		v
+	} else {
+		matrix(numeric(0), 0L, 0L)
+	}
+	neg_ll = -as.numeric(utils::tail(fit$loglik, 1L))
+	if (!is.finite(neg_ll)) return(NULL)
+	fisher = if (ncol(vcov) > 0L) {
+		tryCatch(solve(vcov), error = function(e) NULL)
+	} else {
+		matrix(numeric(0), 0L, 0L)
+	}
+	list(
+		b = b,
+		coefficients = b,
+		vcov = vcov,
+		var = vcov,
+		neg_ll = neg_ll,
+		neg_loglik = neg_ll,
+		neg_log_lik = neg_ll,
+		fisher_information = fisher,
+		converged = TRUE
+	)
+}
+
+.fit_survival_coxph_fixed_kernel = function(X, y, dead, strata = NULL, fixed_idx = 1L, fixed_value = 0){
+	X = as.matrix(X)
+	p = ncol(X)
+	if (p < 1L || fixed_idx < 1L || fixed_idx > p) return(NULL)
+	if (is.null(colnames(X))) colnames(X) = paste0("x", seq_len(p))
+	fixed_idx = as.integer(fixed_idx)
+	X_fixed = X[, fixed_idx, drop = TRUE]
+	free_idx = setdiff(seq_len(p), fixed_idx)
+	X_free = X[, free_idx, drop = FALSE]
+	offset = as.numeric(fixed_value) * as.numeric(X_fixed)
+	fit = .fit_survival_coxph_kernel(X_free, y, dead, strata = strata, offset = offset)
+	if (is.null(fit)) return(NULL)
+	b = numeric(p)
+	b[fixed_idx] = as.numeric(fixed_value)
+	if (length(free_idx) > 0L) b[free_idx] = as.numeric(fit$b)
+	names(b) = colnames(X)
+	fisher = if (!is.null(fit$fisher_information) && length(free_idx) > 0L) {
+		full = matrix(0, p, p, dimnames = list(colnames(X), colnames(X)))
+		full[free_idx, free_idx] = fit$fisher_information
+		full
+	} else {
+		NULL
+	}
+	list(
+		b = b,
+		coefficients = b,
+		vcov = NULL,
+		var = NULL,
+		neg_ll = fit$neg_ll,
+		neg_loglik = fit$neg_loglik,
+		neg_log_lik = fit$neg_log_lik,
+		fisher_information = fisher,
+		converged = TRUE
+	)
+}
+
+.cox_neg_loglik_breslow_r = function(X, y, dead, beta, strata = NULL){
+	X = as.matrix(X)
+	y = as.numeric(y)
+	dead = as.numeric(dead)
+	beta = as.numeric(beta)
+	if (length(beta) != ncol(X)) return(NA_real_)
+	strata_id = if (is.null(strata)) rep.int(1L, length(y)) else as.integer(strata)
+	eta = as.numeric(X %*% beta)
+	if (!all(is.finite(eta))) return(NA_real_)
+	ll = 0
+	for (s in unique(strata_id)) {
+		idx = which(strata_id == s)
+		if (length(idx) == 0L) next
+		event_times = sort(unique(y[idx][dead[idx] == 1L]))
+		for (tt in event_times) {
+			event_idx = idx[dead[idx] == 1L & y[idx] == tt]
+			risk_idx = idx[y[idx] >= tt]
+			d = length(event_idx)
+			if (d == 0L || length(risk_idx) == 0L) next
+			den = sum(exp(eta[risk_idx]))
+			if (!is.finite(den) || den <= 0) return(NA_real_)
+			ll = ll + sum(eta[event_idx]) - d * log(den)
+		}
+	}
+	-as.numeric(ll)
+}
+
+.cox_score_breslow_fd_r = function(X, y, dead, beta, strata = NULL){
+	beta = as.numeric(beta)
+	p = length(beta)
+	score = numeric(p)
+	for (j in seq_len(p)) {
+		h = 1e-5 * max(1, abs(beta[j]))
+		b_hi = beta; b_lo = beta
+		b_hi[j] = b_hi[j] + h
+		b_lo[j] = b_lo[j] - h
+		nll_hi = .cox_neg_loglik_breslow_r(X, y, dead, b_hi, strata = strata)
+		nll_lo = .cox_neg_loglik_breslow_r(X, y, dead, b_lo, strata = strata)
+		if (!is.finite(nll_hi) || !is.finite(nll_lo)) return(rep(NA_real_, p))
+		score[j] = -(nll_hi - nll_lo) / (2 * h)
+	}
+	score
+}
+
+.cox_information_breslow_fd_r = function(X, y, dead, beta, strata = NULL){
+	beta = as.numeric(beta)
+	p = length(beta)
+	info = matrix(NA_real_, p, p)
+	nll0 = .cox_neg_loglik_breslow_r(X, y, dead, beta, strata = strata)
+	if (!is.finite(nll0)) return(info)
+	h = 1e-4 * pmax(1, abs(beta))
+	for (i in seq_len(p)) {
+		for (j in i:p) {
+			if (i == j) {
+				b_hi = beta; b_lo = beta
+				b_hi[i] = b_hi[i] + h[i]
+				b_lo[i] = b_lo[i] - h[i]
+				f_hi = .cox_neg_loglik_breslow_r(X, y, dead, b_hi, strata = strata)
+				f_lo = .cox_neg_loglik_breslow_r(X, y, dead, b_lo, strata = strata)
+				val = (f_hi - 2 * nll0 + f_lo) / (h[i]^2)
+			} else {
+				b_pp = beta; b_pm = beta; b_mp = beta; b_mm = beta
+				b_pp[i] = b_pp[i] + h[i]; b_pp[j] = b_pp[j] + h[j]
+				b_pm[i] = b_pm[i] + h[i]; b_pm[j] = b_pm[j] - h[j]
+				b_mp[i] = b_mp[i] - h[i]; b_mp[j] = b_mp[j] + h[j]
+				b_mm[i] = b_mm[i] - h[i]; b_mm[j] = b_mm[j] - h[j]
+				f_pp = .cox_neg_loglik_breslow_r(X, y, dead, b_pp, strata = strata)
+				f_pm = .cox_neg_loglik_breslow_r(X, y, dead, b_pm, strata = strata)
+				f_mp = .cox_neg_loglik_breslow_r(X, y, dead, b_mp, strata = strata)
+				f_mm = .cox_neg_loglik_breslow_r(X, y, dead, b_mm, strata = strata)
+				val = (f_pp - f_pm - f_mp + f_mm) / (4 * h[i] * h[j])
+			}
+			info[i, j] = val
+			info[j, i] = val
+		}
+	}
+	info
+}
+
 #' Cox Proportional Hazards Regression Inference for Survival Responses
 #'
 #' Fits a Cox proportional hazards regression for survival responses using the
@@ -25,10 +201,10 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		#' @param use_rcpp Logical. If \code{TRUE} (default), use internal Rcpp.
+		#' @param use_rcpp Logical. If \code{TRUE} (default), enable internal Rcpp score/information helpers for likelihood inference.
 		#' @param verbose Whether to print progress messages.
 		#' @param smart_cold_start_default Whether to use smart cold start values by default.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 				assertFormula(model_formula, null.ok = TRUE)
@@ -84,27 +260,13 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 			y_sim = sim$y_sim; dead_sim = sim$dead_sim
 			if (!all(is.finite(y_sim)) || any(y_sim <= 0)) return(NULL)
 			j = spec$j
-			full_res = tryCatch(
-				fast_coxph_regression_cpp(
-					X = X_fit, y = y_sim, dead = dead_sim,
-					estimate_only = FALSE
-				),
-				error = function(e) NULL
-			)
+			full_res = .fit_survival_coxph_kernel(X_fit, y_sim, dead_sim)
 			if (is.null(full_res) || !isTRUE(full_res$converged) || !is.finite(full_res$coefficients[j])) return(NULL)
 			full_fit_boot = list(b = as.numeric(full_res$coefficients), neg_loglik = as.numeric(full_res$neg_ll))
 			list(
 				full_fit = full_fit_boot,
 				fit_null = function(d, start = NULL){
-					res = tryCatch(
-						fast_coxph_regression_cpp(
-							X = X_fit, y = y_sim, dead = dead_sim,
-							warm_start_beta = start %||% as.numeric(full_res$coefficients),
-							fixed_idx = j, fixed_values = d,
-							estimate_only = FALSE
-						),
-						error = function(e) NULL
-					)
+					res = .fit_survival_coxph_fixed_kernel(X_fit, y_sim, dead_sim, fixed_idx = j, fixed_value = d)
 					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
 					list(b = as.numeric(res$coefficients), neg_loglik = as.numeric(res$neg_ll))
 				},
@@ -118,24 +280,13 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 			X = ctx$X
 			y = as.numeric(private$y)
 			dead = as.numeric(private$dead)
-			full_b_cox = as.numeric(private$cached_mod$b[-1])  # strip 0-prefix
+			full_b_cox = as.numeric(private$cached_mod$b[-1])  # strip Cox no-intercept prefix
 			full_fit = list(b = full_b_cox, neg_loglik = ctx$full_neg_loglik)
 			list(
 				X = X, y = y, j = 1L,
 				full_fit = full_fit,
 				fit_null = function(delta, start = NULL){
-					res = tryCatch(
-						fast_coxph_regression_cpp(
-							X, y, dead,
-							warm_start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X)),
-							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X)),
-							fixed_idx = 1L,
-							fixed_values = delta,
-							smart_cold_start = private$smart_cold_start_default,
-							estimate_only = TRUE
-						),
-						error = function(e) NULL
-					)
+					res = .fit_survival_coxph_fixed_kernel(X, y, dead, fixed_idx = 1L, fixed_value = delta)
 					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
 					list(b = as.numeric(res$coefficients), neg_loglik = as.numeric(res$neg_ll), fisher_information = res$fisher_information)
 				},
@@ -149,10 +300,10 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 					-get_coxph_hessian_cpp(X, y, dead, as.numeric(fit$b))
 				},
 				fisher_information = function(fit){
-					-get_coxph_hessian_cpp(X, y, dead, as.numeric(fit$b))
+					fit$fisher_information %||% -get_coxph_hessian_cpp(X, y, dead, as.numeric(fit$b))
 				},
 				information = function(fit){
-					-get_coxph_hessian_cpp(X, y, dead, as.numeric(fit$b))
+					fit$information %||% fit$fisher_information %||% -get_coxph_hessian_cpp(X, y, dead, as.numeric(fit$b))
 				},
 				neg_loglik = function(fit){ as.numeric(fit$neg_loglik) }
 			)
@@ -164,45 +315,20 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 			} else {
 				matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
 			}
+			if (private$harden && ncol(X_fit) > 1L) {
+				orig_names = colnames(X_fit)
+				reduced = qr_reduce_preserve_cols_cpp(as.matrix(X_fit), 1L)
+				X_fit = as.matrix(reduced$X_reduced)
+				colnames(X_fit) = orig_names[as.integer(reduced$keep)]
+			}
 			if (private$use_rcpp) {
-				if (is.null(private$cox_data_cache) || !identical(private$w, private$cox_w_cache)) {
-					private$cox_data_cache = build_cox_data_cache_cpp(X_fit, private$y, private$dead)
-					private$cox_w_cache = private$w
-				}
-				optimization_alg = .normalize_optimizer_algorithm(NULL, allow_irls = FALSE, default = "newton_raphson")
-				raw_res = tryCatch(
-					fast_coxph_regression_prebuilt_cpp(
-						private$cox_data_cache,
-						estimate_only = estimate_only,
-						optimization_alg = optimization_alg,
-						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
-						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
-						smart_cold_start = private$smart_cold_start_default
-					),
-					error = function(e) NULL
-				)
-				fit = if (!is.null(raw_res) && isTRUE(raw_res$converged)) {
-					b = as.numeric(raw_res$coefficients)
-					names(b) = colnames(X_fit)
-					list(b = b, coefficients = b, vcov = if (estimate_only) NULL else raw_res$vcov,
-					     neg_log_lik = as.numeric(raw_res$neg_ll), fisher_information = raw_res$fisher_information)
-				} else NULL
-				fit = if (is.null(fit)) tryCatch(
-					fast_coxph_regression(
-						X_fit, private$y, private$dead,
-						use_rcpp = TRUE,
-						estimate_only = estimate_only,
-						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
-						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
-						smart_cold_start = private$smart_cold_start_default
-					),
-					error = function(e) NULL
-				) else fit
+				fit = .fit_survival_coxph_kernel(X_fit, private$y, private$dead)
 				if (is.null(fit)) {
 					private$cached_values$likelihood_test_context = NULL
-					return(list(b = rep(NA_real_, ncol(X_fit)), vcov = matrix(NA_real_, ncol(X_fit), ncol(X_fit))))
+					return(list(b = rep(NA_real_, ncol(X_fit) + 1L), vcov = matrix(NA_real_, ncol(X_fit) + 1L, ncol(X_fit) + 1L)))
 				}
 				private$set_fit_warm_start(as.numeric(fit$b), "beta", fisher = fit$fisher_information)
+				private$cached_mod = fit
 				private$cached_values$likelihood_test_context = list(
 					X = X_fit,
 					full_neg_loglik = fit$neg_log_lik

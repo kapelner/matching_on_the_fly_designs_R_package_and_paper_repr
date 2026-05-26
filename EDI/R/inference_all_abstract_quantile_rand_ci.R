@@ -15,7 +15,7 @@ InferenceAbstractQuantileRandCI = R6::R6Class("InferenceAbstractQuantileRandCI",
 		#' @param model_formula   Optional formula for covariate adjustment.
 		#' @param verbose         Whether to print messages.
 		#' @param smart_cold_start_default   Whether to use smart cold start values.
-		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = NULL){
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 		},
 		#' @description Computes a 1-alpha level frequentist confidence interval for the randomization test.

@@ -26,7 +26,7 @@ InferencePropKKGEE = R6::R6Class("InferencePropKKGEE",
 		#' @param verbose Whether to print progress messages.
 		#' @param use_rcpp Whether to use the internal Rcpp solver.
 		#' @param smart_cold_start_default Whether to use smart cold start values.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = TRUE){
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = NULL){
 			if (should_run_asserts() && !use_rcpp) {
 				if (!check_package_installed("geepack")){
 					stop("Package 'geepack' is required for ", class(self)[1], ". Please install it.")
@@ -117,7 +117,7 @@ InferencePropKKGLMM = R6::R6Class("InferencePropKKGLMM",
 		#' @param verbose Whether to print progress messages.
 		#' @param smart_cold_start_default   Whether to use smart cold start values.
 		#' @param optimization_alg Character. Optimization algorithm (default "lbfgs").
-		initialize = function(des_obj, model_formula = NULL, max_abs_reasonable_coef = 1e4, max_abs_log_sigma = 8, verbose = FALSE, smart_cold_start_default = TRUE, optimization_alg = NULL){
+		initialize = function(des_obj, model_formula = NULL, max_abs_reasonable_coef = 1e4, max_abs_log_sigma = 8, verbose = FALSE, smart_cold_start_default = NULL, optimization_alg = NULL){
 			super$initialize(des_obj, model_formula = model_formula, max_abs_reasonable_coef = max_abs_reasonable_coef, max_abs_log_sigma = max_abs_log_sigma, verbose = verbose, smart_cold_start_default = smart_cold_start_default, optimization_alg = optimization_alg)
 		}
 	),

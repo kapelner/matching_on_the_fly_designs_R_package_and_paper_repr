@@ -108,7 +108,7 @@ NumericVector kk21_stepwise_survival_weights_cpp(
 
 	if (n == 0 || p == 0) return weights;
 
-	Eigen::Map<Eigen::MatrixXd> X_map(as<Eigen::Map<Eigen::MatrixXd>>(X));
+	Eigen::MatrixXd X_map = as<Eigen::MatrixXd>(X);
 	Eigen::VectorXd y_vec   = as<Eigen::VectorXd>(y);
 	Eigen::VectorXd delta_v = as<Eigen::VectorXd>(delta);
 	Eigen::VectorXd w_vec   = as<Eigen::VectorXd>(w);

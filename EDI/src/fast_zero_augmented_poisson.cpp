@@ -112,23 +112,33 @@ public:
         Eigen::VectorXd eta_cond = m_X * beta_cond;
         Eigen::VectorXd eta_zi = m_Xzi * beta_zi;
 
+        double* H_data = H.data();
         for (int i = 0; i < m_n; ++i) {
             double eta_c = std::min(eta_cond[i], 700.0);
             double lambda = std::exp(eta_c);
             double eta_z = std::max(std::min(eta_zi[i], 700.0), -700.0);
             double pi = 1.0 / (1.0 + std::exp(-eta_z));
             double pi_prime = pi * (1.0 - pi);
-            Eigen::VectorXd xc = m_X.row(i).transpose();
-            Eigen::VectorXd xz = m_Xzi.row(i).transpose();
+            const double* xci = m_X.data() + i;    // xci[j * m_n] == X(i,j)
+            const double* xzi = m_Xzi.data() + i;  // xzi[j * m_n] == Xzi(i,j)
 
             if (m_is_hurdle) {
-                double h_zi = pi_prime;
-                H.bottomRightCorner(m_p_zi, m_p_zi).noalias() += h_zi * (xz * xz.transpose());
+                // zi-zi block (upper triangle): rows/cols m_p_cond..total_p-1
+                for (int c = 0; c < m_p_zi; ++c) {
+                    const double s = pi_prime * xzi[c * m_n];
+                    for (int r = 0; r <= c; ++r)
+                        H_data[(m_p_cond + r) + (m_p_cond + c) * total_p] += s * xzi[r * m_n];
+                }
                 if (m_y[i] > 0) {
                     double exp_ml = std::exp(-lambda);
                     double denom = std::max(1.0 - exp_ml, 1e-15);
                     double h_cond = lambda * (denom - lambda * exp_ml) / (denom * denom);
-                    H.topLeftCorner(m_p_cond, m_p_cond).noalias() += h_cond * (xc * xc.transpose());
+                    // cond-cond block (upper triangle): rows/cols 0..m_p_cond-1
+                    for (int c = 0; c < m_p_cond; ++c) {
+                        const double s = h_cond * xci[c * m_n];
+                        for (int r = 0; r <= c; ++r)
+                            H_data[r + c * total_p] += s * xci[r * m_n];
+                    }
                 }
             } else {
                 if (m_y[i] == 0) {
@@ -145,16 +155,116 @@ public:
                     double h_zz = q_z * q_z / (q * q) - q_zz / q;
                     double h_cz = q_c * q_z / (q * q) - q_zc / q;
 
-                    H.topLeftCorner(m_p_cond, m_p_cond).noalias() += h_cc * (xc * xc.transpose());
-                    H.bottomRightCorner(m_p_zi, m_p_zi).noalias() += h_zz * (xz * xz.transpose());
-                    H.topRightCorner(m_p_cond, m_p_zi).noalias() += h_cz * (xc * xz.transpose());
+                    // cond-cond block (upper triangle)
+                    for (int c = 0; c < m_p_cond; ++c) {
+                        const double s = h_cc * xci[c * m_n];
+                        for (int r = 0; r <= c; ++r)
+                            H_data[r + c * total_p] += s * xci[r * m_n];
+                    }
+                    // zi-zi block (upper triangle)
+                    for (int c = 0; c < m_p_zi; ++c) {
+                        const double s = h_zz * xzi[c * m_n];
+                        for (int r = 0; r <= c; ++r)
+                            H_data[(m_p_cond + r) + (m_p_cond + c) * total_p] += s * xzi[r * m_n];
+                    }
+                    // cond-zi cross block (full, not symmetric)
+                    for (int c = 0; c < m_p_zi; ++c)
+                        for (int r = 0; r < m_p_cond; ++r)
+                            H_data[r + (m_p_cond + c) * total_p] += h_cz * xci[r * m_n] * xzi[c * m_n];
                 } else {
-                    H.topLeftCorner(m_p_cond, m_p_cond).noalias() += lambda * (xc * xc.transpose());
-                    H.bottomRightCorner(m_p_zi, m_p_zi).noalias() += pi_prime * (xz * xz.transpose());
+                    // cond-cond block (upper triangle)
+                    for (int c = 0; c < m_p_cond; ++c) {
+                        const double s = lambda * xci[c * m_n];
+                        for (int r = 0; r <= c; ++r)
+                            H_data[r + c * total_p] += s * xci[r * m_n];
+                    }
+                    // zi-zi block (upper triangle)
+                    for (int c = 0; c < m_p_zi; ++c) {
+                        const double s = pi_prime * xzi[c * m_n];
+                        for (int r = 0; r <= c; ++r)
+                            H_data[(m_p_cond + r) + (m_p_cond + c) * total_p] += s * xzi[r * m_n];
+                    }
                 }
             }
         }
-        H.bottomLeftCorner(m_p_zi, m_p_cond) = H.topRightCorner(m_p_cond, m_p_zi).transpose();
+        // Reflect upper triangle to lower (handles cond-cond, zi-zi, and cond-zi/zi-cond blocks)
+        for (int c = 0; c < total_p; ++c)
+            for (int r = 0; r < c; ++r)
+                H_data[c + r * total_p] = H_data[r + c * total_p];
+        return H;
+    }
+
+    Eigen::MatrixXd expected_hessian(const Eigen::VectorXd& params) {
+        int total_p = m_p_cond + m_p_zi;
+        Eigen::MatrixXd H = Eigen::MatrixXd::Zero(total_p, total_p);
+        Eigen::VectorXd beta_cond = params.head(m_p_cond);
+        Eigen::VectorXd beta_zi = params.tail(m_p_zi);
+        Eigen::VectorXd eta_cond = m_X * beta_cond;
+        Eigen::VectorXd eta_zi = m_Xzi * beta_zi;
+
+        double* H_data = H.data();
+        for (int i = 0; i < m_n; ++i) {
+            double eta_c = std::min(eta_cond[i], 700.0);
+            double lambda = std::exp(eta_c);
+            double eta_z = std::max(std::min(eta_zi[i], 700.0), -700.0);
+            double pi = 1.0 / (1.0 + std::exp(-eta_z));
+            double pi_prime = pi * (1.0 - pi);
+            const double* xci = m_X.data() + i;
+            const double* xzi = m_Xzi.data() + i;
+
+            if (m_is_hurdle) {
+                for (int c = 0; c < m_p_zi; ++c) {
+                    const double s = pi_prime * xzi[c * m_n];
+                    for (int r = 0; r <= c; ++r)
+                        H_data[(m_p_cond + r) + (m_p_cond + c) * total_p] += s * xzi[r * m_n];
+                }
+
+                double exp_ml = std::exp(-lambda);
+                double denom = std::max(1.0 - exp_ml, 1e-15);
+                double h_cond = lambda * (denom - lambda * exp_ml) / (denom * denom);
+                double p_positive = 1.0 - pi;
+                for (int c = 0; c < m_p_cond; ++c) {
+                    const double s = p_positive * h_cond * xci[c * m_n];
+                    for (int r = 0; r <= c; ++r)
+                        H_data[r + c * total_p] += s * xci[r * m_n];
+                }
+            } else {
+                double r0 = std::exp(-lambda);
+                double q0 = std::max(pi + (1.0 - pi) * r0, 1e-15);
+                double p_positive = (1.0 - pi) * (1.0 - r0);
+                double pi_second = pi_prime * (1.0 - 2.0 * pi);
+                double q_z = pi_prime * (1.0 - r0);
+                double q_zz = pi_second * (1.0 - r0);
+                double q_c = -(1.0 - pi) * lambda * r0;
+                double q_cc = (1.0 - pi) * r0 * (lambda * lambda - lambda);
+                double q_zc = pi_prime * lambda * r0;
+
+                double h0_cc = q_c * q_c / (q0 * q0) - q_cc / q0;
+                double h0_zz = q_z * q_z / (q0 * q0) - q_zz / q0;
+                double h0_cz = q_c * q_z / (q0 * q0) - q_zc / q0;
+
+                double h_cc = q0 * h0_cc + p_positive * lambda;
+                double h_zz = q0 * h0_zz + p_positive * pi_prime;
+                double h_cz = q0 * h0_cz;
+
+                for (int c = 0; c < m_p_cond; ++c) {
+                    const double s = h_cc * xci[c * m_n];
+                    for (int rr = 0; rr <= c; ++rr)
+                        H_data[rr + c * total_p] += s * xci[rr * m_n];
+                }
+                for (int c = 0; c < m_p_zi; ++c) {
+                    const double s = h_zz * xzi[c * m_n];
+                    for (int rr = 0; rr <= c; ++rr)
+                        H_data[(m_p_cond + rr) + (m_p_cond + c) * total_p] += s * xzi[rr * m_n];
+                }
+                for (int c = 0; c < m_p_zi; ++c)
+                    for (int rr = 0; rr < m_p_cond; ++rr)
+                        H_data[rr + (m_p_cond + c) * total_p] += h_cz * xci[rr * m_n] * xzi[c * m_n];
+            }
+        }
+        for (int c = 0; c < total_p; ++c)
+            for (int r = 0; r < c; ++r)
+                H_data[c + r * total_p] = H_data[r + c * total_p];
         return H;
     }
 };
@@ -210,10 +320,10 @@ List fast_zero_augmented_poisson_cpp(const Eigen::MatrixXd& X,
                                      bool smart_cold_start = true,
                                      bool estimate_only = false,
                                      int maxit = 1000,
-                                     double tol = 1e-6,
+                                     double tol = 1e-8,
                                      Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                      Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                     std::string optimization_alg = "newton_raphson",
+                                     std::string optimization_alg = "lbfgs",
                                      Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     int p_cond = X.cols();
     int p_zi = Xzi.cols();
@@ -242,7 +352,7 @@ List fast_zero_augmented_poisson_cpp(const Eigen::MatrixXd& X,
 
     LikelihoodFitResult fit;
     try {
-        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, h_ptr);
+        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, h_ptr);
     } catch (...) {
         return List::create(Named("converged") = false);
     }
@@ -255,13 +365,14 @@ List fast_zero_augmented_poisson_cpp(const Eigen::MatrixXd& X,
                 Named("zi") = params.tail(p_zi)
             ),
             Named("converged") = fit.converged,
-            Named("neg_ll") = fit.value,
-            Named("fisher_information") = fun.hessian(params)
+            Named("neg_ll") = fit.value
         );
     }
 
-    Eigen::MatrixXd H = fun.hessian(params);
-    Eigen::MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
+    Eigen::MatrixXd observed_information = fun.hessian(params);
+    Eigen::MatrixXd fisher_information = fun.expected_hessian(params);
+
+    Eigen::MatrixXd H_free = subset_matrix(fisher_information, fixed_spec.free_idx, fixed_spec.free_idx);
     Eigen::MatrixXd cov_free = H_free.inverse();
     Eigen::MatrixXd vcov = expand_free_covariance(total_p, fixed_spec, cov_free, true);
 
@@ -273,6 +384,10 @@ List fast_zero_augmented_poisson_cpp(const Eigen::MatrixXd& X,
         Named("vcov") = vcov,
         Named("converged") = fit.converged,
         Named("neg_ll") = fit.value,
-        Named("fisher_information") = H
+        Named("observed_information") = observed_information,
+        Named("fisher_information") = fisher_information,
+        Named("information") = fisher_information,
+        Named("information_type") = "fisher",
+        Named("hessian") = -observed_information
     );
 }

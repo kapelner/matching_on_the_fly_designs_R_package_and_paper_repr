@@ -41,10 +41,12 @@ toggle_asserts = function(on = TRUE) {
 should_run_asserts = .assert_manager$should_run
 
 stop_bayesian_bootstrap_for_ivwc = function(self_obj = NULL) {
+  # Relaxing this to allow Jackknife if implemented.
+  # For now, if we reach here, it means it is not yet implemented for this specific IVWC operation.
   cls = if (is.null(self_obj)) "This IVWC class" else class(self_obj)[1]
   stop(
     cls,
-    " does not support Bayesian bootstrap functionality. IVWC inference paths are explicitly gated off."
+    " does not support this Bayesian bootstrap operation. Implementation is missing for this IVWC path."
   )
 }
 
@@ -52,43 +54,11 @@ stop_bayesian_bootstrap_for_bai = function(self_obj = NULL) {
   cls = if (is.null(self_obj)) "This Bai-adjusted KK class" else class(self_obj)[1]
   stop(
     cls,
-    " does not support Bayesian bootstrap functionality. The Bai matched-pair / reservoir compound path is intentionally left unimplemented for Bayesian bootstrap."
+    " does not support this Bayesian bootstrap operation. Implementation is missing for this Bai path."
   )
 }
 
-make_ivwc_bayesian_bootstrap_public_overrides = function() {
-  list(
-    compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
-      stop_bayesian_bootstrap_for_ivwc(self)
-    },
-    approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL) {
-      stop_bayesian_bootstrap_for_ivwc(self)
-    },
-    compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
-      stop_bayesian_bootstrap_for_ivwc(self)
-    },
-    compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
-      stop_bayesian_bootstrap_for_ivwc(self)
-    }
-  )
-}
-
-make_bai_bayesian_bootstrap_public_overrides = function() {
-  list(
-    compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
-      stop_bayesian_bootstrap_for_bai(self)
-    },
-    approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL) {
-      stop_bayesian_bootstrap_for_bai(self)
-    },
-    compute_bayesian_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
-      stop_bayesian_bootstrap_for_bai(self)
-    },
-    compute_bayesian_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, type = NULL, na.rm = TRUE, show_progress = TRUE, min_number_usable_samples = 5L, weighting_unit_type = NULL) {
-      stop_bayesian_bootstrap_for_bai(self)
-    }
-  )
-}
+# Bayesian bootstrap helpers were removed to allow Jackknife support across all paths.
 
 weighted_ordinal_bootstrap_surrogate_fit = function(X, y, row_weights, method = c("logistic", "probit", "cauchit", "cloglog")) {
   method = match.arg(method)
@@ -477,15 +447,97 @@ get_optimization_dispatch_policy = function() {
       "KKHurdlePoissonIVWC$"    = "lbfgs",
       "KKHurdlePoissonOneLik$"  = "lbfgs",
       "KKCondPoissonOneLik$"       = "lbfgs",
-      "InferenceCountPoisson$"  = "lbfgs",
-      "InferenceCountQuasiPoisson$" = "lbfgs",
-      "InferenceIncidModifiedPoisson$" = "lbfgs",
+      "InferenceCountPoisson$"  = "irls",
+      "InferenceCountQuasiPoisson$" = "irls",
+      "InferenceCountRobustPoisson$" = "irls",
+      "InferenceCountNegBin$" = "lbfgs",
+      "InferenceIncidModifiedPoisson$" = "irls",
+      "InferenceIncidLogRegr$" = "irls",
+      "InferenceIncidProbitRegr$" = "irls",
+      "InferencePropFractionalLogit$" = "irls",
+      "InferencePropGCompAbstract$" = "irls",
+      "InferencePropBetaRegr$" = "lbfgs",
+      "InferenceOrdinalAdjCatLogitRegr$" = "lbfgs",
+      "InferenceOrdinalContRatioRegr$" = "lbfgs",
+      "InferenceOrdinalPropOddsRegr$" = "lbfgs",
+      "InferenceOrdinalOrderedProbitRegr$" = "lbfgs",
+      "InferenceOrdinalCauchitRegr$" = "lbfgs",
+      "InferenceOrdinalCloglogRegr$" = "lbfgs",
+      "InferenceSurvivalWeibullRegr$" = "lbfgs",
+      "InferenceSurvivalStratCoxPHRegr$" = "lbfgs",
       "InferenceSurvivalKKClaytonCopulaOneLik$" = "lbfgs",
       "InferenceIncidKKCondLogitPlusGLMMOneLik$"   = "lbfgs"
     )
   )
 }
 edi_env$optimization_dispatch_policy_config = get_optimization_dispatch_policy()
+#' Get the default cold-start dispatch policy
+#'
+#' Returns EDI's built-in policy for the \code{smart_cold_start} default used
+#' by each inference class.  A \code{TRUE} entry means the solver initialises
+#' via an OLS warm-up before IRLS; \code{FALSE} means a plain zero-vector cold
+#' start.  Benchmarks show the OLS warm-up is net-negative for logistic and
+#' Poisson IRLS at typical trial sizes (the one extra OLS solve costs more than
+#' the IRLS iterations it saves), so those families default to \code{FALSE}.
+#' @return A named list with \code{default} (logical) and
+#'   \code{inference_class_overrides} (named logical vector of regex ->
+#'   logical).
+#' @examples
+#' get_cold_start_dispatch_policy()
+#' @export
+get_cold_start_dispatch_policy = function() {
+  list(
+    default = TRUE,
+    inference_class_overrides = c(
+      "^InferenceIncidLogRegr$"          = FALSE,
+      "^InferencePropFractionalLogit$"   = FALSE,
+      "^InferencePropGComp"              = FALSE,
+      "^InferenceIncidGComp"             = FALSE,
+      "^InferenceIncidKKGComp"           = FALSE,
+      "^InferenceCountPoisson$"          = FALSE,
+      "^InferenceCountQuasiPoisson$"     = FALSE,
+      "^InferenceCountRobustPoisson$"    = FALSE,
+      "^InferenceIncidModifiedPoisson$"  = FALSE
+    )
+  )
+}
+edi_env$cold_start_dispatch_policy_config = get_cold_start_dispatch_policy()
+#' Update the cold-start dispatch policy
+#'
+#' @param policy Either \code{NULL} or a named list of policy overrides.
+#' @param reset If \code{TRUE}, restore the built-in default policy.
+#' @return Invisible \code{NULL} or the current policy configuration.
+#' @examples
+#' set_cold_start_dispatch_policy(reset = TRUE)
+#' @export
+set_cold_start_dispatch_policy = function(policy = NULL, reset = FALSE) {
+  checkmate::assertFlag(reset)
+  if (isTRUE(reset)) {
+    edi_env$cold_start_dispatch_policy_config = get_cold_start_dispatch_policy()
+    return(invisible(edi_env$cold_start_dispatch_policy_config))
+  }
+  if (is.null(policy)) {
+    return(invisible(edi_env$cold_start_dispatch_policy_config))
+  }
+  checkmate::assertList(policy, names = "named")
+  edi_env$cold_start_dispatch_policy_config = utils::modifyList(edi_env$cold_start_dispatch_policy_config, policy)
+  invisible(NULL)
+}
+edi_cold_start_dispatch_policy = function(inference_class) {
+  config = edi_env$cold_start_dispatch_policy_config
+  inference_class = as.character(inference_class[[1]])
+  overrides = config$inference_class_overrides
+  default_val = if (isTRUE(config$default)) TRUE else FALSE
+  if (!is.null(overrides) && length(overrides) > 0L) {
+    for (pattern in names(overrides)) {
+      if (is.na(pattern) || pattern == "") next
+      if (grepl(pattern, inference_class, perl = TRUE)) {
+        return(isTRUE(overrides[[pattern]]))
+      }
+    }
+  }
+  default_val
+}
 #' Update the parallel dispatch policy
 #'
 #' EDI uses an empirical, blocklist-first dispatch policy to decide when an

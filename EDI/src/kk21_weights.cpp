@@ -94,8 +94,8 @@ NumericVector kk21_logistic_weights_cpp(const NumericMatrix& X,
 	return weights;
 	}
 
-	const auto X_map = as<Eigen::Map<Eigen::MatrixXd>>(X);
-	const auto y_vec = as<Eigen::Map<Eigen::VectorXd>>(y);
+	const Eigen::MatrixXd X_map = as<Eigen::MatrixXd>(X);
+	const Eigen::VectorXd y_vec = as<Eigen::VectorXd>(y);
 
 	for (int j = 0; j < p; ++j) {
 	double b0 = 0.0;
@@ -180,7 +180,7 @@ NumericVector kk21_stepwise_continuous_weights_cpp(const NumericMatrix& X,
 
 	const double eps = std::numeric_limits<double>::epsilon();
 
-	Eigen::Map<Eigen::MatrixXd> X_map(as<Eigen::Map<Eigen::MatrixXd>>(X));
+	Eigen::MatrixXd X_map = as<Eigen::MatrixXd>(X);
 	Eigen::VectorXd y_vec = as<Eigen::VectorXd>(y);
 	Eigen::VectorXd w_vec = as<Eigen::VectorXd>(w);
 
@@ -336,7 +336,7 @@ NumericVector kk21_stepwise_logistic_weights_cpp(const NumericMatrix& X,
 	return weights;
 	}
 
-	Eigen::Map<Eigen::MatrixXd> X_map(as<Eigen::Map<Eigen::MatrixXd>>(X));
+	Eigen::MatrixXd X_map = as<Eigen::MatrixXd>(X);
 	Eigen::VectorXd y_vec = as<Eigen::VectorXd>(y);
 	Eigen::VectorXd w_vec = as<Eigen::VectorXd>(w);
 
@@ -601,7 +601,7 @@ NumericVector kk21_beta_weights_cpp(const NumericMatrix& X,
 	}
 
 	// Convert to Eigen
-	Eigen::Map<Eigen::MatrixXd> X_map(as<Eigen::Map<Eigen::MatrixXd>>(X));
+	Eigen::MatrixXd X_map = as<Eigen::MatrixXd>(X);
 	Eigen::VectorXd y_vec = as<Eigen::VectorXd>(y);
 
 	for (int j = 0; j < p; ++j) {
@@ -674,7 +674,7 @@ NumericVector kk21_negbin_weights_cpp(const NumericMatrix& X,
 	}
 
 	// Convert to Eigen
-	Eigen::Map<Eigen::MatrixXd> X_map(as<Eigen::Map<Eigen::MatrixXd>>(X));
+	Eigen::MatrixXd X_map = as<Eigen::MatrixXd>(X);
 	Eigen::VectorXd y_vec = as<Eigen::VectorXd>(y);
 
 	// Pre-compute OLS quantities for fallback (using log(y+1))
@@ -842,7 +842,7 @@ NumericVector kk21_survival_weights_cpp(const NumericMatrix& X,
 	}
 
 	// Convert to Eigen
-	Eigen::Map<Eigen::MatrixXd> X_map(as<Eigen::Map<Eigen::MatrixXd>>(X));
+	Eigen::MatrixXd X_map = as<Eigen::MatrixXd>(X);
 	Eigen::VectorXd y_vec = as<Eigen::VectorXd>(y);
 	Eigen::VectorXd delta_vec = as<Eigen::VectorXd>(delta);
 
@@ -1089,7 +1089,7 @@ NumericVector kk21_stepwise_beta_weights_cpp(const NumericMatrix& X,
 		return weights;
 	}
 
-	Eigen::Map<Eigen::MatrixXd> X_map(as<Eigen::Map<Eigen::MatrixXd>>(X));
+	Eigen::MatrixXd X_map = as<Eigen::MatrixXd>(X);
 	Eigen::VectorXd y_vec = as<Eigen::VectorXd>(y);
 	Eigen::VectorXd w_vec = as<Eigen::VectorXd>(w);
 
@@ -1154,7 +1154,7 @@ NumericVector kk21_stepwise_negbin_weights_cpp(const NumericMatrix& X,
 		return weights;
 	}
 
-	Eigen::Map<Eigen::MatrixXd> X_map(as<Eigen::Map<Eigen::MatrixXd>>(X));
+	Eigen::MatrixXd X_map = as<Eigen::MatrixXd>(X);
 	Eigen::VectorXd y_vec = as<Eigen::VectorXd>(y);
 	Eigen::VectorXd w_vec = as<Eigen::VectorXd>(w);
 
@@ -1228,7 +1228,7 @@ NumericVector kk21_ordinal_weights_cpp(const NumericMatrix& X,
         return weights;
     }
 
-    Eigen::Map<Eigen::MatrixXd> X_map(as<Eigen::Map<Eigen::MatrixXd>>(X));
+    Eigen::MatrixXd X_map = as<Eigen::MatrixXd>(X);
     Eigen::VectorXd y_vec = as<Eigen::VectorXd>(y);
 
     for (int j = 0; j < p; ++j) {
@@ -1257,7 +1257,7 @@ NumericVector kk21_stepwise_ordinal_weights_cpp(const NumericMatrix& X,
         return weights;
     }
 
-    Eigen::Map<Eigen::MatrixXd> X_map(as<Eigen::Map<Eigen::MatrixXd>>(X));
+    Eigen::MatrixXd X_map = as<Eigen::MatrixXd>(X);
     Eigen::VectorXd y_vec = as<Eigen::VectorXd>(y);
     Eigen::VectorXd w_vec = as<Eigen::VectorXd>(w);
 

@@ -230,27 +230,161 @@ public:
         const Eigen::VectorXd alpha = params.head(n_alpha);
         const Eigen::VectorXd beta = params.tail(m_p);
         const Eigen::VectorXd eta = m_X * beta;
+        double* H_data = H.data();
+
+        // Local arrays for dq, v_upper, v_lower — allocated once, reset per observation
+        std::vector<double> dq(n_params, 0.0);
+        std::vector<double> v_upper(n_params, 0.0);
+        std::vector<double> v_lower(n_params, 0.0);
 
         for (int i = 0; i < m_n; ++i) {
             const int yi_idx = level_index(m_levels, m_y[i]);
             if (yi_idx < 0) continue;
 
-            const double p_upper = (yi_idx == m_K - 1) ? 1.0 : cdf(m_link, alpha[yi_idx] + m_eta_sign * eta[i]);
-            const double p_lower = (yi_idx == 0) ? 0.0 : cdf(m_link, alpha[yi_idx - 1] + m_eta_sign * eta[i]);
-            const double prob = std::max(1e-12, p_upper - p_lower);
-            m_scratch_dq.setZero();
-            m_scratch_d2q.setZero();
+            const double eta_i = eta[i];
             const double wi = obs_weight(i);
 
-            if (yi_idx < m_K - 1) {
-                add_endpoint_derivatives(yi_idx, alpha[yi_idx] + m_eta_sign * eta[i], 1.0, m_X.row(i), m_scratch_dq, m_scratch_d2q);
+            // Compute endpoint quantities
+            double f_upper = 0.0, fp_upper = 0.0;
+            double f_lower = 0.0, fp_lower = 0.0;
+            const bool has_upper = (yi_idx < n_alpha);
+            const bool has_lower = (yi_idx > 0);
+
+            if (has_upper) {
+                const double z_upper = alpha[yi_idx] + m_eta_sign * eta_i;
+                f_upper = pdf(m_link, z_upper);
+                fp_upper = pdf_derivative(m_link, z_upper);
             }
-            if (yi_idx > 0) {
-                add_endpoint_derivatives(yi_idx - 1, alpha[yi_idx - 1] + m_eta_sign * eta[i], -1.0, m_X.row(i), m_scratch_dq, m_scratch_d2q);
+            if (has_lower) {
+                const double z_lower = alpha[yi_idx - 1] + m_eta_sign * eta_i;
+                f_lower = pdf(m_link, z_lower);
+                fp_lower = pdf_derivative(m_link, z_lower);
             }
-            H.noalias() += wi * ((m_scratch_dq * m_scratch_dq.transpose()) / (prob * prob) - m_scratch_d2q / prob);
+
+            const double p_upper = has_upper ? cdf(m_link, alpha[yi_idx] + m_eta_sign * eta_i) : 1.0;
+            const double p_lower = has_lower ? cdf(m_link, alpha[yi_idx - 1] + m_eta_sign * eta_i) : 0.0;
+            const double prob = std::max(1e-12, p_upper - p_lower);
+
+            // Build v_upper and v_lower as plain arrays
+            const double* xi = m_X.data() + i;  // xi[j * m_n] == X(i,j)
+            if (has_upper) {
+                std::fill(v_upper.begin(), v_upper.end(), 0.0);
+                v_upper[yi_idx] = 1.0;
+                for (int j = 0; j < m_p; ++j)
+                    v_upper[n_alpha + j] = m_eta_sign * xi[j * m_n];
+            }
+            if (has_lower) {
+                std::fill(v_lower.begin(), v_lower.end(), 0.0);
+                v_lower[yi_idx - 1] = 1.0;
+                for (int j = 0; j < m_p; ++j)
+                    v_lower[n_alpha + j] = m_eta_sign * xi[j * m_n];
+            }
+
+            // Build dq = f_upper * v_upper - f_lower * v_lower
+            std::fill(dq.begin(), dq.end(), 0.0);
+            if (has_upper) {
+                for (int j = 0; j < n_params; ++j)
+                    dq[j] += f_upper * v_upper[j];
+            }
+            if (has_lower) {
+                for (int j = 0; j < n_params; ++j)
+                    dq[j] -= f_lower * v_lower[j];
+            }
+
+            // Accumulate into H (upper triangle only)
+            const double inv_prob = 1.0 / prob;
+            const double inv_prob2 = inv_prob * inv_prob;
+            for (int c = 0; c < n_params; ++c) {
+                for (int r = 0; r <= c; ++r) {
+                    double val = wi * inv_prob2 * dq[r] * dq[c];
+                    if (has_upper)
+                        val -= wi * inv_prob * fp_upper * v_upper[r] * v_upper[c];
+                    if (has_lower)
+                        val += wi * inv_prob * fp_lower * v_lower[r] * v_lower[c];
+                    H_data[r + c * n_params] += val;
+                }
+            }
         }
-        return 0.5 * (H + H.transpose());
+        // Reflect upper triangle to lower
+        for (int c = 0; c < n_params; ++c)
+            for (int r = 0; r < c; ++r)
+                H_data[c + r * n_params] = H_data[r + c * n_params];
+        return H;
+    }
+
+    Eigen::MatrixXd expected_hessian(const Eigen::VectorXd& params) const {
+        const int n_params = params.size();
+        Eigen::MatrixXd H = Eigen::MatrixXd::Zero(n_params, n_params);
+        if (!validate_params(params)) return H;
+
+        const int n_alpha = m_K - 1;
+        const Eigen::VectorXd alpha = params.head(n_alpha);
+        const Eigen::VectorXd beta = params.tail(m_p);
+        const Eigen::VectorXd eta = m_X * beta;
+        double* H_data = H.data();
+
+        // Cached per-category gradients for this observation
+        std::vector<std::vector<double>> grad_pi(m_K, std::vector<double>(n_params, 0.0));
+        std::vector<double> f(n_alpha, 0.0);
+        std::vector<double> p(n_alpha, 0.0);
+        std::vector<double> v_k(n_params, 0.0);
+
+        for (int i = 0; i < m_n; ++i) {
+            const double eta_i = eta[i];
+            const double wi = obs_weight(i);
+            const double* xi = m_X.data() + i;
+
+            // 1. Compute f_k and p_k (cdf) for all thresholds
+            for (int k = 0; k < n_alpha; ++k) {
+                const double z = alpha[k] + m_eta_sign * eta_i;
+                f[k] = pdf(m_link, z);
+                p[k] = cdf(m_link, z);
+            }
+
+            // 2. Compute grad_pi_k for each category k
+            // grad_pi_k = \nabla (p_k - p_{k-1}) = f_k * v_k - f_{k-1} * v_{k-1}
+            // where v_k = [0...1...0, sign * x]
+            for (int k = 0; k < m_K; ++k) {
+                std::fill(grad_pi[k].begin(), grad_pi[k].end(), 0.0);
+                
+                // Contribution from upper threshold p_k
+                if (k < n_alpha) {
+                    grad_pi[k][k] += f[k];
+                    for (int j = 0; j < m_p; ++j)
+                        grad_pi[k][n_alpha + j] += f[k] * m_eta_sign * xi[j * m_n];
+                }
+                
+                // Contribution from lower threshold p_{k-1}
+                if (k > 0) {
+                    grad_pi[k][k - 1] -= f[k - 1];
+                    for (int j = 0; j < m_p; ++j)
+                        grad_pi[k][n_alpha + j] -= f[k - 1] * m_eta_sign * xi[j * m_n];
+                }
+            }
+
+            // 3. Accumulate: I += \sum_k (1/pi_k) * grad_pi_k * grad_pi_k^T
+            for (int k = 0; k < m_K; ++k) {
+                double pi_k = (k == 0) ? p[0] : ((k == m_K - 1) ? (1.0 - p[k - 1]) : (p[k] - p[k - 1]));
+                pi_k = std::max(pi_k, 1e-12);
+                const double inv_pi = 1.0 / pi_k;
+                const double* gk = grad_pi[k].data();
+                
+                for (int c = 0; c < n_params; ++c) {
+                    if (gk[c] == 0.0) continue;
+                    for (int r = 0; r <= c; ++r) {
+                        if (gk[r] == 0.0) continue;
+                        H_data[r + c * n_params] += wi * inv_pi * gk[r] * gk[c];
+                    }
+                }
+            }
+        }
+
+        // Reflect
+        for (int c = 0; c < n_params; ++c)
+            for (int r = 0; r < c; ++r)
+                H_data[c + r * n_params] = H_data[r + c * n_params];
+        
+        return H;
     }
 };
 
