@@ -24,7 +24,7 @@ struct CoxData {
     int p;
 
     CoxData(const Eigen::VectorXd& y_in, const Eigen::VectorXd& dead_in, const Eigen::MatrixXd& X_in) :
-        y(y_in), dead(dead_in), n(y_in.size()), p(X_in.cols()),
+        y(y_in), dead(dead_in), n((int)y_in.size()), p((int)X_in.cols()),
         X_rowmaj(y_in.size() * X_in.cols()) {
 
         for (int i = 0; i < n; ++i)
@@ -63,13 +63,13 @@ struct CoxData {
 
 struct CoxWorkspace {
     Eigen::VectorXd eta;
-    std::vector<double> exp_eta;
-    std::vector<double> r_x_exp;
-    std::vector<double> r_xx_exp;
-    std::vector<double> sum_x_dk;
-    std::vector<double> e_z;
-    std::vector<double> grad;
-    std::vector<double> hess;
+    Eigen::VectorXd exp_eta;
+    Eigen::VectorXd r_x_exp;
+    Eigen::MatrixXd r_xx_exp;
+    Eigen::VectorXd sum_x_dk;
+    Eigen::VectorXd e_z;
+    Eigen::VectorXd grad;
+    Eigen::MatrixXd hess;
 
     CoxWorkspace() = default;
 
@@ -77,11 +77,11 @@ struct CoxWorkspace {
         eta(n),
         exp_eta(n),
         r_x_exp(p),
-        r_xx_exp(p * p),
+        r_xx_exp(p, p),
         sum_x_dk(p),
         e_z(p),
         grad(p),
-        hess(p * p) {}
+        hess(p, p) {}
 };
 
 double compute_cox_neg_ll_only(const CoxData& data, const std::vector<double>& beta, CoxWorkspace& workspace) {
@@ -90,9 +90,8 @@ double compute_cox_neg_ll_only(const CoxData& data, const std::vector<double>& b
     Eigen::Map<const Eigen::VectorXd> beta_map(beta.data(), p);
     workspace.eta.noalias() = data.matrix_map() * beta_map;
     const double max_eta = workspace.eta.maxCoeff();
-    Eigen::Map<Eigen::VectorXd>(workspace.exp_eta.data(), n) =
-        (workspace.eta.array() - max_eta).exp().matrix();
-    double r_exp = Eigen::Map<const Eigen::VectorXd>(workspace.exp_eta.data(), n).sum();
+    workspace.exp_eta.array() = (workspace.eta.array() - max_eta).exp();
+    double r_exp = workspace.exp_eta.sum();
     double neg_ll = 0.0;
     int j = 0;
     for (size_t k = 0; k < data.unique_event_times.size(); ++k) {
@@ -127,40 +126,27 @@ std::vector<CoxWorkspace> make_cox_workspaces(const std::vector<CoxData>& strata
 double compute_cox_ll_grad_hess_fast(
         const CoxData& data,
         const std::vector<double>& beta,
-        std::vector<double>& grad,
-        std::vector<double>& hess,
+        Eigen::VectorXd& grad,
+        Eigen::MatrixXd& hess,
         bool estimate_only,
         CoxWorkspace& workspace
 ) {
     const int n = data.n;
     const int p = data.p;
-    std::vector<double>& exp_eta = workspace.exp_eta;
-    std::vector<double>& r_x_exp = workspace.r_x_exp;
-    std::vector<double>& r_xx_exp = workspace.r_xx_exp;
-    std::vector<double>& sum_x_dk = workspace.sum_x_dk;
-    std::vector<double>& e_z = workspace.e_z;
-    Eigen::Map<Eigen::VectorXd> r_x_exp_map(r_x_exp.data(), p);
-    Eigen::Map<Eigen::MatrixXd> r_xx_exp_map(r_xx_exp.data(), p, p);
-    Eigen::Map<Eigen::VectorXd> sum_x_dk_map(sum_x_dk.data(), p);
-    Eigen::Map<Eigen::VectorXd> e_z_map(e_z.data(), p);
-    Eigen::Map<Eigen::VectorXd> grad_map(grad.data(), p);
-    Eigen::Map<Eigen::MatrixXd> hess_map(hess.data(), p, p);
-
+    
     Eigen::Map<const Eigen::VectorXd> beta_map(beta.data(), p);
     workspace.eta.noalias() = data.matrix_map() * beta_map;
     const double max_eta = workspace.eta.maxCoeff();
-    Eigen::Map<Eigen::VectorXd>(exp_eta.data(), n) =
-        (workspace.eta.array() - max_eta).exp().matrix();
+    workspace.exp_eta.array() = (workspace.eta.array() - max_eta).exp();
 
-    Eigen::Map<const Eigen::VectorXd> exp_eta_map(exp_eta.data(), n);
-    double r_exp = exp_eta_map.sum();
-    r_x_exp_map.noalias() = data.matrix_map().transpose() * exp_eta_map;
+    double r_exp = workspace.exp_eta.sum();
+    workspace.r_x_exp.noalias() = data.matrix_map().transpose() * workspace.exp_eta;
     if (!estimate_only) {
-        r_xx_exp_map.noalias() = weighted_crossprod(data.matrix_map(), exp_eta_map);
+        workspace.r_xx_exp.noalias() = weighted_crossprod(data.matrix_map(), workspace.exp_eta);
     }
 
-    grad_map.setZero();
-    if (!estimate_only) hess_map.setZero();
+    grad.setZero();
+    if (!estimate_only) hess.setZero();
 
     double neg_ll = 0.0;
     int j = 0;
@@ -171,15 +157,17 @@ double compute_cox_ll_grad_hess_fast(
         while (j < n && data.y[data.idx_asc[j]] < tk) {
             int id = data.idx_asc[j];
             Eigen::Map<const Eigen::VectorXd> xi(data.row(id), p);
-            const double wi = exp_eta[id];
+            const double wi = workspace.exp_eta[id];
             r_exp -= wi;
-            r_x_exp_map.noalias() -= wi * xi;
-            if (!estimate_only) r_xx_exp_map.noalias() -= wi * (xi * xi.transpose());
+            workspace.r_x_exp.noalias() -= wi * xi;
+            if (!estimate_only) {
+                workspace.r_xx_exp.selfadjointView<Eigen::Lower>().rankUpdate(xi, -wi);
+            }
             ++j;
         }
 
         double sum_eta_dk = 0.0;
-        sum_x_dk_map.setZero();
+        workspace.sum_x_dk.setZero();
         int count_dk = data.event_counts[k];
 
         int m = j;
@@ -188,7 +176,7 @@ double compute_cox_ll_grad_hess_fast(
             if (data.dead[id] > 0.5) {
                 Eigen::Map<const Eigen::VectorXd> xi(data.row(id), p);
                 sum_eta_dk += workspace.eta[id];
-                sum_x_dk_map.noalias() += xi;
+                workspace.sum_x_dk.noalias() += xi;
             }
             ++m;
         }
@@ -197,12 +185,17 @@ double compute_cox_ll_grad_hess_fast(
             double safe_r = std::max(r_exp, 1e-100);
             double inv_r = 1.0 / safe_r;
             neg_ll -= (sum_eta_dk - count_dk * (std::log(safe_r) + max_eta));
-            e_z_map.noalias() = r_x_exp_map * inv_r;
-            grad_map.noalias() -= sum_x_dk_map - count_dk * e_z_map;
+            workspace.e_z.noalias() = workspace.r_x_exp * inv_r;
+            grad.noalias() -= workspace.sum_x_dk - count_dk * workspace.e_z;
             if (!estimate_only) {
-                hess_map.noalias() += count_dk * (r_xx_exp_map * inv_r - e_z_map * e_z_map.transpose());
+                hess.triangularView<Eigen::Lower>() += (count_dk * inv_r) * workspace.r_xx_exp;
+                hess.selfadjointView<Eigen::Lower>().rankUpdate(workspace.e_z, -count_dk);
             }
         }
+    }
+    
+    if (!estimate_only) {
+        hess.triangularView<Eigen::Upper>() = hess.transpose();
     }
 
     return neg_ll;
@@ -215,6 +208,8 @@ struct CoxFitResult {
     double neg_ll;
     bool converged;
     int iterations;
+
+    CoxFitResult() : neg_ll(NA_REAL), converged(false), iterations(0) {}
 };
 
 CoxFitResult cox_newton_raphson(
@@ -227,7 +222,8 @@ CoxFitResult cox_newton_raphson(
     double tol,
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
 {
-    const int p = strata_data[0].p;
+    if (strata_data.empty()) return CoxFitResult();
+    const int p = (int)strata_data[0].p;
     Eigen::VectorXd beta = Eigen::VectorXd::Zero(p);
     if (warm_start_beta.isNotNull()) {
         NumericVector sb(warm_start_beta);
@@ -247,18 +243,20 @@ CoxFitResult cox_newton_raphson(
     }
     beta = apply_fixed_values(beta, fixed_spec);
 
-    std::vector<double> grad_vec(p), hess_vec(p * p);
     std::vector<CoxWorkspace> workspaces = make_cox_workspaces(strata_data);
     Eigen::VectorXd beta_candidate(p);
     std::vector<double> beta_cand_vec(p);
     std::vector<double> beta_vec(p);
+    
+    Eigen::VectorXd total_grad(p);
+    Eigen::MatrixXd total_hess(p, p);
 
     double old_ll = 1e300;
     int iter = 0;
 
     for (iter = 0; iter < maxit; ++iter) {
-        std::fill(grad_vec.begin(), grad_vec.end(), 0.0);
-        std::fill(hess_vec.begin(), hess_vec.end(), 0.0);
+        total_grad.setZero();
+        total_hess.setZero();
         double ll = 0.0;
 
         for (int q = 0; q < p; ++q) beta_vec[q] = beta[q];
@@ -266,13 +264,9 @@ CoxFitResult cox_newton_raphson(
         for (std::size_t s = 0; s < strata_data.size(); ++s) {
             const CoxData& sd = strata_data[s];
             CoxWorkspace& ws = workspaces[s];
-            // estimate_only skips vcov materialization, but Newton-Raphson still
-            // needs the Hessian to update the coefficients correctly.
             ll += compute_cox_ll_grad_hess_fast(sd, beta_vec, ws.grad, ws.hess, false, ws);
-            for (int q = 0; q < p; ++q) grad_vec[q] += ws.grad[q];
-            if (iter > 0 || warm_start_fisher_info.isNull()) {
-                for (int qq = 0; qq < p * p; ++qq) hess_vec[qq] += ws.hess[qq];
-            }
+            total_grad.noalias() += ws.grad;
+            total_hess.noalias() += ws.hess;
         }
 
         if (std::abs(old_ll - ll) < tol) break;
@@ -281,14 +275,18 @@ CoxFitResult cox_newton_raphson(
         Eigen::MatrixXd H;
         if (iter == 0 && warm_start_fisher_info.isNotNull()) {
             H = as<Eigen::MatrixXd>(warm_start_fisher_info);
+            if (H.rows() != p || H.cols() != p) {
+                H = total_hess;
+            }
         } else {
-            H = Eigen::Map<const Eigen::MatrixXd>(hess_vec.data(), p, p);
+            H = total_hess;
         }
-        Eigen::VectorXd g = Eigen::Map<const Eigen::VectorXd>(grad_vec.data(), p);
+
+        if (!H.allFinite() || !total_grad.allFinite()) break;
 
         for (int i = 0; i < (int)fixed_spec.fixed_idx.size(); ++i) {
             int idx = fixed_spec.fixed_idx[i];
-            g[idx] = 0.0;
+            total_grad[idx] = 0.0;
             H.row(idx).setZero();
             H.col(idx).setZero();
             H(idx, idx) = 1.0;
@@ -296,11 +294,10 @@ CoxFitResult cox_newton_raphson(
 
         Eigen::LDLT<Eigen::MatrixXd> ldlt(H);
         if (ldlt.info() != Eigen::Success) break;
-        const Eigen::VectorXd delta = ldlt.solve(g);
+        const Eigen::VectorXd delta = ldlt.solve(total_grad);
+        if (!delta.allFinite()) break;
 
         // Step-halving line search: ensure the neg log-likelihood decreases.
-        // Each halving costs ~1/3 of a full iteration (eta + exp + event scan,
-        // no gradient or Hessian), so up to 10 halvings is cheap.
         static const int kMaxHalvings = 10;
         auto eval_ll_candidate = [&](double step) -> double {
             for (int q = 0; q < p; ++q) beta_candidate[q] = beta[q] - step * delta[q];
@@ -327,7 +324,7 @@ CoxFitResult cox_newton_raphson(
     res.neg_ll = old_ll;
     res.converged = (iter < maxit);
     res.iterations = iter;
-    res.hess_mat = Eigen::Map<const Eigen::MatrixXd>(hess_vec.data(), p, p);
+    res.hess_mat = total_hess;
 
     if (!estimate_only) {
         Eigen::MatrixXd H_free = subset_matrix(res.hess_mat, fixed_spec.free_idx, fixed_spec.free_idx);
@@ -353,28 +350,28 @@ public:
 
     double operator()(const Eigen::VectorXd& par, Eigen::VectorXd& grad) {
         std::vector<double> beta(par.data(), par.data() + m_p);
-        std::vector<double> g(m_p, 0.0);
         double nll = 0.0;
+        grad.setZero();
         for (std::size_t s = 0; s < m_strata.size(); ++s) {
             const CoxData& sd = m_strata[s];
             CoxWorkspace& ws = m_workspaces[s];
             nll += compute_cox_ll_grad_hess_fast(sd, beta, ws.grad, ws.hess, true, ws);
-            for (int q = 0; q < m_p; ++q) g[q] += ws.grad[q];
+            grad.noalias() += ws.grad;
         }
-        grad = Eigen::Map<Eigen::VectorXd>(g.data(), m_p);
         return nll;
     }
 
     Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
         std::vector<double> beta(par.data(), par.data() + m_p);
-        std::vector<double> h(m_p * m_p, 0.0);
+        Eigen::MatrixXd h(m_p, m_p);
+        h.setZero();
         for (std::size_t s = 0; s < m_strata.size(); ++s) {
             const CoxData& sd = m_strata[s];
             CoxWorkspace& ws = m_workspaces[s];
             compute_cox_ll_grad_hess_fast(sd, beta, ws.grad, ws.hess, false, ws);
-            for (int qq = 0; qq < m_p * m_p; ++qq) h[qq] += ws.hess[qq];
+            h.noalias() += ws.hess;
         }
-        return Eigen::Map<Eigen::MatrixXd>(h.data(), m_p, m_p);
+        return h;
     }
 };
 
@@ -388,7 +385,8 @@ CoxFitResult cox_lbfgs(
     double tol,
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
 {
-    const int p = strata_data[0].p;
+    if (strata_data.empty()) return CoxFitResult();
+    const int p = (int)strata_data[0].p;
     Eigen::VectorXd par = Eigen::VectorXd::Zero(p);
     if (warm_start_beta.isNotNull()) {
         NumericVector sb(warm_start_beta);
@@ -424,7 +422,7 @@ CoxFitResult cox_lbfgs(
     res.converged = fit.converged;
     res.iterations = fit.niter;
 
-    if (!estimate_only && fit.converged) {
+    if (!estimate_only && (fit.converged || true)) { // Always try to get Hessian if not estimate_only
         res.hess_mat = obj.hessian(fit.params);
         Eigen::MatrixXd H_free = subset_matrix(res.hess_mat, fixed_spec.free_idx, fixed_spec.free_idx);
         Eigen::FullPivLU<Eigen::MatrixXd> lu(H_free);
@@ -462,7 +460,7 @@ Eigen::MatrixXd compute_robust_vcov(
 {
     int n_total = 0;
     for (const CoxData& sd : strata_data) n_total += sd.n;
-    const int p = beta.size();
+    const int p = (int)beta.size();
     Eigen::Map<const Eigen::VectorXd> beta_map(beta.data(), p);
 
     Eigen::MatrixXd U(n_total, p);
@@ -582,6 +580,7 @@ List fast_coxph_regression_prebuilt_cpp(
 {
     Rcpp::XPtr<std::vector<CoxData>> data_ptr(cox_data_xptr);
     const std::vector<CoxData>& strata_data = *data_ptr;
+    if (strata_data.empty()) return List::create();
     const int p = strata_data[0].p;
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
     CoxFitResult fit = cox_fit(strata_data, warm_start_beta, smart_cold_start, fixed_spec, estimate_only, maxit, tol, optimization_alg, warm_start_fisher_info);
@@ -605,7 +604,7 @@ List fast_coxph_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
                                Nullable<NumericVector> fixed_values = R_NilValue,
                                std::string optimization_alg = "lbfgs",
                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-    int p = X.cols();
+    int p = (int)X.cols();
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
     std::vector<CoxData> strata_data;
     strata_data.emplace_back(y, dead, X);
@@ -635,8 +634,8 @@ List fast_stratified_coxph_regression_cpp(
     std::string optimization_alg = "lbfgs",
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
 {
-    const int n = y.size();
-    const int p = X.cols();
+    const int n = (int)y.size();
+    const int p = (int)X.cols();
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
 
     // Efficiently group by strata
@@ -658,7 +657,7 @@ List fast_stratified_coxph_regression_cpp(
 
     CoxFitResult fit = cox_fit(strata_data, warm_start_beta, smart_cold_start, fixed_spec, estimate_only, maxit, tol, optimization_alg, warm_start_fisher_info);
     NumericVector coef_r(p);
-    for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];
+    for (int q = 0; q < p; ++q) coef_r[q] = (p > 0 && !fit.beta.empty()) ? fit.beta[q] : NA_REAL;
     if (estimate_only) {
         return List::create(_["coefficients"] = coef_r, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat);
     }
@@ -668,19 +667,28 @@ List fast_stratified_coxph_regression_cpp(
 // [[Rcpp::export]]
 Eigen::VectorXd get_coxph_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::VectorXd& beta) {
     std::vector<CoxData> strata_data; strata_data.emplace_back(y, dead, X);
-    StratifiedCoxObjective obj(strata_data, X.cols());
-    Eigen::VectorXd grad(beta.size()); obj(beta, grad); return -grad;
+    CoxWorkspace ws((int)y.size(), (int)X.cols());
+    Eigen::VectorXd grad(beta.size());
+    Eigen::MatrixXd hess(beta.size(), beta.size());
+    std::vector<double> beta_vec(beta.data(), beta.data() + beta.size());
+    compute_cox_ll_grad_hess_fast(strata_data[0], beta_vec, grad, hess, true, ws);
+    return -grad;
 }
 
 // [[Rcpp::export]]
 Eigen::MatrixXd get_coxph_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Eigen::VectorXd& beta) {
     std::vector<CoxData> strata_data; strata_data.emplace_back(y, dead, X);
-    StratifiedCoxObjective obj(strata_data, X.cols()); return -obj.hessian(beta);
+    CoxWorkspace ws((int)y.size(), (int)X.cols());
+    Eigen::VectorXd grad(beta.size());
+    Eigen::MatrixXd hess(beta.size(), beta.size());
+    std::vector<double> beta_vec(beta.data(), beta.data() + beta.size());
+    compute_cox_ll_grad_hess_fast(strata_data[0], beta_vec, grad, hess, false, ws);
+    return -hess;
 }
 
 // [[Rcpp::export]]
 Eigen::VectorXd get_stratified_coxph_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Rcpp::IntegerVector& strata, const Eigen::VectorXd& beta) {
-    const int n = y.size(); const int p = X.cols();
+    const int n = (int)y.size(); const int p = (int)X.cols();
     std::map<int, std::vector<int>> strata_map; for (int i = 0; i < n; ++i) strata_map[strata[i]].push_back(i);
     std::vector<CoxData> strata_data; strata_data.reserve(strata_map.size());
     for (auto const& [sid, idx] : strata_map) {
@@ -693,7 +701,7 @@ Eigen::VectorXd get_stratified_coxph_score_cpp(const Eigen::MatrixXd& X, const E
 
 // [[Rcpp::export]]
 Eigen::MatrixXd get_stratified_coxph_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead, const Rcpp::IntegerVector& strata, const Eigen::VectorXd& beta) {
-    const int n = y.size(); const int p = X.cols();
+    const int n = (int)y.size(); const int p = (int)X.cols();
     std::map<int, std::vector<int>> strata_map; for (int i = 0; i < n; ++i) strata_map[strata[i]].push_back(i);
     std::vector<CoxData> strata_data; strata_data.reserve(strata_map.size());
     for (auto const& [sid, idx] : strata_map) {

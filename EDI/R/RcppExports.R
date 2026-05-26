@@ -771,114 +771,30 @@ fast_logistic_glmm_cpp <- function(X, y, group_id, j_T, warm_start_params = NULL
     .Call(`_EDI_fast_logistic_glmm_cpp`, X, y, group_id, j_T, warm_start_params, smart_cold_start, estimate_only, n_gh, maxit, eps_g, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info)
 }
 
-#' @title Compute Logistic Regression Score
-#' @description Calculates the score vector (gradient of the log-likelihood) for a logistic regression model.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
-#' @param beta A numeric vector of coefficients.
-#' @return A numeric vector representing the score.
-#' @export
-#' @keywords internal
 get_logistic_regression_score_cpp <- function(X, y, beta) {
     .Call(`_EDI_get_logistic_regression_score_cpp`, X, y, beta)
 }
 
-#' @title Compute Logistic Regression Hessian
-#' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a logistic regression model.
-#' @param X A numeric matrix of predictors.
-#' @param beta A numeric vector of coefficients.
-#' @return A numeric matrix representing the Hessian.
-#' @export
-#' @keywords internal
 get_logistic_regression_hessian_cpp <- function(X, beta) {
     .Call(`_EDI_get_logistic_regression_hessian_cpp`, X, beta)
 }
 
-#' @title Compute Weighted Logistic Regression Score
-#' @description Calculates the score vector for a weighted logistic regression model.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
-#' @param weights A numeric vector of weights.
-#' @param beta A numeric vector of coefficients.
-#' @return A numeric vector representing the weighted score.
-#' @export
-#' @keywords internal
 get_logistic_regression_weighted_score_cpp <- function(X, y, weights, beta) {
     .Call(`_EDI_get_logistic_regression_weighted_score_cpp`, X, y, weights, beta)
 }
 
-#' @title Compute Weighted Logistic Regression Hessian
-#' @description Calculates the Hessian matrix for a weighted logistic regression model.
-#' @param X A numeric matrix of predictors.
-#' @param weights A numeric vector of weights.
-#' @param beta A numeric vector of coefficients.
-#' @return A numeric matrix representing the weighted Hessian.
-#' @export
-#' @keywords internal
 get_logistic_regression_weighted_hessian_cpp <- function(X, weights, beta) {
     .Call(`_EDI_get_logistic_regression_weighted_hessian_cpp`, X, weights, beta)
 }
 
-#' @title Fast Logistic Regression (C++)
-#' @description High-performance logistic regression fitting using L-BFGS or IRLS.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
-#' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-#' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
-#' @param maxit Maximum number of iterations.
-#' @param tol Convergence tolerance.
-#' @param fixed_idx Optional indices of fixed parameters.
-#' @param fixed_values Optional values for fixed parameters.
-#' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
-#' @return A list containing coefficients and weights.
-#' @export
-#' @keywords internal
-#' @examples
-#' X = matrix(rnorm(100), 10, 10)
-#' y = rbinom(10, 1, 0.5)
-#' fast_logistic_regression_cpp(X, y)
 fast_logistic_regression_cpp <- function(X_sexp, y_sexp, warm_start_beta = NULL, smart_cold_start = FALSE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
     .Call(`_EDI_fast_logistic_regression_cpp`, X_sexp, y_sexp, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info, estimate_only)
 }
 
-#' @title Fast Weighted Logistic Regression (C++)
-#' @description High-performance weighted logistic regression fitting using L-BFGS or IRLS.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
-#' @param weights A numeric vector of weights.
-#' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-#' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
-#' @param maxit Maximum number of iterations.
-#' @param tol Convergence tolerance.
-#' @param fixed_idx Optional indices of fixed parameters.
-#' @param fixed_values Optional values for fixed parameters.
-#' @param optimization_alg Optimization algorithm to use.
-#' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
-#' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
-#' @return A list containing coefficients, fitted values, and information matrix.
-#' @export
-#' @keywords internal
 fast_logistic_regression_weighted_cpp <- function(X_sexp, y_sexp, weights_sexp, warm_start_beta = NULL, smart_cold_start = FALSE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL) {
     .Call(`_EDI_fast_logistic_regression_weighted_cpp`, X_sexp, y_sexp, weights_sexp, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
 }
 
-#' @title Fast Logistic Regression with Variance (C++)
-#' @description Logistic regression with full variance-covariance matrix and score calculation.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
-#' @param j The 1-based index of the parameter for which to return specific variance.
-#' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-#' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
-#' @param fixed_idx Optional indices of fixed parameters.
-#' @param fixed_values Optional values for fixed parameters.
-#' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
-#' @return A list containing coefficients, vcov, score, and likelihood statistics.
-#' @export
-#' @keywords internal
-#' @examples
-#' X = matrix(rnorm(100), 10, 10)
-#' y = rbinom(10, 1, 0.5)
-#' fast_logistic_regression_with_var_cpp(X, y)
 fast_logistic_regression_with_var_cpp <- function(X_sexp, y_sexp, j = 2L, warm_start_beta = NULL, smart_cold_start = FALSE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL) {
     .Call(`_EDI_fast_logistic_regression_with_var_cpp`, X_sexp, y_sexp, j, warm_start_beta, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
 }
@@ -1290,239 +1206,56 @@ get_poisson_glmm_hessian_cpp <- function(X, y, group_id, par, n_gh = 20L) {
     .Call(`_EDI_get_poisson_glmm_hessian_cpp`, X, y, group_id, par, n_gh)
 }
 
-#' @title Compute Poisson Regression Score
-#' @description Calculates the score vector (gradient of the log-likelihood) for a Poisson regression model.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses (counts).
-#' @param beta A numeric vector of coefficients.
-#' @return A numeric vector representing the score.
-#' @export
-#' @keywords internal
 get_poisson_regression_score_cpp <- function(X, y, beta) {
     .Call(`_EDI_get_poisson_regression_score_cpp`, X, y, beta)
 }
 
-#' @title Compute Poisson Regression Hessian
-#' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a Poisson regression model.
-#' @param X A numeric matrix of predictors.
-#' @param beta A numeric vector of coefficients.
-#' @return A numeric matrix representing the Hessian.
-#' @export
-#' @keywords internal
 get_poisson_regression_hessian_cpp <- function(X, beta) {
     .Call(`_EDI_get_poisson_regression_hessian_cpp`, X, beta)
 }
 
-#' @title Compute Weighted Poisson Regression Score
-#' @description Calculates the score vector for a weighted Poisson regression model.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses (counts).
-#' @param weights A numeric vector of weights.
-#' @param beta A numeric vector of coefficients.
-#' @return A numeric vector representing the weighted score.
-#' @export
-#' @keywords internal
 get_poisson_regression_weighted_score_cpp <- function(X, y, weights, beta) {
     .Call(`_EDI_get_poisson_regression_weighted_score_cpp`, X, y, weights, beta)
 }
 
-#' @title Compute Weighted Poisson Regression Hessian
-#' @description Calculates the Hessian matrix for a weighted Poisson regression model.
-#' @param X A numeric matrix of predictors.
-#' @param weights A numeric vector of weights.
-#' @param beta A numeric vector of coefficients.
-#' @return A numeric matrix representing the weighted Hessian.
-#' @export
-#' @keywords internal
 get_poisson_regression_weighted_hessian_cpp <- function(X, weights, beta) {
     .Call(`_EDI_get_poisson_regression_weighted_hessian_cpp`, X, weights, beta)
 }
 
-#' @title Fast Poisson Regression (C++)
-#' @description High-performance Poisson regression fitting using IRLS or L-BFGS.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses (counts).
-#' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-#' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
-#' @param maxit Maximum number of iterations.
-#' @param tol Convergence tolerance.
-#' @param fixed_idx Optional indices of fixed parameters.
-#' @param fixed_values Optional values for fixed parameters.
-#' @param optimization_alg Optimization algorithm ("lbfgs" or "irls").
-#' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
-#' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
-#' @return A list containing coefficients, fitted values, and information matrix.
-#' @export
-#' @keywords internal
-#' @examples
-#' X = matrix(rnorm(100), 10, 10)
-#' y = rpois(10, 2)
-#' fast_poisson_regression_cpp(X, y)
-fast_poisson_regression_cpp <- function(X, y, warm_start_beta = NULL, smart_cold_start = FALSE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
-    .Call(`_EDI_fast_poisson_regression_cpp`, X, y, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info, estimate_only)
+fast_poisson_regression_cpp <- function(X_sexp, y_sexp, warm_start_beta = NULL, smart_cold_start = FALSE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
+    .Call(`_EDI_fast_poisson_regression_cpp`, X_sexp, y_sexp, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info, estimate_only)
 }
 
-#' @title Fast Weighted Poisson Regression (C++)
-#' @description High-performance weighted Poisson regression fitting.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses (counts).
-#' @param weights A numeric vector of weights.
-#' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-#' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
-#' @param maxit Maximum number of iterations.
-#' @param tol Convergence tolerance.
-#' @param fixed_idx Optional indices of fixed parameters.
-#' @param fixed_values Optional values for fixed parameters.
-#' @param optimization_alg Optimization algorithm.
-#' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
-#' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
-#' @return A list containing coefficients, fitted values, and information matrix.
-#' @export
-#' @keywords internal
-fast_poisson_regression_weighted_cpp <- function(X, y, weights, warm_start_beta = NULL, smart_cold_start = FALSE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_poisson_regression_weighted_cpp`, X, y, weights, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
+fast_poisson_regression_weighted_cpp <- function(X_sexp, y_sexp, weights_sexp, warm_start_beta = NULL, smart_cold_start = FALSE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_poisson_regression_weighted_cpp`, X_sexp, y_sexp, weights_sexp, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
 }
 
-#' @title Fast Poisson Regression with Variance (C++)
-#' @description Poisson regression with variance-covariance matrix and score calculation.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses (counts).
-#' @param j 1-based index of the parameter for which to return specific variance.
-#' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-#' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
-#' @param maxit Maximum number of iterations.
-#' @param tol Convergence tolerance.
-#' @param fixed_idx Optional indices of fixed parameters.
-#' @param fixed_values Optional values for fixed parameters.
-#' @param optimization_alg Optimization algorithm.
-#' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
-#' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
-#' @return A list containing coefficients, vcov, score, and likelihood statistics.
-#' @export
-#' @keywords internal
-#' @examples
-#' X = matrix(rnorm(100), 10, 10)
-#' y = rpois(10, 2)
-#' fast_poisson_regression_with_var_cpp(X, y)
-fast_poisson_regression_with_var_cpp <- function(X, y, j = 2L, warm_start_beta = NULL, smart_cold_start = FALSE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_poisson_regression_with_var_cpp`, X, y, j, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
+fast_poisson_regression_with_var_cpp <- function(X_sexp, y_sexp, j = 2L, warm_start_beta = NULL, smart_cold_start = FALSE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_poisson_regression_with_var_cpp`, X_sexp, y_sexp, j, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
 }
 
-#' @title Fast Quasi-Poisson Regression with Variance (C++)
-#' @description Quasi-Poisson regression with dispersion-adjusted variance-covariance matrix.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses (counts).
-#' @param j 1-based index of the parameter for which to return specific variance.
-#' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
-#' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
-#' @param maxit Maximum number of iterations.
-#' @param tol Convergence tolerance.
-#' @param fixed_idx Optional indices of fixed parameters.
-#' @param fixed_values Optional values for fixed parameters.
-#' @param optimization_alg Optimization algorithm.
-#' @param warm_start_weights Optional initial working weights for the first IRLS iteration.
-#' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
-#' @return A list containing coefficients, vcov, and dispersion estimate.
-#' @export
-#' @keywords internal
-fast_quasipoisson_regression_with_var_cpp <- function(X, y, j = 2L, warm_start_beta = NULL, smart_cold_start = FALSE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_quasipoisson_regression_with_var_cpp`, X, y, j, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
+fast_quasipoisson_regression_with_var_cpp <- function(X_sexp, y_sexp, j = 2L, warm_start_beta = NULL, smart_cold_start = FALSE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_quasipoisson_regression_with_var_cpp`, X_sexp, y_sexp, j, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
 }
 
-#' Parallel Poisson Randomization Distribution
-#'
-#' @param X Matrix of covariates (without intercept or treatment).
-#' @param y Numeric vector of response values (pre-null-shifted for treated).
-#' @param w_mat Integer matrix of permuted treatment assignments (n x nsim).
-#' @param delta Null treatment effect shift.
-#' @param log_transform If TRUE, apply multiplicative delta shift (exp scale); otherwise additive.
-#' @param num_cores Number of OpenMP threads.
-#' @return Numeric vector of length nsim with treatment coefficients.
-compute_poisson_distr_parallel_cpp <- function(X, y, w_mat, delta, log_transform, num_cores) {
-    .Call(`_EDI_compute_poisson_distr_parallel_cpp`, X, y, w_mat, delta, log_transform, num_cores)
-}
-
-#' @title Compute Probit Regression Score
-#' @description Score vector (gradient of log-likelihood) for a probit regression model.
-#' @param X Numeric matrix of predictors (including intercept column).
-#' @param y Binary numeric vector of responses.
-#' @param beta Numeric vector of coefficients.
-#' @return Numeric vector representing the score.
-#' @export
-#' @keywords internal
 get_probit_regression_score_cpp <- function(X, y, beta) {
     .Call(`_EDI_get_probit_regression_score_cpp`, X, y, beta)
 }
 
-#' @title Compute Probit Regression Hessian
-#' @description Hessian matrix (second derivatives of log-likelihood) for a probit regression model.
-#' @param X Numeric matrix of predictors (including intercept column).
-#' @param beta Numeric vector of coefficients.
-#' @return Numeric matrix representing the Hessian (negative Fisher information).
-#' @export
-#' @keywords internal
 get_probit_regression_hessian_cpp <- function(X, beta) {
     .Call(`_EDI_get_probit_regression_hessian_cpp`, X, beta)
 }
 
-#' @title Fast Probit Regression (C++)
-#' @description High-performance probit regression fitting using IRLS.
-#' @param X Numeric matrix of predictors (including intercept column).
-#' @param y Binary numeric vector of responses.
-#' @param warm_start_beta Optional starting values for coefficients.
-#' @param smart_cold_start Logical. If TRUE, use a probit-transformed OLS guess on cold start.
-#' @param maxit Maximum number of IRLS iterations.
-#' @param tol Convergence tolerance.
-#' @param fixed_idx Optional 1-based indices of fixed parameters.
-#' @param fixed_values Optional values for fixed parameters.
-#' @param optimization_alg Accepted for API consistency; IRLS is always used.
-#' @param warm_start_weights Accepted for API consistency; ignored for probit.
-#' @param warm_start_fisher_info Optional initial Fisher information matrix for the first iteration.
-#' @return A list with coefficients \code{b}, IRLS weights \code{w}, and \code{fisher_information}.
-#' @export
-#' @keywords internal
-fast_probit_regression_cpp <- function(X, y, warm_start_beta = NULL, smart_cold_start = TRUE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
-    .Call(`_EDI_fast_probit_regression_cpp`, X, y, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info, estimate_only)
+fast_probit_regression_cpp <- function(X_sexp, y_sexp, warm_start_beta = NULL, smart_cold_start = TRUE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
+    .Call(`_EDI_fast_probit_regression_cpp`, X_sexp, y_sexp, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info, estimate_only)
 }
 
-#' @title Fast Weighted Probit Regression (C++)
-#' @description High-performance weighted probit regression fitting using IRLS.
-#' @param X Numeric matrix of predictors (including intercept column).
-#' @param y Binary numeric vector of responses.
-#' @param weights Numeric vector of observation weights.
-#' @param warm_start_beta Optional starting values for coefficients.
-#' @param smart_cold_start Logical. If TRUE, use a probit-transformed OLS guess on cold start.
-#' @param maxit Maximum number of IRLS iterations.
-#' @param tol Convergence tolerance.
-#' @param fixed_idx Optional 1-based indices of fixed parameters.
-#' @param fixed_values Optional values for fixed parameters.
-#' @param optimization_alg Accepted for API consistency; IRLS is always used.
-#' @param warm_start_weights Accepted for API consistency; ignored for probit.
-#' @param warm_start_fisher_info Optional initial Fisher information matrix.
-#' @return A list with coefficients, fitted values \code{mu}, and \code{fisher_information}.
-#' @export
-#' @keywords internal
-fast_probit_regression_weighted_cpp <- function(X, y, weights, warm_start_beta = NULL, smart_cold_start = TRUE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_probit_regression_weighted_cpp`, X, y, weights, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
+fast_probit_regression_weighted_cpp <- function(X_sexp, y_sexp, weights_sexp, warm_start_beta = NULL, smart_cold_start = TRUE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_probit_regression_weighted_cpp`, X_sexp, y_sexp, weights_sexp, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
 }
 
-#' @title Fast Probit Regression with Variance (C++)
-#' @description Probit regression with full variance-covariance matrix and likelihood statistics.
-#' @param X Numeric matrix of predictors (including intercept column).
-#' @param y Binary numeric vector of responses.
-#' @param j 1-based index of the parameter for which to return the specific variance.
-#' @param warm_start_beta Optional starting values for coefficients.
-#' @param smart_cold_start Logical. If TRUE, use a probit-transformed OLS guess on cold start.
-#' @param fixed_idx Optional 1-based indices of fixed parameters.
-#' @param fixed_values Optional values for fixed parameters.
-#' @param optimization_alg Accepted for API consistency; IRLS is always used.
-#' @param warm_start_weights Accepted for API consistency; ignored for probit.
-#' @param warm_start_fisher_info Optional initial Fisher information matrix.
-#' @return A list with coefficients, variance components, score, and likelihood statistics.
-#' @export
-#' @keywords internal
-fast_probit_regression_with_var_cpp <- function(X, y, j = 2L, warm_start_beta = NULL, smart_cold_start = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_probit_regression_with_var_cpp`, X, y, j, warm_start_beta, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
+fast_probit_regression_with_var_cpp <- function(X_sexp, y_sexp, j = 2L, warm_start_beta = NULL, smart_cold_start = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_probit_regression_with_var_cpp`, X_sexp, y_sexp, j, warm_start_beta, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
 }
 
 fast_ridit_scores_cpp <- function(y, ref_idx) {
@@ -1923,6 +1656,14 @@ get_zinb_neg_loglik_cpp <- function(X, y, Xzi, params) {
 #' @keywords internal
 fast_zinb_cpp <- function(X, y, Xzi, warm_start_params = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 1000L, tol = 1e-6, optimization_alg = "lbfgs", fixed_idx = NULL, fixed_values = NULL, warm_start_fisher_info = NULL) {
     .Call(`_EDI_fast_zinb_cpp`, X, y, Xzi, warm_start_params, smart_cold_start, estimate_only, maxit, tol, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info)
+}
+
+gcomp_fractional_logit_point_estimate_cpp <- function(X_fit, coef_hat, j_treat) {
+    .Call(`_EDI_gcomp_fractional_logit_point_estimate_cpp`, X_fit, coef_hat, j_treat)
+}
+
+gcomp_logistic_point_estimate_cpp <- function(X_fit, coef_hat, j_treat) {
+    .Call(`_EDI_gcomp_logistic_point_estimate_cpp`, X_fit, coef_hat, j_treat)
 }
 
 gcomp_logistic_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, j_treat) {

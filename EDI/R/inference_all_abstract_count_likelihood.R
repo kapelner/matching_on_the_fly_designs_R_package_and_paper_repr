@@ -12,51 +12,65 @@ inference_count_likelihood_public = list(
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
+		},
+		#' @description Computes an asymptotic confidence interval using the configured test.
+		#' @param alpha Significance level 1 - \code{alpha}. Default 0.05.
+		#' @return A confidence interval.
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			if (private$testing_type == "wald") {
+				private$shared(estimate_only = FALSE)
+				if (is.finite(private$cached_values$s_beta_hat_T %||% NA_real_)) {
+					return(private$compute_z_or_t_ci_from_s_and_df(alpha))
+				}
+			}
+			super$compute_asymp_confidence_interval(alpha)
+		},
+		#' @description Computes an asymptotic two-sided p-value using the configured test.
+		#' @param delta Null treatment effect to test against. Default 0.
+		#' @return The asymptotic p-value.
+		compute_asymp_two_sided_pval = function(delta = 0){
+			if (private$testing_type == "wald") {
+				private$shared(estimate_only = FALSE)
+				if (is.finite(private$cached_values$s_beta_hat_T %||% NA_real_)) {
+					return(private$compute_z_or_t_two_sided_pval_from_s_and_df(delta))
+				}
+			}
+			super$compute_asymp_two_sided_pval(delta)
 		}
 	)
+
 inference_count_likelihood_private = list(
 		# --- Count-specific shared logic ---
 
-		# 1. Parameter packing and unpacking
-		# Count models often pack coefficients (b) and auxiliary parameters (e.g. log-theta).
-		# We use "params" as the standard tag for packed parameters in count models.
-
-		# 2. Warm starts
-		# Centralizes the use of "params" and "beta" tags for count warm starts.
-
-		# 3. Estimate, SE, and df caching
-		# Re-implements the basic caching pattern from StdModCache but scoped to counts.
-		
-		generate_mod = function(estimate_only = FALSE) stop(class(self)[1], " must implement generate_mod()"),
-
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T) && is.finite(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+
 			model_output = private$generate_mod(estimate_only = estimate_only)
 			private$cached_mod = model_output
-			
+
 			if (is.null(model_output)) {
 				private$cached_values$beta_hat_T = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$df = NA_real_
 				return(invisible(NULL))
 			}
-			
+
 			# Count models usually return treatment effect at index 2 of the cond component
 			# or in a specific field. We allow models to set beta_hat_T directly in output.
 			private$cached_values$beta_hat_T = model_output$beta_hat_T %||% model_output$b[2]
-			
+
 			if (!is.null(model_output$params) || !is.null(model_output$b)) {
 				private$set_fit_warm_start(
 					as.numeric(model_output$params %||% model_output$b),
 					type = if (!is.null(model_output$params)) "params" else "beta",
-					fisher = model_output$fisher_information %||% model_output$XtWX
+					fisher = model_output$fisher_information %||% model_output$XtWX,
+					weights = model_output$w %||% model_output$mu
 				)
 			}
 
 			if (estimate_only) return(invisible(NULL))
-			
+
 			ssq = model_output$ssq_b_j %||% model_output$ssq_b_2
 			if (!is.null(ssq) && is.finite(ssq) && ssq > 0) {
 				private$cached_values$s_beta_hat_T = sqrt(ssq)

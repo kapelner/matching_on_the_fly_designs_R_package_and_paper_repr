@@ -17,7 +17,7 @@
 #' @keywords internal
 InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurvivalRankRegrIVWC",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLik,
+	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
 	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
@@ -37,7 +37,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			if (should_run_asserts()) {
 				assertResponseType(res_type, "survival")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
+			super$initialize(des_obj = des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				if (!check_package_installed("aftgee")) {
 					stop("Package 'aftgee' is required for ", class(self)[1], ". Please install it.")
@@ -95,6 +95,9 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 		}
 	)),
 	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+		best_X_colnames_matched = NULL,
+		best_X_colnames_reservoir = NULL,
+		max_abs_reasonable_coef = 1e4,
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		extract_term_estimate = function(mod, term_name = "w"){

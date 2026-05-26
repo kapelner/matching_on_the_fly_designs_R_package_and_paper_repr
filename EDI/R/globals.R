@@ -778,3 +778,13 @@ set_package_threads = function(num_cores) {
   options(".edi_last_set_threads" =   num_cores)
   invisible(NULL)
 }
+
+.create_match_dummies = function(m_vec) {
+  m_vec = as.integer(m_vec)
+  m_vec[is.na(m_vec)] = 0L
+  max_m = max(m_vec, 0L)
+  if (max_m == 0L) return(NULL)
+  mm = stats::model.matrix(~ factor(m_vec) + 0)
+  colnames(mm) = paste0("match_", 0:max_m)
+  mm
+}

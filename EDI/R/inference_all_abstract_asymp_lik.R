@@ -248,6 +248,11 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 				val = as.numeric(information[1L, 1L])
 				return(if (is.finite(val) && val > 0) 1 / val else NA_real_)
 			}
+			# Use specialized C++ helper for single diagonal entry to avoid full matrix inversion in R
+			res = tryCatch(eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp(information, as.integer(j)), error = function(e) NA_real_)
+			if (is.finite(res) && res > 0) return(res)
+			
+			# Fallback to full inversion if C++ helper fails or returns invalid result
 			vcov = tryCatch(solve(information), error = function(e) NULL)
 			if (is.null(vcov) || any(!is.finite(vcov))) {
 				vcov = tryCatch(qr.solve(information, diag(nrow(information))), error = function(e) NULL)

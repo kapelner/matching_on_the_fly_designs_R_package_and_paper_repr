@@ -322,6 +322,14 @@ Inference = R6::R6Class("Inference",
 		likelihood_null_warm_cache = NULL,
 		reduced_design_keep_cache = NULL,
 		fixed_covariate_keep_cache = NULL,
+		cached_design_matrix = NULL,
+		cached_w_for_design_matrix = NULL,
+		cached_harden_for_design_matrix = NULL,
+		cached_hardened_X_cov = NULL,
+		cached_reduced_X = NULL,
+		cached_X_full_for_reduced = NULL,
+		cached_keep_for_reduced = NULL,
+		cached_j_treat_for_reduced = NULL,
 			cached_values = list(),
 			num_cores_override = NULL,
 		# Returns the number of C++ OpenMP threads to use for a parallel C++ function
@@ -675,36 +683,48 @@ Inference = R6::R6Class("Inference",
 				}
 			},
 		create_design_matrix = function(){
-			X_cov = private$get_X()
-			if (is.null(X_cov)) {
-				return(cbind(`(Intercept)` = 1, treatment = private$w))
+			if (!is.null(private$cached_design_matrix) && 
+				identical(private$w, private$cached_w_for_design_matrix) &&
+				identical(private$harden, private$cached_harden_for_design_matrix)) {
+				return(private$cached_design_matrix)
 			}
-			X_cov = as.matrix(X_cov)
-			if (!ncol(X_cov)) {
-				return(cbind(`(Intercept)` = 1, treatment = private$w))
+			
+			Xc = if (!is.null(private$cached_hardened_X_cov) && identical(private$harden, private$cached_harden_for_design_matrix)) {
+				private$cached_hardened_X_cov
+			} else {
+				Xc_raw = private$get_X()
+				if (is.null(Xc_raw) || !ncol(Xc_raw)) {
+					NULL
+				} else {
+					Xc_raw = as.matrix(Xc_raw)
+					cov_names = colnames(Xc_raw)
+					if (is.null(cov_names) || length(cov_names) != ncol(Xc_raw)) {
+						colnames(Xc_raw) = paste0("x", seq_len(ncol(Xc_raw)))
+					}
+					if (isTRUE(private$harden)){
+						Xc_raw = drop_highly_correlated_cols(Xc_raw, threshold = 0.999)$M
+					}
+					private$cached_hardened_X_cov = Xc_raw
+					Xc_raw
+				}
 			}
-			cov_names = colnames(X_cov)
-			if (is.null(cov_names) || length(cov_names) != ncol(X_cov) ||
-				any(is.na(cov_names)) || any(!nzchar(cov_names)) ||
-				anyDuplicated(cov_names)) {
-				cov_names = paste0("x", seq_len(ncol(X_cov)))
+
+			if (is.null(Xc)) {
+				X_full = cbind(`(Intercept)` = 1, treatment = private$w)
+			} else {
+				X_full = cbind(`(Intercept)` = 1, treatment = private$w, Xc)
 			}
-			colnames(X_cov) = cov_names
-			if (isTRUE(private$harden)){
-				# Drop highly correlated covariates first to improve condition number.
-				# We only do this for covariates, keeping intercept and treatment safe.
-				X_cov = drop_highly_correlated_cols(X_cov, threshold = 0.999)$M
-			}
-			X_full = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
 			
 			if (isTRUE(private$harden)){
-				# Drop covariate columns that are linearly dependent on earlier columns.
-				# This handles e.g. DesignFixedBlockedCluster where cluster dummies are
-				# collinear with the treatment column (all cluster members share the same w).
-				# pivoted QR naturally prefers columns at the front (intercept, treatment).
-				res = drop_linearly_dependent_cols(X_full)
-				X_full = res$M
+				# Use a faster check if possible
+				if (ncol(X_full) > 2L) {
+					res = drop_linearly_dependent_cols(X_full)
+					X_full = res$M
+				}
 			}
+			private$cached_design_matrix = X_full
+			private$cached_w_for_design_matrix = private$w
+			private$cached_harden_for_design_matrix = private$harden
 			X_full
 		},
 		get_X = function(){
@@ -728,20 +748,41 @@ Inference = R6::R6Class("Inference",
 		},
 		try_cached_reduced_design_keep = function(X_full, keep = private$reduced_design_keep_cache){
 			if (is.null(keep) || !length(keep)) return(NULL)
+			
+			# Fast track: if we have a fully cached reduced matrix and X_full is the same
+			if (!is.null(private$cached_reduced_X) && 
+				identical(X_full, private$cached_X_full_for_reduced) &&
+				identical(keep, private$cached_keep_for_reduced)) {
+				return(list(X = private$cached_reduced_X, keep = keep, j_treat = private$cached_j_treat_for_reduced))
+			}
+
 			keep = sort(unique(as.integer(keep)))
 			if (any(!is.finite(keep)) || any(keep < 1L) || any(keep > ncol(X_full)) || !(2L %in% keep)) {
 				return(NULL)
 			}
 			X_try = as.matrix(X_full[, keep, drop = FALSE])
+			
+			# Avoid QR for simple treatment-only designs
 			if (ncol(X_try) == 2L) {
 				fast = private$reduce_treatment_only_design_fast(X_try)
 				if (!is.null(fast) && !is.null(fast$X)) {
-					return(list(X = X_try, keep = keep, j_treat = match(2L, keep)))
+					res = list(X = X_try, keep = keep, j_treat = match(2L, keep))
+					private$cached_reduced_X = res$X
+					private$cached_X_full_for_reduced = X_full
+					private$cached_keep_for_reduced = keep
+					private$cached_j_treat_for_reduced = res$j_treat
+					return(res)
 				}
 				return(NULL)
 			}
+			
 			if (qr(X_try)$rank != ncol(X_try)) return(NULL)
-			list(X = X_try, keep = keep, j_treat = match(2L, keep))
+			res = list(X = X_try, keep = keep, j_treat = match(2L, keep))
+			private$cached_reduced_X = res$X
+			private$cached_X_full_for_reduced = X_full
+			private$cached_keep_for_reduced = keep
+			private$cached_j_treat_for_reduced = res$j_treat
+			return(res)
 		},
 		reduce_design_matrix_preserving_treatment = function(X_full){
 			if (!private$harden) {

@@ -3,8 +3,11 @@
 // Algorithm (per design):
 //   1. Random balanced init: n/2 treated via Fisher-Yates.
 //   2. Criterion vector  d = M * (2w − 1),  M is p×n.
-//   3. For n_iter steps: pick random (treated i, control j), compute
-//      Δ = 2(M[:,j] − M[:,i]), accept swap if f(d+Δ) < f(d).
+//   3a. Exhaustive mode (n_iter < 0): each round scans ALL (treated i, control j)
+//       pairs, accepts the globally best improving swap, repeats until no swap
+//       improves — guaranteed convergence to a strict local optimum.
+//   3b. Stochastic mode (n_iter >= 0): run exactly n_iter steps; each step
+//       picks a random (treated i, control j) pair and accepts if f(d+Δ) < f(d).
 //
 // Objectives
 //   abs_sum_diff : M = X_std'/n,  f(d) = ‖d‖₁  (fused expr, no temp vector)
@@ -178,54 +181,113 @@ Rcpp::IntegerMatrix greedy_design_search_cpp(
             double f    = abs_mode ? d.lpNorm<1>() : d.squaredNorm();
 
             // ── Greedy swap iterations ───────────────────────────────────────
-            // Early stopping: halt if no improvement for `patience` consecutive iters.
-            const int patience = std::max(n, 500);
-            int no_improve = 0;
-            if (pair_mode) {
-                for (int it = 0; it < n_iter; it++) {
-                    const int k    = pick_pair_dist(rng);
-                    const int side = pair_cur_t[static_cast<std::size_t>(k)];
-                    const int i    = pairs[static_cast<std::size_t>(k)][side];       // current T
-                    const int j    = pairs[static_cast<std::size_t>(k)][1 - side];   // current C
-
-                    delta.noalias() = 2.0 * (M.col(j) - M.col(i));
-                    const double f_cand = abs_mode
-                        ? (d + delta).lpNorm<1>()
-                        : f + 2.0 * d.dot(delta) + delta.squaredNorm();
-
-                    if (f_cand < f) {
-                        w[static_cast<std::size_t>(i)] = 0;
-                        w[static_cast<std::size_t>(j)] = 1;
-                        pair_cur_t[static_cast<std::size_t>(k)] ^= 1;
-                        d += delta;
-                        f  = f_cand;
-                        no_improve = 0;
-                    } else if (++no_improve >= patience) {
-                        break;
+            const bool exhaustive = (n_iter < 0);
+            if (exhaustive) {
+                // ── Exhaustive best-improvement: scan all pairs each round ───
+                if (pair_mode) {
+                    bool any_improved = true;
+                    while (any_improved) {
+                        any_improved = false;
+                        double best_gain = 0.0;
+                        int best_k = -1;
+                        for (int k = 0; k < np; k++) {
+                            const int side = pair_cur_t[static_cast<std::size_t>(k)];
+                            const int i    = pairs[static_cast<std::size_t>(k)][side];
+                            const int j    = pairs[static_cast<std::size_t>(k)][1 - side];
+                            delta.noalias() = 2.0 * (M.col(j) - M.col(i));
+                            const double f_cand = abs_mode
+                                ? (d + delta).lpNorm<1>()
+                                : f + 2.0 * d.dot(delta) + delta.squaredNorm();
+                            const double gain = f - f_cand;
+                            if (gain > best_gain) { best_gain = gain; best_k = k; }
+                        }
+                        if (best_k >= 0) {
+                            const int side = pair_cur_t[static_cast<std::size_t>(best_k)];
+                            const int i    = pairs[static_cast<std::size_t>(best_k)][side];
+                            const int j    = pairs[static_cast<std::size_t>(best_k)][1 - side];
+                            delta.noalias() = 2.0 * (M.col(j) - M.col(i));
+                            w[static_cast<std::size_t>(i)] = 0;
+                            w[static_cast<std::size_t>(j)] = 1;
+                            pair_cur_t[static_cast<std::size_t>(best_k)] ^= 1;
+                            d += delta;
+                            f -= best_gain;
+                            any_improved = true;
+                        }
+                    }
+                } else {
+                    bool any_improved = true;
+                    while (any_improved) {
+                        any_improved = false;
+                        double best_gain = 0.0;
+                        int best_ti = -1, best_ci = -1;
+                        for (int ti = 0; ti < nt; ti++) {
+                            const int i = treated[static_cast<std::size_t>(ti)];
+                            for (int ci = 0; ci < nt; ci++) {
+                                const int j = control[static_cast<std::size_t>(ci)];
+                                delta.noalias() = 2.0 * (M.col(j) - M.col(i));
+                                const double f_cand = abs_mode
+                                    ? (d + delta).lpNorm<1>()
+                                    : f + 2.0 * d.dot(delta) + delta.squaredNorm();
+                                const double gain = f - f_cand;
+                                if (gain > best_gain) { best_gain = gain; best_ti = ti; best_ci = ci; }
+                            }
+                        }
+                        if (best_ti >= 0) {
+                            const int i = treated[static_cast<std::size_t>(best_ti)];
+                            const int j = control[static_cast<std::size_t>(best_ci)];
+                            delta.noalias() = 2.0 * (M.col(j) - M.col(i));
+                            w[static_cast<std::size_t>(i)] = 0;
+                            w[static_cast<std::size_t>(j)] = 1;
+                            treated[static_cast<std::size_t>(best_ti)] = j;
+                            control[static_cast<std::size_t>(best_ci)] = i;
+                            d += delta;
+                            f -= best_gain;
+                            any_improved = true;
+                        }
                     }
                 }
             } else {
-                for (int it = 0; it < n_iter; it++) {
-                    const int ti = pick_nt(rng);
-                    const int ci = pick_nt(rng);
-                    const int i  = treated[static_cast<std::size_t>(ti)];
-                    const int j  = control[static_cast<std::size_t>(ci)];
+                // ── Stochastic: run exactly n_iter random-pair steps
+                if (pair_mode) {
+                    for (int it = 0; it < n_iter; it++) {
+                        const int k    = pick_pair_dist(rng);
+                        const int side = pair_cur_t[static_cast<std::size_t>(k)];
+                        const int i    = pairs[static_cast<std::size_t>(k)][side];
+                        const int j    = pairs[static_cast<std::size_t>(k)][1 - side];
 
-                    delta.noalias() = 2.0 * (M.col(j) - M.col(i));
-                    const double f_cand = abs_mode
-                        ? (d + delta).lpNorm<1>()
-                        : f + 2.0 * d.dot(delta) + delta.squaredNorm();
+                        delta.noalias() = 2.0 * (M.col(j) - M.col(i));
+                        const double f_cand = abs_mode
+                            ? (d + delta).lpNorm<1>()
+                            : f + 2.0 * d.dot(delta) + delta.squaredNorm();
 
-                    if (f_cand < f) {
-                        w[static_cast<std::size_t>(i)] = 0;
-                        w[static_cast<std::size_t>(j)] = 1;
-                        treated[static_cast<std::size_t>(ti)] = j;
-                        control[static_cast<std::size_t>(ci)] = i;
-                        d += delta;
-                        f  = f_cand;
-                        no_improve = 0;
-                    } else if (++no_improve >= patience) {
-                        break;
+                        if (f_cand < f) {
+                            w[static_cast<std::size_t>(i)] = 0;
+                            w[static_cast<std::size_t>(j)] = 1;
+                            pair_cur_t[static_cast<std::size_t>(k)] ^= 1;
+                            d += delta;
+                            f  = f_cand;
+                        }
+                    }
+                } else {
+                    for (int it = 0; it < n_iter; it++) {
+                        const int ti = pick_nt(rng);
+                        const int ci = pick_nt(rng);
+                        const int i  = treated[static_cast<std::size_t>(ti)];
+                        const int j  = control[static_cast<std::size_t>(ci)];
+
+                        delta.noalias() = 2.0 * (M.col(j) - M.col(i));
+                        const double f_cand = abs_mode
+                            ? (d + delta).lpNorm<1>()
+                            : f + 2.0 * d.dot(delta) + delta.squaredNorm();
+
+                        if (f_cand < f) {
+                            w[static_cast<std::size_t>(i)] = 0;
+                            w[static_cast<std::size_t>(j)] = 1;
+                            treated[static_cast<std::size_t>(ti)] = j;
+                            control[static_cast<std::size_t>(ci)] = i;
+                            d += delta;
+                            f  = f_cand;
+                        }
                     }
                 }
             }

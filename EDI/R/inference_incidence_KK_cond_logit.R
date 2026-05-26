@@ -21,7 +21,7 @@ InferenceIncidKKCondLogitOneLik = R6::R6Class("InferenceIncidKKCondLogitOneLik",
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
+			super$initialize(des_obj = des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
@@ -81,6 +81,7 @@ InferenceIncidKKCondLogitOneLik = R6::R6Class("InferenceIncidKKCondLogitOneLik",
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
+		cached_mod = NULL,
 		max_abs_reasonable_coef = 1e4,
 		shared_combined_likelihood = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
@@ -391,7 +392,7 @@ InferenceIncidKKCondLogitIVWC = R6::R6Class("InferenceIncidKKCondLogitIVWC",
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
+			super$initialize(des_obj = des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}

@@ -226,23 +226,19 @@ make_edi_bm = function(cls_name, d) {
         # Lin regression: pre-build centered interaction design; call lm.fit directly
 
 
-        # --- GComp classes: fast_logistic_regression_cpp + R marginalisation ---
+        # --- GComp classes: fast_logistic_regression_cpp + C++ marginalisation ---
         InferencePropGCompMeanDiff = quote({
             b = fast_logistic_regression_cpp(X_bm, y_bm, estimate_only = TRUE)$b
-            eta_base = drop(X_bm %*% b) - X_bm[, 2L] * b[2L]
-            mean(plogis(eta_base + b[2L])) - mean(plogis(eta_base))
+            gcomp_fractional_logit_point_estimate_cpp(X_bm, b, 2L)$md
         }),
         InferenceIncidGCompRiskDiff = quote({
             b = fast_logistic_regression_cpp(X_bm, y_bm, estimate_only = TRUE)$b
-            eta_base = drop(X_bm %*% b) - X_bm[, 2L] * b[2L]
-            mean(plogis(eta_base + b[2L])) - mean(plogis(eta_base))
+            gcomp_logistic_point_estimate_cpp(X_bm, b, 2L)$md
         }),
         InferenceIncidGCompRiskRatio = quote({
             b = fast_logistic_regression_cpp(X_bm, y_bm, estimate_only = TRUE)$b
-            eta_base = drop(X_bm %*% b) - X_bm[, 2L] * b[2L]
-            r1 = mean(plogis(eta_base + b[2L]))
-            r0 = mean(plogis(eta_base))
-            r1 / r0
+            res = gcomp_logistic_point_estimate_cpp(X_bm, b, 2L)
+            res$mean1 / res$mean0
         }),
         InferenceOrdinalGCompMeanDiff = quote({
             fit = fast_ordinal_regression_cpp(X_ord, y_bm, estimate_only = TRUE)

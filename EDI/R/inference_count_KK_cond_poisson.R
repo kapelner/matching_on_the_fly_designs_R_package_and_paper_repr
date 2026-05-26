@@ -450,6 +450,8 @@ InferenceCountKKHurdlePoissonOneLik = R6::R6Class("InferenceCountKKHurdlePoisson
 		}
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+		m = NULL,
+		cached_mod = NULL,
 		use_rcpp = TRUE,
 		max_abs_reasonable_coef = 1e4,
 		supports_likelihood_tests = function(){
@@ -802,6 +804,7 @@ InferenceCountKKCondPoissonOneLik = R6::R6Class("InferenceCountKKCondPoissonOneL
 		}
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+		cached_mod = NULL,
 		max_abs_reasonable_coef = 1e4,
 		get_supported_testing_types_impl = function(){
 			c("wald", "score", "gradient", "lik_ratio")

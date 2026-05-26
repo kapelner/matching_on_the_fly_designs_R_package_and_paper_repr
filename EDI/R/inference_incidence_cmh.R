@@ -23,12 +23,14 @@ InferenceIncidCMH = R6::R6Class("InferenceIncidCMH",
 		#' @description Computes an approximate confidence interval.
 		#' @param alpha Numeric. Significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
+			self$compute_estimate()
 			private$get_standard_error()
 			super$compute_asymp_confidence_interval(alpha)
 		},
 		#' @description Computes an approximate two-sided p-value.
 		#' @param delta Numeric. Null treatment effect value (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
+			self$compute_estimate()
 			private$get_standard_error()
 			super$compute_asymp_two_sided_pval(delta)
 		},
@@ -39,7 +41,7 @@ InferenceIncidCMH = R6::R6Class("InferenceIncidCMH",
 		#'   drawn from the design to estimate the standard error. Default \code{1000L}.
 		#' @param verbose Logical. Whether to print progress messages.
 		#' @return A new \code{InferenceIncidCMH} object.
-		initialize = function(des_obj, model_formula = NULL, se_est_num_vectors = 1000L, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, se_est_num_vectors = 5000L, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 				assertCount(se_est_num_vectors, positive = TRUE)
@@ -73,7 +75,7 @@ InferenceIncidCMH = R6::R6Class("InferenceIncidCMH",
 				ytw      = drop(private$y %*% w_mat)
 				# E[y·W] = (n/2)·ȳ is known exactly — use it rather than mean(ytw).
 				eytw_sq  = ((private$n / 2L) * mean(private$y))^2
-				private$cached_values$cmh_s_beta_hat_T = 4 / private$n * sqrt(sum(ytw^2) / (length(ytw) - 1L) - eytw_sq)
+				private$cached_values$cmh_s_beta_hat_T = 4 / private$n * sqrt(max(0, sum(ytw^2) / (length(ytw) - 1L) - eytw_sq))
 			}
 			private$cached_values$s_beta_hat_T = private$cached_values$cmh_s_beta_hat_T
 			private$cached_values$df = NA_real_

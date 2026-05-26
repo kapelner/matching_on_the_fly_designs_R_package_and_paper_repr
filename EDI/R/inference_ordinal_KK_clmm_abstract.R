@@ -256,6 +256,10 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			X_fit    = private$clmm_X_for_rcpp()
 			y_levels = sort(unique(private$y))
 			K        = length(y_levels)
+			if (K < 2L) {
+				private$cache_nonestimable_estimate("kk_clmm_too_few_levels")
+				return(invisible(NULL))
+			}
 			if (K > 20L) {
 				private$cache_nonestimable_estimate("kk_clmm_too_many_levels")
 				return(invisible(NULL))

@@ -53,6 +53,41 @@ Eigen::MatrixXd cluster_meat(const Eigen::MatrixXd& X_fit,
 }  // namespace
 
 // [[Rcpp::export]]
+List gcomp_fractional_logit_point_estimate_cpp(const Eigen::MatrixXd& X_fit,
+                                               const Eigen::VectorXd& coef_hat,
+                                               int j_treat) {
+  const int n = X_fit.rows();
+  const int p = X_fit.cols();
+  const int j_treat0 = j_treat - 1;
+
+  if (j_treat0 < 0 || j_treat0 >= p) {
+    stop("treatment column index is out of bounds");
+  }
+
+  Eigen::VectorXd eta = X_fit * coef_hat;
+  Eigen::VectorXd eta_base = eta - coef_hat[j_treat0] * X_fit.col(j_treat0);
+
+  Eigen::ArrayXd risk1_arr = plogis_array_safe((eta_base.array() + coef_hat[j_treat0]));
+  Eigen::ArrayXd risk0_arr = plogis_array_safe(eta_base.array());
+
+  double mean1 = risk1_arr.mean();
+  double mean0 = risk0_arr.mean();
+
+  return List::create(
+    _["mean1"] = mean1,
+    _["mean0"] = mean0,
+    _["md"] = mean1 - mean0
+  );
+}
+
+// [[Rcpp::export]]
+List gcomp_logistic_point_estimate_cpp(const Eigen::MatrixXd& X_fit,
+                                        const Eigen::VectorXd& coef_hat,
+                                        int j_treat) {
+  return gcomp_fractional_logit_point_estimate_cpp(X_fit, coef_hat, j_treat);
+}
+
+// [[Rcpp::export]]
 List gcomp_logistic_post_fit_cpp(const Eigen::MatrixXd& X_fit,
                                  const Eigen::VectorXd& y,
                                  const Eigen::VectorXd& coef_hat,

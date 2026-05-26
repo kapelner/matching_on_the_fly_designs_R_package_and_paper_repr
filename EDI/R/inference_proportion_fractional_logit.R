@@ -132,52 +132,77 @@ InferencePropFractionalLogit = R6::R6Class("InferencePropFractionalLogit",
 		generate_mod = function(estimate_only = FALSE){
 			X_full = private$build_design_matrix()
 			
-			attempt = private$fit_with_hardened_qr_column_dropping(
-				X_full = X_full,
-				required_cols = 2L,
-				fit_fun = function(X_fit){
-					ws_args = private$get_backend_warm_start_args(ncol(X_fit))
-					if (estimate_only) {
-						res = fast_logistic_regression_cpp(
-							X = X_fit, 
-							y = private$y, 
-							warm_start_beta = ws_args$warm_start_beta,
-							warm_start_weights = ws_args$warm_start_weights,
-							warm_start_fisher_info = ws_args$warm_start_fisher_info,
-							smart_cold_start = private$smart_cold_start_default,
-							estimate_only = TRUE
-						)
-						list(b = res$b, ssq_b_2 = NA_real_)
-					} else {
-						fast_logistic_regression_with_var_cpp(
-							X = X_fit, 
-							y = private$y,
-							warm_start_beta = ws_args$warm_start_beta,
-							warm_start_weights = ws_args$warm_start_weights,
-							warm_start_fisher_info = ws_args$warm_start_fisher_info,
-							smart_cold_start = private$smart_cold_start_default
-						)
+			attempt = if (private$harden) {
+				private$fit_with_hardened_qr_column_dropping(
+					X_full = X_full,
+					required_cols = 2L,
+					fit_fun = function(X_fit){
+						ws_args = private$get_backend_warm_start_args(ncol(X_fit))
+						if (estimate_only) {
+							res = fast_logistic_regression_cpp(
+								X = X_fit, 
+								y = private$y, 
+								warm_start_beta = ws_args$warm_start_beta,
+								warm_start_weights = ws_args$warm_start_weights,
+								warm_start_fisher_info = ws_args$warm_start_fisher_info,
+								smart_cold_start = private$smart_cold_start_default,
+								estimate_only = TRUE
+							)
+							list(b = res$b, ssq_b_2 = NA_real_)
+						} else {
+							fast_logistic_regression_with_var_cpp(
+								X = X_fit, 
+								y = private$y,
+								warm_start_beta = ws_args$warm_start_beta,
+								warm_start_weights = ws_args$warm_start_weights,
+								warm_start_fisher_info = ws_args$warm_start_fisher_info,
+								smart_cold_start = private$smart_cold_start_default
+							)
+						}
+					},
+					fit_ok = function(mod, X_fit, keep){
+						if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
+						if (estimate_only) return(TRUE)
+						is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
 					}
-				},
-				fit_ok = function(mod, X_fit, keep){
-					if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
-					if (estimate_only) return(TRUE)
-					is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
-				}
-			)
+				)
+			} else {
+				list(
+					X = X_full,
+					keep = seq_len(ncol(X_full)),
+					fit = {
+						ws_args = private$get_backend_warm_start_args(ncol(X_full))
+						if (estimate_only) {
+							res = fast_logistic_regression_cpp(
+								X = X_full, 
+								y = private$y, 
+								warm_start_beta = ws_args$warm_start_beta,
+								warm_start_weights = ws_args$warm_start_weights,
+								warm_start_fisher_info = ws_args$warm_start_fisher_info,
+								smart_cold_start = private$smart_cold_start_default,
+								estimate_only = TRUE
+							)
+							list(b = res$b, ssq_b_2 = NA_real_)
+						} else {
+							fast_logistic_regression_with_var_cpp(
+								X = X_full, 
+								y = private$y,
+								warm_start_beta = ws_args$warm_start_beta,
+								warm_start_weights = ws_args$warm_start_weights,
+								warm_start_fisher_info = ws_args$warm_start_fisher_info,
+								smart_cold_start = private$smart_cold_start_default
+							)
+						}
+					}
+				)
+			}
 			if (!is.null(attempt$fit)){
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 			}
 			attempt$fit
 		},
 		build_design_matrix = function(){
-			X_cov = private$X
-			if (is.null(X_cov) || ncol(X_cov) == 0) {
-				X = cbind(`(Intercept)` = 1, treatment = private$w)
-			} else {
-				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
-			}
-			X
+			private$create_design_matrix()
 		}
 	)
 )

@@ -194,7 +194,7 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLikStdModCache,
 	public = list(
-				
+
 		#' @description Initialize a Cox PH inference object.
 		#' @param des_obj A completed \code{Design} object with a survival response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -322,23 +322,39 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 				colnames(X_fit) = orig_names[as.integer(reduced$keep)]
 			}
 			if (private$use_rcpp) {
-				fit = .fit_survival_coxph_kernel(X_fit, private$y, private$dead)
+				fit = tryCatch(
+					fast_coxph_regression_cpp(
+						X_fit, private$y, private$dead,
+						estimate_only = estimate_only,
+						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
+						smart_cold_start = private$smart_cold_start_default %||% TRUE
+					),
+					error = function(e) NULL
+				)
+				if (is.null(fit) || !isTRUE(fit$converged)) {
+					# Fallback to R if C++ fails or if it's the first fit and we want to be safe
+					fit = .fit_survival_coxph_kernel(X_fit, private$y, private$dead, estimate_only = estimate_only)
+				}
+				
 				if (is.null(fit)) {
 					private$cached_values$likelihood_test_context = NULL
 					return(list(b = rep(NA_real_, ncol(X_fit) + 1L), vcov = matrix(NA_real_, ncol(X_fit) + 1L, ncol(X_fit) + 1L)))
 				}
-				private$set_fit_warm_start(as.numeric(fit$b), "beta", fisher = fit$fisher_information)
+				
+				private$set_fit_warm_start(as.numeric(fit$coefficients %||% fit$b), "beta", fisher = fit$fisher_information)
 				private$cached_mod = fit
 				private$cached_values$likelihood_test_context = list(
 					X = X_fit,
-					full_neg_loglik = fit$neg_log_lik
+					full_neg_loglik = fit$neg_ll %||% fit$neg_log_lik
 				)
-				# fast_coxph_regression returns coefficients with intercept=FALSE for Cox.
-				# InferenceAsympLikStdModCache expects intercept in first position if it exists.
-				# But Cox has no intercept. So we prefix 0.
+				
 				return(list(
-					b = c(0, fit$b),
+					beta_hat_T = as.numeric(fit$coefficients %||% fit$b)[1L],
 					ssq_b_2 = if (estimate_only) NA_real_ else fit$vcov[1, 1],
+					b = c(0, fit$coefficients %||% fit$b), # for base class warm starts
+					neg_log_lik = as.numeric(fit$neg_ll %||% fit$neg_log_lik),
+					fisher_information = fit$fisher_information,
 					vcov = if (estimate_only) NULL else {
 						v = matrix(0, ncol(X_fit) + 1, ncol(X_fit) + 1)
 						v[2:(ncol(X_fit) + 1), 2:(ncol(X_fit) + 1)] = fit$vcov
@@ -350,19 +366,24 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 			tryCatch({
 				coxph_mod = suppressWarnings(survival::coxph(surv_obj ~ X_fit))
 				if (estimate_only) {
+					coefs = stats::coef(coxph_mod)
 					list(
-						b = c(0, stats::coef(coxph_mod)),
+						beta_hat_T = as.numeric(coefs[1]),
+						b = c(0, coefs),
 						ssq_b_2 = NA_real_,
 						vcov = NULL
 					)
 				} else {
+					coefs = stats::coef(coxph_mod)
 					vcov_mat = stats::vcov(coxph_mod)
 					v = matrix(0, ncol(X_fit) + 1, ncol(X_fit) + 1)
 					v[2:(ncol(X_fit) + 1), 2:(ncol(X_fit) + 1)] = vcov_mat
 					list(
-						b = c(0, stats::coef(coxph_mod)),
+						beta_hat_T = as.numeric(coefs[1]),
 						ssq_b_2 = as.numeric(vcov_mat[1, 1]),
-						vcov = v
+						b = c(0, coefs),
+						vcov = v,
+						neg_log_lik = as.numeric(-stats::logLik(coxph_mod))
 					)
 				}
 			}, error = function(e){

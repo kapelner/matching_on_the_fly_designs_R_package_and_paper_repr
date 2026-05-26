@@ -71,14 +71,14 @@ inference_kk_passthrough_compound_public = utils::modifyList(utils::modifyList(a
 			
 			# combine using fixed weights from observed fit (standard Jackknife practice for complex estimators)
 			w_star = stats$w_star
-			if (is.na(w_star)) {
+			if (is.null(w_star) || is.na(w_star)) {
 				if (!is.na(d_bar_w)) return(d_bar_w)
 				return(r_bar_w)
 			}
 			if (is.na(d_bar_w)) return(r_bar_w)
 			if (is.na(r_bar_w)) return(d_bar_w)
 			
-			w_star * d_bar_w + (1 - w_star) * r_bar_w
+			as.numeric(w_star * d_bar_w + (1 - w_star) * r_bar_w)
 		}
 	))
 inference_kk_passthrough_compound_private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), as.list(InferenceMixinKKPassThroughCompound$private))

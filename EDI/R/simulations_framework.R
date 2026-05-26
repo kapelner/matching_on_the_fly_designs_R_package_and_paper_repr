@@ -1081,7 +1081,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                 ready = isTRUE(private$reuse_cache) && file.exists(cache_file)
               )
             }
-            if (has_cmh_inference) {
+            if (has_cmh_inference && !is_pregen) {
+              # Pregen designs use design_w_cache$ws as the CMH SE W matrix
+              # (Nrep vectors, zero extra cost) — skip separate cmh_se_w_cache.
               cache_file = private$.simulation_cache_file(
                 cs, dl, dp, "cmh_se_w", cmh_se_num_vectors = cmh_se_num_vectors
               )
@@ -2759,7 +2761,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             } else {
               d$add_all_subjects_to_experiment(X)
             }
-            if (!is.null(state$cmh_se_w_cache) && !is.null(state$cmh_se_w_cache[[design_name]])) {
+            # For pregen designs (design_w_cache present), use the full pre-generated
+            # W matrix as the CMH SE W matrix — gives Nrep vectors at zero extra cost.
+            # Fall back to the dedicated cmh_se_w_cache for non-pregen designs.
+            if (!is.null(state$design_w_cache) && !is.null(state$design_w_cache[[design_name]])) {
+              d$inject_cmh_se_w_mat(state$design_w_cache[[design_name]]$ws)
+            } else if (!is.null(state$cmh_se_w_cache) && !is.null(state$cmh_se_w_cache[[design_name]])) {
               d$inject_cmh_se_w_mat(state$cmh_se_w_cache[[design_name]])
             }
             d$assign_w_to_all_subjects(precomp_w)

@@ -61,7 +61,7 @@ public:
 
         dp.setZero(na);
         de = -(g_up - g_lo);
-        dp[0] = g_up - g_lo;
+        if (na > 0) dp[0] = g_up - g_lo;
 
         if (y_ir <= 1) return lp;
 

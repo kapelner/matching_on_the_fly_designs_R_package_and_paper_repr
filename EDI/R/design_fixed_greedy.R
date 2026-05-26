@@ -16,6 +16,10 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 		#' @param response_type 	The data type of response values.
 		#' @param prob_T  The probability of the treatment assignment. Must be 0.5.
 		#' @param objective 	The objective function to use. Default is "mahal_dist".
+		#' @param n_iter Number of swap iterations. \code{Inf} (default) uses exhaustive
+		#'   best-improvement search guaranteed to reach a strict local optimum. A positive
+		#'   integer runs that many stochastic random-pair iterations with patience-based
+		#'   early stopping.
 		#' @param include_is_missing_as_a_new_feature  Flag for missingness indicators.
 		#' @param n  		The sample size.
 		#' @param verbose  Flag for verbosity.
@@ -25,10 +29,12 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 		#'
 		#' @return 			A new `DesignFixedGreedy` object
 		#'
+		supports_batch_w_pregeneration = function() TRUE,
 		initialize = function(
 				response_type,
 				prob_T = 0.5,
 				objective = "mahal_dist",
+				n_iter = Inf,
 				include_is_missing_as_a_new_feature = TRUE,
 				n = NULL,
 				verbose = FALSE,
@@ -43,8 +49,13 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 			}
 			# GED availability is checked lazily in draw_ws_according_to_design so
 			# that workers using pre-computed w vectors never trigger a JVM load.
+			if (should_run_asserts()) {
+				if (!is.infinite(n_iter) && (!is.numeric(n_iter) || length(n_iter) != 1L || n_iter <= 0 || n_iter != floor(n_iter)))
+					stop("n_iter must be Inf or a positive integer")
+			}
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 			private$objective = objective
+			private$n_iter    = n_iter
 			private$uses_covariates = TRUE
 		},
 		#' @description Draw multiple treatment assignment vectors.
@@ -71,13 +82,13 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 				return(private$validate_allocation_matrix(w_mat, n = n, r = r))
 			}
 			private$covariate_impute_if_necessary_and_then_create_model_matrix()
-			X      = private$X[1:n, , drop = FALSE]
-			n_iter = max(500L, 500L * as.integer(n))
-			w_mat  = greedy_design_search_cpp(
+			X          = private$X[1:n, , drop = FALSE]
+			cpp_n_iter = if (is.infinite(private$n_iter)) -1L else as.integer(private$n_iter)
+			w_mat      = greedy_design_search_cpp(
 				X_raw     = X,
 				r         = as.integer(r),
 				objective = private$objective,
-				n_iter    = n_iter
+				n_iter    = cpp_n_iter
 			)
 			# greedy_design_search_cpp already returns n x r
 			storage.mode(w_mat) = "numeric"
@@ -86,6 +97,7 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 	),
 	private = list(
 		objective = NULL,
+		n_iter    = NULL,
 		validate_allocation_matrix = function(w_mat, n, r){
 			if (is.vector(w_mat)) {
 				w_mat = matrix(w_mat, nrow = n, ncol = 1)

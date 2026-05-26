@@ -110,128 +110,145 @@ InferenceMixinKKPassThrough = list(
 								tryCatch({
 									boot_inf_obj = self$duplicate()
 									boot_inf_obj$.__enclos_env__$private$y = y[i_b]
+									boot_inf_obj$.__enclos_env__$private$y_temp = boot_inf_obj$.__enclos_env__$private$y
 									boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
 									boot_inf_obj$.__enclos_env__$private$w = w[i_b]
 									boot_inf_obj$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
-									boot_inf_obj$.__enclos_env__$private$cached_values = list()
 									boot_inf_obj$.__enclos_env__$private$m = m_vec_b
-									boot_inf_obj$.__enclos_env__$private$compute_basic_match_data()
-									if (has_res_stat_debug) boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-									boot_inf_obj$compute_estimate(estimate_only = TRUE)
+									boot_inf_obj$.__enclos_env__$private$cached_values = list(
+										KKstats = compute_bootstrap_matching_stats_cpp(
+											X = X, y = y, w = w, i_b = i_b, n_reservoir = n_reservoir
+										)
+									)
+									if (has_res_stat_debug) {
+										boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
+									}
+									as.numeric(boot_inf_obj$compute_estimate(estimate_only = TRUE))[1L]
 								}, error = function(e) list(val = NA_real_, error = conditionMessage(e))),
-								warning = function(wrn) { iter_warns <<- c(iter_warns, conditionMessage(wrn)); invokeRestart("muffleWarning") }
+								warning = function(w) {
+									iter_warns <<- c(iter_warns, conditionMessage(w))
+									invokeRestart("muffleWarning")
+								}
 							)
+							res_val = if (is.list(iter_val)) iter_val$val else iter_val
+							res_err = if (is.list(iter_val)) iter_val$error else NULL
 							debug_results[[b]] = list(
-								val = if (is.list(iter_val) && !is.null(iter_val$val)) as.numeric(iter_val$val)[1L] else as.numeric(iter_val)[1L],
-								errors = if (is.list(iter_val) && !is.null(iter_val$error)) iter_val$error else character(0),
+								val = res_val,
+								error = res_err,
 								warnings = iter_warns
 							)
 						}
-						debug_results = debug_results[!vapply(debug_results, is.null, logical(1))]
-						if (length(debug_results) == 0L) {
-							stop("All bootstrap iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
-						}
-						values = sapply(debug_results, `[[`, "val")
-						errors_list = lapply(debug_results, `[[`, "errors")
-						warnings_list = lapply(debug_results, `[[`, "warnings")
-						num_errors_vec = lengths(errors_list)
-						num_warnings_vec = lengths(warnings_list)
-						return(list(
-							values = values,
-							errors = errors_list,
-							warnings = warnings_list,
-							num_errors = num_errors_vec,
-							num_warnings = num_warnings_vec,
-							prop_iterations_with_errors = mean(num_errors_vec > 0),
-							prop_iterations_with_warnings = mean(num_warnings_vec > 0),
-							prop_illegal_values = mean(!is.finite(values))
+						return(debug_results)
+					}
+					# Standard Loop
+					cores_to_use = private$effective_parallel_cores("bootstrap", self$num_cores)
+					res = if (cores_to_use > 1L) {
+						unlist(private$par_lapply(
+							as.list(seq_len(B)),
+							function(b) {
+								tryCatch({
+									boot_sample = kk_boot_draws[[b]]
+									i_b = boot_sample$i_b
+									m_vec_b = boot_sample$m_vec_b
+									boot_inf_obj = self$duplicate()
+									boot_inf_obj$.__enclos_env__$private$y = y[i_b]
+									boot_inf_obj$.__enclos_env__$private$y_temp = boot_inf_obj$.__enclos_env__$private$y
+									boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
+									boot_inf_obj$.__enclos_env__$private$w = w[i_b]
+									boot_inf_obj$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
+									boot_inf_obj$.__enclos_env__$private$m = m_vec_b
+									boot_inf_obj$.__enclos_env__$private$cached_values = list(
+										KKstats = compute_bootstrap_matching_stats_cpp(
+											X = X, y = y, w = w, i_b = i_b, n_reservoir = n_reservoir
+										)
+									)
+									as.numeric(boot_inf_obj$compute_estimate(estimate_only = TRUE))[1L]
+								}, error = function(e) { NA_real_ })
+							},
+							n_cores = cores_to_use,
+							show_progress = show_progress
 						))
-					}
-					# Pure R KK bootstrap implementation
-					if (self$num_cores == 1) {
-						pb = NULL
-						if (private$verbose) {
-							pb = utils::txtProgressBar(min = 0, max = B, style = 3)
-							on.exit(close(pb), add = TRUE)
-						}
-						beta_hat_T_bs = rep(NA_real_, B)
-						has_res_stat_serial = private$has_private_method("compute_reservoir_and_match_statistics")
-						for (b in 1:B) {
-							boot_sample = kk_boot_draws[[b]]
-							i_b    = boot_sample$i_b
-							m_vec_b = boot_sample$m_vec_b
-							boot_inf_obj = self$duplicate()
-							boot_inf_obj$.__enclos_env__$private$y = y[i_b]
-							boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
-							boot_inf_obj$.__enclos_env__$private$w = w[i_b]
-							boot_inf_obj$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
-							boot_inf_obj$.__enclos_env__$private$cached_values = list()
-							beta_hat_T_bs[b] = tryCatch({
-								boot_inf_obj$.__enclos_env__$private$m = m_vec_b
-								boot_inf_obj$.__enclos_env__$private$compute_basic_match_data()
-								if (has_res_stat_serial) boot_inf_obj$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-								boot_inf_obj$compute_estimate(estimate_only = TRUE)
-							}, error = function(e) { NA_real_ })
-							if (!is.null(pb)) utils::setTxtProgressBar(pb, b)
-						}
-						return(beta_hat_T_bs)
 					} else {
-						# Parallel bootstrap execution for KK designs
-						cores_to_use = self$num_cores
-						if (cores_to_use > 1L) {
-							boot_sample_w = des_priv$draw_bootstrap_indices()
-							i_b_w   = boot_sample_w$i_b
-							m_vec_b_w = boot_sample_w$m_vec_b
-							t_warmup_kk = system.time({
-								boot_w = self$duplicate()
-								boot_w$.__enclos_env__$private$y = y[i_b_w]
-								boot_w$.__enclos_env__$private$dead = dead[i_b_w]
-								boot_w$.__enclos_env__$private$w = w[i_b_w]
-								boot_w$.__enclos_env__$private$X = X[i_b_w, , drop = FALSE]
-								boot_w$.__enclos_env__$private$cached_values = list()
-								boot_w$.__enclos_env__$private$m = m_vec_b_w
-								boot_w$.__enclos_env__$private$compute_basic_match_data()
-								if (private$object_has_private_method(boot_w, "compute_reservoir_and_match_statistics"))
-									boot_w$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-								tryCatch(boot_w$compute_estimate(estimate_only = TRUE), error = function(e) NA_real_)
-							})[[3]]
-							fork_overhead_estimate = if (!is.null(get_global_fork_cluster())) 0.01 else 0.5
-							if (!(t_warmup_kk * B > fork_overhead_estimate * cores_to_use))
-								cores_to_use = 1L
-						}
-						kk_template = self$duplicate()
-						has_res_stat = private$object_has_private_method(kk_template, "compute_reservoir_and_match_statistics")
-						# Use private$par_lapply which handles both persistent fork clusters and other strategies.
-						beta_hat_T_bs = unlist(private$par_lapply(seq_along(kk_boot_draws), function(b) {
-							boot_sample = kk_boot_draws[[b]]
-							i_b    = boot_sample$i_b
-							m_vec_b = boot_sample$m_vec_b
-							worker_inf = kk_template$duplicate()
-							worker_inf$.__enclos_env__$private$y = y[i_b]
-							worker_inf$.__enclos_env__$private$dead = dead[i_b]
-							worker_inf$.__enclos_env__$private$w = w[i_b]
-							worker_inf$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
-							worker_inf$.__enclos_env__$private$cached_values = list()
+						vapply(seq_len(B), function(b) {
 							tryCatch({
-								worker_inf$.__enclos_env__$private$m = m_vec_b
-								worker_inf$.__enclos_env__$private$compute_basic_match_data()
-								if (has_res_stat) worker_inf$.__enclos_env__$private$compute_reservoir_and_match_statistics()
-								worker_inf$compute_estimate(estimate_only = TRUE)
-							}, error = function(e) NA_real_)
-						}, n_cores = cores_to_use, show_progress = private$verbose,
-						export_list = list(
-							y = y, dead = dead, w = w, X = X, kk_template = kk_template,
-							kk_boot_draws = kk_boot_draws,
-							has_res_stat = has_res_stat
-						)))
-						return(beta_hat_T_bs)
+								boot_sample = kk_boot_draws[[b]]
+								i_b = boot_sample$i_b
+								m_vec_b = boot_sample$m_vec_b
+								boot_inf_obj = self$duplicate()
+								boot_inf_obj$.__enclos_env__$private$y = y[i_b]
+								boot_inf_obj$.__enclos_env__$private$y_temp = boot_inf_obj$.__enclos_env__$private$y
+								boot_inf_obj$.__enclos_env__$private$dead = dead[i_b]
+								boot_inf_obj$.__enclos_env__$private$w = w[i_b]
+								boot_inf_obj$.__enclos_env__$private$X = X[i_b, , drop = FALSE]
+								boot_inf_obj$.__enclos_env__$private$m = m_vec_b
+								boot_inf_obj$.__enclos_env__$private$cached_values = list(
+									KKstats = compute_bootstrap_matching_stats_cpp(
+										X = X, y = y, w = w, i_b = i_b, n_reservoir = n_reservoir
+									)
+								)
+								as.numeric(boot_inf_obj$compute_estimate(estimate_only = TRUE))[1L]
+							}, error = function(e) { NA_real_ })
+						}, numeric(1L))
 					}
+					res
 				}
+		},
+		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
+		#' @param estimate_only If TRUE, skip variance calculations.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			
+			# If the class provides its own specialized weighted estimator (e.g. via backend), use it.
+			if (is.function(private$compute_weighted_estimate_ivwc)) {
+				w_info = kk_pair_and_reservoir_bootstrap_weights(private, row_weights)
+				return(private$compute_weighted_estimate_ivwc(w_info, estimate_only))
+			}
+			
+			# Fallback for KK designs: weighted combination of matches and reservoir.
+			if (is.null(private$cached_values$KKstats)) {
+				private$compute_basic_match_data()
+			}
+			stats = private$cached_values$KKstats
+			if (is.null(stats)) return(NA_real_)
+			
+			w_info = kk_pair_and_reservoir_bootstrap_weights(private, row_weights)
+			
+			# 1. Matched differences mean
+			d_bar_w = if (length(w_info$pair_weights) > 0) {
+				sum(stats$y_matched_diffs * w_info$pair_weights, na.rm = TRUE) / sum(w_info$pair_weights, na.rm = TRUE)
+			} else NA_real_
+			
+			# 2. Reservoir mean diff
+			r_idx = w_info$reservoir_idx
+			r_w = w_info$reservoir_weights
+			if (length(r_idx) > 0 && !is.null(stats$y_reservoir)) {
+				y_r = stats$y_reservoir; w_r = stats$w_reservoir
+				num_t = sum(y_r[w_r == 1] * r_w[w_r == 1], na.rm = TRUE)
+				den_t = sum(r_w[w_r == 1], na.rm = TRUE)
+				num_c = sum(y_r[w_r == 0] * r_w[w_r == 0], na.rm = TRUE)
+				den_c = sum(r_w[w_r == 0], na.rm = TRUE)
+				r_bar_t = if (is.finite(den_t) && den_t > 0) num_t / den_t else NA_real_
+				r_bar_c = if (is.finite(den_c) && den_c > 0) num_c / den_c else NA_real_
+				r_bar_w = r_bar_t - r_bar_c
+			} else r_bar_w = NA_real_
+			
+			# Combine using fixed weights from observed fit
+			w_star = stats$w_star
+			if (is.null(w_star) || is.na(w_star)) {
+				if (!is.na(d_bar_w)) return(d_bar_w)
+				return(r_bar_w)
+			}
+			if (is.na(d_bar_w)) return(r_bar_w)
+			if (is.na(r_bar_w)) return(d_bar_w)
+			
+			as.numeric(w_star * d_bar_w + (1 - w_star) * r_bar_w)
 		}
 	),
 	private = list(
 		m = NULL,
 		kk_passthrough = TRUE,
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		supports_information_preference = function(){
 			FALSE
 		},
@@ -325,70 +342,57 @@ InferenceMixinKKPassThrough = list(
 			worker_state = private$create_kk_bootstrap_worker_state(kk_boot_context)
 			debug_results = vector("list", B)
 			for (b in seq_len(B)) {
+				sample_info = kk_boot_draws[[b]]
 				iter_warns = character(0)
 				iter_val = withCallingHandlers(
 					tryCatch({
-						sample_info = kk_boot_draws[[b]]
 						private$load_kk_bootstrap_sample_into_worker(worker_state, sample_info)
 						private$compute_kk_bootstrap_worker_estimate(worker_state)
 					}, error = function(e) list(val = NA_real_, error = conditionMessage(e))),
-					warning = function(wrn) { iter_warns <<- c(iter_warns, conditionMessage(wrn)); invokeRestart("muffleWarning") }
+					warning = function(w) {
+						iter_warns <<- c(iter_warns, conditionMessage(w))
+						invokeRestart("muffleWarning")
+					}
 				)
+				res_val = if (is.list(iter_val)) iter_val$val else iter_val
+				res_err = if (is.list(iter_val)) iter_val$error else NULL
 				debug_results[[b]] = list(
-					val = if (is.list(iter_val) && !is.null(iter_val$val)) as.numeric(iter_val$val)[1L] else as.numeric(iter_val)[1L],
-					errors = if (is.list(iter_val) && !is.null(iter_val$error)) iter_val$error else character(0),
+					val = res_val,
+					error = res_err,
 					warnings = iter_warns
 				)
 			}
-			debug_results = debug_results[!vapply(debug_results, is.null, logical(1))]
-			if (should_run_asserts()) {
-				if (length(debug_results) == 0L) {
-					stop("All bootstrap iterations failed or returned invalid results. Check for worker crashes or out-of-memory issues.")
-				}
-			}
-			values = sapply(debug_results, `[[`, "val")
-			errors_list = lapply(debug_results, `[[`, "errors")
-			warnings_list = lapply(debug_results, `[[`, "warnings")
-			num_errors_vec = lengths(errors_list)
-			num_warnings_vec = lengths(warnings_list)
-			list(
-				values = values,
-				errors = errors_list,
-				warnings = warnings_list,
-				num_errors = num_errors_vec,
-				num_warnings = num_warnings_vec,
-				prop_iterations_with_errors = mean(num_errors_vec > 0),
-				prop_iterations_with_warnings = mean(num_warnings_vec > 0),
-				prop_illegal_values = mean(!is.finite(values))
-			)
+			debug_results
 		},
-		compute_kk_bootstrap_distribution_with_reused_workers = function(kk_boot_draws, kk_boot_context, actual_cores, show_progress = FALSE){
+		compute_kk_bootstrap_distribution_with_reused_workers = function(kk_boot_draws, kk_boot_context, actual_cores, show_progress){
 			B = length(kk_boot_draws)
-			chunk_n = max(1L, min(as.integer(actual_cores), as.integer(B)))
-			chunk_id = ceiling(seq_len(B) / ceiling(B / chunk_n))
-			chunks = split(seq_len(B), chunk_id)
-			run_chunk = function(idxs) {
+			if (actual_cores > 1L) {
+				unlist(private$par_lapply(
+					as.list(seq_len(B)),
+					function(idx) {
+						b = as.integer(idx)[1L]
+						# In a fork, we can't easily reuse state across indices without complicated orchestration.
+						# Re-creating a fresh state is safer and the worker state setup is cheap.
+						worker_state = private$create_kk_bootstrap_worker_state(kk_boot_context)
+						private$load_kk_bootstrap_sample_into_worker(worker_state, kk_boot_draws[[b]])
+						tryCatch(private$compute_kk_bootstrap_worker_estimate(worker_state), error = function(e) NA_real_)
+					},
+					n_cores = actual_cores,
+					budget = 1L,
+					show_progress = show_progress
+				), recursive = FALSE, use.names = FALSE)
+			} else {
 				worker_state = private$create_kk_bootstrap_worker_state(kk_boot_context)
-				out = numeric(length(idxs))
-				for (k in seq_along(idxs)) {
-					sample_info = kk_boot_draws[[idxs[[k]]]]
-					out[k] = tryCatch({
-						private$load_kk_bootstrap_sample_into_worker(worker_state, sample_info)
-						private$compute_kk_bootstrap_worker_estimate(worker_state)
-					}, error = function(e) NA_real_)
-				}
-				out
+				pbar = if (show_progress) utils::txtProgressBar(min = 0, max = B, style = 3) else NULL
+				res = vapply(seq_len(B), function(b) {
+					private$load_kk_bootstrap_sample_into_worker(worker_state, kk_boot_draws[[b]])
+					val = tryCatch(private$compute_kk_bootstrap_worker_estimate(worker_state), error = function(e) NA_real_)
+					if (show_progress) utils::setTxtProgressBar(pbar, b)
+					val
+				}, numeric(1L))
+				if (show_progress) close(pbar)
+				res
 			}
-			if (actual_cores <= 1L) {
-				return(as.numeric(run_chunk(seq_len(B))))
-			}
-			as.numeric(unlist(private$par_lapply(
-				chunks,
-				run_chunk,
-				n_cores = actual_cores,
-				budget = 1L,
-				show_progress = show_progress
-			), use.names = FALSE))
 		},
 		compute_basic_kk_match_data_impl = function(){
 			if (!isTRUE(private$has_match_structure)) {
@@ -404,35 +408,7 @@ InferenceMixinKKPassThrough = list(
 				w = private$w,
 				m_vec = private$m
 			)
-		},
-		compute_concordant_and_discordant_match_statistics = function(){
-			m = private$cached_values$KKstats$m
-			y_matched_diffs = private$cached_values$KKstats$y_matched_diffs
-			i_m_conc = which(y_matched_diffs == 0)
-			i_m_disc = setdiff(seq_len(m), i_m_conc)
-			private$cached_values$KKstats$i_m_conc = i_m_conc
-			private$cached_values$KKstats$i_m_disc = i_m_disc
-			private$cached_values$KKstats$n_m_conc = length(i_m_conc)
-			private$cached_values$KKstats$n_m_disc = length(i_m_disc)
-			private$cached_values$KKstats$y_matched_diffs_disc = y_matched_diffs[i_m_disc]
-			private$cached_values$KKstats$X_matched_diffs_disc =
-				private$cached_values$KKstats$X_matched_diffs[i_m_disc, drop = FALSE]
-			i_conc = which(private$m %in% i_m_conc)
-			private$cached_values$KKstats$X_conc = private$get_X()[i_conc, , drop = FALSE]
-			private$cached_values$KKstats$y_conc = private$y[i_conc]
-			private$cached_values$KKstats$w_conc = private$w[i_conc]
-		},
-		compute_model_matrix_with_matching_dummies = function(){
-			if (is.null(private$cached_values$data_frame_with_matching_dummies)){
-				if (!is.null(private$m) & uniqueN(private$m) > 1){
-					mm = model.matrix(~ 0 + factor(private$m))
-					mm = mm[, 2 : (ncol(mm) - 1)]
-				} else {
-					mm = NULL
-				}
-				private$cached_values$data_frame_with_matching_dummies = cbind(data.frame(w = private$w), mm)
-			}
-			private$cached_values$data_frame_with_matching_dummies
+			private$cached_values$KKstats
 		}
 	)
 )

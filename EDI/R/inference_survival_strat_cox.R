@@ -40,12 +40,6 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$use_rcpp = use_rcpp
 		},
-		#' @description Compute the treatment effect estimate.
-		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_estimate = function(estimate_only = FALSE){
-			private$shared(estimate_only = estimate_only)
-			private$cached_values$beta_hat_T
-		},
 		#' @description Recomputes the stratified Cox PH treatment estimate under
 		#'   Bayesian-bootstrap weights.
 		#' @param subject_or_block_weights Subject-, block-, cluster-, or matched-set
@@ -68,24 +62,6 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 			private$cached_values$s_beta_hat_T = NA_real_
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes an approximate confidence interval.
-		#' @param alpha Confidence level.
-		compute_asymp_confidence_interval = function(alpha = 0.05){
-			if (should_run_asserts()) {
-				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			}
-			private$shared()
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
-		},
-		#' @description Computes an approximate two-sided p-value.
-		#' @param delta Null treatment effect value.
-		compute_asymp_two_sided_pval = function(delta = 0){
-			if (should_run_asserts()) {
-				assertNumeric(delta)
-			}
-			private$shared()
-			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-		},
 		#' @description Compute confidence interval rand
 		#' @param alpha The significance level (default 0.05).
 		#' @param r Number of vectors to draw.
@@ -103,11 +79,11 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 		get_complexity_tier = function() "light",
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T) && is.finite(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 			mod = private$generate_mod(estimate_only = estimate_only)
-			private$cached_values$beta_hat_T = as.numeric(mod$b[2])
+			private$cached_values$beta_hat_T = mod$beta_hat_T %||% as.numeric(mod$b[2])
 			if (estimate_only) return(invisible(NULL))
-			se = if (is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0) sqrt(mod$ssq_b_2) else NA_real_
+			se = if (is.finite(mod$ssq_b_2 %||% NA_real_) && mod$ssq_b_2 > 0) sqrt(mod$ssq_b_2) else NA_real_
 			private$cached_values$s_beta_hat_T = se
 			private$cached_values$df = NA_real_
 		},
@@ -115,51 +91,6 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 			isTRUE(private$use_rcpp)
 		},
 		supports_lik_ratio_param_bootstrap = function() isTRUE(private$use_rcpp),
-		compute_lik_ratio_confidence_interval_impl = function(alpha){
-			est = self$compute_estimate()
-			if (!is.finite(est)) return(c(NA_real_, NA_real_))
-			private$shared(estimate_only = FALSE)
-			se = private$cached_values$s_beta_hat_T
-			step = if (is.finite(se) && se > 0) se else max(abs(est), 1)
-			step = max(step, 1e-4)
-			wald_ci = private$compute_wald_confidence_interval_impl(alpha)
-			seeds = c(
-				if (length(wald_ci) >= 1L && is.finite(wald_ci[[1L]])) wald_ci[[1L]] else est - step,
-				if (length(wald_ci) >= 2L && is.finite(wald_ci[[2L]])) wald_ci[[2L]] else est + step
-			)
-			pval_fn = function(delta){
-				tryCatch(self$compute_lik_ratio_two_sided_pval(delta), error = function(e) NA_real_)
-			}
-			find_bound = function(direction, seed){
-				f_est = pval_fn(est) - alpha
-				if (!is.finite(f_est)) return(NA_real_)
-				if (f_est <= 0) return(est)
-				outer = NA_real_
-				if (is.finite(seed) && ((direction < 0 && seed < est) || (direction > 0 && seed > est))) {
-					f_seed = pval_fn(seed) - alpha
-					if (is.finite(f_seed) && f_seed <= 0) outer = seed
-				}
-				if (!is.finite(outer)) {
-					for (i in 0:59) {
-						d = est + direction * step * 2^i
-						f_d = pval_fn(d) - alpha
-						if (is.finite(f_d) && f_d <= 0) {
-							outer = d
-							break
-						}
-					}
-				}
-				if (!is.finite(outer)) return(NA_real_)
-				root = tryCatch(
-					stats::uniroot(function(d) pval_fn(d) - alpha, lower = min(est, outer), upper = max(est, outer), tol = 1e-6)$root,
-					error = function(e) NA_real_
-				)
-				as.numeric(root)
-			}
-			ci = c(find_bound(-1, seeds[1]), find_bound(1, seeds[2]))
-			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
-			ci
-		},
 		simulate_under_lik_null = function(spec, delta, null_fit){
 			b_null = as.numeric(null_fit$coefficients %||% null_fit$b)
 			if (!all(is.finite(b_null))) return(NULL)
@@ -179,7 +110,13 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 			y_sim = sim$y_sim; dead_sim = sim$dead_sim
 			if (!all(is.finite(y_sim)) || any(y_sim <= 0)) return(NULL)
 			strata_arg = if (stratified && !is.null(strata)) strata else NULL
-			full_res = .fit_survival_coxph_kernel(X_fit, y_sim, dead_sim, strata = strata_arg)
+			full_res = tryCatch(
+				fast_stratified_coxph_regression_cpp(X_fit, y_sim, dead_sim, strata = as.integer(strata_arg %||% rep.int(1L, length(y_sim))), estimate_only = FALSE),
+				error = function(e) NULL
+			)
+			if (is.null(full_res) || !isTRUE(full_res$converged) || !is.finite(full_res$coefficients[j])) {
+				full_res = .fit_survival_coxph_kernel(X_fit, y_sim, dead_sim, strata = strata_arg)
+			}
 			if (is.null(full_res) || !isTRUE(full_res$converged) || !is.finite(full_res$coefficients[j])) return(NULL)
 			full_fit_boot = list(b = as.numeric(full_res$coefficients), neg_loglik = as.numeric(full_res$neg_ll))
 			list(
@@ -209,7 +146,10 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 				strata = strata,
 				stratified = stratified,
 				j = j_treat,
-				full_fit = private$cached_mod,
+				full_fit = list(
+					b = as.numeric(private$cached_mod$coefficients %||% private$cached_mod$b),
+					neg_loglik = as.numeric(ctx$full_neg_loglik)
+				),
 				fit_null = function(delta, start = NULL){
 					strata_arg = if (stratified) strata else NULL
 					.fit_survival_coxph_fixed_kernel(X_fit, y, dead, strata = strata_arg, fixed_idx = j_treat, fixed_value = delta)
@@ -220,7 +160,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 				score = function(fit){
 					beta = as.numeric(fit$coefficients %||% fit$b)
 					if (stratified) {
-						.cox_score_breslow_fd_r(X_fit, y, dead, beta, strata = strata)
+						get_stratified_coxph_score_cpp(X_fit, y, dead, as.integer(strata), beta)
 					} else {
 						get_coxph_score_cpp(X_fit, y, dead, beta)
 					}
@@ -228,29 +168,29 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 				observed_information = function(fit){
 					beta = as.numeric(fit$coefficients %||% fit$b)
 					if (stratified) {
-						.cox_information_breslow_fd_r(X_fit, y, dead, beta, strata = strata)
+						get_stratified_coxph_hessian_cpp(X_fit, y, dead, as.integer(strata), beta)
 					} else {
-						-get_coxph_hessian_cpp(X_fit, y, dead, beta)
+						get_coxph_hessian_cpp(X_fit, y, dead, beta)
 					}
 				},
 				fisher_information = function(fit){
 					beta = as.numeric(fit$coefficients %||% fit$b)
 					fit$fisher_information %||% if (stratified) {
-						.cox_information_breslow_fd_r(X_fit, y, dead, beta, strata = strata)
+						get_stratified_coxph_hessian_cpp(X_fit, y, dead, as.integer(strata), beta)
 					} else {
-						-get_coxph_hessian_cpp(X_fit, y, dead, beta)
+						get_coxph_hessian_cpp(X_fit, y, dead, beta)
 					}
 				},
 				information = function(fit){
 					beta = as.numeric(fit$coefficients %||% fit$b)
 					fit$information %||% fit$fisher_information %||% if (stratified) {
-						.cox_information_breslow_fd_r(X_fit, y, dead, beta, strata = strata)
+						get_stratified_coxph_hessian_cpp(X_fit, y, dead, as.integer(strata), beta)
 					} else {
-						-get_coxph_hessian_cpp(X_fit, y, dead, beta)
+						get_coxph_hessian_cpp(X_fit, y, dead, beta)
 					}
 				},
 				neg_loglik = function(fit){
-					as.numeric(fit$neg_ll %||% fit$neg_loglik)
+					as.numeric(fit$neg_ll %||% fit$neg_loglik %||% fit$neg_log_lik)
 				}
 			)
 		},
@@ -311,13 +251,15 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 		},
 		format_mod_output = function(mod){
 			if (is.null(mod)){
-				return(list(b = c(NA_real_, NA_real_), ssq_b_2 = NA_real_))
+				return(list(b = c(NA_real_, NA_real_), ssq_b_2 = NA_real_, neg_log_lik = NA_real_))
 			}
 			coef_w = tryCatch(as.numeric(stats::coef(mod)["w"]), error = function(e) NA_real_)
 			ssq_w = tryCatch(as.numeric(stats::vcov(mod)["w", "w"]), error = function(e) NA_real_)
 			list(
+				beta_hat_T = coef_w,
 				b = c(0, coef_w),
-				ssq_b_2 = if (is.finite(ssq_w) && ssq_w > 0) ssq_w else NA_real_
+				ssq_b_2 = if (is.finite(ssq_w) && ssq_w > 0) ssq_w else NA_real_,
+				neg_log_lik = tryCatch(as.numeric(-stats::logLik(mod)), error = function(e) NA_real_)
 			)
 		},
 		# Build (y, dead, X_mat) for a given row set.  X_mat = cbind(w, X_linear).
@@ -362,16 +304,32 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 			if (length(b) != ncol(X) || !all(is.finite(b))) return(NULL)
 			names(b) = colnames(X)
 			list(b = b, coefficients = b, vcov = NULL, var = NULL,
-				neg_ll = NA_real_, neg_loglik = NA_real_, neg_log_lik = NA_real_,
+				neg_ll = -as.numeric(utils::tail(fit$loglik, 1L)), 
+				neg_loglik = -as.numeric(utils::tail(fit$loglik, 1L)), 
+				neg_log_lik = -as.numeric(utils::tail(fit$loglik, 1L)),
 				fisher_information = NULL, converged = TRUE)
 		},
 		fit_rcpp_stratified = function(rows, X_linear, strata_id, estimate_only = FALSE){
 			inp  = private$build_rcpp_inputs(rows, X_linear)
 			strata_sub = as.integer(strata_id[rows])
-			fit = if (estimate_only) {
-				private$fit_coxph_estimate_only_fast(inp$X, inp$surv_y, strata = strata_sub, rownames = inp$rownames)
-			} else {
-				.fit_survival_coxph_kernel(inp$X, inp$y, inp$dead, strata = strata_sub, estimate_only = FALSE)
+			fit = tryCatch(
+				fast_stratified_coxph_regression_cpp(
+					inp$X, inp$y, inp$dead, strata = strata_sub,
+					estimate_only = estimate_only,
+					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(inp$X)),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(inp$X)),
+					smart_cold_start = private$smart_cold_start_default %||% FALSE
+				),
+				error = function(e) NULL
+			)
+			if (is.null(fit) || !isTRUE(fit$converged)) {
+				# Fallback to R if C++ fails
+				fit_r = if (estimate_only) {
+					private$fit_coxph_estimate_only_fast(inp$X, inp$surv_y, strata = strata_sub, rownames = inp$rownames)
+				} else {
+					.fit_survival_coxph_kernel(inp$X, inp$y, inp$dead, strata = strata_sub, estimate_only = FALSE)
+				}
+				fit = fit_r
 			}
 			if (is.null(fit)) return(NULL)
 			if (estimate_only) return(list(fit = fit, stratified = TRUE))
@@ -380,10 +338,23 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 
 		fit_rcpp_unstratified = function(rows, X_linear, estimate_only = FALSE){
 			inp = private$build_rcpp_inputs(rows, X_linear)
-			fit = if (estimate_only) {
-				private$fit_coxph_estimate_only_fast(inp$X, inp$surv_y, rownames = inp$rownames)
-			} else {
-				.fit_survival_coxph_kernel(inp$X, inp$y, inp$dead, estimate_only = FALSE)
+			fit = tryCatch(
+				fast_coxph_regression_cpp(
+					inp$X, inp$y, inp$dead,
+					estimate_only = estimate_only,
+					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(inp$X)),
+					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(inp$X)),
+					smart_cold_start = private$smart_cold_start_default %||% FALSE
+				),
+				error = function(e) NULL
+			)
+			if (is.null(fit) || !isTRUE(fit$converged)) {
+				fit_r = if (estimate_only) {
+					private$fit_coxph_estimate_only_fast(inp$X, inp$surv_y, rownames = inp$rownames)
+				} else {
+					.fit_survival_coxph_kernel(inp$X, inp$y, inp$dead, estimate_only = FALSE)
+				}
+				fit = fit_r
 			}
 			if (is.null(fit)) return(NULL)
 			if (estimate_only) return(list(fit = fit, stratified = FALSE))
@@ -391,11 +362,11 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 		},
 
 		format_rcpp_output = function(fit){
-			if (is.null(fit) || !isTRUE(fit$converged)) return(list(b = c(NA_real_, NA_real_), ssq_b_2 = NA_real_))
-			beta_w  = as.numeric(fit$coefficients[1])
+			if (is.null(fit) || !isTRUE(fit$converged)) return(list(b = c(NA_real_, NA_real_), ssq_b_2 = NA_real_, neg_log_lik = NA_real_))
+			beta_w  = as.numeric(fit$coefficients %||% fit$b)[1L]
 			ssq_w   = if (!is.null(fit$vcov) && nrow(fit$vcov) >= 1L && is.finite(fit$vcov[1, 1]) && fit$vcov[1, 1] > 0)
 				fit$vcov[1, 1] else NA_real_
-			list(b = c(0, beta_w), ssq_b_2 = ssq_w, fisher_information = fit$fisher_information)
+			list(beta_hat_T = beta_w, b = c(0, beta_w), ssq_b_2 = ssq_w, neg_log_lik = as.numeric(fit$neg_ll %||% fit$neg_log_lik), fisher_information = fit$fisher_information)
 		},
 		generate_mod = function(estimate_only = FALSE){
 			X_full      = private$X
@@ -417,10 +388,11 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 					if (!is.null(res) && isTRUE(res$fit$converged)){
 						private$cached_mod = res$fit
 						if (!estimate_only) {
-							private$set_fit_warm_start(as.numeric(res$fit$coefficients), "params", fisher = res$fit$fisher_information)
+							private$set_fit_warm_start(as.numeric(res$fit$coefficients %||% res$fit$b), "params", fisher = res$fit$fisher_information)
 							private$cached_values$likelihood_test_context = list(
 								X = res$X, y = res$y, dead = res$dead, strata = res$strata,
-								stratified = TRUE, j_treat = 1L
+								stratified = TRUE, j_treat = 1L,
+								full_neg_loglik = res$fit$neg_ll %||% res$fit$neg_log_lik
 							)
 						}
 						return(private$format_rcpp_output(res$fit))
@@ -429,10 +401,11 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 					if (!is.null(res) && isTRUE(res$fit$converged)){
 						private$cached_mod = res$fit
 						if (!estimate_only) {
-							private$set_fit_warm_start(as.numeric(res$fit$coefficients), "params", fisher = res$fit$fisher_information)
+							private$set_fit_warm_start(as.numeric(res$fit$coefficients %||% res$fit$b), "params", fisher = res$fit$fisher_information)
 							private$cached_values$likelihood_test_context = list(
 								X = res$X, y = res$y, dead = res$dead, strata = res$strata,
-								stratified = FALSE, j_treat = 1L
+								stratified = FALSE, j_treat = 1L,
+								full_neg_loglik = res$fit$neg_ll %||% res$fit$neg_log_lik
 							)
 						}
 						return(private$format_rcpp_output(res$fit))
@@ -454,7 +427,8 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 							dead = private$dead[informative_rows],
 							strata = strata_info$strata_id[informative_rows],
 							stratified = TRUE,
-							j_treat = 1L
+							j_treat = 1L,
+							full_neg_loglik = as.numeric(-stats::logLik(mod))
 						)
 						return(private$format_mod_output(mod))
 					}
@@ -471,7 +445,8 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 								dead = private$dead[informative_rows],
 								strata = strata_info$strata_id[informative_rows],
 								stratified = TRUE,
-								j_treat = 1L
+								j_treat = 1L,
+								full_neg_loglik = as.numeric(-stats::logLik(mod))
 							)
 							return(private$format_mod_output(mod))
 						}
@@ -486,7 +461,8 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 					if (!estimate_only) {
 						private$cached_values$likelihood_test_context = list(
 							X = res$X, y = res$y, dead = res$dead, strata = NULL,
-							stratified = FALSE, j_treat = 1L
+							stratified = FALSE, j_treat = 1L,
+							full_neg_loglik = res$fit$neg_ll %||% res$fit$neg_log_lik
 						)
 					}
 					return(private$format_rcpp_output(res$fit))
@@ -512,12 +488,13 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 						dead = private$dead,
 						strata = NULL,
 						stratified = FALSE,
-						j_treat = 1L
+						j_treat = 1L,
+						full_neg_loglik = as.numeric(-stats::logLik(mod))
 					)
 				}
 				return(private$format_mod_output(mod))
 			}
-			list(b = c(NA_real_, NA_real_), ssq_b_2 = NA_real_)
+			list(b = c(NA_real_, NA_real_), ssq_b_2 = NA_real_, neg_log_lik = NA_real_)
 		}
 	)
 )

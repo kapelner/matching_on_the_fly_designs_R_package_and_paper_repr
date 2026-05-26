@@ -210,15 +210,23 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 					get_probit_regression_score_cpp(X_fit, y, as.numeric(fit$b))
 				},
 				observed_information = function(fit){
+					if (!is.null(fit$fisher_information)) return(fit$fisher_information)
+					if (!is.null(fit$XtWX)) return(fit$XtWX)
 					-get_probit_regression_hessian_cpp(X_fit, as.numeric(fit$b))
 				},
 				fisher_information = function(fit){
+					if (!is.null(fit$fisher_information)) return(fit$fisher_information)
+					if (!is.null(fit$XtWX)) return(fit$XtWX)
 					-get_probit_regression_hessian_cpp(X_fit, as.numeric(fit$b))
 				},
 				information = function(fit){
+					if (!is.null(fit$fisher_information)) return(fit$fisher_information)
+					if (!is.null(fit$XtWX)) return(fit$XtWX)
 					-get_probit_regression_hessian_cpp(X_fit, as.numeric(fit$b))
 				},
 				neg_loglik = function(fit){
+					if (!is.null(fit$neg_ll)) return(fit$neg_ll)
+					if (!is.null(fit$neg_loglik)) return(fit$neg_loglik)
 					eta = as.numeric(X_fit %*% as.numeric(fit$b))
 					-sum(y * pnorm(eta, log.p = TRUE) + (1 - y) * pnorm(-eta, log.p = TRUE))
 				}

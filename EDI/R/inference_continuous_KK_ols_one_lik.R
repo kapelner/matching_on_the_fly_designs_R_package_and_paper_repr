@@ -37,7 +37,7 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj = des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}

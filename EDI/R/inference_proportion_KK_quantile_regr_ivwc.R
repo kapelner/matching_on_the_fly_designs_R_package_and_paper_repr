@@ -69,7 +69,7 @@ InferencePropKKQuantileRegrIVWC = R6::R6Class("InferencePropKKQuantileRegrIVWC",
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "proportion")
 			}
-			super$initialize(des_obj, tau, qlogis, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
+			super$initialize(des_obj = des_obj, model_formula = model_formula, tau = tau, transform_y_fn = qlogis, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}

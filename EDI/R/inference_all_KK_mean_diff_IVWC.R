@@ -44,39 +44,52 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 		#'
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
-			if (is.null(private$cached_values$KKstats)){
-				private$compute_basic_match_data()
-			}
-			if (is.null(private$cached_values$KKstats$ssqD_bar) ||
-				is.null(private$cached_values$KKstats$ssqR) ||
-				is.null(private$cached_values$KKstats$d_bar) ||
-				is.null(private$cached_values$KKstats$r_bar) ||
-				is.null(private$cached_values$KKstats$w_star)){
-				private$compute_reservoir_and_match_statistics()
-			}
-			KKstats = private$cached_values$KKstats
-			nRT = KKstats$nRT
-			nRC = KKstats$nRC
-			m = KKstats$m
-			reservoir_unusable = !is.finite(nRT) || !is.finite(nRC) || nRT <= 1 || nRC <= 1
-			no_matches = !is.finite(m) || m <= 1
-			has_matched_est = is.finite(KKstats$d_bar)
-			has_reservoir_est = is.finite(KKstats$r_bar)
-			private$cached_values$beta_hat_T =
-				if (reservoir_unusable && has_matched_est){
-					KKstats$d_bar
-				} else if (no_matches && has_reservoir_est){
-					KKstats$r_bar
-				} else if (has_matched_est && has_reservoir_est){
-					KKstats$w_star * KKstats$d_bar + (1 - KKstats$w_star) * KKstats$r_bar #proper weighting
-				} else if (has_reservoir_est){
-					KKstats$r_bar
-				} else if (has_matched_est){
-					KKstats$d_bar
-				} else {
-					NA_real_
-				}
+			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
+		},
+		supports_lik_ratio_param_bootstrap = function() TRUE,
+		supports_likelihood_tests = function() TRUE,
+		simulate_under_lik_null = function(spec, delta, null_fit){
+			# Generative model: Matched pairs + Reservoir Gaussian
+			KKstats = private$cached_values$KKstats
+			n = private$n
+			w = spec$w
+			m = KKstats$m
+			
+			# 1. Simulate matched pairs
+			ssq_D = KKstats$ssqD_bar * m 
+			b_null = as.numeric(null_fit$b)
+			y_diffs_sim = rnorm(m, b_null[2], sqrt(ssq_D))
+			
+			# 2. Simulate reservoir
+			ssq_R = KKstats$ssqR
+			y_res_sim = numeric(length(KKstats$y_reservoir))
+			w_res = KKstats$w_reservoir
+			y_res_sim[w_res == 1] = b_null[1] + b_null[2] + rnorm(sum(w_res == 1), 0, sqrt(ssq_R))
+			y_res_sim[w_res == 0] = b_null[1] + rnorm(sum(w_res == 0), 0, sqrt(ssq_R))
+			
+			list(
+				full_fit = list(b = b_null, y_diffs = y_diffs_sim, y_res = y_res_sim),
+				fit_null = function(d, start = NULL){
+					list(b = c(b_null[1], d), y_diffs = y_diffs_sim, y_res = y_res_sim)
+				},
+				neg_loglik = function(fit){
+					b = fit$b
+					ll_m = -0.5 * sum((y_diffs_sim - b[2])^2) / ssq_D
+					ll_r = -0.5 * sum((y_res_sim - (b[1] + w_res * b[2]))^2) / ssq_R
+					-(ll_m + ll_r)
+				}
+			)
+		},
+		get_likelihood_test_spec = function(){
+			private$shared(estimate_only = FALSE)
+			if (is.null(private$cached_values$beta_hat_T)) return(NULL)
+			KKstats = private$cached_values$KKstats
+			list(
+				w = private$w,
+				full_fit = list(b = c(mean(KKstats$y_reservoir[KKstats$w_reservoir==0], na.rm=T), private$cached_values$beta_hat_T)),
+				j = 2L
+			)
 		},
 		#' @description Computes a 1-alpha level frequentist confidence interval
 		#'
@@ -198,23 +211,42 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			if (is.null(private$cached_values$beta_hat_T)){
-				self$compute_estimate()
-			}
-			if (is.null(private$cached_values$KKstats$ssqD_bar) ||
-				is.null(private$cached_values$KKstats$ssqR) ||
-				is.null(private$cached_values$KKstats$d_bar) ||
-				is.null(private$cached_values$KKstats$r_bar) ||
-				is.null(private$cached_values$KKstats$w_star)){
-				private$compute_reservoir_and_match_statistics()
-			}
-			ssqD = private$cached_values$KKstats$ssqD_bar
-			ssqR = private$cached_values$KKstats$ssqR
-			nRT = private$cached_values$KKstats$nRT
-			nRC = private$cached_values$KKstats$nRC
-			m = private$cached_values$KKstats$m
+			
+			if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
+			if (is.null(private$cached_values$KKstats$d_bar)) private$compute_reservoir_and_match_statistics()
+			
+			KKstats = private$cached_values$KKstats
+			nRT = KKstats$nRT
+			nRC = KKstats$nRC
+			m = KKstats$m
 			reservoir_unusable = !is.finite(nRT) || !is.finite(nRC) || nRT <= 1 || nRC <= 1
 			no_matches = !is.finite(m) || m <= 1
+			
+			if (is.null(private$cached_values$beta_hat_T)){
+				has_matched_est = is.finite(KKstats$d_bar)
+				has_reservoir_est = is.finite(KKstats$r_bar)
+				private$cached_values$beta_hat_T =
+					if (reservoir_unusable && has_matched_est){
+						KKstats$d_bar
+					} else if (no_matches && has_reservoir_est){
+						KKstats$r_bar
+					} else if (has_matched_est && has_reservoir_est){
+						KKstats$w_star * KKstats$d_bar + (1 - KKstats$w_star) * KKstats$r_bar #proper weighting
+					} else if (has_reservoir_est){
+						KKstats$r_bar
+					} else if (has_matched_est){
+						KKstats$d_bar
+					} else {
+						NA_real_
+					}
+			}
+
+			if (estimate_only) return(invisible(NULL))
+			
+			if (is.null(private$cached_values$KKstats$ssqD_bar)) private$compute_reservoir_and_match_statistics()
+			ssqD = private$cached_values$KKstats$ssqD_bar
+			ssqR = private$cached_values$KKstats$ssqR
+			
 			private$cached_values$s_beta_hat_T =
 				if (reservoir_unusable){
 					# Only matched pairs are usable; fall back to ssqR if ssqD is degenerate
@@ -224,8 +256,6 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 					if (is.finite(ssqR) && ssqR > 0) sqrt(ssqR) else NA_real_
 				} else {
 					# Combined: require both components to be positive and finite.
-					# If one collapses (e.g. tiny reservoir with near-identical responses),
-					# fall back to the other rather than pulling the combined SE to zero.
 					if (!is.finite(ssqD) || ssqD <= 0) {
 						if (is.finite(ssqR) && ssqR > 0) sqrt(ssqR) else NA_real_
 					} else if (!is.finite(ssqR) || ssqR <= 0) {

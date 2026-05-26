@@ -517,10 +517,24 @@ run_one = function(spec) {
     if (cls_name == "InferenceIncidLogBinomial") family = "log-binomial"
     
     n = N_WALD 
-    if (identical(resp_type, "count")) {
+    use_stable_count_draw = cls_name %in% c(
+        "InferenceCountHurdlePoisson",
+        "InferenceCountHurdleNegBin",
+        "InferenceCountQuasiPoisson",
+        "InferenceCountRobustPoisson"
+    )
+    if (use_stable_count_draw) {
+        old_seed = if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) .Random.seed else NULL
         set.seed(42)
+        d = generate_data(n = n, family = family)
+        if (is.null(old_seed)) {
+            if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) rm(".Random.seed", envir = .GlobalEnv)
+        } else {
+            .Random.seed <<- old_seed
+        }
+    } else {
+        d = generate_data(n = n, family = family)
     }
-    d = generate_data(n = n, family = family)
     if (identical(cls_name, "InferenceSurvivalStratCoxPHRegr")) {
         d = make_true_stratified_survival_data(d)
     }

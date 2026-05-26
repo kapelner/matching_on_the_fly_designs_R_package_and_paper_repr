@@ -28,8 +28,8 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		#' @param verbose  		Whether to print progress messages.
-		#' @param harden  		Whether to apply robustness measures.
+		#' @param verbose               Whether to print progress messages.
+		#' @param harden                Whether to apply robustness measures.
 		#' @param smart_cold_start_default Whether to use smart cold start values by default.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = NULL, harden = TRUE){
 			if (should_run_asserts()) {
@@ -39,24 +39,6 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-		},
-		#' @description Compute the treatment effect estimate.
-		#' @param estimate_only If TRUE, skip variance calculations.
-		compute_estimate = function(estimate_only = FALSE){
-			private$shared(estimate_only = estimate_only)
-			private$cached_values$beta_hat_T
-		},
-		#' @description Computes an approximate confidence interval.
-		#' @param alpha Confidence level.
-		compute_asymp_confidence_interval = function(alpha = 0.05){
-			private$shared(estimate_only = FALSE)
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
-		},
-		#' @description Computes an approximate two-sided p-value.
-		#' @param delta Null treatment effect value.
-		compute_asymp_two_sided_pval = function(delta = 0){
-			private$shared(estimate_only = FALSE)
-			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
 		#' @description Computes the treatment effect estimate for a bootstrap sample.
 		#' @param subject_or_block_weights Row weights for the bootstrap sample.
@@ -112,15 +94,6 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 				fisher = attempt$fit$XtWX
 			)
 			private$cached_values$beta_hat_T
-		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
-		#' @param B  					Number of bootstrap samples.
-		#' @param show_progress Whether to show a progress bar.
-		#' @param debug         Whether to return diagnostics.
-		#' @param bootstrap_type Optional resampling scheme.
-		#' @return A numeric vector of bootstrap estimates.
-		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
-			super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		}
 	),
 	private = list(
@@ -135,7 +108,7 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 			}
 			X_cols = private$best_X_colnames
 			X_data = private$get_X()
-			
+
 			if (length(X_cols) == 0L){
 				X = cbind(1, private$w)
 			} else {
@@ -179,7 +152,7 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 			if (is.null(y_sim)) return(NULL)
 			X_fit      = spec$X
 			j          = spec$j
-			
+
 			# Parametric bootstrap: use observed fit as anchor
 			ws_args = private$get_backend_warm_start_args(ncol(X_fit))
 			full_fit_b = tryCatch(
@@ -311,7 +284,8 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(
 					X = attempt$X,
-					j_treat = which(attempt$keep == 2L)
+					j_treat = which(attempt$keep == 2L),
+					full_neg_loglik = attempt$fit$neg_ll
 				)
 			} else {
 				private$cached_values$likelihood_test_context = NULL

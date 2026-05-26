@@ -427,91 +427,89 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			covariate_cols[which.max(replace(coef_mags, !is.finite(coef_mags), -Inf))]
 		},
 		fit_fractional_logit_with_sandwich = function(X_full, estimate_only = FALSE){
-			X_curr = X_full
-			repeat {
-				reduced = private$reduce_design_matrix_preserving_treatment(X_curr)
-				X_fit = reduced$X
-				j_treat = reduced$j_treat
-				if (is.null(X_fit) || !is.finite(j_treat) || nrow(X_fit) <= ncol(X_fit)){
-					return(NULL)
-				}
-				mod = tryCatch(
-					fast_logistic_regression_cpp(
-						X = X_fit, 
-						y = as.numeric(private$y),
-						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
-						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
-						smart_cold_start = private$smart_cold_start_default,
-						estimate_only = estimate_only
-					),
-					error = function(e) NULL
+			attempt = if (private$harden) {
+				private$fit_with_hardened_qr_column_dropping(
+					X_full = X_full,
+					required_cols = 2L,
+					fit_fun = function(X_fit, keep){
+						fast_logistic_regression_cpp(
+							X = X_fit, 
+							y = as.numeric(private$y),
+							warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
+							smart_cold_start = private$smart_cold_start_default,
+							estimate_only = estimate_only
+						)
+					},
+					fit_ok = function(mod, X_fit, keep){
+						!is.null(mod) && all(is.finite(mod$b))
+					}
 				)
-				if (is.null(mod)){
-					return(NULL)
-				}
-				coef_hat = as.numeric(mod$b)
-				converged = all(is.finite(coef_hat))
-				if (!converged){
-					if (ncol(X_curr) <= 2L) return(NULL)
-					drop_col = private$select_covariate_to_drop(X_curr, coef_hat)
-					if (!is.finite(drop_col)) return(NULL)
-					X_curr = X_curr[, -drop_col, drop = FALSE]
-					next
-				}
-				private$set_fit_warm_start(coef_hat, "beta", fisher = mod$fisher_information)
-				
-				if (estimate_only){
-					private$gcomp_design_colnames = colnames(X_fit)
-					private$gcomp_design_j_treat = j_treat
-					return(list(
-						X = X_fit,
-						j_treat = j_treat,
-						coefficients = coef_hat,
-						estimate_only = TRUE
-					))
-				}
-				mu_hat = inv_logit(X_fit %*% coef_hat)
-				mu_hat = pmin(pmax(as.numeric(mu_hat), .Machine$double.eps), 1 - .Machine$double.eps)
-				W = mu_hat * (1 - mu_hat)
-				if (any(!is.finite(W)) || any(W <= 0)){
-					if (ncol(X_curr) <= 2L) return(NULL)
-					drop_col = private$select_covariate_to_drop(X_curr, coef_hat)
-					if (!is.finite(drop_col)) return(NULL)
-					X_curr = X_curr[, -drop_col, drop = FALSE]
-					next
-				}
-				post_fit = tryCatch(
-					gcomp_fractional_logit_post_fit_cpp(
-						X_fit = X_fit,
-						y = as.numeric(private$y),
-						coef_hat = coef_hat,
-						mu_hat = mu_hat,
-						j_treat = j_treat
-					),
-					error = function(e) NULL
+			} else {
+				list(
+					X = X_full,
+					keep = seq_len(ncol(X_full)),
+					fit = {
+						fast_logistic_regression_cpp(
+							X = X_full, 
+							y = as.numeric(private$y),
+							warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_full)),
+							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_full)),
+							smart_cold_start = private$smart_cold_start_default,
+							estimate_only = estimate_only
+						)
+					}
 				)
-				if (is.null(post_fit)){
-					if (ncol(X_curr) <= 2L) return(NULL)
-					drop_col = private$select_covariate_to_drop(X_curr, coef_hat)
-					if (!is.finite(drop_col)) return(NULL)
-					X_curr = X_curr[, -drop_col, drop = FALSE]
-					next
-				}
-				coef_names = colnames(X_fit)
-				names(coef_hat) = coef_names
-				vcov_robust = post_fit$vcov
-				colnames(vcov_robust) = rownames(vcov_robust) = coef_names
-				private$gcomp_design_colnames = coef_names
+			}
+			mod = attempt$fit
+			X_fit = attempt$X
+			j_treat = 2L # Standard for build_design_matrix
+			if (is.null(mod) || !all(is.finite(mod$b))){
+				return(NULL)
+			}
+			coef_hat = as.numeric(mod$b)
+			private$set_fit_warm_start(coef_hat, "beta", fisher = mod$fisher_information)
+			
+			if (estimate_only){
+				private$gcomp_design_colnames = colnames(X_fit)
 				private$gcomp_design_j_treat = j_treat
 				return(list(
 					X = X_fit,
 					j_treat = j_treat,
 					coefficients = coef_hat,
-					vcov = vcov_robust,
-					post_fit = post_fit,
-					estimate_only = FALSE
+					estimate_only = TRUE
 				))
 			}
+			mu_hat = inv_logit(X_fit %*% coef_hat)
+			mu_hat = pmin(pmax(as.numeric(mu_hat), .Machine$double.eps), 1 - .Machine$double.eps)
+			
+			post_fit = tryCatch(
+				gcomp_fractional_logit_post_fit_cpp(
+					X_fit = X_fit,
+					y = as.numeric(private$y),
+					coef_hat = coef_hat,
+					mu_hat = mu_hat,
+					j_treat = j_treat
+				),
+				error = function(e) NULL
+			)
+			if (is.null(post_fit)){
+				return(NULL)
+			}
+			coef_names = colnames(X_fit)
+			names(coef_hat) = coef_names
+			vcov_robust = post_fit$vcov
+			colnames(vcov_robust) = rownames(vcov_robust) = coef_names
+			private$gcomp_design_colnames = coef_names
+			private$gcomp_design_j_treat = j_treat
+			return(list(
+				X = X_fit,
+				j_treat = j_treat,
+				coefficients = coef_hat,
+				vcov = vcov_robust,
+				post_fit = post_fit,
+				estimate_only = FALSE
+			))
 		},
 			compute_standardized_effect_components = function(X_fit, coef_hat, j_treat, clip_lower = NULL, clip_upper = NULL){
 				X1 = X_fit
@@ -667,18 +665,20 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			vcov_robust = fit$vcov
 			j_treat = fit$j_treat
 			estimate_only = isTRUE(fit$estimate_only)
-			components = private$compute_standardized_effect_components(X_fit, coef_hat, j_treat)
+			
 			if (estimate_only){
+				pe = gcomp_fractional_logit_point_estimate_cpp(X_fit, coef_hat, j_treat)
 				return(list(
-					mean1 = components$mean1,
-					mean0 = components$mean0,
-					md = components$md,
+					mean1 = pe$mean1,
+					mean0 = pe$mean0,
+					md = pe$md,
 					se_md = NA_real_,
 					full_coefficients = coef_hat,
 					full_vcov = NULL,
 					summary_table = NULL
 				))
 			}
+			components = private$compute_standardized_effect_components(X_fit, coef_hat, j_treat)
 			var_res = private$resolve_effect_variance(X_fit, coef_hat, j_treat, vcov_robust, components)
 			vcov_used = var_res$vcov
 			std_err = if (!is.null(vcov_used)) sqrt(pmax(diag(vcov_used), 0)) else rep(NA_real_, length(coef_hat))
@@ -815,11 +815,11 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				if (nrow(X_b_full) == 0) return(NA_real_)
 				fit = private$bootstrap_fit_from_sample(X_b_full, y_b)
 				if (is.null(fit)) return(NA_real_)
-				md_val = private$compute_standardized_effect_components(fit$X, fit$coefficients, fit$j_treat)$md
-				if (!is.finite(md_val)){
+				pe = gcomp_fractional_logit_point_estimate_cpp(fit$X, fit$coefficients, fit$j_treat)
+				if (!is.finite(pe$md)){
 					return(NA_real_)
 				}
-				md_val
+				pe$md
 			},
 		compute_effect_confidence_interval = function(alpha){
 			z = stats::qnorm(1 - alpha / 2)

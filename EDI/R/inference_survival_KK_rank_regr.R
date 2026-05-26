@@ -29,7 +29,7 @@ InferenceSurvivalKKRankRegrIVWC = R6::R6Class("InferenceSurvivalKKRankRegrIVWC",
 		#'   design's imputed covariates.
 		#' @param verbose Whether to print progress messages.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			super$initialize(des_obj = des_obj, model_formula = model_formula, verbose = verbose)
 		}
 	),
 	private = list(

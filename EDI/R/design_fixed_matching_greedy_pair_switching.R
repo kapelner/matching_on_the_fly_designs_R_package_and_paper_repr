@@ -22,9 +22,14 @@ DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyP
 		#' @param missingness_method How to handle missing values in covariates.
 		#' @param model_formula A formula object.
 		#' @param objective The imbalance objective. Either \code{"mahal_dist"} (default) or \code{"abs_sum_diff"}.
+		#' @param n_iter Number of swap iterations. \code{Inf} (default) uses exhaustive
+		#'   best-improvement search guaranteed to reach a strict local optimum. A positive
+		#'   integer runs that many stochastic random-pair iterations with patience-based
+		#'   early stopping.
 		#' @param seed Integer seed for reproducibility.
 		#'
 		#' @return A new \code{DesignFixedMatchingGreedyPairSwitching} object.
+		supports_batch_w_pregeneration = function() TRUE,
 		initialize = function(
 				response_type,
 				prob_T = 0.5,
@@ -32,6 +37,7 @@ DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyP
 				n,
 				verbose = FALSE,
 				objective = "mahal_dist",
+				n_iter = Inf,
 				missingness_method = "impute",
 				model_formula = ~ .,
 				seed = NULL
@@ -41,8 +47,13 @@ DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyP
 					stop("DesignFixedMatchingGreedyPairSwitching only supports balanced designs (prob_T = 0.5).")
 				}
 			}
+			if (should_run_asserts()) {
+				if (!is.infinite(n_iter) && (!is.numeric(n_iter) || length(n_iter) != 1L || n_iter <= 0 || n_iter != floor(n_iter)))
+					stop("n_iter must be Inf or a positive integer")
+			}
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 			private$objective = objective
+			private$n_iter    = n_iter
 			private$uses_covariates = TRUE
 		},
 		#' @description Draw multiple treatment assignment vectors according to binary match followed by
@@ -70,12 +81,12 @@ DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyP
 			}
 			pairs_mat = private$bms$indicies_pairs
 			storage.mode(pairs_mat) = "integer"
-			n_iter = max(500L, 500L * as.integer(n))
+			cpp_n_iter = if (is.infinite(private$n_iter)) -1L else as.integer(private$n_iter)
 			w_mat = greedy_design_search_cpp(
 				X_raw          = X,
 				r              = as.integer(r),
 				objective      = private$objective,
-				n_iter         = n_iter,
+				n_iter         = cpp_n_iter,
 				indicies_pairs = pairs_mat
 			)
 			storage.mode(w_mat) = "numeric"
@@ -84,6 +95,7 @@ DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyP
 	),
 	private = list(
 		objective = NULL,
+		n_iter    = NULL,
 		bms = NULL,
 		validate_allocation_matrix = function(w_mat, n, r){
 			if (is.vector(w_mat)) {

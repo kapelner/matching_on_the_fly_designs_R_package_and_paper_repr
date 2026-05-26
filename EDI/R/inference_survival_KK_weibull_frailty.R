@@ -87,7 +87,12 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 		}
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+		cached_mod = NULL,
+		best_X_colnames_matched = NULL,
+		best_X_colnames_reservoir = NULL,
+		max_abs_reasonable_coef = 1e4,
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
+		supports_lik_ratio_param_bootstrap = function() isTRUE(private$use_rcpp),
 		supports_likelihood_tests = function() FALSE,
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design and parameters from the original data
@@ -400,6 +405,8 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 		}
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+		cached_mod = NULL,
+		best_X_colnames = NULL,
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		use_rcpp = TRUE,
 		max_abs_reasonable_coef = 1e4,

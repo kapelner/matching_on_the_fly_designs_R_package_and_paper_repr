@@ -25,6 +25,8 @@ struct ModelResult {
     Eigen::VectorXd b;
     Eigen::VectorXd mu;
     Eigen::MatrixXd XtWX;
+    Eigen::VectorXd score;
+    double neg_ll;
     double ssq_b_j;
     double ssq_b_2;
     double dispersion;
@@ -32,7 +34,7 @@ struct ModelResult {
     int iterations;
     bool converged;
 
-    ModelResult() : ssq_b_j(NA_REAL), ssq_b_2(NA_REAL), dispersion(NA_REAL), sigma2_hat(NA_REAL), iterations(0), converged(false) {}
+    ModelResult() : neg_ll(NA_REAL), ssq_b_j(NA_REAL), ssq_b_2(NA_REAL), dispersion(NA_REAL), sigma2_hat(NA_REAL), iterations(0), converged(false) {}
 };
 
 // Pure C++ internal helpers

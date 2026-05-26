@@ -9,6 +9,30 @@ inference_asymp_lik_std_mod_cache_public = list(
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
+		},
+		#' @description Computes an asymptotic confidence interval using the configured test.
+		#' @param alpha Significance level 1 - \code{alpha}. Default 0.05.
+		#' @return A confidence interval.
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			if (private$testing_type == "wald") {
+				private$shared(estimate_only = FALSE)
+				if (is.finite(private$cached_values$s_beta_hat_T %||% NA_real_)) {
+					return(private$compute_z_or_t_ci_from_s_and_df(alpha))
+				}
+			}
+			super$compute_asymp_confidence_interval(alpha)
+		},
+		#' @description Computes an asymptotic two-sided p-value using the configured test.
+		#' @param delta Null treatment effect to test against. Default 0.
+		#' @return The asymptotic p-value.
+		compute_asymp_two_sided_pval = function(delta = 0){
+			if (private$testing_type == "wald") {
+				private$shared(estimate_only = FALSE)
+				if (is.finite(private$cached_values$s_beta_hat_T %||% NA_real_)) {
+					return(private$compute_z_or_t_two_sided_pval_from_s_and_df(delta))
+				}
+			}
+			super$compute_asymp_two_sided_pval(delta)
 		}
 	)
 inference_asymp_lik_std_mod_cache_private = list(
@@ -107,15 +131,14 @@ inference_asymp_lik_std_mod_cache_private = list(
 			}
 			private$cached_values$beta_hat_T = model_output$beta_hat_T %||% model_output$b[2]
 			
-			if (!is.null(model_output$b)) {
-				private$set_fit_warm_start(
-					as.numeric(model_output$params %||% model_output$b),
-					type = if (!is.null(model_output$params)) "params" else "beta",
-					fisher = model_output$fisher_information %||% model_output$XtWX,
-					weights = model_output$w %||% model_output$mu
-				)
-			}
-
+                        if (!is.null(model_output$b)) {
+                                private$set_fit_warm_start(
+                                        as.numeric(model_output$params %||% model_output$b),
+                                        type = if (!is.null(model_output$params)) "params" else "beta",
+                                        fisher = model_output$fisher_information %||% model_output$XtWX,
+                                        weights = model_output$w %||% model_output$mu
+                                )
+                        }
 			if (estimate_only) return(invisible(NULL))
 			ssq = model_output$ssq_b_2 %||% model_output$ssq_b_j
 			if (!is.null(ssq) && !is.na(ssq) && ssq > 0) {

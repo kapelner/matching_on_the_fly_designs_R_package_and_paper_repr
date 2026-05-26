@@ -25,7 +25,7 @@
 InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
-	public = utils::modifyList(list(
+	public = as.list(utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -48,26 +48,25 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-		#' @description Weighted bootstrap estimate using a direct empirical risk-difference surrogate.
-		#' @param subject_or_block_weights bootstrap weights at the subject/block level.
+		#' @description Computes the treatment effect estimate.
 		#' @param estimate_only flag.
-		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
-			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
-			if (weights_are_effectively_constant(row_weights)) {
-				beta_hat_T = as.numeric(private$weighted_empirical_risk_difference(row_weights))[1L]
-			} else {
-				beta_hat_T = as.numeric(private$weighted_empirical_risk_difference(row_weights))[1L]
-			}
-			private$cached_values$beta_hat_T = beta_hat_T
-			private$cached_values$s_beta_hat_T = NA_real_
-			private$cached_values$df = NA_real_
+		compute_estimate = function(estimate_only = FALSE){
+			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		}
-	), list()), # empty list for modifyList
-	private = list(
+	))),
+	private = as.list(utils::modifyList(as.list(InferenceKKPassThroughCompoundNoParamBootstrap$private %||% list()), list(
+		m = NULL,
+		cached_mod = NULL,
+		best_X_colnames = NULL,
+		max_abs_reasonable_coef = 1e4,
 		compute_basic_match_data = function(){
 			# Use the optimized Zhang helper to get counts
-			private$cached_values$KKstats = compute_zhang_match_data_cpp(private$get_X(), private$y, private$w, private$m)		},
+			private$cached_values$KKstats = compute_zhang_match_data_cpp(private$get_X(), private$y, private$w, private$m)
+		},
+		shared = function(estimate_only = FALSE){
+			private$shared_combined()
+		},
 		pool_estimates_ivwc = function(est1, var1, est2, var2){
 			ok1 = is.finite(est1) && is.finite(var1) && var1 > 0
 			ok2 = is.finite(est2) && is.finite(var2) && var2 > 0
@@ -102,12 +101,12 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (is.null(private$cached_values$KKstats)) private$compute_basic_match_data()
 			if (is.null(private$cached_values$KKstats)) return(invisible(NULL))
-			
+
 			KKstats = private$cached_values$KKstats
 			m = KKstats$m
 			nRT = KKstats$nRT
 			nRC = KKstats$nRC
-			
+
 			# Matched part
 			est_m = NA_real_
 			var_m = NA_real_
@@ -120,7 +119,7 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 				est_m = p10 - p01
 				var_m = (p10 + p01 - (p10 - p01)^2) / n
 			}
-			
+
 			# Reservoir part
 			est_r = NA_real_
 			var_r = NA_real_
@@ -130,13 +129,13 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 				est_r = pRT - pRC
 				var_r = pRT * (1 - pRT) / nRT + pRC * (1 - pRC) / nRC
 			}
-			
+
 			# IVWC Pooling
 			res = private$pool_estimates_ivwc(est_m, var_m, est_r, var_r)
-			
+
 			private$cached_values$beta_hat_T = res$estimate
 			private$cached_values$s_beta_hat_T = sqrt(res$variance)
 			private$cached_values$df = NA_real_
 		}
-	)
+	)))
 )
