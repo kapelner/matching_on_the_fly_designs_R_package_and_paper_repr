@@ -229,15 +229,15 @@ make_edi_bm = function(cls_name, d) {
         # --- GComp classes: fast_logistic_regression_cpp + C++ marginalisation ---
         InferencePropGCompMeanDiff = quote({
             b = fast_logistic_regression_cpp(X_bm, y_bm, estimate_only = TRUE)$b
-            gcomp_fractional_logit_point_estimate_cpp(X_bm, b, 2L)$md
+            EDI:::gcomp_fractional_logit_point_estimate_cpp(X_bm, b, 2L)$md
         }),
         InferenceIncidGCompRiskDiff = quote({
             b = fast_logistic_regression_cpp(X_bm, y_bm, estimate_only = TRUE)$b
-            gcomp_logistic_point_estimate_cpp(X_bm, b, 2L)$md
+            EDI:::gcomp_logistic_point_estimate_cpp(X_bm, b, 2L)$md
         }),
         InferenceIncidGCompRiskRatio = quote({
             b = fast_logistic_regression_cpp(X_bm, y_bm, estimate_only = TRUE)$b
-            res = gcomp_logistic_point_estimate_cpp(X_bm, b, 2L)
+            res = EDI:::gcomp_logistic_point_estimate_cpp(X_bm, b, 2L)
             res$mean1 / res$mean0
         }),
         InferenceOrdinalGCompMeanDiff = quote({

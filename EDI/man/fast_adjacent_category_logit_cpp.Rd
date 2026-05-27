@@ -12,7 +12,7 @@ fast_adjacent_category_logit_cpp(
   smart_cold_start = TRUE,
   fixed_idx = NULL,
   fixed_values = NULL,
-  optimization_alg = "newton_raphson",
+  optimization_alg = "lbfgs",
   warm_start_fisher_info = NULL,
   warm_start_params = NULL,
   warm_start_beta = NULL

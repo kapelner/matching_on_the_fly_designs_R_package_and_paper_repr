@@ -125,27 +125,36 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 				assertNumeric(delta_0, len = 1)
 			}
+			is_default_call = (abs(alpha - 0.05) < .Machine$double.eps && abs(delta_0) < .Machine$double.eps)
+			if (is_default_call && !is.null(private$cached_values$incid_exact_fisher_htest)) {
+				return(private$cached_values$incid_exact_fisher_htest)
+			}
 			fisher_tables = private$get_exact_fisher_tables()
 			conf_level = 1 - alpha
-			if (fisher_tables$n_strata == 1L) {
-				return(stats::fisher.test(
+			result = if (fisher_tables$n_strata == 1L) {
+				stats::fisher.test(
 					fisher_tables$table,
 					alternative = "two.sided",
 					or = exp(delta_0),
 					conf.level = conf_level
-				))
-			}
-			if (should_run_asserts()) {
-				if (abs(delta_0) > sqrt(.Machine$double.eps)) {
-					stop("Stratified Fisher exact inference only supports delta = 0.")
+				)
+			} else {
+				if (should_run_asserts()) {
+					if (abs(delta_0) > sqrt(.Machine$double.eps)) {
+						stop("Stratified Fisher exact inference only supports delta = 0.")
+					}
 				}
+				stats::mantelhaen.test(
+					fisher_tables$array,
+					alternative = "two.sided",
+					exact = TRUE,
+					conf.level = conf_level
+				)
 			}
-			stats::mantelhaen.test(
-				fisher_tables$array,
-				alternative = "two.sided",
-				exact = TRUE,
-				conf.level = conf_level
-			)
+			if (is_default_call) {
+				private$cached_values$incid_exact_fisher_htest = result
+			}
+			result
 		},
 		get_exact_fisher_tables = function(){
 			if (!is.null(private$cached_values$incid_exact_fisher_tables)) {

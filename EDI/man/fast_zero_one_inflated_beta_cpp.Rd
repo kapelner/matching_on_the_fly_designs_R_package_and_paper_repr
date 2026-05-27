@@ -13,7 +13,8 @@ fast_zero_one_inflated_beta_cpp(
   fixed_idx = NULL,
   fixed_values = NULL,
   optimization_alg = "lbfgs",
-  warm_start_fisher_info = NULL
+  warm_start_fisher_info = NULL,
+  estimate_only = FALSE
 )
 }
 \arguments{

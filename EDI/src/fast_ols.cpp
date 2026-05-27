@@ -98,39 +98,84 @@ List fast_ols_cpp(const Eigen::MatrixXd& X,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_ols_with_var_cpp(const Eigen::MatrixXd& X,
-                           const Eigen::VectorXd& y,
-                           int j = 2,
+List fast_ols_with_var_cpp(SEXP X_sexp, SEXP y_sexp, int j = 2,
                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                            Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue) {
-    int n = X.rows();
-    int p = X.cols();
-    ModelResult res = fast_ols_internal(X, y, fixed_idx, fixed_values);
+    NumericMatrix X_r(X_sexp);
+    NumericVector y_r(y_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+
+    const int n = X.rows();
+    const int p = X.cols();
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
+    const int p_free = fixed_spec.free_idx.size();
 
-    Eigen::VectorXd e = y - X * res.b;
+    Eigen::VectorXd y_adj = y;
+    for (int k = 0; k < fixed_spec.fixed_idx.size(); ++k) {
+        y_adj.noalias() -= X.col(fixed_spec.fixed_idx[k]) * fixed_spec.fixed_values[k];
+    }
+
+    Eigen::VectorXd beta = Eigen::VectorXd::Zero(p);
+    for (int k = 0; k < fixed_spec.fixed_idx.size(); ++k) beta[fixed_spec.fixed_idx[k]] = fixed_spec.fixed_values[k];
+
+    Eigen::MatrixXd XtX_free(p_free, p_free);
+    Eigen::VectorXd Xty_free(p_free);
+    Eigen::MatrixXd X_free(n, p_free);
+
+    for (int k = 0; k < p_free; ++k) X_free.col(k) = X.col(fixed_spec.free_idx[k]);
+    
+    XtX_free.setZero().selfadjointView<Eigen::Lower>().rankUpdate(X_free.transpose());
+    XtX_free.triangularView<Eigen::Upper>() = XtX_free.transpose();
+    Xty_free.noalias() = X_free.transpose() * y_adj;
+
+    Eigen::LDLT<Eigen::MatrixXd> ldlt(XtX_free);
+    bool converged = (ldlt.info() == Eigen::Success);
+    Eigen::VectorXd beta_free;
+    
+    if (converged) {
+        beta_free = ldlt.solve(Xty_free);
+    } else {
+        Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X_free);
+        beta_free = cod.solve(y_adj);
+    }
+
+    for (int k = 0; k < p_free; ++k) beta[fixed_spec.free_idx[k]] = beta_free[k];
+
+    Eigen::VectorXd e = y_adj - X_free * beta_free;
     double sse = e.squaredNorm();
-    res.sigma2_hat = sse / (n - fixed_spec.free_idx.size());
-
-    Eigen::MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
+    double sigma2_hat = sse / (n - p_free);
 
     auto free_idx_of = [&](int k) -> int {
-        for (int jj = 0; jj < (int)fixed_spec.free_idx.size(); ++jj)
-            if (fixed_spec.free_idx[jj] == k) return jj + 1;
+        for (int jj = 0; jj < p_free; ++jj)
+            if (fixed_spec.free_idx[jj] == k) return jj;
         return -1;
     };
-    int free_j = (j > 0 && j <= p) ? free_idx_of(j - 1) : -1;
-    double raw_j = (free_j > 0) ? compute_diagonal_inverse_entry(info_free, free_j) : NA_REAL;
-    res.ssq_b_j = R_finite(raw_j) ? res.sigma2_hat * raw_j : NA_REAL;
-    int free_2 = (X.cols() >= 2) ? free_idx_of(1) : -1;
-    double raw_2 = (free_2 > 0) ? compute_diagonal_inverse_entry(info_free, free_2) : NA_REAL;
-    res.ssq_b_2 = R_finite(raw_2) ? res.sigma2_hat * raw_2 : NA_REAL;
+
+    double ssq_b_j = NA_REAL;
+    int f_j = (j > 0 && j <= p) ? free_idx_of(j - 1) : -1;
+    if (f_j >= 0 && converged) {
+        Eigen::VectorXd unit = Eigen::VectorXd::Unit(p_free, f_j);
+        ssq_b_j = sigma2_hat * ldlt.solve(unit)(f_j);
+    }
+
+    double ssq_b_2 = NA_REAL;
+    int f_2 = (p >= 2) ? free_idx_of(1) : -1;
+    if (f_2 >= 0 && converged) {
+        if (f_2 == f_j) {
+            ssq_b_2 = ssq_b_j;
+        } else {
+            Eigen::VectorXd unit = Eigen::VectorXd::Unit(p_free, f_2);
+            ssq_b_2 = sigma2_hat * ldlt.solve(unit)(f_2);
+        }
+    }
 
     return List::create(
-        Named("b") = res.b,
-        Named("XtX") = res.XtWX,
-        Named("ssq_b_j") = res.ssq_b_j,
-        Named("ssq_b_2") = res.ssq_b_2,
-        Named("sigma2_hat") = res.sigma2_hat
+        Named("b") = beta,
+        Named("XtX") = expand_free_covariance(p, fixed_spec, XtX_free, false),
+        Named("ssq_b_j") = ssq_b_j,
+        Named("ssq_b_2") = ssq_b_2,
+        Named("sigma2_hat") = sigma2_hat,
+        Named("converged") = converged
     );
 }

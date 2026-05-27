@@ -15,7 +15,8 @@ fast_stereotype_logit_cpp(
   optimization_alg = "newton_raphson",
   warm_start_fisher_info = NULL,
   warm_start_params = NULL,
-  warm_start_beta = NULL
+  warm_start_beta = NULL,
+  estimate_only = FALSE
 )
 }
 \arguments{

@@ -125,7 +125,9 @@ prepare_solver_only_edi = function(inf_obj, cls_name) {
     priv = inf_obj$.__enclos_env__$private
     if (cls_name %in% c(
         "InferenceCountHurdlePoisson",
+        "InferenceCountHurdleNegBin",
         "InferenceCountZeroInflatedPoisson",
+        "InferenceCountZeroInflatedNegBin",
         "InferenceCountQuasiPoisson",
         "InferenceCountRobustPoisson"
     )) {
@@ -515,6 +517,7 @@ run_one = function(spec) {
     else if (grepl("Survival|Cox|Weibull|KM|Rank|LogRank|Gehan|RMST|RMDiff|LWACox|Clayton", cls_name)) { resp_type = "survival"; family = "cox" }
     
     if (cls_name == "InferenceIncidLogBinomial") family = "log-binomial"
+    if (cls_name %in% c("InferenceCountZeroInflatedNegBin", "InferenceCountHurdleNegBin")) family = "negbin"
     
     n = N_WALD 
     use_stable_count_draw = cls_name %in% c(
@@ -581,31 +584,39 @@ run_one = function(spec) {
 						p
 					})
 				} else if (has_asymp) {
-					quote({
-						priv_env$cached_mod = NULL
-						priv_env$cached_values = list()
-						inf_obj$compute_estimate(estimate_only = FALSE)
-						p = inf_obj$compute_asymp_two_sided_pval(delta = pval_delta)
-						if (!is.finite(p)) stop("Non-finite EDI p-value.")
-						p
-					})
-	            } else if (has_exact) {
-	                quote({
-	                    priv_env$cached_mod = NULL
-                    priv_env$cached_values = list()
-                    inf_obj$compute_estimate(estimate_only = FALSE)
-                    p = inf_obj$compute_exact_two_sided_pval_for_treatment_effect()
-                    if (!is.finite(p)) stop("Non-finite EDI p-value.")
-                    p
-                })
-            } else {
-                quote({
-                    priv_env$cached_mod = NULL
-                    priv_env$cached_values = list()
-                    inf_obj$compute_estimate(estimate_only = FALSE)
-                })
-            }
-        }
+				        quote({
+				                priv_env$cached_mod = NULL
+				                priv_env$cached_values = list()
+				                if (exists("cox_data_cache", envir = priv_env, inherits = FALSE)) {
+				                        priv_env$cox_data_cache = NULL
+				                }
+				                inf_obj$compute_estimate(estimate_only = FALSE)
+				                p = inf_obj$compute_asymp_two_sided_pval(delta = pval_delta)
+				                if (!is.finite(p)) stop("Non-finite EDI p-value.")
+				                p
+				        })
+				} else if (has_exact) {
+				quote({
+				priv_env$cached_mod = NULL
+				priv_env$cached_values = list()
+				if (exists("cox_data_cache", envir = priv_env, inherits = FALSE)) {
+				priv_env$cox_data_cache = NULL
+				}
+				inf_obj$compute_estimate(estimate_only = FALSE)
+				p = inf_obj$compute_exact_two_sided_pval_for_treatment_effect()
+				if (!is.finite(p)) stop("Non-finite EDI p-value.")
+				p
+				})
+				} else {
+				quote({
+				priv_env$cached_mod = NULL
+				priv_env$cached_values = list()
+				if (exists("cox_data_cache", envir = priv_env, inherits = FALSE)) {
+				priv_env$cox_data_cache = NULL
+				}
+				inf_obj$compute_estimate(estimate_only = FALSE)
+				})
+				}        }
         
         # Warmup
         eval(bench_expr)

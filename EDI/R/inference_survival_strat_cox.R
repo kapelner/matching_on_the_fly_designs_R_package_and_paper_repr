@@ -31,7 +31,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 		#' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
 		#' @param verbose Whether to print progress messages.
 		#' @param smart_cold_start_default Whether to use smart cold start values.
-		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = "lbfgs", verbose = FALSE, smart_cold_start_default = NULL) {
+		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, optimization_alg = "newton_raphson", verbose = FALSE, smart_cold_start_default = NULL) {
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 				assertFlag(use_rcpp)

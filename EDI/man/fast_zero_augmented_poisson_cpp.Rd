@@ -13,10 +13,10 @@ fast_zero_augmented_poisson_cpp(
   smart_cold_start = TRUE,
   estimate_only = FALSE,
   maxit = 1000L,
-  tol = 1e-06,
+  tol = 1e-08,
   fixed_idx = NULL,
   fixed_values = NULL,
-  optimization_alg = "newton_raphson",
+  optimization_alg = "lbfgs",
   warm_start_fisher_info = NULL
 )
 }

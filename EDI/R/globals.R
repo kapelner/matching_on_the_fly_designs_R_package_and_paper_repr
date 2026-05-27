@@ -464,7 +464,7 @@ get_optimization_dispatch_policy = function() {
       "InferenceOrdinalCauchitRegr$" = "lbfgs",
       "InferenceOrdinalCloglogRegr$" = "lbfgs",
       "InferenceSurvivalWeibullRegr$" = "lbfgs",
-      "InferenceSurvivalStratCoxPHRegr$" = "lbfgs",
+      "InferenceSurvivalStratCoxPHRegr$" = "newton_raphson",
       "InferenceSurvivalKKClaytonCopulaOneLik$" = "lbfgs",
       "InferenceIncidKKCondLogitPlusGLMMOneLik$"   = "lbfgs"
     )

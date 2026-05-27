@@ -13,7 +13,7 @@ fast_ordinal_regression_with_var_cpp(
   tol = 1e-06,
   fixed_idx = NULL,
   fixed_values = NULL,
-  optimization_alg = "newton_raphson",
+  optimization_alg = "lbfgs",
   warm_start_fisher_info = NULL
 )
 }

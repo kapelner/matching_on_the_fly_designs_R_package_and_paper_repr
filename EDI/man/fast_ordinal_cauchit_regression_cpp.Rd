@@ -11,10 +11,11 @@ fast_ordinal_cauchit_regression_cpp(
   smart_cold_start = TRUE,
   maxit = 100L,
   tol = 1e-06,
-  optimization_alg = "newton_raphson",
+  optimization_alg = "lbfgs",
   fixed_idx = NULL,
   fixed_values = NULL,
-  warm_start_fisher_info = NULL
+  warm_start_fisher_info = NULL,
+  estimate_only = FALSE
 )
 }
 \arguments{

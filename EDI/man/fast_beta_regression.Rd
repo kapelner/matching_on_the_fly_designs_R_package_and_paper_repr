@@ -8,7 +8,7 @@ fast_beta_regression(
   X,
   y,
   start_phi = 10,
-  optimization_alg = "newton_raphson",
+  optimization_alg = "lbfgs",
   warm_start_beta = NULL,
   warm_start_fisher_info = NULL
 )

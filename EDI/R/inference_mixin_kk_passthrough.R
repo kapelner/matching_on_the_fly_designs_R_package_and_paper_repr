@@ -248,6 +248,16 @@ InferenceMixinKKPassThrough = list(
 	private = list(
 		m = NULL,
 		kk_passthrough = TRUE,
+		y_temp = NULL,
+		dead = NULL,
+		w = NULL,
+		X = NULL,
+		any_censoring = NULL,
+		best_par = NULL,
+		optimization_alg = "lbfgs",
+		cached_mod = NULL,
+		best_X_colnames = NULL,
+		best_Xmm_colnames = NULL,
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		supports_information_preference = function(){
 			FALSE

@@ -9,7 +9,7 @@ fast_ordinal_cloglog_regression_with_var_cpp(
   y,
   warm_start_params = NULL,
   smart_cold_start = TRUE,
-  optimization_alg = "newton_raphson",
+  optimization_alg = "lbfgs",
   fixed_idx = NULL,
   fixed_values = NULL,
   warm_start_fisher_info = NULL

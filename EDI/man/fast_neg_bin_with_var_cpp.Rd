@@ -11,11 +11,12 @@ fast_neg_bin_with_var_cpp(
   smart_cold_start = FALSE,
   maxit = 1000L,
   eps_f = 1e-08,
-  eps_g = 1e-05,
+  eps_g = 1e-06,
   fixed_idx = NULL,
   fixed_values = NULL,
-  optimization_alg = "newton_raphson",
-  warm_start_fisher_info = NULL
+  optimization_alg = "lbfgs",
+  warm_start_fisher_info = NULL,
+  estimate_only = FALSE
 )
 }
 \arguments{

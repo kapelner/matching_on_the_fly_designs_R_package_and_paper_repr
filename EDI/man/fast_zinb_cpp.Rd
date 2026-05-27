@@ -13,7 +13,7 @@ fast_zinb_cpp(
   estimate_only = FALSE,
   maxit = 1000L,
   tol = 1e-06,
-  optimization_alg = "newton_raphson",
+  optimization_alg = "lbfgs",
   fixed_idx = NULL,
   fixed_values = NULL,
   warm_start_fisher_info = NULL

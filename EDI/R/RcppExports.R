@@ -355,15 +355,15 @@ build_cox_data_cache_cpp <- function(X, y, dead) {
     .Call(`_EDI_build_cox_data_cache_cpp`, X, y, dead)
 }
 
-fast_coxph_regression_prebuilt_cpp <- function(cox_data_xptr, warm_start_beta = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 20L, tol = 1e-9, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
+fast_coxph_regression_prebuilt_cpp <- function(cox_data_xptr, warm_start_beta = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 20L, tol = 1e-9, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson", warm_start_fisher_info = NULL) {
     .Call(`_EDI_fast_coxph_regression_prebuilt_cpp`, cox_data_xptr, warm_start_beta, smart_cold_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
-fast_coxph_regression_cpp <- function(X, y, dead, warm_start_beta = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 20L, tol = 1e-9, cluster = NULL, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
+fast_coxph_regression_cpp <- function(X, y, dead, warm_start_beta = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 20L, tol = 1e-9, cluster = NULL, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson", warm_start_fisher_info = NULL) {
     .Call(`_EDI_fast_coxph_regression_cpp`, X, y, dead, warm_start_beta, smart_cold_start, estimate_only, maxit, tol, cluster, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
-fast_stratified_coxph_regression_cpp <- function(X, y, dead, strata, warm_start_beta = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 20L, tol = 1e-9, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
+fast_stratified_coxph_regression_cpp <- function(X, y, dead, strata, warm_start_beta = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 20L, tol = 1e-9, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson", warm_start_fisher_info = NULL) {
     .Call(`_EDI_fast_stratified_coxph_regression_cpp`, X, y, dead, strata, warm_start_beta, smart_cold_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
@@ -906,8 +906,8 @@ fast_ols_cpp <- function(X, y, fixed_idx = NULL, fixed_values = NULL) {
 #' @return A list containing coefficients, vcov, ssq_b_j, and sigma2_hat.
 #' @export
 #' @keywords internal
-fast_ols_with_var_cpp <- function(X, y, j = 2L, fixed_idx = NULL, fixed_values = NULL) {
-    .Call(`_EDI_fast_ols_with_var_cpp`, X, y, j, fixed_idx, fixed_values)
+fast_ols_with_var_cpp <- function(X_sexp, y_sexp, j = 2L, fixed_idx = NULL, fixed_values = NULL) {
+    .Call(`_EDI_fast_ols_with_var_cpp`, X_sexp, y_sexp, j, fixed_idx, fixed_values)
 }
 
 get_ordinal_cauchit_regression_score_cpp <- function(X, y, params, fixed_idx = NULL, fixed_values = NULL) {
@@ -1658,10 +1658,26 @@ fast_zinb_cpp <- function(X, y, Xzi, warm_start_params = NULL, smart_cold_start 
     .Call(`_EDI_fast_zinb_cpp`, X, y, Xzi, warm_start_params, smart_cold_start, estimate_only, maxit, tol, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info)
 }
 
+#' @title Fast G-Computation Point Estimate for Fractional Logit (C++)
+#' @description Computes marginal mean difference under the fractional logit (quasi-binomial) model using G-computation.
+#' @param X_fit Numeric matrix of predictors including intercept.
+#' @param coef_hat Numeric vector of fitted coefficients.
+#' @param j_treat 1-based column index of the treatment indicator in X_fit.
+#' @return A list with elements \code{mean1}, \code{mean0}, and \code{md} (mean difference).
+#' @export
+#' @keywords internal
 gcomp_fractional_logit_point_estimate_cpp <- function(X_fit, coef_hat, j_treat) {
     .Call(`_EDI_gcomp_fractional_logit_point_estimate_cpp`, X_fit, coef_hat, j_treat)
 }
 
+#' @title Fast G-Computation Point Estimate for Logistic Regression (C++)
+#' @description Computes marginal risk difference and risk ratio under the logistic model using G-computation.
+#' @param X_fit Numeric matrix of predictors including intercept.
+#' @param coef_hat Numeric vector of fitted coefficients.
+#' @param j_treat 1-based column index of the treatment indicator in X_fit.
+#' @return A list with elements \code{mean1}, \code{mean0}, and \code{md} (mean difference).
+#' @export
+#' @keywords internal
 gcomp_logistic_point_estimate_cpp <- function(X_fit, coef_hat, j_treat) {
     .Call(`_EDI_gcomp_logistic_point_estimate_cpp`, X_fit, coef_hat, j_treat)
 }

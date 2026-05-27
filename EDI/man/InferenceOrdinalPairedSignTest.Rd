@@ -4,6 +4,11 @@
 \alias{InferenceOrdinalPairedSignTest}
 \title{Paired Sign Test Inference for KK Designs with Ordinal Response}
 \description{
+Paired Sign Test Inference for KK Designs with Ordinal Response
+
+Paired Sign Test Inference for KK Designs with Ordinal Response
+}
+\details{
 Fits a paired sign test for ordinal responses under a KK matching-on-the-fly
 design that stores ordinary matched pairs. For matched pairs, it considers the
 sign of the within-pair differences. Reservoir subjects are not included in this
@@ -27,234 +32,229 @@ infer
 
 }
 \section{Super classes}{
-\code{Inference} -> \code{InferenceRand} -> \code{InferenceRandCI} -> \code{InferenceNonParamBootstrap} -> \code{InferenceBayesianBootstrap} -> \code{InferenceJackknife} -> \code{InferenceAsymp} -> \code{InferenceMLEorKMSummaryTable} -> \code{InferenceAsympLik} -> \code{InferenceOrdinalPairedSignTest}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{EDI::InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{InferenceOrdinalPairedSignTest}
 }
 \section{Methods}{
 \subsection{Public methods}{
-  \itemize{
-    \item \href{#method-InferenceOrdinalPairedSignTest-initialize}{\code{InferenceOrdinalPairedSignTest$new()}}
-    \item \href{#method-InferenceOrdinalPairedSignTest-compute_estimate}{\code{InferenceOrdinalPairedSignTest$compute_estimate()}}
-    \item \href{#method-InferenceOrdinalPairedSignTest-compute_estimate_with_bootstrap_weights}{\code{InferenceOrdinalPairedSignTest$compute_estimate_with_bootstrap_weights()}}
-    \item \href{#method-InferenceOrdinalPairedSignTest-compute_asymp_confidence_interval}{\code{InferenceOrdinalPairedSignTest$compute_asymp_confidence_interval()}}
-    \item \href{#method-InferenceOrdinalPairedSignTest-compute_asymp_two_sided_pval}{\code{InferenceOrdinalPairedSignTest$compute_asymp_two_sided_pval()}}
-    \item \href{#method-InferenceOrdinalPairedSignTest-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceOrdinalPairedSignTest$approximate_bootstrap_distribution_beta_hat_T()}}
-    \item \href{#method-InferenceOrdinalPairedSignTest-clone}{\code{InferenceOrdinalPairedSignTest$clone()}}
-  }
+\itemize{
+\item \href{#method-InferenceOrdinalPairedSignTest-new}{\code{InferenceOrdinalPairedSignTest$new()}}
+\item \href{#method-InferenceOrdinalPairedSignTest-compute_estimate}{\code{InferenceOrdinalPairedSignTest$compute_estimate()}}
+\item \href{#method-InferenceOrdinalPairedSignTest-compute_estimate_with_bootstrap_weights}{\code{InferenceOrdinalPairedSignTest$compute_estimate_with_bootstrap_weights()}}
+\item \href{#method-InferenceOrdinalPairedSignTest-compute_asymp_confidence_interval}{\code{InferenceOrdinalPairedSignTest$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceOrdinalPairedSignTest-compute_asymp_two_sided_pval}{\code{InferenceOrdinalPairedSignTest$compute_asymp_two_sided_pval()}}
+\item \href{#method-InferenceOrdinalPairedSignTest-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceOrdinalPairedSignTest$approximate_bootstrap_distribution_beta_hat_T()}}
+\item \href{#method-InferenceOrdinalPairedSignTest-clone}{\code{InferenceOrdinalPairedSignTest$clone()}}
 }
-\if{html}{\out{<details><summary>Inherited methods</summary>
+}
+\if{html}{\out{
+<details><summary>Inherited methods</summary>
 <ul>
-  <li><code>Inference$compute_exact_confidence_interval()</code></li>
-  <li><code>Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-  <li><code>Inference$duplicate()</code></li>
-  <li><code>Inference$get_analysis_data()</code></li>
-  <li><code>Inference$get_covariates()</code></li>
-  <li><code>Inference$get_design_object()</code></li>
-  <li><code>Inference$get_model_formula()</code></li>
-  <li><code>Inference$get_nonestimable_reason()</code></li>
-  <li><code>Inference$get_nonestimable_stage()</code></li>
-  <li><code>Inference$get_optimization_alg()</code></li>
-  <li><code>Inference$get_response()</code></li>
-  <li><code>Inference$get_response_type()</code></li>
-  <li><code>Inference$get_treatment()</code></li>
-  <li><code>Inference$is_nonestimable()</code></li>
-  <li><code>Inference$set_optimization_alg()</code></li>
-  <li><code>Inference$set_seed()</code></li>
-  <li><code>InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></li>
-  <li><code>InferenceRand$set_custom_randomization_statistic_function()</code></li>
-  <li><code>InferenceRandCI$compute_rand_confidence_interval()</code></li>
-  <li><code>InferenceRandCI$compute_rand_two_sided_pval()</code></li>
-  <li><code>InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></li>
-  <li><code>InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></li>
-  <li><code>InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></li>
-  <li><code>InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></li>
-  <li><code>InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></li>
-  <li><code>InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></li>
-  <li><code>InferenceJackknife$compute_jackknife_bias_estimate()</code></li>
-  <li><code>InferenceJackknife$compute_jackknife_corrected_estimate()</code></li>
-  <li><code>InferenceJackknife$compute_jackknife_estimate()</code></li>
-  <li><code>InferenceJackknife$compute_jackknife_standard_error()</code></li>
-  <li><code>InferenceJackknife$compute_jackknife_std_error()</code></li>
-  <li><code>InferenceJackknife$compute_jackknife_wald_confidence_interval()</code></li>
-  <li><code>InferenceJackknife$compute_jackknife_wald_two_sided_pval()</code></li>
-  <li><code>InferenceAsymp$compute_wald_confidence_interval()</code></li>
-  <li><code>InferenceAsymp$compute_wald_two_sided_pval()</code></li>
-  <li><code>InferenceAsymp$get_mod()</code></li>
-  <li><code>InferenceAsymp$get_summary()</code></li>
-  <li><code>InferenceAsympLik$compute_gradient_confidence_interval()</code></li>
-  <li><code>InferenceAsympLik$compute_gradient_two_sided_pval()</code></li>
-  <li><code>InferenceAsympLik$compute_lik_ratio_confidence_interval()</code></li>
-  <li><code>InferenceAsympLik$compute_lik_ratio_two_sided_pval()</code></li>
-  <li><code>InferenceAsympLik$compute_score_confidence_interval()</code></li>
-  <li><code>InferenceAsympLik$compute_score_two_sided_pval()</code></li>
-  <li><code>InferenceAsympLik$get_information_preference()</code></li>
-  <li><code>InferenceAsympLik$get_information_source_used()</code></li>
-  <li><code>InferenceAsympLik$get_supported_information_preferences()</code></li>
-  <li><code>InferenceAsympLik$get_supported_testing_types()</code></li>
-  <li><code>InferenceAsympLik$get_testing_type()</code></li>
-  <li><code>InferenceAsympLik$set_information_preference()</code></li>
-  <li><code>InferenceAsympLik$set_testing_type()</code></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_analysis_data"><a href='../../EDI/html/Inference.html#method-Inference-get_analysis_data'><code>EDI::Inference$get_analysis_data()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_covariates"><a href='../../EDI/html/Inference.html#method-Inference-get_covariates'><code>EDI::Inference$get_covariates()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_design_object"><a href='../../EDI/html/Inference.html#method-Inference-get_design_object'><code>EDI::Inference$get_design_object()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_model_formula"><a href='../../EDI/html/Inference.html#method-Inference-get_model_formula'><code>EDI::Inference$get_model_formula()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_reason'><code>EDI::Inference$get_nonestimable_reason()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_stage'><code>EDI::Inference$get_nonestimable_stage()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-get_optimization_alg'><code>EDI::Inference$get_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response"><a href='../../EDI/html/Inference.html#method-Inference-get_response'><code>EDI::Inference$get_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response_type"><a href='../../EDI/html/Inference.html#method-Inference-get_response_type'><code>EDI::Inference$get_response_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>EDI::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>EDI::InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="approximate_jackknife_distribution_beta_hat_T"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>EDI::InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_bias_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>EDI::InferenceJackknife$compute_jackknife_bias_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_corrected_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_corrected_estimate'><code>EDI::InferenceJackknife$compute_jackknife_corrected_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_estimate"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_estimate'><code>EDI::InferenceJackknife$compute_jackknife_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_standard_error"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_standard_error'><code>EDI::InferenceJackknife$compute_jackknife_standard_error()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_std_error"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_std_error'><code>EDI::InferenceJackknife$compute_jackknife_std_error()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_wald_confidence_interval"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_confidence_interval'><code>EDI::InferenceJackknife$compute_jackknife_wald_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceJackknife" data-id="compute_jackknife_wald_two_sided_pval"><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_two_sided_pval'><code>EDI::InferenceJackknife$compute_jackknife_wald_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_confidence_interval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_confidence_interval'><code>EDI::InferenceAsymp$compute_wald_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="compute_wald_two_sided_pval"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_two_sided_pval'><code>EDI::InferenceAsymp$compute_wald_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_mod"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>EDI::InferenceAsymp$get_mod()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsymp" data-id="get_summary"><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>EDI::InferenceAsymp$get_summary()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_gradient_confidence_interval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_gradient_confidence_interval'><code>EDI::InferenceAsympLik$compute_gradient_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_gradient_two_sided_pval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_gradient_two_sided_pval'><code>EDI::InferenceAsympLik$compute_gradient_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_lik_ratio_confidence_interval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_confidence_interval'><code>EDI::InferenceAsympLik$compute_lik_ratio_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_lik_ratio_two_sided_pval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_two_sided_pval'><code>EDI::InferenceAsympLik$compute_lik_ratio_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_score_confidence_interval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_score_confidence_interval'><code>EDI::InferenceAsympLik$compute_score_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="compute_score_two_sided_pval"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_score_two_sided_pval'><code>EDI::InferenceAsympLik$compute_score_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_information_preference"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_information_preference'><code>EDI::InferenceAsympLik$get_information_preference()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_information_source_used"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_information_source_used'><code>EDI::InferenceAsympLik$get_information_source_used()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_supported_information_preferences"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_supported_information_preferences'><code>EDI::InferenceAsympLik$get_supported_information_preferences()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_supported_testing_types"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_supported_testing_types'><code>EDI::InferenceAsympLik$get_supported_testing_types()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="get_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>EDI::InferenceAsympLik$get_testing_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_information_preference"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>EDI::InferenceAsympLik$set_information_preference()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>EDI::InferenceAsympLik$set_testing_type()</code></a></span></li>
 </ul>
-</details>}}
+</details>
+}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceOrdinalPairedSignTest-initialize"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceOrdinalPairedSignTest-initialize}{}}}
-\subsection{\code{InferenceOrdinalPairedSignTest$new()}}{
-  Initialize the inference object.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceOrdinalPairedSignTest$new(
+\if{html}{\out{<a id="method-InferenceOrdinalPairedSignTest-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalPairedSignTest-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPairedSignTest$new(
   des_obj,
   model_formula = NULL,
   verbose = FALSE,
-  smart_cold_start_default = TRUE
-)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{des_obj}}{A completed KK matching-on-the-fly design object.}
-      \item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+  smart_cold_start_default = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed KK matching-on-the-fly design object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
 the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
-      \item{\code{verbose}}{Whether to print progress messages.}
-      \item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
-    }
-    \if{html}{\out{</div>}}
-  }
-}
 
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPairedSignTest-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPairedSignTest-compute_estimate}{}}}
-\subsection{\code{InferenceOrdinalPairedSignTest$compute_estimate()}}{
-  Returns the estimated treatment effect (proportion of pairs where T > C).
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceOrdinalPairedSignTest$compute_estimate(estimate_only = FALSE)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
-    }
-    \if{html}{\out{</div>}}
-  }
+\subsection{Method \code{compute_estimate()}}{
+Returns the estimated treatment effect (proportion of pairs where T > C).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPairedSignTest$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPairedSignTest-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPairedSignTest-compute_estimate_with_bootstrap_weights}{}}}
-\subsection{\code{InferenceOrdinalPairedSignTest$compute_estimate_with_bootstrap_weights()}}{
-  Recomputes the paired-sign treatment estimate under
+\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Recomputes the paired-sign treatment estimate under
   Bayesian-bootstrap weights.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceOrdinalPairedSignTest$compute_estimate_with_bootstrap_weights(
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPairedSignTest$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
   estimate_only = FALSE
-)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
-bootstrap weights.}
-      \item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
-estimate.}
-    }
-    \if{html}{\out{</div>}}
-  }
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
+bootstrap weights.}
+
+\item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
+estimate.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPairedSignTest-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPairedSignTest-compute_asymp_confidence_interval}{}}}
-\subsection{\code{InferenceOrdinalPairedSignTest$compute_asymp_confidence_interval()}}{
-  Computes the confidence interval for the probability P(T > C).
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceOrdinalPairedSignTest$compute_asymp_confidence_interval(alpha = 0.05)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{alpha}}{The significance level.}
-    }
-    \if{html}{\out{</div>}}
-  }
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes the confidence interval for the probability P(T > C).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPairedSignTest$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The significance level.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPairedSignTest-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPairedSignTest-compute_asymp_two_sided_pval}{}}}
-\subsection{\code{InferenceOrdinalPairedSignTest$compute_asymp_two_sided_pval()}}{
-  Computes the p-value for the sign test.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceOrdinalPairedSignTest$compute_asymp_two_sided_pval(delta = 0)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{delta}}{The null difference (must be 0 for sign test).}
-    }
-    \if{html}{\out{</div>}}
-  }
+\subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes the p-value for the sign test.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPairedSignTest$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference (must be 0 for sign test).}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPairedSignTest-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPairedSignTest-approximate_bootstrap_distribution_beta_hat_T}{}}}
-\subsection{\code{InferenceOrdinalPairedSignTest$approximate_bootstrap_distribution_beta_hat_T()}}{
-  Creates the bootstrap distribution of the estimate for the treatment effect.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceOrdinalPairedSignTest$approximate_bootstrap_distribution_beta_hat_T(
+\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPairedSignTest$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
   show_progress = TRUE,
   debug = FALSE,
   bootstrap_type = NULL
-)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{B}}{Number of bootstrap samples.}
-      \item{\code{show_progress}}{Whether to show a progress bar.}
-      \item{\code{debug}}{Whether to return diagnostics.}
-      \item{\code{bootstrap_type}}{Optional resampling scheme.}
-    }
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    A numeric vector of bootstrap estimates.
-  }
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPairedSignTest-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPairedSignTest-clone}{}}}
-\subsection{\code{InferenceOrdinalPairedSignTest$clone()}}{
-  The objects of this class are cloneable with this method.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceOrdinalPairedSignTest$clone(deep = FALSE)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{deep}}{Whether to make a deep clone.}
-    }
-    \if{html}{\out{</div>}}
-  }
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPairedSignTest$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
+}
+\if{html}{\out{</div>}}
+}
+}
 }

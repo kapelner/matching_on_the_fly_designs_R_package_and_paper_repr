@@ -17,7 +17,8 @@ fast_robust_regression_cpp(
   fixed_idx = NULL,
   fixed_values = NULL,
   warm_start_weights = NULL,
-  warm_start_fisher_info = NULL
+  warm_start_fisher_info = NULL,
+  estimate_only = FALSE
 )
 }
 \arguments{

@@ -9,7 +9,7 @@ fast_beta_regression_with_var(
   y,
   start_phi = 10,
   j = 2,
-  optimization_alg = "newton_raphson",
+  optimization_alg = "lbfgs",
   warm_start_beta = NULL,
   warm_start_fisher_info = NULL
 )

@@ -97,6 +97,10 @@ InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCo
 		}
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+		optimization_alg = "lbfgs",
+		best_par = NULL,
+		best_X_colnames = NULL,
+		cached_mod = NULL,
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		supports_likelihood_tests = function() FALSE,
 		max_abs_reasonable_coef = 1e4,
@@ -365,10 +369,11 @@ InferenceSurvivalKKClaytonCopulaOneLik = R6::R6Class("InferenceSurvivalKKClayton
 		}
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
-		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
-		best_X_colnames = NULL,
-		best_par = NULL,
 		optimization_alg = "lbfgs",
+		best_par = NULL,
+		best_X_colnames = NULL,
+		cached_mod = NULL,
+		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Re-read design variables which might have been transformed during randomization
 			private$w = private$des_obj_priv_int$w

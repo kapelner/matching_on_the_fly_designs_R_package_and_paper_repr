@@ -1784,17 +1784,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_ols_with_var_cpp
-List fast_ols_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int j, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values);
-RcppExport SEXP _EDI_fast_ols_with_var_cpp(SEXP XSEXP, SEXP ySEXP, SEXP jSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP) {
+List fast_ols_with_var_cpp(SEXP X_sexp, SEXP y_sexp, int j, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values);
+RcppExport SEXP _EDI_fast_ols_with_var_cpp(SEXP X_sexpSEXP, SEXP y_sexpSEXP, SEXP jSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
-    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< SEXP >::type X_sexp(X_sexpSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type y_sexp(y_sexpSEXP);
     Rcpp::traits::input_parameter< int >::type j(jSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_ols_with_var_cpp(X, y, j, fixed_idx, fixed_values));
+    rcpp_result_gen = Rcpp::wrap(fast_ols_with_var_cpp(X_sexp, y_sexp, j, fixed_idx, fixed_values));
     return rcpp_result_gen;
 END_RCPP
 }

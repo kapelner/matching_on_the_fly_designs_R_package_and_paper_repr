@@ -35,7 +35,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "survival")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
+			super$initialize(des_obj = des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Returns the estimated treatment effect (log-time ratio).
@@ -87,6 +87,11 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 		}
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+		optimization_alg = NULL,
+		best_par = NULL,
+		best_X_colnames = NULL,
+		any_censoring = NULL,
+		m = NULL,
 		cached_mod = NULL,
 		best_X_colnames_matched = NULL,
 		best_X_colnames_reservoir = NULL,
@@ -336,7 +341,7 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 			}
 			private$use_rcpp = use_rcpp
 			self$set_optimization_alg(optimization_alg, allow_irls = FALSE)
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
+			super$initialize(des_obj = des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$init_kk_passthrough(des_obj)
 		},
 		#' @description Returns the combined-likelihood estimate of the treatment effect.
@@ -407,6 +412,9 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		cached_mod = NULL,
 		best_X_colnames = NULL,
+		optimization_alg = "lbfgs",
+		best_par = NULL,
+		any_censoring = NULL,
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		use_rcpp = TRUE,
 		max_abs_reasonable_coef = 1e4,
@@ -628,7 +636,7 @@ InferenceSurvivalKKWeibullFrailtyIVWC = R6::R6Class("InferenceSurvivalKKWeibullF
 		#' @param optimization_alg Optimization algorithm to use.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, optimization_alg = NULL){
 			self$set_optimization_alg(optimization_alg)
-			super$initialize(des_obj, model_formula = model_formula, verbose = verbose)
+			super$initialize(des_obj = des_obj, model_formula = model_formula, verbose = verbose)
 		}
 	)
 )
@@ -645,7 +653,7 @@ InferenceSurvivalKKWeibullFrailtyOneLik = R6::R6Class("InferenceSurvivalKKWeibul
 		#' @param optimization_alg Optimization algorithm to use.
 		initialize = function(des_obj, model_formula = NULL, use_rcpp = TRUE, verbose = FALSE, optimization_alg = NULL){
 			self$set_optimization_alg(optimization_alg)
-			super$initialize(des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose)
+			super$initialize(des_obj = des_obj, model_formula = model_formula, use_rcpp = use_rcpp, verbose = verbose)
 		}
 	)
 )

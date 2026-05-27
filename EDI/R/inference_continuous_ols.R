@@ -84,20 +84,26 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			if (should_run_asserts()) {
-				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-			}
-			private$shared()
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
+			private$shared(estimate_only = FALSE)
+			est = private$cached_values$beta_hat_T
+			se = private$cached_values$s_beta_hat_T
+			df = private$cached_values$df
+			if (length(est) != 1L || !is.finite(est) || !is.finite(se) || se <= 0) return(c(NA_real_, NA_real_))
+			mult = if (!is.finite(df)) stats::qnorm(1 - alpha / 2) else stats::qt(1 - alpha / 2, df = df)
+			ci = c(est - mult * se, est + mult * se)
+			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
+			ci
 		},
 		#' @description Computes an approximate two-sided p-value for the treatment effect.
 		#' @param delta The null difference to test against. Default is zero.
 		compute_asymp_two_sided_pval = function(delta = 0){
-			if (should_run_asserts()) {
-				assertNumeric(delta)
-			}
-			private$shared()
-			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+			private$shared(estimate_only = FALSE)
+			est = private$cached_values$beta_hat_T
+			se = private$cached_values$s_beta_hat_T
+			df = private$cached_values$df
+			if (length(est) != 1L || !is.finite(est) || !is.finite(se) || se <= 0) return(NA_real_)
+			val = (est - delta) / se
+			if (is.finite(df)) 2 * stats::pt(-abs(val), df = df) else 2 * stats::pnorm(-abs(val))
 		}
 	),
 	private = list(
@@ -116,6 +122,21 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 			X_full = private$build_design_matrix()
 			
+			if (!private$harden) {
+				if (estimate_only) {
+					res = fast_ols_cpp(X_full, private$y)
+					private$cached_values$beta_hat_T = as.numeric(res$b[2])
+				} else {
+					res = fast_ols_with_var_cpp(X_full, private$y, j = 2L)
+					private$cached_values$beta_hat_T = as.numeric(res$b[2])
+					private$cached_values$s_beta_hat_T = if (is.finite(res$ssq_b_2)) sqrt(res$ssq_b_2) else NA_real_
+					private$cached_values$df = nrow(X_full) - ncol(X_full)
+					private$cached_values$likelihood_test_context = list(X = X_full, j_treat = 2L, full_fit = res)
+					private$cached_mod = res
+				}
+				return(invisible(NULL))
+			}
+
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
 				required_cols = 2L,

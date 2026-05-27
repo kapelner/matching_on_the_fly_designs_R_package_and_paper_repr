@@ -10,7 +10,7 @@ fast_coxph_regression(
   dead,
   use_rcpp = TRUE,
   estimate_only = FALSE,
-  optimization_alg = "newton_raphson",
+  optimization_alg = "lbfgs",
   warm_start_beta = NULL,
   warm_start_fisher_info = NULL,
   smart_cold_start = TRUE

@@ -10,7 +10,7 @@ fast_weibull_regression(
   X,
   use_rcpp = TRUE,
   estimate_only = FALSE,
-  optimization_alg = "newton_raphson",
+  optimization_alg = "lbfgs",
   warm_start_params = NULL,
   warm_start_fisher_info = NULL
 )

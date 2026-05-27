@@ -444,7 +444,7 @@ CoxFitResult cox_fit(
     bool estimate_only,
     int maxit,
     double tol,
-    const std::string& optimization_alg,
+    const std::string& optimization_alg = "newton_raphson",
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
 {
     if (optimization_alg == "lbfgs")
@@ -575,7 +575,7 @@ List fast_coxph_regression_prebuilt_cpp(
     double tol = 1e-9,
     Nullable<IntegerVector> fixed_idx = R_NilValue,
     Nullable<NumericVector> fixed_values = R_NilValue,
-    std::string optimization_alg = "lbfgs",
+    std::string optimization_alg = "newton_raphson",
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
 {
     Rcpp::XPtr<std::vector<CoxData>> data_ptr(cox_data_xptr);
@@ -602,7 +602,7 @@ List fast_coxph_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
                                Nullable<IntegerVector> cluster = R_NilValue,
                                Nullable<IntegerVector> fixed_idx = R_NilValue,
                                Nullable<NumericVector> fixed_values = R_NilValue,
-                               std::string optimization_alg = "lbfgs",
+                               std::string optimization_alg = "newton_raphson",
                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     int p = (int)X.cols();
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
@@ -631,7 +631,7 @@ List fast_stratified_coxph_regression_cpp(
     double tol = 1e-9,
     Nullable<IntegerVector> fixed_idx = R_NilValue,
     Nullable<NumericVector> fixed_values = R_NilValue,
-    std::string optimization_alg = "lbfgs",
+    std::string optimization_alg = "newton_raphson",
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
 {
     const int n = (int)y.size();
@@ -639,18 +639,28 @@ List fast_stratified_coxph_regression_cpp(
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
 
     // Efficiently group by strata
+    std::vector<int> unique_strata;
     std::map<int, std::vector<int>> strata_map;
-    for (int i = 0; i < n; ++i) strata_map[strata[i]].push_back(i);
+    for (int i = 0; i < n; ++i) {
+        if (strata_map.find(strata[i]) == strata_map.end()) {
+            unique_strata.push_back(strata[i]);
+        }
+        strata_map[strata[i]].push_back(i);
+    }
+
+    // Use RowMajorMatrixXd for faster row-wise access during data preparation
+    RowMajorMatrixXd X_rm = X;
 
     std::vector<CoxData> strata_data;
-    strata_data.reserve(strata_map.size());
-    for (auto const& [sid, idx] : strata_map) {
+    strata_data.reserve(unique_strata.size());
+    for (int sid : unique_strata) {
+        const std::vector<int>& idx = strata_map[sid];
         const int ns = (int)idx.size();
         Eigen::VectorXd y_s(ns), dead_s(ns);
         Eigen::MatrixXd X_s(ns, p);
         for (int ii = 0; ii < ns; ++ii) {
             int id = idx[ii];
-            y_s[ii] = y[id]; dead_s[ii] = dead[id]; X_s.row(ii) = X.row(id);
+            y_s[ii] = y[id]; dead_s[ii] = dead[id]; X_s.row(ii) = X_rm.row(id);
         }
         strata_data.emplace_back(y_s, dead_s, X_s);
     }

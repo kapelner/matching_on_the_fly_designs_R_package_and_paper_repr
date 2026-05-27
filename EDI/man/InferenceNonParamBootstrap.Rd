@@ -4,72 +4,81 @@
 \alias{InferenceNonParamBootstrap}
 \title{Bootstrap-based Inference}
 \description{
+Bootstrap-based Inference
+
+Bootstrap-based Inference
+}
+\details{
 Abstract class for bootstrap-based inference.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{Inference} -> \code{InferenceRand} -> \code{InferenceRandCI} -> \code{InferenceNonParamBootstrap}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{InferenceNonParamBootstrap}
 }
 \section{Methods}{
 \subsection{Public methods}{
-  \itemize{
-    \item \href{#method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()}}
-    \item \href{#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval}{\code{InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()}}
-    \item \href{#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval}{\code{InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()}}
-    \item \href{#method-InferenceNonParamBootstrap-clone}{\code{InferenceNonParamBootstrap$clone()}}
-  }
+\itemize{
+\item \href{#method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()}}
+\item \href{#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval}{\code{InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()}}
+\item \href{#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval}{\code{InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()}}
+\item \href{#method-InferenceNonParamBootstrap-clone}{\code{InferenceNonParamBootstrap$clone()}}
 }
-\if{html}{\out{<details><summary>Inherited methods</summary>
+}
+\if{html}{\out{
+<details><summary>Inherited methods</summary>
 <ul>
-  <li><code>Inference$compute_estimate()</code></li>
-  <li><code>Inference$compute_exact_confidence_interval()</code></li>
-  <li><code>Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-  <li><code>Inference$duplicate()</code></li>
-  <li><code>Inference$get_analysis_data()</code></li>
-  <li><code>Inference$get_covariates()</code></li>
-  <li><code>Inference$get_design_object()</code></li>
-  <li><code>Inference$get_model_formula()</code></li>
-  <li><code>Inference$get_nonestimable_reason()</code></li>
-  <li><code>Inference$get_nonestimable_stage()</code></li>
-  <li><code>Inference$get_optimization_alg()</code></li>
-  <li><code>Inference$get_response()</code></li>
-  <li><code>Inference$get_response_type()</code></li>
-  <li><code>Inference$get_treatment()</code></li>
-  <li><code>Inference$initialize()</code></li>
-  <li><code>Inference$is_nonestimable()</code></li>
-  <li><code>Inference$set_optimization_alg()</code></li>
-  <li><code>Inference$set_seed()</code></li>
-  <li><code>InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></li>
-  <li><code>InferenceRand$set_custom_randomization_statistic_function()</code></li>
-  <li><code>InferenceRandCI$compute_rand_confidence_interval()</code></li>
-  <li><code>InferenceRandCI$compute_rand_two_sided_pval()</code></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_estimate"><a href='../../EDI/html/Inference.html#method-Inference-compute_estimate'><code>EDI::Inference$compute_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_analysis_data"><a href='../../EDI/html/Inference.html#method-Inference-get_analysis_data'><code>EDI::Inference$get_analysis_data()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_covariates"><a href='../../EDI/html/Inference.html#method-Inference-get_covariates'><code>EDI::Inference$get_covariates()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_design_object"><a href='../../EDI/html/Inference.html#method-Inference-get_design_object'><code>EDI::Inference$get_design_object()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_model_formula"><a href='../../EDI/html/Inference.html#method-Inference-get_model_formula'><code>EDI::Inference$get_model_formula()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_reason'><code>EDI::Inference$get_nonestimable_reason()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_stage'><code>EDI::Inference$get_nonestimable_stage()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-get_optimization_alg'><code>EDI::Inference$get_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response"><a href='../../EDI/html/Inference.html#method-Inference-get_response'><code>EDI::Inference$get_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response_type"><a href='../../EDI/html/Inference.html#method-Inference-get_response_type'><code>EDI::Inference$get_response_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="initialize"><a href='../../EDI/html/Inference.html#method-Inference-initialize'><code>EDI::Inference$initialize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>EDI::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
 </ul>
-</details>}}
+</details>
+}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T}{}}}
-\subsection{\code{InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()}}{
-  Creates the bootstrap distribution of the estimate for the treatment effect
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T(
+\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
   show_progress = TRUE,
   debug = FALSE,
   bootstrap_type = NULL
-)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{B}}{Number of bootstrap samples. The default is 501.}
-      \item{\code{show_progress}}{A flag indicating whether a progress bar should be displayed.}
-      \item{\code{debug}}{If \code{TRUE}, return a list with the distribution values and
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples. The default is 501.}
+
+\item{\code{show_progress}}{A flag indicating whether a progress bar should be displayed.}
+
+\item{\code{debug}}{If \code{TRUE}, return a list with the distribution values and
 per-iteration diagnostics including error messages, warning messages, counts of each,
 and summary proportions for iterations with errors, warnings, and illegal (non-finite)
 values. Runs serially. Default \code{FALSE}.}
-      \item{\code{bootstrap_type}}{Optional bootstrap-resampling scheme. Legal public values are:
+
+\item{\code{bootstrap_type}}{Optional bootstrap-resampling scheme. Legal public values are:
 \describe{
   \item{\code{NULL}}{Use the design's default row-resampling bootstrap. For ordinary
     non-blocking designs this is the usual subject-level resample-with-replacement
@@ -86,41 +95,41 @@ values. Runs serially. Default \code{FALSE}.}
     rather than resampling units within each block.}
 }
 Any non-\code{NULL} value is rejected for designs outside that blocking family.}
-    }
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    When \code{debug = FALSE} (default), a numeric vector of length \code{B}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+When \code{debug = FALSE} (default), a numeric vector of length \code{B}
   containing the bootstrap estimates. When \code{debug = TRUE}, a list with: \code{values},
   \code{errors} (list of character vectors, one per iteration), \code{warnings} (list of
   character vectors, one per iteration), \code{num_errors}, \code{num_warnings},
   \code{prop_iterations_with_errors}, \code{prop_iterations_with_warnings}, and
   \code{prop_illegal_values}.
-  }
 }
-
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval}{}}}
-\subsection{\code{InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()}}{
-  Computes a bootstrap-based two-sided p-value for the treatment effect.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval(
+\subsection{Method \code{compute_bootstrap_two_sided_pval()}}{
+Computes a bootstrap-based two-sided p-value for the treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval(
   delta = 0,
   B = 501,
   type = NULL,
   na.rm = FALSE,
   min_number_usable_samples = 5L
-)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{delta}}{Null hypothesis value. Default 0.}
-      \item{\code{B}}{Number of bootstrap samples. Default 501.}
-      \item{\code{type}}{Bootstrap p-value type. Supported values are
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null hypothesis value. Default 0.}
+
+\item{\code{B}}{Number of bootstrap samples. Default 501.}
+
+\item{\code{type}}{Bootstrap p-value type. Supported values are
 \code{"percentile"} (default), \code{"symmetric"}, \code{"studentized"},
 \code{"bootstrap-t"}, and \code{"bca"}.
 \code{"percentile"}: shifts the bootstrap distribution to be centred at
@@ -134,74 +143,76 @@ method (Hall 1992; Davidson & MacKinnon 1999).
 \code{"bca"}: bias-corrected and accelerated p-value via closed-form CI
 inversion using the jackknife acceleration and bias-correction constants;
 second-order accurate (Efron 1987; Efron & Tibshirani 1993).}
-      \item{\code{na.rm}}{Remove non-finite bootstrap replicates. Default FALSE.}
-      \item{\code{min_number_usable_samples}}{Minimum number of finite bootstrap samples
-required after filtering. Default 50. Must be smaller than \code{B}.}
-    }
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    A bootstrap two-sided p-value.
-  }
-}
 
+\item{\code{na.rm}}{Remove non-finite bootstrap replicates. Default FALSE.}
+
+\item{\code{min_number_usable_samples}}{Minimum number of finite bootstrap samples
+required after filtering. Default 50. Must be smaller than \code{B}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A bootstrap two-sided p-value.
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval}{}}}
-\subsection{\code{InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()}}{
-  Computes a bootstrap-based confidence interval.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceNonParamBootstrap$compute_bootstrap_confidence_interval(
+\subsection{Method \code{compute_bootstrap_confidence_interval()}}{
+Computes a bootstrap-based confidence interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceNonParamBootstrap$compute_bootstrap_confidence_interval(
   alpha = 0.05,
   B = 501,
   type = NULL,
   na.rm = TRUE,
   show_progress = TRUE,
   min_number_usable_samples = 5L
-)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{alpha}}{The confidence level 1 - \code{alpha}. Default 0.05.}
-      \item{\code{B}}{Number of bootstrap samples. Default 501.}
-      \item{\code{type}}{Bootstrap CI type. Supported values are
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level 1 - \code{alpha}. Default 0.05.}
+
+\item{\code{B}}{Number of bootstrap samples. Default 501.}
+
+\item{\code{type}}{Bootstrap CI type. Supported values are
 \code{"percentile"}, \code{"basic"}, \code{"studentized"},
 \code{"bootstrap-t"}, \code{"symmetric-percentile-t"},
 \code{"bca"}, \code{"prepivoted"}, \code{"double-bootstrap"},
 \code{"calibrated"}, and \code{"smoothed"}.}
-      \item{\code{na.rm}}{Remove non-finite bootstrap replicates.
-Default TRUE. Non-finite replicates are always removed internally.}
-      \item{\code{show_progress}}{Show progress bar.}
-      \item{\code{min_number_usable_samples}}{Minimum number of finite bootstrap samples
-required after filtering. Default 50. Must be smaller than \code{B}.}
-    }
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    A bootstrap confidence interval.
-  }
-}
 
+\item{\code{na.rm}}{Remove non-finite bootstrap replicates.
+Default TRUE. Non-finite replicates are always removed internally.}
+
+\item{\code{show_progress}}{Show progress bar.}
+
+\item{\code{min_number_usable_samples}}{Minimum number of finite bootstrap samples
+required after filtering. Default 50. Must be smaller than \code{B}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A bootstrap confidence interval.
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceNonParamBootstrap-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-clone}{}}}
-\subsection{\code{InferenceNonParamBootstrap$clone()}}{
-  The objects of this class are cloneable with this method.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceNonParamBootstrap$clone(deep = FALSE)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{deep}}{Whether to make a deep clone.}
-    }
-    \if{html}{\out{</div>}}
-  }
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceNonParamBootstrap$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
+}
+\if{html}{\out{</div>}}
+}
+}
 }

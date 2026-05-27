@@ -4,72 +4,76 @@
 \alias{InferenceRand}
 \title{Randomization-based Inference}
 \description{
+Randomization-based Inference
+
+Randomization-based Inference
+}
+\details{
 Abstract class for randomization-based inference.
 }
 \keyword{internal}
 \section{Super class}{
-\code{Inference} -> \code{InferenceRand}
+\code{\link[EDI:Inference]{EDI::Inference}} -> \code{InferenceRand}
 }
 \section{Methods}{
 \subsection{Public methods}{
-  \itemize{
-    \item \href{#method-InferenceRand-set_custom_randomization_statistic_function}{\code{InferenceRand$set_custom_randomization_statistic_function()}}
-    \item \href{#method-InferenceRand-approximate_randomization_distribution_beta_hat_T}{\code{InferenceRand$approximate_randomization_distribution_beta_hat_T()}}
-    \item \href{#method-InferenceRand-compute_rand_two_sided_pval}{\code{InferenceRand$compute_rand_two_sided_pval()}}
-    \item \href{#method-InferenceRand-clone}{\code{InferenceRand$clone()}}
-  }
+\itemize{
+\item \href{#method-InferenceRand-set_custom_randomization_statistic_function}{\code{InferenceRand$set_custom_randomization_statistic_function()}}
+\item \href{#method-InferenceRand-approximate_randomization_distribution_beta_hat_T}{\code{InferenceRand$approximate_randomization_distribution_beta_hat_T()}}
+\item \href{#method-InferenceRand-compute_rand_two_sided_pval}{\code{InferenceRand$compute_rand_two_sided_pval()}}
+\item \href{#method-InferenceRand-clone}{\code{InferenceRand$clone()}}
 }
-\if{html}{\out{<details><summary>Inherited methods</summary>
+}
+\if{html}{\out{
+<details><summary>Inherited methods</summary>
 <ul>
-  <li><code>Inference$compute_estimate()</code></li>
-  <li><code>Inference$compute_exact_confidence_interval()</code></li>
-  <li><code>Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></li>
-  <li><code>Inference$duplicate()</code></li>
-  <li><code>Inference$get_analysis_data()</code></li>
-  <li><code>Inference$get_covariates()</code></li>
-  <li><code>Inference$get_design_object()</code></li>
-  <li><code>Inference$get_model_formula()</code></li>
-  <li><code>Inference$get_nonestimable_reason()</code></li>
-  <li><code>Inference$get_nonestimable_stage()</code></li>
-  <li><code>Inference$get_optimization_alg()</code></li>
-  <li><code>Inference$get_response()</code></li>
-  <li><code>Inference$get_response_type()</code></li>
-  <li><code>Inference$get_treatment()</code></li>
-  <li><code>Inference$initialize()</code></li>
-  <li><code>Inference$is_nonestimable()</code></li>
-  <li><code>Inference$set_optimization_alg()</code></li>
-  <li><code>Inference$set_seed()</code></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_estimate"><a href='../../EDI/html/Inference.html#method-Inference-compute_estimate'><code>EDI::Inference$compute_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_analysis_data"><a href='../../EDI/html/Inference.html#method-Inference-get_analysis_data'><code>EDI::Inference$get_analysis_data()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_covariates"><a href='../../EDI/html/Inference.html#method-Inference-get_covariates'><code>EDI::Inference$get_covariates()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_design_object"><a href='../../EDI/html/Inference.html#method-Inference-get_design_object'><code>EDI::Inference$get_design_object()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_model_formula"><a href='../../EDI/html/Inference.html#method-Inference-get_model_formula'><code>EDI::Inference$get_model_formula()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_reason'><code>EDI::Inference$get_nonestimable_reason()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_stage'><code>EDI::Inference$get_nonestimable_stage()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-get_optimization_alg'><code>EDI::Inference$get_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response"><a href='../../EDI/html/Inference.html#method-Inference-get_response'><code>EDI::Inference$get_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response_type"><a href='../../EDI/html/Inference.html#method-Inference-get_response_type'><code>EDI::Inference$get_response_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="initialize"><a href='../../EDI/html/Inference.html#method-Inference-initialize'><code>EDI::Inference$initialize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
 </ul>
-</details>}}
+</details>
+}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRand-set_custom_randomization_statistic_function"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceRand-set_custom_randomization_statistic_function}{}}}
-\subsection{\code{InferenceRand$set_custom_randomization_statistic_function()}}{
-  Set Custom Randomization Statistic Computation
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceRand$set_custom_randomization_statistic_function(
+\subsection{Method \code{set_custom_randomization_statistic_function()}}{
+Set Custom Randomization Statistic Computation
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceRand$set_custom_randomization_statistic_function(
   custom_randomization_statistic_function
-)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{custom_randomization_statistic_function}}{A function that returns a scalar value.}
-    }
-    \if{html}{\out{</div>}}
-  }
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{custom_randomization_statistic_function}}{A function that returns a scalar value.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRand-approximate_randomization_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceRand-approximate_randomization_distribution_beta_hat_T}{}}}
-\subsection{\code{InferenceRand$approximate_randomization_distribution_beta_hat_T()}}{
-  Computes the randomization distribution of the treatment effect estimate under the sharp null.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceRand$approximate_randomization_distribution_beta_hat_T(
+\subsection{Method \code{approximate_randomization_distribution_beta_hat_T()}}{
+Computes the randomization distribution of the treatment effect estimate under the sharp null.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceRand$approximate_randomization_distribution_beta_hat_T(
   r = 501,
   delta = 0,
   transform_responses = "none",
@@ -77,43 +81,47 @@ Abstract class for randomization-based inference.
   permutations = NULL,
   debug = FALSE,
   zero_one_logit_clamp = .Machine$double.eps
-)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{r}}{Number of randomization vectors. Default 501.}
-      \item{\code{delta}}{The null difference. Default 0.}
-      \item{\code{transform_responses}}{Type of transformation. Default "none".}
-      \item{\code{show_progress}}{Show progress bar. Default TRUE.}
-      \item{\code{permutations}}{Pre-computed permutations. Default NULL.}
-      \item{\code{debug}}{If \code{TRUE}, return a list with the distribution values and
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{Number of randomization vectors. Default 501.}
+
+\item{\code{delta}}{The null difference. Default 0.}
+
+\item{\code{transform_responses}}{Type of transformation. Default "none".}
+
+\item{\code{show_progress}}{Show progress bar. Default TRUE.}
+
+\item{\code{permutations}}{Pre-computed permutations. Default NULL.}
+
+\item{\code{debug}}{If \code{TRUE}, return a list with the distribution values and
 per-iteration diagnostics including error messages, warning messages, counts of each,
 and summary proportions for iterations with errors, warnings, and illegal (non-finite)
 values. Runs serially. Default \code{FALSE}.}
-      \item{\code{zero_one_logit_clamp}}{The clamping amount for exact 0 and 1 values when logging}
-    }
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    When \code{debug = FALSE} (default), a numeric vector of length \code{r}. When
+
+\item{\code{zero_one_logit_clamp}}{The clamping amount for exact 0 and 1 values when logging}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+When \code{debug = FALSE} (default), a numeric vector of length \code{r}. When
   \code{debug = TRUE}, a list with: \code{values}, \code{errors} (list of character
   vectors, one per iteration), \code{warnings} (list of character vectors, one per
   iteration), \code{num_errors}, \code{num_warnings},
   \code{prop_iterations_with_errors}, \code{prop_iterations_with_warnings}, and
   \code{prop_illegal_values}.
-  }
 }
-
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRand-compute_rand_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceRand-compute_rand_two_sided_pval}{}}}
-\subsection{\code{InferenceRand$compute_rand_two_sided_pval()}}{
-  Computes a randomization-based p-value.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceRand$compute_rand_two_sided_pval(
+\subsection{Method \code{compute_rand_two_sided_pval()}}{
+Computes a randomization-based p-value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceRand$compute_rand_two_sided_pval(
   r = 501,
   delta = 0,
   transform_responses = "none",
@@ -121,44 +129,47 @@ values. Runs serially. Default \code{FALSE}.}
   show_progress = TRUE,
   permutations = NULL,
   zero_one_logit_clamp = .Machine$double.eps
-)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{r}}{Number of randomization vectors.}
-      \item{\code{delta}}{Null difference.}
-      \item{\code{transform_responses}}{Transformation.}
-      \item{\code{na.rm}}{Remove NAs.}
-      \item{\code{show_progress}}{Show progress.}
-      \item{\code{permutations}}{Pre-computed permutations.}
-      \item{\code{zero_one_logit_clamp}}{The clamping amount for exact 0 and 1 values when logging}
-    }
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    Randomization p-value.
-  }
+)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{Number of randomization vectors.}
+
+\item{\code{delta}}{Null difference.}
+
+\item{\code{transform_responses}}{Transformation.}
+
+\item{\code{na.rm}}{Remove NAs.}
+
+\item{\code{show_progress}}{Show progress.}
+
+\item{\code{permutations}}{Pre-computed permutations.}
+
+\item{\code{zero_one_logit_clamp}}{The clamping amount for exact 0 and 1 values when logging}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Randomization p-value.
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRand-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceRand-clone}{}}}
-\subsection{\code{InferenceRand$clone()}}{
-  The objects of this class are cloneable with this method.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceRand$clone(deep = FALSE)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{deep}}{Whether to make a deep clone.}
-    }
-    \if{html}{\out{</div>}}
-  }
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceRand$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
+}
+\if{html}{\out{</div>}}
+}
+}
 }

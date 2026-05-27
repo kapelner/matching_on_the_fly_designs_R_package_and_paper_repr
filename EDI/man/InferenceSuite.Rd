@@ -4,6 +4,11 @@
 \alias{InferenceSuite}
 \title{Inference Suite}
 \description{
+Inference Suite
+
+Inference Suite
+}
+\details{
 Bundles a design object with a set of inference classes and their
 constructor arguments.  On initialization the suite automatically
 introspects the package namespace to discover every concrete
@@ -30,66 +35,64 @@ suite$applicable_design_classes
 }
 }
 \section{Public fields}{
-  \if{html}{\out{<div class="r6-fields">}}
-  \describe{
-    \item{\code{applicable_design_classes}}{Character vector of applicable inference
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{applicable_design_classes}}{Character vector of applicable inference
 class names derived during initialization.}
-  }
-  \if{html}{\out{</div>}}
+}
+\if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
-  \itemize{
-    \item \href{#method-InferenceSuite-initialize}{\code{InferenceSuite$new()}}
-    \item \href{#method-InferenceSuite-clone}{\code{InferenceSuite$clone()}}
-  }
+\itemize{
+\item \href{#method-InferenceSuite-new}{\code{InferenceSuite$new()}}
+\item \href{#method-InferenceSuite-clone}{\code{InferenceSuite$clone()}}
+}
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSuite-initialize"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSuite-initialize}{}}}
-\subsection{\code{InferenceSuite$new()}}{
-  Initialize an \code{InferenceSuite}.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceSuite$new(des_obj, model_formula = NULL, inference_params = list())}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{des_obj}}{A completed \code{Design} object.}
-      \item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+\if{html}{\out{<a id="method-InferenceSuite-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSuite-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize an \code{InferenceSuite}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSuite$new(des_obj, model_formula = NULL, inference_params = list())}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
 the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
-      \item{\code{inference_params}}{A named list of lists supplying additional
+
+\item{\code{inference_params}}{A named list of lists supplying additional
 constructor arguments for specific inference classes.  Each name
 must be the name of a concrete \code{Inference} subclass; the
 corresponding list contains keyword arguments (beyond
 \code{des_obj}) forwarded to that class's \code{initialize}.
 Defaults to an empty list (no extra arguments for any class).}
-    }
-    \if{html}{\out{</div>}}
-  }
 }
-
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSuite-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSuite-clone}{}}}
-\subsection{\code{InferenceSuite$clone()}}{
-  The objects of this class are cloneable with this method.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceSuite$clone(deep = FALSE)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{deep}}{Whether to make a deep clone.}
-    }
-    \if{html}{\out{</div>}}
-  }
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSuite$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
+}
+\if{html}{\out{</div>}}
+}
+}
 }

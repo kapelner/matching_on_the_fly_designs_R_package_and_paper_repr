@@ -4,6 +4,11 @@
 \alias{DesignFixedMatchingGreedyPairSwitching}
 \title{A Fixed Design Combining Binary Matching and Greedy Pair Switching}
 \description{
+A Fixed Design Combining Binary Matching and Greedy Pair Switching
+
+A Fixed Design Combining Binary Matching and Greedy Pair Switching
+}
+\details{
 An R6 class encapsulating a fixed experimental design that first computes
 binary matches and then improves the matched design with greedy pair switching
 using a native C++ implementation.
@@ -14,145 +19,165 @@ des = DesignFixedMatchingGreedyPairSwitching$new(n = 10, response_type = 'contin
 }
 }
 \section{Super classes}{
-\code{Design} -> \code{DesignBlocking} -> \code{DesignMatching} -> \code{DesignFixed} -> \code{DesignFixedMatchingGreedyPairSwitching}
+\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignBlocking]{EDI::DesignBlocking}} -> \code{\link[EDI:DesignMatching]{EDI::DesignMatching}} -> \code{\link[EDI:DesignFixed]{EDI::DesignFixed}} -> \code{DesignFixedMatchingGreedyPairSwitching}
 }
 \section{Methods}{
 \subsection{Public methods}{
-  \itemize{
-    \item \href{#method-DesignFixedMatchingGreedyPairSwitching-initialize}{\code{DesignFixedMatchingGreedyPairSwitching$new()}}
-    \item \href{#method-DesignFixedMatchingGreedyPairSwitching-draw_ws_according_to_design}{\code{DesignFixedMatchingGreedyPairSwitching$draw_ws_according_to_design()}}
-    \item \href{#method-DesignFixedMatchingGreedyPairSwitching-clone}{\code{DesignFixedMatchingGreedyPairSwitching$clone()}}
-  }
+\itemize{
+\item \href{#method-DesignFixedMatchingGreedyPairSwitching-supports_batch_w_pregeneration}{\code{DesignFixedMatchingGreedyPairSwitching$supports_batch_w_pregeneration()}}
+\item \href{#method-DesignFixedMatchingGreedyPairSwitching-new}{\code{DesignFixedMatchingGreedyPairSwitching$new()}}
+\item \href{#method-DesignFixedMatchingGreedyPairSwitching-draw_ws_according_to_design}{\code{DesignFixedMatchingGreedyPairSwitching$draw_ws_according_to_design()}}
+\item \href{#method-DesignFixedMatchingGreedyPairSwitching-clone}{\code{DesignFixedMatchingGreedyPairSwitching$clone()}}
 }
-\if{html}{\out{<details><summary>Inherited methods</summary>
+}
+\if{html}{\out{
+<details><summary>Inherited methods</summary>
 <ul>
-  <li><code>Design$add_one_subject_response()</code></li>
-  <li><code>Design$any_censoring()</code></li>
-  <li><code>Design$assert_all_responses_recorded()</code></li>
-  <li><code>Design$assert_all_subjects_arrived()</code></li>
-  <li><code>Design$assert_even_allocation()</code></li>
-  <li><code>Design$assert_fixed_sample()</code></li>
-  <li><code>Design$check_experiment_completed()</code></li>
-  <li><code>Design$duplicate()</code></li>
-  <li><code>Design$get_X()</code></li>
-  <li><code>Design$get_X_imp()</code></li>
-  <li><code>Design$get_X_raw()</code></li>
-  <li><code>Design$get_dead()</code></li>
-  <li><code>Design$get_missingness_method()</code></li>
-  <li><code>Design$get_model_formula()</code></li>
-  <li><code>Design$get_n()</code></li>
-  <li><code>Design$get_ordinal_levels()</code></li>
-  <li><code>Design$get_original_ordinal_levels()</code></li>
-  <li><code>Design$get_prob_T()</code></li>
-  <li><code>Design$get_response_type()</code></li>
-  <li><code>Design$get_response_type_original()</code></li>
-  <li><code>Design$get_t()</code></li>
-  <li><code>Design$get_w()</code></li>
-  <li><code>Design$get_y()</code></li>
-  <li><code>Design$get_y_original()</code></li>
-  <li><code>Design$has_covariates()</code></li>
-  <li><code>Design$is_fixed_sample_size()</code></li>
-  <li><code>Design$transform_y()</code></li>
-  <li><code>DesignBlocking$add_all_subject_matched_pair_ids()</code></li>
-  <li><code>DesignBlocking$assert_blocking_design()</code></li>
-  <li><code>DesignBlocking$assert_equal_block_sizes()</code></li>
-  <li><code>DesignBlocking$get_block_ids()</code></li>
-  <li><code>DesignBlocking$get_cmh_se_w_mat()</code></li>
-  <li><code>DesignBlocking$inject_cmh_se_w_mat()</code></li>
-  <li><code>DesignBlocking$is_blocking_design()</code></li>
-  <li><code>DesignBlocking$is_complete_blocking_design()</code></li>
-  <li><code>DesignBlocking$set_m()</code></li>
-  <li><code>DesignBlocking$summarize_blocks()</code></li>
-  <li><code>DesignMatching$assert_matching_design()</code></li>
-  <li><code>DesignMatching$get_matching_cluster_ids()</code></li>
-  <li><code>DesignMatching$is_matching_design()</code></li>
-  <li><code>DesignFixed$add_all_subject_responses()</code></li>
-  <li><code>DesignFixed$add_all_subjects_to_experiment()</code></li>
-  <li><code>DesignFixed$assign_w_to_all_subjects()</code></li>
-  <li><code>DesignFixed$overwrite_all_subject_assignments()</code></li>
-  <li><code>DesignFixed$supports_resampling()</code></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_one_subject_response"><a href='../../EDI/html/Design.html#method-Design-add_one_subject_response'><code>EDI::Design$add_one_subject_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="any_censoring"><a href='../../EDI/html/Design.html#method-Design-any_censoring'><code>EDI::Design$any_censoring()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_all_responses_recorded"><a href='../../EDI/html/Design.html#method-Design-assert_all_responses_recorded'><code>EDI::Design$assert_all_responses_recorded()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../../EDI/html/Design.html#method-Design-assert_all_subjects_arrived'><code>EDI::Design$assert_all_subjects_arrived()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_even_allocation"><a href='../../EDI/html/Design.html#method-Design-assert_even_allocation'><code>EDI::Design$assert_even_allocation()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_fixed_sample"><a href='../../EDI/html/Design.html#method-Design-assert_fixed_sample'><code>EDI::Design$assert_fixed_sample()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="check_experiment_completed"><a href='../../EDI/html/Design.html#method-Design-check_experiment_completed'><code>EDI::Design$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="duplicate"><a href='../../EDI/html/Design.html#method-Design-duplicate'><code>EDI::Design$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_X"><a href='../../EDI/html/Design.html#method-Design-get_X'><code>EDI::Design$get_X()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_X_imp"><a href='../../EDI/html/Design.html#method-Design-get_X_imp'><code>EDI::Design$get_X_imp()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_X_raw"><a href='../../EDI/html/Design.html#method-Design-get_X_raw'><code>EDI::Design$get_X_raw()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_dead"><a href='../../EDI/html/Design.html#method-Design-get_dead'><code>EDI::Design$get_dead()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_missingness_method"><a href='../../EDI/html/Design.html#method-Design-get_missingness_method'><code>EDI::Design$get_missingness_method()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_model_formula"><a href='../../EDI/html/Design.html#method-Design-get_model_formula'><code>EDI::Design$get_model_formula()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_n"><a href='../../EDI/html/Design.html#method-Design-get_n'><code>EDI::Design$get_n()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_ordinal_levels"><a href='../../EDI/html/Design.html#method-Design-get_ordinal_levels'><code>EDI::Design$get_ordinal_levels()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_original_ordinal_levels"><a href='../../EDI/html/Design.html#method-Design-get_original_ordinal_levels'><code>EDI::Design$get_original_ordinal_levels()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_prob_T"><a href='../../EDI/html/Design.html#method-Design-get_prob_T'><code>EDI::Design$get_prob_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_response_type"><a href='../../EDI/html/Design.html#method-Design-get_response_type'><code>EDI::Design$get_response_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_response_type_original"><a href='../../EDI/html/Design.html#method-Design-get_response_type_original'><code>EDI::Design$get_response_type_original()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_t"><a href='../../EDI/html/Design.html#method-Design-get_t'><code>EDI::Design$get_t()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_w"><a href='../../EDI/html/Design.html#method-Design-get_w'><code>EDI::Design$get_w()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y"><a href='../../EDI/html/Design.html#method-Design-get_y'><code>EDI::Design$get_y()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y_original"><a href='../../EDI/html/Design.html#method-Design-get_y_original'><code>EDI::Design$get_y_original()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="has_covariates"><a href='../../EDI/html/Design.html#method-Design-has_covariates'><code>EDI::Design$has_covariates()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="transform_y"><a href='../../EDI/html/Design.html#method-Design-transform_y'><code>EDI::Design$transform_y()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="add_all_subject_matched_pair_ids"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-add_all_subject_matched_pair_ids'><code>EDI::DesignBlocking$add_all_subject_matched_pair_ids()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="assert_blocking_design"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-assert_blocking_design'><code>EDI::DesignBlocking$assert_blocking_design()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="assert_equal_block_sizes"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-assert_equal_block_sizes'><code>EDI::DesignBlocking$assert_equal_block_sizes()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="get_block_ids"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-get_block_ids'><code>EDI::DesignBlocking$get_block_ids()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="get_cmh_se_w_mat"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-get_cmh_se_w_mat'><code>EDI::DesignBlocking$get_cmh_se_w_mat()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="inject_cmh_se_w_mat"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-inject_cmh_se_w_mat'><code>EDI::DesignBlocking$inject_cmh_se_w_mat()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="is_blocking_design"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-is_blocking_design'><code>EDI::DesignBlocking$is_blocking_design()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="is_complete_blocking_design"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-is_complete_blocking_design'><code>EDI::DesignBlocking$is_complete_blocking_design()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="set_m"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-set_m'><code>EDI::DesignBlocking$set_m()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignBlocking" data-id="summarize_blocks"><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-summarize_blocks'><code>EDI::DesignBlocking$summarize_blocks()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignMatching" data-id="assert_matching_design"><a href='../../EDI/html/DesignMatching.html#method-DesignMatching-assert_matching_design'><code>EDI::DesignMatching$assert_matching_design()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignMatching" data-id="get_matching_cluster_ids"><a href='../../EDI/html/DesignMatching.html#method-DesignMatching-get_matching_cluster_ids'><code>EDI::DesignMatching$get_matching_cluster_ids()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignMatching" data-id="is_matching_design"><a href='../../EDI/html/DesignMatching.html#method-DesignMatching-is_matching_design'><code>EDI::DesignMatching$is_matching_design()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignFixed" data-id="add_all_subject_responses"><a href='../../EDI/html/DesignFixed.html#method-DesignFixed-add_all_subject_responses'><code>EDI::DesignFixed$add_all_subject_responses()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignFixed" data-id="add_all_subjects_to_experiment"><a href='../../EDI/html/DesignFixed.html#method-DesignFixed-add_all_subjects_to_experiment'><code>EDI::DesignFixed$add_all_subjects_to_experiment()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignFixed" data-id="assign_w_to_all_subjects"><a href='../../EDI/html/DesignFixed.html#method-DesignFixed-assign_w_to_all_subjects'><code>EDI::DesignFixed$assign_w_to_all_subjects()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignFixed" data-id="overwrite_all_subject_assignments"><a href='../../EDI/html/DesignFixed.html#method-DesignFixed-overwrite_all_subject_assignments'><code>EDI::DesignFixed$overwrite_all_subject_assignments()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="DesignFixed" data-id="supports_resampling"><a href='../../EDI/html/DesignFixed.html#method-DesignFixed-supports_resampling'><code>EDI::DesignFixed$supports_resampling()</code></a></span></li>
 </ul>
-</details>}}
+</details>
+}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignFixedMatchingGreedyPairSwitching-initialize"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignFixedMatchingGreedyPairSwitching-initialize}{}}}
-\subsection{\code{DesignFixedMatchingGreedyPairSwitching$new()}}{
-  Initialize a fixed design that performs binary matching followed by greedy pair switching.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{DesignFixedMatchingGreedyPairSwitching$new(
+\if{html}{\out{<a id="method-DesignFixedMatchingGreedyPairSwitching-supports_batch_w_pregeneration"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignFixedMatchingGreedyPairSwitching-supports_batch_w_pregeneration}{}}}
+\subsection{Method \code{supports_batch_w_pregeneration()}}{
+Initialize a fixed design that performs binary matching followed by greedy pair switching.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DesignFixedMatchingGreedyPairSwitching$supports_batch_w_pregeneration()}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{response_type}}{The data type of response values.}
+
+\item{\code{prob_T}}{The probability of treatment assignment. Must be \code{0.5}.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+
+\item{\code{n}}{The sample size.}
+
+\item{\code{verbose}}{A flag for verbosity.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates.}
+
+\item{\code{model_formula}}{A formula object.}
+
+\item{\code{objective}}{The imbalance objective. Either \code{"mahal_dist"} (default) or \code{"abs_sum_diff"}.}
+
+\item{\code{n_iter}}{Number of swap iterations. \code{Inf} (default) uses exhaustive
+best-improvement search guaranteed to reach a strict local optimum. A positive
+integer runs that many stochastic random-pair iterations with patience-based
+early stopping.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new \code{DesignFixedMatchingGreedyPairSwitching} object.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DesignFixedMatchingGreedyPairSwitching-new"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignFixedMatchingGreedyPairSwitching-new}{}}}
+\subsection{Method \code{new()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DesignFixedMatchingGreedyPairSwitching$new(
   response_type,
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
   n,
   verbose = FALSE,
   objective = "mahal_dist",
+  n_iter = Inf,
   missingness_method = "impute",
   model_formula = ~.,
   seed = NULL
-)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{response_type}}{The data type of response values.}
-      \item{\code{prob_T}}{The probability of treatment assignment. Must be \code{0.5}.}
-      \item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
-      \item{\code{n}}{The sample size.}
-      \item{\code{verbose}}{A flag for verbosity.}
-      \item{\code{objective}}{The imbalance objective. Either \code{"mahal_dist"} (default) or \code{"abs_sum_diff"}.}
-      \item{\code{missingness_method}}{How to handle missing values in covariates.}
-      \item{\code{model_formula}}{A formula object.}
-      \item{\code{seed}}{Integer seed for reproducibility.}
-    }
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    A new \code{DesignFixedMatchingGreedyPairSwitching} object.
-  }
+)}\if{html}{\out{</div>}}
 }
 
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedMatchingGreedyPairSwitching-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedMatchingGreedyPairSwitching-draw_ws_according_to_design}{}}}
-\subsection{\code{DesignFixedMatchingGreedyPairSwitching$draw_ws_according_to_design()}}{
-  Draw multiple treatment assignment vectors according to binary match followed by
+\subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to binary match followed by
 greedy pair switching.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{DesignFixedMatchingGreedyPairSwitching$draw_ws_according_to_design(r = 100)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{r}}{The number of designs to draw.}
-    }
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    A matrix of size n x r.
-  }
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DesignFixedMatchingGreedyPairSwitching$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedMatchingGreedyPairSwitching-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedMatchingGreedyPairSwitching-clone}{}}}
-\subsection{\code{DesignFixedMatchingGreedyPairSwitching$clone()}}{
-  The objects of this class are cloneable with this method.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{DesignFixedMatchingGreedyPairSwitching$clone(deep = FALSE)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{deep}}{Whether to make a deep clone.}
-    }
-    \if{html}{\out{</div>}}
-  }
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DesignFixedMatchingGreedyPairSwitching$clone(deep = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
+}
+\if{html}{\out{</div>}}
+}
+}
 }

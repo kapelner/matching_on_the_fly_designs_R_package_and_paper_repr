@@ -322,9 +322,15 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 				colnames(X_fit) = orig_names[as.integer(reduced$keep)]
 			}
 			if (private$use_rcpp) {
+				# Use prebuilt cache if available and relevant
+				if (is.null(private$cox_data_cache) || !identical(private$w, private$cox_w_cache)) {
+					private$cox_data_cache = build_cox_data_cache_cpp(X_fit, private$y, private$dead)
+					private$cox_w_cache = private$w
+				}
+
 				fit = tryCatch(
-					fast_coxph_regression_cpp(
-						X_fit, private$y, private$dead,
+					fast_coxph_regression_prebuilt_cpp(
+						private$cox_data_cache,
 						estimate_only = estimate_only,
 						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
 						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
@@ -332,8 +338,9 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 					),
 					error = function(e) NULL
 				)
+				
 				if (is.null(fit) || !isTRUE(fit$converged)) {
-					# Fallback to R if C++ fails or if it's the first fit and we want to be safe
+					# Fallback to R if C++ fails
 					fit = .fit_survival_coxph_kernel(X_fit, private$y, private$dead, estimate_only = estimate_only)
 				}
 				

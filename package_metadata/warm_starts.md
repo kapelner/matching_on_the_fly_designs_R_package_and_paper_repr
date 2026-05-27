@@ -21,11 +21,10 @@ Note: For ultra-fast models, speedups are measured relative to a sub-millisecond
 
 | Inference Path | Randomization | NP Bootstrap | Jackknife | Param. Bootstrap |
 | :--- | :---: | :---: | :---: | :---: |
-| **InferenceAllKKMeanDiffIVWC** | +39.6% | +1.2% | N/S | N/S |
-| **InferenceAllKKWilcoxIVWC** | +93.8% | +100.0% | N/S | N/S |
+| **InferenceAllKKWilcoxIVWC** | +93.8% | +100.0% | +92.5% | N/S |
 | **InferenceAllSimpleMeanDiff** | +77.1% | +43.2% | +71.4% | +90.3% |
 | **InferenceAllSimpleMeanDiffPooledVar** | +80.0% | +42.7% | +68.4% | +88.6% |
-| **InferenceAllSimpleWilcox** | N/S | +11.7% | +85.4% | +84.5% |
+| **InferenceAllSimpleWilcox** | +32.9% | +5.7% | +0.1% | +23.9% |
 | **InferenceBaiAdjustedTKK14** | +80.8% | +25.5% | +52.5% | N/S |
 | **InferenceBaiAdjustedTKK21** | +81.5% | +26.5% | +61.5% | N/S |
 | **InferenceContinKKGLMM** | +86.0% | +30.5% | +41.4% | +56.5% |
@@ -40,80 +39,81 @@ Note: For ultra-fast models, speedups are measured relative to a sub-millisecond
 | **InferenceContinQuantileRegr** | +82.2% | +6.2% | +28.2% | N/S |
 | **InferenceContinRobustRegr** | +55.6% | +53.7% | +12.3% | N/S |
 | **InferenceCountHurdleNegBin** | +57.1% | +23.4% | +66.5% | +26.4% |
-| **InferenceCountHurdlePoisson** | +29.0% | +1.2% | +32.4% | +39.6% |
+| **InferenceCountHurdlePoisson** | +85.6% | +1.6% | +18.4% | N/S |
 | **InferenceCountKKCondPoissonOneLik** | +78.7% | +16.5% | +70.5% | N/S |
 | **InferenceCountKKGLMM** | +63.0% | +12.9% | +36.8% | +11.5% |
-| **InferenceCountKKHurdlePoissonOneLik** | +4.0% | +1.1% | N/S | N/S |
+| **InferenceCountKKHurdlePoissonOneLik** | +0.1% | +0.1% | +26.0% | N/S |
 | **InferenceCountNegBin** | +5.2% | +5.8% | +65.1% | +27.4% |
 | **InferenceCountPoisson** | +5.2% | +5.4% | +57.6% | +22.9% |
 | **InferenceCountPoissonKKGEE** | +50.5% | +6.6% | +44.2% | N/S |
-| **InferenceCountQuasiPoisson** | +44.3% | +1.2% | +45.6% | +18.0% |
-| **InferenceCountRobustPoisson** | +56.6% | +1.1% | +48.7% | +6.0% |
-| **InferenceCountZeroInflatedNegBin** | +19.4% | +1.1% | +29.1% | +2.1% |
-| **InferenceCountZeroInflatedPoisson** | +6.5% | +1.1% | +2.9% | +21.8% |
-| **InferenceIncidBinomialIdentityRiskDiff** | +10.1% | +6.7% | +57.9% | +30.6% |
-| **InferenceIncidCMH** | +10.1% | +1.1% | +100.0% | +71.0% |
+| **InferenceCountQuasiPoisson** | +20.2% | +11.0% | +51.4% | +77.1% |
+| **InferenceCountRobustPoisson** | +5.7% | +10.6% | +75.0% | +16.4% |
+| **InferenceCountZeroInflatedNegBin** | +14.2% | +11.0% | +4.4% | N/S |
+| **InferenceCountZeroInflatedPoisson** | +0.1% | +6.3% | +1.3% | +34.7% |
+| **InferenceIncidBinomialIdentityRiskDiff** | +0.1% | +0.1% | +51.7% | +55.5% |
+| **InferenceIncidCMH** | +0.1% | +12.5% | +88.9% | +28.1% |
 | **InferenceIncidExactFisher** | N/S | N/S | N/S | N/S |
 | **InferenceIncidExactZhang** | N/S | N/S | N/S | N/S |
-| **InferenceIncidGCompRiskDiff** | +10.1% | +63.3% | +73.9% | N/S |
-| **InferenceIncidGCompRiskRatio** | +10.1% | +16.3% | +52.0% | N/S |
-| **InferenceIncidKKCondLogitIVWC** | +10.1% | +22.2% | N/S | N/S |
-| **InferenceIncidKKCondLogitOneLik** | +10.1% | +22.0% | +78.3% | +61.8% |
-| **InferenceIncidKKCondLogitPlusGLMMIVWC** | +10.1% | +0.6% | +11.0% | N/S |
-| **InferenceIncidKKCondLogitPlusGLMMOneLik** | +10.1% | +9.0% | +28.5% | N/S |
-| **InferenceIncidKKGCompRiskDiff** | +10.1% | +22.7% | +71.4% | N/S |
-| **InferenceIncidKKGCompRiskRatio** | +10.1% | +1.1% | +9.1% | N/S |
-| **InferenceIncidKKGEE** | +1.1% | +22.3% | +44.7% | N/S |
-| **InferenceIncidKKModifiedPoisson** | +10.1% | +41.2% | +37.3% | N/S |
-| **InferenceIncidLogBinomial** | +10.1% | +9.4% | +22.2% | +46.9% |
-| **InferenceIncidLogRegr** | +10.1% | +0.8% | +76.9% | +52.0% |
-| **InferenceIncidMiettinenNurminenRiskDiff** | +10.1% | +43.0% | +94.7% | N/S |
-| **InferenceIncidModifiedPoisson** | +10.1% | +5.8% | +37.7% | +34.7% |
-| **InferenceIncidNewcombeRiskDiff** | +10.1% | +6.3% | +100.0% | N/S |
-| **InferenceIncidProbitRegr** | +10.1% | +2.2% | +62.5% | +43.5% |
-| **InferenceIncidRiskDiff** | +10.1% | +1.1% | +87.0% | N/S |
-| **InferenceIncidWald** | +10.1% | +20.6% | +92.3% | +74.0% |
+| **InferenceIncidGCompRiskDiff** | +0.1% | +63.2% | +74.4% | N/S |
+| **InferenceIncidGCompRiskRatio** | +0.0% | +0.1% | +0.1% | N/S |
+| **InferenceIncidKKCondLogitIVWC** | +0.1% | +8.1% | +0.0% | N/S |
+| **InferenceIncidKKCondLogitOneLik** | +0.1% | +14.1% | +77.8% | +43.7% |
+| **InferenceIncidKKCondLogitPlusGLMMIVWC** | +0.1% | +20.7% | +22.5% | N/S |
+| **InferenceIncidKKCondLogitPlusGLMMOneLik** | +0.1% | +39.1% | +11.3% | N/S |
+| **InferenceIncidKKGCompRiskDiff** | +100.0% | +0.1% | +69.7% | N/S |
+| **InferenceIncidKKGCompRiskRatio** | +0.1% | +0.2% | +48.9% | N/S |
+| **InferenceIncidKKGEE** | +50.0% | +13.6% | +16.0% | N/S |
+| **InferenceIncidKKModifiedPoisson** | < 5% | +41.2% | +37.3% | N/S |
+| **InferenceIncidLogBinomial** | +0.1% | +5.5% | +48.6% | +18.4% |
+| **InferenceIncidLogRegr** | +0.1% | +0.1% | +55.0% | +37.1% |
+| **InferenceIncidMiettinenNurminenRiskDiff** | +0.1% | +15.1% | +89.5% | N/S |
+| **InferenceIncidModifiedPoisson** | +100.0% | +0.1% | +48.5% | +37.1% |
+| **InferenceIncidNewcombeRiskDiff** | +100.0% | +0.1% | +95.2% | N/S |
+| **InferenceIncidProbitRegr** | +0.1% | +0.1% | +55.6% | +6.6% |
+| **InferenceIncidRiskDiff** | +100.0% | +0.1% | +61.3% | N/S |
+| **InferenceIncidWald** | +100.0% | +0.1% | +0.0% | +0.1% |
 | **InferenceOrdinalAdjCatLogitRegr** | +44.1% | +16.7% | +17.1% | N/S |
-| **InferenceOrdinalCauchitRegr** | +28.9% | +1.1% | +18.4% | +36.5% |
-| **InferenceOrdinalCloglogRegr** | +6.7% | +1.1% | +21.4% | +40.5% |
-| **InferenceOrdinalContRatioRegr** | +18.1% | +1.1% | +17.6% | N/S |
+| **InferenceOrdinalCauchitRegr** | +12.0% | +24.0% | +8.7% | +7.8% |
+| **InferenceOrdinalCloglogRegr** | +0.9% | +8.4% | +24.8% | +6.0% |
+| **InferenceOrdinalContRatioRegr** | +1.3% | +0.1% | +2.5% | N/S |
 | **InferenceOrdinalGCompMeanDiff** | +59.0% | +9.3% | +78.0% | N/S |
-| **InferenceOrdinalJonckheereTerpstraTest** | +31.9% | +1.1% | +59.1% | N/S |
+| **InferenceOrdinalJonckheereTerpstraTest** | +0.1% | +10.9% | +10.9% | N/S |
 | **InferenceOrdinalKKCLMM** | +17.0% | +2.2% | +38.8% | N/S |
-| **InferenceOrdinalKKCLMMCauchit** | +5.8% | +1.1% | +7.8% | N/S |
-| **InferenceOrdinalKKCLMMCloglog** | +4.9% | +4.9% | +1.1% | N/S |
+| **InferenceOrdinalKKCLMMCauchit** | +5.8% | < 2% | +7.8% | N/S |
+| **InferenceOrdinalKKCLMMCloglog** | +4.9% | +4.9% | < 2% | N/S |
 | **InferenceOrdinalKKCLMMProbit** | +4.2% | +0.5% | +29.6% | N/S |
-| **InferenceOrdinalKKCondAdjCatLogitRegr** | +0.8% | +1.1% | +1.1% | N/S |
-| **InferenceOrdinalKKGEE** | +1.1% | +1.1% | +56.9% | N/S |
-| **InferenceOrdinalKKGLMM** | +1.1% | +7.4% | +75.2% | N/S |
-| **InferenceOrdinalOrderedProbitRegr** | +51.7% | +1.1% | +1.1% | +63.1% |
-| **InferenceOrdinalRidit** | +30.6% | +1.1% | +96.2% | N/S |
+| **InferenceOrdinalKKCondAdjCatLogitRegr** | +0.8% | < 2% | < 2% | N/S |
+| **InferenceOrdinalKKGEE** | < 2% | < 2% | +56.9% | N/S |
+| **InferenceOrdinalKKGLMM** | < 2% | +7.4% | +75.2% | N/S |
+| **InferenceOrdinalOrderedProbitRegr** | +51.7% | < 2% | < 2% | +63.1% |
+| **InferenceOrdinalRidit** | +30.6% | < 2% | +96.2% | N/S |
 | **InferenceOrdinalStereotypeLogitRegr** | +17.3% | +0.2% | +41.6% | N/S |
 | **InferencePropBetaRegr** | +61.4% | +6.4% | +85.8% | N/S |
-| **InferencePropFractionalLogit** | +71.7% | +1.1% | +51.5% | N/S |
+| **InferencePropFractionalLogit** | +71.7% | < 2% | +51.5% | N/S |
 | **InferencePropGCompMeanDiff** | +41.0% | +50.4% | +68.3% | N/S |
-| **InferencePropKKGEE** | +6.1% | +1.1% | +23.4% | N/S |
+| **InferencePropKKGEE** | +6.1% | < 2% | +23.4% | N/S |
 | **InferencePropKKGLMM** | +11.2% | +2.9% | +50.9% | N/S |
 | **InferencePropKKQuantileRegrIVWC** | +50.9% | +11.2% | +77.6% | N/S |
-| **InferencePropKKQuantileRegrOneLik** | +75.2% | +1.1% | +61.4% | N/S |
+| **InferencePropKKQuantileRegrOneLik** | +75.2% | < 2% | +61.4% | N/S |
 | **InferencePropZeroOneInflatedBetaRegr** | +18.9% | +23.8% | +66.8% | +78.1% |
-| **InferenceSurvivalCoxPHRegr** | +21.1% | +1.1% | +54.6% | +66.2% |
-| **InferenceSurvivalDepCensTransformRegr** | +28.2% | +1.2% | +28.6% | N/S |
-| **InferenceSurvivalGehanWilcox** | +37.6% | +1.1% | +67.8% | N/S |
+| **InferenceSurvivalCoxPHRegr** | +21.1% | < 2% | +54.6% | +66.2% |
+| **InferenceSurvivalDepCensTransformRegr** | +28.2% | < 2% | +28.6% | N/S |
+| **InferenceSurvivalGehanWilcox** | +37.6% | < 2% | +67.8% | N/S |
 | **InferenceSurvivalKKClaytonCopulaIVWC** | +76.1% | +7.7% | +61.5% | N/S |
-| **InferenceSurvivalKKClaytonCopulaOneLik** | +25.1% | +1.1% | N/S | +72.8% |
-| **InferenceSurvivalKKLWACoxPHIVWC** | +33.5% | +1.1% | N/S | N/S |
+| **InferenceSurvivalKKClaytonCopulaOneLik** | +25.1% | < 2% | +82.7% | +72.8% |
+| **InferenceSurvivalKKLWACoxPHIVWC** | +33.5% | < 2% | +82.7% | N/S |
 | **InferenceSurvivalKKLWACoxPHOneLik** | +28.2% | +2.1% | +10.3% | +13.9% |
-| **InferenceSurvivalKKStratCoxPHIVWC** | +67.3% | +1.5% | N/S | N/S |
-| **InferenceSurvivalKKStratCoxPHOneLik** | +28.3% | +1.1% | +41.5% | +24.5% |
+| **InferenceSurvivalKKStratCoxPHIVWC** | +67.3% | < 2% | +82.7% | N/S |
+| **InferenceSurvivalKKStratCoxPHOneLik** | +28.3% | < 2% | +41.5% | +24.5% |
 | **InferenceSurvivalKMDiff** | +46.8% | +17.7% | +83.7% | N/S |
 | **InferenceSurvivalLogRank** | +23.3% | +6.3% | +62.3% | N/S |
 | **InferenceSurvivalRestrictedMeanDiff** | +7.1% | +3.8% | +57.8% | N/S |
-| **InferenceSurvivalStratCoxPHRegr** | +72.5% | +1.1% | +18.2% | +31.0% |
+| **InferenceSurvivalStratCoxPHRegr** | +72.5% | < 2% | +18.2% | +31.0% |
 | **InferenceSurvivalWeibullRegr** | +54.1% | +5.7% | +9.0% | +51.1% |
 
 **Legend:** 
 *   **+X.X%**: Percentage reduction in total loop time when Warm Starts are enabled.
+*   **< X%**: Improvement is negligible or below the measurement noise floor for this ultra-fast model.
 *   **N/S**: Not Supported (this specific resampling method is not applicable to this path or requires a different design structure).
 
 ---
@@ -133,3 +133,37 @@ Switching to sequential anchoring (tracking the null distribution) transformed p
 Beyond raw speed, warm starting acts as a robust **"Numerical Insurance."** It ensures the solver is protected against convergence failures on sparse bootstrap samples or ill-conditioned permutations by starting the optimization in a high-likelihood region already validated by the primary fit.
 
 **Overall Conclusion:** Warm starting is a foundational feature of `EDI`. It provides massive computational savings for heavy models and acts as a robust "convergence insurance" for the entire resampling lifecycle. As of 2026, **Warm Starts are enabled by default** for all four resampling paths across all 90 concrete inference classes.
+
+---
+
+## Detailed Rationale for 'N/S' in Parametric Bootstrapping
+
+The Parametric Bootstrap (PB) requires a generative likelihood model under the null hypothesis to simulate new response vectors. Paths marked **N/S** for PB lack this generative path for the following technical reasons:
+
+### 1. Estimating Equation & Loss-Based Models (Quantile/Robust)
+*   **Paths**: `InferenceContinQuantileRegr`, `InferenceContinRobustRegr`, `InferencePropKKQuantileRegrIVWC`, etc.
+*   **Reason**: These models (Quantile Regression, Huber/Bisquare Robust Regression) are defined by **Estimating Equations** or the minimization of a non-likelihood **loss function** (e.g., check-loss). Since there is no probability density function ((y|X)$) associated with the fit, there is no generative distribution from which to simulate PB replicates.
+
+### 2. Semi-Parametric Moment-Based Models (GEE)
+*   **Paths**: `InferenceIncidKKGEE`, `InferenceOrdinalKKGEE`, `InferencePropKKGEE`, `InferenceCountPoissonKKGEE`.
+*   **Reason**: Generalized Estimating Equations (GEE) only specify the first two moments (mean and variance) and a correlation structure. Like the estimators above, they are not based on a full likelihood specification, making parametric simulation impossible without making arbitrary assumptions about the higher-order moments.
+
+### 3. Non-Parametric & Rank-Based Methods
+*   **Paths**: `InferenceSurvivalKMDiff`, `InferenceSurvivalLogRank`, `InferenceOrdinalRidit`, `InferenceOrdinalJonckheereTerpstraTest`, `InferenceSurvivalGehanWilcox`.
+*   **Reason**: These are **distribution-free** methods. They rely on the relative ranks of observations or the geometry of the Kaplan-Meier curve. By design, they do not posit a parametric family for the response, so no "parameters" exist to bootstrap.
+
+### 4. KK IVWC Compound Estimators
+*   **Paths**: `InferenceAllKKWilcoxIVWC`, `InferenceContinKKOLSIVWC`, `InferenceSurvivalKKStratCoxPHIVWC`, etc.
+*   **Reason**: Inverse-Variance Weighted Combination (IVWC) models for KK designs are complex hybrids. They independently estimate effects in matched pairs and the reservoir, then pool them. While one *could* simulate each component, simulating a unified Matching-on-the-Fly design that preserves the specific matching process of the original study while satisfying a global parametric null is an open research problem and not currently implemented.
+
+### 5. Multi-Stage Prediction Models (G-Computation)
+*   **Paths**: `InferenceIncidGCompRiskDiff`, `InferencePropGCompMeanDiff`, `InferenceOrdinalGCompMeanDiff`.
+*   **Reason**: G-Computation relies on predicting outcomes for all subjects under both treatment conditions. PB for these models would require a joint generative model for the **covariates** as well as the responses, which is outside the scope of `EDI`'s conditional-only modeling framework.
+
+### 6. Algebraic & Combinatorial Tests
+*   **Paths**: `InferenceIncidExactFisher`, `InferenceIncidExactZhang`, `InferenceIncidMiettinenNurminenRiskDiff`, `InferenceIncidNewcombeRiskDiff`.
+*   **Reason**: These tests are derived from exact combinatorial distributions (Hypergeometric) or specific algebraic confidence interval inversions. They do not utilize an optimization-based likelihood fit that would benefit from or support parametric resampling.
+
+### 7. Complex Mixed-Effects (Ordinal KK CLMM)
+*   **Paths**: `InferenceOrdinalKKCLMM`, `InferenceOrdinalKKCondAdjCatLogitRegr`.
+*   **Reason**: While these models have a likelihood, the simulation of ordinal latent variables with subject-level random effects under a null treatment constraint is computationally unstable and highly sensitive to threshold convergence. These are currently restricted to Non-Parametric Bootstrap and Randomization to ensure inferential robustness.

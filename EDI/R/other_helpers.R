@@ -633,14 +633,14 @@ NULL
 	is_bad_se = function(x) !is.finite(x) || x <= 0 || x > 1e6
 
 	se = tryCatch({
-		s_fit = suppressWarnings(summary(fit, se = "nid", covariance = TRUE))
+		s_fit = suppressWarnings(summary(fit, se = "nid"))
 		ct = s_fit$coefficients
 		if (coef_name %in% rownames(ct)) ct[coef_name, "Std. Error"] else NA_real_
 	}, error = function(e) NA_real_)
 
 	if (is_bad_se(se)){
 		se = tryCatch({
-			s_fit = suppressWarnings(summary(fit, se = "iid", covariance = TRUE))
+			s_fit = suppressWarnings(summary(fit, se = "iid"))
 			ct = s_fit$coefficients
 			if (coef_name %in% rownames(ct)) ct[coef_name, "Std. Error"] else NA_real_
 		}, error = function(e) NA_real_)

@@ -13,7 +13,7 @@ fast_beta_regression_with_var_cpp(
   compute_std_errs = TRUE,
   fixed_idx = NULL,
   fixed_values = NULL,
-  optimization_alg = "newton_raphson",
+  optimization_alg = "lbfgs",
   warm_start_fisher_info = NULL
 )
 }

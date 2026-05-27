@@ -128,7 +128,14 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			w_mat = permutations$w_mat
-			res = compute_wilcox_hl_rand_distr_parallel_cpp(as.numeric(y), matrix(as.integer(w_mat), nrow=length(y)), as.numeric(delta), private$n_cpp_threads(ncol(w_mat)))
+			res = compute_wilcox_hl_distr_parallel_cpp(
+				w_mat = as.matrix(w_mat),
+				y = as.numeric(y),
+				delta = as.numeric(delta),
+				transform_code = 0L,
+				zero_one_logit_clamp = as.numeric(zero_one_logit_clamp),
+				num_cores = private$n_cpp_threads(ncol(w_mat))
+			)
 			return(res)
 		},
 		shared = function(estimate_only = FALSE){
