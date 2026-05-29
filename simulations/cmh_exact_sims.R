@@ -6,27 +6,32 @@ Nrep = 10000L   # Monte Carlo replications per cell
 sim = SimulationFramework$new(
         Nrep                          = Nrep,
         num_cores                     = 10L,
-        results_filename              = sprintf("simulations/cmh_exact_sims_plus_greedy_results_Nrep_%d.csv.bz2", Nrep),
+        results_filename              = sprintf("simulations/cmh_exact_sims_plus_greedy_results_high_signal_Nrep_%d.csv.bz2", Nrep),
         continue_from_last_result_row = TRUE,
         response_type                 = "incidence",
         n                             = c(64L, 128L, 256L),
         p                             = c(1L, 2L, 5L, 10L),
+        norm_sq_beta_vec              = 4, #default is 1; we're increasing it here to give the x's more signal
         random_X_draws                = FALSE,
         seed                          = 1984,
         betaT                         = c(1, 0), # 0 → size / type-I error;  1 → power / coverage
         alpha                         = 0.05,
-        cond_exp_func_model           = c("linear"), #, "nonlinear" #nonlinear not as interesting for now
+        cond_exp_func_model           = c("linear"), #the "nonlinear" cond exp model is not as interesting for this simulation
         design_classes_and_params     = list(
                                           DesignFixediBCRD,
                                           DesignFixedBinaryMatch,
+                                          DesignFixedOptimalBlocks =                list(B = 2),
                                           DesignFixedOptimalBlocks =                list(B = 4),
                                           DesignFixedOptimalBlocks =                list(B = 8),
                                           DesignFixedOptimalBlocks =                list(B = 16),
                                           DesignFixedOptimalBlocks =                list(B = 32),
+                                          DesignFixedOptimalBlocks =                list(B = 64),
+                                          DesignFixedBlocking =                     list(B_target = 2,  exact_num_blocks = TRUE),
                                           DesignFixedBlocking =                     list(B_target = 4,  exact_num_blocks = TRUE),
                                           DesignFixedBlocking =                     list(B_target = 8,  exact_num_blocks = TRUE),
                                           DesignFixedBlocking =                     list(B_target = 16, exact_num_blocks = TRUE),
                                           DesignFixedBlocking =                     list(B_target = 32, exact_num_blocks = TRUE),
+                                          DesignFixedBlocking =                     list(B_target = 64, exact_num_blocks = TRUE),
                                           DesignFixedGreedy =                       list(objective = "mahal_dist"),
                                           DesignFixedMatchingGreedyPairSwitching =  list(objective = "mahal_dist"),
                                           DesignFixedRerandomization =              list(prop_acceptable = 0.01) 

@@ -851,7 +851,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         X_mat_matrix = if (!is.null(private$X_mat)) as.matrix(private$X_mat) else NULL
         
         for (np_idx in seq_len(n_np)) {
-          if (isTRUE(private$verbose)) private$.draw_labeled_progress_bar("generating covariate matrices", (np_idx - 1L) / n_np)
           n_i = np_grid$n[[np_idx]]
           p_i = np_grid$p[[np_idx]]
           X_i = if (is.null(X_mat_matrix)) {
@@ -866,10 +865,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             X_mat_matrix # Names should already be there or handled by generate_covariate_dataset
           }
           shared_X_draws[[paste(n_i, p_i, sep = "|")]] = X_i
-        }
-        if (isTRUE(private$verbose)) {
-          private$.draw_labeled_progress_bar("generating covariate matrices", 1)
-          cat("\n", file = stderr())
         }
       }
       # Pre-calculate planned combos and cache cell metadata

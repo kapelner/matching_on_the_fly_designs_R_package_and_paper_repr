@@ -351,7 +351,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 				fast_coxph_regression_cpp(
 					inp$X, inp$y, inp$dead,
 					estimate_only = estimate_only,
-					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(inp$X)),
+					warm_start_beta = private$get_fit_warm_start_for_length("params", ncol(inp$X)),
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(inp$X)),
 					smart_cold_start = private$smart_cold_start_default %||% FALSE
 				),
@@ -433,7 +433,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 							fast_coxph_regression_prebuilt_cpp(
 								private$strat_cox_data_cache,
 								estimate_only = estimate_only,
-								warm_start_beta = private$get_fit_warm_start_for_length("beta", p_fit),
+								warm_start_beta = private$get_fit_warm_start_for_length("params", p_fit),
 								warm_start_fisher_info = private$get_fit_warm_start_fisher(p_fit),
 								smart_cold_start = private$smart_cold_start_default %||% FALSE,
 								optimization_alg = "newton_raphson"
@@ -443,8 +443,8 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 					}
 					if (!is.null(fit) && isTRUE(fit$converged)){
 						private$cached_mod = fit
+						private$set_fit_warm_start(as.numeric(fit$coefficients %||% fit$b), "params", fisher = fit$fisher_information, force_pd = TRUE)
 						if (!estimate_only) {
-							private$set_fit_warm_start(as.numeric(fit$coefficients %||% fit$b), "params", fisher = fit$fisher_information, force_pd = TRUE)
 							private$cached_values$likelihood_test_context = list(
 								X = private$strat_cox_X_fit_cache, y = private$strat_cox_y_cache,
 								dead = private$strat_cox_dead_cache, strata = private$strat_cox_strata_sub_cache,
@@ -458,8 +458,8 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 					res = private$fit_rcpp_stratified(informative_rows, X_linear, strata_info$strata_id, estimate_only = estimate_only)
 					if (!is.null(res) && isTRUE(res$fit$converged)){
 						private$cached_mod = res$fit
+						private$set_fit_warm_start(as.numeric(res$fit$coefficients %||% res$fit$b), "params", fisher = res$fit$fisher_information, force_pd = TRUE)
 						if (!estimate_only) {
-							private$set_fit_warm_start(as.numeric(res$fit$coefficients %||% res$fit$b), "params", fisher = res$fit$fisher_information, force_pd = TRUE)
 							private$cached_values$likelihood_test_context = list(
 								X = res$X, y = res$y, dead = res$dead, strata = res$strata,
 								stratified = TRUE, j_treat = 1L,
@@ -471,8 +471,8 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 					res = private$fit_rcpp_unstratified(informative_rows, X_linear, estimate_only = estimate_only)
 					if (!is.null(res) && isTRUE(res$fit$converged)){
 						private$cached_mod = res$fit
+						private$set_fit_warm_start(as.numeric(res$fit$coefficients %||% res$fit$b), "params", fisher = res$fit$fisher_information, force_pd = TRUE)
 						if (!estimate_only) {
-							private$set_fit_warm_start(as.numeric(res$fit$coefficients %||% res$fit$b), "params", fisher = res$fit$fisher_information, force_pd = TRUE)
 							private$cached_values$likelihood_test_context = list(
 								X = res$X, y = res$y, dead = res$dead, strata = res$strata,
 								stratified = FALSE, j_treat = 1L,
@@ -533,7 +533,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 						fast_coxph_regression_prebuilt_cpp(
 							private$strat_cox_data_cache,
 							estimate_only = estimate_only,
-							warm_start_beta = private$get_fit_warm_start_for_length("beta", p_fit),
+							warm_start_beta = private$get_fit_warm_start_for_length("params", p_fit),
 							warm_start_fisher_info = private$get_fit_warm_start_fisher(p_fit),
 							smart_cold_start = private$smart_cold_start_default %||% FALSE,
 							optimization_alg = "newton_raphson"
@@ -543,8 +543,8 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 				}
 				if (!is.null(fit) && isTRUE(fit$converged)){
 					private$cached_mod = fit
+					private$set_fit_warm_start(as.numeric(fit$coefficients %||% fit$b), "params", fisher = fit$fisher_information, force_pd = TRUE)
 					if (!estimate_only) {
-						private$set_fit_warm_start(as.numeric(fit$coefficients %||% fit$b), "params", fisher = fit$fisher_information, force_pd = TRUE)
 						private$cached_values$likelihood_test_context = list(
 							X = private$strat_cox_X_fit_cache, y = private$strat_cox_y_cache,
 							dead = private$strat_cox_dead_cache, strata = NULL,
@@ -557,8 +557,8 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 				res = private$fit_rcpp_unstratified(all_rows, X_linear, estimate_only = estimate_only)
 				if (!is.null(res) && isTRUE(res$fit$converged)){
 					private$cached_mod = res$fit
+					private$set_fit_warm_start(as.numeric(res$fit$coefficients %||% res$fit$b), "params", fisher = res$fit$fisher_information, force_pd = TRUE)
 					if (!estimate_only) {
-						private$set_fit_warm_start(as.numeric(res$fit$coefficients %||% res$fit$b), "params", fisher = res$fit$fisher_information, force_pd = TRUE)
 						private$cached_values$likelihood_test_context = list(
 							X = res$X, y = res$y, dead = res$dead, strata = NULL,
 							stratified = FALSE, j_treat = 1L,

@@ -2,13 +2,13 @@
 #define EDI_BUILD_FLAGS_H
 
 #define EDI_BUILD_CAPTURE_METHOD "configure-generated header compiled into EDI.so"
-#define EDI_BUILD_TIMESTAMP "2026-05-28 22:13:00 EDT"
+#define EDI_BUILD_TIMESTAMP "2026-05-29 00:34:10 EDT"
 #define EDI_BUILD_HOST "LAPTOP-J2T9TGGB"
 #define EDI_BUILD_R_HOME "/usr/local/lib/R"
 #define EDI_BUILD_R_VERSION "R Under development (unstable) (2026-04-23 r89955) -- \"Unsuffered Consequences\""
 #define EDI_BUILD_R_CXX20 "g++ -O3 -march=native -flto -fno-math-errno"
 #define EDI_BUILD_R_CXX20STD "-std=gnu++20"
-#define EDI_BUILD_R_CXX20FLAGS "-g -O2"
+#define EDI_BUILD_R_CXX20FLAGS "-g -O2 -UNDEBUG -Wall -pedantic -g -O0 -fdiagnostics-color=always"
 #define EDI_BUILD_R_SHLIB_OPENMP_CXXFLAGS "unavailable"
 #define EDI_BUILD_ENV_EDI_PORTABLE "0"
 #define EDI_BUILD_ENV_EDI_DISABLE_VECTORIZATION "0"
