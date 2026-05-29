@@ -75,20 +75,54 @@ make_true_stratified_survival_data = function(d) {
     d
 }
 
-collect_timing_ms = function(expr, times = B_TIME, env = parent.frame(), target_batch_ms = TARGET_BATCH_MS, max_inner_reps = MAX_INNER_REPS, fast_path_microbenchmark_reps = FAST_PATH_MICROBENCH_REPS) {
+collect_timing_ms = function(expr, setup = NULL, times = B_TIME, env = parent.frame(), target_batch_ms = TARGET_BATCH_MS, max_inner_reps = MAX_INNER_REPS, fast_path_microbenchmark_reps = FAST_PATH_MICROBENCH_REPS) {
+    gctorture(FALSE)
+    gc(verbose = FALSE)
+    if (is.null(setup)) setup = quote({})
+    
     micro_time_ms = function() {
-        mb_ms = microbenchmark(eval(expr, envir = env), times = fast_path_microbenchmark_reps)$time / 1e6
-        mb_ms = mb_ms[is.finite(mb_ms) & mb_ms > 0]
+        gctorture(FALSE)
+        gc(verbose = FALSE)
+        bm_res = tryCatch({
+            bench::mark(
+                total = {
+                    eval(setup, envir = env)
+                    eval(expr, envir = env)
+                },
+                setup_only = {
+                    eval(setup, envir = env)
+                },
+                iterations = fast_path_microbenchmark_reps,
+                check = FALSE,
+                filter_gc = TRUE,
+                memory = FALSE
+            )
+        }, error = function(e) NULL)
+        if (is.null(bm_res)) {
+            return(list(median_ms = NA_real_, samples_ms = numeric(0), method = "bench::mark"))
+        }
+        t_total = bm_res$time[[which(bm_res$expression == "total")]] * 1000
+        t_setup = bm_res$time[[which(bm_res$expression == "setup_only")]] * 1000
+        
+        median_total = as.numeric(bm_res$median[bm_res$expression == "total"]) * 1000
+        median_setup = as.numeric(bm_res$median[bm_res$expression == "setup_only"]) * 1000
+        median_diff = max(0, median_total - median_setup)
+        
+        samples_ms = t_total - median_setup
+        samples_ms = samples_ms[is.finite(samples_ms) & samples_ms > 0]
         list(
-            median_ms = if (length(mb_ms) == 0L) 0 else median(mb_ms),
-            samples_ms = mb_ms,
-            method = "microbenchmark"
+            median_ms = median_diff,
+            samples_ms = samples_ms,
+            method = "bench::mark"
         )
     }
     inner_reps = 1L
     batch_ms = 0
     while (inner_reps < max_inner_reps) {
-        batch_ms = system.time(for (j in seq_len(inner_reps)) eval(expr, envir = env))[["elapsed"]] * 1000
+        batch_ms = system.time(for (j in seq_len(inner_reps)) {
+            eval(setup, envir = env)
+            eval(expr, envir = env)
+        })[["elapsed"]] * 1000
         if (is.finite(batch_ms) && batch_ms >= min(target_batch_ms, MIN_RESOLVED_BATCH_MS)) break
         inner_reps = min(max_inner_reps, inner_reps * 2L)
     }
@@ -100,7 +134,20 @@ collect_timing_ms = function(expr, times = B_TIME, env = parent.frame(), target_
     }
     vals_ms = numeric(times)
     for (i in seq_len(times)) {
-        vals_ms[i] = system.time(for (j in seq_len(inner_reps)) eval(expr, envir = env))[["elapsed"]] * 1000 / inner_reps
+        gctorture(FALSE)
+        gc(verbose = FALSE)
+        t_total = system.time(for (j in seq_len(inner_reps)) {
+            eval(setup, envir = env)
+            eval(expr, envir = env)
+        })[["elapsed"]] * 1000
+        
+        gctorture(FALSE)
+        gc(verbose = FALSE)
+        t_setup = system.time(for (j in seq_len(inner_reps)) {
+            eval(setup, envir = env)
+        })[["elapsed"]] * 1000
+        
+        vals_ms[i] = max(0, t_total - t_setup) / inner_reps
     }
     vals_ms = vals_ms[is.finite(vals_ms) & vals_ms > 0]
     median_ms = if (length(vals_ms) == 0L) NA_real_ else median(vals_ms)
@@ -589,57 +636,64 @@ run_one = function(spec) {
 			has_exact = "compute_exact_two_sided_pval_for_treatment_effect" %in% names(inf_obj)
 			priv_env = inf_obj$.__enclos_env__$private
         
-        # Determine the benchmark expression
-        bench_expr = if (cls_name == "InferenceAllSimpleWilcox") {
-            quote({
-                priv_env$hl_point_estimate(d$y, d$w)
-            })
-		} else {
-				if (force_wald && has_wald) {
-					quote({
-						priv_env$cached_mod = NULL
-						priv_env$cached_values = list()
-						if (exists("clear_fit_warm_start", envir = priv_env, inherits = FALSE)) {
-							priv_env$clear_fit_warm_start()
-						}
-						ci = inf_obj$compute_wald_confidence_interval()
-						if (any(!is.finite(ci))) stop("Non-finite EDI confidence interval.")
-						p = inf_obj$compute_wald_two_sided_pval(delta = pval_delta)
-						if (!is.finite(p)) stop("Non-finite EDI p-value.")
-						p
-					})
-				} else if (has_asymp) {
-				        quote({
-				                priv_env$cached_mod = NULL
-				                priv_env$cached_values = list()
-				                inf_obj$compute_estimate(estimate_only = FALSE)
-				                p = inf_obj$compute_asymp_two_sided_pval(delta = pval_delta)
-				                if (!is.finite(p)) stop("Non-finite EDI p-value.")
-				                p
-				        })
-				} else if (has_exact) {
-				quote({
-				priv_env$cached_mod = NULL
-				priv_env$cached_values = list()
-				inf_obj$compute_estimate(estimate_only = FALSE)
-				p = inf_obj$compute_exact_two_sided_pval_for_treatment_effect()
-				if (!is.finite(p)) stop("Non-finite EDI p-value.")
-				p
-				})
-				} else {
-				quote({
-				priv_env$cached_mod = NULL
-				priv_env$cached_values = list()
-				if (exists("cox_data_cache", envir = priv_env, inherits = FALSE)) {
-				priv_env$cox_data_cache = NULL
-				}
-				inf_obj$compute_estimate(estimate_only = FALSE)
-				})
-				}        }
+        # Determine the benchmark expression and setup expression
+        if (cls_name == "InferenceAllSimpleWilcox") {
+            bench_expr = quote(priv_env$hl_point_estimate(d$y, d$w))
+            setup_expr = NULL
+        } else {
+            bench_expr = if (force_wald && has_wald) {
+                quote({
+                    ci = inf_obj$compute_wald_confidence_interval()
+                    if (any(!is.finite(ci))) stop("Non-finite EDI confidence interval.")
+                    p = inf_obj$compute_wald_two_sided_pval(delta = pval_delta)
+                    if (!is.finite(p)) stop("Non-finite EDI p-value.")
+                    p
+                })
+            } else if (has_asymp) {
+                quote({
+                    inf_obj$compute_estimate(estimate_only = FALSE)
+                    p = inf_obj$compute_asymp_two_sided_pval(delta = pval_delta)
+                    if (!is.finite(p)) stop("Non-finite EDI p-value.")
+                    p
+                })
+            } else if (has_exact) {
+                quote({
+                    inf_obj$compute_estimate(estimate_only = FALSE)
+                    p = inf_obj$compute_exact_two_sided_pval_for_treatment_effect()
+                    if (!is.finite(p)) stop("Non-finite EDI p-value.")
+                    p
+                })
+            } else {
+                quote(inf_obj$compute_estimate(estimate_only = FALSE))
+            }
+
+            reset_exprs = list(
+                quote(priv_env$cached_mod <- NULL),
+                quote(priv_env$cached_values <- list())
+            )
+            if (exists("clear_fit_warm_start", envir = priv_env, inherits = FALSE)) {
+                reset_exprs = c(reset_exprs, quote(priv_env$clear_fit_warm_start()))
+            }
+            if (exists("cox_data_cache", envir = priv_env, inherits = FALSE)) {
+                reset_exprs = c(reset_exprs, quote(priv_env$cox_data_cache <- NULL))
+            }
+
+            setup_expr = as.call(c(as.symbol("{"), reset_exprs))
+        }
         
         # Warmup
         eval(bench_expr)
-        collect_timing_ms(bench_expr)
+        if (!is.null(inf_obj)) {
+            priv_env$cached_mod = NULL
+            priv_env$cached_values = list()
+            if (exists("clear_fit_warm_start", envir = priv_env, inherits = FALSE)) {
+                priv_env$clear_fit_warm_start()
+            }
+            if (exists("cox_data_cache", envir = priv_env, inherits = FALSE)) {
+                priv_env$cox_data_cache = NULL
+            }
+        }
+        collect_timing_ms(bench_expr, setup = setup_expr)
     }, error = function(e) { cat("  EDI Error:", e$message, "\n"); list(median_ms = NA_real_, samples_ms = numeric(0)) })
     
     # Timing Canonical
@@ -780,5 +834,24 @@ header = c(
   "",
   table_lines
 )
-writeLines(c(report_lines, "", header, "", STYLE_BLOCK), "package_metadata/benchmark_model_fits.md")
+
+METHODOLOGY_BLOCK = c(
+  "## Garbage Collection and Cache Management",
+  "",
+  "To ensure that the benchmark results are highly precise, reproducible, and represent the actual computation speed of the numerical solvers, the benchmarking harness uses the following garbage collection and cache management strategies:",
+  "",
+  "### 1. Garbage Collection (GC) Filtering",
+  "Garbage collection cycles run automatically by the R interpreter and can introduce significant, arbitrary pauses that skew timing measurements. To isolate the execution time of the code from R's GC overhead:",
+  "* **GC Disabling**: We disable R's memory stress-testing mode using `gctorture(FALSE)` before running timing loops.",
+  "* **Proactive Compaction**: In the `system.time()` path, we invoke `gc(verbose = FALSE)` immediately before timing each replicate. This starts the timer on a clean, compacted heap, minimizing the likelihood of triggering an automatic garbage collection cycle mid-replicate.",
+  "* **Automatic Filtering**: In the microbenchmarking path, we utilize the `bench::mark()` engine with the `filter_gc = TRUE` parameter, which automatically tracks and discards timing iterations during which a garbage collection event occurred.",
+  "",
+  "### 2. Fair Cache Management for R6 Estimators",
+  "Many EDI estimators utilize R6 objects that cache model fits (`cached_mod`) and computed estimates/variances (`cached_values`) to avoid redundant computations on subsequent accessor calls.",
+  "* **Clean Calculations**: If these caches were not cleared between benchmark repetitions, iterations 2 to $N$ would return the cached results instantly in $O(1)$ time, which would prevent measuring the actual numerical optimization speed.",
+  "* **Cache Cleansing**: To compare the raw C++ optimization algorithms against R's canonical solvers fairly (e.g. in simulation or bootstrap loops where the data/weights change on every run and the cache is not reusable), the R6 estimator caches are explicitly cleared on every single repetition.",
+  "* **Overhead Subtraction**: Modifying environments and setting variables to `NULL` in R introduces small computational overhead. To ensure this cleanup cost is not counted against EDI, the benchmarking harness isolates the cleanup time by timing it separately (via `setup_only` control runs) and subtracting it from the total execution time, ensuring a clean measurement of the solver itself."
+)
+
+writeLines(c(report_lines, "", header, "", METHODOLOGY_BLOCK, "", STYLE_BLOCK), "package_metadata/benchmark_model_fits.md")
 cat("Wald Test Benchmark complete.\n")

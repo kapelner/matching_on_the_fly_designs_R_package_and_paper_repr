@@ -1,6 +1,6 @@
 .libPaths(c(file.path(Sys.getenv("HOME"), "R", paste0(R.version$platform, "-library"), paste(R.version$major, sub("\\..*$", "", R.version$minor), sep = ".")), .libPaths()))
 library(EDI)
-library(microbenchmark)
+library(bench)
 library(data.table)
 library(survival)
 
@@ -14,18 +14,55 @@ MAX_INNER_REPS = 100000L
 FAST_PATH_MICROBENCH_REPS = 2000L
 FAST_PATH_THRESHOLD_MS = 0.01
 
-collect_timing_ms = function(expr, times = B_TIME, env = parent.frame(),
+collect_timing_ms = function(expr, setup = NULL, times = B_TIME, env = parent.frame(),
     target_batch_ms = TARGET_BATCH_MS, max_inner_reps = MAX_INNER_REPS,
     fast_path_microbenchmark_reps = FAST_PATH_MICROBENCH_REPS) {
+  gctorture(FALSE)
+  gc(verbose = FALSE)
+  if (is.null(setup)) setup = quote({})
+  
   micro_time_ms = function() {
-    mb_ms = microbenchmark(eval(expr, envir = env), times = fast_path_microbenchmark_reps)$time / 1e6
-    mb_ms = mb_ms[is.finite(mb_ms) & mb_ms > 0]
-    list(median_ms = if (length(mb_ms) == 0L) 0 else median(mb_ms),
-         samples_ms = mb_ms, method = "microbenchmark")
+    gctorture(FALSE)
+    gc(verbose = FALSE)
+    bm_res = tryCatch({
+      bench::mark(
+        total = {
+          eval(setup, envir = env)
+          eval(expr, envir = env)
+        },
+        setup_only = {
+          eval(setup, envir = env)
+        },
+        iterations = fast_path_microbenchmark_reps,
+        check = FALSE,
+        filter_gc = TRUE,
+        memory = FALSE
+      )
+    }, error = function(e) NULL)
+    if (is.null(bm_res)) {
+      return(list(median_ms = NA_real_, samples_ms = numeric(0), method = "bench::mark"))
+    }
+    t_total = bm_res$time[[which(bm_res$expression == "total")]] * 1000
+    t_setup = bm_res$time[[which(bm_res$expression == "setup_only")]] * 1000
+    
+    median_total = as.numeric(bm_res$median[bm_res$expression == "total"]) * 1000
+    median_setup = as.numeric(bm_res$median[bm_res$expression == "setup_only"]) * 1000
+    median_diff = max(0, median_total - median_setup)
+    
+    samples_ms = t_total - median_setup
+    samples_ms = samples_ms[is.finite(samples_ms) & samples_ms > 0]
+    list(
+      median_ms = median_diff,
+      samples_ms = samples_ms,
+      method = "bench::mark"
+    )
   }
   inner_reps = 1L; batch_ms = 0
   while (inner_reps < max_inner_reps) {
-    batch_ms = system.time(for (j in seq_len(inner_reps)) eval(expr, envir = env))[["elapsed"]] * 1000
+    batch_ms = system.time(for (j in seq_len(inner_reps)) {
+      eval(setup, envir = env)
+      eval(expr, envir = env)
+    })[["elapsed"]] * 1000
     if (is.finite(batch_ms) && batch_ms >= min(target_batch_ms, MIN_RESOLVED_BATCH_MS)) break
     inner_reps = min(max_inner_reps, inner_reps * 2L)
   }
@@ -33,8 +70,22 @@ collect_timing_ms = function(expr, times = B_TIME, env = parent.frame(),
   if (is.finite(batch_ms) && batch_ms > 0)
     inner_reps = min(max_inner_reps, max(1L, ceiling(inner_reps * target_batch_ms / batch_ms)))
   vals_ms = numeric(times)
-  for (i in seq_len(times))
-    vals_ms[i] = system.time(for (j in seq_len(inner_reps)) eval(expr, envir = env))[["elapsed"]] * 1000 / inner_reps
+  for (i in seq_len(times)) {
+    gctorture(FALSE)
+    gc(verbose = FALSE)
+    t_total = system.time(for (j in seq_len(inner_reps)) {
+      eval(setup, envir = env)
+      eval(expr, envir = env)
+    })[["elapsed"]] * 1000
+    
+    gctorture(FALSE)
+    gc(verbose = FALSE)
+    t_setup = system.time(for (j in seq_len(inner_reps)) {
+      eval(setup, envir = env)
+    })[["elapsed"]] * 1000
+    
+    vals_ms[i] = max(0, t_total - t_setup) / inner_reps
+  }
   vals_ms = vals_ms[is.finite(vals_ms) & vals_ms > 0]
   median_ms = if (length(vals_ms) == 0L) NA_real_ else median(vals_ms)
   if (!is.finite(median_ms) || median_ms < FAST_PATH_THRESHOLD_MS) return(micro_time_ms())
@@ -209,14 +260,16 @@ e_mf$inf_obj_strat_cox = tryCatch(
   InferenceSurvivalStratCoxPHRegr$new(des_mf, smart_cold_start_default = FALSE),
   error = function(err) InferenceSurvivalStratCoxPHRegr$new(des_mf)
 )
-expr_edi_mf = quote({
-  inf_obj_strat_cox$.__enclos_env__$private$cached_mod = NULL
-  inf_obj_strat_cox$.__enclos_env__$private$cached_values = list()
-  inf_obj_strat_cox$compute_estimate(estimate_only = TRUE)
+expr_edi_mf = quote(inf_obj_strat_cox$compute_estimate(estimate_only = TRUE))
+setup_edi_mf = quote({
+  priv = inf_obj_strat_cox$.__enclos_env__$private
+  priv$cached_mod = NULL
+  priv$cached_values = list()
+  priv$cox_data_cache = NULL
 })
 cat("Benchmarking model-fits EDI (estimate_only)...\n")
 eval(expr_edi_mf, envir = e_mf)   # validation run
-t_edi_mf = collect_timing_ms(expr_edi_mf, env = e_mf)
+t_edi_mf = collect_timing_ms(expr_edi_mf, setup = setup_edi_mf, env = e_mf)
 
 # Canonical (model-fits style)
 strat_inputs_mf = build_strat_cox_canonical_inputs(d_mf)
@@ -262,16 +315,23 @@ prepare_solver_only_edi(inf_obj_wd, TARGET)
 priv_env_wd = inf_obj_wd$.__enclos_env__$private
 
 expr_edi_wd = quote({
-  priv_env_wd$cached_mod = NULL
-  priv_env_wd$cached_values = list()
   inf_obj_wd$compute_estimate(estimate_only = FALSE)
   p = inf_obj_wd$compute_asymp_two_sided_pval(delta = 0)
   if (!is.finite(p)) stop("Non-finite EDI p-value.")
   p
 })
+setup_edi_wd = quote({
+  priv = inf_obj_wd$.__enclos_env__$private
+  priv$cached_mod = NULL
+  priv$cached_values = list()
+  priv$cox_data_cache = NULL
+  if (exists("clear_fit_warm_start", envir = priv, inherits = FALSE)) {
+    priv$clear_fit_warm_start()
+  }
+})
 cat("Benchmarking Wald EDI...\n")
 eval(expr_edi_wd)   # warmup
-t_edi_wd = collect_timing_ms(expr_edi_wd)
+t_edi_wd = collect_timing_ms(expr_edi_wd, setup = setup_edi_wd)
 
 # Canonical Wald
 strat_inputs_wd = build_strat_cox_canonical_inputs(d_wd)

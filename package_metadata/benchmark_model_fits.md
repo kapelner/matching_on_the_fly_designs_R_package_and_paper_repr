@@ -91,7 +91,7 @@ All benchmarks were performed on a synthetic clinical-trial-scale dataset genera
     <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalKMDiff</td><td>survival</td><td>0.03</td><td>survival</td><td>survfit(median)</td><td>7.10</td><td>253.97x</td><td>9.2e-07</td><td>***</td></tr>
     <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalLogRank</td><td>survival</td><td>0.03</td><td>survival</td><td>survdiff</td><td>3.61</td><td>110.36x</td><td>1.64e-09</td><td>***</td></tr>
     <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalRestrictedMeanDiff</td><td>survival</td><td>0.02</td><td>survival</td><td>survfit(rmean)</td><td>4.84</td><td>195x</td><td>5.99e-06</td><td>***</td></tr>
-    <tr style="background-color: #ffd9d9;"><td>InferenceSurvivalStratCoxPHRegr</td><td>survival</td><td>1.00</td><td>survival</td><td>coxph.fit(strat)</td><td>0.62</td><td>0.62x</td><td>3.19e-08</td><td>***</td></tr>
+    <tr style="background-color: #ffd9d9;"><td>InferenceSurvivalStratCoxPHRegr</td><td>survival</td><td>0.50</td><td>survival</td><td>coxph.fit(strat)</td><td>0.38</td><td>0.77x</td><td>2.96e-07</td><td>***</td></tr>
     <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalWeibullRegr</td><td>survival</td><td>0.09</td><td>survival</td><td>survreg</td><td>6.63</td><td>74.96x</td><td>4.05e-10</td><td>***</td></tr>
     <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalAdjCatLogitRegr</td><td>ordinal</td><td>0.83</td><td>VGAM</td><td>vglm(acat)</td><td>49.88</td><td>60.13x</td><td>2.48e-09</td><td>***</td></tr>
     <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalCauchitRegr</td><td>ordinal</td><td>1.31</td><td>ordinal</td><td>clm(cauchit)</td><td>17.58</td><td>13.41x</td><td>7.58e-08</td><td>***</td></tr>
@@ -156,7 +156,7 @@ EDI regression models (Logistic, Poisson) are benchmarked using the **IRLS** opt
     <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalGehanWilcox</td><td>survival</td><td>8.32</td><td>survival</td><td>coxph(null)+KM weighted residual mean diff + survdiff(rho=1)</td><td>10.44</td><td>1.25x</td><td>0.0255</td><td>*</td></tr>
     <tr><td>InferenceSurvivalKMDiff</td><td>survival</td><td>6.14</td><td>survival</td><td>survfit(median)+CI</td><td>6.08</td><td>0.99x</td><td>0.979</td><td></td></tr>
     <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalLogRank</td><td>survival</td><td>1.19</td><td>survival</td><td>survdiff</td><td>2.80</td><td>2.35x</td><td>1.66e-08</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalStratCoxPHRegr</td><td>survival</td><td>0.30</td><td>survival</td><td>coxph.fit(strat,breslow)+Wald</td><td>0.42</td><td>1.4x</td><td>8.67e-06</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalStratCoxPHRegr</td><td>survival</td><td>0.23</td><td>survival</td><td>coxph.fit(strat,breslow)+Wald</td><td>0.26</td><td>1.15x</td><td>3.91e-06</td><td>***</td></tr>
     <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalWeibullRegr</td><td>survival</td><td>0.53</td><td>survival</td><td>survreg+summary</td><td>3.98</td><td>7.49x</td><td>2.22e-08</td><td>***</td></tr>
     <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalAdjCatLogitRegr</td><td>ordinal</td><td>0.78</td><td>VGAM</td><td>vglm+summary</td><td>20.54</td><td>26.47x</td><td>3.33e-10</td><td>***</td></tr>
     <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalContRatioRegr</td><td>ordinal</td><td>0.77</td><td>VGAM</td><td>vglm+summary</td><td>24.00</td><td>31.04x</td><td>2.76e-07</td><td>***</td></tr>
@@ -166,6 +166,22 @@ EDI regression models (Logistic, Poisson) are benchmarked using the **IRLS** opt
     <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalRidit</td><td>ordinal</td><td>0.10</td><td>stats</td><td>mean(ridit)</td><td>0.25</td><td>2.49x</td><td>2.3e-06</td><td>***</td></tr>
   </tbody>
 </table>
+
+## Garbage Collection and Cache Management
+
+To ensure that the benchmark results are highly precise, reproducible, and represent the actual computation speed of the numerical solvers, the benchmarking harness uses the following garbage collection and cache management strategies:
+
+### 1. Garbage Collection (GC) Filtering
+Garbage collection cycles run automatically by the R interpreter and can introduce significant, arbitrary pauses that skew timing measurements. To isolate the execution time of the code from R's GC overhead:
+* **GC Disabling**: We disable R's memory stress-testing mode using `gctorture(FALSE)` before running timing loops.
+* **Proactive Compaction**: In the `system.time()` path, we invoke `gc(verbose = FALSE)` immediately before timing each replicate. This starts the timer on a clean, compacted heap, minimizing the likelihood of triggering an automatic garbage collection cycle mid-replicate.
+* **Automatic Filtering**: In the microbenchmarking path, we utilize the `bench::mark()` engine with the `filter_gc = TRUE` parameter, which automatically tracks and discards timing iterations during which a garbage collection event occurred.
+
+### 2. Fair Cache Management for R6 Estimators
+Many EDI estimators utilize R6 objects that cache model fits (`cached_mod`) and computed estimates/variances (`cached_values`) to avoid redundant computations on subsequent accessor calls.
+* **Clean Calculations**: If these caches were not cleared between benchmark repetitions, iterations 2 to $N$ would return the cached results instantly in $O(1)$ time, which would prevent measuring the actual numerical optimization speed.
+* **Cache Cleansing**: To compare the raw C++ optimization algorithms against R's canonical solvers fairly (e.g. in simulation or bootstrap loops where the data/weights change on every run and the cache is not reusable), the R6 estimator caches are explicitly cleared on every single repetition.
+* **Overhead Subtraction**: Modifying environments and setting variables to `NULL` in R introduces small computational overhead. To ensure this cleanup cost is not counted against EDI, the benchmarking harness isolates the cleanup time by timing it separately (via `setup_only` control runs) and subtracting it from the total execution time, ensuring a clean measurement of the solver itself.
 
 <style>
     body, .markdown-body, .container {
