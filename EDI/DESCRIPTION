@@ -212,4 +212,6 @@ Collate:
     'zzz.R'
 URL: https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr
 Config/roxygen2/version: 8.0.0
+Config/roxygen2/load: source
 RoxygenNote: 7.3.3
+

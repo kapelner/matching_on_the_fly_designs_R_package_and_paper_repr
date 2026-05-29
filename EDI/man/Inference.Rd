@@ -52,7 +52,6 @@ Defaults to the global budget unless overridden on the object.}
 \if{html}{\out{<a id="method-Inference-new"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize an estimation and test object after the design is completed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$new(
   des_obj,
@@ -64,279 +63,137 @@ Initialize an estimation and test object after the design is completed.
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed \code{Design} object whose entire n subjects are
-assigned and response y is recorded within.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-
-\item{\code{harden}}{Whether to apply robustness measures (default \code{TRUE}). When
-\code{TRUE}, the inference methods employ defensive strategies including QR-based
-rank reduction of the design matrix, progressive correlation-threshold dropping,
-and fallback fits (e.g.\ robust survival regression, treatment-only models) to
-avoid crashes on ill-conditioned data. When \code{FALSE}, the vanilla algorithm
-runs on the full design matrix as supplied; any rank deficiency or convergence
-failure will surface as an error rather than being silently worked around. Set to
-\code{FALSE} when you want to verify that the raw model converges without
-intervention.}
-
-\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
-the formula from the design object is used and its pre-computed design matrix is
-reused. If a formula is provided, a new design matrix is constructed from the
-design's imputed covariates.}
-
-\item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default for
-likelihood-based models. Explicit starts always override this object-level policy.
-\code{NULL} (default) consults the global cold-start dispatch policy.}
-
-\item{\code{seed}}{Integer seed for reproducibility.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-compute_exact_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-compute_exact_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_exact_two_sided_pval_for_treatment_effect()}}{
-Computes an exact two-sided p-value. Subclasses that support exact inference override this.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$compute_exact_two_sided_pval_for_treatment_effect(...)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{Other arguments passed to the method.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-compute_exact_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-compute_exact_confidence_interval}{}}}
 \subsection{Method \code{compute_exact_confidence_interval()}}{
-Computes an exact confidence interval. Subclasses that support exact inference override this.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$compute_exact_confidence_interval(...)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{Other arguments passed to the method.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
-Computes the treatment estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A numeric treatment estimate.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-is_nonestimable"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-is_nonestimable}{}}}
 \subsection{Method \code{is_nonestimable()}}{
-Returns whether the most recent inference attempt explicitly marked the
-result as non-estimable.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$is_nonestimable(type = c("any", "estimate", "se"))}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{type}}{Which stage to query: \code{"any"}, \code{"estimate"}, or \code{"se"}.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A logical scalar.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-get_nonestimable_reason"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-get_nonestimable_reason}{}}}
 \subsection{Method \code{get_nonestimable_reason()}}{
-Returns the reason recorded for the most recent explicit non-estimability.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$get_nonestimable_reason()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A character scalar or \code{NULL}.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-get_nonestimable_stage"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-get_nonestimable_stage}{}}}
 \subsection{Method \code{get_nonestimable_stage()}}{
-Returns the stage recorded for the most recent explicit non-estimability.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$get_nonestimable_stage()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A character scalar or \code{NULL}.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-duplicate"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-duplicate}{}}}
 \subsection{Method \code{duplicate()}}{
-Duplicate this inference object
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$duplicate(verbose = FALSE, make_fork_cluster = FALSE)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{verbose}}{A flag indicating whether messages should be displayed.}
-
-\item{\code{make_fork_cluster}}{Whether the duplicate should be allowed to create a fork 
-cluster. Default FALSE.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A new \code{Inference} object with the same data
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-get_response"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-get_response}{}}}
 \subsection{Method \code{get_response()}}{
-Return the response vector used by inference extension classes.
-
-This accessor is part of the supported extension contract for user-defined
-R6 inference classes. Prefer this method over direct access to private
-fields.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$get_response()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A numeric response vector.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-get_treatment"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-get_treatment}{}}}
 \subsection{Method \code{get_treatment()}}{
-Return the treatment-assignment vector used by inference extension classes.
-
-This accessor is part of the supported extension contract for user-defined
-R6 inference classes. Treatment is encoded as 0/1.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$get_treatment()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A numeric or integer 0/1 treatment vector.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-get_covariates"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-get_covariates}{}}}
 \subsection{Method \code{get_covariates()}}{
-Return the processed covariate matrix used by inference extension classes.
-
-This accessor returns the design object's model-matrix covariates, after
-the package's missingness handling and encoding. It may be \code{NULL} if
-no covariates are available.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$get_covariates()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A numeric matrix of covariates or \code{NULL}.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-get_analysis_data"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-get_analysis_data}{}}}
 \subsection{Method \code{get_analysis_data()}}{
-Return a data frame with response, treatment, censoring status, and covariates.
-
-This accessor is the preferred data interface for user-defined R6
-inference classes. It avoids reliance on private implementation fields.
-The returned data frame always contains \code{y}, \code{w}, and
-\code{dead}; covariate columns are appended when available.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$get_analysis_data()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A data frame suitable for user-defined model fitting.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-get_design_object"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-get_design_object}{}}}
 \subsection{Method \code{get_design_object()}}{
-Return the completed design object backing this inference object.
-
-This accessor is part of the supported extension contract. Extension
-classes should use this method instead of \code{private$des_obj}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$get_design_object()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-The completed \code{Design} object.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-get_response_type"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-get_response_type}{}}}
 \subsection{Method \code{get_response_type()}}{
-Return the response type for the backing design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$get_response_type()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A character scalar such as \code{"continuous"},
-  \code{"incidence"}, \code{"proportion"}, \code{"count"},
-  \code{"survival"}, or \code{"ordinal"}.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-get_model_formula"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-get_model_formula}{}}}
 \subsection{Method \code{get_model_formula()}}{
-Return the model formula used for covariate adjustment.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$get_model_formula()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A formula object or \code{NULL}.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-set_optimization_alg"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-set_optimization_alg}{}}}
 \subsection{Method \code{set_optimization_alg()}}{
-Set the optimizer used by likelihood-based inference implementations.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$set_optimization_alg(
   optimization_alg = NULL,
@@ -345,28 +202,11 @@ Set the optimizer used by likelihood-based inference implementations.
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{optimization_alg}}{The optimizer name. Valid values are configured by
-the concrete inference class.}
-
-\item{\code{allow_irls}}{Whether to allow IRLS (Iteratively Reweighted Least Squares)
-as a fallback or primary optimization algorithm.}
-
-\item{\code{default}}{The default optimizer to use if none is specified.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-Invisibly returns \code{self}.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-get_optimization_alg"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-get_optimization_alg}{}}}
 \subsection{Method \code{get_optimization_alg()}}{
-Return the optimizer used by likelihood-based inference implementations.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$get_optimization_alg()}\if{html}{\out{</div>}}
 }
@@ -376,18 +216,10 @@ Return the optimizer used by likelihood-based inference implementations.
 \if{html}{\out{<a id="method-Inference-set_seed"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-set_seed}{}}}
 \subsection{Method \code{set_seed()}}{
-Set the seed for reproducibility.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Inference$set_seed(seed)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{seed}}{Integer seed for reproducibility.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Inference-clone"></a>}}

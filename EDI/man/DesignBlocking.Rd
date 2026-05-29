@@ -13,7 +13,7 @@ des = DesignBlocking$new(n = 6, response_type = "continuous")
 }
 \keyword{internal}
 \section{Super class}{
-\code{EDI::Design} -> \code{DesignBlocking}
+\code{::Design} -> \code{DesignBlocking}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -34,36 +34,36 @@ des = DesignBlocking$new(n = 6, response_type = "continuous")
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_all_subject_responses"><a href='../../EDI/html/Design.html#method-Design-add_all_subject_responses'><code>EDI::Design$add_all_subject_responses()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="add_one_subject_response"><a href='../../EDI/html/Design.html#method-Design-add_one_subject_response'><code>EDI::Design$add_one_subject_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="any_censoring"><a href='../../EDI/html/Design.html#method-Design-any_censoring'><code>EDI::Design$any_censoring()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_all_responses_recorded"><a href='../../EDI/html/Design.html#method-Design-assert_all_responses_recorded'><code>EDI::Design$assert_all_responses_recorded()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../../EDI/html/Design.html#method-Design-assert_all_subjects_arrived'><code>EDI::Design$assert_all_subjects_arrived()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_even_allocation"><a href='../../EDI/html/Design.html#method-Design-assert_even_allocation'><code>EDI::Design$assert_even_allocation()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="assert_fixed_sample"><a href='../../EDI/html/Design.html#method-Design-assert_fixed_sample'><code>EDI::Design$assert_fixed_sample()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="check_experiment_completed"><a href='../../EDI/html/Design.html#method-Design-check_experiment_completed'><code>EDI::Design$check_experiment_completed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="duplicate"><a href='../../EDI/html/Design.html#method-Design-duplicate'><code>EDI::Design$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_X"><a href='../../EDI/html/Design.html#method-Design-get_X'><code>EDI::Design$get_X()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_X_imp"><a href='../../EDI/html/Design.html#method-Design-get_X_imp'><code>EDI::Design$get_X_imp()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_X_raw"><a href='../../EDI/html/Design.html#method-Design-get_X_raw'><code>EDI::Design$get_X_raw()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_dead"><a href='../../EDI/html/Design.html#method-Design-get_dead'><code>EDI::Design$get_dead()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_missingness_method"><a href='../../EDI/html/Design.html#method-Design-get_missingness_method'><code>EDI::Design$get_missingness_method()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_model_formula"><a href='../../EDI/html/Design.html#method-Design-get_model_formula'><code>EDI::Design$get_model_formula()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_n"><a href='../../EDI/html/Design.html#method-Design-get_n'><code>EDI::Design$get_n()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_ordinal_levels"><a href='../../EDI/html/Design.html#method-Design-get_ordinal_levels'><code>EDI::Design$get_ordinal_levels()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_original_ordinal_levels"><a href='../../EDI/html/Design.html#method-Design-get_original_ordinal_levels'><code>EDI::Design$get_original_ordinal_levels()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_prob_T"><a href='../../EDI/html/Design.html#method-Design-get_prob_T'><code>EDI::Design$get_prob_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_response_type"><a href='../../EDI/html/Design.html#method-Design-get_response_type'><code>EDI::Design$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_response_type_original"><a href='../../EDI/html/Design.html#method-Design-get_response_type_original'><code>EDI::Design$get_response_type_original()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_t"><a href='../../EDI/html/Design.html#method-Design-get_t'><code>EDI::Design$get_t()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_w"><a href='../../EDI/html/Design.html#method-Design-get_w'><code>EDI::Design$get_w()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y"><a href='../../EDI/html/Design.html#method-Design-get_y'><code>EDI::Design$get_y()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="get_y_original"><a href='../../EDI/html/Design.html#method-Design-get_y_original'><code>EDI::Design$get_y_original()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="has_covariates"><a href='../../EDI/html/Design.html#method-Design-has_covariates'><code>EDI::Design$has_covariates()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="initialize"><a href='../../EDI/html/Design.html#method-Design-initialize'><code>EDI::Design$initialize()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="is_fixed_sample_size"><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>EDI::Design$is_fixed_sample_size()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="overwrite_all_subject_assignments"><a href='../../EDI/html/Design.html#method-Design-overwrite_all_subject_assignments'><code>EDI::Design$overwrite_all_subject_assignments()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Design" data-id="transform_y"><a href='../../EDI/html/Design.html#method-Design-transform_y'><code>EDI::Design$transform_y()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="add_all_subject_responses"><a href='../..//html/Design.html#method-Design-add_all_subject_responses'><code>::Design$add_all_subject_responses()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="add_one_subject_response"><a href='../..//html/Design.html#method-Design-add_one_subject_response'><code>::Design$add_one_subject_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="any_censoring"><a href='../..//html/Design.html#method-Design-any_censoring'><code>::Design$any_censoring()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_all_responses_recorded"><a href='../..//html/Design.html#method-Design-assert_all_responses_recorded'><code>::Design$assert_all_responses_recorded()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../..//html/Design.html#method-Design-assert_all_subjects_arrived'><code>::Design$assert_all_subjects_arrived()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_even_allocation"><a href='../..//html/Design.html#method-Design-assert_even_allocation'><code>::Design$assert_even_allocation()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_fixed_sample"><a href='../..//html/Design.html#method-Design-assert_fixed_sample'><code>::Design$assert_fixed_sample()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="check_experiment_completed"><a href='../..//html/Design.html#method-Design-check_experiment_completed'><code>::Design$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="duplicate"><a href='../..//html/Design.html#method-Design-duplicate'><code>::Design$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X"><a href='../..//html/Design.html#method-Design-get_X'><code>::Design$get_X()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_imp"><a href='../..//html/Design.html#method-Design-get_X_imp'><code>::Design$get_X_imp()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_raw"><a href='../..//html/Design.html#method-Design-get_X_raw'><code>::Design$get_X_raw()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_dead"><a href='../..//html/Design.html#method-Design-get_dead'><code>::Design$get_dead()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_missingness_method"><a href='../..//html/Design.html#method-Design-get_missingness_method'><code>::Design$get_missingness_method()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_model_formula"><a href='../..//html/Design.html#method-Design-get_model_formula'><code>::Design$get_model_formula()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_n"><a href='../..//html/Design.html#method-Design-get_n'><code>::Design$get_n()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_ordinal_levels"><a href='../..//html/Design.html#method-Design-get_ordinal_levels'><code>::Design$get_ordinal_levels()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_original_ordinal_levels"><a href='../..//html/Design.html#method-Design-get_original_ordinal_levels'><code>::Design$get_original_ordinal_levels()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_prob_T"><a href='../..//html/Design.html#method-Design-get_prob_T'><code>::Design$get_prob_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_response_type"><a href='../..//html/Design.html#method-Design-get_response_type'><code>::Design$get_response_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_response_type_original"><a href='../..//html/Design.html#method-Design-get_response_type_original'><code>::Design$get_response_type_original()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_t"><a href='../..//html/Design.html#method-Design-get_t'><code>::Design$get_t()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_w"><a href='../..//html/Design.html#method-Design-get_w'><code>::Design$get_w()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_y"><a href='../..//html/Design.html#method-Design-get_y'><code>::Design$get_y()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_y_original"><a href='../..//html/Design.html#method-Design-get_y_original'><code>::Design$get_y_original()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="has_covariates"><a href='../..//html/Design.html#method-Design-has_covariates'><code>::Design$has_covariates()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="initialize"><a href='../..//html/Design.html#method-Design-initialize'><code>::Design$initialize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="is_fixed_sample_size"><a href='../..//html/Design.html#method-Design-is_fixed_sample_size'><code>::Design$is_fixed_sample_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="overwrite_all_subject_assignments"><a href='../..//html/Design.html#method-Design-overwrite_all_subject_assignments'><code>::Design$overwrite_all_subject_assignments()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="transform_y"><a href='../..//html/Design.html#method-Design-transform_y'><code>::Design$transform_y()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -71,38 +71,24 @@ des = DesignBlocking$new(n = 6, response_type = "continuous")
 \if{html}{\out{<a id="method-DesignBlocking-is_blocking_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignBlocking-is_blocking_design}{}}}
 \subsection{Method \code{is_blocking_design()}}{
-Checks whether this design currently has blocking structure.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignBlocking$is_blocking_design()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-\code{TRUE} if the design supports blocking or manual block IDs
-  have been recorded, \code{FALSE} otherwise.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignBlocking-inject_cmh_se_w_mat"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignBlocking-inject_cmh_se_w_mat}{}}}
 \subsection{Method \code{inject_cmh_se_w_mat()}}{
-Inject a precomputed matrix of assignment vectors for CMH SE estimation.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignBlocking$inject_cmh_se_w_mat(w_mat)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{w_mat}}{Integer matrix (n x se_est_num_vectors).}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignBlocking-get_cmh_se_w_mat"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignBlocking-get_cmh_se_w_mat}{}}}
 \subsection{Method \code{get_cmh_se_w_mat()}}{
-Retrieve the precomputed CMH SE w_mat, or NULL if not set.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignBlocking$get_cmh_se_w_mat()}\if{html}{\out{</div>}}
 }
@@ -112,7 +98,6 @@ Retrieve the precomputed CMH SE w_mat, or NULL if not set.
 \if{html}{\out{<a id="method-DesignBlocking-assert_blocking_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignBlocking-assert_blocking_design}{}}}
 \subsection{Method \code{assert_blocking_design()}}{
-Checks whether this design is a blocking design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignBlocking$assert_blocking_design()}\if{html}{\out{</div>}}
 }
@@ -122,107 +107,55 @@ Checks whether this design is a blocking design.
 \if{html}{\out{<a id="method-DesignBlocking-is_complete_blocking_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignBlocking-is_complete_blocking_design}{}}}
 \subsection{Method \code{is_complete_blocking_design()}}{
-Check whether the current blocking structure is complete.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignBlocking$is_complete_blocking_design()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-\code{TRUE} if blocking is defined and all block IDs are positive.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignBlocking-assert_equal_block_sizes"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignBlocking-assert_equal_block_sizes}{}}}
 \subsection{Method \code{assert_equal_block_sizes()}}{
-Checks whether all blocks have the same number of subjects.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignBlocking$assert_equal_block_sizes()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-`TRUE` invisibly if the block sizes are equal.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignBlocking-add_all_subject_matched_pair_ids"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignBlocking-add_all_subject_matched_pair_ids}{}}}
 \subsection{Method \code{add_all_subject_matched_pair_ids()}}{
-Record externally-supplied matched-pair or block identifiers.
-
-This is primarily for post-hoc analysis of completed experiments whose
-block IDs were defined outside the built-in design classes.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignBlocking$add_all_subject_matched_pair_ids(m)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{m}}{A positive-integer vector of block IDs with one entry per subject.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-Invisibly returns \code{self}.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignBlocking-set_m"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignBlocking-set_m}{}}}
 \subsection{Method \code{set_m()}}{
-Set the strata (block identifiers) for this design.
-
-Can only be called when \code{private$m} is still \code{NULL} (i.e. before strata
-have been derived or assigned). The design must advertise blocking support.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignBlocking$set_m(m)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{m}}{A non-negative-integer vector of block IDs, one entry per subject already
-recorded. Zero is reserved as a reservoir flag used by sequential KK designs.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-Invisibly returns \code{self} for method chaining.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignBlocking-get_block_ids"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignBlocking-get_block_ids}{}}}
 \subsection{Method \code{get_block_ids()}}{
-If the design is a block design, get block identifiers (otherwise halts)
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignBlocking$get_block_ids()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-An integer vector of block identifiers.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignBlocking-summarize_blocks"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignBlocking-summarize_blocks}{}}}
 \subsection{Method \code{summarize_blocks()}}{
-Summarize the covariates within blocks.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignBlocking$summarize_blocks(block_ids = NULL)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{block_ids}}{A vector of block identifiers to summarize. If NULL, defaults to all blocks.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A list of data.tables, one for each block.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignBlocking-clone"></a>}}

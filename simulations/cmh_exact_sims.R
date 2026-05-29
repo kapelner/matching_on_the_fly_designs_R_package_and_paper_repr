@@ -52,11 +52,3 @@ sim = SimulationFramework$new(
       )  
 
 suppressWarnings(sim$run())
-# sm = sim$summarize()
-
-# if (!is.null(sm) && nrow(sm) > 0L) {
-#   print(as.data.frame(sm[, .(
-#     avg_power = mean(power, na.rm = TRUE),
-#     avg_coverage = mean(coverage, na.rm = TRUE)
-#   ), by = c("design", "inference", "n", "p", "cond_exp_func_model")]))
-# }

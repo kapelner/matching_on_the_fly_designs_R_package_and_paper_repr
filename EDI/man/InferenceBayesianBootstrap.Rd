@@ -14,7 +14,7 @@ top of the existing nonparametric bootstrap infrastructure.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceNonParamBootstrap} -> \code{InferenceBayesianBootstrap}
+\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceNonParamBootstrap} -> \code{InferenceBayesianBootstrap}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -29,31 +29,31 @@ top of the existing nonparametric bootstrap infrastructure.
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_estimate"><a href='../../EDI/html/Inference.html#method-Inference-compute_estimate'><code>EDI::Inference$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>EDI::Inference$compute_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>EDI::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="duplicate"><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>EDI::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_analysis_data"><a href='../../EDI/html/Inference.html#method-Inference-get_analysis_data'><code>EDI::Inference$get_analysis_data()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_covariates"><a href='../../EDI/html/Inference.html#method-Inference-get_covariates'><code>EDI::Inference$get_covariates()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_design_object"><a href='../../EDI/html/Inference.html#method-Inference-get_design_object'><code>EDI::Inference$get_design_object()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_model_formula"><a href='../../EDI/html/Inference.html#method-Inference-get_model_formula'><code>EDI::Inference$get_model_formula()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_reason'><code>EDI::Inference$get_nonestimable_reason()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_stage'><code>EDI::Inference$get_nonestimable_stage()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-get_optimization_alg'><code>EDI::Inference$get_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response"><a href='../../EDI/html/Inference.html#method-Inference-get_response'><code>EDI::Inference$get_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_response_type"><a href='../../EDI/html/Inference.html#method-Inference-get_response_type'><code>EDI::Inference$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="get_treatment"><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>EDI::Inference$get_treatment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="initialize"><a href='../../EDI/html/Inference.html#method-Inference-initialize'><code>EDI::Inference$initialize()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="is_nonestimable"><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>EDI::Inference$is_nonestimable()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_optimization_alg"><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>EDI::Inference$set_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="Inference" data-id="set_seed"><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>EDI::Inference$set_seed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>EDI::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>EDI::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>EDI::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>EDI::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T'><code>EDI::InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>EDI::InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_estimate"><a href='../..//html/Inference.html#method-Inference-compute_estimate'><code>::Inference$compute_estimate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_analysis_data"><a href='../..//html/Inference.html#method-Inference-get_analysis_data'><code>::Inference$get_analysis_data()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_covariates"><a href='../..//html/Inference.html#method-Inference-get_covariates'><code>::Inference$get_covariates()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_design_object"><a href='../..//html/Inference.html#method-Inference-get_design_object'><code>::Inference$get_design_object()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_model_formula"><a href='../..//html/Inference.html#method-Inference-get_model_formula'><code>::Inference$get_model_formula()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../..//html/Inference.html#method-Inference-get_nonestimable_reason'><code>::Inference$get_nonestimable_reason()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../..//html/Inference.html#method-Inference-get_nonestimable_stage'><code>::Inference$get_nonestimable_stage()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_optimization_alg"><a href='../..//html/Inference.html#method-Inference-get_optimization_alg'><code>::Inference$get_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_response"><a href='../..//html/Inference.html#method-Inference-get_response'><code>::Inference$get_response()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_response_type"><a href='../..//html/Inference.html#method-Inference-get_response_type'><code>::Inference$get_response_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_treatment"><a href='../..//html/Inference.html#method-Inference-get_treatment'><code>::Inference$get_treatment()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="initialize"><a href='../..//html/Inference.html#method-Inference-initialize'><code>::Inference$initialize()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="is_nonestimable"><a href='../..//html/Inference.html#method-Inference-is_nonestimable'><code>::Inference$is_nonestimable()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="set_optimization_alg"><a href='../..//html/Inference.html#method-Inference-set_optimization_alg'><code>::Inference$set_optimization_alg()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="set_seed"><a href='../..//html/Inference.html#method-Inference-set_seed'><code>::Inference$set_seed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../..//html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>::InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>::InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -61,11 +61,6 @@ top of the existing nonparametric bootstrap infrastructure.
 \if{html}{\out{<a id="method-InferenceBayesianBootstrap-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceBayesianBootstrap-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
-Recomputes the treatment estimate under Bayesian-bootstrap
-  subject-, block-, cluster-, or matched-set weights.
-
-This is an abstract hook implemented by concrete inference families that
-support weighted re-estimation.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceBayesianBootstrap$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -73,30 +68,11 @@ support weighted re-estimation.
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{subject_or_block_weights}}{Numeric Bayesian-bootstrap weights at the
-design's exchangeable resampling unit. For ordinary designs these are
-subject-level weights. For blocking, clustering, or matching designs
-these may instead be block-, cluster-, pair-, or matched-set-level
-weights, depending on \code{weighting_unit_type}.}
-
-\item{\code{estimate_only}}{If \code{TRUE}, compute only the point estimate for
-the weighted replicate.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A numeric treatment-effect estimate for the weighted replicate.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T}{}}}
 \subsection{Method \code{approximate_bayesian_bootstrap_distribution_beta_hat_T()}}{
-Creates the Bayesian-bootstrap distribution of the treatment
-  estimate using Dirichlet weights.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T(
   B = 501,
@@ -106,60 +82,11 @@ Creates the Bayesian-bootstrap distribution of the treatment
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{B}}{Number of Bayesian-bootstrap replicates. The default is 501.}
-
-\item{\code{show_progress}}{A flag indicating whether a progress bar should be displayed.}
-
-\item{\code{debug}}{If \code{TRUE}, return a list with the distribution values and
-per-iteration diagnostics including error messages, warning messages,
-counts of each, and summary proportions for iterations with errors,
-warnings, and illegal (non-finite) values. Runs serially. Default
-\code{FALSE}.}
-
-\item{\code{weighting_unit_type}}{Optional Bayesian-bootstrap weighting-unit
-scheme. Legal public values are:
-\describe{
-  \item{\code{NULL}}{Use the design's default weighting-unit logic. For
-    ordinary non-blocking designs this is the usual subject-level
-    Bayesian bootstrap. For certain blocking designs, \code{NULL} maps
-    to the same behavior as \code{"within_blocks"}.}
-  \item{\code{"within_blocks"}}{Only legal for blocking-style designs
-    that support block-aware weighting:
-    \code{DesignFixedBlocking}, \code{DesignFixedOptimalBlocks},
-    \code{DesignSeqOneByOneSPBR}, and
-    \code{DesignFixedBlockedCluster}. Draws Dirichlet weights on
-    observational units within each observed block/stratum. For blocked
-    cluster designs this means cluster-within-stratum weights.}
-  \item{\code{"resample_blocks"}}{Only legal for the same
-    blocking-style designs as \code{"within_blocks"}. Draws Dirichlet
-    weights on whole observed blocks/strata rather than on units within
-    each block.}
-}
-Any non-\code{NULL} value is rejected for designs outside that blocking
-family.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-When \code{debug = FALSE} (default), a numeric vector of length
-  \code{B} containing the Bayesian-bootstrap estimates. When
-  \code{debug = TRUE}, a list with: \code{values}, \code{errors} (list of
-  character vectors, one per iteration), \code{warnings} (list of
-  character vectors, one per iteration), \code{num_errors},
-  \code{num_warnings}, \code{prop_iterations_with_errors},
-  \code{prop_iterations_with_warnings}, and
-  \code{prop_illegal_values}.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval}{}}}
 \subsection{Method \code{compute_bayesian_bootstrap_two_sided_pval()}}{
-Computes a Bayesian-bootstrap-based two-sided p-value for
-  the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval(
   delta = 0,
@@ -172,46 +99,11 @@ Computes a Bayesian-bootstrap-based two-sided p-value for
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{Null hypothesis value. Default 0.}
-
-\item{\code{B}}{Number of Bayesian-bootstrap replicates. Default 501.}
-
-\item{\code{type}}{Type of Bayesian-bootstrap p-value. Supported values are
-\code{"percentile"} (default), \code{"symmetric"}, \code{"wald"},
-\code{"studentized"} / \code{"bootstrap-t"} (pivots by replicate SE from
-\code{compute_estimate_with_bootstrap_weights(..., estimate_only = FALSE)}),
-and \code{"bca"} (bias-corrected and accelerated via leave-one-unit-out
-Bayesian jackknife).}
-
-\item{\code{na.rm}}{If \code{TRUE}, discard non-finite bootstrap replicates before
-computing the p-value. Otherwise, any non-finite replicate returns
-\code{NA}.}
-
-\item{\code{show_progress}}{A flag indicating whether a progress bar should be displayed.}
-
-\item{\code{min_number_usable_samples}}{Minimum number of finite Bayesian-bootstrap
-replicates required after filtering. Default 5.}
-
-\item{\code{weighting_unit_type}}{Optional Bayesian-bootstrap weighting-unit
-scheme. See
-\code{\link{InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T}()}.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A numeric two-sided p-value, or \code{NA_real_} if too few usable
-  replicates remain or the estimate is non-finite.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval}{}}}
 \subsection{Method \code{compute_bayesian_bootstrap_confidence_interval()}}{
-Computes a Bayesian-bootstrap confidence interval for the
-  treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval(
   alpha = 0.05,
@@ -224,39 +116,6 @@ Computes a Bayesian-bootstrap confidence interval for the
 )}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{Significance level. Default 0.05.}
-
-\item{\code{B}}{Number of Bayesian-bootstrap replicates. Default 501.}
-
-\item{\code{type}}{Type of Bayesian-bootstrap interval. Supported values are
-\code{"percentile"} (default), \code{"basic"}, \code{"wald"},
-\code{"studentized"} / \code{"bootstrap-t"} (pivots by replicate SE from
-\code{compute_estimate_with_bootstrap_weights(..., estimate_only = FALSE)}),
-and \code{"bca"} (bias-corrected and accelerated via leave-one-unit-out
-Bayesian jackknife).}
-
-\item{\code{na.rm}}{If \code{TRUE}, discard non-finite bootstrap replicates before
-constructing the interval.}
-
-\item{\code{show_progress}}{A flag indicating whether a progress bar should be displayed.}
-
-\item{\code{min_number_usable_samples}}{Minimum number of finite Bayesian-bootstrap
-replicates required after filtering. Default 5.}
-
-\item{\code{weighting_unit_type}}{Optional Bayesian-bootstrap weighting-unit
-scheme. See
-\code{\link{InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T}()}.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A length-2 numeric confidence interval. Returns
-  \code{c(NA_real_, NA_real_)} when the estimate is non-finite or too few
-  usable replicates remain.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceBayesianBootstrap-clone"></a>}}

@@ -48,81 +48,42 @@ report$summarize()
 \if{html}{\out{<a id="method-SimulationFrameworkReport-new"></a>}}
 \if{latex}{\out{\hypertarget{method-SimulationFrameworkReport-new}{}}}
 \subsection{Method \code{new()}}{
-Create a new \code{SimulationFrameworkReport}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SimulationFrameworkReport$new(sim_or_filename, alpha = NULL)}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{sim_or_filename}}{Either a completed \code{SimulationFramework} object
-or a character string giving the path to a \code{.csv} or \code{.csv.bz2}
-results file written by \code{SimulationFramework}.}
-
-\item{\code{alpha}}{Numeric in \eqn{(0,1)}.  Significance level for coverage and
-power calculations.  When \code{sim_or_filename} is a
-\code{SimulationFramework} object and \code{alpha} is \code{NULL}
-(default), the framework's own alpha is used.  When loading from a file,
-defaults to \code{0.05}.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SimulationFrameworkReport-get_results"></a>}}
 \if{latex}{\out{\hypertarget{method-SimulationFrameworkReport-get_results}{}}}
 \subsection{Method \code{get_results()}}{
-Get the raw per-replication results.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SimulationFrameworkReport$get_results()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A \code{data.table} with one row per
-  (replication, design, inference class, inference type).
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SimulationFrameworkReport-get_errors"></a>}}
 \if{latex}{\out{\hypertarget{method-SimulationFrameworkReport-get_errors}{}}}
 \subsection{Method \code{get_errors()}}{
-Return all errors captured during the simulation run.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SimulationFrameworkReport$get_errors()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A list of named lists, one per captured error.  Each element
-  includes the simulation cell metadata, replication number,
-  design / inference path, user-supplied parameters, error stage, and
-  error message.  Empty when constructed from a file.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SimulationFrameworkReport-summarize"></a>}}
 \if{latex}{\out{\hypertarget{method-SimulationFrameworkReport-summarize}{}}}
 \subsection{Method \code{summarize()}}{
-Aggregate and summarize simulation results.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SimulationFrameworkReport$summarize()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A \code{data.table} with one row per unique
-  (response_type, cond_exp_func_model, n, p, betaT, design, inference,
-  inference_type) combination.  Columns include \code{MSE},
-  \code{coverage}, \code{ci_length} (when CI types were run),
-  \code{power} (when betaT != 0 and p-value types were run),
-  \code{size} (when betaT == 0 and p-value types were run), and
-  parameter annotation strings.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-SimulationFrameworkReport-print"></a>}}
 \if{latex}{\out{\hypertarget{method-SimulationFrameworkReport-print}{}}}
 \subsection{Method \code{print()}}{
-Print a concise summary of the report.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SimulationFrameworkReport$print()}\if{html}{\out{</div>}}
 }
