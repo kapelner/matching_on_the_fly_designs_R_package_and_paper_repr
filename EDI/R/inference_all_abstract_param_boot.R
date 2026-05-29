@@ -578,6 +578,8 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 			worker_priv$cached_values = list()
 			worker_priv$clear_likelihood_null_warm_cache()
 			worker_priv$clear_fit_warm_start()
+			worker_priv$cached_design_matrix = NULL
+			worker_priv$cached_hardened_X_cov = NULL
 			worker_priv$reduced_design_keep_cache = NULL
 			worker_priv$fixed_covariate_keep_cache = NULL
 			worker_priv$best_X_colnames = NULL

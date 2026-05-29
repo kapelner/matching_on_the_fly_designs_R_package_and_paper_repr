@@ -4,14 +4,14 @@
 \alias{get_restricted_mean_se_diff}
 \title{Calculates the standard error of the difference in restricted mean survival times}
 \usage{
-get_restricted_mean_se_diff(y, dead, w)
+get_restricted_mean_se_diff(y_sexp, dead_sexp, w_sexp)
 }
 \arguments{
-\item{y}{Numeric vector of survival times.}
+\item{y_sexp}{Numeric vector of survival times.}
 
-\item{dead}{Integer vector of event indicators (1=event, 0=censored).}
+\item{dead_sexp}{Integer vector of event indicators (1=event, 0=censored).}
 
-\item{w}{Integer vector of treatment assignments (1=treatment, 0=control).}
+\item{w_sexp}{Integer vector of treatment assignments (1=treatment, 0=control).}
 }
 \value{
 The standard error of the difference.

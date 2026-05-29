@@ -5,10 +5,17 @@
 
 // [[Rcpp::export]]
 double neg_loglik_nb_cpp(double theta,
-							const Eigen::VectorXd &beta,
-			                const Eigen::MatrixXd &X,
-			                const Eigen::VectorXi &y
+							SEXP beta_sexp,
+			                SEXP X_sexp,
+			                SEXP y_sexp
 	                 	) {
+	using namespace Rcpp;
+	NumericVector beta_r(beta_sexp);
+	NumericMatrix X_r(X_sexp);
+	IntegerVector y_r(y_sexp);
+	Eigen::Map<const Eigen::VectorXd> beta(beta_r.begin(), beta_r.size());
+	Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+	Eigen::Map<const Eigen::VectorXi> y(y_r.begin(), y_r.size());
 
 	Eigen::VectorXd eta = X * beta;
 	Eigen::VectorXd mu = eta.array().exp();

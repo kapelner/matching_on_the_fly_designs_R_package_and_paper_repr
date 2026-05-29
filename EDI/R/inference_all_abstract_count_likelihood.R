@@ -65,7 +65,8 @@ inference_count_likelihood_private = list(
 					as.numeric(model_output$params %||% model_output$b),
 					type = if (!is.null(model_output$params)) "params" else "beta",
 					fisher = model_output$fisher_information %||% model_output$XtWX,
-					weights = model_output$w %||% model_output$mu
+					weights = model_output$w %||% model_output$mu,
+					force_pd = TRUE
 				)
 			}
 

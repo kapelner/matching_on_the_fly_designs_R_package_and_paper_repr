@@ -13,181 +13,198 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 NumericVector compute_ols_distr_parallel_cpp(
-	const Eigen::MatrixXd& X,
-	const NumericVector& y,
-	const IntegerMatrix& w_mat,
-	double delta,
-	int num_cores) {
+        SEXP X_sexp,
+        SEXP y_sexp,
+        SEXP w_mat_sexp,
+        double delta,
+        int num_cores) {
 
-	int nsim = w_mat.cols();
-	int n = y.size();
-	int p_covars = X.cols();
-	int p_full = p_covars + 2; // Intercept + w + covars
+        NumericMatrix X_mat(X_sexp);
+        NumericVector y_vec(y_sexp);
+        IntegerMatrix w_int_mat(w_mat_sexp);
+        Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+        Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+        Eigen::Map<const Eigen::MatrixXi> w_mat(w_int_mat.begin(), w_int_mat.nrow(), w_int_mat.ncol());
 
-	if (X.rows() != n) {
-		stop("compute_ols_distr_parallel_cpp: X rows must match length(y).");
-	}
-	if (w_mat.rows() != n) {
-		stop("compute_ols_distr_parallel_cpp: w_mat rows must match length(y).");
-	}
-	if (nsim <= 0) {
-		return NumericVector(0);
-	}
-	if (num_cores < 1) {
-		num_cores = 1;
-	}
-	
-	std::vector<double> results_vec(nsim);
-	
-	const double* y_ptr = y.begin();
-	const int* w_ptr = w_mat.begin();
-	double* res_ptr = results_vec.data();
-	const bool use_parallel = should_parallelize_replicates(nsim, n, num_cores);
+        int nsim = w_mat.cols();
+        int n = y.size();
+        int p_covars = X.cols();
+        int p_full = p_covars + 2; // Intercept + w + covars
+
+        if (X.rows() != n) {
+                stop("compute_ols_distr_parallel_cpp: X rows must match length(y).");
+        }
+        if (w_mat.rows() != n) {
+                stop("compute_ols_distr_parallel_cpp: w_mat rows must match length(y).");
+        }
+        if (nsim <= 0) {
+                return NumericVector(0);
+        }
+        if (num_cores < 1) {
+                num_cores = 1;
+        }
+
+        std::vector<double> results_vec(nsim);
+
+        const double* y_ptr = y.data();
+        const int* w_ptr = w_mat.data();
+        double* res_ptr = results_vec.data();
+        const bool use_parallel = should_parallelize_replicates(nsim, n, num_cores);
 
 #ifdef _OPENMP
-	if (use_parallel) omp_set_num_threads(num_cores);
+        if (use_parallel) omp_set_num_threads(num_cores);
 #endif
 
-	// MEMOIZATION
-	double sum_1 = (double)n;
-	Eigen::VectorXd Xt_1 = X.colwise().sum();
-	Eigen::MatrixXd XtX_c = X.transpose() * X;
-	
+        // MEMOIZATION
+        double sum_1 = (double)n;
+        Eigen::VectorXd Xt_1 = X.colwise().sum();
+        Eigen::MatrixXd XtX_c = X.transpose() * X;
+
 #pragma omp parallel for schedule(static) if(use_parallel)
-	for (int b = 0; b < nsim; ++b) {
-		const int* w_col = w_ptr + (size_t)b * n;
-		
-		Eigen::VectorXd w_d(n);
-		Eigen::VectorXd y_sim(n);
-		double sum_w = 0;
-		double sum_y = 0;
-		
-		for (int i = 0; i < n; ++i) {
-			double w_val = (double)w_col[i];
-			w_d[i] = w_val;
-			sum_w += w_val;
-			double y_val = y_ptr[i] + (w_col[i] == 1 ? delta : 0.0);
-			y_sim[i] = y_val;
-			sum_y += y_val;
-		}
+        for (int b = 0; b < nsim; ++b) {
+                const int* w_col = w_ptr + (size_t)b * n;
 
-		Eigen::VectorXd Xt_w = X.transpose() * w_d;
+                Eigen::VectorXd w_d(n);
+                Eigen::VectorXd y_sim(n);
+                double sum_w = 0;
+                double sum_y = 0;
 
-			Eigen::MatrixXd XtX(p_full, p_full);
-			XtX.setZero();
-			XtX(0, 0) = sum_1;
-			XtX(0, 1) = sum_w;
-			XtX.row(0).tail(p_covars) = Xt_1.transpose();
-		
-		XtX(1, 0) = sum_w;
-		XtX(1, 1) = sum_w;
-		XtX.row(1).tail(p_covars) = Xt_w.transpose();
-		
-		XtX.col(0).tail(p_covars) = Xt_1;
-		XtX.col(1).tail(p_covars) = Xt_w;
-		XtX.bottomRightCorner(p_covars, p_covars) = XtX_c;
+                for (int i = 0; i < n; ++i) {
+                        double w_val = (double)w_col[i];
+                        w_d[i] = w_val;
+                        sum_w += w_val;
+                        double y_val = y_ptr[i] + (w_col[i] == 1 ? delta : 0.0);
+                        y_sim[i] = y_val;
+                        sum_y += y_val;
+                }
 
-		Eigen::VectorXd Xty(p_full);
-		Xty[0] = sum_y;
-		Xty[1] = w_d.dot(y_sim);
-		Xty.tail(p_covars) = X.transpose() * y_sim;
+                Eigen::VectorXd Xt_w = X.transpose() * w_d;
 
-		Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(XtX);
-		Eigen::VectorXd beta = qr.solve(Xty);
-		res_ptr[b] = beta.allFinite() && beta.size() > 1 ? beta[1] : NA_REAL;
-	}
+                        Eigen::MatrixXd XtX(p_full, p_full);
+                        XtX.setZero();
+                        XtX(0, 0) = sum_1;
+                        XtX(0, 1) = sum_w;
+                        XtX.row(0).tail(p_covars) = Xt_1.transpose();
 
-	return wrap(results_vec);
+                XtX(1, 0) = sum_w;
+                XtX(1, 1) = sum_w;
+                XtX.row(1).tail(p_covars) = Xt_w.transpose();
+
+                XtX.col(0).tail(p_covars) = Xt_1;
+                XtX.col(1).tail(p_covars) = Xt_w;
+                XtX.bottomRightCorner(p_covars, p_covars) = XtX_c;
+
+                Eigen::VectorXd Xty(p_full);
+                Xty[0] = sum_y;
+                Xty[1] = w_d.dot(y_sim);
+                Xty.tail(p_covars) = X.transpose() * y_sim;
+
+                Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(XtX);
+                Eigen::VectorXd beta = qr.solve(Xty);
+                res_ptr[b] = beta.allFinite() && beta.size() > 1 ? beta[1] : NA_REAL;
+        }
+
+        return wrap(results_vec);
 }
 
 // Bootstrap OLS: for each column of indices_mat (0-based row indices, -1 = NA bootstrap),
 // resample y/w/X and return the OLS treatment coefficient.
 // [[Rcpp::export]]
 NumericVector compute_ols_bootstrap_parallel_cpp(
-	const Eigen::MatrixXd& X,
-	const NumericVector& y,
-	const IntegerVector& w,
-	const IntegerMatrix& indices_mat,
-	int num_cores) {
+        SEXP X_sexp,
+        SEXP y_sexp,
+        SEXP w_sexp,
+        SEXP indices_mat_sexp,
+        int num_cores) {
 
-	int B = indices_mat.cols();
-	int n_boot = indices_mat.rows(); // bootstrap sample size (= n for simple bootstrap)
-	int p_covars = X.cols();
-	int p_full = p_covars + 2; // intercept + w + covars
+        NumericMatrix X_mat(X_sexp);
+        NumericVector y_vec(y_sexp);
+        IntegerVector w_int_vec(w_sexp);
+        IntegerMatrix indices_int_mat(indices_mat_sexp);
+        Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+        Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+        Eigen::Map<const Eigen::VectorXi> w(w_int_vec.begin(), w_int_vec.size());
+        Eigen::Map<const Eigen::MatrixXi> indices_mat(indices_int_mat.begin(), indices_int_mat.nrow(), indices_int_mat.ncol());
 
-	if (X.rows() != y.size()) {
-		stop("compute_ols_bootstrap_parallel_cpp: X rows must match length(y).");
-	}
-	if (w.size() != y.size()) {
-		stop("compute_ols_bootstrap_parallel_cpp: w length must match length(y).");
-	}
-	if (indices_mat.rows() <= 0 || B <= 0) {
-		return NumericVector(0);
-	}
-	if (num_cores < 1) {
-		num_cores = 1;
-	}
+        int B = indices_mat.cols();
+        int n_boot = indices_mat.rows(); // bootstrap sample size (= n for simple bootstrap)
+        int p_covars = X.cols();
+        int p_full = p_covars + 2; // intercept + w + covars
 
-	std::vector<double> results_vec(B, NA_REAL);
+        if (X.rows() != y.size()) {
+                stop("compute_ols_bootstrap_parallel_cpp: X rows must match length(y).");
+        }
+        if (w.size() != y.size()) {
+                stop("compute_ols_bootstrap_parallel_cpp: w length must match length(y).");
+        }
+        if (indices_mat.rows() <= 0 || B <= 0) {
+                return NumericVector(0);
+        }
+        if (num_cores < 1) {
+                num_cores = 1;
+        }
 
-	const double* y_ptr = y.begin();
-	const int* w_ptr = w.begin();
-	const int* idx_ptr = indices_mat.begin();
-	const bool use_parallel = should_parallelize_replicates(B, n_boot, num_cores);
+        std::vector<double> results_vec(B, NA_REAL);
+
+        const double* y_ptr = y.data();
+        const int* w_ptr = w.data();
+        const int* idx_ptr = indices_mat.data();
+        const bool use_parallel = should_parallelize_replicates(B, n_boot, num_cores);
 
 #ifdef _OPENMP
-	if (use_parallel) omp_set_num_threads(num_cores);
+        if (use_parallel) omp_set_num_threads(num_cores);
 #endif
 
 #pragma omp parallel for schedule(static) if(use_parallel)
-	for (int b = 0; b < B; ++b) {
-		const int* idx_col = idx_ptr + (size_t)b * n_boot;
-		if (idx_col[0] < 0) { results_vec[b] = NA_REAL; continue; }
+        for (int b = 0; b < B; ++b) {
+                const int* idx_col = idx_ptr + (size_t)b * n_boot;
+                if (idx_col[0] < 0) { results_vec[b] = NA_REAL; continue; }
 
-		Eigen::VectorXd y_b(n_boot);
-		Eigen::VectorXd w_b(n_boot);
-		Eigen::MatrixXd X_b(n_boot, p_covars);
+                Eigen::VectorXd y_b(n_boot);
+                Eigen::VectorXd w_b(n_boot);
+                Eigen::MatrixXd X_b(n_boot, p_covars);
 
-		double sum_1 = (double)n_boot;
-		double sum_w = 0.0, sum_y = 0.0;
+                double sum_1 = (double)n_boot;
+                double sum_w = 0.0, sum_y = 0.0;
 
-		for (int i = 0; i < n_boot; ++i) {
-			int idx = idx_col[i];
-			y_b[i] = y_ptr[idx];
-			double wv = (double)w_ptr[idx];
-			w_b[i] = wv;
-			sum_w += wv;
-			sum_y += y_b[i];
-			X_b.row(i) = X.row(idx);
-		}
+                for (int i = 0; i < n_boot; ++i) {
+                        int idx = idx_col[i];
+                        y_b[i] = y_ptr[idx];
+                        double wv = (double)w_ptr[idx];
+                        w_b[i] = wv;
+                        sum_w += wv;
+                        sum_y += y_b[i];
+                        X_b.row(i) = X.row(idx);
+                }
 
-		Eigen::VectorXd Xt_1 = X_b.colwise().sum();
-		Eigen::VectorXd Xt_w = X_b.transpose() * w_b;
-		Eigen::MatrixXd XtX_c = X_b.transpose() * X_b;
+                Eigen::VectorXd Xt_1 = X_b.colwise().sum();
+                Eigen::VectorXd Xt_w = X_b.transpose() * w_b;
+                Eigen::MatrixXd XtX_c = X_b.transpose() * X_b;
 
-		Eigen::MatrixXd XtX(p_full, p_full);
-		XtX.setZero();
-		XtX(0, 0) = sum_1;
-		XtX(0, 1) = sum_w;
-		XtX.row(0).tail(p_covars) = Xt_1.transpose();
+                Eigen::MatrixXd XtX(p_full, p_full);
+                XtX.setZero();
+                XtX(0, 0) = sum_1;
+                XtX(0, 1) = sum_w;
+                XtX.row(0).tail(p_covars) = Xt_1.transpose();
 
-		XtX(1, 0) = sum_w;
-		XtX(1, 1) = sum_w;
-		XtX.row(1).tail(p_covars) = Xt_w.transpose();
+                XtX(1, 0) = sum_w;
+                XtX(1, 1) = sum_w;
+                XtX.row(1).tail(p_covars) = Xt_w.transpose();
 
-		XtX.col(0).tail(p_covars) = Xt_1;
-		XtX.col(1).tail(p_covars) = Xt_w;
-		XtX.bottomRightCorner(p_covars, p_covars) = XtX_c;
+                XtX.col(0).tail(p_covars) = Xt_1;
+                XtX.col(1).tail(p_covars) = Xt_w;
+                XtX.bottomRightCorner(p_covars, p_covars) = XtX_c;
 
-		Eigen::VectorXd Xty(p_full);
-		Xty[0] = sum_y;
-		Xty[1] = w_b.dot(y_b);
-		Xty.tail(p_covars) = X_b.transpose() * y_b;
+                Eigen::VectorXd Xty(p_full);
+                Xty[0] = sum_y;
+                Xty[1] = w_b.dot(y_b);
+                Xty.tail(p_covars) = X_b.transpose() * y_b;
 
-		Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(XtX);
-		Eigen::VectorXd beta = qr.solve(Xty);
-		results_vec[b] = beta.allFinite() && beta.size() > 1 ? beta[1] : NA_REAL;
-	}
+                Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(XtX);
+                Eigen::VectorXd beta = qr.solve(Xty);
+                results_vec[b] = beta.allFinite() && beta.size() > 1 ? beta[1] : NA_REAL;
+        }
 
-	return wrap(results_vec);
+        return wrap(results_vec);
 }
+

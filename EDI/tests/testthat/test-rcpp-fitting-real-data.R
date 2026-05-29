@@ -235,7 +235,7 @@ test_that("Count: fast_zinb_cpp on glmmTMB::Salamanders", {
 	X_zi <- model.matrix(~ mined, data = glmmTMB::Salamanders)
 	y <- glmmTMB::Salamanders$count
 
-	res_cpp <- EDI:::fast_zinb_cpp(X_cond, y, X_zi)
+	res_cpp <- EDI:::fast_zinb_cpp(X = X_cond, Xzi = X_zi, y = y)
 	res_r <- glmmTMB::glmmTMB(count ~ mined + spp, ziformula = ~ mined, family = glmmTMB::nbinom2, data = glmmTMB::Salamanders)
 
 	expect_equal(as.numeric(res_cpp$coefficients$cond), as.numeric(glmmTMB::fixef(res_r)$cond), tolerance = 5e-3)

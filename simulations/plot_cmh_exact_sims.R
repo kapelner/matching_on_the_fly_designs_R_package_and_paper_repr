@@ -301,7 +301,7 @@ for (p_ in unique(results_dt$p)) {
 }
 
 n_ = 128
-p_ = 1
+p_ = 5
 cond_exp_func_model_ = "linear"
 pow =    results_dt[betaT == 1 & n == n_ & p == p_ & cond_exp_func_model == cond_exp_func_model_, 
                  .(power = pow_avg, design = design_short, inference = inference_short)]

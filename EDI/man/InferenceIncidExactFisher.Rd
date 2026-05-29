@@ -14,7 +14,7 @@ Exact Fisher Incidence Inference
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceExact]{EDI::InferenceExact}} -> \code{InferenceIncidExactFisher}
+\code{EDI::Inference} -> \code{EDI::InferenceExact} -> \code{InferenceIncidExactFisher}
 }
 \section{Methods}{
 \subsection{Public methods}{

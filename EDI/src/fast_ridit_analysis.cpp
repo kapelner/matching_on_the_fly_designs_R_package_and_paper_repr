@@ -1,12 +1,17 @@
-#include <Rcpp.h>
+#include <RcppEigen.h>
 #include <vector>
 #include <algorithm>
 #include <map>
 
 using namespace Rcpp;
+using namespace Eigen;
 
 // [[Rcpp::export]]
-List fast_ridit_scores_cpp(const IntegerVector& y, const IntegerVector& ref_idx) {
+List fast_ridit_scores_cpp(SEXP y_sexp, SEXP ref_idx_sexp) {
+    IntegerVector y_vec(y_sexp);
+    Eigen::Map<const Eigen::VectorXi> y(y_vec.begin(), y_vec.size());
+    IntegerVector ref_idx_vec(ref_idx_sexp);
+    Eigen::Map<const Eigen::VectorXi> ref_idx(ref_idx_vec.begin(), ref_idx_vec.size());
     int n = y.size();
     int n_ref = ref_idx.size();
     
@@ -69,7 +74,11 @@ List fast_ridit_scores_cpp(const IntegerVector& y, const IntegerVector& ref_idx)
 }
 
 // [[Rcpp::export]]
-List fast_ridit_analysis_cpp(const IntegerVector& w, const IntegerVector& y, const std::string& reference = "control") {
+List fast_ridit_analysis_cpp(SEXP w_sexp, SEXP y_sexp, const std::string& reference = "control") {
+    IntegerVector w_vec(w_sexp);
+    Eigen::Map<const Eigen::VectorXi> w(w_vec.begin(), w_vec.size());
+    IntegerVector y_vec(y_sexp);
+    Eigen::Map<const Eigen::VectorXi> y(y_vec.begin(), y_vec.size());
     int n = y.size();
     std::vector<int> ref_idx;
     
@@ -83,7 +92,7 @@ List fast_ridit_analysis_cpp(const IntegerVector& w, const IntegerVector& y, con
     
     if (ref_idx.empty()) return List::create();
     
-    List ridit_data = fast_ridit_scores_cpp(y, wrap(ref_idx));
+    List ridit_data = fast_ridit_scores_cpp(y_sexp, wrap(ref_idx));
     NumericVector scores = ridit_data["scores"];
     
     double sum_t = 0.0, sum_c = 0.0;

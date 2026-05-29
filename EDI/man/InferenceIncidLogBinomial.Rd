@@ -24,16 +24,13 @@ inf$compute_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{EDI::InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{EDI::InferenceAsympLikStdModCache} -> \code{InferenceIncidLogBinomial}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceNonParamBootstrap} -> \code{EDI::InferenceBayesianBootstrap} -> \code{EDI::InferenceJackknife} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceMLEorKMSummaryTable} -> \code{EDI::InferenceAsympLik} -> \code{EDI::InferenceParamBootstrap} -> \code{EDI::InferenceAsympLikStdModCache} -> \code{InferenceIncidLogBinomial}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceIncidLogBinomial-new}{\code{InferenceIncidLogBinomial$new()}}
-\item \href{#method-InferenceIncidLogBinomial-compute_estimate}{\code{InferenceIncidLogBinomial$compute_estimate()}}
 \item \href{#method-InferenceIncidLogBinomial-compute_estimate_with_bootstrap_weights}{\code{InferenceIncidLogBinomial$compute_estimate_with_bootstrap_weights()}}
-\item \href{#method-InferenceIncidLogBinomial-compute_asymp_confidence_interval}{\code{InferenceIncidLogBinomial$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceIncidLogBinomial-compute_asymp_two_sided_pval}{\code{InferenceIncidLogBinomial$compute_asymp_two_sided_pval()}}
 \item \href{#method-InferenceIncidLogBinomial-clone}{\code{InferenceIncidLogBinomial$clone()}}
 }
 }
@@ -94,6 +91,9 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_confidence_interval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_confidence_interval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="compute_lik_ratio_bootstrap_two_sided_pval"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_lik_ratio_bootstrap_two_sided_pval'><code>EDI::InferenceParamBootstrap$compute_lik_ratio_bootstrap_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceParamBootstrap" data-id="get_last_param_bootstrap_diagnostics"><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-get_last_param_bootstrap_diagnostics'><code>EDI::InferenceParamBootstrap$get_last_param_bootstrap_diagnostics()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLikStdModCache" data-id="compute_asymp_confidence_interval"><a href='../../EDI/html/InferenceAsympLikStdModCache.html#method-InferenceAsympLikStdModCache-compute_asymp_confidence_interval'><code>EDI::InferenceAsympLikStdModCache$compute_asymp_confidence_interval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLikStdModCache" data-id="compute_asymp_two_sided_pval"><a href='../../EDI/html/InferenceAsympLikStdModCache.html#method-InferenceAsympLikStdModCache-compute_asymp_two_sided_pval'><code>EDI::InferenceAsympLikStdModCache$compute_asymp_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="EDI" data-topic="InferenceAsympLikStdModCache" data-id="compute_estimate"><a href='../../EDI/html/InferenceAsympLikStdModCache.html#method-InferenceAsympLikStdModCache-compute_estimate'><code>EDI::InferenceAsympLikStdModCache$compute_estimate()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -129,23 +129,6 @@ design's imputed covariates.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidLogBinomial-compute_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidLogBinomial-compute_estimate}{}}}
-\subsection{Method \code{compute_estimate()}}{
-Compute the treatment effect estimate.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidLogBinomial$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidLogBinomial-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidLogBinomial-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
@@ -163,40 +146,6 @@ Computes the treatment effect estimate for a weighted bootstrap sample.
 \item{\code{subject_or_block_weights}}{Bootstrap weights at the subject or block level.}
 
 \item{\code{estimate_only}}{If TRUE, skip variance calculations.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidLogBinomial-compute_asymp_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidLogBinomial-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes an approximate confidence interval.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidLogBinomial$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{Confidence level.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidLogBinomial-compute_asymp_two_sided_pval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidLogBinomial-compute_asymp_two_sided_pval}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval()}}{
-Computes an approximate two-sided p-value.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidLogBinomial$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{Null treatment effect value.}
 }
 \if{html}{\out{</div>}}
 }

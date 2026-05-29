@@ -839,10 +839,11 @@ InferenceCountKKCondPoissonOneLik = R6::R6Class("InferenceCountKKCondPoissonOneL
 			j_treat = as.integer(j_treat)
 			cov_cols = setdiff(seq_len(ncol(X_fit)), c(1L, j_treat))
 			pair_ids = sort(unique(m_vec[m_vec > 0L]))
-			yT = numeric(0)
-			nk = numeric(0)
-			Xdiff = if (length(cov_cols) > 0L) matrix(numeric(0), ncol = length(cov_cols)) else matrix(numeric(0), ncol = 0L)
-			pair_rows = vector("list", length(pair_ids))
+			n_max = length(pair_ids)
+			yT = numeric(n_max)
+			nk = numeric(n_max)
+			Xdiff_rows = if (length(cov_cols) > 0L) vector("list", n_max) else NULL
+			pair_rows = vector("list", n_max)
 			keep_pair = 0L
 			for (pid in pair_ids){
 				rows = which(m_vec == pid)
@@ -852,13 +853,23 @@ InferenceCountKKCondPoissonOneLik = R6::R6Class("InferenceCountKKCondPoissonOneL
 				if (length(t_row) != 1L || length(c_row) != 1L) next
 				keep_pair = keep_pair + 1L
 				pair_rows[[keep_pair]] = c(t_row, c_row)
-				yT = c(yT, as.numeric(private$y[t_row]))
-				nk = c(nk, as.numeric(private$y[t_row] + private$y[c_row]))
+				yT[keep_pair] = as.numeric(private$y[t_row])
+				nk[keep_pair] = as.numeric(private$y[t_row] + private$y[c_row])
 				if (length(cov_cols) > 0L) {
-					Xdiff = rbind(Xdiff, X_fit[t_row, cov_cols, drop = FALSE] - X_fit[c_row, cov_cols, drop = FALSE])
+					Xdiff_rows[[keep_pair]] = as.numeric(X_fit[t_row, cov_cols] - X_fit[c_row, cov_cols])
 				}
 			}
-			if (keep_pair < length(pair_rows)) pair_rows = pair_rows[seq_len(keep_pair)]
+			if (keep_pair < n_max) {
+				yT = yT[seq_len(keep_pair)]
+				nk = nk[seq_len(keep_pair)]
+				pair_rows = pair_rows[seq_len(keep_pair)]
+				if (!is.null(Xdiff_rows)) Xdiff_rows = Xdiff_rows[seq_len(keep_pair)]
+			}
+			Xdiff = if (length(cov_cols) > 0L && keep_pair > 0L) {
+				matrix(unlist(Xdiff_rows), nrow = keep_pair, ncol = length(cov_cols), byrow = TRUE)
+			} else {
+				matrix(numeric(0), nrow = 0L, ncol = length(cov_cols))
+			}
 			reservoir_idx = which(m_vec <= 0L)
 			X_res = if (length(cov_cols) > 0L) X_fit[reservoir_idx, cov_cols, drop = FALSE] else matrix(nrow = length(reservoir_idx), ncol = 0L)
 			list(

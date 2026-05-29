@@ -17,7 +17,7 @@ seq_des = DesignSeqOneByOneAtkinson$new(n = 6, response_type = 'continuous')
 seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignBlocking]{EDI::DesignBlocking}} -> \code{\link[EDI:DesignMatching]{EDI::DesignMatching}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneAtkinson}
+\code{EDI::Design} -> \code{EDI::DesignBlocking} -> \code{EDI::DesignMatching} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneAtkinson}
 }
 \section{Methods}{
 \subsection{Public methods}{

@@ -4,7 +4,9 @@ using namespace Rcpp;
 using namespace Eigen;
 
 // [[Rcpp::export]]
-List qr_reduce_full_rank_cpp(const Eigen::MatrixXd& X) {
+List qr_reduce_full_rank_cpp(SEXP X_sexp) {
+	NumericMatrix X_r(X_sexp);
+	Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
 	const int p = X.cols();
 	const int n = X.rows();
 	if (p == 0) {
@@ -37,7 +39,9 @@ List qr_reduce_full_rank_cpp(const Eigen::MatrixXd& X) {
 }
 
 // [[Rcpp::export]]
-List qr_reduce_preserve_cols_cpp(const Eigen::MatrixXd& X, IntegerVector required_cols) {
+List qr_reduce_preserve_cols_cpp(SEXP X_sexp, IntegerVector required_cols) {
+	NumericMatrix X_r(X_sexp);
+	Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
 	const int p = X.cols();
 	const int n = X.rows();
 	if (p == 0) {

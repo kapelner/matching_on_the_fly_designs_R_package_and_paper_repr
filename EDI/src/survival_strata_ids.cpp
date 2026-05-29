@@ -36,10 +36,12 @@ inline bool candidate_less(const CandidateColumn& a, const CandidateColumn& b) {
 //'   candidate column.
 //' @return A list with `strata_id`, `selected_cols`, and `num_strata`.
 // [[Rcpp::export]]
-List compute_survival_strata_ids_cpp(const Eigen::MatrixXd& X,
+List compute_survival_strata_ids_cpp(SEXP X_sexp,
                                      int max_unique_per_col = 4,
                                      int max_strata_cols = 4,
                                      int min_count_per_level = 2) {
+  Rcpp::NumericMatrix X_r(X_sexp);
+  Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
   const int n = X.rows();
   const int p = X.cols();
   IntegerVector default_ids(n, 1);

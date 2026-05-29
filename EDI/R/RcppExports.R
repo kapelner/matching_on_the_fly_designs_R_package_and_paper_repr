@@ -5,56 +5,60 @@ fill_i_b_with_matches_loop_cpp <- function(i_b, m_vec, ms_b, i_b_idx) {
     invisible(.Call(`_EDI_fill_i_b_with_matches_loop_cpp`, i_b, m_vec, ms_b, i_b_idx))
 }
 
-eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp <- function(M, j) {
-    .Call(`_EDI_eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp`, M, j)
+eigen_Xt_times_X_cpp <- function(X_sexp) {
+    .Call(`_EDI_eigen_Xt_times_X_cpp`, X_sexp)
 }
 
-eigen_Xt_times_diag_w_times_X_cpp <- function(X, w) {
-    .Call(`_EDI_eigen_Xt_times_diag_w_times_X_cpp`, X, w)
+eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp <- function(M_sexp, j) {
+    .Call(`_EDI_eigen_compute_single_entry_on_diagonal_of_inverse_matrix_cpp`, M_sexp, j)
+}
+
+eigen_Xt_times_diag_w_times_X_cpp <- function(X_sexp, w_sexp) {
+    .Call(`_EDI_eigen_Xt_times_diag_w_times_X_cpp`, X_sexp, w_sexp)
 }
 
 likelihood_ratio_test_from_negloglik_cpp <- function(unrestricted_neg_loglik, null_neg_loglik, df = 1L) {
     .Call(`_EDI_likelihood_ratio_test_from_negloglik_cpp`, unrestricted_neg_loglik, null_neg_loglik, df)
 }
 
-score_test_from_score_information_cpp <- function(score, information, tested_idx) {
-    .Call(`_EDI_score_test_from_score_information_cpp`, score, information, tested_idx)
+score_test_from_score_information_cpp <- function(score_sexp, information_sexp, tested_idx) {
+    .Call(`_EDI_score_test_from_score_information_cpp`, score_sexp, information_sexp, tested_idx)
 }
 
-gradient_test_from_restricted_score_cpp <- function(score, unrestricted_estimate, null_value, tested_idx) {
-    .Call(`_EDI_gradient_test_from_restricted_score_cpp`, score, unrestricted_estimate, null_value, tested_idx)
+gradient_test_from_restricted_score_cpp <- function(score_sexp, unrestricted_estimate, null_value, tested_idx) {
+    .Call(`_EDI_gradient_test_from_restricted_score_cpp`, score_sexp, unrestricted_estimate, null_value, tested_idx)
 }
 
-mean_cpp <- function(x) {
-    .Call(`_EDI_mean_cpp`, x)
+mean_cpp <- function(x_sexp) {
+    .Call(`_EDI_mean_cpp`, x_sexp)
 }
 
-var_cpp <- function(x) {
-    .Call(`_EDI_var_cpp`, x)
+var_cpp <- function(x_sexp) {
+    .Call(`_EDI_var_cpp`, x_sexp)
 }
 
 atkinson_assign_weight_cpp <- function(w_prev, X_prev, xt_prev, rank_prev, t) {
     .Call(`_EDI_atkinson_assign_weight_cpp`, w_prev, X_prev, xt_prev, rank_prev, t)
 }
 
-atkinson_redraw_batch_cpp <- function(X, n, p_raw, prob_T = 0.5) {
-    .Call(`_EDI_atkinson_redraw_batch_cpp`, X, n, p_raw, prob_T)
+atkinson_redraw_batch_cpp <- function(X_sexp, n, p_raw, prob_T = 0.5) {
+    .Call(`_EDI_atkinson_redraw_batch_cpp`, X_sexp, n, p_raw, prob_T)
 }
 
 base_bootstrap_loop_cpp <- function(X, y, dead, w, indices, duplicate_inference_fn, compute_estimate_fn, num_cores = 1L) {
     .Call(`_EDI_base_bootstrap_loop_cpp`, X, y, dead, w, indices, duplicate_inference_fn, compute_estimate_fn, num_cores)
 }
 
-beta_loglik_cpp <- function(y, mu, phi, wt) {
-    .Call(`_EDI_beta_loglik_cpp`, y, mu, phi, wt)
+beta_loglik_cpp <- function(y_sexp, mu_sexp, phi, wt_sexp) {
+    .Call(`_EDI_beta_loglik_cpp`, y_sexp, mu_sexp, phi, wt_sexp)
 }
 
-beta_dev_resids_cpp <- function(y, mu, phi, wt) {
-    .Call(`_EDI_beta_dev_resids_cpp`, y, mu, phi, wt)
+beta_dev_resids_cpp <- function(y_sexp, mu_sexp, phi, wt_sexp) {
+    .Call(`_EDI_beta_dev_resids_cpp`, y_sexp, mu_sexp, phi, wt_sexp)
 }
 
-beta_aic_cpp <- function(y, mu, phi, wt) {
-    .Call(`_EDI_beta_aic_cpp`, y, mu, phi, wt)
+beta_aic_cpp <- function(y_sexp, mu_sexp, phi, wt_sexp) {
+    .Call(`_EDI_beta_aic_cpp`, y_sexp, mu_sexp, phi, wt_sexp)
 }
 
 draw_binary_match_assignments_cpp <- function(indices_pairs, n, r, num_cores) {
@@ -133,16 +137,33 @@ match_stats_from_indices_cpp <- function(X, y, w, original_m_vec, i_b, m) {
     .Call(`_EDI_match_stats_from_indices_cpp`, X, y, w, original_m_vec, i_b, m)
 }
 
-collect_discordant_pairs_cpp <- function(y_m, w_m, X_m, strata_m) {
-    .Call(`_EDI_collect_discordant_pairs_cpp`, y_m, w_m, X_m, strata_m)
+#' Return EDI Build Information
+#'
+#' Returns the compiler and package build metadata that was compiled into the
+#' loaded EDI shared object. This is intended for benchmark reports and
+#' reproducibility audits where the installed binary's build context matters.
+#'
+#' @return A named list with build timestamp, R compiler configuration, EDI
+#'   build environment variables, package-level compiler and linker flags, and
+#'   selected compiler preprocessor macro indicators.
+#' @export
+#' @examples
+#' info = edi_build_info_cpp()
+#' info$pkg_cxxflags
+edi_build_info_cpp <- function() {
+    .Call(`_EDI_edi_build_info_cpp`)
 }
 
-build_matching_combined_clogit_design_cpp <- function(y_m, w_m, X_m, strata_m, y_r, w_r, X_r) {
-    .Call(`_EDI_build_matching_combined_clogit_design_cpp`, y_m, w_m, X_m, strata_m, y_r, w_r, X_r)
+collect_discordant_pairs_cpp <- function(y_m_sexp, w_m_sexp, X_m_sexp, strata_m) {
+    .Call(`_EDI_collect_discordant_pairs_cpp`, y_m_sexp, w_m_sexp, X_m_sexp, strata_m)
 }
 
-build_matching_combined_ols_design_cpp <- function(yd, Xd, y_r, w_r, X_r) {
-    .Call(`_EDI_build_matching_combined_ols_design_cpp`, yd, Xd, y_r, w_r, X_r)
+build_matching_combined_clogit_design_cpp <- function(y_m_sexp, w_m_sexp, X_m_sexp, strata_m, y_r_sexp, w_r_sexp, X_r_sexp) {
+    .Call(`_EDI_build_matching_combined_clogit_design_cpp`, y_m_sexp, w_m_sexp, X_m_sexp, strata_m, y_r_sexp, w_r_sexp, X_r_sexp)
+}
+
+build_matching_combined_ols_design_cpp <- function(yd_sexp, Xd_sexp, y_r_sexp, w_r_sexp, X_r_sexp) {
+    .Call(`_EDI_build_matching_combined_ols_design_cpp`, yd_sexp, Xd_sexp, y_r_sexp, w_r_sexp, X_r_sexp)
 }
 
 compute_cmh_block_se_cpp <- function(y, m_vec, n_total) {
@@ -153,12 +174,12 @@ compute_extended_robins_block_se_cpp <- function(y, w, m_vec, n_total) {
     .Call(`_EDI_compute_extended_robins_block_se_cpp`, y, w, m_vec, n_total)
 }
 
-compute_all_subject_data_cpp <- function(X, t, i_all_y_present_R, rank_tol = 1e-12) {
-    .Call(`_EDI_compute_all_subject_data_cpp`, X, t, i_all_y_present_R, rank_tol)
+compute_all_subject_data_cpp <- function(X_sexp, t, i_all_y_present_R, rank_tol = 1e-12) {
+    .Call(`_EDI_compute_all_subject_data_cpp`, X_sexp, t, i_all_y_present_R, rank_tol)
 }
 
-compute_proportional_mahal_distances_cpp <- function(xt_prev, X_prev, reservoir_indices, S_xs_inv) {
-    .Call(`_EDI_compute_proportional_mahal_distances_cpp`, xt_prev, X_prev, reservoir_indices, S_xs_inv)
+compute_proportional_mahal_distances_cpp <- function(xt_prev_sexp, X_prev_sexp, reservoir_indices_sexp, S_xs_inv_sexp) {
+    .Call(`_EDI_compute_proportional_mahal_distances_cpp`, xt_prev_sexp, X_prev_sexp, reservoir_indices_sexp, S_xs_inv_sexp)
 }
 
 compute_weighted_sqd_distances_cpp <- function(x_new, X_all_scaled_col_subset, reservoir_indices, covariate_weights) {
@@ -173,12 +194,12 @@ efron_redraw_cpp <- function(t, prob_T, weighted_coin_prob) {
     .Call(`_EDI_efron_redraw_cpp`, t, prob_T, weighted_coin_prob)
 }
 
-get_adjacent_category_logit_score_cpp <- function(X, y, params) {
-    .Call(`_EDI_get_adjacent_category_logit_score_cpp`, X, y, params)
+get_adjacent_category_logit_score_cpp <- function(X_sexp, y_sexp, params_sexp) {
+    .Call(`_EDI_get_adjacent_category_logit_score_cpp`, X_sexp, y_sexp, params_sexp)
 }
 
-get_adjacent_category_logit_hessian_cpp <- function(X, y, params) {
-    .Call(`_EDI_get_adjacent_category_logit_hessian_cpp`, X, y, params)
+get_adjacent_category_logit_hessian_cpp <- function(X_sexp, y_sexp, params_sexp) {
+    .Call(`_EDI_get_adjacent_category_logit_hessian_cpp`, X_sexp, y_sexp, params_sexp)
 }
 
 #' @title Fast Adjacent-Category Logit (C++)
@@ -197,8 +218,8 @@ get_adjacent_category_logit_hessian_cpp <- function(X, y, params) {
 #' @return A list containing coefficients, alpha, and convergence status.
 #' @export
 #' @keywords internal
-fast_adjacent_category_logit_cpp <- function(X, y, maxit = 100L, tol = 1e-8, smart_cold_start = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, warm_start_params = NULL, warm_start_beta = NULL) {
-    .Call(`_EDI_fast_adjacent_category_logit_cpp`, X, y, maxit, tol, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, warm_start_params, warm_start_beta)
+fast_adjacent_category_logit_cpp <- function(X_sexp, y_sexp, maxit = 100L, tol = 1e-8, smart_cold_start = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, warm_start_params = NULL, warm_start_beta = NULL) {
+    .Call(`_EDI_fast_adjacent_category_logit_cpp`, X_sexp, y_sexp, maxit, tol, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, warm_start_params, warm_start_beta)
 }
 
 #' @title Fast Adjacent-Category Logit with Variance (C++)
@@ -217,12 +238,12 @@ fast_adjacent_category_logit_cpp <- function(X, y, maxit = 100L, tol = 1e-8, sma
 #' @return A list containing coefficients, vcov, and convergence status.
 #' @export
 #' @keywords internal
-fast_adjacent_category_logit_with_var_cpp <- function(X, y, maxit = 100L, tol = 1e-8, smart_cold_start = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, warm_start_params = NULL, warm_start_beta = NULL) {
-    .Call(`_EDI_fast_adjacent_category_logit_with_var_cpp`, X, y, maxit, tol, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, warm_start_params, warm_start_beta)
+fast_adjacent_category_logit_with_var_cpp <- function(X_sexp, y_sexp, maxit = 100L, tol = 1e-8, smart_cold_start = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, warm_start_params = NULL, warm_start_beta = NULL) {
+    .Call(`_EDI_fast_adjacent_category_logit_with_var_cpp`, X_sexp, y_sexp, maxit, tol, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, warm_start_params, warm_start_beta)
 }
 
-compute_adj_cat_logit_distr_parallel_cpp <- function(X, y, w_mat, delta, num_cores) {
-    .Call(`_EDI_compute_adj_cat_logit_distr_parallel_cpp`, X, y, w_mat, delta, num_cores)
+compute_adj_cat_logit_distr_parallel_cpp <- function(X_sexp, y_sexp, w_mat, delta, num_cores) {
+    .Call(`_EDI_compute_adj_cat_logit_distr_parallel_cpp`, X_sexp, y_sexp, w_mat, delta, num_cores)
 }
 
 #' Fast Bai Adjusted T Statistic for Multiple Permutations
@@ -235,8 +256,8 @@ compute_adj_cat_logit_distr_parallel_cpp <- function(X, y, w_mat, delta, num_cor
 #' @param convex_flag Logical flag for convex combination.
 #' @param num_cores Number of OpenMP threads.
 #' @return Numeric vector of Bai adjusted T statistics.
-compute_bai_distr_parallel_cpp <- function(w_mat, m_mat, y, delta, halves_idx, convex_flag, num_cores) {
-    .Call(`_EDI_compute_bai_distr_parallel_cpp`, w_mat, m_mat, y, delta, halves_idx, convex_flag, num_cores)
+compute_bai_distr_parallel_cpp <- function(w_mat_sexp, m_mat_sexp, y_sexp, delta, halves_idx_sexp, convex_flag, num_cores) {
+    .Call(`_EDI_compute_bai_distr_parallel_cpp`, w_mat_sexp, m_mat_sexp, y_sexp, delta, halves_idx_sexp, convex_flag, num_cores)
 }
 
 #' @title Compute Beta Regression Score
@@ -247,8 +268,8 @@ compute_bai_distr_parallel_cpp <- function(w_mat, m_mat, y, delta, halves_idx, c
 #' @return A numeric vector representing the score.
 #' @export
 #' @keywords internal
-get_beta_regression_score_cpp <- function(X, y, params) {
-    .Call(`_EDI_get_beta_regression_score_cpp`, X, y, params)
+get_beta_regression_score_cpp <- function(X_sexp, y_sexp, params_sexp) {
+    .Call(`_EDI_get_beta_regression_score_cpp`, X_sexp, y_sexp, params_sexp)
 }
 
 #' @title Compute Beta Regression Hessian
@@ -259,8 +280,8 @@ get_beta_regression_score_cpp <- function(X, y, params) {
 #' @return A numeric matrix representing the Hessian.
 #' @export
 #' @keywords internal
-get_beta_regression_hessian_cpp <- function(X, y, params) {
-    .Call(`_EDI_get_beta_regression_hessian_cpp`, X, y, params)
+get_beta_regression_hessian_cpp <- function(X_sexp, y_sexp, params_sexp) {
+    .Call(`_EDI_get_beta_regression_hessian_cpp`, X_sexp, y_sexp, params_sexp)
 }
 
 #' @title Fast Beta Regression (C++)
@@ -282,8 +303,8 @@ get_beta_regression_hessian_cpp <- function(X, y, params) {
 #' X = matrix(rnorm(100), 10, 10)
 #' y = runif(10)
 #' fast_beta_regression_cpp(X, y)
-fast_beta_regression_cpp <- function(X, y, warm_start_beta = NULL, smart_cold_start = TRUE, start_phi = 10.0, compute_std_errs = FALSE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, estimate_only = FALSE) {
-    .Call(`_EDI_fast_beta_regression_cpp`, X, y, warm_start_beta, smart_cold_start, start_phi, compute_std_errs, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only)
+fast_beta_regression_cpp <- function(X_sexp, y_sexp, warm_start_beta = NULL, smart_cold_start = TRUE, start_phi = 10.0, compute_std_errs = FALSE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, estimate_only = FALSE) {
+    .Call(`_EDI_fast_beta_regression_cpp`, X_sexp, y_sexp, warm_start_beta, smart_cold_start, start_phi, compute_std_errs, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only)
 }
 
 #' @title Fast Beta Regression with Variance (C++)
@@ -304,28 +325,28 @@ fast_beta_regression_cpp <- function(X, y, warm_start_beta = NULL, smart_cold_st
 #' X = matrix(rnorm(100), 10, 10)
 #' y = runif(10)
 #' fast_beta_regression_with_var_cpp(X, y)
-fast_beta_regression_with_var_cpp <- function(X, y, warm_start_beta = NULL, smart_cold_start = TRUE, start_phi = 10.0, compute_std_errs = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_beta_regression_with_var_cpp`, X, y, warm_start_beta, smart_cold_start, start_phi, compute_std_errs, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
+fast_beta_regression_with_var_cpp <- function(X_sexp, y_sexp, warm_start_beta = NULL, smart_cold_start = TRUE, start_phi = 10.0, compute_std_errs = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_beta_regression_with_var_cpp`, X_sexp, y_sexp, warm_start_beta, smart_cold_start, start_phi, compute_std_errs, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
-get_clogit_plus_glmm_score_cpp <- function(X_disc, y_disc, X_conc, y_conc, group_conc, params, has_discordant, has_concordant, max_abs_log_sigma = 8.0) {
-    .Call(`_EDI_get_clogit_plus_glmm_score_cpp`, X_disc, y_disc, X_conc, y_conc, group_conc, params, has_discordant, has_concordant, max_abs_log_sigma)
+get_clogit_plus_glmm_score_cpp <- function(X_disc_r, y_disc_r, X_conc_r, y_conc_r, group_conc_r, params_r, has_discordant, has_concordant, max_abs_log_sigma = 8.0) {
+    .Call(`_EDI_get_clogit_plus_glmm_score_cpp`, X_disc_r, y_disc_r, X_conc_r, y_conc_r, group_conc_r, params_r, has_discordant, has_concordant, max_abs_log_sigma)
 }
 
-get_clogit_plus_glmm_hessian_cpp <- function(X_disc, y_disc, X_conc, y_conc, group_conc, params, has_discordant, has_concordant, max_abs_log_sigma = 8.0) {
-    .Call(`_EDI_get_clogit_plus_glmm_hessian_cpp`, X_disc, y_disc, X_conc, y_conc, group_conc, params, has_discordant, has_concordant, max_abs_log_sigma)
+get_clogit_plus_glmm_hessian_cpp <- function(X_disc_r, y_disc_r, X_conc_r, y_conc_r, group_conc_r, params_r, has_discordant, has_concordant, max_abs_log_sigma = 8.0) {
+    .Call(`_EDI_get_clogit_plus_glmm_hessian_cpp`, X_disc_r, y_disc_r, X_conc_r, y_conc_r, group_conc_r, params_r, has_discordant, has_concordant, max_abs_log_sigma)
 }
 
-fast_clogit_plus_glmm_cpp <- function(X_disc, y_disc, X_conc, y_conc, group_conc, has_discordant, has_concordant, warm_start_params = NULL, warm_start_beta = NULL, estimate_only = FALSE, max_abs_log_sigma = 8.0, maxit = 200L, eps_g = 1e-5, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_clogit_plus_glmm_cpp`, X_disc, y_disc, X_conc, y_conc, group_conc, has_discordant, has_concordant, warm_start_params, warm_start_beta, estimate_only, max_abs_log_sigma, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
+fast_clogit_plus_glmm_cpp <- function(X_disc_r, y_disc_r, X_conc_r, y_conc_r, group_conc_r, has_discordant, has_concordant, warm_start_params = NULL, warm_start_beta = NULL, estimate_only = FALSE, max_abs_log_sigma = 8.0, maxit = 200L, eps_g = 1e-5, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_clogit_plus_glmm_cpp`, X_disc_r, y_disc_r, X_conc_r, y_conc_r, group_conc_r, has_discordant, has_concordant, warm_start_params, warm_start_beta, estimate_only, max_abs_log_sigma, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
-get_continuation_ratio_regression_score_cpp <- function(X, y, params) {
-    .Call(`_EDI_get_continuation_ratio_regression_score_cpp`, X, y, params)
+get_continuation_ratio_regression_score_cpp <- function(X_sexp, y_sexp, params_sexp) {
+    .Call(`_EDI_get_continuation_ratio_regression_score_cpp`, X_sexp, y_sexp, params_sexp)
 }
 
-get_continuation_ratio_regression_hessian_cpp <- function(X, y, params) {
-    .Call(`_EDI_get_continuation_ratio_regression_hessian_cpp`, X, y, params)
+get_continuation_ratio_regression_hessian_cpp <- function(X_sexp, y_sexp, params_sexp) {
+    .Call(`_EDI_get_continuation_ratio_regression_hessian_cpp`, X_sexp, y_sexp, params_sexp)
 }
 
 #' @title Fast Continuation-Ratio Regression (C++)
@@ -343,16 +364,20 @@ get_continuation_ratio_regression_hessian_cpp <- function(X, y, params) {
 #' @return A list containing coefficients, alpha, and convergence status.
 #' @export
 #' @keywords internal
-fast_continuation_ratio_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8, warm_start_beta = NULL, smart_cold_start = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_continuation_ratio_regression_cpp`, X, y, maxit, tol, warm_start_beta, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
+fast_continuation_ratio_regression_cpp <- function(X_sexp, y_sexp, maxit = 100L, tol = 1e-8, warm_start_beta = NULL, smart_cold_start = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_continuation_ratio_regression_cpp`, X_sexp, y_sexp, maxit, tol, warm_start_beta, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
-fast_continuation_ratio_regression_with_var_cpp <- function(X, y, maxit = 100L, tol = 1e-8, warm_start_beta = NULL, smart_cold_start = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_continuation_ratio_regression_with_var_cpp`, X, y, maxit, tol, warm_start_beta, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
+fast_continuation_ratio_regression_with_var_cpp <- function(X_sexp, y_sexp, maxit = 100L, tol = 1e-8, warm_start_beta = NULL, smart_cold_start = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_continuation_ratio_regression_with_var_cpp`, X_sexp, y_sexp, maxit, tol, warm_start_beta, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
 build_cox_data_cache_cpp <- function(X, y, dead) {
     .Call(`_EDI_build_cox_data_cache_cpp`, X, y, dead)
+}
+
+build_stratified_cox_data_cache_cpp <- function(X, y, dead, strata) {
+    .Call(`_EDI_build_stratified_cox_data_cache_cpp`, X, y, dead, strata)
 }
 
 fast_coxph_regression_prebuilt_cpp <- function(cox_data_xptr, warm_start_beta = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 20L, tol = 1e-9, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "newton_raphson", warm_start_fisher_info = NULL) {
@@ -395,8 +420,8 @@ get_stratified_coxph_hessian_cpp <- function(X, y, dead, strata, beta) {
 #' @return A numeric vector representing the score.
 #' @export
 #' @keywords internal
-get_cpoisson_combined_score_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params) {
-    .Call(`_EDI_get_cpoisson_combined_score_cpp`, yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params)
+get_cpoisson_combined_score_cpp <- function(yT_v_r, n_k_v_r, X_diff_v_r, y_r_r, w_r_r, X_r_r, params_r) {
+    .Call(`_EDI_get_cpoisson_combined_score_cpp`, yT_v_r, n_k_v_r, X_diff_v_r, y_r_r, w_r_r, X_r_r, params_r)
 }
 
 #' @title Compute Combined Conditional-Poisson Hessian
@@ -411,8 +436,8 @@ get_cpoisson_combined_score_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r
 #' @return A numeric matrix representing the Hessian.
 #' @export
 #' @keywords internal
-get_cpoisson_combined_hessian_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params) {
-    .Call(`_EDI_get_cpoisson_combined_hessian_cpp`, yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params)
+get_cpoisson_combined_hessian_cpp <- function(yT_v_r, n_k_v_r, X_diff_v_r, y_r_r, w_r_r, X_r_r, params_r) {
+    .Call(`_EDI_get_cpoisson_combined_hessian_cpp`, yT_v_r, n_k_v_r, X_diff_v_r, y_r_r, w_r_r, X_r_r, params_r)
 }
 
 #' @title Fast Combined Conditional-Poisson Regression (C++)
@@ -430,40 +455,40 @@ get_cpoisson_combined_hessian_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X
 #' @return A list containing coefficients, variance estimates, and likelihood statistics.
 #' @export
 #' @keywords internal
-fast_cpoisson_combined_with_var_cpp <- function(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_fisher_info = NULL, warm_start_params = NULL, warm_start_beta = NULL, estimate_only = FALSE) {
-    .Call(`_EDI_fast_cpoisson_combined_with_var_cpp`, yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, maxit, tol, fixed_idx, fixed_values, warm_start_fisher_info, warm_start_params, warm_start_beta, estimate_only)
+fast_cpoisson_combined_with_var_cpp <- function(yT_v_r, n_k_v_r, X_diff_v_r, y_r_r, w_r_r, X_r_r, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_fisher_info = NULL, warm_start_params = NULL, warm_start_beta = NULL, estimate_only = FALSE) {
+    .Call(`_EDI_fast_cpoisson_combined_with_var_cpp`, yT_v_r, n_k_v_r, X_diff_v_r, y_r_r, w_r_r, X_r_r, maxit, tol, fixed_idx, fixed_values, warm_start_fisher_info, warm_start_params, warm_start_beta, estimate_only)
 }
 
-fast_gaussian_lmm_cpp <- function(X, y, group_id, warm_start_params = NULL, warm_start_beta = NULL, estimate_only = FALSE, maxit = 300L, eps_g = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_gaussian_lmm_cpp`, X, y, group_id, warm_start_params, warm_start_beta, estimate_only, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
+fast_gaussian_lmm_cpp <- function(X_r, y_r, group_id_r, warm_start_params = NULL, warm_start_beta = NULL, estimate_only = FALSE, maxit = 300L, eps_g = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_gaussian_lmm_cpp`, X_r, y_r, group_id_r, warm_start_params, warm_start_beta, estimate_only, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
-get_gaussian_lmm_score_cpp <- function(X, y, group_id, par) {
-    .Call(`_EDI_get_gaussian_lmm_score_cpp`, X, y, group_id, par)
+get_gaussian_lmm_score_cpp <- function(X_r, y_r, group_id_r, par_sexp) {
+    .Call(`_EDI_get_gaussian_lmm_score_cpp`, X_r, y_r, group_id_r, par_sexp)
 }
 
-get_gaussian_lmm_fisher_cpp <- function(X, y, group_id, par, h_rel = 1e-4) {
-    .Call(`_EDI_get_gaussian_lmm_fisher_cpp`, X, y, group_id, par, h_rel)
+get_gaussian_lmm_fisher_cpp <- function(X_r, y_r, group_id_r, par_sexp, h_rel = 1e-4) {
+    .Call(`_EDI_get_gaussian_lmm_fisher_cpp`, X_r, y_r, group_id_r, par_sexp, h_rel)
 }
 
-gee_pairs_singletons_weighted_cpp <- function(X, y, group_id, family_str, weights, warm_start_beta = NULL, warm_start_fisher_info = NULL, maxit = 100L, tol = 1e-8) {
-    .Call(`_EDI_gee_pairs_singletons_weighted_cpp`, X, y, group_id, family_str, weights, warm_start_beta, warm_start_fisher_info, maxit, tol)
+gee_pairs_singletons_weighted_cpp <- function(X_r, y_r, group_id_r, family_str, weights_r, warm_start_beta = NULL, warm_start_fisher_info = NULL, maxit = 100L, tol = 1e-8) {
+    .Call(`_EDI_gee_pairs_singletons_weighted_cpp`, X_r, y_r, group_id_r, family_str, weights_r, warm_start_beta, warm_start_fisher_info, maxit, tol)
 }
 
-gee_pairs_singletons_cpp <- function(X, y, group_id, family_str, warm_start_beta = NULL, warm_start_fisher_info = NULL, maxit = 100L, tol = 1e-8) {
-    .Call(`_EDI_gee_pairs_singletons_cpp`, X, y, group_id, family_str, warm_start_beta, warm_start_fisher_info, maxit, tol)
+gee_pairs_singletons_cpp <- function(X_r, y_r, group_id_r, family_str, warm_start_beta = NULL, warm_start_fisher_info = NULL, maxit = 100L, tol = 1e-8) {
+    .Call(`_EDI_gee_pairs_singletons_cpp`, X_r, y_r, group_id_r, family_str, warm_start_beta, warm_start_fisher_info, maxit, tol)
 }
 
-get_hurdle_negbin_count_score_cpp <- function(X, y, params) {
-    .Call(`_EDI_get_hurdle_negbin_count_score_cpp`, X, y, params)
+get_hurdle_negbin_count_score_cpp <- function(X_r, y_r, params_sexp) {
+    .Call(`_EDI_get_hurdle_negbin_count_score_cpp`, X_r, y_r, params_sexp)
 }
 
-get_hurdle_negbin_count_hessian_cpp <- function(X, y, params) {
-    .Call(`_EDI_get_hurdle_negbin_count_hessian_cpp`, X, y, params)
+get_hurdle_negbin_count_hessian_cpp <- function(X_r, y_r, params_sexp) {
+    .Call(`_EDI_get_hurdle_negbin_count_hessian_cpp`, X_r, y_r, params_sexp)
 }
 
-fast_hurdle_negbin_cpp <- function(X, y, X_hurdle, warm_start_params = NULL, smart_cold_start = TRUE, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, warm_start_hurdle_fisher_info = NULL, estimate_only = FALSE) {
-    .Call(`_EDI_fast_hurdle_negbin_cpp`, X, y, X_hurdle, warm_start_params, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, warm_start_hurdle_fisher_info, estimate_only)
+fast_hurdle_negbin_cpp <- function(X_r, y_r, X_hurdle_r, warm_start_params = NULL, smart_cold_start = TRUE, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, warm_start_hurdle_fisher_info = NULL, estimate_only = FALSE) {
+    .Call(`_EDI_fast_hurdle_negbin_cpp`, X_r, y_r, X_hurdle_r, warm_start_params, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, warm_start_hurdle_fisher_info, estimate_only)
 }
 
 #' @title Fast Hurdle Negative Binomial Regression with Variance (C++)
@@ -484,48 +509,32 @@ fast_hurdle_negbin_cpp <- function(X, y, X_hurdle, warm_start_params = NULL, sma
 #' @return A list containing coefficients, vcov, and convergence status.
 #' @export
 #' @keywords internal
-fast_hurdle_negbin_with_var_cpp <- function(X, y, X_hurdle, j = 2L, warm_start_params = NULL, smart_cold_start = TRUE, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, warm_start_hurdle_fisher_info = NULL) {
-    .Call(`_EDI_fast_hurdle_negbin_with_var_cpp`, X, y, X_hurdle, j, warm_start_params, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, warm_start_hurdle_fisher_info)
+fast_hurdle_negbin_with_var_cpp <- function(X_r, y_r, X_hurdle_r, j = 2L, warm_start_params = NULL, smart_cold_start = TRUE, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, warm_start_hurdle_fisher_info = NULL) {
+    .Call(`_EDI_fast_hurdle_negbin_with_var_cpp`, X_r, y_r, X_hurdle_r, j, warm_start_params, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, warm_start_hurdle_fisher_info)
 }
 
-#' @title Fast Truncated Negative Binomial Regression (C++)
-#' @description High-performance zero-truncated negative binomial regression fitting.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses (must be positive integers).
-#' @param warm_start_params Optional starting values for [beta, log_theta]. If provided, \code{smart_cold_start} is ignored.
-#' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
-#' @param estimate_only If TRUE, only return coefficients and likelihood.
-#' @param maxit Maximum number of iterations.
-#' @param tol Convergence tolerance.
-#' @param fixed_idx Optional indices of fixed parameters.
-#' @param fixed_values Optional values for fixed parameters.
-#' @param optimization_alg Optimization algorithm.
-#' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first iteration.
-#' @return A list containing coefficients, vcov, and convergence status.
-#' @export
-#' @keywords internal
-fast_truncated_negbin_count_cpp <- function(X, y, warm_start_params = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_truncated_negbin_count_cpp`, X, y, warm_start_params, smart_cold_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
+fast_truncated_negbin_count_cpp <- function(X_r, y_r, warm_start_params = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_truncated_negbin_count_cpp`, X_r, y_r, warm_start_params, smart_cold_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
-get_hurdle_poisson_glmm_score_cpp <- function(X, y, group_id, params, n_gh = 7L) {
-    .Call(`_EDI_get_hurdle_poisson_glmm_score_cpp`, X, y, group_id, params, n_gh)
+get_hurdle_poisson_glmm_score_cpp <- function(X_r, y_r, group_id_r, params_sexp, n_gh = 7L) {
+    .Call(`_EDI_get_hurdle_poisson_glmm_score_cpp`, X_r, y_r, group_id_r, params_sexp, n_gh)
 }
 
-get_hurdle_poisson_glmm_hessian_cpp <- function(X, y, group_id, params, n_gh = 7L) {
-    .Call(`_EDI_get_hurdle_poisson_glmm_hessian_cpp`, X, y, group_id, params, n_gh)
+get_hurdle_poisson_glmm_hessian_cpp <- function(X_r, y_r, group_id_r, params_sexp, n_gh = 7L) {
+    .Call(`_EDI_get_hurdle_poisson_glmm_hessian_cpp`, X_r, y_r, group_id_r, params_sexp, n_gh)
 }
 
-get_hurdle_poisson_glmm_neg_loglik_cpp <- function(X, y, group_id, params, n_gh = 7L) {
-    .Call(`_EDI_get_hurdle_poisson_glmm_neg_loglik_cpp`, X, y, group_id, params, n_gh)
+get_hurdle_poisson_glmm_neg_loglik_cpp <- function(X_r, y_r, group_id_r, params_sexp, n_gh = 7L) {
+    .Call(`_EDI_get_hurdle_poisson_glmm_neg_loglik_cpp`, X_r, y_r, group_id_r, params_sexp, n_gh)
 }
 
-fast_hurdle_poisson_glmm_cpp <- function(X, y, group_id, j_T, warm_start_params = NULL, smart_cold_start = TRUE, estimate_only = FALSE, n_gh = 7L, maxit = 300L, eps_g = 1e-6, optimization_alg = "lbfgs", fixed_idx = NULL, fixed_values = NULL, warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_hurdle_poisson_glmm_cpp`, X, y, group_id, j_T, warm_start_params, smart_cold_start, estimate_only, n_gh, maxit, eps_g, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info)
+fast_hurdle_poisson_glmm_cpp <- function(X_r, y_r, group_id_r, j_T, warm_start_params = NULL, smart_cold_start = TRUE, estimate_only = FALSE, n_gh = 7L, maxit = 300L, eps_g = 1e-6, optimization_alg = "lbfgs", fixed_idx = NULL, fixed_values = NULL, warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_hurdle_poisson_glmm_cpp`, X_r, y_r, group_id_r, j_T, warm_start_params, smart_cold_start, estimate_only, n_gh, maxit, eps_g, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info)
 }
 
-exact_jonckheere_terpstra_pval_cpp <- function(y, w) {
-    .Call(`_EDI_exact_jonckheere_terpstra_pval_cpp`, y, w)
+exact_jonckheere_terpstra_pval_cpp <- function(y_sexp, w_sexp) {
+    .Call(`_EDI_exact_jonckheere_terpstra_pval_cpp`, y_sexp, w_sexp)
 }
 
 #' Fast KK Wilcoxon Statistic for Multiple Permutations
@@ -539,8 +548,8 @@ exact_jonckheere_terpstra_pval_cpp <- function(y, w) {
 #' @param is_fixed_matching Logical flag for fixed matching designs.
 #' @param num_cores Number of OpenMP threads.
 #' @return Numeric vector of KK Wilcoxon statistics.
-compute_matching_wilcox_distr_parallel_cpp <- function(w_mat, m_mat, y, delta, transform_code, zero_one_logit_clamp, is_fixed_matching, num_cores) {
-    .Call(`_EDI_compute_matching_wilcox_distr_parallel_cpp`, w_mat, m_mat, y, delta, transform_code, zero_one_logit_clamp, is_fixed_matching, num_cores)
+compute_matching_wilcox_distr_parallel_cpp <- function(w_mat_sexp, m_mat_sexp, y_sexp, delta, transform_code, zero_one_logit_clamp, is_fixed_matching, num_cores) {
+    .Call(`_EDI_compute_matching_wilcox_distr_parallel_cpp`, w_mat_sexp, m_mat_sexp, y_sexp, delta, transform_code, zero_one_logit_clamp, is_fixed_matching, num_cores)
 }
 
 #' @title Compute Log-Binomial Regression Score
@@ -551,8 +560,8 @@ compute_matching_wilcox_distr_parallel_cpp <- function(w_mat, m_mat, y, delta, t
 #' @return A numeric vector representing the score.
 #' @export
 #' @keywords internal
-get_log_binomial_regression_score_cpp <- function(X, y, beta) {
-    .Call(`_EDI_get_log_binomial_regression_score_cpp`, X, y, beta)
+get_log_binomial_regression_score_cpp <- function(X_r, y_r, beta_sexp) {
+    .Call(`_EDI_get_log_binomial_regression_score_cpp`, X_r, y_r, beta_sexp)
 }
 
 #' @title Compute Log-Binomial Regression Hessian
@@ -563,8 +572,8 @@ get_log_binomial_regression_score_cpp <- function(X, y, beta) {
 #' @return A numeric matrix representing the Hessian.
 #' @export
 #' @keywords internal
-get_log_binomial_regression_hessian_cpp <- function(X, y, beta) {
-    .Call(`_EDI_get_log_binomial_regression_hessian_cpp`, X, y, beta)
+get_log_binomial_regression_hessian_cpp <- function(X_r, y_r, beta_sexp) {
+    .Call(`_EDI_get_log_binomial_regression_hessian_cpp`, X_r, y_r, beta_sexp)
 }
 
 #' @title Compute Weighted Log-Binomial Regression Score
@@ -576,8 +585,8 @@ get_log_binomial_regression_hessian_cpp <- function(X, y, beta) {
 #' @return A numeric vector representing the weighted score.
 #' @export
 #' @keywords internal
-get_log_binomial_regression_weighted_score_cpp <- function(X, y, weights, beta) {
-    .Call(`_EDI_get_log_binomial_regression_weighted_score_cpp`, X, y, weights, beta)
+get_log_binomial_regression_weighted_score_cpp <- function(X_r, y_r, weights_r, beta_sexp) {
+    .Call(`_EDI_get_log_binomial_regression_weighted_score_cpp`, X_r, y_r, weights_r, beta_sexp)
 }
 
 #' @title Compute Weighted Log-Binomial Regression Hessian
@@ -589,8 +598,8 @@ get_log_binomial_regression_weighted_score_cpp <- function(X, y, weights, beta) 
 #' @return A numeric matrix representing the weighted Hessian.
 #' @export
 #' @keywords internal
-get_log_binomial_regression_weighted_hessian_cpp <- function(X, y, weights, beta) {
-    .Call(`_EDI_get_log_binomial_regression_weighted_hessian_cpp`, X, y, weights, beta)
+get_log_binomial_regression_weighted_hessian_cpp <- function(X_r, y_r, weights_r, beta_sexp) {
+    .Call(`_EDI_get_log_binomial_regression_weighted_hessian_cpp`, X_r, y_r, weights_r, beta_sexp)
 }
 
 #' @title Compute Identity-Binomial Regression Score
@@ -601,8 +610,8 @@ get_log_binomial_regression_weighted_hessian_cpp <- function(X, y, weights, beta
 #' @return A numeric vector representing the score.
 #' @export
 #' @keywords internal
-get_identity_binomial_regression_score_cpp <- function(X, y, beta) {
-    .Call(`_EDI_get_identity_binomial_regression_score_cpp`, X, y, beta)
+get_identity_binomial_regression_score_cpp <- function(X_r, y_r, beta_sexp) {
+    .Call(`_EDI_get_identity_binomial_regression_score_cpp`, X_r, y_r, beta_sexp)
 }
 
 #' @title Compute Identity-Binomial Regression Hessian
@@ -613,8 +622,8 @@ get_identity_binomial_regression_score_cpp <- function(X, y, beta) {
 #' @return A numeric matrix representing the Hessian.
 #' @export
 #' @keywords internal
-get_identity_binomial_regression_hessian_cpp <- function(X, y, beta) {
-    .Call(`_EDI_get_identity_binomial_regression_hessian_cpp`, X, y, beta)
+get_identity_binomial_regression_hessian_cpp <- function(X_r, y_r, beta_sexp) {
+    .Call(`_EDI_get_identity_binomial_regression_hessian_cpp`, X_r, y_r, beta_sexp)
 }
 
 #' @title Compute Weighted Identity-Binomial Regression Score
@@ -626,8 +635,8 @@ get_identity_binomial_regression_hessian_cpp <- function(X, y, beta) {
 #' @return A numeric vector representing the weighted score.
 #' @export
 #' @keywords internal
-get_identity_binomial_regression_weighted_score_cpp <- function(X, y, weights, beta) {
-    .Call(`_EDI_get_identity_binomial_regression_weighted_score_cpp`, X, y, weights, beta)
+get_identity_binomial_regression_weighted_score_cpp <- function(X_r, y_r, weights_r, beta_sexp) {
+    .Call(`_EDI_get_identity_binomial_regression_weighted_score_cpp`, X_r, y_r, weights_r, beta_sexp)
 }
 
 #' @title Compute Weighted Identity-Binomial Regression Hessian
@@ -639,8 +648,8 @@ get_identity_binomial_regression_weighted_score_cpp <- function(X, y, weights, b
 #' @return A numeric matrix representing the weighted Hessian.
 #' @export
 #' @keywords internal
-get_identity_binomial_regression_weighted_hessian_cpp <- function(X, y, weights, beta) {
-    .Call(`_EDI_get_identity_binomial_regression_weighted_hessian_cpp`, X, y, weights, beta)
+get_identity_binomial_regression_weighted_hessian_cpp <- function(X_r, y_r, weights_r, beta_sexp) {
+    .Call(`_EDI_get_identity_binomial_regression_weighted_hessian_cpp`, X_r, y_r, weights_r, beta_sexp)
 }
 
 #' @title Fast Log-Binomial Regression (C++)
@@ -657,8 +666,8 @@ get_identity_binomial_regression_weighted_hessian_cpp <- function(X, y, weights,
 #' @return A list containing coefficients and fitted values.
 #' @export
 #' @keywords internal
-fast_log_binomial_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_log_binomial_regression_cpp`, X, y, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info)
+fast_log_binomial_regression_cpp <- function(X_r, y_r, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
+    .Call(`_EDI_fast_log_binomial_regression_cpp`, X_r, y_r, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info, estimate_only)
 }
 
 #' @title Fast Log-Binomial Regression with Variance (C++)
@@ -676,8 +685,8 @@ fast_log_binomial_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fix
 #' @return A list containing coefficients, vcov, and standard errors.
 #' @export
 #' @keywords internal
-fast_log_binomial_regression_with_var_cpp <- function(X, y, j = 2L, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_log_binomial_regression_with_var_cpp`, X, y, j, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info)
+fast_log_binomial_regression_with_var_cpp <- function(X_r, y_r, j = 2L, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_log_binomial_regression_with_var_cpp`, X_r, y_r, j, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info)
 }
 
 #' @title Fast Weighted Log-Binomial Regression (C++)
@@ -695,8 +704,8 @@ fast_log_binomial_regression_with_var_cpp <- function(X, y, j = 2L, maxit = 100L
 #' @return A list containing coefficients and fitted values.
 #' @export
 #' @keywords internal
-fast_log_binomial_regression_weighted_cpp <- function(X, y, weights, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_log_binomial_regression_weighted_cpp`, X, y, weights, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info)
+fast_log_binomial_regression_weighted_cpp <- function(X_r, y_r, weights_r, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
+    .Call(`_EDI_fast_log_binomial_regression_weighted_cpp`, X_r, y_r, weights_r, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info, estimate_only)
 }
 
 #' @title Fast Identity-Binomial Regression (C++)
@@ -713,8 +722,8 @@ fast_log_binomial_regression_weighted_cpp <- function(X, y, weights, maxit = 100
 #' @return A list containing coefficients and fitted values.
 #' @export
 #' @keywords internal
-fast_identity_binomial_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_identity_binomial_regression_cpp`, X, y, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info)
+fast_identity_binomial_regression_cpp <- function(X_r, y_r, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_identity_binomial_regression_cpp`, X_r, y_r, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info)
 }
 
 #' @title Fast Identity-Binomial Regression with Variance (C++)
@@ -732,8 +741,8 @@ fast_identity_binomial_regression_cpp <- function(X, y, maxit = 100L, tol = 1e-8
 #' @return A list containing coefficients, vcov, and standard errors.
 #' @export
 #' @keywords internal
-fast_identity_binomial_regression_with_var_cpp <- function(X, y, j = 2L, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_identity_binomial_regression_with_var_cpp`, X, y, j, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info)
+fast_identity_binomial_regression_with_var_cpp <- function(X_r, y_r, j = 2L, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_identity_binomial_regression_with_var_cpp`, X_r, y_r, j, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info)
 }
 
 #' @title Fast Weighted Identity-Binomial Regression (C++)
@@ -751,40 +760,40 @@ fast_identity_binomial_regression_with_var_cpp <- function(X, y, j = 2L, maxit =
 #' @return A list containing coefficients and fitted values.
 #' @export
 #' @keywords internal
-fast_identity_binomial_regression_weighted_cpp <- function(X, y, weights, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_identity_binomial_regression_weighted_cpp`, X, y, weights, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info)
+fast_identity_binomial_regression_weighted_cpp <- function(X_r, y_r, weights_r, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
+    .Call(`_EDI_fast_identity_binomial_regression_weighted_cpp`, X_r, y_r, weights_r, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info, estimate_only)
 }
 
-get_logistic_glmm_score_cpp <- function(X, y, group_id, params, n_gh = 20L) {
-    .Call(`_EDI_get_logistic_glmm_score_cpp`, X, y, group_id, params, n_gh)
+get_logistic_glmm_score_cpp <- function(X_r, y_r, group_id_r, params_sexp, n_gh = 20L) {
+    .Call(`_EDI_get_logistic_glmm_score_cpp`, X_r, y_r, group_id_r, params_sexp, n_gh)
 }
 
-get_logistic_glmm_hessian_cpp <- function(X, y, group_id, params, n_gh = 20L) {
-    .Call(`_EDI_get_logistic_glmm_hessian_cpp`, X, y, group_id, params, n_gh)
+get_logistic_glmm_hessian_cpp <- function(X_r, y_r, group_id_r, params_sexp, n_gh = 20L) {
+    .Call(`_EDI_get_logistic_glmm_hessian_cpp`, X_r, y_r, group_id_r, params_sexp, n_gh)
 }
 
-get_logistic_glmm_neg_loglik_cpp <- function(X, y, group_id, params, n_gh = 20L) {
-    .Call(`_EDI_get_logistic_glmm_neg_loglik_cpp`, X, y, group_id, params, n_gh)
+get_logistic_glmm_neg_loglik_cpp <- function(X_r, y_r, group_id_r, params_sexp, n_gh = 20L) {
+    .Call(`_EDI_get_logistic_glmm_neg_loglik_cpp`, X_r, y_r, group_id_r, params_sexp, n_gh)
 }
 
-fast_logistic_glmm_cpp <- function(X, y, group_id, j_T, warm_start_params = NULL, smart_cold_start = TRUE, estimate_only = FALSE, n_gh = 20L, maxit = 300L, eps_g = 1e-6, optimization_alg = "lbfgs", fixed_idx = NULL, fixed_values = NULL, warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_logistic_glmm_cpp`, X, y, group_id, j_T, warm_start_params, smart_cold_start, estimate_only, n_gh, maxit, eps_g, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info)
+fast_logistic_glmm_cpp <- function(X_r, y_r, group_id_r, j_T, warm_start_params = NULL, smart_cold_start = TRUE, estimate_only = FALSE, n_gh = 20L, maxit = 300L, eps_g = 1e-6, optimization_alg = "lbfgs", fixed_idx = NULL, fixed_values = NULL, warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_logistic_glmm_cpp`, X_r, y_r, group_id_r, j_T, warm_start_params, smart_cold_start, estimate_only, n_gh, maxit, eps_g, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info)
 }
 
-get_logistic_regression_score_cpp <- function(X, y, beta) {
-    .Call(`_EDI_get_logistic_regression_score_cpp`, X, y, beta)
+get_logistic_regression_score_cpp <- function(X_sexp, y_sexp, beta_sexp) {
+    .Call(`_EDI_get_logistic_regression_score_cpp`, X_sexp, y_sexp, beta_sexp)
 }
 
-get_logistic_regression_hessian_cpp <- function(X, beta) {
-    .Call(`_EDI_get_logistic_regression_hessian_cpp`, X, beta)
+get_logistic_regression_hessian_cpp <- function(X_sexp, beta_sexp) {
+    .Call(`_EDI_get_logistic_regression_hessian_cpp`, X_sexp, beta_sexp)
 }
 
-get_logistic_regression_weighted_score_cpp <- function(X, y, weights, beta) {
-    .Call(`_EDI_get_logistic_regression_weighted_score_cpp`, X, y, weights, beta)
+get_logistic_regression_weighted_score_cpp <- function(X_sexp, y_sexp, weights_sexp, beta_sexp) {
+    .Call(`_EDI_get_logistic_regression_weighted_score_cpp`, X_sexp, y_sexp, weights_sexp, beta_sexp)
 }
 
-get_logistic_regression_weighted_hessian_cpp <- function(X, weights, beta) {
-    .Call(`_EDI_get_logistic_regression_weighted_hessian_cpp`, X, weights, beta)
+get_logistic_regression_weighted_hessian_cpp <- function(X_sexp, weights_sexp, beta_sexp) {
+    .Call(`_EDI_get_logistic_regression_weighted_hessian_cpp`, X_sexp, weights_sexp, beta_sexp)
 }
 
 fast_logistic_regression_cpp <- function(X_sexp, y_sexp, warm_start_beta = NULL, smart_cold_start = FALSE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
@@ -799,12 +808,12 @@ fast_logistic_regression_with_var_cpp <- function(X_sexp, y_sexp, j = 2L, warm_s
     .Call(`_EDI_fast_logistic_regression_with_var_cpp`, X_sexp, y_sexp, j, warm_start_beta, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
 }
 
-fast_logrank_stats_cpp <- function(w, y, dead) {
-    .Call(`_EDI_fast_logrank_stats_cpp`, w, y, dead)
+fast_logrank_stats_cpp <- function(w, y_r, dead) {
+    .Call(`_EDI_fast_logrank_stats_cpp`, w, y_r, dead)
 }
 
-matrix_rank_cpp <- function(A, tol = 1e-7) {
-    .Call(`_EDI_matrix_rank_cpp`, A, tol)
+matrix_rank_cpp <- function(A_r, tol = 1e-7) {
+    .Call(`_EDI_matrix_rank_cpp`, A_r, tol)
 }
 
 #' @title Compute Negative Binomial Regression Score
@@ -815,8 +824,8 @@ matrix_rank_cpp <- function(A, tol = 1e-7) {
 #' @return A numeric vector representing the score.
 #' @export
 #' @keywords internal
-get_negbin_regression_score_cpp <- function(X, y, params) {
-    .Call(`_EDI_get_negbin_regression_score_cpp`, X, y, params)
+get_negbin_regression_score_cpp <- function(X_sexp, y_sexp, params_sexp) {
+    .Call(`_EDI_get_negbin_regression_score_cpp`, X_sexp, y_sexp, params_sexp)
 }
 
 #' @title Compute Negative Binomial Regression Hessian
@@ -827,8 +836,8 @@ get_negbin_regression_score_cpp <- function(X, y, params) {
 #' @return A numeric matrix representing the Hessian.
 #' @export
 #' @keywords internal
-get_negbin_regression_hessian_cpp <- function(X, y, params) {
-    .Call(`_EDI_get_negbin_regression_hessian_cpp`, X, y, params)
+get_negbin_regression_hessian_cpp <- function(X_sexp, y_sexp, params_sexp) {
+    .Call(`_EDI_get_negbin_regression_hessian_cpp`, X_sexp, y_sexp, params_sexp)
 }
 
 #' @title Fast Negative Binomial Regression with Variance (C++)
@@ -851,8 +860,8 @@ get_negbin_regression_hessian_cpp <- function(X, y, params) {
 #' X = matrix(rnorm(100), 10, 10)
 #' y = rpois(10, 2)
 #' fast_neg_bin_with_var_cpp(X, y)
-fast_neg_bin_with_var_cpp <- function(X, y, warm_start_params = NULL, smart_cold_start = FALSE, maxit = 1000L, eps_f = 1e-8, eps_g = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, estimate_only = FALSE) {
-    .Call(`_EDI_fast_neg_bin_with_var_cpp`, X, y, warm_start_params, smart_cold_start, maxit, eps_f, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only)
+fast_neg_bin_with_var_cpp <- function(X_sexp, y_sexp, warm_start_params = NULL, smart_cold_start = FALSE, maxit = 1000L, eps_f = 1e-8, eps_g = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, estimate_only = FALSE) {
+    .Call(`_EDI_fast_neg_bin_with_var_cpp`, X_sexp, y_sexp, warm_start_params, smart_cold_start, maxit, eps_f, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only)
 }
 
 #' @title Fast Negative Binomial Regression (C++)
@@ -875,37 +884,14 @@ fast_neg_bin_with_var_cpp <- function(X, y, warm_start_params = NULL, smart_cold
 #' X = matrix(rnorm(100), 10, 10)
 #' y = rpois(10, 2)
 #' fast_neg_bin_cpp(X, y)
-fast_neg_bin_cpp <- function(X, y, warm_start_params = NULL, smart_cold_start = FALSE, maxit = 1000L, eps_f = 1e-8, eps_g = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, estimate_only = FALSE) {
-    .Call(`_EDI_fast_neg_bin_cpp`, X, y, warm_start_params, smart_cold_start, maxit, eps_f, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only)
+fast_neg_bin_cpp <- function(X_sexp, y_sexp, warm_start_params = NULL, smart_cold_start = FALSE, maxit = 1000L, eps_f = 1e-8, eps_g = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, estimate_only = FALSE) {
+    .Call(`_EDI_fast_neg_bin_cpp`, X_sexp, y_sexp, warm_start_params, smart_cold_start, maxit, eps_f, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only)
 }
 
-#' @title Fast Ordinary Least Squares (C++)
-#' @description High-performance OLS fitting using Eigen's Complete Orthogonal Decomposition.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses.
-#' @param fixed_idx Optional indices of fixed parameters.
-#' @param fixed_values Optional values for fixed parameters.
-#' @return A list containing coefficients and the XtX matrix.
-#' @export
-#' @keywords internal
-#' @examples
-#' X = matrix(rnorm(100), 10, 10)
-#' y = rnorm(10)
-#' fast_ols_cpp(X, y)
-fast_ols_cpp <- function(X, y, fixed_idx = NULL, fixed_values = NULL) {
-    .Call(`_EDI_fast_ols_cpp`, X, y, fixed_idx, fixed_values)
+fast_ols_cpp <- function(X_sexp, y_sexp, fixed_idx = NULL, fixed_values = NULL) {
+    .Call(`_EDI_fast_ols_cpp`, X_sexp, y_sexp, fixed_idx, fixed_values)
 }
 
-#' @title Fast OLS with Variance (C++)
-#' @description OLS fitting with variance-covariance matrix and error variance estimation.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses.
-#' @param j 1-based index of the parameter for which to return specific variance.
-#' @param fixed_idx Optional indices of fixed parameters.
-#' @param fixed_values Optional values for fixed parameters.
-#' @return A list containing coefficients, vcov, ssq_b_j, and sigma2_hat.
-#' @export
-#' @keywords internal
 fast_ols_with_var_cpp <- function(X_sexp, y_sexp, j = 2L, fixed_idx = NULL, fixed_values = NULL) {
     .Call(`_EDI_fast_ols_with_var_cpp`, X_sexp, y_sexp, j, fixed_idx, fixed_values)
 }
@@ -1194,32 +1180,32 @@ expand_adjacent_category_data_cpp <- function(y, w, strata, K) {
     .Call(`_EDI_expand_adjacent_category_data_cpp`, y, w, strata, K)
 }
 
-fast_poisson_glmm_cpp <- function(X, y, group_id, j_T, warm_start_params = NULL, smart_cold_start = TRUE, estimate_only = FALSE, n_gh = 20L, maxit = 300L, eps_g = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_poisson_glmm_cpp`, X, y, group_id, j_T, warm_start_params, smart_cold_start, estimate_only, n_gh, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
+fast_poisson_glmm_cpp <- function(X_r, y_r, group_id_r, j_T, warm_start_params = NULL, smart_cold_start = TRUE, estimate_only = FALSE, n_gh = 20L, maxit = 300L, eps_g = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_poisson_glmm_cpp`, X_r, y_r, group_id_r, j_T, warm_start_params, smart_cold_start, estimate_only, n_gh, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
-get_poisson_glmm_score_cpp <- function(X, y, group_id, par, n_gh = 20L) {
-    .Call(`_EDI_get_poisson_glmm_score_cpp`, X, y, group_id, par, n_gh)
+get_poisson_glmm_score_cpp <- function(X_r, y_r, group_id_r, par_r, n_gh = 20L) {
+    .Call(`_EDI_get_poisson_glmm_score_cpp`, X_r, y_r, group_id_r, par_r, n_gh)
 }
 
-get_poisson_glmm_hessian_cpp <- function(X, y, group_id, par, n_gh = 20L) {
-    .Call(`_EDI_get_poisson_glmm_hessian_cpp`, X, y, group_id, par, n_gh)
+get_poisson_glmm_hessian_cpp <- function(X_r, y_r, group_id_r, par_r, n_gh = 20L) {
+    .Call(`_EDI_get_poisson_glmm_hessian_cpp`, X_r, y_r, group_id_r, par_r, n_gh)
 }
 
-get_poisson_regression_score_cpp <- function(X, y, beta) {
-    .Call(`_EDI_get_poisson_regression_score_cpp`, X, y, beta)
+get_poisson_regression_score_cpp <- function(X_sexp, y_sexp, beta_sexp) {
+    .Call(`_EDI_get_poisson_regression_score_cpp`, X_sexp, y_sexp, beta_sexp)
 }
 
-get_poisson_regression_hessian_cpp <- function(X, beta) {
-    .Call(`_EDI_get_poisson_regression_hessian_cpp`, X, beta)
+get_poisson_regression_hessian_cpp <- function(X_sexp, beta_sexp) {
+    .Call(`_EDI_get_poisson_regression_hessian_cpp`, X_sexp, beta_sexp)
 }
 
-get_poisson_regression_weighted_score_cpp <- function(X, y, weights, beta) {
-    .Call(`_EDI_get_poisson_regression_weighted_score_cpp`, X, y, weights, beta)
+get_poisson_regression_weighted_score_cpp <- function(X_sexp, y_sexp, weights_sexp, beta_sexp) {
+    .Call(`_EDI_get_poisson_regression_weighted_score_cpp`, X_sexp, y_sexp, weights_sexp, beta_sexp)
 }
 
-get_poisson_regression_weighted_hessian_cpp <- function(X, weights, beta) {
-    .Call(`_EDI_get_poisson_regression_weighted_hessian_cpp`, X, weights, beta)
+get_poisson_regression_weighted_hessian_cpp <- function(X_sexp, weights_sexp, beta_sexp) {
+    .Call(`_EDI_get_poisson_regression_weighted_hessian_cpp`, X_sexp, weights_sexp, beta_sexp)
 }
 
 fast_poisson_regression_cpp <- function(X_sexp, y_sexp, warm_start_beta = NULL, smart_cold_start = FALSE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
@@ -1238,14 +1224,31 @@ fast_quasipoisson_regression_with_var_cpp <- function(X_sexp, y_sexp, j = 2L, wa
     .Call(`_EDI_fast_quasipoisson_regression_with_var_cpp`, X_sexp, y_sexp, j, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
 }
 
-get_probit_regression_score_cpp <- function(X, y, beta) {
-    .Call(`_EDI_get_probit_regression_score_cpp`, X, y, beta)
+get_probit_regression_score_cpp <- function(X_sexp, y_sexp, beta_sexp) {
+    .Call(`_EDI_get_probit_regression_score_cpp`, X_sexp, y_sexp, beta_sexp)
 }
 
-get_probit_regression_hessian_cpp <- function(X, beta) {
-    .Call(`_EDI_get_probit_regression_hessian_cpp`, X, beta)
+get_probit_regression_hessian_cpp <- function(X_sexp, beta_sexp) {
+    .Call(`_EDI_get_probit_regression_hessian_cpp`, X_sexp, beta_sexp)
 }
 
+#' @title Fast Probit Regression (C++)
+#' @description High-performance probit GLM fitting via IRLS or L-BFGS.
+#' @param X_sexp A numeric matrix of predictors (including intercept column).
+#' @param y_sexp A numeric vector of binary responses (0/1).
+#' @param warm_start_beta Optional starting values for coefficients.
+#' @param smart_cold_start Logical. If TRUE, use an OLS-based initial guess when no warm start is provided.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm ("irls" or "lbfgs"). Default "irls".
+#' @param warm_start_weights Optional initial IRLS working weights.
+#' @param warm_start_fisher_info Optional initial Fisher Information matrix.
+#' @param estimate_only Logical. If TRUE, skip variance computation and return only coefficients.
+#' @return A list containing coefficients and convergence status.
+#' @export
+#' @keywords internal
 fast_probit_regression_cpp <- function(X_sexp, y_sexp, warm_start_beta = NULL, smart_cold_start = TRUE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "irls", warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
     .Call(`_EDI_fast_probit_regression_cpp`, X_sexp, y_sexp, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info, estimate_only)
 }
@@ -1258,12 +1261,12 @@ fast_probit_regression_with_var_cpp <- function(X_sexp, y_sexp, j = 2L, warm_sta
     .Call(`_EDI_fast_probit_regression_with_var_cpp`, X_sexp, y_sexp, j, warm_start_beta, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info)
 }
 
-fast_ridit_scores_cpp <- function(y, ref_idx) {
-    .Call(`_EDI_fast_ridit_scores_cpp`, y, ref_idx)
+fast_ridit_scores_cpp <- function(y_sexp, ref_idx_sexp) {
+    .Call(`_EDI_fast_ridit_scores_cpp`, y_sexp, ref_idx_sexp)
 }
 
-fast_ridit_analysis_cpp <- function(w, y, reference = "control") {
-    .Call(`_EDI_fast_ridit_analysis_cpp`, w, y, reference)
+fast_ridit_analysis_cpp <- function(w_sexp, y_sexp, reference = "control") {
+    .Call(`_EDI_fast_ridit_analysis_cpp`, w_sexp, y_sexp, reference)
 }
 
 #' @title Fast Robust Regression (C++)
@@ -1283,8 +1286,8 @@ fast_ridit_analysis_cpp <- function(w, y, reference = "control") {
 #' @return A list containing coefficients, weights, and scale estimate.
 #' @export
 #' @keywords internal
-fast_robust_regression_cpp <- function(X, y, warm_start_beta = NULL, smart_cold_start = TRUE, method = "MM", j = 2L, c = 1.345, maxit = 50L, tol = 1e-7, fixed_idx = NULL, fixed_values = NULL, warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
-    .Call(`_EDI_fast_robust_regression_cpp`, X, y, warm_start_beta, smart_cold_start, method, j, c, maxit, tol, fixed_idx, fixed_values, warm_start_weights, warm_start_fisher_info, estimate_only)
+fast_robust_regression_cpp <- function(X_sexp, y_sexp, warm_start_beta = NULL, smart_cold_start = TRUE, method = "MM", j = 2L, c = 1.345, maxit = 50L, tol = 1e-7, fixed_idx = NULL, fixed_values = NULL, warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
+    .Call(`_EDI_fast_robust_regression_cpp`, X_sexp, y_sexp, warm_start_beta, smart_cold_start, method, j, c, maxit, tol, fixed_idx, fixed_values, warm_start_weights, warm_start_fisher_info, estimate_only)
 }
 
 sample_int_replace_cpp <- function(n, size) {
@@ -1295,12 +1298,12 @@ resample_group_rows_cpp <- function(group_id, sample_size) {
     .Call(`_EDI_resample_group_rows_cpp`, group_id, sample_size)
 }
 
-scale_columns_cpp <- function(X) {
-    .Call(`_EDI_scale_columns_cpp`, X)
+scale_columns_cpp <- function(X_sexp) {
+    .Call(`_EDI_scale_columns_cpp`, X_sexp)
 }
 
-shuffle_cpp <- function(w) {
-    .Call(`_EDI_shuffle_cpp`, w)
+shuffle_cpp <- function(w_sexp) {
+    .Call(`_EDI_shuffle_cpp`, w_sexp)
 }
 
 #' @title Compute Stereotype Logit Score
@@ -1388,28 +1391,28 @@ compute_stereotype_logit_distr_parallel_cpp <- function(X, y, w_mat, delta, num_
     .Call(`_EDI_compute_stereotype_logit_distr_parallel_cpp`, X, y, w_mat, delta, num_cores)
 }
 
-get_clayton_weibull_aft_score_cpp <- function(X, y, dead, pair_idx, singleton_rows, params) {
-    .Call(`_EDI_get_clayton_weibull_aft_score_cpp`, X, y, dead, pair_idx, singleton_rows, params)
+get_clayton_weibull_aft_score_cpp <- function(X_sexp, y_sexp, dead_sexp, pair_idx_sexp, singleton_rows_sexp, params_sexp) {
+    .Call(`_EDI_get_clayton_weibull_aft_score_cpp`, X_sexp, y_sexp, dead_sexp, pair_idx_sexp, singleton_rows_sexp, params_sexp)
 }
 
-get_clayton_weibull_aft_hessian_cpp <- function(X, y, dead, pair_idx, singleton_rows, params) {
-    .Call(`_EDI_get_clayton_weibull_aft_hessian_cpp`, X, y, dead, pair_idx, singleton_rows, params)
+get_clayton_weibull_aft_hessian_cpp <- function(X_sexp, y_sexp, dead_sexp, pair_idx_sexp, singleton_rows_sexp, params_sexp) {
+    .Call(`_EDI_get_clayton_weibull_aft_hessian_cpp`, X_sexp, y_sexp, dead_sexp, pair_idx_sexp, singleton_rows_sexp, params_sexp)
 }
 
-get_dep_cens_transform_score_cpp <- function(X, y, dead, params) {
-    .Call(`_EDI_get_dep_cens_transform_score_cpp`, X, y, dead, params)
+get_dep_cens_transform_score_cpp <- function(X_sexp, y_sexp, dead_sexp, params_sexp) {
+    .Call(`_EDI_get_dep_cens_transform_score_cpp`, X_sexp, y_sexp, dead_sexp, params_sexp)
 }
 
-get_dep_cens_transform_hessian_cpp <- function(X, y, dead, params) {
-    .Call(`_EDI_get_dep_cens_transform_hessian_cpp`, X, y, dead, params)
+get_dep_cens_transform_hessian_cpp <- function(X_sexp, y_sexp, dead_sexp, params_sexp) {
+    .Call(`_EDI_get_dep_cens_transform_hessian_cpp`, X_sexp, y_sexp, dead_sexp, params_sexp)
 }
 
-fast_clayton_weibull_aft_optim_cpp <- function(X, y, dead, pair_idx, singleton_rows, warm_start_params, estimate_only = FALSE, maxit = 2000L, reltol = 1e-9, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_clayton_weibull_aft_optim_cpp`, X, y, dead, pair_idx, singleton_rows, warm_start_params, estimate_only, maxit, reltol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
+fast_clayton_weibull_aft_optim_cpp <- function(X_sexp, y_sexp, dead_sexp, pair_idx_sexp, singleton_rows_sexp, warm_start_params_sexp, estimate_only = FALSE, maxit = 2000L, reltol = 1e-9, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_clayton_weibull_aft_optim_cpp`, X_sexp, y_sexp, dead_sexp, pair_idx_sexp, singleton_rows_sexp, warm_start_params_sexp, estimate_only, maxit, reltol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
-fast_dep_cens_transform_optim_cpp <- function(X, y, dead, warm_start_params = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 2000L, reltol = 1e-9, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_dep_cens_transform_optim_cpp`, X, y, dead, warm_start_params, smart_cold_start, estimate_only, maxit, reltol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
+fast_dep_cens_transform_optim_cpp <- function(X_sexp, y_sexp, dead_sexp, warm_start_params = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 2000L, reltol = 1e-9, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_dep_cens_transform_optim_cpp`, X_sexp, y_sexp, dead_sexp, warm_start_params, smart_cold_start, estimate_only, maxit, reltol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
 #' Calculates the median or restricted mean survival time for a single group
@@ -1419,21 +1422,21 @@ fast_dep_cens_transform_optim_cpp <- function(X, y, dead, warm_start_params = NU
 #' @param requested_stat A string, either "median" or "restricted_mean".
 #' @return The calculated statistic.
 #' @keywords internal
-get_survival_stat_for_group <- function(y, dead, requested_stat) {
-    .Call(`_EDI_get_survival_stat_for_group`, y, dead, requested_stat)
+get_survival_stat_for_group <- function(y_sexp, dead_sexp, requested_stat) {
+    .Call(`_EDI_get_survival_stat_for_group`, y_sexp, dead_sexp, requested_stat)
 }
 
 #' Calculates the difference in a survival statistic (median or restricted mean)
 #' between two groups (treatment vs control)
 #'
-#' @param y Numeric vector of survival times.
-#' @param dead Integer vector of event indicators (1=event, 0=censored).
-#' @param w Integer vector of treatment assignments (1=treatment, 0=control).
+#' @param y_sexp Numeric vector of survival times.
+#' @param dead_sexp Integer vector of event indicators (1=event, 0=censored).
+#' @param w_sexp Integer vector of treatment assignments (1=treatment, 0=control).
 #' @param requested_stat A string, either "median" or "restricted_mean".
 #' @return The difference in the statistic (treatment - control).
 #' @keywords internal
-get_survival_stat_diff <- function(y, dead, w, requested_stat) {
-    .Call(`_EDI_get_survival_stat_diff`, y, dead, w, requested_stat)
+get_survival_stat_diff <- function(y_sexp, dead_sexp, w_sexp, requested_stat) {
+    .Call(`_EDI_get_survival_stat_diff`, y_sexp, dead_sexp, w_sexp, requested_stat)
 }
 
 #' Calculates standard variance using the formula from Uno et al
@@ -1446,39 +1449,39 @@ get_survival_stat_diff <- function(y, dead, w, requested_stat) {
 #' Terms where n_j == d_j are omitted: S drops to 0 there, so A(t_j) = 0 and the
 #' contribution is 0 in the limit regardless of the undefined Greenwood denominator.
 #'
-#' @param y Numeric vector of survival times.
-#' @param dead Integer vector of event indicators (1=event, 0=censored).
+#' @param y_sexp Numeric vector of survival times.
+#' @param dead_sexp Integer vector of event indicators (1=event, 0=censored).
 #' @return The standard error of the restricted mean.
 #' @keywords internal
-get_restricted_mean_se_for_group <- function(y, dead) {
-    .Call(`_EDI_get_restricted_mean_se_for_group`, y, dead)
+get_restricted_mean_se_for_group <- function(y_sexp, dead_sexp) {
+    .Call(`_EDI_get_restricted_mean_se_for_group`, y_sexp, dead_sexp)
 }
 
 #' Calculates the standard error of the difference in restricted mean survival times
 #'
-#' @param y Numeric vector of survival times.
-#' @param dead Integer vector of event indicators (1=event, 0=censored).
-#' @param w Integer vector of treatment assignments (1=treatment, 0=control).
+#' @param y_sexp Numeric vector of survival times.
+#' @param dead_sexp Integer vector of event indicators (1=event, 0=censored).
+#' @param w_sexp Integer vector of treatment assignments (1=treatment, 0=control).
 #' @return The standard error of the difference.
 #' @keywords internal
-get_restricted_mean_se_diff <- function(y, dead, w) {
-    .Call(`_EDI_get_restricted_mean_se_diff`, y, dead, w)
+get_restricted_mean_se_diff <- function(y_sexp, dead_sexp, w_sexp) {
+    .Call(`_EDI_get_restricted_mean_se_diff`, y_sexp, dead_sexp, w_sexp)
 }
 
-get_weibull_frailty_neg_loglik_cpp <- function(X, y, dead, group_id, params, n_gh = 20L, max_abs_log_sigma = 8.0) {
-    .Call(`_EDI_get_weibull_frailty_neg_loglik_cpp`, X, y, dead, group_id, params, n_gh, max_abs_log_sigma)
+get_weibull_frailty_neg_loglik_cpp <- function(X_sexp, y_sexp, dead_sexp, group_id_sexp, params_sexp, n_gh = 20L, max_abs_log_sigma = 8.0) {
+    .Call(`_EDI_get_weibull_frailty_neg_loglik_cpp`, X_sexp, y_sexp, dead_sexp, group_id_sexp, params_sexp, n_gh, max_abs_log_sigma)
 }
 
-get_weibull_frailty_score_cpp <- function(X, y, dead, group_id, params, n_gh = 20L, max_abs_log_sigma = 8.0) {
-    .Call(`_EDI_get_weibull_frailty_score_cpp`, X, y, dead, group_id, params, n_gh, max_abs_log_sigma)
+get_weibull_frailty_score_cpp <- function(X_sexp, y_sexp, dead_sexp, group_id_sexp, params_sexp, n_gh = 20L, max_abs_log_sigma = 8.0) {
+    .Call(`_EDI_get_weibull_frailty_score_cpp`, X_sexp, y_sexp, dead_sexp, group_id_sexp, params_sexp, n_gh, max_abs_log_sigma)
 }
 
-get_weibull_frailty_hessian_cpp <- function(X, y, dead, group_id, params, n_gh = 20L, max_abs_log_sigma = 8.0) {
-    .Call(`_EDI_get_weibull_frailty_hessian_cpp`, X, y, dead, group_id, params, n_gh, max_abs_log_sigma)
+get_weibull_frailty_hessian_cpp <- function(X_sexp, y_sexp, dead_sexp, group_id_sexp, params_sexp, n_gh = 20L, max_abs_log_sigma = 8.0) {
+    .Call(`_EDI_get_weibull_frailty_hessian_cpp`, X_sexp, y_sexp, dead_sexp, group_id_sexp, params_sexp, n_gh, max_abs_log_sigma)
 }
 
-fast_weibull_frailty_cpp <- function(X, y, dead, group_id, warm_start_params = NULL, warm_start_beta = NULL, estimate_only = FALSE, n_gh = 20L, max_abs_log_sigma = 8.0, maxit = 300L, eps_g = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_weibull_frailty_cpp`, X, y, dead, group_id, warm_start_params, warm_start_beta, estimate_only, n_gh, max_abs_log_sigma, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
+fast_weibull_frailty_cpp <- function(X_sexp, y_sexp, dead_sexp, group_id_sexp, warm_start_params = NULL, warm_start_beta = NULL, estimate_only = FALSE, n_gh = 20L, max_abs_log_sigma = 8.0, maxit = 300L, eps_g = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_weibull_frailty_cpp`, X_sexp, y_sexp, dead_sexp, group_id_sexp, warm_start_params, warm_start_beta, estimate_only, n_gh, max_abs_log_sigma, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
 #' @title Compute Weibull Regression Score
@@ -1490,8 +1493,8 @@ fast_weibull_frailty_cpp <- function(X, y, dead, group_id, warm_start_params = N
 #' @return A numeric vector representing the score.
 #' @export
 #' @keywords internal
-get_weibull_regression_score_cpp <- function(X, y, dead, params) {
-    .Call(`_EDI_get_weibull_regression_score_cpp`, X, y, dead, params)
+get_weibull_regression_score_cpp <- function(X_sexp, y_sexp, dead_sexp, params_sexp) {
+    .Call(`_EDI_get_weibull_regression_score_cpp`, X_sexp, y_sexp, dead_sexp, params_sexp)
 }
 
 #' @title Compute Weibull Regression Hessian
@@ -1503,78 +1506,74 @@ get_weibull_regression_score_cpp <- function(X, y, dead, params) {
 #' @return A numeric matrix representing the Hessian.
 #' @export
 #' @keywords internal
-get_weibull_regression_hessian_cpp <- function(X, y, dead, params) {
-    .Call(`_EDI_get_weibull_regression_hessian_cpp`, X, y, dead, params)
+get_weibull_regression_hessian_cpp <- function(X_sexp, y_sexp, dead_sexp, params_sexp) {
+    .Call(`_EDI_get_weibull_regression_hessian_cpp`, X_sexp, y_sexp, dead_sexp, params_sexp)
 }
 
-#' @title Fast Weibull Regression (C++)
-#' @description High-performance Weibull Accelerated Failure Time (AFT) regression fitting.
+#' @title Fast Weibull AFT Regression (C++)
+#' @description Weibull Accelerated Failure Time model fitting.
 #' @param X A numeric matrix of predictors.
 #' @param y A numeric vector of survival times.
-#' @param dead A numeric vector of event indicators.
-#' @param warm_start_params Optional starting values for [beta, log_sigma]. If provided, \code{smart_cold_start} is ignored.
-#' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
-#' @param estimate_only If TRUE, only return coefficients and likelihood.
+#' @param dead A numeric vector of event indicators (1=event, 0=censored).
+#' @param warm_start_beta Optional starting values for coefficients.
+#' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess.
+#' @param estimate_only Logical. If TRUE, do not compute variance-covariance.
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
 #' @param fixed_idx Optional indices of fixed parameters.
 #' @param fixed_values Optional values for fixed parameters.
 #' @param optimization_alg Optimization algorithm.
-#' @return A list containing coefficients, log_sigma, vcov, and convergence status.
+#' @param warm_start_fisher_info Optional initial Fisher Information matrix.
+#' @return A list containing coefficients, log_sigma, and convergence status.
 #' @export
 #' @keywords internal
-#' @examples
-#' X = matrix(rnorm(100), 10, 10)
-#' y = runif(10)
-#' dead = rbinom(10, 1, 0.5)
-#' fast_weibull_regression_cpp(X, y, dead)
-fast_weibull_regression_cpp <- function(X, y, dead, warm_start_params = NULL, smart_cold_start = FALSE, estimate_only = FALSE, maxit = 1000L, tol = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_weibull_regression_cpp`, X, y, dead, warm_start_params, smart_cold_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
+fast_weibull_regression_cpp <- function(X_sexp, y_sexp, dead_sexp, warm_start_params = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_weibull_regression_cpp`, X_sexp, y_sexp, dead_sexp, warm_start_params, smart_cold_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
-wilcox_hl_signed_rank_point_estimate_cpp <- function(dy) {
-    .Call(`_EDI_wilcox_hl_signed_rank_point_estimate_cpp`, dy)
+wilcox_hl_signed_rank_point_estimate_cpp <- function(dy_sexp) {
+    .Call(`_EDI_wilcox_hl_signed_rank_point_estimate_cpp`, dy_sexp)
 }
 
-wilcox_hl_point_estimate_cpp <- function(w, y) {
-    .Call(`_EDI_wilcox_hl_point_estimate_cpp`, w, y)
+wilcox_hl_point_estimate_cpp <- function(w_sexp, y_sexp) {
+    .Call(`_EDI_wilcox_hl_point_estimate_cpp`, w_sexp, y_sexp)
 }
 
-compute_wilcox_hl_bootstrap_parallel_cpp <- function(w, y, indices_mat, num_cores) {
-    .Call(`_EDI_compute_wilcox_hl_bootstrap_parallel_cpp`, w, y, indices_mat, num_cores)
+compute_wilcox_hl_bootstrap_parallel_cpp <- function(w_sexp, y_sexp, indices_mat_sexp, num_cores) {
+    .Call(`_EDI_compute_wilcox_hl_bootstrap_parallel_cpp`, w_sexp, y_sexp, indices_mat_sexp, num_cores)
 }
 
 #' Fast Wilcoxon HL Statistic for Multiple Permutations
 #'
-#' @param w_mat Integer matrix of permuted treatment assignments (n x r).
-#' @param y Numeric response vector.
+#' @param w_mat_sexp Integer matrix of permuted treatment assignments (n x r).
+#' @param y_sexp Numeric response vector.
 #' @param delta Null treatment effect shift.
 #' @param transform_code Integer code for response transformation.
 #' @param zero_one_logit_clamp Clamp value for logit transformation.
 #' @param num_cores Number of OpenMP threads.
 #' @return Numeric vector of HL statistics.
-compute_wilcox_hl_distr_parallel_cpp <- function(w_mat, y, delta, transform_code, zero_one_logit_clamp, num_cores) {
-    .Call(`_EDI_compute_wilcox_hl_distr_parallel_cpp`, w_mat, y, delta, transform_code, zero_one_logit_clamp, num_cores)
+compute_wilcox_hl_distr_parallel_cpp <- function(w_mat_sexp, y_sexp, delta, transform_code, zero_one_logit_clamp, num_cores) {
+    .Call(`_EDI_compute_wilcox_hl_distr_parallel_cpp`, w_mat_sexp, y_sexp, delta, transform_code, zero_one_logit_clamp, num_cores)
 }
 
-compute_wilcox_matching_ivwc_bootstrap_parallel_cpp <- function(w, y, m_vec, indices_mat, m_mat, num_cores) {
-    .Call(`_EDI_compute_wilcox_matching_ivwc_bootstrap_parallel_cpp`, w, y, m_vec, indices_mat, m_mat, num_cores)
+compute_wilcox_matching_ivwc_bootstrap_parallel_cpp <- function(w_sexp, y_sexp, m_vec_sexp, indices_mat_sexp, m_mat_sexp, num_cores) {
+    .Call(`_EDI_compute_wilcox_matching_ivwc_bootstrap_parallel_cpp`, w_sexp, y_sexp, m_vec_sexp, indices_mat_sexp, m_mat_sexp, num_cores)
 }
 
-compute_wilcox_distr_parallel_cpp <- function(w_mat, y, delta, num_cores) {
-    .Call(`_EDI_compute_wilcox_distr_parallel_cpp`, w_mat, y, delta, num_cores)
+compute_wilcox_distr_parallel_cpp <- function(w_mat_sexp, y_sexp, delta, num_cores) {
+    .Call(`_EDI_compute_wilcox_distr_parallel_cpp`, w_mat_sexp, y_sexp, delta, num_cores)
 }
 
-compute_wilcox_distr_from_list_parallel_cpp <- function(permutations, y, delta, num_cores) {
-    .Call(`_EDI_compute_wilcox_distr_from_list_parallel_cpp`, permutations, y, delta, num_cores)
+compute_wilcox_distr_from_list_parallel_cpp <- function(permutations, y_sexp, delta, num_cores) {
+    .Call(`_EDI_compute_wilcox_distr_from_list_parallel_cpp`, permutations, y_sexp, delta, num_cores)
 }
 
-get_zero_augmented_poisson_score_cpp <- function(X, y, Xzi, params, is_hurdle) {
-    .Call(`_EDI_get_zero_augmented_poisson_score_cpp`, X, y, Xzi, params, is_hurdle)
+get_zero_augmented_poisson_score_cpp <- function(X_sexp, y_sexp, Xzi_sexp, params_sexp, is_hurdle) {
+    .Call(`_EDI_get_zero_augmented_poisson_score_cpp`, X_sexp, y_sexp, Xzi_sexp, params_sexp, is_hurdle)
 }
 
-get_zero_augmented_poisson_hessian_cpp <- function(X, y, Xzi, params, is_hurdle) {
-    .Call(`_EDI_get_zero_augmented_poisson_hessian_cpp`, X, y, Xzi, params, is_hurdle)
+get_zero_augmented_poisson_hessian_cpp <- function(X_sexp, y_sexp, Xzi_sexp, params_sexp, is_hurdle) {
+    .Call(`_EDI_get_zero_augmented_poisson_hessian_cpp`, X_sexp, y_sexp, Xzi_sexp, params_sexp, is_hurdle)
 }
 
 #' @title Fast Zero-Augmented Poisson Regression (C++)
@@ -1595,16 +1594,16 @@ get_zero_augmented_poisson_hessian_cpp <- function(X, y, Xzi, params, is_hurdle)
 #' @return A list containing coefficients, vcov, and convergence status.
 #' @export
 #' @keywords internal
-fast_zero_augmented_poisson_cpp <- function(X, y, Xzi, is_hurdle, warm_start_params = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_zero_augmented_poisson_cpp`, X, y, Xzi, is_hurdle, warm_start_params, smart_cold_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
+fast_zero_augmented_poisson_cpp <- function(X_sexp, y_sexp, Xzi_sexp, is_hurdle, warm_start_params = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL) {
+    .Call(`_EDI_fast_zero_augmented_poisson_cpp`, X_sexp, y_sexp, Xzi_sexp, is_hurdle, warm_start_params, smart_cold_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
-get_zero_one_inflated_beta_score_cpp <- function(X, X_zero_one, y, params) {
-    .Call(`_EDI_get_zero_one_inflated_beta_score_cpp`, X, X_zero_one, y, params)
+get_zero_one_inflated_beta_score_cpp <- function(X_sexp, X_zero_one_sexp, y_sexp, params_sexp) {
+    .Call(`_EDI_get_zero_one_inflated_beta_score_cpp`, X_sexp, X_zero_one_sexp, y_sexp, params_sexp)
 }
 
-get_zero_one_inflated_beta_hessian_cpp <- function(X, X_zero_one, y, params) {
-    .Call(`_EDI_get_zero_one_inflated_beta_hessian_cpp`, X, X_zero_one, y, params)
+get_zero_one_inflated_beta_hessian_cpp <- function(X_sexp, X_zero_one_sexp, y_sexp, params_sexp) {
+    .Call(`_EDI_get_zero_one_inflated_beta_hessian_cpp`, X_sexp, X_zero_one_sexp, y_sexp, params_sexp)
 }
 
 #' @title Fast Zero/One-Inflated Beta Regression (C++)
@@ -1621,41 +1620,29 @@ get_zero_one_inflated_beta_hessian_cpp <- function(X, X_zero_one, y, params) {
 #' @return A list containing coefficients, vcov, and convergence status.
 #' @export
 #' @keywords internal
-fast_zero_one_inflated_beta_cpp <- function(X, X_zero_one, y, warm_start_params = NULL, smart_cold_start = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, estimate_only = FALSE) {
-    .Call(`_EDI_fast_zero_one_inflated_beta_cpp`, X, X_zero_one, y, warm_start_params, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only)
-}
-
-get_zinb_score_cpp <- function(X, y, Xzi, params) {
-    .Call(`_EDI_get_zinb_score_cpp`, X, y, Xzi, params)
-}
-
-get_zinb_hessian_cpp <- function(X, y, Xzi, params) {
-    .Call(`_EDI_get_zinb_hessian_cpp`, X, y, Xzi, params)
-}
-
-get_zinb_neg_loglik_cpp <- function(X, y, Xzi, params) {
-    .Call(`_EDI_get_zinb_neg_loglik_cpp`, X, y, Xzi, params)
+fast_zero_one_inflated_beta_cpp <- function(X_sexp, X_zero_one_sexp, y_sexp, warm_start_params = NULL, smart_cold_start = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, estimate_only = FALSE) {
+    .Call(`_EDI_fast_zero_one_inflated_beta_cpp`, X_sexp, X_zero_one_sexp, y_sexp, warm_start_params, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only)
 }
 
 #' @title Fast Zero-Inflated Negative Binomial Regression (C++)
-#' @description High-performance ZINB regression fitting using Newton-Raphson or L-BFGS.
-#' @param X Matrix of predictors for the conditional component.
-#' @param y Vector of responses.
-#' @param Xzi Matrix of predictors for the zero-inflation component.
-#' @param warm_start_params Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.
-#' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
-#' @param estimate_only If TRUE, skip variance component calculations.
+#' @description High-performance zero-inflated negative binomial model fitting via L-BFGS.
+#' @param X Numeric matrix of predictors for the count component (including intercept).
+#' @param Xzi Numeric matrix of predictors for the zero-inflation component (including intercept).
+#' @param y Numeric vector of non-negative integer count responses.
+#' @param warm_start_params Optional starting values for all parameters.
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
-#' @param optimization_alg Optimization algorithm.
 #' @param fixed_idx Optional indices of fixed parameters.
 #' @param fixed_values Optional values for fixed parameters.
-#' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first iteration.
-#' @return A list containing coefficients, vcov, and convergence status.
+#' @param optimization_alg Optimization algorithm (default "lbfgs").
+#' @param smart_cold_start Logical. If TRUE, use a heuristic initial guess.
+#' @param warm_start_fisher_info Optional initial Fisher Information matrix.
+#' @param estimate_only Logical. If TRUE, skip variance computation and return only coefficients.
+#' @return A list containing coefficients and convergence status.
 #' @export
 #' @keywords internal
-fast_zinb_cpp <- function(X, y, Xzi, warm_start_params = NULL, smart_cold_start = TRUE, estimate_only = FALSE, maxit = 1000L, tol = 1e-6, optimization_alg = "lbfgs", fixed_idx = NULL, fixed_values = NULL, warm_start_fisher_info = NULL) {
-    .Call(`_EDI_fast_zinb_cpp`, X, y, Xzi, warm_start_params, smart_cold_start, estimate_only, maxit, tol, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info)
+fast_zinb_cpp <- function(X, Xzi, y, warm_start_params = NULL, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", smart_cold_start = TRUE, warm_start_fisher_info = NULL, estimate_only = FALSE) {
+    .Call(`_EDI_fast_zinb_cpp`, X, Xzi, y, warm_start_params, maxit, tol, fixed_idx, fixed_values, optimization_alg, smart_cold_start, warm_start_fisher_info, estimate_only)
 }
 
 #' @title Fast G-Computation Point Estimate for Fractional Logit (C++)
@@ -1666,8 +1653,8 @@ fast_zinb_cpp <- function(X, y, Xzi, warm_start_params = NULL, smart_cold_start 
 #' @return A list with elements \code{mean1}, \code{mean0}, and \code{md} (mean difference).
 #' @export
 #' @keywords internal
-gcomp_fractional_logit_point_estimate_cpp <- function(X_fit, coef_hat, j_treat) {
-    .Call(`_EDI_gcomp_fractional_logit_point_estimate_cpp`, X_fit, coef_hat, j_treat)
+gcomp_fractional_logit_point_estimate_cpp <- function(X_fit_sexp, coef_hat_sexp, j_treat) {
+    .Call(`_EDI_gcomp_fractional_logit_point_estimate_cpp`, X_fit_sexp, coef_hat_sexp, j_treat)
 }
 
 #' @title Fast G-Computation Point Estimate for Logistic Regression (C++)
@@ -1678,24 +1665,24 @@ gcomp_fractional_logit_point_estimate_cpp <- function(X_fit, coef_hat, j_treat) 
 #' @return A list with elements \code{mean1}, \code{mean0}, and \code{md} (mean difference).
 #' @export
 #' @keywords internal
-gcomp_logistic_point_estimate_cpp <- function(X_fit, coef_hat, j_treat) {
-    .Call(`_EDI_gcomp_logistic_point_estimate_cpp`, X_fit, coef_hat, j_treat)
+gcomp_logistic_point_estimate_cpp <- function(X_fit_sexp, coef_hat_sexp, j_treat) {
+    .Call(`_EDI_gcomp_logistic_point_estimate_cpp`, X_fit_sexp, coef_hat_sexp, j_treat)
 }
 
-gcomp_logistic_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, j_treat) {
-    .Call(`_EDI_gcomp_logistic_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, j_treat)
+gcomp_logistic_post_fit_cpp <- function(X_fit_sexp, y_sexp, coef_hat_sexp, mu_hat_sexp, j_treat) {
+    .Call(`_EDI_gcomp_logistic_post_fit_cpp`, X_fit_sexp, y_sexp, coef_hat_sexp, mu_hat_sexp, j_treat)
 }
 
-gcomp_fractional_logit_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, j_treat) {
-    .Call(`_EDI_gcomp_fractional_logit_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, j_treat)
+gcomp_fractional_logit_post_fit_cpp <- function(X_fit_sexp, y_sexp, coef_hat_sexp, mu_hat_sexp, j_treat) {
+    .Call(`_EDI_gcomp_fractional_logit_post_fit_cpp`, X_fit_sexp, y_sexp, coef_hat_sexp, mu_hat_sexp, j_treat)
 }
 
-gcomp_logistic_cluster_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, cluster_id, j_treat) {
-    .Call(`_EDI_gcomp_logistic_cluster_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, cluster_id, j_treat)
+gcomp_logistic_cluster_post_fit_cpp <- function(X_fit_sexp, y_sexp, coef_hat_sexp, mu_hat_sexp, cluster_id, j_treat) {
+    .Call(`_EDI_gcomp_logistic_cluster_post_fit_cpp`, X_fit_sexp, y_sexp, coef_hat_sexp, mu_hat_sexp, cluster_id, j_treat)
 }
 
-gcomp_ordinal_proportional_odds_post_fit_cpp <- function(X_fit, coef_hat, alpha_hat, j_treat) {
-    .Call(`_EDI_gcomp_ordinal_proportional_odds_post_fit_cpp`, X_fit, coef_hat, alpha_hat, j_treat)
+gcomp_ordinal_proportional_odds_post_fit_cpp <- function(X_fit_sexp, coef_hat_sexp, alpha_hat_sexp, j_treat) {
+    .Call(`_EDI_gcomp_ordinal_proportional_odds_post_fit_cpp`, X_fit_sexp, coef_hat_sexp, alpha_hat_sexp, j_treat)
 }
 
 generate_permutations_matching_cpp <- function(m_vec, nsim, prob_T) {
@@ -1718,8 +1705,8 @@ generate_permutations_efron_cpp <- function(n, nsim, prob_T, weighted_coin_prob)
     .Call(`_EDI_generate_permutations_efron_cpp`, n, nsim, prob_T, weighted_coin_prob)
 }
 
-generate_permutations_atkinson_cpp <- function(X, n, p_raw, prob_T, nsim) {
-    .Call(`_EDI_generate_permutations_atkinson_cpp`, X, n, p_raw, prob_T, nsim)
+generate_permutations_atkinson_cpp <- function(X_sexp, n, p_raw, prob_T, nsim) {
+    .Call(`_EDI_generate_permutations_atkinson_cpp`, X_sexp, n, p_raw, prob_T, nsim)
 }
 
 generate_permutations_pocock_simon_cpp <- function(x_levels_matrix, num_levels_total, weights, p_best, prob_T, nsim) {
@@ -1818,12 +1805,12 @@ compute_cluster_ids_cpp <- function(m_vec) {
     .Call(`_EDI_compute_cluster_ids_cpp`, m_vec)
 }
 
-compute_matching_compound_distr_parallel_cpp <- function(y, w_mat, m_mat, num_cores) {
-    .Call(`_EDI_compute_matching_compound_distr_parallel_cpp`, y, w_mat, m_mat, num_cores)
+compute_matching_compound_distr_parallel_cpp <- function(y_sexp, w_mat_sexp, m_mat_sexp, num_cores) {
+    .Call(`_EDI_compute_matching_compound_distr_parallel_cpp`, y_sexp, w_mat_sexp, m_mat_sexp, num_cores)
 }
 
-compute_matching_compound_bootstrap_parallel_cpp <- function(w_mat, m_mat, y_mat, num_cores) {
-    .Call(`_EDI_compute_matching_compound_bootstrap_parallel_cpp`, w_mat, m_mat, y_mat, num_cores)
+compute_matching_compound_bootstrap_parallel_cpp <- function(w_mat_sexp, m_mat_sexp, y_mat_sexp, num_cores) {
+    .Call(`_EDI_compute_matching_compound_bootstrap_parallel_cpp`, w_mat_sexp, m_mat_sexp, y_mat_sexp, num_cores)
 }
 
 compute_matching_lin_match_data_cpp <- function(X, y, w, m_vec) {
@@ -1834,8 +1821,8 @@ compute_matching_lin_wy_stats_cpp <- function(w, y, m_vec) {
     .Call(`_EDI_compute_matching_lin_wy_stats_cpp`, w, y, m_vec)
 }
 
-neg_loglik_nb_cpp <- function(theta, beta, X, y) {
-    .Call(`_EDI_neg_loglik_nb_cpp`, theta, beta, X, y)
+neg_loglik_nb_cpp <- function(theta, beta_sexp, X_sexp, y_sexp) {
+    .Call(`_EDI_neg_loglik_nb_cpp`, theta, beta_sexp, X_sexp, y_sexp)
 }
 
 #' LRT confidence interval by Newton-Raphson + bisection (Rcpp implementation)
@@ -1891,8 +1878,8 @@ pval_invert_ci_cpp <- function(pval_fn, est, alpha, step, lower_seed, upper_seed
     .Call(`_EDI_pval_invert_ci_cpp`, pval_fn, est, alpha, step, lower_seed, upper_seed, max_bracket, max_bisect, tol)
 }
 
-match_diffs_cpp <- function(X, y, w, m_vec, m) {
-    .Call(`_EDI_match_diffs_cpp`, X, y, w, m_vec, m)
+match_diffs_cpp <- function(X_sexp, y_sexp, w_sexp, m_vec_sexp, m) {
+    .Call(`_EDI_match_diffs_cpp`, X_sexp, y_sexp, w_sexp, m_vec_sexp, m)
 }
 
 #' Constrained MLE for Risk Difference (Miettinen-Nurminen)
@@ -1965,12 +1952,12 @@ newcombe_paired_ci_cpp <- function(n11, n10, n01, n00, alpha) {
     .Call(`_EDI_newcombe_paired_ci_cpp`, n11, n10, n01, n00, alpha)
 }
 
-compute_ols_distr_parallel_cpp <- function(X, y, w_mat, delta, num_cores) {
-    .Call(`_EDI_compute_ols_distr_parallel_cpp`, X, y, w_mat, delta, num_cores)
+compute_ols_distr_parallel_cpp <- function(X_sexp, y_sexp, w_mat_sexp, delta, num_cores) {
+    .Call(`_EDI_compute_ols_distr_parallel_cpp`, X_sexp, y_sexp, w_mat_sexp, delta, num_cores)
 }
 
-compute_ols_bootstrap_parallel_cpp <- function(X, y, w, indices_mat, num_cores) {
-    .Call(`_EDI_compute_ols_bootstrap_parallel_cpp`, X, y, w, indices_mat, num_cores)
+compute_ols_bootstrap_parallel_cpp <- function(X_sexp, y_sexp, w_sexp, indices_mat_sexp, num_cores) {
+    .Call(`_EDI_compute_ols_bootstrap_parallel_cpp`, X_sexp, y_sexp, w_sexp, indices_mat_sexp, num_cores)
 }
 
 #' Set the number of threads for OpenMP, Eigen, and MKL
@@ -2009,12 +1996,12 @@ optimal_blocks_distance_matrix_cpp <- function(X, dist_code, dist_fn = NULL) {
     .Call(`_EDI_optimal_blocks_distance_matrix_cpp`, X, dist_code, dist_fn)
 }
 
-d_optimal_search_cpp <- function(P, nsim, n_T) {
-    .Call(`_EDI_d_optimal_search_cpp`, P, nsim, n_T)
+d_optimal_search_cpp <- function(P_sexp, nsim, n_T) {
+    .Call(`_EDI_d_optimal_search_cpp`, P_sexp, nsim, n_T)
 }
 
-a_optimal_search_cpp <- function(P, H, nsim, n_T) {
-    .Call(`_EDI_a_optimal_search_cpp`, P, H, nsim, n_T)
+a_optimal_search_cpp <- function(P_sexp, H_sexp, nsim, n_T) {
+    .Call(`_EDI_a_optimal_search_cpp`, P_sexp, H_sexp, nsim, n_T)
 }
 
 compute_pair_averages_cpp <- function(X, m_vec, m) {
@@ -2079,12 +2066,12 @@ pocock_simon_redraw_w_cpp <- function(x_levels_matrix, num_levels_total, weights
     .Call(`_EDI_pocock_simon_redraw_w_cpp`, x_levels_matrix, num_levels_total, weights, p_best, prob_T)
 }
 
-qr_reduce_full_rank_cpp <- function(X) {
-    .Call(`_EDI_qr_reduce_full_rank_cpp`, X)
+qr_reduce_full_rank_cpp <- function(X_sexp) {
+    .Call(`_EDI_qr_reduce_full_rank_cpp`, X_sexp)
 }
 
-qr_reduce_preserve_cols_cpp <- function(X, required_cols) {
-    .Call(`_EDI_qr_reduce_preserve_cols_cpp`, X, required_cols)
+qr_reduce_preserve_cols_cpp <- function(X_sexp, required_cols) {
+    .Call(`_EDI_qr_reduce_preserve_cols_cpp`, X_sexp, required_cols)
 }
 
 random_block_size_redraw_w_cpp <- function(strata_keys_sexp, block_sizes_sexp, prob_T_sexp) {
@@ -2139,24 +2126,24 @@ compute_ridit_bootstrap_parallel_cpp <- function(w, y, indices_mat, reference, n
     .Call(`_EDI_compute_ridit_bootstrap_parallel_cpp`, w, y, indices_mat, reference, num_cores)
 }
 
-ols_hc2_setup_cpp <- function(X_fit) {
-    .Call(`_EDI_ols_hc2_setup_cpp`, X_fit)
+ols_hc2_setup_cpp <- function(X_fit_sexp) {
+    .Call(`_EDI_ols_hc2_setup_cpp`, X_fit_sexp)
 }
 
-ols_hc2_post_fit_precomputed_cpp <- function(X_fit, y, coef_hat, bread, hat, j_treat) {
-    .Call(`_EDI_ols_hc2_post_fit_precomputed_cpp`, X_fit, y, coef_hat, bread, hat, j_treat)
+ols_hc2_post_fit_precomputed_cpp <- function(X_fit_sexp, y_sexp, coef_hat_sexp, bread_sexp, hat_sexp, j_treat) {
+    .Call(`_EDI_ols_hc2_post_fit_precomputed_cpp`, X_fit_sexp, y_sexp, coef_hat_sexp, bread_sexp, hat_sexp, j_treat)
 }
 
-ols_hc2_post_fit_cpp <- function(X_fit, y, coef_hat, j_treat) {
-    .Call(`_EDI_ols_hc2_post_fit_cpp`, X_fit, y, coef_hat, j_treat)
+ols_hc2_post_fit_cpp <- function(X_fit_sexp, y_sexp, coef_hat_sexp, j_treat) {
+    .Call(`_EDI_ols_hc2_post_fit_cpp`, X_fit_sexp, y_sexp, coef_hat_sexp, j_treat)
 }
 
-glm_sandwich_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, working_weights, j_treat) {
-    .Call(`_EDI_glm_sandwich_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, working_weights, j_treat)
+glm_sandwich_post_fit_cpp <- function(X_fit_sexp, y_sexp, coef_hat_sexp, mu_hat_sexp, working_weights_sexp, j_treat) {
+    .Call(`_EDI_glm_sandwich_post_fit_cpp`, X_fit_sexp, y_sexp, coef_hat_sexp, mu_hat_sexp, working_weights_sexp, j_treat)
 }
 
-glm_cluster_sandwich_post_fit_cpp <- function(X_fit, y, coef_hat, mu_hat, working_weights, cluster_id, j_treat) {
-    .Call(`_EDI_glm_cluster_sandwich_post_fit_cpp`, X_fit, y, coef_hat, mu_hat, working_weights, cluster_id, j_treat)
+glm_cluster_sandwich_post_fit_cpp <- function(X_fit_sexp, y_sexp, coef_hat_sexp, mu_hat_sexp, working_weights_sexp, cluster_id, j_treat) {
+    .Call(`_EDI_glm_cluster_sandwich_post_fit_cpp`, X_fit_sexp, y_sexp, coef_hat_sexp, mu_hat_sexp, working_weights_sexp, cluster_id, j_treat)
 }
 
 compute_bootstrapped_weighted_sqd_distances_cpp <- function(X_all_scaled_col_subset, covariate_weights, t, B) {
@@ -2197,28 +2184,28 @@ stratified_bootstrap_indices_cpp <- function(strata_keys_sexp) {
 #' @param min_count_per_level Minimum frequency required for every level in a
 #'   candidate column.
 #' @return A list with `strata_id`, `selected_cols`, and `num_strata`.
-compute_survival_strata_ids_cpp <- function(X, max_unique_per_col = 4L, max_strata_cols = 4L, min_count_per_level = 2L) {
-    .Call(`_EDI_compute_survival_strata_ids_cpp`, X, max_unique_per_col, max_strata_cols, min_count_per_level)
+compute_survival_strata_ids_cpp <- function(X_sexp, max_unique_per_col = 4L, max_strata_cols = 4L, min_count_per_level = 2L) {
+    .Call(`_EDI_compute_survival_strata_ids_cpp`, X_sexp, max_unique_per_col, max_strata_cols, min_count_per_level)
 }
 
-test_ols_smart_cold_start_beta_cpp <- function(X, y) {
-    .Call(`_EDI_test_ols_smart_cold_start_beta_cpp`, X, y)
+test_ols_smart_cold_start_beta_cpp <- function(X_sexp, y_sexp) {
+    .Call(`_EDI_test_ols_smart_cold_start_beta_cpp`, X_sexp, y_sexp)
 }
 
-test_ols_smart_cold_start_beta_on_log1p_cpp <- function(X, y) {
-    .Call(`_EDI_test_ols_smart_cold_start_beta_on_log1p_cpp`, X, y)
+test_ols_smart_cold_start_beta_on_log1p_cpp <- function(X_sexp, y_sexp) {
+    .Call(`_EDI_test_ols_smart_cold_start_beta_on_log1p_cpp`, X_sexp, y_sexp)
 }
 
-test_finalize_warm_start_beta_cpp <- function(smart_cold_start, legacy_start, use_smart = TRUE, fixed_idx = NULL, fixed_values = NULL) {
-    .Call(`_EDI_test_finalize_warm_start_beta_cpp`, smart_cold_start, legacy_start, use_smart, fixed_idx, fixed_values)
+test_finalize_warm_start_beta_cpp <- function(smart_cold_start_sexp, legacy_start_sexp, use_smart = TRUE, fixed_idx = NULL, fixed_values = NULL) {
+    .Call(`_EDI_test_finalize_warm_start_beta_cpp`, smart_cold_start_sexp, legacy_start_sexp, use_smart, fixed_idx, fixed_values)
 }
 
-test_weibull_aft_start_cpp <- function(X, y, dead) {
-    .Call(`_EDI_test_weibull_aft_start_cpp`, X, y, dead)
+test_weibull_aft_start_cpp <- function(X_sexp, y_sexp, dead_sexp) {
+    .Call(`_EDI_test_weibull_aft_start_cpp`, X_sexp, y_sexp, dead_sexp)
 }
 
-test_ordinal_start_cpp <- function(X, y, link = "logit") {
-    .Call(`_EDI_test_ordinal_start_cpp`, X, y, link)
+test_ordinal_start_cpp <- function(X_sexp, y_sexp, link = "logit") {
+    .Call(`_EDI_test_ordinal_start_cpp`, X_sexp, y_sexp, link)
 }
 
 which_cols_vary_cpp <- function(X) {

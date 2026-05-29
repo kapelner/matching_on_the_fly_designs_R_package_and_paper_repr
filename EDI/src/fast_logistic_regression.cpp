@@ -22,23 +22,21 @@ inline double log1pexp_stable(double x) {
 
 class LogisticLbfgsObjective : public Numer::MFuncGrad {
 private:
-    const Eigen::MatrixXd& m_X;
-    const Eigen::VectorXd& m_y;
-    const Eigen::VectorXd& m_weights;
-    const Eigen::VectorXd& m_eta_fixed;
+    const Eigen::Ref<const Eigen::MatrixXd> m_X;
+    const Eigen::Ref<const Eigen::VectorXd> m_y;
+    const Eigen::Ref<const Eigen::VectorXd> m_weights;
+    const Eigen::Ref<const Eigen::VectorXd> m_eta_fixed;
     bool m_use_weights;
     int m_n;
 
 public:
-    LogisticLbfgsObjective(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, 
-                           const Eigen::VectorXd& weights, const Eigen::VectorXd& eta_fixed, 
+    LogisticLbfgsObjective(const Eigen::Ref<const Eigen::MatrixXd>& X, const Eigen::Ref<const Eigen::VectorXd>& y, 
+                           const Eigen::Ref<const Eigen::VectorXd>& weights, const Eigen::Ref<const Eigen::VectorXd>& eta_fixed, 
                            bool use_weights)
         : m_X(X), m_y(y), m_weights(weights), m_eta_fixed(eta_fixed), 
           m_use_weights(use_weights), m_n(X.rows()) {}
 
     virtual double f_grad(Numer::Constvec& beta, Numer::Refvec grad) override {
-        // Numer::Constvec is usually const Eigen::VectorXd
-        // Numer::Refvec is usually Eigen::Ref<Eigen::VectorXd>
         Eigen::VectorXd eta = m_eta_fixed + m_X * beta;
         double neg_ll = 0.0;
         Eigen::VectorXd diff(m_n);
@@ -58,9 +56,9 @@ public:
 } // namespace
 
 // Internal pure C++ logic
-ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X, 
-                                              const Eigen::VectorXd& y, 
-                                              const Eigen::VectorXd& weights = Eigen::VectorXd(),
+ModelResult fast_logistic_regression_internal(const Eigen::Ref<const Eigen::MatrixXd>& X, 
+                                              const Eigen::Ref<const Eigen::VectorXd>& y, 
+                                              const Eigen::Ref<const Eigen::VectorXd>& weights,
                                               Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                               bool smart_cold_start = false,
                                               int maxit = 100, 
@@ -120,7 +118,7 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X,
     }
 
     // IRLS Path
-    RowMajorMatrixXd X_free(n, p_free);
+    Eigen::MatrixXd X_free(n, p_free);
     for (int j = 0; j < p_free; ++j) X_free.col(j) = X.col(fixed_spec.free_idx[j]);
 
     Eigen::VectorXd mu(n);
@@ -214,7 +212,6 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X,
     if (!estimate_only) {
         res.mu = mu;
         res.XtWX = expand_free_covariance(p, fixed_spec, XtWX, false);
-        // Compute log-likelihood
         double nl = 0.0;
         Eigen::VectorXd final_eta = eta_fixed + X_free * beta_free;
         for (int i = 0; i < n; ++i) {
@@ -222,7 +219,6 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X,
             nl += wi * (log1pexp_stable(final_eta[i]) - y[i] * final_eta[i]);
         }
         res.neg_ll = nl;
-        // Compute score
         Eigen::VectorXd final_diff = y - mu;
         if (use_weights) final_diff.array() *= weights.array();
         res.score = X.transpose() * final_diff;
@@ -233,7 +229,14 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X,
 }
 
 // [[Rcpp::export]]
-Eigen::VectorXd get_logistic_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& beta) {
+Eigen::VectorXd get_logistic_regression_score_cpp(SEXP X_sexp, SEXP y_sexp, SEXP beta_sexp) {
+    NumericMatrix X_r(X_sexp);
+    NumericVector y_r(y_sexp);
+    NumericVector beta_r(beta_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+    Eigen::Map<const Eigen::VectorXd> beta(beta_r.begin(), beta_r.size());
+
     const int n = X.rows();
     Eigen::VectorXd eta = X * beta;
     Eigen::VectorXd mu(n);
@@ -242,7 +245,12 @@ Eigen::VectorXd get_logistic_regression_score_cpp(const Eigen::MatrixXd& X, cons
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd get_logistic_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& beta) {
+Eigen::MatrixXd get_logistic_regression_hessian_cpp(SEXP X_sexp, SEXP beta_sexp) {
+    NumericMatrix X_r(X_sexp);
+    NumericVector beta_r(beta_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> beta(beta_r.begin(), beta_r.size());
+
     const int n = X.rows();
     Eigen::VectorXd eta = X * beta;
     Eigen::VectorXd w(n);
@@ -252,7 +260,16 @@ Eigen::MatrixXd get_logistic_regression_hessian_cpp(const Eigen::MatrixXd& X, co
 }
 
 // [[Rcpp::export]]
-Eigen::VectorXd get_logistic_regression_weighted_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights, const Eigen::VectorXd& beta) {
+Eigen::VectorXd get_logistic_regression_weighted_score_cpp(SEXP X_sexp, SEXP y_sexp, SEXP weights_sexp, SEXP beta_sexp) {
+    NumericMatrix X_r(X_sexp);
+    NumericVector y_r(y_sexp);
+    NumericVector w_r(weights_sexp);
+    NumericVector beta_r(beta_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+    Eigen::Map<const Eigen::VectorXd> weights(w_r.begin(), w_r.size());
+    Eigen::Map<const Eigen::VectorXd> beta(beta_r.begin(), beta_r.size());
+
     const int n = X.rows();
     Eigen::VectorXd eta = X * beta;
     Eigen::VectorXd mu(n);
@@ -263,7 +280,14 @@ Eigen::VectorXd get_logistic_regression_weighted_score_cpp(const Eigen::MatrixXd
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd get_logistic_regression_weighted_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& weights, const Eigen::VectorXd& beta) {
+Eigen::MatrixXd get_logistic_regression_weighted_hessian_cpp(SEXP X_sexp, SEXP weights_sexp, SEXP beta_sexp) {
+    NumericMatrix X_r(X_sexp);
+    NumericVector w_r(weights_sexp);
+    NumericVector beta_r(beta_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> weights(w_r.begin(), w_r.size());
+    Eigen::Map<const Eigen::VectorXd> beta(beta_r.begin(), beta_r.size());
+
     const int n = X.rows();
     Eigen::VectorXd eta = X * beta;
     Eigen::VectorXd w(n);

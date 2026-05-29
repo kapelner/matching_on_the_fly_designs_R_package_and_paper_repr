@@ -20,15 +20,15 @@ struct TrigammaFunctor {
 
 class BetaRegression {
 private:
-	const Eigen::VectorXd m_y;
-	const Eigen::MatrixXd m_X;
+	const Eigen::Ref<const Eigen::VectorXd> m_y;
+	const Eigen::Ref<const Eigen::MatrixXd> m_X;
 	const int m_n;
 	const int m_p;
 	const Eigen::VectorXd m_log_y;
 	const Eigen::VectorXd m_log1_y;
 
 public:
-	BetaRegression(const Eigen::VectorXd& y, const Eigen::MatrixXd& X) :
+	BetaRegression(const Eigen::Ref<const Eigen::VectorXd>& y, const Eigen::Ref<const Eigen::MatrixXd>& X) :
 		m_y(y), m_X(X), m_n(X.rows()), m_p(X.cols()),
 		m_log_y(y.array().log().matrix()),
 		m_log1_y((1.0 - y.array()).log().matrix()) {}
@@ -183,8 +183,8 @@ public:
 	}
 };
 
-ModelResult fast_beta_regression_internal(const Eigen::MatrixXd& X,
-                                        const Eigen::VectorXd& y,
+ModelResult fast_beta_regression_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
+                                        const Eigen::Ref<const Eigen::VectorXd>& y,
                                         const Eigen::VectorXd* warm_start_beta = nullptr,
                                         bool smart_cold_start = true,
                                         double start_phi = 10.0,
@@ -245,9 +245,16 @@ ModelResult fast_beta_regression_internal(const Eigen::MatrixXd& X,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::VectorXd get_beta_regression_score_cpp(const Eigen::MatrixXd& X,
-                                              const Eigen::VectorXd& y,
-                                              const Eigen::VectorXd& params) {
+Eigen::VectorXd get_beta_regression_score_cpp(SEXP X_sexp,
+                                              SEXP y_sexp,
+                                              SEXP params_sexp) {
+    NumericMatrix X_r(X_sexp);
+    NumericVector y_r(y_sexp);
+    NumericVector params_r(params_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+    Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
+
     BetaRegression fun(y, X);
     Eigen::VectorXd grad(params.size());
     fun(params, grad);
@@ -263,9 +270,16 @@ Eigen::VectorXd get_beta_regression_score_cpp(const Eigen::MatrixXd& X,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::MatrixXd get_beta_regression_hessian_cpp(const Eigen::MatrixXd& X,
-                                                const Eigen::VectorXd& y,
-                                                const Eigen::VectorXd& params) {
+Eigen::MatrixXd get_beta_regression_hessian_cpp(SEXP X_sexp,
+                                                SEXP y_sexp,
+                                                SEXP params_sexp) {
+    NumericMatrix X_r(X_sexp);
+    NumericVector y_r(y_sexp);
+    NumericVector params_r(params_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+    Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
+
     BetaRegression fun(y, X);
     return -fun.hessian(params); // Return the actual Hessian of log-likelihood (Fisher Information is -Hessian)
 }
@@ -290,8 +304,8 @@ Eigen::MatrixXd get_beta_regression_hessian_cpp(const Eigen::MatrixXd& X,
 //' y = runif(10)
 //' fast_beta_regression_cpp(X, y)
 // [[Rcpp::export]]
-List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
-								const NumericVector& y,
+List fast_beta_regression_cpp(SEXP X_sexp,
+								SEXP y_sexp,
 								Nullable<NumericVector> warm_start_beta = R_NilValue,
 								bool smart_cold_start = true,
 								double start_phi = 10.0,
@@ -302,7 +316,11 @@ List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
                                 Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
                                 bool estimate_only = false) {
 
-	Eigen::VectorXd y_eigen = as<Eigen::VectorXd>(y);
+    NumericMatrix X_r(X_sexp);
+    NumericVector y_r(y_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+
     Eigen::VectorXd sb;
     Eigen::VectorXd* sb_ptr = nullptr;
     if (warm_start_beta.isNotNull()) {
@@ -310,12 +328,12 @@ List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
         sb_ptr = &sb;
     }
 
-    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, smart_cold_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only);
+    ModelResult fit = fast_beta_regression_internal(X, y, sb_ptr, smart_cold_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only);
 
     Eigen::VectorXd params_full(fit.b.size() + 1);
     params_full.head(fit.b.size()) = fit.b;
     params_full[fit.b.size()] = std::log(fit.dispersion);
-    BetaRegression fun_neg_ll(y_eigen, X);
+    BetaRegression fun_neg_ll(y, X);
     Eigen::VectorXd dummy_grad(params_full.size());
     double neg_loglik = fun_neg_ll(params_full, dummy_grad);
 
@@ -347,8 +365,8 @@ List fast_beta_regression_cpp(const Eigen::MatrixXd& X,
 //' y = runif(10)
 //' fast_beta_regression_with_var_cpp(X, y)
 // [[Rcpp::export]]
-List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
-									 const NumericVector& y,
+List fast_beta_regression_with_var_cpp(SEXP X_sexp,
+									 SEXP y_sexp,
 									 Nullable<NumericVector> warm_start_beta = R_NilValue,
 									 bool smart_cold_start = true,
 									 double start_phi = 10.0,
@@ -359,7 +377,11 @@ List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
                                      std::string optimization_alg = "lbfgs",
                                      Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
 
-	Eigen::VectorXd y_eigen = as<Eigen::VectorXd>(y);
+    NumericMatrix X_r(X_sexp);
+    NumericVector y_r(y_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+
     Eigen::VectorXd sb;
     Eigen::VectorXd* sb_ptr = nullptr;
     if (warm_start_beta.isNotNull()) {
@@ -367,7 +389,7 @@ List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
         sb_ptr = &sb;
     }
 
-    ModelResult fit = fast_beta_regression_internal(X, y_eigen, sb_ptr, smart_cold_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
+    ModelResult fit = fast_beta_regression_internal(X, y, sb_ptr, smart_cold_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols() + 1, fixed_idx, fixed_values);
     Eigen::MatrixXd H_free = subset_matrix(fit.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
 	Eigen::MatrixXd cov_free = H_free.inverse();
@@ -377,7 +399,7 @@ List fast_beta_regression_with_var_cpp(const Eigen::MatrixXd& X,
     Eigen::VectorXd params_full(fit.b.size() + 1);
     params_full.head(fit.b.size()) = fit.b;
     params_full[fit.b.size()] = std::log(fit.dispersion);
-    BetaRegression fun_neg_ll(y_eigen, X);
+    BetaRegression fun_neg_ll(y, X);
     Eigen::VectorXd dummy_grad(params_full.size());
     double neg_loglik = fun_neg_ll(params_full, dummy_grad);
 

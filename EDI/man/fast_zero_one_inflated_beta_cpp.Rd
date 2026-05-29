@@ -5,9 +5,9 @@
 \title{Fast Zero/One-Inflated Beta Regression (C++)}
 \usage{
 fast_zero_one_inflated_beta_cpp(
-  X,
-  X_zero_one,
-  y,
+  X_sexp,
+  X_zero_one_sexp,
+  y_sexp,
   warm_start_params = NULL,
   smart_cold_start = TRUE,
   fixed_idx = NULL,
@@ -18,12 +18,6 @@ fast_zero_one_inflated_beta_cpp(
 )
 }
 \arguments{
-\item{X}{Matrix of predictors for the beta component.}
-
-\item{X_zero_one}{Matrix of predictors for the zero and one inflation components.}
-
-\item{y}{Vector of responses in [0, 1].}
-
 \item{warm_start_params}{Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.}
 
 \item{smart_cold_start}{Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.}
@@ -35,6 +29,12 @@ fast_zero_one_inflated_beta_cpp(
 \item{optimization_alg}{Optimization algorithm.}
 
 \item{warm_start_fisher_info}{Optional initial Fisher Information matrix for the first iteration.}
+
+\item{X}{Matrix of predictors for the beta component.}
+
+\item{X_zero_one}{Matrix of predictors for the zero and one inflation components.}
+
+\item{y}{Vector of responses in [0, 1].}
 }
 \value{
 A list containing coefficients, vcov, and convergence status.

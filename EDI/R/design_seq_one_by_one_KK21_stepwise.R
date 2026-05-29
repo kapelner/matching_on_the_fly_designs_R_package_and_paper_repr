@@ -155,22 +155,26 @@ DesignSeqOneByOneKK21stepwise = R6::R6Class("DesignSeqOneByOneKK21stepwise",
 			)
 		},
 		compute_weights_KK21stepwise = function(X, response_obj, ws, abs_z_compute_fun){
-			weights = array(NA, ncol(X))
-			j_droppeds = c()
-			X_stepwise = matrix(NA, nrow = nrow(X), ncol = 0)
+			p = ncol(X)
+			weights = array(NA, p)
+			j_droppeds = integer(0)
+			X_stepwise = matrix(NA, nrow = nrow(X), ncol = p)
+			n_stepwise = 0L
 			repeat {
-				covs_to_try = setdiff(1 : ncol(X), j_droppeds)
+				covs_to_try = setdiff(seq_len(p), j_droppeds)
 				if (length(covs_to_try) == 0){ #if there's none left, we jet
 					break
 				}
-				abs_approx_zs = array(NA, ncol(X))
+				abs_approx_zs = array(NA, p)
+				X_sw_current = X_stepwise[, seq_len(n_stepwise), drop = FALSE]
 				for (j in covs_to_try){
-					abs_approx_zs[j] = abs_z_compute_fun(response_obj, cbind(X[, j], X_stepwise, ws))
+					abs_approx_zs[j] = abs_z_compute_fun(response_obj, cbind(X[, j], X_sw_current, ws))
 				}
 				j_max = which.max(abs_approx_zs)
 				weights[j_max] = abs_approx_zs[j_max]
 				j_droppeds = c(j_droppeds, j_max)
-				X_stepwise = cbind(X_stepwise, X[, j_max])
+				n_stepwise = n_stepwise + 1L
+				X_stepwise[, n_stepwise] = X[, j_max]
 			}
 #			if (any(is.na(weights))){
 #				stop("boom")

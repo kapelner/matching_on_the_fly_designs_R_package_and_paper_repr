@@ -18,7 +18,7 @@ seq_des = DesignSeqOneByOneSPBR$new(strata_cols = 'x1', n = 6, response_type = '
 seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = factor(1, levels=1:2)))
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignBlocking]{EDI::DesignBlocking}} -> \code{\link[EDI:DesignMatching]{EDI::DesignMatching}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{DesignSeqOneByOneSPBR}
+\code{EDI::Design} -> \code{EDI::DesignBlocking} -> \code{EDI::DesignMatching} -> \code{EDI::DesignSeqOneByOne} -> \code{DesignSeqOneByOneSPBR}
 }
 \section{Methods}{
 \subsection{Public methods}{

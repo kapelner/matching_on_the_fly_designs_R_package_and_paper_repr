@@ -19,7 +19,7 @@ des = DesignFixedMatchingGreedyPairSwitching$new(n = 10, response_type = 'contin
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignBlocking]{EDI::DesignBlocking}} -> \code{\link[EDI:DesignMatching]{EDI::DesignMatching}} -> \code{\link[EDI:DesignFixed]{EDI::DesignFixed}} -> \code{DesignFixedMatchingGreedyPairSwitching}
+\code{EDI::Design} -> \code{EDI::DesignBlocking} -> \code{EDI::DesignMatching} -> \code{EDI::DesignFixed} -> \code{DesignFixedMatchingGreedyPairSwitching}
 }
 \section{Methods}{
 \subsection{Public methods}{

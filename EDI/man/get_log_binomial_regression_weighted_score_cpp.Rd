@@ -4,7 +4,7 @@
 \alias{get_log_binomial_regression_weighted_score_cpp}
 \title{Compute Weighted Log-Binomial Regression Score}
 \usage{
-get_log_binomial_regression_weighted_score_cpp(X, y, weights, beta)
+get_log_binomial_regression_weighted_score_cpp(X_r, y_r, weights_r, beta_sexp)
 }
 \arguments{
 \item{X}{A numeric matrix of predictors.}

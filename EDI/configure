@@ -1,0 +1,81 @@
+#!/bin/sh
+
+set -eu
+
+c_escape() {
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+r_cmd_config() {
+  out="$("${R_HOME}/bin/R" CMD config "$1" 2>/dev/null || true)"
+  case "$out" in
+    ""|ERROR:*) printf '%s' "unavailable" ;;
+    *) printf '%s' "$out" ;;
+  esac
+}
+
+env_or_default() {
+  var_name="$1"
+  default_value="$2"
+  eval "var_value=\${$var_name:-}"
+  if [ -z "$var_value" ]; then
+    printf '%s' "$default_value"
+  else
+    printf '%s' "$var_value"
+  fi
+}
+
+edi_portable="$(env_or_default EDI_PORTABLE 0)"
+edi_disable_vectorization="$(env_or_default EDI_DISABLE_VECTORIZATION 0)"
+edi_native_speed="$(env_or_default EDI_NATIVE_SPEED 1)"
+edi_native_lto="$(env_or_default EDI_NATIVE_LTO 0)"
+
+pkg_cppflags="-I../inst/include"
+pkg_cxxflags="\$(SHLIB_OPENMP_CXXFLAGS) -DNDEBUG -DEIGEN_NO_DEBUG -Wno-ignored-attributes"
+pkg_cxxstdflags=""
+pkg_libs="\$(SHLIB_OPENMP_CXXFLAGS) \$(LAPACK_LIBS) \$(BLAS_LIBS) \$(FLIBS) -ltbb12 -fstack-protector"
+
+if [ "$edi_portable" = "0" ]; then
+  pkg_cxxflags="$pkg_cxxflags -march=native -mtune=native"
+fi
+
+if [ "$edi_disable_vectorization" = "1" ]; then
+  pkg_cppflags="$pkg_cppflags -DEIGEN_DONT_VECTORIZE -DEIGEN_UNALIGNED_VECTORIZE=0"
+  pkg_cxxflags="$pkg_cxxflags -fno-tree-vectorize"
+fi
+
+if [ "$edi_native_speed" = "1" ]; then
+  pkg_cxxstdflags="override CXXFLAGS+=-O3"
+fi
+
+if [ "$edi_native_lto" = "1" ]; then
+  pkg_cxxflags="$pkg_cxxflags -flto"
+  pkg_libs="$pkg_libs -flto"
+else
+  pkg_cxxflags="$pkg_cxxflags -fno-lto"
+fi
+
+mkdir -p src
+{
+  echo "#ifndef EDI_BUILD_FLAGS_H"
+  echo "#define EDI_BUILD_FLAGS_H"
+  echo ""
+  echo "#define EDI_BUILD_CAPTURE_METHOD \"configure-generated header compiled into EDI.so\""
+  echo "#define EDI_BUILD_TIMESTAMP \"$(c_escape "$(date '+%Y-%m-%d %H:%M:%S %Z')")\""
+  echo "#define EDI_BUILD_HOST \"$(c_escape "$(hostname 2>/dev/null || printf unknown)")\""
+  echo "#define EDI_BUILD_R_HOME \"$(c_escape "$R_HOME")\""
+  echo "#define EDI_BUILD_R_VERSION \"$(c_escape "$("${R_HOME}/bin/R" --version 2>/dev/null | sed -n '1p')")\""
+  echo "#define EDI_BUILD_R_CXX20 \"$(c_escape "$(r_cmd_config CXX20)")\""
+  echo "#define EDI_BUILD_R_CXX20STD \"$(c_escape "$(r_cmd_config CXX20STD)")\""
+  echo "#define EDI_BUILD_R_CXX20FLAGS \"$(c_escape "$(r_cmd_config CXX20FLAGS)")\""
+  echo "#define EDI_BUILD_R_SHLIB_OPENMP_CXXFLAGS \"$(c_escape "$(r_cmd_config SHLIB_OPENMP_CXXFLAGS)")\""
+  echo "#define EDI_BUILD_ENV_EDI_PORTABLE \"$(c_escape "$edi_portable")\""
+  echo "#define EDI_BUILD_ENV_EDI_DISABLE_VECTORIZATION \"$(c_escape "$edi_disable_vectorization")\""
+  echo "#define EDI_BUILD_ENV_EDI_NATIVE_SPEED \"$(c_escape "$edi_native_speed")\""
+  echo "#define EDI_BUILD_ENV_EDI_NATIVE_LTO \"$(c_escape "$edi_native_lto")\""
+  echo "#define EDI_BUILD_PKG_CPPFLAGS \"$(c_escape "$pkg_cppflags")\""
+  echo "#define EDI_BUILD_PKG_CXXFLAGS \"$(c_escape "$pkg_cxxflags${pkg_cxxstdflags:+; }$pkg_cxxstdflags")\""
+  echo "#define EDI_BUILD_PKG_LIBS \"$(c_escape "$pkg_libs")\""
+  echo ""
+  echo "#endif"
+} > src/edi_build_flags.h

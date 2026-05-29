@@ -32,11 +32,11 @@ inline double safe_mu_from_eta(double eta, BinomialConstrainedLink link_type) {
   return clamp_prob(eta);
 }
 
-double loglik_constrained_binomial(const Eigen::MatrixXd& X,
-                                   const Eigen::VectorXd& y,
-                                   const Eigen::VectorXd& beta,
+double loglik_constrained_binomial(const Eigen::Ref<const Eigen::MatrixXd>& X,
+                                   const Eigen::Ref<const Eigen::VectorXd>& y,
+                                   const Eigen::Ref<const Eigen::VectorXd>& beta,
                                    BinomialConstrainedLink link_type) {
-  const int n = X.rows();
+  const int n = (int)X.rows();
   Eigen::VectorXd eta = X * beta;
   double ll = 0.0;
   for (int i = 0; i < n; ++i) {
@@ -53,12 +53,12 @@ double loglik_constrained_binomial(const Eigen::MatrixXd& X,
   return ll;
 }
 
-double weighted_loglik_constrained_binomial(const Eigen::MatrixXd& X,
-                                            const Eigen::VectorXd& y,
-                                            const Eigen::VectorXd& obs_weights,
-                                            const Eigen::VectorXd& beta,
+double weighted_loglik_constrained_binomial(const Eigen::Ref<const Eigen::MatrixXd>& X,
+                                            const Eigen::Ref<const Eigen::VectorXd>& y,
+                                            const Eigen::Ref<const Eigen::VectorXd>& obs_weights,
+                                            const Eigen::Ref<const Eigen::VectorXd>& beta,
                                             BinomialConstrainedLink link_type) {
-  const int n = X.rows();
+  const int n = (int)X.rows();
   Eigen::VectorXd eta = X * beta;
   double ll = 0.0;
   for (int i = 0; i < n; ++i) {
@@ -77,14 +77,14 @@ double weighted_loglik_constrained_binomial(const Eigen::MatrixXd& X,
   return ll;
 }
 
-bool all_finite_vec(const Eigen::VectorXd& x) {
+bool all_finite_vec(const Eigen::Ref<const Eigen::VectorXd>& x) {
   for (int i = 0; i < x.size(); ++i) {
     if (!R_finite(x[i])) return false;
   }
   return true;
 }
 
-bool all_finite_mat(const Eigen::MatrixXd& X) {
+bool all_finite_mat(const Eigen::Ref<const Eigen::MatrixXd>& X) {
   for (int j = 0; j < X.cols(); ++j) {
     for (int i = 0; i < X.rows(); ++i) {
       if (!R_finite(X(i, j))) return false;
@@ -93,8 +93,8 @@ bool all_finite_mat(const Eigen::MatrixXd& X) {
   return true;
 }
 
-List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
-                                       const Eigen::VectorXd& y,
+List fit_constrained_binomial_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& X,
+                                       const Eigen::Ref<const Eigen::VectorXd>& y,
                                        BinomialConstrainedLink link_type,
                                        int maxit,
                                        double tol,
@@ -103,16 +103,17 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
                                        Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                        bool smart_cold_start = true,
                                        Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-                                       Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-  const int n = X.rows();
-  const int p = X.cols();
+                                       Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                       bool estimate_only = false) {
+  const int n = (int)X.rows();
+  const int p = (int)X.cols();
   if (y.size() != n) stop("dimension mismatch in constrained binomial regression");
   FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
-  const int p_free = fixed_spec.free_idx.size();
-  RowMajorMatrixXd X_free(n, p_free);
+  const int p_free = (int)fixed_spec.free_idx.size();
+  Eigen::MatrixXd X_free(n, p_free);
   for (int j = 0; j < p_free; ++j) X_free.col(j) = X.col(fixed_spec.free_idx[j]);
   Eigen::VectorXd eta_fixed = Eigen::VectorXd::Zero(n);
-  for (int j = 0; j < fixed_spec.fixed_idx.size(); ++j) {
+  for (int j = 0; j < (int)fixed_spec.fixed_idx.size(); ++j) {
     eta_fixed.noalias() += X.col(fixed_spec.fixed_idx[j]) * fixed_spec.fixed_values[j];
   }
 
@@ -163,10 +164,15 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
     }
 
     Eigen::MatrixXd XtWX;
+    bool used_warm_fisher = false;
     if (iter == 0 && warm_start_fisher_info.isNotNull()) {
       Eigen::MatrixXd info_full = as<Eigen::MatrixXd>(warm_start_fisher_info);
-      if (info_full.rows() != p || info_full.cols() != p) stop("warm_start_fisher_info must be a p x p matrix");
-      XtWX = subset_matrix(info_full, fixed_spec.free_idx, fixed_spec.free_idx);
+      if (info_full.rows() == p && info_full.cols() == p) {
+        XtWX = subset_matrix(info_full, fixed_spec.free_idx, fixed_spec.free_idx);
+        used_warm_fisher = true;
+      } else {
+        XtWX = weighted_crossprod(X_free, w);
+      }
     } else {
       XtWX = weighted_crossprod(X_free, w);
     }
@@ -174,7 +180,15 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
 
     Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
     if (ldlt.info() != Eigen::Success) {
-      return List::create(_["b"] = beta, _["mu_hat"] = mu, _["working_weights"] = w, _["converged"] = false);
+      if (used_warm_fisher) {
+        XtWX = weighted_crossprod(X_free, w);
+        ldlt.compute(XtWX);
+        if (ldlt.info() != Eigen::Success) {
+          return List::create(_["b"] = beta, _["mu_hat"] = mu, _["working_weights"] = w, _["converged"] = false);
+        }
+      } else {
+        return List::create(_["b"] = beta, _["mu_hat"] = mu, _["working_weights"] = w, _["converged"] = false);
+      }
     }
 
     Eigen::VectorXd beta_free_target = ldlt.solve(XtWz);
@@ -208,6 +222,14 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
     beta_free = beta_free_new;
   }
 
+  if (estimate_only) {
+    return List::create(
+      _["b"] = beta,
+      _["converged"] = converged && all_finite_vec(beta),
+      _["iterations"] = iterations
+    );
+  }
+
   Eigen::VectorXd eta = X * beta;
   if (link_type == BinomialConstrainedLink::kLog) {
     eta = eta.array().min(kMaxEtaLog).matrix();
@@ -229,8 +251,8 @@ List fit_constrained_binomial_cpp_impl(const Eigen::MatrixXd& X,
   );
 }
 
-List fit_constrained_binomial_weighted_cpp_impl(const Eigen::MatrixXd& X,
-                                                const Eigen::VectorXd& y,
+List fit_constrained_binomial_weighted_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& X,
+                                                const Eigen::Ref<const Eigen::VectorXd>& y,
                                                 const Eigen::VectorXd& obs_weights,
                                                 BinomialConstrainedLink link_type,
                                                 int maxit,
@@ -240,17 +262,18 @@ List fit_constrained_binomial_weighted_cpp_impl(const Eigen::MatrixXd& X,
                                                 Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                                 bool smart_cold_start = true,
                                                 Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-                                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-  const int n = X.rows();
-  const int p = X.cols();
+                                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                                bool estimate_only = false) {
+  const int n = (int)X.rows();
+  const int p = (int)X.cols();
   if (y.size() != n) stop("dimension mismatch in constrained binomial regression");
   if (obs_weights.size() != n) stop("weights length mismatch in constrained binomial regression");
   FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
-  const int p_free = fixed_spec.free_idx.size();
-  RowMajorMatrixXd X_free(n, p_free);
+  const int p_free = (int)fixed_spec.free_idx.size();
+  Eigen::MatrixXd X_free(n, p_free);
   for (int j = 0; j < p_free; ++j) X_free.col(j) = X.col(fixed_spec.free_idx[j]);
   Eigen::VectorXd eta_fixed = Eigen::VectorXd::Zero(n);
-  for (int j = 0; j < fixed_spec.fixed_idx.size(); ++j) {
+  for (int j = 0; j < (int)fixed_spec.fixed_idx.size(); ++j) {
     eta_fixed.noalias() += X.col(fixed_spec.fixed_idx[j]) * fixed_spec.fixed_values[j];
   }
 
@@ -302,16 +325,21 @@ List fit_constrained_binomial_weighted_cpp_impl(const Eigen::MatrixXd& X,
     }
 
     Eigen::VectorXd z = (link_type == BinomialConstrainedLink::kLog) ?
-      eta + (y - mu).cwiseQuotient(mu.array().max(kEps).matrix()) :
-      y;
+      (eta + (y - mu).cwiseQuotient(mu.array().max(kEps).matrix())).eval() :
+      y.eval();
     Eigen::VectorXd z_adj = z - eta_fixed;
     Eigen::VectorXd w_eff = obs_weights.cwiseProduct(w);
 
     Eigen::MatrixXd XtWX;
+    bool used_warm_fisher_w = false;
     if (iter == 0 && warm_start_fisher_info.isNotNull()) {
       Eigen::MatrixXd info_full = as<Eigen::MatrixXd>(warm_start_fisher_info);
-      if (info_full.rows() != p || info_full.cols() != p) stop("warm_start_fisher_info must be a p x p matrix");
-      XtWX = subset_matrix(info_full, fixed_spec.free_idx, fixed_spec.free_idx);
+      if (info_full.rows() == p && info_full.cols() == p) {
+        XtWX = subset_matrix(info_full, fixed_spec.free_idx, fixed_spec.free_idx);
+        used_warm_fisher_w = true;
+      } else {
+        XtWX = weighted_crossprod(X_free, w_eff);
+      }
     } else {
       XtWX = weighted_crossprod(X_free, w_eff);
     }
@@ -319,7 +347,15 @@ List fit_constrained_binomial_weighted_cpp_impl(const Eigen::MatrixXd& X,
 
     Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
     if (ldlt.info() != Eigen::Success) {
-      return List::create(_["b"] = beta, _["mu_hat"] = mu, _["working_weights"] = w, _["converged"] = false);
+      if (used_warm_fisher_w) {
+        XtWX = weighted_crossprod(X_free, w_eff);
+        ldlt.compute(XtWX);
+        if (ldlt.info() != Eigen::Success) {
+          return List::create(_["b"] = beta, _["mu_hat"] = mu, _["working_weights"] = w, _["converged"] = false);
+        }
+      } else {
+        return List::create(_["b"] = beta, _["mu_hat"] = mu, _["working_weights"] = w, _["converged"] = false);
+      }
     }
 
     Eigen::VectorXd beta_free_target = ldlt.solve(XtWz);
@@ -353,6 +389,14 @@ List fit_constrained_binomial_weighted_cpp_impl(const Eigen::MatrixXd& X,
     beta_free = beta_free_new;
   }
 
+  if (estimate_only) {
+    return List::create(
+      _["b"] = beta,
+      _["converged"] = converged && all_finite_vec(beta),
+      _["iterations"] = iterations
+    );
+  }
+
   Eigen::VectorXd eta = X * beta;
   if (link_type == BinomialConstrainedLink::kLog) {
     eta = eta.array().min(kMaxEtaLog).matrix();
@@ -375,8 +419,8 @@ List fit_constrained_binomial_weighted_cpp_impl(const Eigen::MatrixXd& X,
   );
 }
 
-List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& X,
-                                                 const Eigen::VectorXd& y,
+List fit_constrained_binomial_with_var_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& X,
+                                                 const Eigen::Ref<const Eigen::VectorXd>& y,
                                                  BinomialConstrainedLink link_type,
                                                  int j,
                                                  int maxit,
@@ -403,9 +447,9 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& X,
     );
   }
 
-  FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
-  RowMajorMatrixXd X_free(X.rows(), fixed_spec.free_idx.size());
-  for (int col = 0; col < fixed_spec.free_idx.size(); ++col) X_free.col(col) = X.col(fixed_spec.free_idx[col]);
+  FixedParamSpec fixed_spec = make_fixed_param_spec((int)X.cols(), fixed_idx, fixed_values);
+  Eigen::MatrixXd X_free(X.rows(), (int)fixed_spec.free_idx.size());
+  for (int col = 0; col < (int)fixed_spec.free_idx.size(); ++col) X_free.col(col) = X.col(fixed_spec.free_idx[col]);
   Eigen::MatrixXd XtWX_free = weighted_crossprod(X_free, w);
   Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX_free);
   if (ldlt.info() != Eigen::Success) {
@@ -428,15 +472,17 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::MatrixXd& X,
     _["b"] = beta,
     _["ssq_b_j"] = ssq_b_j,
     _["converged"] = true,
-    _["fisher_information"] = weighted_crossprod(X, w)
+    _["fisher_information"] = weighted_crossprod(X, w),
+    _["neg_ll"] = -loglik_constrained_binomial(X, y, beta, link_type),
+    _["logLik"] = loglik_constrained_binomial(X, y, beta, link_type)
   );
 }
 
-Eigen::VectorXd constrained_binomial_score_cpp_impl(const Eigen::MatrixXd& X,
-													const Eigen::VectorXd& y,
-													const Eigen::VectorXd& beta,
+Eigen::VectorXd constrained_binomial_score_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& X,
+													const Eigen::Ref<const Eigen::VectorXd>& y,
+													const Eigen::Ref<const Eigen::VectorXd>& beta,
 													BinomialConstrainedLink link_type) {
-	const int p = beta.size();
+	const int p = (int)beta.size();
 	Eigen::VectorXd score(p);
 	const double h = 1e-6;
 	for (int j = 0; j < p; ++j) {
@@ -450,11 +496,11 @@ Eigen::VectorXd constrained_binomial_score_cpp_impl(const Eigen::MatrixXd& X,
 	return score;
 }
 
-Eigen::MatrixXd constrained_binomial_hessian_cpp_impl(const Eigen::MatrixXd& X,
-													  const Eigen::VectorXd& y,
-													  const Eigen::VectorXd& beta,
+Eigen::MatrixXd constrained_binomial_hessian_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& X,
+													  const Eigen::Ref<const Eigen::VectorXd>& y,
+													  const Eigen::Ref<const Eigen::VectorXd>& beta,
 													  BinomialConstrainedLink link_type) {
-	const int p = beta.size();
+	const int p = (int)beta.size();
 	Eigen::MatrixXd H(p, p);
 	const double h = 1e-4;
 	for (int i = 0; i < p; ++i) {
@@ -473,12 +519,12 @@ Eigen::MatrixXd constrained_binomial_hessian_cpp_impl(const Eigen::MatrixXd& X,
 	return H;
 }
 
-Eigen::VectorXd constrained_binomial_weighted_score_cpp_impl(const Eigen::MatrixXd& X,
-                                                             const Eigen::VectorXd& y,
-                                                             const Eigen::VectorXd& weights,
-                                                             const Eigen::VectorXd& beta,
+Eigen::VectorXd constrained_binomial_weighted_score_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& X,
+                                                             const Eigen::Ref<const Eigen::VectorXd>& y,
+                                                             const Eigen::Ref<const Eigen::VectorXd>& weights,
+                                                             const Eigen::Ref<const Eigen::VectorXd>& beta,
                                                              BinomialConstrainedLink link_type) {
-  const int p = beta.size();
+  const int p = (int)beta.size();
   Eigen::VectorXd score(p);
   const double h = 1e-6;
   for (int j = 0; j < p; ++j) {
@@ -492,12 +538,12 @@ Eigen::VectorXd constrained_binomial_weighted_score_cpp_impl(const Eigen::Matrix
   return score;
 }
 
-Eigen::MatrixXd constrained_binomial_weighted_hessian_cpp_impl(const Eigen::MatrixXd& X,
-                                                               const Eigen::VectorXd& y,
-                                                               const Eigen::VectorXd& weights,
-                                                               const Eigen::VectorXd& beta,
+Eigen::MatrixXd constrained_binomial_weighted_hessian_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& X,
+                                                               const Eigen::Ref<const Eigen::VectorXd>& y,
+                                                               const Eigen::Ref<const Eigen::VectorXd>& weights,
+                                                               const Eigen::Ref<const Eigen::VectorXd>& beta,
                                                                BinomialConstrainedLink link_type) {
-  const int p = beta.size();
+  const int p = (int)beta.size();
   Eigen::MatrixXd H(p, p);
   const double h = 1e-4;
   for (int i = 0; i < p; ++i) {
@@ -527,9 +573,15 @@ Eigen::MatrixXd constrained_binomial_weighted_hessian_cpp_impl(const Eigen::Matr
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::VectorXd get_log_binomial_regression_score_cpp(const Eigen::MatrixXd& X,
-													  const Eigen::VectorXd& y,
-													  const Eigen::VectorXd& beta) {
+Eigen::VectorXd get_log_binomial_regression_score_cpp(SEXP X_r,
+													  SEXP y_r,
+													  SEXP beta_sexp) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    NumericVector beta_r(beta_sexp);
+    Eigen::Map<const Eigen::VectorXd> beta(beta_r.begin(), beta_r.size());
 	return constrained_binomial_score_cpp_impl(X, y, beta, BinomialConstrainedLink::kLog);
 }
 
@@ -542,9 +594,15 @@ Eigen::VectorXd get_log_binomial_regression_score_cpp(const Eigen::MatrixXd& X,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::MatrixXd get_log_binomial_regression_hessian_cpp(const Eigen::MatrixXd& X,
-														const Eigen::VectorXd& y,
-														const Eigen::VectorXd& beta) {
+Eigen::MatrixXd get_log_binomial_regression_hessian_cpp(SEXP X_r,
+														SEXP y_r,
+														SEXP beta_sexp) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    NumericVector beta_r(beta_sexp);
+    Eigen::Map<const Eigen::VectorXd> beta(beta_r.begin(), beta_r.size());
 	return constrained_binomial_hessian_cpp_impl(X, y, beta, BinomialConstrainedLink::kLog);
 }
 
@@ -558,10 +616,18 @@ Eigen::MatrixXd get_log_binomial_regression_hessian_cpp(const Eigen::MatrixXd& X
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::VectorXd get_log_binomial_regression_weighted_score_cpp(const Eigen::MatrixXd& X,
-                                                               const Eigen::VectorXd& y,
-                                                               const Eigen::VectorXd& weights,
-                                                               const Eigen::VectorXd& beta) {
+Eigen::VectorXd get_log_binomial_regression_weighted_score_cpp(SEXP X_r,
+                                                               SEXP y_r,
+                                                               SEXP weights_r,
+                                                               SEXP beta_sexp) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    NumericVector weights_vec(weights_r);
+    Eigen::Map<const Eigen::VectorXd> weights(weights_vec.begin(), weights_vec.size());
+    NumericVector beta_r(beta_sexp);
+    Eigen::Map<const Eigen::VectorXd> beta(beta_r.begin(), beta_r.size());
   return constrained_binomial_weighted_score_cpp_impl(X, y, weights, beta, BinomialConstrainedLink::kLog);
 }
 
@@ -575,10 +641,18 @@ Eigen::VectorXd get_log_binomial_regression_weighted_score_cpp(const Eigen::Matr
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::MatrixXd get_log_binomial_regression_weighted_hessian_cpp(const Eigen::MatrixXd& X,
-                                                                 const Eigen::VectorXd& y,
-                                                                 const Eigen::VectorXd& weights,
-                                                                 const Eigen::VectorXd& beta) {
+Eigen::MatrixXd get_log_binomial_regression_weighted_hessian_cpp(SEXP X_r,
+                                                                 SEXP y_r,
+                                                                 SEXP weights_r,
+                                                                 SEXP beta_sexp) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    NumericVector weights_vec(weights_r);
+    Eigen::Map<const Eigen::VectorXd> weights(weights_vec.begin(), weights_vec.size());
+    NumericVector beta_r(beta_sexp);
+    Eigen::Map<const Eigen::VectorXd> beta(beta_r.begin(), beta_r.size());
   return constrained_binomial_weighted_hessian_cpp_impl(X, y, weights, beta, BinomialConstrainedLink::kLog);
 }
 
@@ -591,9 +665,15 @@ Eigen::MatrixXd get_log_binomial_regression_weighted_hessian_cpp(const Eigen::Ma
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::VectorXd get_identity_binomial_regression_score_cpp(const Eigen::MatrixXd& X,
-														   const Eigen::VectorXd& y,
-														   const Eigen::VectorXd& beta) {
+Eigen::VectorXd get_identity_binomial_regression_score_cpp(SEXP X_r,
+														   SEXP y_r,
+														   SEXP beta_sexp) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    NumericVector beta_r(beta_sexp);
+    Eigen::Map<const Eigen::VectorXd> beta(beta_r.begin(), beta_r.size());
 	return constrained_binomial_score_cpp_impl(X, y, beta, BinomialConstrainedLink::kIdentity);
 }
 
@@ -606,9 +686,15 @@ Eigen::VectorXd get_identity_binomial_regression_score_cpp(const Eigen::MatrixXd
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::MatrixXd get_identity_binomial_regression_hessian_cpp(const Eigen::MatrixXd& X,
-															 const Eigen::VectorXd& y,
-															 const Eigen::VectorXd& beta) {
+Eigen::MatrixXd get_identity_binomial_regression_hessian_cpp(SEXP X_r,
+															 SEXP y_r,
+															 SEXP beta_sexp) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    NumericVector beta_r(beta_sexp);
+    Eigen::Map<const Eigen::VectorXd> beta(beta_r.begin(), beta_r.size());
 	return constrained_binomial_hessian_cpp_impl(X, y, beta, BinomialConstrainedLink::kIdentity);
 }
 
@@ -622,10 +708,18 @@ Eigen::MatrixXd get_identity_binomial_regression_hessian_cpp(const Eigen::Matrix
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::VectorXd get_identity_binomial_regression_weighted_score_cpp(const Eigen::MatrixXd& X,
-                                                                    const Eigen::VectorXd& y,
-                                                                    const Eigen::VectorXd& weights,
-                                                                    const Eigen::VectorXd& beta) {
+Eigen::VectorXd get_identity_binomial_regression_weighted_score_cpp(SEXP X_r,
+                                                                    SEXP y_r,
+                                                                    SEXP weights_r,
+                                                                    SEXP beta_sexp) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    NumericVector weights_vec(weights_r);
+    Eigen::Map<const Eigen::VectorXd> weights(weights_vec.begin(), weights_vec.size());
+    NumericVector beta_r(beta_sexp);
+    Eigen::Map<const Eigen::VectorXd> beta(beta_r.begin(), beta_r.size());
   return constrained_binomial_weighted_score_cpp_impl(X, y, weights, beta, BinomialConstrainedLink::kIdentity);
 }
 
@@ -639,10 +733,18 @@ Eigen::VectorXd get_identity_binomial_regression_weighted_score_cpp(const Eigen:
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::MatrixXd get_identity_binomial_regression_weighted_hessian_cpp(const Eigen::MatrixXd& X,
-                                                                      const Eigen::VectorXd& y,
-                                                                      const Eigen::VectorXd& weights,
-                                                                      const Eigen::VectorXd& beta) {
+Eigen::MatrixXd get_identity_binomial_regression_weighted_hessian_cpp(SEXP X_r,
+                                                                      SEXP y_r,
+                                                                      SEXP weights_r,
+                                                                      SEXP beta_sexp) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    NumericVector weights_vec(weights_r);
+    Eigen::Map<const Eigen::VectorXd> weights(weights_vec.begin(), weights_vec.size());
+    NumericVector beta_r(beta_sexp);
+    Eigen::Map<const Eigen::VectorXd> beta(beta_r.begin(), beta_r.size());
   return constrained_binomial_weighted_hessian_cpp_impl(X, y, weights, beta, BinomialConstrainedLink::kIdentity);
 }
 
@@ -661,8 +763,8 @@ Eigen::MatrixXd get_identity_binomial_regression_weighted_hessian_cpp(const Eige
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_log_binomial_regression_cpp(const Eigen::MatrixXd& X,
-                                      const Eigen::VectorXd& y,
+List fast_log_binomial_regression_cpp(SEXP X_r,
+                                      SEXP y_r,
                                       int maxit = 100,
                                       double tol = 1e-8,
                                       Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -670,8 +772,13 @@ List fast_log_binomial_regression_cpp(const Eigen::MatrixXd& X,
                                       Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                       bool smart_cold_start = true,
                                       Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-                                      Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-  return fit_constrained_binomial_cpp_impl(X, y, BinomialConstrainedLink::kLog, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info);
+                                      Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                      bool estimate_only = false) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+  return fit_constrained_binomial_cpp_impl(X, y, BinomialConstrainedLink::kLog, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info, estimate_only);
 }
 
 //' @title Fast Log-Binomial Regression with Variance (C++)
@@ -690,8 +797,8 @@ List fast_log_binomial_regression_cpp(const Eigen::MatrixXd& X,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_log_binomial_regression_with_var_cpp(const Eigen::MatrixXd& X,
-                                               const Eigen::VectorXd& y,
+List fast_log_binomial_regression_with_var_cpp(SEXP X_r,
+                                               SEXP y_r,
                                                int j = 2,
                                                int maxit = 100,
                                                double tol = 1e-8,
@@ -701,6 +808,10 @@ List fast_log_binomial_regression_with_var_cpp(const Eigen::MatrixXd& X,
                                                bool smart_cold_start = true,
                                                Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
                                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
   return fit_constrained_binomial_with_var_cpp_impl(X, y, BinomialConstrainedLink::kLog, j, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info);
 }
 
@@ -720,9 +831,9 @@ List fast_log_binomial_regression_with_var_cpp(const Eigen::MatrixXd& X,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_log_binomial_regression_weighted_cpp(const Eigen::MatrixXd& X,
-                                               const Eigen::VectorXd& y,
-                                               const Eigen::VectorXd& weights,
+List fast_log_binomial_regression_weighted_cpp(SEXP X_r,
+                                               SEXP y_r,
+                                               SEXP weights_r,
                                                int maxit = 100,
                                                double tol = 1e-8,
                                                Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -730,8 +841,15 @@ List fast_log_binomial_regression_weighted_cpp(const Eigen::MatrixXd& X,
                                                Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                                bool smart_cold_start = true,
                                                Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-                                               Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-  return fit_constrained_binomial_weighted_cpp_impl(X, y, weights, BinomialConstrainedLink::kLog, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info);
+                                               Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                               bool estimate_only = false) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    NumericVector weights_vec(weights_r);
+    Eigen::Map<const Eigen::VectorXd> weights(weights_vec.begin(), weights_vec.size());
+  return fit_constrained_binomial_weighted_cpp_impl(X, y, weights, BinomialConstrainedLink::kLog, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info, estimate_only);
 }
 
 //' @title Fast Identity-Binomial Regression (C++)
@@ -749,8 +867,8 @@ List fast_log_binomial_regression_weighted_cpp(const Eigen::MatrixXd& X,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_identity_binomial_regression_cpp(const Eigen::MatrixXd& X,
-                                           const Eigen::VectorXd& y,
+List fast_identity_binomial_regression_cpp(SEXP X_r,
+                                           SEXP y_r,
                                            int maxit = 100,
                                            double tol = 1e-8,
                                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -759,6 +877,10 @@ List fast_identity_binomial_regression_cpp(const Eigen::MatrixXd& X,
                                            bool smart_cold_start = true,
                                            Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
                                            Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
   return fit_constrained_binomial_cpp_impl(X, y, BinomialConstrainedLink::kIdentity, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info);
 }
 
@@ -778,8 +900,8 @@ List fast_identity_binomial_regression_cpp(const Eigen::MatrixXd& X,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_identity_binomial_regression_with_var_cpp(const Eigen::MatrixXd& X,
-                                                    const Eigen::VectorXd& y,
+List fast_identity_binomial_regression_with_var_cpp(SEXP X_r,
+                                                    SEXP y_r,
                                                     int j = 2,
                                                     int maxit = 100,
                                                     double tol = 1e-8,
@@ -789,6 +911,10 @@ List fast_identity_binomial_regression_with_var_cpp(const Eigen::MatrixXd& X,
                                                     bool smart_cold_start = true,
                                                     Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
                                                     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
   return fit_constrained_binomial_with_var_cpp_impl(X, y, BinomialConstrainedLink::kIdentity, j, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info);
 }
 
@@ -808,9 +934,9 @@ List fast_identity_binomial_regression_with_var_cpp(const Eigen::MatrixXd& X,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_identity_binomial_regression_weighted_cpp(const Eigen::MatrixXd& X,
-                                                    const Eigen::VectorXd& y,
-                                                    const Eigen::VectorXd& weights,
+List fast_identity_binomial_regression_weighted_cpp(SEXP X_r,
+                                                    SEXP y_r,
+                                                    SEXP weights_r,
                                                     int maxit = 100,
                                                     double tol = 1e-8,
                                                     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -818,6 +944,13 @@ List fast_identity_binomial_regression_weighted_cpp(const Eigen::MatrixXd& X,
                                                     Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                                     bool smart_cold_start = true,
                                                     Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-                                                    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-  return fit_constrained_binomial_weighted_cpp_impl(X, y, weights, BinomialConstrainedLink::kIdentity, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info);
+                                                    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                                    bool estimate_only = false) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    NumericVector weights_vec(weights_r);
+    Eigen::Map<const Eigen::VectorXd> weights(weights_vec.begin(), weights_vec.size());
+  return fit_constrained_binomial_weighted_cpp_impl(X, y, weights, BinomialConstrainedLink::kIdentity, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info, estimate_only);
 }

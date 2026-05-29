@@ -5,8 +5,8 @@
 \title{Fast Continuation-Ratio Regression (C++)}
 \usage{
 fast_continuation_ratio_regression_cpp(
-  X,
-  y,
+  X_sexp,
+  y_sexp,
   maxit = 100L,
   tol = 1e-08,
   warm_start_beta = NULL,
@@ -18,10 +18,6 @@ fast_continuation_ratio_regression_cpp(
 )
 }
 \arguments{
-\item{X}{A numeric matrix of predictors (no intercept column; threshold intercepts are estimated internally).}
-
-\item{y}{A numeric vector of ordinal responses.}
-
 \item{maxit}{Maximum number of iterations.}
 
 \item{tol}{Convergence tolerance.}
@@ -37,6 +33,10 @@ fast_continuation_ratio_regression_cpp(
 \item{optimization_alg}{Optimization algorithm.}
 
 \item{warm_start_fisher_info}{Optional initial Fisher Information matrix.}
+
+\item{X}{A numeric matrix of predictors (no intercept column; threshold intercepts are estimated internally).}
+
+\item{y}{A numeric vector of ordinal responses.}
 }
 \value{
 A list containing coefficients, alpha, and convergence status.

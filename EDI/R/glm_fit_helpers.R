@@ -461,15 +461,17 @@ fast_weibull_regression = function(y, dead, X, use_rcpp = TRUE, estimate_only = 
 			stop("Weibull regression (Rcpp) failed to converge.")
 		}
 		
-		coefficients = as.numeric(res$coefficients)
+		p = ncol(X)
+		coefficients = as.numeric(if (estimate_only) res$b else res$params[seq_len(p)])
 		names(coefficients) = colnames(X)
-		
+		log_sigma_val = as.numeric(if (estimate_only) res$log_sigma else res$params[p + 1L])
+
 		return(list(
 			coefficients = coefficients,
-			log_sigma = as.numeric(res$log_sigma),
+			log_sigma = log_sigma_val,
 			vcov = if (estimate_only) NULL else res$vcov,
 			neg_log_lik = as.numeric(res$neg_ll),
-			fisher_information = res$fisher_information
+			fisher_information = if (estimate_only) NULL else res$information
 		))
 	}
 

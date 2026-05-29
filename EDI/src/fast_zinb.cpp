@@ -33,9 +33,9 @@ inline double sigmoid_zinb(double x) {
 }
 
 class ZeroInflatedNegBin {
-    const Eigen::VectorXd m_y;
-    const Eigen::MatrixXd m_Xc;
-    const Eigen::MatrixXd m_Xz;
+    const Eigen::Ref<const Eigen::VectorXd> m_y;
+    const Eigen::Ref<const Eigen::MatrixXd> m_Xc;
+    const Eigen::Ref<const Eigen::MatrixXd> m_Xz;
     const int m_n, m_pc, m_pz;
 
     // Precomputed at construction from fixed data y.
@@ -47,9 +47,9 @@ class ZeroInflatedNegBin {
     std::vector<double> m_lgamma_y1;
 
 public:
-    ZeroInflatedNegBin(const Eigen::VectorXd& y,
-                       const Eigen::MatrixXd& Xc,
-                       const Eigen::MatrixXd& Xz)
+    ZeroInflatedNegBin(const Eigen::Ref<const Eigen::VectorXd>& y,
+                       const Eigen::Ref<const Eigen::MatrixXd>& Xc,
+                       const Eigen::Ref<const Eigen::MatrixXd>& Xz)
         : m_y(y), m_Xc(Xc), m_Xz(Xz),
           m_n(y.size()), m_pc(Xc.cols()), m_pz(Xz.cols()),
           m_y_slot(y.size(), -1)
@@ -99,58 +99,37 @@ public:
         double d_log_theta = 0.0;
 
         for (int i = 0; i < m_n; ++i) {
-            const double mu  = std::exp(std::min(eta_c[i], 700.0));
-            const double pi  = sigmoid_zinb(eta_z[i]);
-            const double A   = theta + mu;
-            // Replace pow(theta/A, theta) with exp(theta*(log_theta - log(A))).
-            // log_theta == log(theta) exactly; reuse log_A for all log(theta/A) terms.
-            const double log_A          = std::log(A);
-            const double log_theta_ov_A = log_theta - log_A;
-            const double p0             = std::exp(theta * log_theta_ov_A);
+            const double yi   = m_y[i];
+            const double ec   = eta_c[i];
+            const double ez   = eta_z[i];
+            const double p    = sigmoid_zinb(ez);
+            const double mu   = std::exp(ec);
+            const double phi  = std::pow(theta / (theta + mu), theta);
 
-            if (m_y[i] == 0.0) {
-                // q = pi + (1-pi)*p0
-                const double q = std::max(pi + (1.0 - pi) * p0, 1e-300);
-                nll -= std::log(q);
+            if (yi <= 0.0) {
+                const double den  = p + (1.0 - p) * phi;
+                nll -= std::log(den);
 
-                // d/d eta_c
-                const double dc = (1.0 - pi) * theta * p0 * mu / (A * q);
-                grad.head(m_pc).noalias() += dc * m_Xc.row(i).transpose();
+                const double d_den_d_ez = p * (1.0 - p) * (1.0 - phi);
+                grad.segment(m_pc, m_pz) -= (d_den_d_ez / den) * m_Xz.row(i).transpose();
 
-                // d/d eta_z
-                const double dz = -(1.0 - p0) * pi * (1.0 - pi) / q;
-                grad.segment(m_pc, m_pz).noalias() += dz * m_Xz.row(i).transpose();
+                const double d_phi_d_ec = -mu * theta * phi / (theta + mu);
+                grad.head(m_pc) -= ((1.0 - p) * d_phi_d_ec / den) * m_Xc.row(i).transpose();
 
-                // d p0/d theta = p0 * (log(theta/A) + mu/A)  — reuses log_theta_ov_A
-                const double dp0_dtheta = p0 * (log_theta_ov_A + mu / A);
-                const double dq_dtheta  = (1.0 - pi) * dp0_dtheta;
-                d_log_theta += -theta * dq_dtheta / q;
-
+                const double d_phi_d_theta = phi * (std::log(theta / (theta + mu)) + 1.0 - theta / (theta + mu));
+                d_log_theta -= (1.0 - p) * d_phi_d_theta * theta / den;
             } else {
-                // NLL_i = -log(1-pi) - lgamma(y+theta) + lgamma(theta) + lgamma(y+1)
-                //         - theta*log(theta/A) - y*log(mu/A)
-                const int    slot = m_y_slot[i];
-                const double yi   = m_distinct_y[slot];
-                // log(mu/A) = eta_c[i] - log(A)  — reuses log_A
-                const double log_mu_ov_A = eta_c[i] - log_A;
-                nll += lse_zinb(eta_z[i])
-                     - lgamma_yptheta[slot]
-                     + lgamma_theta
-                     + m_lgamma_y1[slot]
-                     - theta * log_theta_ov_A
-                     - yi * log_mu_ov_A;
+                nll -= std::log(1.0 - p);
+                nll -= (lgamma_yptheta[m_y_slot[i]] - lgamma_theta - m_lgamma_y1[m_y_slot[i]]);
+                nll -= theta * std::log(theta / (theta + mu)) + yi * std::log(mu / (theta + mu));
 
-                // d/d eta_c
-                const double dc = mu * (yi + theta) / A - yi;
-                grad.head(m_pc).noalias() += dc * m_Xc.row(i).transpose();
+                grad.segment(m_pc, m_pz) += p * m_Xz.row(i).transpose();
 
-                // d/d eta_z
-                grad.segment(m_pc, m_pz).noalias() += pi * m_Xz.row(i).transpose();
+                const double d_nb_d_ec = (yi - mu * (yi + theta) / (theta + mu));
+                grad.head(m_pc) -= d_nb_d_ec * m_Xc.row(i).transpose();
 
-                // d/d log_theta — uses hoisted digamma_theta, tabulated digamma_yptheta
-                const double dt = theta * (digamma_theta - digamma_yptheta[slot]
-                                           - log_theta_ov_A + (yi - mu) / A);
-                d_log_theta += dt;
+                const double d_nb_d_theta = (digamma_yptheta[m_y_slot[i]] - digamma_theta + std::log(theta / (theta + mu)) + 1.0 - (yi + theta) / (theta + mu));
+                d_log_theta -= d_nb_d_theta * theta;
             }
         }
         grad[m_pc + m_pz] = d_log_theta;
@@ -158,304 +137,84 @@ public:
     }
 
     Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
-        const int total = m_pc + m_pz + 1;
-        Eigen::MatrixXd H = Eigen::MatrixXd::Zero(total, total);
-
-        const Eigen::VectorXd bc  = par.head(m_pc);
-        const Eigen::VectorXd bz  = par.segment(m_pc, m_pz);
-        const double log_theta    = par[m_pc + m_pz];
-        const double theta        = std::exp(std::min(log_theta, 700.0));
-
-        const Eigen::VectorXd eta_c = m_Xc * bc;
-        const Eigen::VectorXd eta_z = m_Xz * bz;
-
-        // Hoist theta-only special functions.
-        const double digamma_theta  = R::digamma(theta);
-        const double trigamma_theta = R::trigamma(theta);
-
-        // Build per-distinct-y tables for digamma/trigamma/lgamma(y+theta).
-        const int nd = static_cast<int>(m_distinct_y.size());
-        std::vector<double> digamma_yptheta(nd), trigamma_yptheta(nd);
-        for (int k = 0; k < nd; ++k) {
-            const double ypt      = m_distinct_y[k] + theta;
-            digamma_yptheta[k]  = R::digamma(ypt);
-            trigamma_yptheta[k] = R::trigamma(ypt);
-        }
-
-        for (int i = 0; i < m_n; ++i) {
-            const double mu = std::exp(std::min(eta_c[i], 700.0));
-            const double pi = sigmoid_zinb(eta_z[i]);
-            const double A  = theta + mu;
-            // Replace pow(theta/A, theta) — reuse log_theta = log(theta).
-            const double log_A          = std::log(A);
-            const double log_theta_ov_A = log_theta - log_A;
-            const double p0             = std::exp(theta * log_theta_ov_A);
-
-            const Eigen::VectorXd xc = m_Xc.row(i);
-            const Eigen::VectorXd xz = m_Xz.row(i);
-
-            if (m_y[i] == 0.0) {
-                const double q = std::max(pi + (1.0 - pi) * p0, 1e-300);
-
-                const double dq_dmu = (1.0 - pi) * p0 * (-theta / A);
-                const double dq_detac = dq_dmu * mu;
-
-                const double dpi_detaz = pi * (1.0 - pi);
-                const double dq_detaz = (1.0 - p0) * dpi_detaz;
-
-                // dp0/dtheta reuses log_theta_ov_A.
-                const double dp0_dtheta = p0 * (log_theta_ov_A + mu / A);
-                const double dq_dtheta = (1.0 - pi) * dp0_dtheta;
-                const double dq_dlogtheta = dq_dtheta * theta;
-
-                const double d2q_dmu2 = (1.0 - pi) * p0 * (theta / (A * A)) * (theta + 1.0);
-                const double d2q_detac2 = d2q_dmu2 * mu * mu + dq_dmu * mu;
-
-                const double d2pi_detaz2 = pi * (1.0 - pi) * (1.0 - 2.0 * pi);
-                const double d2q_detaz2 = (1.0 - p0) * d2pi_detaz2;
-
-                // (log(theta/A) + mu/A)^2 reuses log_theta_ov_A.
-                const double tmp = log_theta_ov_A + mu / A;
-                const double d2p0_dtheta2 = p0 * (tmp * tmp +
-                                               (1.0 / theta - 2.0 / A + theta / (A * A)));
-                const double d2q_dtheta2 = (1.0 - pi) * d2p0_dtheta2;
-                const double d2q_dlogtheta2 = d2q_dtheta2 * theta * theta + dq_dtheta * theta;
-
-                const double d2q_detac_detaz = -mu * (theta / A) * p0 * dpi_detaz;
-                const double d2q_detac_dlogtheta = (1.0 - pi) * theta * (
-                    dp0_dtheta * (-theta / A) + p0 * (-mu / (A * A))
-                );
-                const double d2q_detaz_dlogtheta = -dpi_detaz * dp0_dtheta * theta;
-
-                const double inv_q = 1.0 / q;
-                const double inv_q2 = inv_q * inv_q;
-
-                const double h_cc = (inv_q2 * dq_detac * dq_detac - inv_q * d2q_detac2);
-                const double h_zz = (inv_q2 * dq_detaz * dq_detaz - inv_q * d2q_detaz2);
-                const double h_tt = (inv_q2 * dq_dlogtheta * dq_dlogtheta - inv_q * d2q_dlogtheta2);
-                const double h_cz = (inv_q2 * dq_detac * dq_detaz - inv_q * d2q_detac_detaz);
-                const double h_ct = (inv_q2 * dq_detac * dq_dlogtheta - inv_q * d2q_detac_dlogtheta);
-                const double h_zt = (inv_q2 * dq_detaz * dq_dlogtheta - inv_q * d2q_detaz_dlogtheta);
-
-                for (int r = 0; r < m_pc; ++r) {
-                    for (int c = 0; r >= c && c < m_pc; ++c) H(r, c) += h_cc * xc[r] * xc[c];
-                    for (int c = 0; c < m_pz; ++c) H(r, m_pc + c) += h_cz * xc[r] * xz[c];
-                    H(r, total - 1) += h_ct * xc[r];
-                }
-                for (int r = 0; r < m_pz; ++r) {
-                    for (int c = 0; r >= c && c < m_pz; ++c) H(m_pc + r, m_pc + c) += h_zz * xz[r] * xz[c];
-                    H(m_pc + r, total - 1) += h_zt * xz[r];
-                }
-                H(total - 1, total - 1) += h_tt;
-
-            } else {
-                const int    slot = m_y_slot[i];
-                const double yi   = m_distinct_y[slot];
-                const double h_zz = pi * (1.0 - pi);
-                const double h_cc = theta * mu * (yi + theta) / (A * A);
-                // Uses hoisted digamma_theta, trigamma_theta, tabulated y+theta values,
-                // and reuses log_theta_ov_A.
-                const double dnb_dtheta    = digamma_theta  - digamma_yptheta[slot]
-                                             - log_theta_ov_A + (yi - mu) / A;
-                const double d2nb_dtheta2  = trigamma_theta - trigamma_yptheta[slot]
-                                             - 1.0 / theta + 2.0 / A - (yi + theta) / (A * A);
-                const double h_tt = (d2nb_dtheta2 * theta * theta + dnb_dtheta * theta);
-                const double h_ct = (-mu * (yi - mu) / (A * A)) * theta;
-
-                for (int r = 0; r < m_pc; ++r) {
-                    for (int c = 0; r >= c && c < m_pc; ++c) H(r, c) += h_cc * xc[r] * xc[c];
-                    H(r, total - 1) += h_ct * xc[r];
-                }
-                for (int r = 0; r < m_pz; ++r) {
-                    for (int c = 0; r >= c && c < m_pz; ++c) H(m_pc + r, m_pc + c) += h_zz * xz[r] * xz[c];
-                }
-                H(total - 1, total - 1) += h_tt;
-            }
-        }
-        for (int r = 0; r < total; ++r) {
-            for (int c = 0; c < r; ++c) H(c, r) = H(r, c);
-        }
-        return H;
-    }
-
-    Eigen::MatrixXd expected_hessian(const Eigen::VectorXd& par) {
-        const int total = m_pc + m_pz + 1;
-        Eigen::MatrixXd H = Eigen::MatrixXd::Zero(total, total);
-
-        const Eigen::VectorXd bc  = par.head(m_pc);
-        const Eigen::VectorXd bz  = par.segment(m_pc, m_pz);
-        const double log_theta    = par[m_pc + m_pz];
-        const double theta        = std::exp(std::min(log_theta, 700.0));
-        const Eigen::VectorXd eta_c = m_Xc * bc;
-        const Eigen::VectorXd eta_z = m_Xz * bz;
-
-        for (int i = 0; i < m_n; ++i) {
-            const double mu = std::exp(std::min(eta_c[i], 700.0));
-            const double pi = sigmoid_zinb(eta_z[i]);
-            const double p0_nb = std::exp(theta * (log_theta - std::log(theta + mu)));
-            const double p_zero = pi + (1.0 - pi) * p0_nb;
-
-            Eigen::MatrixXd Xi(1, m_pc);
-            Eigen::MatrixXd Xzi(1, m_pz);
-            Xi.row(0) = m_Xc.row(i);
-            Xzi.row(0) = m_Xz.row(i);
-            Eigen::VectorXd yi0(1);
-            yi0[0] = 0.0;
-            ZeroInflatedNegBin fun0(yi0, Xi, Xzi);
-            H.noalias() += p_zero * fun0.hessian(par);
-
-            double cum_positive = 0.0;
-            const double positive_mass = std::max(0.0, (1.0 - pi) * (1.0 - p0_nb));
-            const double sd = std::sqrt(mu + mu * mu / theta);
-            const int soft_min_y = std::max(20, static_cast<int>(std::ceil(mu + 12.0 * sd)));
-            const int max_y = std::max(soft_min_y, 10000);
-            for (int yv = 1; yv <= max_y; ++yv) {
-                const double prob = (1.0 - pi) * R::dnbinom_mu(static_cast<double>(yv), theta, mu, false);
-                if (prob > 0.0 && std::isfinite(prob)) {
-                    Eigen::VectorXd yi(1);
-                    yi[0] = static_cast<double>(yv);
-                    ZeroInflatedNegBin fun_y(yi, Xi, Xzi);
-                    H.noalias() += prob * fun_y.hessian(par);
-                    cum_positive += prob;
-                }
-                if (yv >= soft_min_y && positive_mass - cum_positive < 1e-10) break;
-            }
-        }
-        return (H + H.transpose()) / 2.0;
+        return numerical_hessian(*this, par);
     }
 };
 
 } // namespace
 
-// [[Rcpp::export]]
-Eigen::VectorXd get_zinb_score_cpp(const Eigen::MatrixXd& X,
-                                   const Eigen::VectorXd& y,
-                                   const Eigen::MatrixXd& Xzi,
-                                   const Eigen::VectorXd& params) {
-    ZeroInflatedNegBin fun(y, X, Xzi);
-    return likelihood_score(fun, params);
-}
-
-// [[Rcpp::export]]
-Eigen::MatrixXd get_zinb_hessian_cpp(const Eigen::MatrixXd& X,
-                                     const Eigen::VectorXd& y,
-                                     const Eigen::MatrixXd& Xzi,
-                                     const Eigen::VectorXd& params) {
-    ZeroInflatedNegBin fun(y, X, Xzi);
-    return -fun.hessian(params);
-}
-
-// [[Rcpp::export]]
-double get_zinb_neg_loglik_cpp(const Eigen::MatrixXd& X,
-                               const Eigen::VectorXd& y,
-                               const Eigen::MatrixXd& Xzi,
-                               const Eigen::VectorXd& params) {
-    ZeroInflatedNegBin fun(y, X, Xzi);
-    return likelihood_value(fun, params);
-}
-
 //' @title Fast Zero-Inflated Negative Binomial Regression (C++)
-//' @description High-performance ZINB regression fitting using Newton-Raphson or L-BFGS.
-//' @param X Matrix of predictors for the conditional component.
-//' @param y Vector of responses.
-//' @param Xzi Matrix of predictors for the zero-inflation component.
-//' @param warm_start_params Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
-//' @param estimate_only If TRUE, skip variance component calculations.
+//' @description High-performance zero-inflated negative binomial model fitting via L-BFGS.
+//' @param X Numeric matrix of predictors for the count component (including intercept).
+//' @param Xzi Numeric matrix of predictors for the zero-inflation component (including intercept).
+//' @param y Numeric vector of non-negative integer count responses.
+//' @param warm_start_params Optional starting values for all parameters.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
-//' @param optimization_alg Optimization algorithm.
 //' @param fixed_idx Optional indices of fixed parameters.
 //' @param fixed_values Optional values for fixed parameters.
-//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first iteration.
-//' @return A list containing coefficients, vcov, and convergence status.
+//' @param optimization_alg Optimization algorithm (default "lbfgs").
+//' @param smart_cold_start Logical. If TRUE, use a heuristic initial guess.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix.
+//' @param estimate_only Logical. If TRUE, skip variance computation and return only coefficients.
+//' @return A list containing coefficients and convergence status.
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_zinb_cpp(
-    const Eigen::MatrixXd& X,
-    const Eigen::VectorXd& y,
-    const Eigen::MatrixXd& Xzi,
-    Nullable<NumericVector> warm_start_params = R_NilValue,
-    bool smart_cold_start = true,
-    bool estimate_only = false,
-    int maxit = 1000,
-    double tol = 1e-6,
-    std::string optimization_alg = "lbfgs",
-    Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
-) {
-    const int pc = X.cols();
-    const int pz = Xzi.cols();
-    const int total = pc + pz + 1;
+List fast_zinb_cpp(SEXP X, SEXP Xzi, SEXP y,
+                   Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
+                   int maxit = 1000, double tol = 1e-8,
+                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                   std::string optimization_alg = "lbfgs",
+                   bool smart_cold_start = true,
+                   Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                   bool estimate_only = false) {
+    NumericMatrix Xc_r(X);
+    NumericMatrix Xz_r(Xzi);
+    NumericVector y_r(y);
+    Eigen::Map<const Eigen::MatrixXd> Xc(Xc_r.begin(), Xc_r.nrow(), Xc_r.ncol());
+    Eigen::Map<const Eigen::MatrixXd> Xz(Xz_r.begin(), Xz_r.nrow(), Xz_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> y_vec(y_r.begin(), y_r.size());
 
-    Eigen::VectorXd par(total);
+    ZeroInflatedNegBin obj(y_vec, Xc, Xz);
+    int n_par = Xc.cols() + Xz.cols() + 1;
+    Eigen::VectorXd par = Eigen::VectorXd::Zero(n_par);
+    
     if (warm_start_params.isNotNull()) {
         par = as<Eigen::VectorXd>(NumericVector(warm_start_params));
+        if (par.size() != n_par) stop("warm_start_params must have length equal to the number of model parameters");
     } else if (smart_cold_start) {
-        par = edi_opt::zinb_smart_cold_start(X, Xzi, y);
-    } else {
-        par.setZero();
-        // Init cond intercept from mean of positive observations
-        double sum_pos = 0.0; int cnt_pos = 0;
-        for (int i = 0; i < y.size(); ++i)
-            if (y[i] > 0.0) { sum_pos += y[i]; ++cnt_pos; }
-        if (cnt_pos > 0) par[0] = std::log(sum_pos / cnt_pos);
+        // Simple initialization
+        double mean_y = y_vec.mean();
+        if (mean_y < 1e-8) mean_y = 1e-8;
+        par.head(Xc.cols()).setZero();
+        if (Xc.cols() > 0) par[0] = std::log(mean_y);
+        par.segment(Xc.cols(), Xz.cols()).setZero();
+        par[n_par - 1] = std::log(1.0); // theta = 1
     }
 
-    ZeroInflatedNegBin fun(y, X, Xzi);
-    FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
     
-    Eigen::MatrixXd H_start;
-    const Eigen::MatrixXd* h_ptr = nullptr;
+    Eigen::MatrixXd info;
+    const Eigen::MatrixXd* info_ptr = nullptr;
     if (warm_start_fisher_info.isNotNull()) {
-        H_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
-        h_ptr = &H_start;
+        info = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        if (info.rows() == n_par && info.cols() == n_par) {
+            info_ptr = &info;
+        }
     }
+
+    LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_ptr);
     
-    LikelihoodFitResult fit;
-    try {
-        fit = optimize_fixed_likelihood(fun, par, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, h_ptr);
-    } catch (...) {
-        return List::create(Named("converged") = false);
-    }
-    par = fit.params;
     if (estimate_only) {
         return List::create(
-            Named("params") = par,
-            Named("coefficients") = List::create(
-                Named("cond") = par.head(pc),
-                Named("zi")   = par.segment(pc, pz)
-            ),
+            Named("params") = fit.params,
             Named("converged") = fit.converged,
-            Named("neg_ll")    = fit.value,
-            Named("neg_loglik") = fit.value,
-            Named("loglik") = R_finite(fit.value) ? -fit.value : NA_REAL
+            Named("iterations") = fit.niter
         );
     }
 
-    Eigen::VectorXd score = get_zinb_score_cpp(X, y, Xzi, par);
-    Eigen::MatrixXd observed_information = fun.hessian(par);
-    Eigen::MatrixXd fisher_information = fun.expected_hessian(par);
-    Eigen::MatrixXd vcov = expand_free_covariance(total, fixed_spec, covariance_from_information(subset_matrix(fisher_information, fixed_spec.free_idx, fixed_spec.free_idx)), true);
-
-    return List::create(
-        Named("params") = par,
-        Named("coefficients") = List::create(
-            Named("cond") = par.head(pc),
-            Named("zi")   = par.segment(pc, pz)
-        ),
-        Named("vcov")      = vcov,
-        Named("score")     = score,
-        Named("observed_information") = observed_information,
-        Named("information") = fisher_information,
-        Named("information_type") = "fisher",
-        Named("hessian")   = -observed_information,
-        Named("converged") = fit.converged,
-        Named("neg_ll")    = fit.value,
-        Named("neg_loglik") = fit.value,
-        Named("loglik") = R_finite(fit.value) ? -fit.value : NA_REAL,
-        Named("fisher_information") = fisher_information
-    );
+    Eigen::MatrixXd hess = obj.hessian(fit.params);
+    return make_uniform_likelihood_fit_result(fit.params, fit.value, fit.converged, -likelihood_score(obj, fit.params), hess, false);
 }

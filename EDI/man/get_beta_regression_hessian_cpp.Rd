@@ -4,7 +4,7 @@
 \alias{get_beta_regression_hessian_cpp}
 \title{Compute Beta Regression Hessian}
 \usage{
-get_beta_regression_hessian_cpp(X, y, params)
+get_beta_regression_hessian_cpp(X_sexp, y_sexp, params_sexp)
 }
 \arguments{
 \item{X}{A numeric matrix of predictors.}

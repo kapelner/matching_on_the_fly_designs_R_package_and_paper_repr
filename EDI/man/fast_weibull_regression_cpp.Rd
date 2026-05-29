@@ -5,14 +5,14 @@
 \title{Fast Weibull Regression (C++ Backend)}
 \usage{
 fast_weibull_regression_cpp(
-  X,
-  y,
-  dead,
+  X_sexp,
+  y_sexp,
+  dead_sexp,
   warm_start_params = NULL,
-  smart_cold_start = FALSE,
+  smart_cold_start = TRUE,
   estimate_only = FALSE,
-  maxit = 1000L,
-  tol = 1e-06,
+  maxit = 100L,
+  tol = 1e-08,
   fixed_idx = NULL,
   fixed_values = NULL,
   optimization_alg = "lbfgs",
@@ -20,17 +20,9 @@ fast_weibull_regression_cpp(
 )
 }
 \arguments{
-\item{X}{A numeric matrix of predictors.}
+\item{smart_cold_start}{Logical. If TRUE, use an initial OLS-based guess.}
 
-\item{y}{A numeric vector of survival times.}
-
-\item{dead}{A numeric vector of event indicators.}
-
-\item{warm_start_params}{Optional starting values for [beta, log_sigma]. If provided, \code{smart_cold_start} is ignored.}
-
-\item{smart_cold_start}{Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.}
-
-\item{estimate_only}{If TRUE, only return coefficients and likelihood.}
+\item{estimate_only}{Logical. If TRUE, do not compute variance-covariance.}
 
 \item{maxit}{Maximum number of iterations.}
 
@@ -41,6 +33,16 @@ fast_weibull_regression_cpp(
 \item{fixed_values}{Optional values for fixed parameters.}
 
 \item{optimization_alg}{Optimization algorithm.}
+
+\item{warm_start_fisher_info}{Optional initial Fisher Information matrix.}
+
+\item{X}{A numeric matrix of predictors.}
+
+\item{y}{A numeric vector of survival times.}
+
+\item{dead}{A numeric vector of event indicators (1=event, 0=censored).}
+
+\item{warm_start_beta}{Optional starting values for coefficients.}
 }
 \value{
 A list containing the following components:
@@ -53,15 +55,9 @@ including the intercept.}
 \item{converged}{A logical value indicating whether the algorithm converged.}
 }
 
-A list containing coefficients, log_sigma, vcov, and convergence status.
+A list containing coefficients, log_sigma, and convergence status.
 }
 \description{
-High-performance Weibull Accelerated Failure Time (AFT) regression fitting.
-}
-\examples{
-X = matrix(rnorm(100), 10, 10)
-y = runif(10)
-dead = rbinom(10, 1, 0.5)
-fast_weibull_regression_cpp(X, y, dead)
+Weibull Accelerated Failure Time model fitting.
 }
 \keyword{internal}

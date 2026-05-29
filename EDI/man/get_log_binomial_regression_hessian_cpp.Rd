@@ -4,7 +4,7 @@
 \alias{get_log_binomial_regression_hessian_cpp}
 \title{Compute Log-Binomial Regression Hessian}
 \usage{
-get_log_binomial_regression_hessian_cpp(X, y, beta)
+get_log_binomial_regression_hessian_cpp(X_r, y_r, beta_sexp)
 }
 \arguments{
 \item{X}{A numeric matrix of predictors.}

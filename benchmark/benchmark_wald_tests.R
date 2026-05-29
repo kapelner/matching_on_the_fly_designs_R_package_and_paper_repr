@@ -180,6 +180,25 @@ prepare_solver_only_edi = function(inf_obj, cls_name) {
         }
     }
 
+    if (identical(cls_name, "InferenceSurvivalCoxPHRegr") &&
+        exists("cox_data_cache", envir = priv, inherits = FALSE)) {
+        # Pre-build the risk-set cache mirroring exactly what generate_mod does:
+        # X_fit = cbind(treatment, get_X()). Keyed on (y, dead) fixed across iterations.
+        tryCatch({
+            X_cov = if (exists("get_X", envir = priv, inherits = FALSE))
+                priv$get_X()
+            else
+                NULL
+            X_fit = if (!is.null(X_cov) && ncol(X_cov) > 0L)
+                cbind(treatment = priv$w, X_cov)
+            else
+                matrix(priv$w, ncol = 1L, dimnames = list(NULL, "treatment"))
+            cache = EDI:::build_cox_data_cache_cpp(X_fit, priv$y, priv$dead)
+            replace_binding("cox_data_cache", cache)
+            replace_binding("cox_w_cache", priv$w)
+        }, error = function(e) NULL)
+    }
+
     if (identical(cls_name, "InferenceSurvivalStratCoxPHRegr") &&
         exists("compute_strata_info", envir = priv, inherits = FALSE)) {
         X_full = tryCatch(priv$X, error = function(e) NULL)
@@ -382,6 +401,11 @@ bench_specs = list(
         p = ncol(X_can); R = res$qr$qr[1:p, 1:p, drop=FALSE]; R[lower.tri(R)] = 0
         v = chol2inv(R); 2 * pnorm(-abs(res$coefficients[2] / sqrt(v[2,2])))
     })),
+    list(cls = "InferenceIncidProbitRegr", pkg = "stats", func = "glm.fit(probit)+Wald", expr = quote({
+        res = glm.fit(x = X_can, y = df$y, family = binomial(link = "probit"))
+        p = ncol(X_can); R = res$qr$qr[1:p, 1:p, drop = FALSE]; R[lower.tri(R)] = 0
+        v = chol2inv(R); 2 * pnorm(-abs(res$coefficients[2] / sqrt(v[2, 2])))
+    })),
     list(cls = "InferenceOrdinalAdjCatLogitRegr", pkg = "VGAM", func = "vglm+summary", expr = quote({
         res = VGAM::vglm(factor(y, ordered=T) ~ treatment + x1 + x2 + x3 + x4, VGAM::acat(), data=df)
         summary(res)@coef3[1, 4]
@@ -517,7 +541,8 @@ run_one = function(spec) {
     else if (grepl("Survival|Cox|Weibull|KM|Rank|LogRank|Gehan|RMST|RMDiff|LWACox|Clayton", cls_name)) { resp_type = "survival"; family = "cox" }
     
     if (cls_name == "InferenceIncidLogBinomial") family = "log-binomial"
-    if (cls_name %in% c("InferenceCountZeroInflatedNegBin", "InferenceCountHurdleNegBin")) family = "negbin"
+    if (cls_name == "InferenceIncidProbitRegr") family = "probit"
+    if (cls_name %in% c("InferenceCountNegBin", "InferenceCountZeroInflatedNegBin", "InferenceCountHurdleNegBin")) family = "negbin"
     
     n = N_WALD 
     use_stable_count_draw = cls_name %in% c(
@@ -587,9 +612,6 @@ run_one = function(spec) {
 				        quote({
 				                priv_env$cached_mod = NULL
 				                priv_env$cached_values = list()
-				                if (exists("cox_data_cache", envir = priv_env, inherits = FALSE)) {
-				                        priv_env$cox_data_cache = NULL
-				                }
 				                inf_obj$compute_estimate(estimate_only = FALSE)
 				                p = inf_obj$compute_asymp_two_sided_pval(delta = pval_delta)
 				                if (!is.finite(p)) stop("Non-finite EDI p-value.")
@@ -599,9 +621,6 @@ run_one = function(spec) {
 				quote({
 				priv_env$cached_mod = NULL
 				priv_env$cached_values = list()
-				if (exists("cox_data_cache", envir = priv_env, inherits = FALSE)) {
-				priv_env$cox_data_cache = NULL
-				}
 				inf_obj$compute_estimate(estimate_only = FALSE)
 				p = inf_obj$compute_exact_two_sided_pval_for_treatment_effect()
 				if (!is.finite(p)) stop("Non-finite EDI p-value.")
@@ -683,8 +702,6 @@ format_pval_stars = function(x) {
 row_bg_color = function(speedup, pval) {
   if (!is.finite(speedup) || is.na(pval)) return("#eceff1")
   if (pval < 0.05 && speedup > 1) return("#d9fdd3")
-  if (pval < 0.05 && speedup < 1) return("#ffd9d9")
-  if (pval >= 0.05) return("#fff4bf")
   ""
 }
 format_ms = function(x) {
@@ -738,6 +755,11 @@ wald_start = grep("## Wald Test Performance", report_lines)
 if (length(wald_start)) {
     report_lines = report_lines[1:(wald_start-1)]
 }
+# Refresh the generated timestamp
+ts_line = grep("^_Generated:", report_lines)
+if (length(ts_line)) {
+    report_lines[ts_line[1]] = paste0("_Generated: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"), "_")
+}
 
 header = c(
   "## Wald Test Performance (Full Inference)",
@@ -754,7 +776,7 @@ header = c(
   "**Limitation**: Some canonical comparators only expose formula-based APIs rather than comparable low-level fit kernels. Those rows remain included, but their canonical timings may still contain formula/model-frame overhead beyond the numerical solver, variance, and p-value work itself.",
   paste0("**Timing Note**: All timings are medians over ", B_TIME, " warmed runs measured with adaptive batched `system.time`; paths below ", FAST_PATH_THRESHOLD_MS, " ms use `microbenchmark(times = ", FAST_PATH_MICROBENCH_REPS, ")` instead."),
   "**Timing P-Value**: `Timing Pval` reports a Welch two-sample t-test comparing the EDI and canonical timing replicate distributions for each row. The unlabeled final column marks thresholds with `***` for p < 0.001, `**` for p < 0.01, and `*` for p < 0.05.",
-  "**Row Highlighting**: Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light red rows indicate `Speedup < 1` and `Timing Pval < 0.05`; light yellow rows indicate `Timing Pval >= 0.05`; light grey rows indicate `NA` timing comparisons.",
+  "**Row Highlighting**: Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light grey rows indicate `NA` timing comparisons.",
   "",
   table_lines
 )

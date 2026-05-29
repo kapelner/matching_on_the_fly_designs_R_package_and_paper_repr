@@ -5,12 +5,12 @@
 \title{Fast Combined Conditional-Poisson Regression (C++)}
 \usage{
 fast_cpoisson_combined_with_var_cpp(
-  yT_v,
-  n_k_v,
-  X_diff_v,
-  y_r,
-  w_r,
-  X_r,
+  yT_v_r,
+  n_k_v_r,
+  X_diff_v_r,
+  y_r_r,
+  w_r_r,
+  X_r_r,
   maxit = 100L,
   tol = 1e-08,
   fixed_idx = NULL,
@@ -22,6 +22,14 @@ fast_cpoisson_combined_with_var_cpp(
 )
 }
 \arguments{
+\item{maxit}{Maximum number of iterations.}
+
+\item{tol}{Convergence tolerance.}
+
+\item{fixed_idx}{Optional indices of fixed parameters.}
+
+\item{fixed_values}{Optional values for fixed parameters.}
+
 \item{yT_v}{Treated counts per pair.}
 
 \item{n_k_v}{Total counts per pair.}
@@ -33,14 +41,6 @@ fast_cpoisson_combined_with_var_cpp(
 \item{w_r}{Reservoir treatment indicators.}
 
 \item{X_r}{Reservoir covariates.}
-
-\item{maxit}{Maximum number of iterations.}
-
-\item{tol}{Convergence tolerance.}
-
-\item{fixed_idx}{Optional indices of fixed parameters.}
-
-\item{fixed_values}{Optional values for fixed parameters.}
 }
 \value{
 A list containing coefficients, variance estimates, and likelihood statistics.

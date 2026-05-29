@@ -4,10 +4,16 @@
 // [[Rcpp::depends(RcppEigen)]]
 
 // [[Rcpp::export]]
-double beta_loglik_cpp(const Eigen::VectorXd& y,
-						 const Eigen::VectorXd& mu,
-						 const double phi,
-						 const Eigen::VectorXd& wt) {
+double beta_loglik_cpp(SEXP y_sexp,
+					 SEXP mu_sexp,
+					 const double phi,
+					 SEXP wt_sexp) {
+	Rcpp::NumericVector y_r(y_sexp);
+	Rcpp::NumericVector mu_r(mu_sexp);
+	Rcpp::NumericVector wt_r(wt_sexp);
+	Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+	Eigen::Map<const Eigen::VectorXd> mu(mu_r.begin(), mu_r.size());
+	Eigen::Map<const Eigen::VectorXd> wt(wt_r.begin(), wt_r.size());
 	const int n = y.size();
 	double out = 0.0;
 
@@ -37,10 +43,16 @@ double beta_loglik_cpp(const Eigen::VectorXd& y,
 }
 
 // [[Rcpp::export]]
-Eigen::VectorXd beta_dev_resids_cpp(const Eigen::VectorXd& y,
-									const Eigen::VectorXd& mu,
+Eigen::VectorXd beta_dev_resids_cpp(SEXP y_sexp,
+									SEXP mu_sexp,
 									const double phi,
-									const Eigen::VectorXd& wt) {
+									SEXP wt_sexp) {
+	Rcpp::NumericVector y_r(y_sexp);
+	Rcpp::NumericVector mu_r(mu_sexp);
+	Rcpp::NumericVector wt_r(wt_sexp);
+	Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+	Eigen::Map<const Eigen::VectorXd> mu(mu_r.begin(), mu_r.size());
+	Eigen::Map<const Eigen::VectorXd> wt(wt_r.begin(), wt_r.size());
 	const int n = y.size();
 	Eigen::VectorXd out(n);
 
@@ -70,10 +82,16 @@ Eigen::VectorXd beta_dev_resids_cpp(const Eigen::VectorXd& y,
 }
 
 // [[Rcpp::export]]
-double beta_aic_cpp(const Eigen::VectorXd& y,
-					const Eigen::VectorXd& mu,
+double beta_aic_cpp(SEXP y_sexp,
+					SEXP mu_sexp,
 					const double phi,
-					const Eigen::VectorXd& wt) {
+					SEXP wt_sexp) {
+	Rcpp::NumericVector y_r(y_sexp);
+	Rcpp::NumericVector mu_r(mu_sexp);
+	Rcpp::NumericVector wt_r(wt_sexp);
+	Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+	Eigen::Map<const Eigen::VectorXd> mu(mu_r.begin(), mu_r.size());
+	Eigen::Map<const Eigen::VectorXd> wt(wt_r.begin(), wt_r.size());
 	const int n = y.size();
 	double ll = 0.0;
 

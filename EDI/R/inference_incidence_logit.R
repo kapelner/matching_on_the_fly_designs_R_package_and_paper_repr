@@ -95,6 +95,8 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 	),
 	private = list(
 		best_X_colnames = NULL,
+		logit_X_full_cache = NULL,
+		logit_w_cache = NULL,
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Ensure we have the best design from the original data
 			if (is.null(private$best_X_colnames)){
@@ -242,7 +244,47 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 			)
 		},
 		generate_mod = function(estimate_only = FALSE){
-			X_full = private$build_design_matrix()
+			if (is.null(private$logit_X_full_cache) || !identical(private$w, private$logit_w_cache)) {
+				private$logit_X_full_cache = private$build_design_matrix()
+				private$logit_w_cache = private$w
+			}
+			X_full = private$logit_X_full_cache
+			
+			if (!private$harden) {
+				ws_args = private$get_backend_warm_start_args(ncol(X_full))
+				if (estimate_only) {
+					res = fast_logistic_regression_cpp(
+						X_full, private$y,
+						warm_start_beta = ws_args$warm_start_beta,
+						warm_start_weights = ws_args$warm_start_weights,
+						warm_start_fisher_info = ws_args$warm_start_fisher_info,
+						smart_cold_start = private$smart_cold_start_default,
+						estimate_only = TRUE,
+						optimization_alg = private$optimization_alg
+					)
+					res$beta_hat_T = as.numeric(res$b[2])
+					res$ssq_b_2 = NA_real_
+					res$neg_log_lik = as.numeric(res$neg_ll)
+				} else {
+					res = fast_logistic_regression_with_var_cpp(
+						X_full, private$y, j = 2L,
+						warm_start_beta = ws_args$warm_start_beta,
+						warm_start_weights = ws_args$warm_start_weights,
+						warm_start_fisher_info = ws_args$warm_start_fisher_info,
+						smart_cold_start = private$smart_cold_start_default,
+						optimization_alg = private$optimization_alg
+					)
+					res$beta_hat_T = as.numeric(res$b[2])
+					res$ssq_b_2 = res$ssq_b_j
+				}
+				private$best_X_colnames = setdiff(colnames(X_full), c("(Intercept)", "treatment"))
+				private$cached_values$likelihood_test_context = list(
+					X = X_full,
+					j_treat = 2L,
+					full_neg_loglik = res$neg_log_lik %||% res$neg_ll
+				)
+				return(res)
+			}
 
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,

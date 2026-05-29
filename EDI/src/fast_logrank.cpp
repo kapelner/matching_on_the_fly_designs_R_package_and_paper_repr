@@ -22,7 +22,7 @@ inline bool record_less(const SubjectRecord& a, const SubjectRecord& b) {
   return a.w < b.w;
 }
 
-ModelResult fast_logrank_internal(const Eigen::VectorXd& time,
+ModelResult fast_logrank_internal(const Eigen::Ref<const Eigen::VectorXd>& time,
                                 const std::vector<int>& dead,
                                 const std::vector<int>& w) {
   const int n = time.size();
@@ -115,9 +115,10 @@ ModelResult fast_logrank_internal(const Eigen::VectorXd& time,
 } // namespace
 
 // [[Rcpp::export]]
-List fast_logrank_stats_cpp(const IntegerVector& w,
-                            const Eigen::VectorXd& y,
+SEXP fast_logrank_stats_cpp(const IntegerVector& w,
+                            const NumericVector& y_r,
                             const IntegerVector& dead) {
+  Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
   int n = y.size();
   std::vector<int> dead_std(n), w_std(n);
   for(int i=0; i<n; ++i) { dead_std[i] = dead[i]; w_std[i] = w[i]; }
@@ -126,12 +127,12 @@ List fast_logrank_stats_cpp(const IntegerVector& w,
   int n_treat = 0;
   for(int val : w_std) if (val == 1) n_treat++;
 
-  return List::create(
+  return wrap(List::create(
     _["score"] = res.dispersion,
     _["var_score"] = (res.sigma2_hat > 0.0) ? res.sigma2_hat : NA_REAL,
     _["beta_hat"] = res.b[0],
     _["se_beta_hat"] = res.ssq_b_2,
     _["n_treat"] = n_treat,
     _["n_control"] = n - n_treat
-  );
+  ));
 }

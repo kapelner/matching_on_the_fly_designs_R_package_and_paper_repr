@@ -8,7 +8,9 @@
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-IntegerMatrix d_optimal_search_cpp(const Eigen::MatrixXd& P, int nsim, int n_T) {
+IntegerMatrix d_optimal_search_cpp(SEXP P_sexp, int nsim, int n_T) {
+    NumericMatrix P_r(P_sexp);
+    Eigen::Map<const Eigen::MatrixXd> P(P_r.begin(), P_r.nrow(), P_r.ncol());
     const int n = P.rows();
     const double* p_ptr = P.data();
     const Eigen::VectorXd p_diag = P.diagonal();
@@ -85,7 +87,11 @@ IntegerMatrix d_optimal_search_cpp(const Eigen::MatrixXd& P, int nsim, int n_T) 
 }
 
 // [[Rcpp::export]]
-IntegerMatrix a_optimal_search_cpp(const Eigen::MatrixXd& P, const Eigen::MatrixXd& H, int nsim, int n_T) {
+IntegerMatrix a_optimal_search_cpp(SEXP P_sexp, SEXP H_sexp, int nsim, int n_T) {
+    NumericMatrix P_r(P_sexp);
+    NumericMatrix H_r(H_sexp);
+    Eigen::Map<const Eigen::MatrixXd> P(P_r.begin(), P_r.nrow(), P_r.ncol());
+    Eigen::Map<const Eigen::MatrixXd> H(H_r.begin(), H_r.nrow(), H_r.ncol());
     const int n = P.rows();
     const double* p_ptr = P.data();
     const double* h_ptr = H.data();

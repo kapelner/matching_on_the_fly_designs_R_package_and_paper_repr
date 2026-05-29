@@ -12,7 +12,7 @@ inline double log1pexp_cpp(double x) {
 	return std::log1p(std::exp(x));
 }
 
-inline double log_sum_exp_cpp(const Eigen::VectorXd& x) {
+inline double log_sum_exp_cpp(const Eigen::Ref<const Eigen::VectorXd>& x) {
 	const double m = x.maxCoeff();
 	if (!std::isfinite(m)) return m;
 	return m + std::log((x.array() - m).exp().sum());
@@ -41,11 +41,11 @@ GHRule gauss_hermite_rule(int n) {
 
 class ClogitPlusGLMMObjective {
 private:
-	const Eigen::MatrixXd X_disc;
-	const Eigen::VectorXd y_disc;
-	const Eigen::MatrixXd X_conc;
-	const Eigen::VectorXd y_conc;
-	const Eigen::VectorXi group_conc;
+	const Eigen::Map<const Eigen::MatrixXd> X_disc;
+	const Eigen::Map<const Eigen::VectorXd> y_disc;
+	const Eigen::Map<const Eigen::MatrixXd> X_conc;
+	const Eigen::Map<const Eigen::VectorXd> y_conc;
+	const Eigen::Map<const Eigen::VectorXi> group_conc;
 	const int q;
 	const bool has_discordant;
 	const bool has_concordant;
@@ -63,11 +63,11 @@ private:
 	Eigen::MatrixXd m_mu_conc_all_k_mat;
 	Eigen::VectorXd m_weighted_res;
 
-	static ContiguousGroupLayout build_concordant_layout(const Eigen::VectorXi& group_conc_) {
+	static ContiguousGroupLayout build_concordant_layout(const Eigen::Ref<const Eigen::VectorXi>& group_conc_) {
 		return build_contiguous_group_layout(group_conc_.size(), [&](int idx) { return group_conc_[idx]; });
 	}
 
-	static Eigen::VectorXd build_group_y_sum(const Eigen::VectorXd& y_conc_,
+	static Eigen::VectorXd build_group_y_sum(const Eigen::Ref<const Eigen::VectorXd>& y_conc_,
 	                                         const std::vector<int>& grp_start,
 	                                         const std::vector<int>& grp_size) {
 		Eigen::VectorXd out(grp_start.size());
@@ -79,11 +79,11 @@ private:
 
 public:
 	ClogitPlusGLMMObjective(
-		const Eigen::MatrixXd& X_disc_,
-		const Eigen::VectorXd& y_disc_,
-		const Eigen::MatrixXd& X_conc_,
-		const Eigen::VectorXd& y_conc_,
-		const Eigen::VectorXi& group_conc_,
+		const Eigen::Map<const Eigen::MatrixXd>& X_disc_,
+		const Eigen::Map<const Eigen::VectorXd>& y_disc_,
+		const Eigen::Map<const Eigen::MatrixXd>& X_conc_,
+		const Eigen::Map<const Eigen::VectorXd>& y_conc_,
+		const Eigen::Map<const Eigen::VectorXi>& group_conc_,
 		const bool has_discordant_,
 		const bool has_concordant_,
 		const int n_gh = 20,
@@ -105,7 +105,7 @@ public:
 		m_mu_conc_all_k_mat(std::max(1, static_cast<int>(X_conc_.rows())), n_gh),
 		m_weighted_res(std::max(1, build_concordant_layout(group_conc_).max_size)) {}
 
-	double neg_clogit(const Eigen::VectorXd& beta_no_intercept) const {
+	double neg_clogit(const Eigen::Ref<const Eigen::VectorXd>& beta_no_intercept) const {
 		if (!has_discordant) return 0.0;
 		const Eigen::VectorXd eta = X_disc * beta_no_intercept;
 		double nll = 0.0;
@@ -117,7 +117,7 @@ public:
 		return nll;
 	}
 
-		double neg_glmm(const Eigen::VectorXd& par_full) const {
+		double neg_glmm(const Eigen::Ref<const Eigen::VectorXd>& par_full) const {
 			if (!has_concordant) return 0.0;
 			const int p_full = par_full.size();
 			const double log_sigma = par_full[p_full - 1];
@@ -157,7 +157,7 @@ public:
 			return -total_ll;
 		}
 
-	double value(const Eigen::VectorXd& par) const {
+	double value(const Eigen::Ref<const Eigen::VectorXd>& par) const {
 		double out = 0.0;
 		if (has_discordant) {
 			const Eigen::VectorXd beta_no_intercept =
@@ -169,7 +169,7 @@ public:
 		return out;
 	}
 
-	double operator()(const Eigen::VectorXd& par, Eigen::VectorXd& grad) {
+	double operator()(const Eigen::Ref<const Eigen::VectorXd>& par, Eigen::VectorXd& grad) {
 		const int p_full = par.size();
 		grad.setZero(p_full);
 		double total_nll = 0.0;
@@ -257,7 +257,7 @@ public:
 		return total_nll;
 	}
 
-	Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
+	Eigen::MatrixXd hessian(const Eigen::Ref<const Eigen::VectorXd>& par) {
 		const int p_full = par.size();
 		Eigen::MatrixXd H = Eigen::MatrixXd::Zero(p_full, p_full);
 
@@ -397,52 +397,66 @@ public:
 } // namespace
 
 // [[Rcpp::export]]
-Eigen::VectorXd get_clogit_plus_glmm_score_cpp(
-	const Eigen::MatrixXd& X_disc,
-	const Eigen::VectorXd& y_disc,
-	const Eigen::MatrixXd& X_conc,
-	const Eigen::VectorXd& y_conc,
-	const Eigen::VectorXi& group_conc,
-	const Eigen::VectorXd& params,
+SEXP get_clogit_plus_glmm_score_cpp(
+	const NumericMatrix& X_disc_r,
+	const NumericVector& y_disc_r,
+	const NumericMatrix& X_conc_r,
+	const NumericVector& y_conc_r,
+	const IntegerVector& group_conc_r,
+	const NumericVector& params_r,
 	bool has_discordant,
 	bool has_concordant,
 	double max_abs_log_sigma = 8.0
 ) {
+	Eigen::Map<const Eigen::MatrixXd> X_disc(X_disc_r.begin(), X_disc_r.rows(), X_disc_r.cols());
+	Eigen::Map<const Eigen::VectorXd> y_disc(y_disc_r.begin(), y_disc_r.size());
+	Eigen::Map<const Eigen::MatrixXd> X_conc(X_conc_r.begin(), X_conc_r.rows(), X_conc_r.cols());
+	Eigen::Map<const Eigen::VectorXd> y_conc(y_conc_r.begin(), y_conc_r.size());
+	Eigen::Map<const Eigen::VectorXi> group_conc(group_conc_r.begin(), group_conc_r.size());
+	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
+
 	ClogitPlusGLMMObjective obj(
 		X_disc, y_disc, X_conc, y_conc, group_conc,
 		has_discordant, has_concordant, 20, max_abs_log_sigma
 	);
 	Eigen::VectorXd grad(params.size());
 	obj(params, grad);
-	return -grad;
+	return wrap(-grad);
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd get_clogit_plus_glmm_hessian_cpp(
-	const Eigen::MatrixXd& X_disc,
-	const Eigen::VectorXd& y_disc,
-	const Eigen::MatrixXd& X_conc,
-	const Eigen::VectorXd& y_conc,
-	const Eigen::VectorXi& group_conc,
-	const Eigen::VectorXd& params,
+SEXP get_clogit_plus_glmm_hessian_cpp(
+	const NumericMatrix& X_disc_r,
+	const NumericVector& y_disc_r,
+	const NumericMatrix& X_conc_r,
+	const NumericVector& y_conc_r,
+	const IntegerVector& group_conc_r,
+	const NumericVector& params_r,
 	bool has_discordant,
 	bool has_concordant,
 	double max_abs_log_sigma = 8.0
 ) {
+	Eigen::Map<const Eigen::MatrixXd> X_disc(X_disc_r.begin(), X_disc_r.rows(), X_disc_r.cols());
+	Eigen::Map<const Eigen::VectorXd> y_disc(y_disc_r.begin(), y_disc_r.size());
+	Eigen::Map<const Eigen::MatrixXd> X_conc(X_conc_r.begin(), X_conc_r.rows(), X_conc_r.cols());
+	Eigen::Map<const Eigen::VectorXd> y_conc(y_conc_r.begin(), y_conc_r.size());
+	Eigen::Map<const Eigen::VectorXi> group_conc(group_conc_r.begin(), group_conc_r.size());
+	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
+
 	ClogitPlusGLMMObjective obj(
 		X_disc, y_disc, X_conc, y_conc, group_conc,
 		has_discordant, has_concordant, 20, max_abs_log_sigma
 	);
-	return -obj.hessian(params);
+	return wrap(-obj.hessian(params));
 }
 
 // [[Rcpp::export]]
-List fast_clogit_plus_glmm_cpp(
-	const Eigen::MatrixXd& X_disc,
-	const Eigen::VectorXd& y_disc,
-	const Eigen::MatrixXd& X_conc,
-	const Eigen::VectorXd& y_conc,
-	const Eigen::VectorXi& group_conc,
+SEXP fast_clogit_plus_glmm_cpp(
+	const NumericMatrix& X_disc_r,
+	const NumericVector& y_disc_r,
+	const NumericMatrix& X_conc_r,
+	const NumericVector& y_conc_r,
+	const IntegerVector& group_conc_r,
 	bool has_discordant,
 	bool has_concordant,
 	Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
@@ -456,6 +470,12 @@ List fast_clogit_plus_glmm_cpp(
 	std::string optimization_alg = "lbfgs",
 	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
+	Eigen::Map<const Eigen::MatrixXd> X_disc(X_disc_r.begin(), X_disc_r.rows(), X_disc_r.cols());
+	Eigen::Map<const Eigen::VectorXd> y_disc(y_disc_r.begin(), y_disc_r.size());
+	Eigen::Map<const Eigen::MatrixXd> X_conc(X_conc_r.begin(), X_conc_r.rows(), X_conc_r.cols());
+	Eigen::Map<const Eigen::VectorXd> y_conc(y_conc_r.begin(), y_conc_r.size());
+	Eigen::Map<const Eigen::VectorXi> group_conc(group_conc_r.begin(), group_conc_r.size());
+
 	ClogitPlusGLMMObjective obj(
 		X_disc, y_disc, X_conc, y_conc, group_conc,
 		has_discordant, has_concordant, 20, max_abs_log_sigma

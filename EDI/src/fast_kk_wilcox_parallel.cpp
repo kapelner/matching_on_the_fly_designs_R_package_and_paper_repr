@@ -62,22 +62,29 @@ inline double apply_shift(double y_val, double delta, int transform_code, double
 //' @return Numeric vector of KK Wilcoxon statistics.
 // [[Rcpp::export]]
 NumericVector compute_matching_wilcox_distr_parallel_cpp(
-    const IntegerMatrix& w_mat,
-    const IntegerMatrix& m_mat,
-    const NumericVector& y,
+    SEXP w_mat_sexp,
+    SEXP m_mat_sexp,
+    SEXP y_sexp,
     double delta,
     int transform_code,
     double zero_one_logit_clamp,
     bool is_fixed_matching,
     int num_cores) {
 
+  IntegerMatrix w_mat_mat(w_mat_sexp);
+  Eigen::Map<const Eigen::MatrixXi> w_mat(w_mat_mat.begin(), w_mat_mat.nrow(), w_mat_mat.ncol());
+  IntegerMatrix m_mat_mat(m_mat_sexp);
+  Eigen::Map<const Eigen::MatrixXi> m_mat(m_mat_mat.begin(), m_mat_mat.nrow(), m_mat_mat.ncol());
+  NumericVector y_vec(y_sexp);
+  Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+
   int n = y.size();
   int nsim = w_mat.cols();
   std::vector<double> results_vec(nsim);
   
-  const double* y_ptr = y.begin();
-  const int* w_ptr = w_mat.begin();
-  const int* m_ptr = m_mat.begin();
+  const double* y_ptr = y.data();
+  const int* w_ptr = w_mat.data();
+  const int* m_ptr = m_mat.data();
   double* res_ptr = results_vec.data();
 
   // Pre-calculate shifted responses for treatment group once

@@ -10,35 +10,38 @@ using namespace Rcpp;
 
 namespace {
 
-using RowMajorMatrixMap =
-    Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>;
-
 struct CoxData {
     Eigen::VectorXd y;
     Eigen::VectorXd dead;
-    std::vector<double> X_rowmaj;
-    std::vector<int> idx_asc;
+    RowMajorMatrixXd X;
     std::vector<double> unique_event_times;
     std::vector<int> event_counts;
     int n;
     int p;
 
-    CoxData(const Eigen::VectorXd& y_in, const Eigen::VectorXd& dead_in, const Eigen::MatrixXd& X_in) :
-        y(y_in), dead(dead_in), n((int)y_in.size()), p((int)X_in.cols()),
-        X_rowmaj(y_in.size() * X_in.cols()) {
+    template<typename Derived>
+    CoxData(const Eigen::VectorXd& y_in, const Eigen::VectorXd& dead_in, const Eigen::MatrixBase<Derived>& X_in) :
+        n((int)y_in.size()), p((int)X_in.cols()) {
 
-        for (int i = 0; i < n; ++i)
-            for (int q = 0; q < p; ++q)
-                X_rowmaj[i * p + q] = X_in(i, q);
-
-        idx_asc.resize(n);
+        std::vector<int> idx_asc(n);
         std::iota(idx_asc.begin(), idx_asc.end(), 0);
         std::sort(idx_asc.begin(), idx_asc.end(), [&](int i, int j) {
-            if (y[i] == y[j]) return dead[i] > dead[j];
-            return y[i] < y[j];
+            if (y_in[i] == y_in[j]) return dead_in[i] > dead_in[j];
+            return y_in[i] < y_in[j];
         });
 
-        for (int i : idx_asc) {
+        y.resize(n);
+        dead.resize(n);
+        X.resize(n, p);
+
+        for (int i = 0; i < n; ++i) {
+            int id = idx_asc[i];
+            y[i] = y_in[id];
+            dead[i] = dead_in[id];
+            X.row(i) = X_in.row(id);
+        }
+
+        for (int i = 0; i < n; ++i) {
             if (dead[i] > 0.5) {
                 if (unique_event_times.empty() || y[i] > unique_event_times.back()) {
                     unique_event_times.push_back(y[i]);
@@ -49,23 +52,24 @@ struct CoxData {
 
         int k = -1;
         for (int i = 0; i < n; ++i) {
-            int id = idx_asc[i];
-            if (k + 1 < (int)unique_event_times.size() && y[id] == unique_event_times[k+1])
+            if (k + 1 < (int)unique_event_times.size() && y[i] == unique_event_times[k+1])
                 k++;
-            if (k >= 0 && y[id] == unique_event_times[k] && dead[id] > 0.5)
+            if (k >= 0 && y[i] == unique_event_times[k] && dead[i] > 0.5)
                 event_counts[k]++;
         }
     }
 
-    inline const double* row(int i) const { return X_rowmaj.data() + i * p; }
-    inline RowMajorMatrixMap matrix_map() const { return RowMajorMatrixMap(X_rowmaj.data(), n, p); }
+    inline const double* row(int i) const { return X.row(i).data(); }
+    inline Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> matrix_map() const {
+        return Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(X.data(), n, p);
+    }
 };
 
 struct CoxWorkspace {
     Eigen::VectorXd eta;
     Eigen::VectorXd exp_eta;
-    Eigen::VectorXd r_x_exp;
-    Eigen::MatrixXd r_xx_exp;
+    Eigen::VectorXd S1;
+    Eigen::MatrixXd S2;
     Eigen::VectorXd sum_x_dk;
     Eigen::VectorXd e_z;
     Eigen::VectorXd grad;
@@ -76,8 +80,8 @@ struct CoxWorkspace {
     CoxWorkspace(int n, int p) :
         eta(n),
         exp_eta(n),
-        r_x_exp(p),
-        r_xx_exp(p, p),
+        S1(p),
+        S2(p, p),
         sum_x_dk(p),
         e_z(p),
         grad(p),
@@ -96,15 +100,14 @@ double compute_cox_neg_ll_only(const CoxData& data, const std::vector<double>& b
     int j = 0;
     for (size_t k = 0; k < data.unique_event_times.size(); ++k) {
         const double tk = data.unique_event_times[k];
-        while (j < n && data.y[data.idx_asc[j]] < tk) {
-            r_exp -= workspace.exp_eta[data.idx_asc[j]];
+        while (j < n && data.y[j] < tk) {
+            r_exp -= workspace.exp_eta[j];
             ++j;
         }
         double sum_eta_dk = 0.0;
         const int count_dk = data.event_counts[k];
-        for (int m = j; m < n && data.y[data.idx_asc[m]] == tk; ++m) {
-            int id = data.idx_asc[m];
-            if (data.dead[id] > 0.5) sum_eta_dk += workspace.eta[id];
+        for (int m = j; m < n && data.y[m] == tk; ++m) {
+            if (data.dead[m] > 0.5) sum_eta_dk += workspace.eta[m];
         }
         if (count_dk > 0) {
             const double safe_r = std::max(r_exp, 1e-100);
@@ -139,57 +142,66 @@ double compute_cox_ll_grad_hess_fast(
     const double max_eta = workspace.eta.maxCoeff();
     workspace.exp_eta.array() = (workspace.eta.array() - max_eta).exp();
 
-    double r_exp = workspace.exp_eta.sum();
-    workspace.r_x_exp.noalias() = data.matrix_map().transpose() * workspace.exp_eta;
-    if (!estimate_only) {
-        workspace.r_xx_exp.noalias() = weighted_crossprod(data.matrix_map(), workspace.exp_eta);
-    }
-
     grad.setZero();
     if (!estimate_only) hess.setZero();
 
     double neg_ll = 0.0;
-    int j = 0;
+    double S0 = 0.0;
+    workspace.S1.setZero(); 
+    if (!estimate_only) workspace.S2.setZero(); 
 
-    for (size_t k = 0; k < data.unique_event_times.size(); ++k) {
+    int data_idx = n - 1; 
+
+    for (int k = (int)data.unique_event_times.size() - 1; k >= 0; --k) {
         double tk = data.unique_event_times[k];
+        int dk = data.event_counts[k];
 
-        while (j < n && data.y[data.idx_asc[j]] < tk) {
-            int id = data.idx_asc[j];
-            Eigen::Map<const Eigen::VectorXd> xi(data.row(id), p);
+        int start_idx_for_tk = data_idx;
+        while (data_idx >= 0 && data.y[data_idx] >= tk) {
+            int id = data_idx;
             const double wi = workspace.exp_eta[id];
-            r_exp -= wi;
-            workspace.r_x_exp.noalias() -= wi * xi;
-            if (!estimate_only) {
-                workspace.r_xx_exp.selfadjointView<Eigen::Lower>().rankUpdate(xi, -wi);
+            const double* xi = data.row(id);
+            
+            S0 += wi;
+            double* r_x_exp_ptr = workspace.S1.data();
+            for (int q = 0; q < p; ++q) {
+                r_x_exp_ptr[q] += wi * xi[q];
             }
-            ++j;
+            if (!estimate_only) {
+                double* r_xx_exp_ptr = workspace.S2.data();
+                for (int q1 = 0; q1 < p; ++q1) {
+                    double w_xi_q1 = wi * xi[q1];
+                    for (int q2 = q1; q2 < p; ++q2) {
+                        r_xx_exp_ptr[q2 + q1 * p] += w_xi_q1 * xi[q2];
+                    }
+                }
+            }
+            --data_idx;
         }
-
+        
         double sum_eta_dk = 0.0;
         workspace.sum_x_dk.setZero();
-        int count_dk = data.event_counts[k];
-
-        int m = j;
-        while (m < n && data.y[data.idx_asc[m]] == tk) {
-            int id = data.idx_asc[m];
+        double* sum_x_dk_ptr = workspace.sum_x_dk.data();
+        
+        for (int id = data_idx + 1; id <= start_idx_for_tk; ++id) {
             if (data.dead[id] > 0.5) {
-                Eigen::Map<const Eigen::VectorXd> xi(data.row(id), p);
                 sum_eta_dk += workspace.eta[id];
-                workspace.sum_x_dk.noalias() += xi;
+                const double* xi = data.row(id);
+                for (int q = 0; q < p; ++q) {
+                    sum_x_dk_ptr[q] += xi[q];
+                }
             }
-            ++m;
         }
 
-        if (count_dk > 0) {
-            double safe_r = std::max(r_exp, 1e-100);
+        if (dk > 0 && S0 > 0) {
+            double safe_r = std::max(S0, 1e-100);
             double inv_r = 1.0 / safe_r;
-            neg_ll -= (sum_eta_dk - count_dk * (std::log(safe_r) + max_eta));
-            workspace.e_z.noalias() = workspace.r_x_exp * inv_r;
-            grad.noalias() -= workspace.sum_x_dk - count_dk * workspace.e_z;
+            neg_ll -= (sum_eta_dk - dk * (std::log(safe_r) + max_eta));
+            
+            workspace.e_z.noalias() = workspace.S1 * inv_r;
+            grad.noalias() -= (workspace.sum_x_dk - dk * workspace.e_z);
             if (!estimate_only) {
-                hess.triangularView<Eigen::Lower>() += (count_dk * inv_r) * workspace.r_xx_exp;
-                hess.selfadjointView<Eigen::Lower>().rankUpdate(workspace.e_z, -count_dk);
+                hess.triangularView<Eigen::Lower>() += dk * (workspace.S2 * inv_r - workspace.e_z * workspace.e_z.transpose());
             }
         }
     }
@@ -235,7 +247,7 @@ CoxFitResult cox_newton_raphson(
         Eigen::VectorXd log_y(total_n);
         int offset = 0;
         for (const auto& sd : strata_data) {
-            X_full.block(offset, 0, sd.n, p) = sd.matrix_map();
+            X_full.block(offset, 0, sd.n, p) = sd.X;
             for (int i = 0; i < sd.n; ++i) log_y[offset + i] = std::log(std::max(sd.y[i], 1e-8));
             offset += sd.n;
         }
@@ -398,7 +410,7 @@ CoxFitResult cox_lbfgs(
         Eigen::VectorXd log_y(total_n);
         int offset = 0;
         for (const auto& sd : strata_data) {
-            X_full.block(offset, 0, sd.n, p) = sd.matrix_map();
+            X_full.block(offset, 0, sd.n, p) = sd.X;
             for (int i = 0; i < sd.n; ++i) log_y[offset + i] = std::log(std::max(sd.y[i], 1e-8));
             offset += sd.n;
         }
@@ -444,7 +456,7 @@ CoxFitResult cox_fit(
     bool estimate_only,
     int maxit,
     double tol,
-    const std::string& optimization_alg = "newton_raphson",
+    const std::string& optimization_alg,
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
 {
     if (optimization_alg == "lbfgs")
@@ -469,7 +481,7 @@ Eigen::MatrixXd compute_robust_vcov(
     int row_offset = 0;
     for (const CoxData& sd : strata_data) {
         const int ns = sd.n;
-        Eigen::VectorXd eta = sd.matrix_map() * beta_map;
+        Eigen::VectorXd eta = sd.X * beta_map;
         std::vector<double> exp_eta(ns);
         Eigen::Map<Eigen::VectorXd>(exp_eta.data(), ns) =
             (eta.array() - eta.maxCoeff()).exp().matrix();
@@ -477,9 +489,8 @@ Eigen::MatrixXd compute_robust_vcov(
         double r_exp = 0.0;
         std::vector<double> r_x_exp(p, 0.0);
         for (int i = 0; i < ns; ++i) {
-            const double* xi = sd.row(i);
             r_exp += exp_eta[i];
-            for (int q = 0; q < p; ++q) r_x_exp[q] += xi[q] * exp_eta[i];
+            for (int q = 0; q < p; ++q) r_x_exp[q] += sd.X(i, q) * exp_eta[i];
         }
 
         const int n_events = (int)sd.unique_event_times.size();
@@ -490,10 +501,10 @@ Eigen::MatrixXd compute_robust_vcov(
         int j = 0;
         for (int k = 0; k < n_events; ++k) {
             double tk = sd.unique_event_times[k];
-            while (j < ns && sd.y[sd.idx_asc[j]] < tk) {
-                int id = sd.idx_asc[j];
+            while (j < ns && sd.y[j] < tk) {
+                int id = j;
                 r_exp -= exp_eta[id];
-                for (int q = 0; q < p; ++q) r_x_exp[q] -= sd.row(id)[q] * exp_eta[id];
+                for (int q = 0; q < p; ++q) r_x_exp[q] -= sd.X(id, q) * exp_eta[id];
                 ++j;
             }
             int dk = sd.event_counts[k];
@@ -521,7 +532,6 @@ Eigen::MatrixXd compute_robust_vcov(
 
         for (int i = 0; i < ns; ++i) {
             double yi = sd.y[i];
-            const double* xi = sd.row(i);
             double ei = exp_eta[i];
             double di = sd.dead[i];
 
@@ -538,7 +548,7 @@ Eigen::MatrixXd compute_robust_vcov(
             for (int q = 0; q < p; ++q) {
                 double B_iq    = (k_last >= 0) ? cum_B[k_last][q] : 0.0;
                 double e_yi_q  = (di > 0.5 && k_last >= 0) ? ek[k_last][q] : 0.0;
-                U(row_offset + i, q) = (xi[q] - e_yi_q) * di - ei * (xi[q] * A_i - B_iq);
+                U(row_offset + i, q) = (sd.X(i, q) - e_yi_q) * di - ei * (sd.X(i, q) * A_i - B_iq);
             }
         }
         row_offset += ns;
@@ -562,6 +572,33 @@ Eigen::MatrixXd compute_robust_vcov(
 SEXP build_cox_data_cache_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead) {
     auto* data = new std::vector<CoxData>();
     data->emplace_back(y, dead, X);
+    return Rcpp::XPtr<std::vector<CoxData>>(data, true);
+}
+
+// [[Rcpp::export]]
+SEXP build_stratified_cox_data_cache_cpp(
+    const Eigen::MatrixXd& X,
+    const Eigen::VectorXd& y,
+    const Eigen::VectorXd& dead,
+    const Rcpp::IntegerVector& strata)
+{
+    const int n = (int)y.size();
+    const int p = (int)X.cols();
+    std::map<int, std::vector<int>> strata_map;
+    for (int i = 0; i < n; ++i) strata_map[strata[i]].push_back(i);
+    RowMajorMatrixXd X_rm = X;
+    auto* data = new std::vector<CoxData>();
+    data->reserve(strata_map.size());
+    for (auto const& [sid, idx] : strata_map) {
+        const int ns = (int)idx.size();
+        Eigen::VectorXd y_s(ns), dead_s(ns);
+        RowMajorMatrixXd X_s(ns, p);
+        for (int ii = 0; ii < ns; ++ii) {
+            int id = idx[ii];
+            y_s[ii] = y[id]; dead_s[ii] = dead[id]; X_s.row(ii) = X_rm.row(id);
+        }
+        data->emplace_back(y_s, dead_s, X_s);
+    }
     return Rcpp::XPtr<std::vector<CoxData>>(data, true);
 }
 
@@ -639,25 +676,16 @@ List fast_stratified_coxph_regression_cpp(
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
 
     // Efficiently group by strata
-    std::vector<int> unique_strata;
     std::map<int, std::vector<int>> strata_map;
-    for (int i = 0; i < n; ++i) {
-        if (strata_map.find(strata[i]) == strata_map.end()) {
-            unique_strata.push_back(strata[i]);
-        }
-        strata_map[strata[i]].push_back(i);
-    }
+    for (int i = 0; i < n; ++i) strata_map[strata[i]].push_back(i);
 
-    // Use RowMajorMatrixXd for faster row-wise access during data preparation
     RowMajorMatrixXd X_rm = X;
-
     std::vector<CoxData> strata_data;
-    strata_data.reserve(unique_strata.size());
-    for (int sid : unique_strata) {
-        const std::vector<int>& idx = strata_map[sid];
+    strata_data.reserve(strata_map.size());
+    for (auto const& [sid, idx] : strata_map) {
         const int ns = (int)idx.size();
         Eigen::VectorXd y_s(ns), dead_s(ns);
-        Eigen::MatrixXd X_s(ns, p);
+        RowMajorMatrixXd X_s(ns, p);
         for (int ii = 0; ii < ns; ++ii) {
             int id = idx[ii];
             y_s[ii] = y[id]; dead_s[ii] = dead[id]; X_s.row(ii) = X_rm.row(id);

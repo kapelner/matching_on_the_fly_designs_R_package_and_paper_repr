@@ -98,6 +98,8 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 	),
 	private = list(
 		best_X_colnames = NULL,
+		poisson_X_full_cache = NULL,
+		poisson_w_cache = NULL,
 		get_complexity_tier = function() "medium",
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
@@ -237,13 +239,45 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 			)
 		},
 		generate_mod = function(estimate_only = FALSE){
-			# Use the common GLM fitting pattern
-			X_data = private$get_X()
-			if (is.null(X_data) || ncol(X_data) == 0) {
-				X_full = cbind(`(Intercept)` = 1, treatment = private$w)
-			} else {
-				X_full = cbind(`(Intercept)` = 1, treatment = private$w, X_data)
+			if (is.null(private$poisson_X_full_cache) || !identical(private$w, private$poisson_w_cache)) {
+				X_data = private$get_X()
+				private$poisson_X_full_cache = if (is.null(X_data) || ncol(X_data) == 0) {
+					cbind(`(Intercept)` = 1, treatment = private$w)
+				} else {
+					cbind(`(Intercept)` = 1, treatment = private$w, X_data)
+				}
+				private$poisson_w_cache = private$w
 			}
+			X_full = private$poisson_X_full_cache
+			
+			if (!private$harden) {
+				ws_args = private$get_backend_warm_start_args(ncol(X_full))
+				if (estimate_only) {
+					res = fast_poisson_regression_cpp(
+						X = X_full, y = private$y,
+						warm_start_beta = ws_args$warm_start_beta,
+						warm_start_weights = ws_args$warm_start_weights,
+						warm_start_fisher_info = ws_args$warm_start_fisher_info,
+						smart_cold_start = private$smart_cold_start_default,
+						estimate_only = TRUE
+					)
+					res$ssq_b_j = NA_real_
+					res$j_treat = 2L
+				} else {
+					res = fast_poisson_regression_with_var_cpp(
+						X = X_full, y = private$y, j = 2L,
+						warm_start_beta = ws_args$warm_start_beta,
+						warm_start_weights = ws_args$warm_start_weights,
+						warm_start_fisher_info = ws_args$warm_start_fisher_info,
+						smart_cold_start = private$smart_cold_start_default
+					)
+					res$j_treat = 2L
+				}
+				private$best_X_colnames = setdiff(colnames(X_full), c("(Intercept)", "treatment"))
+				private$cached_values$likelihood_test_context = list(X = X_full, j_treat = 2L, full_neg_loglik = res$neg_ll)
+				return(res)
+			}
+			
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
 				required_cols = 2L,
@@ -259,7 +293,7 @@ InferenceCountPoisson = R6::R6Class("InferenceCountPoisson",
 							smart_cold_start = private$smart_cold_start_default,
 							estimate_only = TRUE
 						)
-						list(b = res$b, XtWX = res$XtWX, w = res$w, ssq_b_j = NA_real_, j_treat = j_treat)
+						list(b = res$b, XtWX = res$XtWX, w = res$w, ssq_b_j = NA_real_, j_treat = j_treat, neg_ll = res$neg_ll)
 					} else {
 						res = fast_poisson_regression_with_var_cpp(
 							X = X_fit, y = private$y, j = j_treat,

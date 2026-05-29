@@ -78,8 +78,8 @@ struct PoissonGLMMData {
 	GHRuleP gh;
 
 	PoissonGLMMData(
-		const Eigen::MatrixXd& X,
-		const Eigen::VectorXd& y,
+		const Eigen::Ref<const Eigen::MatrixXd>& X,
+		const Eigen::Ref<const Eigen::VectorXd>& y,
 		const std::vector<int>& group_id,
 		int n_gh
 	) : n(X.rows()), p(X.cols()), gh(gauss_hermite_rule_poisson(n_gh)) {
@@ -119,7 +119,7 @@ class PoissonGLMMObjective {
 public:
 	explicit PoissonGLMMObjective(const PoissonGLMMData& d) : dat(d) {}
 
-	double operator()(const Eigen::VectorXd& par, Eigen::VectorXd& grad) {
+	double operator()(const Eigen::Ref<const Eigen::VectorXd>& par, Eigen::VectorXd& grad) {
 		const double log_sigma = par[dat.p];
 		const double sigma     = std::exp(log_sigma);
 		const Eigen::VectorXd beta   = par.head(dat.p);
@@ -187,7 +187,7 @@ public:
 		return total_nll;
 	}
 
-	Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
+	Eigen::MatrixXd hessian(const Eigen::Ref<const Eigen::VectorXd>& par) {
 		const int total = dat.p + 1;
 		const double log_sigma = par[dat.p];
 		const double sigma = std::exp(log_sigma);
@@ -233,7 +233,7 @@ public:
 			E_Hik_sum.topLeftCorner(dat.p, dat.p).noalias() -= weighted_crossprod(dat.X_s, w_Hik_beta);
 			// Sigma-Sigma block: sum_gi pk_gi * H_ik(p,p)
 			const double node_factor = std::sqrt(2.0) * dat.gh.nodes[k];
-			for (int gi = 0; gi < dat.G; gi++) {
+			for (int gi = 0; gi < dat.G; ++gi) {
 				const double pk = pk_vec[gi];
 				if (pk < 1e-15) continue;
 				const int start = dat.grp_start[gi];
@@ -248,7 +248,7 @@ public:
 			}
 		}
 
-		for (int gi = 0; gi < dat.G; gi++) {
+		for (int gi = 0; gi < dat.G; ++gi) {
 			Eigen::VectorXd G_avg_gi = Eigen::VectorXd::Zero(total);
 			Eigen::MatrixXd E_GiGiT_gi = Eigen::MatrixXd::Zero(total, total);
 			for (int k = 0; k < n_nodes; k++) {
@@ -281,10 +281,10 @@ public:
 } // namespace
 
 // [[Rcpp::export]]
-List fast_poisson_glmm_cpp(
-	const Eigen::MatrixXd& X,
-	const Eigen::VectorXd& y,
-	const Eigen::VectorXi& group_id,
+SEXP fast_poisson_glmm_cpp(
+	const NumericMatrix& X_r,
+	const NumericVector& y_r,
+	const IntegerVector& group_id_r,
 	int j_T,
 	Nullable<NumericVector> warm_start_params = R_NilValue,
 	bool smart_cold_start = true,
@@ -297,6 +297,10 @@ List fast_poisson_glmm_cpp(
 	std::string optimization_alg = "lbfgs",
 	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
+	Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.rows(), X_r.cols());
+	Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+	Eigen::Map<const Eigen::VectorXi> group_id(group_id_r.begin(), group_id_r.size());
+
 	const int n = X.rows();
 	const int p = X.cols();
 	const int total = p + 1;
@@ -393,34 +397,44 @@ List fast_poisson_glmm_cpp(
 
 // ── R-exported: score (gradient of log_lik) at arbitrary par ─────────────────
 // [[Rcpp::export]]
-Eigen::VectorXd get_poisson_glmm_score_cpp(
-	const Eigen::MatrixXd& X,
-	const Eigen::VectorXd& y,
-	const Eigen::VectorXi& group_id,
-	const Eigen::VectorXd& par,
+SEXP get_poisson_glmm_score_cpp(
+	const NumericMatrix& X_r,
+	const NumericVector& y_r,
+	const IntegerVector& group_id_r,
+	const NumericVector& par_r,
 	int n_gh = 20
 ) {
+	Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.rows(), X_r.cols());
+	Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+	Eigen::Map<const Eigen::VectorXi> group_id(group_id_r.begin(), group_id_r.size());
+	Eigen::Map<const Eigen::VectorXd> par(par_r.begin(), par_r.size());
+
 	std::vector<int> gid_v(group_id.size());
 	for (int i = 0; i < group_id.size(); ++i) gid_v[i] = group_id[i];
 	PoissonGLMMData dat(X, y, gid_v, n_gh);
 	PoissonGLMMObjective obj(dat);
 	Eigen::VectorXd grad;
 	obj(par, grad);
-	return -grad;
+	return wrap(-grad);
 }
 
 // ── R-exported: observed information (Hessian of neg_ll) at par ─────────────
 // [[Rcpp::export]]
-Eigen::MatrixXd get_poisson_glmm_hessian_cpp(
-	const Eigen::MatrixXd& X,
-	const Eigen::VectorXd& y,
-	const Eigen::VectorXi& group_id,
-	const Eigen::VectorXd& par,
+SEXP get_poisson_glmm_hessian_cpp(
+	const NumericMatrix& X_r,
+	const NumericVector& y_r,
+	const IntegerVector& group_id_r,
+	const NumericVector& par_r,
 	int n_gh = 20
 ) {
+	Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.rows(), X_r.cols());
+	Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+	Eigen::Map<const Eigen::VectorXi> group_id(group_id_r.begin(), group_id_r.size());
+	Eigen::Map<const Eigen::VectorXd> par(par_r.begin(), par_r.size());
+
 	std::vector<int> gid_v(group_id.size());
 	for (int i = 0; i < group_id.size(); ++i) gid_v[i] = group_id[i];
 	PoissonGLMMData dat(X, y, gid_v, n_gh);
 	PoissonGLMMObjective obj(dat);
-	return -obj.hessian(par);
+	return wrap(-obj.hessian(par));
 }

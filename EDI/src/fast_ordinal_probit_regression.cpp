@@ -15,31 +15,31 @@ private:
     edi_ordinal::FixedOrdinalRegression m_model;
 
 public:
-    OrdinalProbitRegression(const MatrixXd& X, const VectorXd& y) :
+    OrdinalProbitRegression(const Eigen::Ref<const Eigen::MatrixXd>& X, const Eigen::Ref<const Eigen::VectorXd>& y) :
         m_model(X, y, edi_ordinal::Link::Probit, -1.0) {}
 
-    static std::vector<double> init_levels(const VectorXd& y) {
+    static std::vector<double> init_levels(const Eigen::Ref<const Eigen::VectorXd>& y) {
         return edi_ordinal::init_levels(y);
     }
 
-    double neg_log_likelihood(const VectorXd& params) const {
+    double neg_log_likelihood(const Eigen::Ref<const Eigen::VectorXd>& params) const {
         return m_model.neg_log_likelihood(params);
     }
 
-    double operator()(const VectorXd& params, VectorXd& grad) const {
+    double operator()(const Eigen::Ref<const Eigen::VectorXd>& params, Eigen::Ref<Eigen::VectorXd> grad) const {
         return m_model(params, grad);
     }
 
-    MatrixXd hessian(const VectorXd& params) const {
+    MatrixXd hessian(const Eigen::Ref<const Eigen::VectorXd>& params) const {
         return m_model.hessian(params);
     }
 
-    MatrixXd expected_hessian(const VectorXd& params) const {
+    MatrixXd expected_hessian(const Eigen::Ref<const Eigen::VectorXd>& params) const {
         return m_model.expected_hessian(params);
     }
 };
 
-static MatrixXd pseudo_inverse_symmetric_probit(const MatrixXd& A, double tol = 1e-8) {
+static MatrixXd pseudo_inverse_symmetric_probit(const Eigen::Ref<const Eigen::MatrixXd>& A, double tol = 1e-8) {
     JacobiSVD<MatrixXd> svd(A, ComputeThinU | ComputeThinV);
     VectorXd sing = svd.singularValues();
     MatrixXd Dinv = MatrixXd::Zero(sing.size(), sing.size());
@@ -52,29 +52,37 @@ static MatrixXd pseudo_inverse_symmetric_probit(const MatrixXd& A, double tol = 
 }
 
 // [[Rcpp::export]]
-Eigen::VectorXd get_ordinal_probit_regression_score_cpp(const Eigen::MatrixXd& X,
-														const Eigen::VectorXd& y,
-														const Eigen::VectorXd& params,
+SEXP get_ordinal_probit_regression_score_cpp(const Rcpp::NumericMatrix& X,
+														const Rcpp::NumericVector& y,
+														const Rcpp::NumericVector& params,
 														Nullable<IntegerVector> fixed_idx = R_NilValue,
 														Nullable<NumericVector> fixed_values = R_NilValue) {
-	OrdinalProbitRegression model(X, y);
-	FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
-	Eigen::VectorXd par = apply_fixed_values(params, fixed_spec);
+	Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
+	Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
+	Eigen::Map<const Eigen::VectorXd> map_params(params.begin(), params.size());
+
+	OrdinalProbitRegression model(map_X, map_y);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(map_params.size(), fixed_idx, fixed_values);
+	Eigen::VectorXd par = apply_fixed_values(map_params, fixed_spec);
 	Eigen::VectorXd grad(par.size());
 	model(par, grad);
-	return -grad;
+	return wrap(-grad);
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd get_ordinal_probit_regression_hessian_cpp(const Eigen::MatrixXd& X,
-														  const Eigen::VectorXd& y,
-														  const Eigen::VectorXd& params,
+SEXP get_ordinal_probit_regression_hessian_cpp(const Rcpp::NumericMatrix& X,
+														  const Rcpp::NumericVector& y,
+														  const Rcpp::NumericVector& params,
 														  Nullable<IntegerVector> fixed_idx = R_NilValue,
 														  Nullable<NumericVector> fixed_values = R_NilValue) {
-	OrdinalProbitRegression model(X, y);
-	FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
-	Eigen::VectorXd par = apply_fixed_values(params, fixed_spec);
-	return -model.hessian(par);
+	Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
+	Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
+	Eigen::Map<const Eigen::VectorXd> map_params(params.begin(), params.size());
+
+	OrdinalProbitRegression model(map_X, map_y);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(map_params.size(), fixed_idx, fixed_values);
+	Eigen::VectorXd par = apply_fixed_values(map_params, fixed_spec);
+	return wrap(-model.hessian(par));
 }
 
 //' @title Fast Ordinal Probit Regression (C++)
@@ -93,8 +101,8 @@ Eigen::MatrixXd get_ordinal_probit_regression_hessian_cpp(const Eigen::MatrixXd&
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X, 
-                                         const Eigen::VectorXd& y, 
+List fast_ordinal_probit_regression_cpp(const Rcpp::NumericMatrix& X, 
+                                         const Rcpp::NumericVector& y, 
                                          Nullable<NumericVector> warm_start_params = R_NilValue,
                                          bool smart_cold_start = true,
                                          int maxit = 100, 
@@ -104,9 +112,12 @@ List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X,
                                          Nullable<NumericVector> fixed_values = R_NilValue,
                                          Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
                                          bool estimate_only = false) {
-    OrdinalProbitRegression model(X, y);
-    const int p = X.cols();
-    const int K = OrdinalProbitRegression::init_levels(y).size();
+    Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
+    Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
+
+    OrdinalProbitRegression model(map_X, map_y);
+    const int p = map_X.cols();
+    const int K = OrdinalProbitRegression::init_levels(map_y).size();
     const int n_alpha = K - 1;
     const int n_params = n_alpha + p;
 
@@ -124,7 +135,7 @@ List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X,
         }
         legacy_start.beta = VectorXd::Zero(p);
         params = ordinal_start_to_params(
-            smart_cold_start ? ordinal_smart_cold_start_or_legacy(X, y, edi_ordinal::Link::Probit, legacy_start, fixed_spec)
+            smart_cold_start ? ordinal_smart_cold_start_or_legacy(map_X, map_y, edi_ordinal::Link::Probit, legacy_start, fixed_spec)
                         : legacy_start
         );
     }
@@ -181,8 +192,8 @@ List fast_ordinal_probit_regression_cpp(const Eigen::MatrixXd& X,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X, 
-                                                  const Eigen::VectorXd& y, 
+List fast_ordinal_probit_regression_with_var_cpp(const Rcpp::NumericMatrix& X, 
+                                                  const Rcpp::NumericVector& y, 
                                                   Nullable<NumericVector> warm_start_params = R_NilValue,
                                                   bool smart_cold_start = true,
                                                   std::string optimization_alg = "lbfgs",
@@ -192,7 +203,11 @@ List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X,
     List res = fast_ordinal_probit_regression_cpp(X, y, warm_start_params, smart_cold_start, 100, 1e-6, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info);
     VectorXd params = res["params"];
     bool converged = res["converged"];
-    OrdinalProbitRegression model(X, y);
+    
+    Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
+    Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
+
+    OrdinalProbitRegression model(map_X, map_y);
     int n_params = params.size();
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
     
@@ -202,7 +217,7 @@ List fast_ordinal_probit_regression_with_var_cpp(const Eigen::MatrixXd& X,
         FixedParameterFunctor<OrdinalProbitRegression> fixed_obj(model, fixed_spec, params);
         VectorXd params_free = subset_vector(params, fixed_spec.free_idx);
         MatrixXd H_free = fixed_obj.expected_hessian(params_free);
-        const int p = X.cols();
+        const int p = map_X.cols();
         const int n_alpha = n_params - p;
         int free_j = -1;
         for (int jj = 0; jj < (int)fixed_spec.free_idx.size(); ++jj)

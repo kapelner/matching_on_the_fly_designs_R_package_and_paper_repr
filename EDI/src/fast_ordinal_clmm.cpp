@@ -80,7 +80,7 @@ public:
 
 template <typename Link>
 List run_fast_ordinal_clmm(const GLMMData& dat, int K, int j_T, bool estimate_only, int maxit, double eps_g, 
-                           const Eigen::VectorXd& start_full, const std::string& optimization_alg,
+                           const Eigen::Ref<const Eigen::VectorXd>& start_full, const std::string& optimization_alg,
                            const FixedParamSpec& fixed_spec,
                            const Eigen::MatrixXd* info_start_ptr = nullptr) {
     OrdinalLikelihood<Link> model(K);
@@ -132,9 +132,9 @@ List run_fast_ordinal_clmm(const GLMMData& dat, int K, int j_T, bool estimate_on
 
 // [[Rcpp::export]]
 List fast_ordinal_clmm_cpp(
-    const Eigen::MatrixXd& X,
-    const Eigen::VectorXi& y,
-    const Eigen::VectorXi& group_id,
+    const Rcpp::NumericMatrix& X,
+    const Rcpp::IntegerVector& y,
+    const Rcpp::IntegerVector& group_id,
     int K,
     int j_T,
     std::string link = "logit",
@@ -149,19 +149,23 @@ List fast_ordinal_clmm_cpp(
     Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
-    int n = X.rows();
-    int p = X.cols();
+    Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
+    Eigen::Map<const Eigen::VectorXi> map_y(y.begin(), y.size());
+    Eigen::Map<const Eigen::VectorXi> map_group_id(group_id.begin(), group_id.size());
+
+    int n = map_X.rows();
+    int p = map_X.cols();
     int na = K - 1;
     int total = na + p + 1;
 
     Eigen::VectorXd y_v(n);
     std::vector<int> gid_v(n);
     for (int i = 0; i < n; ++i) {
-        y_v[i] = static_cast<double>(y[i]);
-        gid_v[i] = group_id[i];
+        y_v[i] = static_cast<double>(map_y[i]);
+        gid_v[i] = map_group_id[i];
     }
 
-    GLMMData dat(X, y_v, gid_v, n_gh, max_abs_log_sigma);
+    GLMMData dat(map_X, y_v, gid_v, n_gh, max_abs_log_sigma);
     FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
 
     Eigen::VectorXd start_full(total);

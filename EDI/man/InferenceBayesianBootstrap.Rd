@@ -14,7 +14,7 @@ top of the existing nonparametric bootstrap infrastructure.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{InferenceBayesianBootstrap}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceNonParamBootstrap} -> \code{InferenceBayesianBootstrap}
 }
 \section{Methods}{
 \subsection{Public methods}{

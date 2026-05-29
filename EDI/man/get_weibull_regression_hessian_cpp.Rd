@@ -4,7 +4,7 @@
 \alias{get_weibull_regression_hessian_cpp}
 \title{Compute Weibull Regression Hessian}
 \usage{
-get_weibull_regression_hessian_cpp(X, y, dead, params)
+get_weibull_regression_hessian_cpp(X_sexp, y_sexp, dead_sexp, params_sexp)
 }
 \arguments{
 \item{X}{A numeric matrix of predictors.}

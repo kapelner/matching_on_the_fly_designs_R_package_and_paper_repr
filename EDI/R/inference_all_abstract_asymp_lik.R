@@ -432,8 +432,11 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 				res = gradient_test_from_restricted_score_cpp(as.numeric(entry$score), est, delta, j)
 				p_value = as.numeric(res$p_value %||% res)
 			} else if (testing_type == "lik_ratio") {
-				if (!is.finite(entry$full_negloglik) || !is.finite(entry$null_negloglik)) return(NA_real_)
-				res = likelihood_ratio_test_from_negloglik_cpp(entry$full_negloglik, entry$null_negloglik, df = 1L)
+				f_nll = entry$full_negloglik
+				n_nll = entry$null_negloglik
+				if (is.null(f_nll) || !length(f_nll) || is.null(n_nll) || !length(n_nll)) return(NA_real_)
+				if (!is.finite(f_nll) || !is.finite(n_nll)) return(NA_real_)
+				res = likelihood_ratio_test_from_negloglik_cpp(f_nll, n_nll, df = 1L)
 				p_value = as.numeric(res$p_value %||% res)
 			} else {
 				stop("Unsupported testing_type: ", testing_type, call. = FALSE)

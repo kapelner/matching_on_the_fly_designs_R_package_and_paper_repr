@@ -23,23 +23,28 @@ using namespace Rcpp;
 //' @return Numeric vector of Bai adjusted T statistics.
 // [[Rcpp::export]]
 NumericVector compute_bai_distr_parallel_cpp(
-    const IntegerMatrix& w_mat,
-    const IntegerMatrix& m_mat,
-    const NumericVector& y,
+    SEXP w_mat_sexp,
+    SEXP m_mat_sexp,
+    SEXP y_sexp,
     double delta,
-    const IntegerMatrix& halves_idx,
+    SEXP halves_idx_sexp,
     bool convex_flag,
     int num_cores) {
+
+  Eigen::Map<const Eigen::MatrixXi> w_mat(INTEGER(w_mat_sexp), Rf_nrows(w_mat_sexp), Rf_ncols(w_mat_sexp));
+  Eigen::Map<const Eigen::MatrixXi> m_mat(INTEGER(m_mat_sexp), Rf_nrows(m_mat_sexp), Rf_ncols(m_mat_sexp));
+  Eigen::Map<const Eigen::VectorXd> y(REAL(y_sexp), Rf_length(y_sexp));
+  Eigen::Map<const Eigen::MatrixXi> halves_idx(INTEGER(halves_idx_sexp), Rf_nrows(halves_idx_sexp), Rf_ncols(halves_idx_sexp));
 
   int n = y.size();
   int nsim = w_mat.cols();
   int n_halves = halves_idx.rows();
   std::vector<double> results_vec(nsim);
 
-  const double* y_ptr = y.begin();
-  const int* w_ptr = w_mat.begin();
-  const int* m_ptr = m_mat.begin();
-  const int* h_ptr = halves_idx.begin();
+  const double* y_ptr = y.data();
+  const int* w_ptr = w_mat.data();
+  const int* m_ptr = m_mat.data();
+  const int* h_ptr = halves_idx.data();
   double* res_ptr = results_vec.data();
 
 #ifdef _OPENMP

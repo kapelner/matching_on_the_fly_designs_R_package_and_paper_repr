@@ -242,6 +242,7 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 	),
 	private = list(
 		use_rcpp = TRUE,
+		cox_X_fit_cache = NULL,
 		cox_data_cache = NULL,
 		cox_w_cache = NULL,
 		supports_likelihood_tests = function(){
@@ -309,32 +310,33 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 			)
 		},
 		generate_mod = function(estimate_only = FALSE){
-			X_cov = private$get_X()
-			X_fit = if (!is.null(X_cov) && ncol(X_cov) > 0){
-				cbind(treatment = private$w, X_cov)
-			} else {
-				matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
-			}
-			if (private$harden && ncol(X_fit) > 1L) {
-				orig_names = colnames(X_fit)
-				reduced = qr_reduce_preserve_cols_cpp(as.matrix(X_fit), 1L)
-				X_fit = as.matrix(reduced$X_reduced)
-				colnames(X_fit) = orig_names[as.integer(reduced$keep)]
-			}
-			if (private$use_rcpp) {
-				# Use prebuilt cache if available and relevant
-				if (is.null(private$cox_data_cache) || !identical(private$w, private$cox_w_cache)) {
-					private$cox_data_cache = build_cox_data_cache_cpp(X_fit, private$y, private$dead)
-					private$cox_w_cache = private$w
+			if (is.null(private$cox_X_fit_cache) || !identical(private$w, private$cox_w_cache)) {
+				X_cov = private$get_X()
+				private$cox_X_fit_cache = if (!is.null(X_cov) && ncol(X_cov) > 0){
+					cbind(treatment = private$w, X_cov)
+				} else {
+					matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
 				}
+				if (private$harden && ncol(private$cox_X_fit_cache) > 1L) {
+					orig_names = colnames(private$cox_X_fit_cache)
+					reduced = qr_reduce_preserve_cols_cpp(as.matrix(private$cox_X_fit_cache), 1L)
+					private$cox_X_fit_cache = as.matrix(reduced$X_reduced)
+					colnames(private$cox_X_fit_cache) = orig_names[as.integer(reduced$keep)]
+				}
+				private$cox_data_cache = build_cox_data_cache_cpp(private$cox_X_fit_cache, private$y, private$dead)
+				private$cox_w_cache = private$w
+			}
+			X_fit = private$cox_X_fit_cache
 
+			if (private$use_rcpp) {
 				fit = tryCatch(
 					fast_coxph_regression_prebuilt_cpp(
 						private$cox_data_cache,
 						estimate_only = estimate_only,
-						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_beta = private$get_fit_warm_start_for_length("params", ncol(X_fit)),
 						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
-						smart_cold_start = private$smart_cold_start_default %||% TRUE
+						smart_cold_start = private$smart_cold_start_default %||% TRUE,
+						optimization_alg = "newton_raphson"
 					),
 					error = function(e) NULL
 				)
@@ -349,17 +351,18 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 					return(list(b = rep(NA_real_, ncol(X_fit) + 1L), vcov = matrix(NA_real_, ncol(X_fit) + 1L, ncol(X_fit) + 1L)))
 				}
 				
-				private$set_fit_warm_start(as.numeric(fit$coefficients %||% fit$b), "beta", fisher = fit$fisher_information)
 				private$cached_mod = fit
 				private$cached_values$likelihood_test_context = list(
 					X = X_fit,
 					full_neg_loglik = fit$neg_ll %||% fit$neg_log_lik
 				)
 				
+				coefs = as.numeric(fit$coefficients %||% fit$b)
 				return(list(
-					beta_hat_T = as.numeric(fit$coefficients %||% fit$b)[1L],
+					beta_hat_T = coefs[1L],
 					ssq_b_2 = if (estimate_only) NA_real_ else fit$vcov[1, 1],
-					b = c(0, fit$coefficients %||% fit$b), # for base class warm starts
+					b = c(0, coefs),
+					params = coefs,
 					neg_log_lik = as.numeric(fit$neg_ll %||% fit$neg_log_lik),
 					fisher_information = fit$fisher_information,
 					vcov = if (estimate_only) NULL else {

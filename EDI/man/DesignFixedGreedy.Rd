@@ -18,7 +18,7 @@ des = DesignFixedGreedy$new(n = 10, response_type = 'continuous')
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignBlocking]{EDI::DesignBlocking}} -> \code{\link[EDI:DesignMatching]{EDI::DesignMatching}} -> \code{\link[EDI:DesignFixed]{EDI::DesignFixed}} -> \code{DesignFixedGreedy}
+\code{EDI::Design} -> \code{EDI::DesignBlocking} -> \code{EDI::DesignMatching} -> \code{EDI::DesignFixed} -> \code{DesignFixedGreedy}
 }
 \section{Methods}{
 \subsection{Public methods}{

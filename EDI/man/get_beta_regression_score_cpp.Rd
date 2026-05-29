@@ -4,7 +4,7 @@
 \alias{get_beta_regression_score_cpp}
 \title{Compute Beta Regression Score}
 \usage{
-get_beta_regression_score_cpp(X, y, params)
+get_beta_regression_score_cpp(X_sexp, y_sexp, params_sexp)
 }
 \arguments{
 \item{X}{A numeric matrix of predictors.}

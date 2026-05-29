@@ -97,7 +97,9 @@ Eigen::MatrixXd cluster_meat(const Eigen::MatrixXd& X_fit,
 }  // namespace
 
 // [[Rcpp::export]]
-List ols_hc2_setup_cpp(const Eigen::MatrixXd& X_fit) {
+List ols_hc2_setup_cpp(SEXP X_fit_sexp) {
+  Rcpp::NumericMatrix X_fit_r(X_fit_sexp);
+  Eigen::Map<const Eigen::MatrixXd> X_fit(X_fit_r.begin(), X_fit_r.nrow(), X_fit_r.ncol());
   const int n = X_fit.rows();
   const int p = X_fit.cols();
   if (!all_finite_mat(X_fit)) {
@@ -127,12 +129,22 @@ List ols_hc2_setup_cpp(const Eigen::MatrixXd& X_fit) {
 }
 
 // [[Rcpp::export]]
-List ols_hc2_post_fit_precomputed_cpp(const Eigen::MatrixXd& X_fit,
-                                      const Eigen::VectorXd& y,
-                                      const Eigen::VectorXd& coef_hat,
-                                      const Eigen::MatrixXd& bread,
-                                      const Eigen::VectorXd& hat,
+List ols_hc2_post_fit_precomputed_cpp(SEXP X_fit_sexp,
+                                      SEXP y_sexp,
+                                      SEXP coef_hat_sexp,
+                                      SEXP bread_sexp,
+                                      SEXP hat_sexp,
                                       int j_treat) {
+  Rcpp::NumericMatrix X_fit_r(X_fit_sexp);
+  Rcpp::NumericVector y_r(y_sexp);
+  Rcpp::NumericVector coef_hat_r(coef_hat_sexp);
+  Rcpp::NumericMatrix bread_r(bread_sexp);
+  Rcpp::NumericVector hat_r(hat_sexp);
+  Eigen::Map<const Eigen::MatrixXd> X_fit(X_fit_r.begin(), X_fit_r.nrow(), X_fit_r.ncol());
+  Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+  Eigen::Map<const Eigen::VectorXd> coef_hat(coef_hat_r.begin(), coef_hat_r.size());
+  Eigen::Map<const Eigen::MatrixXd> bread(bread_r.begin(), bread_r.nrow(), bread_r.ncol());
+  Eigen::Map<const Eigen::VectorXd> hat(hat_r.begin(), hat_r.size());
   const int n = X_fit.rows();
   const int p = X_fit.cols();
   if (y.size() != n || coef_hat.size() != p || bread.rows() != p || bread.cols() != p || hat.size() != n) {
@@ -159,28 +171,44 @@ List ols_hc2_post_fit_precomputed_cpp(const Eigen::MatrixXd& X_fit,
 }
 
 // [[Rcpp::export]]
-List ols_hc2_post_fit_cpp(const Eigen::MatrixXd& X_fit,
-                          const Eigen::VectorXd& y,
-                          const Eigen::VectorXd& coef_hat,
+List ols_hc2_post_fit_cpp(SEXP X_fit_sexp,
+                          SEXP y_sexp,
+                          SEXP coef_hat_sexp,
                           int j_treat) {
-  List setup = ols_hc2_setup_cpp(X_fit);
+  Rcpp::NumericMatrix X_fit_r(X_fit_sexp);
+  Rcpp::NumericVector y_r(y_sexp);
+  Rcpp::NumericVector coef_hat_r(coef_hat_sexp);
+  Eigen::Map<const Eigen::MatrixXd> X_fit(X_fit_r.begin(), X_fit_r.nrow(), X_fit_r.ncol());
+  Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+  Eigen::Map<const Eigen::VectorXd> coef_hat(coef_hat_r.begin(), coef_hat_r.size());
+  List setup = ols_hc2_setup_cpp(X_fit_sexp);
   return ols_hc2_post_fit_precomputed_cpp(
-    X_fit,
-    y,
-    coef_hat,
-    as<Eigen::MatrixXd>(setup["bread"]),
-    as<Eigen::VectorXd>(setup["hat"]),
+    X_fit_sexp,
+    y_sexp,
+    coef_hat_sexp,
+    setup["bread"],
+    setup["hat"],
     j_treat
   );
 }
 
 // [[Rcpp::export]]
-List glm_sandwich_post_fit_cpp(const Eigen::MatrixXd& X_fit,
-                               const Eigen::VectorXd& y,
-                               const Eigen::VectorXd& coef_hat,
-                               const Eigen::VectorXd& mu_hat,
-                               const Eigen::VectorXd& working_weights,
+List glm_sandwich_post_fit_cpp(SEXP X_fit_sexp,
+                               SEXP y_sexp,
+                               SEXP coef_hat_sexp,
+                               SEXP mu_hat_sexp,
+                               SEXP working_weights_sexp,
                                int j_treat) {
+  Rcpp::NumericMatrix X_fit_r(X_fit_sexp);
+  Rcpp::NumericVector y_r(y_sexp);
+  Rcpp::NumericVector coef_hat_r(coef_hat_sexp);
+  Rcpp::NumericVector mu_hat_r(mu_hat_sexp);
+  Rcpp::NumericVector working_weights_r(working_weights_sexp);
+  Eigen::Map<const Eigen::MatrixXd> X_fit(X_fit_r.begin(), X_fit_r.nrow(), X_fit_r.ncol());
+  Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+  Eigen::Map<const Eigen::VectorXd> coef_hat(coef_hat_r.begin(), coef_hat_r.size());
+  Eigen::Map<const Eigen::VectorXd> mu_hat(mu_hat_r.begin(), mu_hat_r.size());
+  Eigen::Map<const Eigen::VectorXd> working_weights(working_weights_r.begin(), working_weights_r.size());
   const int n = X_fit.rows();
   const int p = X_fit.cols();
   if (y.size() != n || coef_hat.size() != p || mu_hat.size() != n || working_weights.size() != n) {
@@ -215,13 +243,23 @@ List glm_sandwich_post_fit_cpp(const Eigen::MatrixXd& X_fit,
 }
 
 // [[Rcpp::export]]
-List glm_cluster_sandwich_post_fit_cpp(const Eigen::MatrixXd& X_fit,
-                                       const Eigen::VectorXd& y,
-                                       const Eigen::VectorXd& coef_hat,
-                                       const Eigen::VectorXd& mu_hat,
-                                       const Eigen::VectorXd& working_weights,
+List glm_cluster_sandwich_post_fit_cpp(SEXP X_fit_sexp,
+                                       SEXP y_sexp,
+                                       SEXP coef_hat_sexp,
+                                       SEXP mu_hat_sexp,
+                                       SEXP working_weights_sexp,
                                        const IntegerVector& cluster_id,
                                        int j_treat) {
+  Rcpp::NumericMatrix X_fit_r(X_fit_sexp);
+  Rcpp::NumericVector y_r(y_sexp);
+  Rcpp::NumericVector coef_hat_r(coef_hat_sexp);
+  Rcpp::NumericVector mu_hat_r(mu_hat_sexp);
+  Rcpp::NumericVector working_weights_r(working_weights_sexp);
+  Eigen::Map<const Eigen::MatrixXd> X_fit(X_fit_r.begin(), X_fit_r.nrow(), X_fit_r.ncol());
+  Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+  Eigen::Map<const Eigen::VectorXd> coef_hat(coef_hat_r.begin(), coef_hat_r.size());
+  Eigen::Map<const Eigen::VectorXd> mu_hat(mu_hat_r.begin(), mu_hat_r.size());
+  Eigen::Map<const Eigen::VectorXd> working_weights(working_weights_r.begin(), working_weights_r.size());
   const int n = X_fit.rows();
   const int p = X_fit.cols();
   if (y.size() != n || coef_hat.size() != p || mu_hat.size() != n || working_weights.size() != n) {

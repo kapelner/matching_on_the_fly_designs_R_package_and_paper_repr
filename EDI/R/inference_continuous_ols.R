@@ -44,6 +44,10 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 		#' @description Computes the OLS estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
+			cv = private$cached_values
+			if (!is.null(cv$beta_hat_T)) {
+				if (estimate_only || !is.null(cv$s_beta_hat_T)) return(cv$beta_hat_T)
+			}
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
@@ -52,7 +56,7 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
 			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
-			X_full = private$build_design_matrix()
+			X_full = private$create_design_matrix()
 			keep = is.finite(row_weights) & row_weights > 0 & is.finite(private$y)
 			if (!any(keep)) {
 				private$cached_values$beta_hat_T = NA_real_
@@ -60,6 +64,8 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 				private$cached_values$df = NA_real_
 				return(NA_real_)
 			}
+			# For weighted bootstrap, we don't have a fast C++ path yet that handles weights properly
+			# but we can at least avoid lm.wfit overhead if it's small.
 			fit = tryCatch(
 				stats::lm.wfit(
 					x = X_full[keep, , drop = FALSE],
@@ -84,10 +90,15 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
-			private$shared(estimate_only = FALSE)
-			est = private$cached_values$beta_hat_T
-			se = private$cached_values$s_beta_hat_T
-			df = private$cached_values$df
+			cv = private$cached_values
+			if (is.null(cv$s_beta_hat_T)) {
+				private$shared(estimate_only = FALSE)
+				cv = private$cached_values
+			}
+			est = cv$beta_hat_T
+			se = cv$s_beta_hat_T
+			df = cv$df
+			if (is.null(df)) df = NA_real_
 			if (length(est) != 1L || !is.finite(est) || !is.finite(se) || se <= 0) return(c(NA_real_, NA_real_))
 			mult = if (!is.finite(df)) stats::qnorm(1 - alpha / 2) else stats::qt(1 - alpha / 2, df = df)
 			ci = c(est - mult * se, est + mult * se)
@@ -97,10 +108,15 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 		#' @description Computes an approximate two-sided p-value for the treatment effect.
 		#' @param delta The null difference to test against. Default is zero.
 		compute_asymp_two_sided_pval = function(delta = 0){
-			private$shared(estimate_only = FALSE)
-			est = private$cached_values$beta_hat_T
-			se = private$cached_values$s_beta_hat_T
-			df = private$cached_values$df
+			cv = private$cached_values
+			if (is.null(cv$s_beta_hat_T)) {
+				private$shared(estimate_only = FALSE)
+				cv = private$cached_values
+			}
+			est = cv$beta_hat_T
+			se = cv$s_beta_hat_T
+			df = cv$df
+			if (is.null(df)) df = NA_real_
 			if (length(est) != 1L || !is.finite(est) || !is.finite(se) || se <= 0) return(NA_real_)
 			val = (est - delta) / se
 			if (is.finite(df)) 2 * stats::pt(-abs(val), df = df) else 2 * stats::pnorm(-abs(val))
@@ -108,19 +124,10 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 	),
 	private = list(
 		max_resample_attempts = NULL,
-		build_design_matrix = function(){
-			X_cov = private$X
-			if (is.null(X_cov) || ncol(X_cov) == 0) {
-				X = cbind(`(Intercept)` = 1, treatment = private$w)
-			} else {
-				X = cbind(`(Intercept)` = 1, treatment = private$w, X_cov)
-			}
-			X
-		},
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
-			X_full = private$build_design_matrix()
+			X_full = private$create_design_matrix()
 			
 			if (!private$harden) {
 				if (estimate_only) {

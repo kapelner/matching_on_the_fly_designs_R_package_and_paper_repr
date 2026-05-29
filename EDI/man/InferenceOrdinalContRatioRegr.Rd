@@ -12,7 +12,7 @@ Fits a continuation ratio regression for ordinal responses using the treatment
 indicator and, optionally, all recorded covariates as predictors.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{EDI::InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{EDI::InferenceAsympLikStdModCacheNoParamBootstrap} -> \code{InferenceOrdinalContRatioRegr}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceNonParamBootstrap} -> \code{EDI::InferenceBayesianBootstrap} -> \code{EDI::InferenceJackknife} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceMLEorKMSummaryTable} -> \code{EDI::InferenceAsympLik} -> \code{EDI::InferenceAsympLikStdModCacheNoParamBootstrap} -> \code{InferenceOrdinalContRatioRegr}
 }
 \section{Methods}{
 \subsection{Public methods}{

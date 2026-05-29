@@ -4,14 +4,14 @@
 \alias{gcomp_fractional_logit_point_estimate_cpp}
 \title{Fast G-Computation Point Estimate for Fractional Logit (C++)}
 \usage{
-gcomp_fractional_logit_point_estimate_cpp(X_fit, coef_hat, j_treat)
+gcomp_fractional_logit_point_estimate_cpp(X_fit_sexp, coef_hat_sexp, j_treat)
 }
 \arguments{
+\item{j_treat}{1-based column index of the treatment indicator in X_fit.}
+
 \item{X_fit}{Numeric matrix of predictors including intercept.}
 
 \item{coef_hat}{Numeric vector of fitted coefficients.}
-
-\item{j_treat}{1-based column index of the treatment indicator in X_fit.}
 }
 \value{
 A list with elements \code{mean1}, \code{mean0}, and \code{md} (mean difference).

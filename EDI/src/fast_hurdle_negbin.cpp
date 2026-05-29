@@ -7,9 +7,9 @@ using namespace Eigen;
 
 // Forward declaration from fast_logistic_regression.cpp
 ModelResult fast_logistic_regression_internal(
-	const Eigen::MatrixXd& X,
-	const Eigen::VectorXd& y,
-	const Eigen::VectorXd& weights = Eigen::VectorXd(),
+	const Eigen::Ref<const Eigen::MatrixXd>& X,
+	const Eigen::Ref<const Eigen::VectorXd>& y,
+	const Eigen::Ref<const Eigen::VectorXd>& weights = Eigen::VectorXd(),
 	Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
 	bool smart_cold_start = true,
 	int maxit = 100,
@@ -29,8 +29,8 @@ double clamp_exp_arg_hnb(double eta) {
 
 class TruncatedNegBinCount;
 
-void validate_truncated_negbin_inputs(const MatrixXd& X,
-									  const VectorXd& y,
+void validate_truncated_negbin_inputs(const Eigen::Ref<const MatrixXd>& X,
+									  const Eigen::Ref<const VectorXd>& y,
 									  const Nullable<NumericVector>& warm_start_params,
 									  const Nullable<NumericMatrix>& warm_start_fisher_info,
 									  const Nullable<IntegerVector>& fixed_idx,
@@ -54,7 +54,7 @@ void validate_truncated_negbin_inputs(const MatrixXd& X,
 		}
 	}
 
-	const int n_params = X.cols() + 1;
+	const int n_params = (int)X.cols() + 1;
 	if (warm_start_params.isNotNull()) {
 		NumericVector warm = NumericVector(warm_start_params);
 		if (warm.size() != n_params) {
@@ -83,7 +83,7 @@ void validate_truncated_negbin_inputs(const MatrixXd& X,
 	make_fixed_param_spec(n_params, fixed_idx, fixed_values);
 }
 
-bool validate_start_vector(const VectorXd& params,
+bool validate_start_vector(const Eigen::Ref<const VectorXd>& params,
 						   int expected_size,
 						   std::string* reason = nullptr) {
 	auto fail = [&](const std::string& msg) {
@@ -103,12 +103,12 @@ bool validate_start_vector(const VectorXd& params,
 	return true;
 }
 
-double smart_truncated_negbin_theta_start_from_beta(const MatrixXd& X,
-													const VectorXi& y,
-													const VectorXd& beta,
+double smart_truncated_negbin_theta_start_from_beta(const Eigen::Ref<const MatrixXd>& X,
+													const Eigen::Ref<const VectorXi>& y,
+													const Eigen::Ref<const VectorXd>& beta,
 													double legacy_theta_start) {
-	const int n = X.rows();
-	const int p = X.cols();
+	const int n = (int)X.rows();
+	const int p = (int)X.cols();
 	const int df = std::max(1, n - p);
 	if (beta.size() != p || !beta.allFinite()) return legacy_theta_start;
 
@@ -130,8 +130,8 @@ double smart_truncated_negbin_theta_start_from_beta(const MatrixXd& X,
 	return std::max(0.1, theta_hat);
 }
 
-VectorXd make_truncated_negbin_start(const MatrixXd& X_pos, const VectorXi& y_pos) {
-	const int p = X_pos.cols();
+VectorXd make_truncated_negbin_start(const Eigen::Ref<const MatrixXd>& X_pos, const Eigen::Ref<const VectorXi>& y_pos) {
+	const int p = (int)X_pos.cols();
 	const VectorXd y_double = y_pos.cast<double>();
 	const double mean_y = y_double.mean();
 	const double var_y = (y_double.array() - mean_y).square().sum() /
@@ -151,8 +151,8 @@ VectorXd make_truncated_negbin_start(const MatrixXd& X_pos, const VectorXi& y_po
 	return params;
 }
 
-std::vector<VectorXd> make_truncated_negbin_candidate_starts(const MatrixXd& X_pos, const VectorXi& y_pos) {
-	const int p = X_pos.cols();
+std::vector<VectorXd> make_truncated_negbin_candidate_starts(const Eigen::Ref<const MatrixXd>& X_pos, const Eigen::Ref<const VectorXi>& y_pos) {
+	const int p = (int)X_pos.cols();
 	const VectorXd y_double = y_pos.cast<double>();
 	const double mean_y = y_double.mean();
 	const double var_y = (y_double.array() - mean_y).square().sum() /
@@ -201,7 +201,7 @@ std::vector<VectorXd> make_truncated_negbin_candidate_starts(const MatrixXd& X_p
 }
 
 LikelihoodFitResult fit_truncated_negbin_with_fallback(TruncatedNegBinCount& fun,
-														VectorXd params,
+														const Eigen::Ref<const VectorXd>& params,
 														const FixedParamSpec& fixed_spec,
 														int maxit,
 														double tol,
@@ -214,7 +214,7 @@ LikelihoodFitResult fit_truncated_negbin_with_fallback(TruncatedNegBinCount& fun
 	best.params = params;
 	best.value = std::numeric_limits<double>::infinity();
 	std::string last_error;
-	const int expected_size = params.size();
+	const int expected_size = (int)params.size();
 
 	if (!validate_start_vector(params, expected_size, &last_error)) {
 		Rcpp::stop(last_error);
@@ -280,7 +280,7 @@ LikelihoodFitResult fit_truncated_negbin_with_fallback(TruncatedNegBinCount& fun
 
 	if (optimization_alg == "lbfgs") {
 		if (try_alg("lbfgs", params, info_start_ptr)) return best;
-		VectorXd retry_start = best.params.size() == params.size() && best.params.allFinite() ? best.params : params;
+		VectorXd retry_start = (best.params.size() == params.size() && best.params.allFinite()) ? best.params : params.matrix();
 		if (try_alg("newton_raphson", retry_start, info_start_ptr)) return best;
 		if (has_distinct_fallback_start) {
 			if (try_alg("newton_raphson", *fallback_start, nullptr)) return best;
@@ -308,9 +308,9 @@ private:
 
 public:
 	TruncatedNegBinCount(const MatrixXd& X, const VectorXi& y)
-		: m_X(X), m_y(y), m_n(X.rows()), m_p(X.cols()) {}
+		: m_X(X), m_y(y), m_n((int)X.rows()), m_p((int)X.cols()) {}
 
-	double operator()(const VectorXd& params, VectorXd& grad) {
+	double operator()(const Eigen::Ref<const VectorXd>& params, Eigen::Ref<VectorXd> grad) {
 		const VectorXd beta = params.head(m_p);
 		const double log_theta = params[m_p];
 		const double theta = std::exp(log_theta);
@@ -355,7 +355,7 @@ public:
 		return neg_ll;
 	}
 
-	MatrixXd hessian(const VectorXd& params) {
+	MatrixXd hessian(const Eigen::Ref<const VectorXd>& params) {
 		const int total_p = m_p + 1;
 		MatrixXd H = MatrixXd::Zero(total_p, total_p);
 		const VectorXd beta = params.head(m_p);
@@ -417,7 +417,7 @@ public:
 		return H;
 	}
 
-	MatrixXd expected_hessian(const VectorXd& params) {
+	MatrixXd expected_hessian(const Eigen::Ref<const VectorXd>& params) {
 		const int total_p = m_p + 1;
 		MatrixXd H = MatrixXd::Zero(total_p, total_p);
 		const VectorXd beta = params.head(m_p);
@@ -453,16 +453,16 @@ public:
 
 }
 
-static List build_positive_hurdle_negbin_data(const Eigen::MatrixXd& X,
-											  const Eigen::VectorXd& y) {
+static List build_positive_hurdle_negbin_data(const Eigen::Ref<const MatrixXd>& X,
+											  const Eigen::Ref<const VectorXd>& y) {
 	std::vector<int> pos_rows;
 	for (int i = 0; i < X.rows(); ++i) {
 		if (y[i] > 0.0) pos_rows.push_back(i);
 	}
 
-	const int p = X.cols();
-	MatrixXd X_pos(pos_rows.size(), p);
-	VectorXi y_pos(pos_rows.size());
+	const int p = (int)X.cols();
+	MatrixXd X_pos((int)pos_rows.size(), p);
+	VectorXi y_pos((int)pos_rows.size());
 	for (size_t k = 0; k < pos_rows.size(); ++k) {
 		const int i = pos_rows[k];
 		X_pos.row(k) = X.row(i);
@@ -472,9 +472,15 @@ static List build_positive_hurdle_negbin_data(const Eigen::MatrixXd& X,
 }
 
 // [[Rcpp::export]]
-Eigen::VectorXd get_hurdle_negbin_count_score_cpp(const Eigen::MatrixXd& X,
-												  const Eigen::VectorXd& y,
-												  const Eigen::VectorXd& params) {
+Eigen::VectorXd get_hurdle_negbin_count_score_cpp(SEXP X_r,
+												  SEXP y_r,
+												  SEXP params_sexp) {
+	NumericMatrix X_mat(X_r);
+	NumericVector y_vec(y_r);
+	NumericVector params_r(params_sexp);
+	Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+	Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
 	List pos = build_positive_hurdle_negbin_data(X, y);
 	MatrixXd X_pos = pos["X_pos"];
 	VectorXi y_pos = pos["y_pos"];
@@ -485,9 +491,15 @@ Eigen::VectorXd get_hurdle_negbin_count_score_cpp(const Eigen::MatrixXd& X,
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd get_hurdle_negbin_count_hessian_cpp(const Eigen::MatrixXd& X,
-													const Eigen::VectorXd& y,
-													const Eigen::VectorXd& params) {
+Eigen::MatrixXd get_hurdle_negbin_count_hessian_cpp(SEXP X_r,
+													SEXP y_r,
+													SEXP params_sexp) {
+	NumericMatrix X_mat(X_r);
+	NumericVector y_vec(y_r);
+	NumericVector params_r(params_sexp);
+	Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+	Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
 	List pos = build_positive_hurdle_negbin_data(X, y);
 	MatrixXd X_pos = pos["X_pos"];
 	VectorXi y_pos = pos["y_pos"];
@@ -496,9 +508,9 @@ Eigen::MatrixXd get_hurdle_negbin_count_hessian_cpp(const Eigen::MatrixXd& X,
 }
 
 // [[Rcpp::export]]
-List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
-						   const Eigen::VectorXd& y,
-						   const Eigen::MatrixXd& X_hurdle,
+List fast_hurdle_negbin_cpp(SEXP X_r,
+						   SEXP y_r,
+						   SEXP X_hurdle_r,
 						   Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
 						   bool smart_cold_start = true,
 						   int maxit = 1000,
@@ -509,19 +521,28 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 						   Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
 						   Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_hurdle_fisher_info = R_NilValue,
 						   bool estimate_only = false) {
-	const int n = X.rows();
-	const int p = X.cols();
-	const int p_hurdle = X_hurdle.cols();
+	NumericMatrix X_mat(X_r);
+	NumericVector y_vec(y_r);
+	Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+	Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+	NumericMatrix X_hurdle_mat(X_hurdle_r);
+	Eigen::Map<const Eigen::MatrixXd> X_hurdle(X_hurdle_mat.begin(), X_hurdle_mat.nrow(), X_hurdle_mat.ncol());
+
+	const int n = (int)X.rows();
+	const int p = (int)X.cols();
+	const int p_hurdle = (int)X_hurdle.cols();
 	std::string alg = normalize_optimizer_algorithm(optimization_alg, "lbfgs", false);
 	FixedParamSpec count_fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
 
 	VectorXd y_pos_ind = (y.array() > 0.0).cast<double>();
 	Eigen::VectorXd hurdle_b = Eigen::VectorXd::Constant(p_hurdle, NA_REAL);
+	Eigen::MatrixXd hurdle_XtWX;
 	bool hurdle_converged = false;
-    
+
 	if (y_pos_ind.minCoeff() < y_pos_ind.maxCoeff()) {
-        ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, R_NilValue, R_NilValue, alg, R_NilValue, warm_start_hurdle_fisher_info, estimate_only);
+		ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, R_NilValue, R_NilValue, alg, R_NilValue, warm_start_hurdle_fisher_info, estimate_only);
 		hurdle_b = hurdle_res.b;
+		hurdle_XtWX = hurdle_res.XtWX;
 		hurdle_converged = hurdle_res.converged;
 	}
 
@@ -540,8 +561,8 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 		);
 	}
 
-	MatrixXd X_pos(pos_rows.size(), p);
-	VectorXi y_pos(pos_rows.size());
+	MatrixXd X_pos((int)pos_rows.size(), p);
+	VectorXi y_pos((int)pos_rows.size());
 	for (size_t k = 0; k < pos_rows.size(); ++k) {
 		const int i = pos_rows[k];
 		X_pos.row(k) = X.row(i);
@@ -615,7 +636,8 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 		Named("fisher_information") = fisher_information,
 		Named("information") = fisher_information,
 		Named("information_type") = "fisher",
-		Named("hessian") = -observed_information
+		Named("hessian") = -observed_information,
+		Named("hurdle_fisher_information") = hurdle_XtWX
 	);
 }
 
@@ -638,9 +660,9 @@ List fast_hurdle_negbin_cpp(const Eigen::MatrixXd& X,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X,
-									 const Eigen::VectorXd& y,
-									 const Eigen::MatrixXd& X_hurdle,
+List fast_hurdle_negbin_with_var_cpp(SEXP X_r,
+									 SEXP y_r,
+									 SEXP X_hurdle_r,
 									 int j = 2,
 									 Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
 									 bool smart_cold_start = true,
@@ -651,19 +673,35 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X,
 									 std::string optimization_alg = "lbfgs",
 									 Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
 									 Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_hurdle_fisher_info = R_NilValue) {
-	List fit = fast_hurdle_negbin_cpp(X, y, X_hurdle, warm_start_params, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, warm_start_hurdle_fisher_info);
+	NumericMatrix X_mat(X_r);
+	NumericVector y_vec(y_r);
+	Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+	Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+	NumericMatrix X_hurdle_mat(X_hurdle_r);
+	Eigen::Map<const Eigen::MatrixXd> X_hurdle(X_hurdle_mat.begin(), X_hurdle_mat.nrow(), X_hurdle_mat.ncol());
+
+	List fit = fast_hurdle_negbin_cpp(X_r, y_r, X_hurdle_r, warm_start_params, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, warm_start_hurdle_fisher_info);
 	SEXP b_sexp = fit["b"];
 	NumericVector b_nv(b_sexp);
-	const int p = b_nv.size();
+	const int p = (int)b_nv.size();
 
 	double hurdle_ssq_b_j = NA_REAL;
 	double hurdle_ssq_b_2 = NA_REAL;
 	if (fit.containsElementNamed("hurdle_b")) {
 		VectorXd y_pos_ind = (y.array() > 0.0).cast<double>();
 		if (y_pos_ind.minCoeff() < y_pos_ind.maxCoeff()) {
-			ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, R_NilValue, R_NilValue, optimization_alg, R_NilValue, R_NilValue);
-			FixedParamSpec hurdle_spec = make_fixed_param_spec(X_hurdle.cols(), R_NilValue, R_NilValue);
-			MatrixXd info_free = subset_matrix(hurdle_res.XtWX, hurdle_spec.free_idx, hurdle_spec.free_idx);
+			MatrixXd hurdle_XtWX;
+			bool have_hurdle_info = false;
+			if (fit.containsElementNamed("hurdle_fisher_information")) {
+				hurdle_XtWX = as<MatrixXd>(fit["hurdle_fisher_information"]);
+				have_hurdle_info = hurdle_XtWX.allFinite() && hurdle_XtWX.rows() == X_hurdle.cols();
+			}
+			if (!have_hurdle_info) {
+				ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, R_NilValue, R_NilValue, optimization_alg, R_NilValue, R_NilValue);
+				hurdle_XtWX = hurdle_res.XtWX;
+			}
+			FixedParamSpec hurdle_spec = make_fixed_param_spec((int)X_hurdle.cols(), R_NilValue, R_NilValue);
+			MatrixXd info_free = subset_matrix(hurdle_XtWX, hurdle_spec.free_idx, hurdle_spec.free_idx);
 			auto hurdle_free_idx_of = [&](int k) -> int {
 				for (int jj = 0; jj < (int)hurdle_spec.free_idx.size(); ++jj)
 					if (hurdle_spec.free_idx[jj] == k) return jj + 1;
@@ -678,42 +716,22 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X,
 
 	double ssq_b_j = NA_REAL;
 	double ssq_b_2 = NA_REAL;
-	if (p > 0 && fit.containsElementNamed("theta_hat")) {
-		SEXP theta_sexp = fit["theta_hat"];
-		double theta_hat = as<double>(theta_sexp);
+	if (p > 0 && fit.containsElementNamed("theta_hat") && fit.containsElementNamed("fisher_information")) {
+		double theta_hat = as<double>(fit["theta_hat"]);
 		if (R_finite(theta_hat) && p >= j) {
-			std::vector<int> pos_rows;
-			for (int i = 0; i < X.rows(); ++i) {
-				if (y[i] > 0.0) pos_rows.push_back(i);
-			}
-			if (static_cast<int>(pos_rows.size()) > p) {
-				MatrixXd X_pos(pos_rows.size(), p);
-				VectorXi y_pos(pos_rows.size());
-				for (size_t k = 0; k < pos_rows.size(); ++k) {
-					const int i = pos_rows[k];
-					X_pos.row(k) = X.row(i);
-					y_pos[k] = static_cast<int>(y[i]);
-				}
-
-				VectorXd params(p + 1);
-				for (int col = 0; col < p; ++col) params[col] = b_nv[col];
-				params[p] = std::log(theta_hat);
-
-				TruncatedNegBinCount fun(X_pos, y_pos);
-				MatrixXd H = fun.expected_hessian(params);
-				if (H.allFinite()) {
-					FixedParamSpec count_fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
-					MatrixXd H_free = subset_matrix(H, count_fixed_spec.free_idx, count_fixed_spec.free_idx);
-					auto cnt_free_idx_of = [&](int k) -> int {
-						for (int jj = 0; jj < (int)count_fixed_spec.free_idx.size(); ++jj)
-							if (count_fixed_spec.free_idx[jj] == k) return jj + 1;
-						return -1;
-					};
-					int cfree_j = (j > 0 && j <= p + 1) ? cnt_free_idx_of(j - 1) : -1;
-					if (cfree_j > 0) ssq_b_j = compute_diagonal_inverse_entry(H_free, cfree_j);
-					int cfree_2 = (p >= 2) ? cnt_free_idx_of(1) : -1;
-					if (cfree_2 > 0) ssq_b_2 = compute_diagonal_inverse_entry(H_free, cfree_2);
-				}
+			MatrixXd H = as<MatrixXd>(fit["fisher_information"]);
+			if (H.allFinite() && H.rows() == p + 1) {
+				FixedParamSpec count_fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
+				MatrixXd H_free = subset_matrix(H, count_fixed_spec.free_idx, count_fixed_spec.free_idx);
+				auto cnt_free_idx_of = [&](int k) -> int {
+					for (int jj = 0; jj < (int)count_fixed_spec.free_idx.size(); ++jj)
+						if (count_fixed_spec.free_idx[jj] == k) return jj + 1;
+					return -1;
+				};
+				int cfree_j = (j > 0 && j <= p + 1) ? cnt_free_idx_of(j - 1) : -1;
+				if (cfree_j > 0) ssq_b_j = compute_diagonal_inverse_entry(H_free, cfree_j);
+				int cfree_2 = (p >= 2) ? cnt_free_idx_of(1) : -1;
+				if (cfree_2 > 0) ssq_b_2 = compute_diagonal_inverse_entry(H_free, cfree_2);
 			}
 		}
 	}
@@ -725,133 +743,122 @@ List fast_hurdle_negbin_with_var_cpp(const Eigen::MatrixXd& X,
 	return fit;
 }
 
-//' @title Fast Truncated Negative Binomial Regression (C++)
-//' @description High-performance zero-truncated negative binomial regression fitting.
-//' @param X A numeric matrix of predictors.
-//' @param y A numeric vector of responses (must be positive integers).
-//' @param warm_start_params Optional starting values for [beta, log_theta]. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
-//' @param estimate_only If TRUE, only return coefficients and likelihood.
-//' @param maxit Maximum number of iterations.
-//' @param tol Convergence tolerance.
-//' @param fixed_idx Optional indices of fixed parameters.
-//' @param fixed_values Optional values for fixed parameters.
-//' @param optimization_alg Optimization algorithm.
-//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first iteration.
-//' @return A list containing coefficients, vcov, and convergence status.
-//' @export
-//' @keywords internal
 // [[Rcpp::export]]
-List fast_truncated_negbin_count_cpp(const Eigen::MatrixXd& X,
-                                                                         const Eigen::VectorXd& y,
-                                                                         Nullable<NumericVector> warm_start_params = R_NilValue,
-                                                                         bool smart_cold_start = true,
-                                                                         bool estimate_only = false,
-                                                                         int maxit = 1000,
-                                                                         double tol = 1e-8,
-                                                                         Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-                                                                         Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-                                                                         std::string optimization_alg = "lbfgs",
-                                                                         Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-        optimization_alg = normalize_optimizer_algorithm(optimization_alg, "lbfgs", false);
-		validate_truncated_negbin_inputs(X, y, warm_start_params, warm_start_fisher_info, fixed_idx, fixed_values);
+List fast_truncated_negbin_count_cpp(SEXP X_r,
+									 SEXP y_r,
+									 Nullable<NumericVector> warm_start_params = R_NilValue,
+									 bool smart_cold_start = true,
+									 bool estimate_only = false,
+									 int maxit = 1000,
+									 double tol = 1e-8,
+									 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+									 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+									 std::string optimization_alg = "lbfgs",
+									 Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
 
-        List pos = build_positive_hurdle_negbin_data(X, y);
-        MatrixXd X_pos = pos["X_pos"];
-        VectorXi y_pos = pos["y_pos"];
-        const int p = X_pos.cols();
-        if (X_pos.rows() <= p){
-                return List::create(
-                        Named("b") = NumericVector(p, NA_REAL),
-                        Named("params") = NumericVector(p + 1, NA_REAL),
-                        Named("converged") = false,
-                        Named("neg_ll") = NA_REAL
-                );
-        }
+    optimization_alg = normalize_optimizer_algorithm(optimization_alg, "lbfgs", false);
+	validate_truncated_negbin_inputs(X, y, warm_start_params, warm_start_fisher_info, fixed_idx, fixed_values);
 
-        std::vector<VectorXd> start_candidates = make_truncated_negbin_candidate_starts(X_pos, y_pos);
-        VectorXd heuristic_start = start_candidates.front();
-        VectorXd params = heuristic_start;
-        if (warm_start_params.isNotNull()) {
-                params = as<VectorXd>(NumericVector(warm_start_params));
-        } else if (!smart_cold_start) {
-                params.setZero();
-                params[p] = std::log(1.0);
-        }
-		std::string start_error;
-		if (!validate_start_vector(params, p + 1, &start_error)) {
-			Rcpp::stop(start_error);
-		}
+    List pos = build_positive_hurdle_negbin_data(X, y);
+    MatrixXd X_pos = pos["X_pos"];
+    VectorXi y_pos = pos["y_pos"];
+    const int p = (int)X_pos.cols();
+    if (X_pos.rows() <= p){
+            return List::create(
+                    Named("b") = NumericVector(p, NA_REAL),
+                    Named("params") = NumericVector(p + 1, NA_REAL),
+                    Named("converged") = false,
+                    Named("neg_ll") = NA_REAL
+            );
+    }
 
-        FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
-        TruncatedNegBinCount fun(X_pos, y_pos);
+    std::vector<VectorXd> start_candidates = make_truncated_negbin_candidate_starts(X_pos, y_pos);
+    VectorXd heuristic_start = start_candidates.front();
+    VectorXd params = heuristic_start;
+    if (warm_start_params.isNotNull()) {
+            params = as<VectorXd>(NumericVector(warm_start_params));
+    } else if (!smart_cold_start) {
+            params.setZero();
+            params[p] = std::log(1.0);
+    }
+	std::string start_error;
+	if (!validate_start_vector(params, p + 1, &start_error)) {
+		Rcpp::stop(start_error);
+	}
 
-        Eigen::MatrixXd info_start;
-        const Eigen::MatrixXd* info_start_ptr = nullptr;
-        if (warm_start_fisher_info.isNotNull()) {
-            info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
-            info_start_ptr = &info_start;
-        }
+    FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
+    TruncatedNegBinCount fun(X_pos, y_pos);
 
-        std::string failure_message;
-        LikelihoodFitResult fit = fit_truncated_negbin_with_fallback(
-                fun,
-                params,
-                fixed_spec,
-                maxit,
-                tol,
-                optimization_alg,
-                info_start_ptr,
-                &heuristic_start,
-                &start_candidates,
-                &failure_message
-        );
-        if (!fit.converged && fit.params.size() == params.size()) {
-                if (!fit.params.allFinite()) {
-                        fit.params = params;
-                }
-        }
-        if (!fit.converged && !failure_message.empty()) {
-                Rcpp::warning(failure_message);
-        }
-        if (fit.params.size() != p + 1 || !fit.params.allFinite()) {
-                return List::create(
-                        Named("b") = NumericVector(p, NA_REAL),
-                        Named("params") = NumericVector(p + 1, NA_REAL),
-                        Named("converged") = false,
-                        Named("neg_ll") = NA_REAL
-                );
-        }
+    Eigen::MatrixXd info_start;
+    const Eigen::MatrixXd* info_start_ptr = nullptr;
+    if (warm_start_fisher_info.isNotNull()) {
+        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        info_start_ptr = &info_start;
+    }
 
-        params = fit.params;
-        VectorXd beta = params.head(p);
-        if (estimate_only) {
-                return List::create(
-                        Named("b") = beta,
-                        Named("params") = params,
-                        Named("converged") = fit.converged,
-                        Named("neg_ll") = fit.value
-                );
-        }
+    std::string failure_message;
+    LikelihoodFitResult fit = fit_truncated_negbin_with_fallback(
+            fun,
+            params,
+            fixed_spec,
+            maxit,
+            tol,
+            optimization_alg,
+            info_start_ptr,
+            &heuristic_start,
+            &start_candidates,
+            &failure_message
+    );
+    if (!fit.converged && fit.params.size() == params.size()) {
+            if (!fit.params.allFinite()) {
+                    fit.params = params;
+            }
+    }
+    if (!fit.converged && !failure_message.empty()) {
+            Rcpp::warning(failure_message);
+    }
+    if (fit.params.size() != p + 1 || !fit.params.allFinite()) {
+            return List::create(
+                    Named("b") = NumericVector(p, NA_REAL),
+                    Named("params") = NumericVector(p + 1, NA_REAL),
+                    Named("converged") = false,
+                    Named("neg_ll") = NA_REAL
+            );
+    }
 
-        MatrixXd observed_information = fun.hessian(params);
-        MatrixXd fisher_information = fun.expected_hessian(params);
-        List out = List::create(
-                Named("b") = beta,
-                Named("params") = params,
-                Named("converged") = fit.converged,
-                Named("neg_ll") = fit.value,
-                Named("observed_information") = observed_information,
-                Named("fisher_information") = fisher_information,
-                Named("information") = fisher_information,
-                Named("information_type") = "fisher",
-                Named("hessian") = -observed_information
-        );
-        if (!fit.converged){
-                return out;
-        }
+    params = fit.params;
+    VectorXd beta = params.head(p);
+    if (estimate_only) {
+            return List::create(
+                    Named("b") = beta,
+                    Named("params") = params,
+                    Named("converged") = fit.converged,
+                    Named("neg_ll") = fit.value
+            );
+    }
 
-        VectorXd score = get_hurdle_negbin_count_score_cpp(X, y, params);
-        out["score"] = score;
-        return out;
+    MatrixXd observed_information = fun.hessian(params);
+    MatrixXd fisher_information = fun.expected_hessian(params);
+    List out = List::create(
+            Named("b") = beta,
+            Named("params") = params,
+            Named("converged") = fit.converged,
+            Named("neg_ll") = fit.value,
+            Named("observed_information") = observed_information,
+            Named("fisher_information") = fisher_information,
+            Named("information") = fisher_information,
+            Named("information_type") = "fisher",
+            Named("hessian") = -observed_information
+    );
+    if (!fit.converged){
+            return out;
+    }
+
+    VectorXd score = get_hurdle_negbin_count_score_cpp(X_r, y_r, Rcpp::wrap(params));
+    out["score"] = score;
+    return out;
 }

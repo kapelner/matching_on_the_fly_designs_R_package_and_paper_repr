@@ -14,7 +14,7 @@ Exact Zhang Incidence Inference
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceExact]{EDI::InferenceExact}} -> \code{InferenceIncidenceExactZhang}
+\code{EDI::Inference} -> \code{EDI::InferenceExact} -> \code{InferenceIncidenceExactZhang}
 }
 \section{Methods}{
 \subsection{Public methods}{

@@ -190,7 +190,9 @@ List generate_permutations_efron_cpp(int n, int nsim, double prob_T, double weig
 }
 
 // [[Rcpp::export]]
-List generate_permutations_atkinson_cpp(const Eigen::MatrixXd& X, int n, int p_raw, double prob_T, int nsim) {
+List generate_permutations_atkinson_cpp(SEXP X_sexp, int n, int p_raw, double prob_T, int nsim) {
+  Rcpp::NumericMatrix X_r(X_sexp);
+  Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
 
   IntegerMatrix w_mat(n, nsim);
   int* w_ptr = w_mat.begin();

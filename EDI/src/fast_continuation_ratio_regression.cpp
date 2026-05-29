@@ -17,10 +17,10 @@ inline Eigen::ArrayXd plogis_array_clamped(const Eigen::ArrayXd& eta) {
 }
 
 struct ContinuationRatioObjective {
-    const MatrixXd& X_aug;
-    const VectorXd& z;
+    const Eigen::Ref<const MatrixXd> X_aug;
+    const Eigen::Ref<const VectorXd> z;
 
-    ContinuationRatioObjective(const MatrixXd& X_aug, const VectorXd& z) :
+    ContinuationRatioObjective(const Eigen::Ref<const MatrixXd>& X_aug, const Eigen::Ref<const VectorXd>& z) :
         X_aug(X_aug), z(z) {}
 
     double operator()(const VectorXd& beta, VectorXd& grad) const {
@@ -42,8 +42,8 @@ struct ContinuationRatioObjective {
     }
 };
 
-static List build_continuation_ratio_augmented_data(const Eigen::MatrixXd& X,
-													const Eigen::VectorXd& y) {
+static List build_continuation_ratio_augmented_data(const Eigen::Ref<const MatrixXd>& X,
+													const Eigen::Ref<const VectorXd>& y) {
 	int n = X.rows();
 	int p = X.cols();
 
@@ -92,9 +92,16 @@ static List build_continuation_ratio_augmented_data(const Eigen::MatrixXd& X,
 } // namespace
 
 // [[Rcpp::export]]
-Eigen::VectorXd get_continuation_ratio_regression_score_cpp(const Eigen::MatrixXd& X,
-															const Eigen::VectorXd& y,
-															const Eigen::VectorXd& params) {
+Eigen::VectorXd get_continuation_ratio_regression_score_cpp(SEXP X_sexp,
+															SEXP y_sexp,
+															SEXP params_sexp) {
+	NumericMatrix X_r(X_sexp);
+	Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+	NumericVector y_r(y_sexp);
+	Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+	NumericVector params_r(params_sexp);
+	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
+
 	List aug = build_continuation_ratio_augmented_data(X, y);
 	MatrixXd X_aug = aug["X_aug"];
 	VectorXd z = aug["z"];
@@ -105,9 +112,16 @@ Eigen::VectorXd get_continuation_ratio_regression_score_cpp(const Eigen::MatrixX
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd get_continuation_ratio_regression_hessian_cpp(const Eigen::MatrixXd& X,
-															  const Eigen::VectorXd& y,
-															  const Eigen::VectorXd& params) {
+Eigen::MatrixXd get_continuation_ratio_regression_hessian_cpp(SEXP X_sexp,
+															  SEXP y_sexp,
+															  SEXP params_sexp) {
+	NumericMatrix X_r(X_sexp);
+	Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+	NumericVector y_r(y_sexp);
+	Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+	NumericVector params_r(params_sexp);
+	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
+
 	List aug = build_continuation_ratio_augmented_data(X, y);
 	MatrixXd X_aug = aug["X_aug"];
 	if (X_aug.rows() == 0) return MatrixXd::Zero(params.size(), params.size());
@@ -133,13 +147,18 @@ Eigen::MatrixXd get_continuation_ratio_regression_hessian_cpp(const Eigen::Matri
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
+List fast_continuation_ratio_regression_cpp(SEXP X_sexp, SEXP y_sexp, int maxit = 100, double tol = 1e-8,
                                              Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                              bool smart_cold_start = true,
                                              Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                              Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                              std::string optimization_alg = "lbfgs",
                                              Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+    NumericMatrix X_r(X_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    NumericVector y_r(y_sexp);
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+
     int p = X.cols();
     List aug = build_continuation_ratio_augmented_data(X, y);
     MatrixXd X_aug = aug["X_aug"];
@@ -183,13 +202,18 @@ List fast_continuation_ratio_regression_cpp(const Eigen::MatrixXd& X, const Eige
 }
 
 // [[Rcpp::export]]
-List fast_continuation_ratio_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
+List fast_continuation_ratio_regression_with_var_cpp(SEXP X_sexp, SEXP y_sexp, int maxit = 100, double tol = 1e-8,
                                                       Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                                       bool smart_cold_start = true,
                                                       Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                       Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                                       std::string optimization_alg = "lbfgs",
                                                       Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+    NumericMatrix X_r(X_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    NumericVector y_r(y_sexp);
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+
     int p = X.cols();
     List aug = build_continuation_ratio_augmented_data(X, y);
     MatrixXd X_aug = aug["X_aug"];

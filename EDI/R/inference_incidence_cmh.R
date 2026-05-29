@@ -73,9 +73,12 @@ InferenceIncidCMH = R6::R6Class("InferenceIncidCMH",
 				precomp = private$des_obj$get_cmh_se_w_mat()
 				w_mat = if (!is.null(precomp)) precomp else private$des_obj$draw_ws_according_to_design(private$se_est_num_vectors)
 				ytw      = drop(private$y %*% w_mat)
-				# E[y·W] = (n/2)·ȳ is known exactly — use it rather than mean(ytw).
-				eytw_sq  = ((private$n / 2L) * mean(private$y))^2
-				private$cached_values$cmh_s_beta_hat_T = 4 / private$n * sqrt(max(0, sum(ytw^2) / (length(ytw) - 1L) - eytw_sq))
+				# Use sample mean of y·W_k rather than the theoretical (n/2)·ȳ.
+				# For designs where P(W_i=1) differs across subjects (greedy designs),
+				# the theoretical mean is biased, inflating SD(z) and causing anti-conservatism.
+				# The sample mean is always consistent with the actual W distribution.
+				K        = length(ytw)
+				private$cached_values$cmh_s_beta_hat_T = 4 / private$n * sqrt(max(0, (sum(ytw^2) - K * mean(ytw)^2) / (K - 1L)))
 			}
 			private$cached_values$s_beta_hat_T = private$cached_values$cmh_s_beta_hat_T
 			private$cached_values$df = NA_real_

@@ -28,7 +28,7 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignBlocking]{EDI::DesignBlocking}} -> \code{\link[EDI:DesignMatching]{EDI::DesignMatching}} -> \code{\link[EDI:DesignSeqOneByOne]{EDI::DesignSeqOneByOne}} -> \code{\link[EDI:DesignSeqOneByOneKK14]{EDI::DesignSeqOneByOneKK14}} -> \code{DesignSeqOneByOneKK21}
+\code{EDI::Design} -> \code{EDI::DesignBlocking} -> \code{EDI::DesignMatching} -> \code{EDI::DesignSeqOneByOne} -> \code{EDI::DesignSeqOneByOneKK14} -> \code{DesignSeqOneByOneKK21}
 }
 \section{Methods}{
 \subsection{Public methods}{

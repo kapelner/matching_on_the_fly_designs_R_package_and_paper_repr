@@ -4,7 +4,15 @@
 \alias{get_cpoisson_combined_hessian_cpp}
 \title{Compute Combined Conditional-Poisson Hessian}
 \usage{
-get_cpoisson_combined_hessian_cpp(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params)
+get_cpoisson_combined_hessian_cpp(
+  yT_v_r,
+  n_k_v_r,
+  X_diff_v_r,
+  y_r_r,
+  w_r_r,
+  X_r_r,
+  params_r
+)
 }
 \arguments{
 \item{yT_v}{Treated counts per pair.}

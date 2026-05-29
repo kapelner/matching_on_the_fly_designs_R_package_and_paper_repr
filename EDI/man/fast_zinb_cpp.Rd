@@ -6,48 +6,48 @@
 \usage{
 fast_zinb_cpp(
   X,
-  y,
   Xzi,
+  y,
   warm_start_params = NULL,
-  smart_cold_start = TRUE,
-  estimate_only = FALSE,
   maxit = 1000L,
-  tol = 1e-06,
-  optimization_alg = "lbfgs",
+  tol = 1e-08,
   fixed_idx = NULL,
   fixed_values = NULL,
-  warm_start_fisher_info = NULL
+  optimization_alg = "lbfgs",
+  smart_cold_start = TRUE,
+  warm_start_fisher_info = NULL,
+  estimate_only = FALSE
 )
 }
 \arguments{
-\item{X}{Matrix of predictors for the conditional component.}
+\item{X}{Numeric matrix of predictors for the count component (including intercept).}
 
-\item{y}{Vector of responses.}
+\item{Xzi}{Numeric matrix of predictors for the zero-inflation component (including intercept).}
 
-\item{Xzi}{Matrix of predictors for the zero-inflation component.}
+\item{y}{Numeric vector of non-negative integer count responses.}
 
-\item{warm_start_params}{Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.}
-
-\item{smart_cold_start}{Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.}
-
-\item{estimate_only}{If TRUE, skip variance component calculations.}
+\item{warm_start_params}{Optional starting values for all parameters.}
 
 \item{maxit}{Maximum number of iterations.}
 
 \item{tol}{Convergence tolerance.}
 
-\item{optimization_alg}{Optimization algorithm.}
-
 \item{fixed_idx}{Optional indices of fixed parameters.}
 
 \item{fixed_values}{Optional values for fixed parameters.}
 
-\item{warm_start_fisher_info}{Optional initial Fisher Information matrix for the first iteration.}
+\item{optimization_alg}{Optimization algorithm (default "lbfgs").}
+
+\item{smart_cold_start}{Logical. If TRUE, use a heuristic initial guess.}
+
+\item{warm_start_fisher_info}{Optional initial Fisher Information matrix.}
+
+\item{estimate_only}{Logical. If TRUE, skip variance computation and return only coefficients.}
 }
 \value{
-A list containing coefficients, vcov, and convergence status.
+A list containing coefficients and convergence status.
 }
 \description{
-High-performance ZINB regression fitting using Newton-Raphson or L-BFGS.
+High-performance zero-inflated negative binomial model fitting via L-BFGS.
 }
 \keyword{internal}

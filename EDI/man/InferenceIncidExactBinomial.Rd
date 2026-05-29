@@ -26,7 +26,7 @@ inf$compute_estimate()
 }
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceExact]{EDI::InferenceExact}} -> \code{InferenceIncidExactBinomial}
+\code{EDI::Inference} -> \code{EDI::InferenceExact} -> \code{InferenceIncidExactBinomial}
 }
 \section{Methods}{
 \subsection{Public methods}{

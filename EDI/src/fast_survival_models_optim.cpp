@@ -26,11 +26,11 @@ inline double log_sum_exp_clayton(double a, double b) {
 
 class ClaytonWeibullLikelihood {
 private:
-    const Eigen::VectorXd& m_y;
-    const Eigen::VectorXd& m_dead;
-    const Eigen::MatrixXd& m_X;
-    const Eigen::MatrixXi& m_pair_idx;
-    const Eigen::VectorXi& m_singleton_rows;
+    Eigen::Ref<const Eigen::VectorXd> m_y;
+    Eigen::Ref<const Eigen::VectorXd> m_dead;
+    Eigen::Ref<const Eigen::MatrixXd> m_X;
+    Eigen::Ref<const Eigen::MatrixXi> m_pair_idx;
+    Eigen::Ref<const Eigen::VectorXi> m_singleton_rows;
     const bool m_has_pairs;
     const bool m_has_singletons;
     const int m_n;
@@ -38,11 +38,11 @@ private:
     const Eigen::VectorXd m_log_y;
 
 public:
-    ClaytonWeibullLikelihood(const Eigen::VectorXd& y, 
-                             const Eigen::VectorXd& dead, 
-                             const Eigen::MatrixXd& X,
-                             const Eigen::MatrixXi& pair_idx,
-                             const Eigen::VectorXi& singleton_rows) :
+    ClaytonWeibullLikelihood(const Eigen::Ref<const Eigen::VectorXd>& y, 
+                             const Eigen::Ref<const Eigen::VectorXd>& dead, 
+                             const Eigen::Ref<const Eigen::MatrixXd>& X,
+                             const Eigen::Ref<const Eigen::MatrixXi>& pair_idx,
+                             const Eigen::Ref<const Eigen::VectorXi>& singleton_rows) :
         m_y(y), m_dead(dead), m_X(X), m_pair_idx(pair_idx), 
         m_singleton_rows(singleton_rows),
         m_has_pairs(pair_idx.rows() > 0),
@@ -50,7 +50,7 @@ public:
         m_n(y.size()), m_p(X.cols()),
         m_log_y(y.array().log().matrix()) {}
 
-    double operator()(const Eigen::VectorXd& params, Eigen::VectorXd& grad) {
+    double operator()(const Eigen::Ref<const Eigen::VectorXd>& params, Eigen::Ref<Eigen::VectorXd> grad) {
         double log_sigma = params[m_p];
         double log_theta = params[m_p + 1];
         double sigma = std::exp(log_sigma);
@@ -169,7 +169,7 @@ public:
         return -loglik;
     }
     
-    Eigen::MatrixXd hessian(const Eigen::VectorXd& params) {
+    Eigen::MatrixXd hessian(const Eigen::Ref<const Eigen::VectorXd>& params) {
         int total_p = params.size();
         Eigen::MatrixXd H(total_p, total_p);
         H.setZero();
@@ -195,21 +195,21 @@ public:
 
 class DepCensTransformLikelihood {
 private:
-    const Eigen::VectorXd& m_y;
-    const Eigen::VectorXd& m_dead;
-    const Eigen::MatrixXd& m_X;
+    Eigen::Ref<const Eigen::VectorXd> m_y;
+    Eigen::Ref<const Eigen::VectorXd> m_dead;
+    Eigen::Ref<const Eigen::MatrixXd> m_X;
     const int m_n;
     const int m_p;
     const Eigen::VectorXd m_log_y;
 
 public:
-    DepCensTransformLikelihood(const Eigen::VectorXd& y, 
-                               const Eigen::VectorXd& dead, 
-                               const Eigen::MatrixXd& X) :
+    DepCensTransformLikelihood(const Eigen::Ref<const Eigen::VectorXd>& y, 
+                               const Eigen::Ref<const Eigen::VectorXd>& dead, 
+                               const Eigen::Ref<const Eigen::MatrixXd>& X) :
         m_y(y), m_dead(dead), m_X(X), m_n(y.size()), m_p(X.cols()),
         m_log_y(y.array().log().matrix()) {}
 
-    double operator()(const Eigen::VectorXd& params, Eigen::VectorXd& grad) {
+    double operator()(const Eigen::Ref<const Eigen::VectorXd>& params, Eigen::Ref<Eigen::VectorXd> grad) {
         // params: [beta_event (p), beta_cens (p), log_sigma_event (1), log_sigma_cens (1), atanh_rho (1)]
         Eigen::VectorXd beta_event = params.head(m_p);
         Eigen::VectorXd beta_cens = params.segment(m_p, m_p);
@@ -303,7 +303,7 @@ public:
         return -loglik;
     }
 
-    Eigen::MatrixXd hessian(const Eigen::VectorXd& params) {
+    Eigen::MatrixXd hessian(const Eigen::Ref<const Eigen::VectorXd>& params) {
         const int total_p = params.size();
         const Eigen::VectorXd beta_event = params.head(m_p);
         const Eigen::VectorXd beta_cens = params.segment(m_p, m_p);
@@ -427,65 +427,109 @@ public:
 // -----------------------------------------------------------------------------
 
 // [[Rcpp::export]]
-Eigen::VectorXd get_clayton_weibull_aft_score_cpp(
-    const Eigen::MatrixXd& X,
-    const Eigen::VectorXd& y,
-    const Eigen::VectorXd& dead,
-    const Eigen::MatrixXi& pair_idx,
-    const Eigen::VectorXi& singleton_rows,
-    const Eigen::VectorXd& params
+SEXP get_clayton_weibull_aft_score_cpp(
+    SEXP X_sexp,
+    SEXP y_sexp,
+    SEXP dead_sexp,
+    SEXP pair_idx_sexp,
+    SEXP singleton_rows_sexp,
+    SEXP params_sexp
 ) {
+    NumericMatrix X_mat(X_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    NumericVector y_vec(y_sexp);
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    NumericVector dead_vec(dead_sexp);
+    Eigen::Map<const Eigen::VectorXd> dead(dead_vec.begin(), dead_vec.size());
+    IntegerMatrix pair_idx_mat(pair_idx_sexp);
+    Eigen::Map<const Eigen::MatrixXi> pair_idx(pair_idx_mat.begin(), pair_idx_mat.nrow(), pair_idx_mat.ncol());
+    IntegerVector singleton_rows_vec(singleton_rows_sexp);
+    Eigen::Map<const Eigen::VectorXi> singleton_rows(singleton_rows_vec.begin(), singleton_rows_vec.size());
+    NumericVector params_vec(params_sexp);
+    Eigen::Map<const Eigen::VectorXd> params(params_vec.begin(), params_vec.size());
+
     ClaytonWeibullLikelihood fun(y, dead, X, pair_idx, singleton_rows);
     Eigen::VectorXd grad(params.size());
     fun(params, grad);
-    return -grad;
+    return wrap(-grad);
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd get_clayton_weibull_aft_hessian_cpp(
-    const Eigen::MatrixXd& X,
-    const Eigen::VectorXd& y,
-    const Eigen::VectorXd& dead,
-    const Eigen::MatrixXi& pair_idx,
-    const Eigen::VectorXi& singleton_rows,
-    const Eigen::VectorXd& params
+SEXP get_clayton_weibull_aft_hessian_cpp(
+    SEXP X_sexp,
+    SEXP y_sexp,
+    SEXP dead_sexp,
+    SEXP pair_idx_sexp,
+    SEXP singleton_rows_sexp,
+    SEXP params_sexp
 ) {
+    NumericMatrix X_mat(X_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    NumericVector y_vec(y_sexp);
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    NumericVector dead_vec(dead_sexp);
+    Eigen::Map<const Eigen::VectorXd> dead(dead_vec.begin(), dead_vec.size());
+    IntegerMatrix pair_idx_mat(pair_idx_sexp);
+    Eigen::Map<const Eigen::MatrixXi> pair_idx(pair_idx_mat.begin(), pair_idx_mat.nrow(), pair_idx_mat.ncol());
+    IntegerVector singleton_rows_vec(singleton_rows_sexp);
+    Eigen::Map<const Eigen::VectorXi> singleton_rows(singleton_rows_vec.begin(), singleton_rows_vec.size());
+    NumericVector params_vec(params_sexp);
+    Eigen::Map<const Eigen::VectorXd> params(params_vec.begin(), params_vec.size());
+
     ClaytonWeibullLikelihood fun(y, dead, X, pair_idx, singleton_rows);
-    return -fun.hessian(params);
+    return wrap(-fun.hessian(params));
 }
 
 // [[Rcpp::export]]
-Eigen::VectorXd get_dep_cens_transform_score_cpp(
-    const Eigen::MatrixXd& X,
-    const Eigen::VectorXd& y,
-    const Eigen::VectorXd& dead,
-    const Eigen::VectorXd& params
+SEXP get_dep_cens_transform_score_cpp(
+    SEXP X_sexp,
+    SEXP y_sexp,
+    SEXP dead_sexp,
+    SEXP params_sexp
 ) {
+    NumericMatrix X_mat(X_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    NumericVector y_vec(y_sexp);
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    NumericVector dead_vec(dead_sexp);
+    Eigen::Map<const Eigen::VectorXd> dead(dead_vec.begin(), dead_vec.size());
+    NumericVector params_vec(params_sexp);
+    Eigen::Map<const Eigen::VectorXd> params(params_vec.begin(), params_vec.size());
+
     DepCensTransformLikelihood fun(y, dead, X);
     Eigen::VectorXd grad(params.size());
     fun(params, grad);
-    return -grad;
+    return wrap(-grad);
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd get_dep_cens_transform_hessian_cpp(
-    const Eigen::MatrixXd& X,
-    const Eigen::VectorXd& y,
-    const Eigen::VectorXd& dead,
-    const Eigen::VectorXd& params
+SEXP get_dep_cens_transform_hessian_cpp(
+    SEXP X_sexp,
+    SEXP y_sexp,
+    SEXP dead_sexp,
+    SEXP params_sexp
 ) {
+    NumericMatrix X_mat(X_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    NumericVector y_vec(y_sexp);
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    NumericVector dead_vec(dead_sexp);
+    Eigen::Map<const Eigen::VectorXd> dead(dead_vec.begin(), dead_vec.size());
+    NumericVector params_vec(params_sexp);
+    Eigen::Map<const Eigen::VectorXd> params(params_vec.begin(), params_vec.size());
+
     DepCensTransformLikelihood fun(y, dead, X);
-    return -fun.hessian(params);
+    return wrap(-fun.hessian(params));
 }
 
 // [[Rcpp::export]]
 List fast_clayton_weibull_aft_optim_cpp(
-    const Eigen::MatrixXd& X,
-    const Eigen::VectorXd& y,
-    const Eigen::VectorXd& dead,
-    const Eigen::MatrixXi& pair_idx,
-    const Eigen::VectorXi& singleton_rows,
-    const Eigen::VectorXd& warm_start_params,
+    SEXP X_sexp,
+    SEXP y_sexp,
+    SEXP dead_sexp,
+    SEXP pair_idx_sexp,
+    SEXP singleton_rows_sexp,
+    SEXP warm_start_params_sexp,
     bool estimate_only = false,
     int maxit = 2000,
     double reltol = 1e-9,
@@ -494,6 +538,19 @@ List fast_clayton_weibull_aft_optim_cpp(
     std::string optimization_alg = "lbfgs",
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
+    NumericMatrix X_mat(X_sexp);
+    NumericVector y_vec(y_sexp);
+    NumericVector dead_vec(dead_sexp);
+    IntegerMatrix pair_idx_int_mat(pair_idx_sexp);
+    IntegerVector singleton_rows_int_vec(singleton_rows_sexp);
+    NumericVector warm_start_params_vec(warm_start_params_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    Eigen::Map<const Eigen::VectorXd> dead(dead_vec.begin(), dead_vec.size());
+    Eigen::Map<const Eigen::MatrixXi> pair_idx(pair_idx_int_mat.begin(), pair_idx_int_mat.nrow(), pair_idx_int_mat.ncol());
+    Eigen::Map<const Eigen::VectorXi> singleton_rows(singleton_rows_int_vec.begin(), singleton_rows_int_vec.size());
+    Eigen::Map<const Eigen::VectorXd> warm_start_params(warm_start_params_vec.begin(), warm_start_params_vec.size());
+
     ClaytonWeibullLikelihood fun(y, dead, X, pair_idx, singleton_rows);
     Eigen::VectorXd params = warm_start_params;
     FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
@@ -554,7 +611,9 @@ List fast_clayton_weibull_aft_optim_cpp(
     }
 
     Eigen::MatrixXd observed_information = fun.hessian(params);
-    Eigen::VectorXd score = get_clayton_weibull_aft_score_cpp(X, y, dead, pair_idx, singleton_rows, params);
+    Eigen::VectorXd score(params.size());
+    fun(params, score);
+    score = -score;
     Eigen::MatrixXd vcov = covariance_from_information(observed_information);
     out["score"] = score;
     out["observed_information"] = observed_information;
@@ -569,9 +628,9 @@ List fast_clayton_weibull_aft_optim_cpp(
 
 // [[Rcpp::export]]
 List fast_dep_cens_transform_optim_cpp(
-    const Eigen::MatrixXd& X,
-    const Eigen::VectorXd& y,
-    const Eigen::VectorXd& dead,
+    SEXP X_sexp,
+    SEXP y_sexp,
+    SEXP dead_sexp,
     Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
     bool smart_cold_start = true,
     bool estimate_only = false,
@@ -582,6 +641,13 @@ List fast_dep_cens_transform_optim_cpp(
     std::string optimization_alg = "lbfgs",
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
+    NumericMatrix X_mat(X_sexp);
+    NumericVector y_vec(y_sexp);
+    NumericVector dead_vec(dead_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    Eigen::Map<const Eigen::VectorXd> dead(dead_vec.begin(), dead_vec.size());
+
     int p = X.cols();
     int total = 2 * p + 3;
     Eigen::VectorXd params(total);
@@ -639,7 +705,9 @@ List fast_dep_cens_transform_optim_cpp(
     }
 
     Eigen::MatrixXd observed_information = fun.hessian(params);
-    Eigen::VectorXd score = get_dep_cens_transform_score_cpp(X, y, dead, params);
+    Eigen::VectorXd score(params.size());
+    fun(params, score);
+    score = -score;
     Eigen::MatrixXd vcov = covariance_from_information(observed_information);
     out["score"] = score;
     out["observed_information"] = observed_information;

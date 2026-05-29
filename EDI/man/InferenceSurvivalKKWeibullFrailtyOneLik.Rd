@@ -9,7 +9,7 @@ Weibull Frailty Combined-Likelihood Inference for KK Designs
 Weibull Frailty Combined-Likelihood Inference for KK Designs
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{EDI::InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{EDI::InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceBayesianBootstrap]{EDI::InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{EDI::InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{EDI::InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{EDI::InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{EDI::InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{EDI::InferenceParamBootstrap}} -> \code{\link[EDI:InferenceAbstractKKWeibullFrailtyOneLik]{EDI::InferenceAbstractKKWeibullFrailtyOneLik}} -> \code{InferenceSurvivalKKWeibullFrailtyOneLik}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{EDI::InferenceRandCI} -> \code{EDI::InferenceNonParamBootstrap} -> \code{EDI::InferenceBayesianBootstrap} -> \code{EDI::InferenceJackknife} -> \code{EDI::InferenceAsymp} -> \code{EDI::InferenceMLEorKMSummaryTable} -> \code{EDI::InferenceAsympLik} -> \code{EDI::InferenceParamBootstrap} -> \code{EDI::InferenceAbstractKKWeibullFrailtyOneLik} -> \code{InferenceSurvivalKKWeibullFrailtyOneLik}
 }
 \section{Methods}{
 \subsection{Public methods}{

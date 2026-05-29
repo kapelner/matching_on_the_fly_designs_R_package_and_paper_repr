@@ -13,7 +13,7 @@ des = DesignMatching$new(n = 6, response_type = "continuous")
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignBlocking]{EDI::DesignBlocking}} -> \code{DesignMatching}
+\code{EDI::Design} -> \code{EDI::DesignBlocking} -> \code{DesignMatching}
 }
 \section{Methods}{
 \subsection{Public methods}{

@@ -5,8 +5,8 @@
 \title{Fast Robust Regression (C++)}
 \usage{
 fast_robust_regression_cpp(
-  X,
-  y,
+  X_sexp,
+  y_sexp,
   warm_start_beta = NULL,
   smart_cold_start = TRUE,
   method = "MM",
@@ -22,10 +22,6 @@ fast_robust_regression_cpp(
 )
 }
 \arguments{
-\item{X}{A numeric matrix of predictors.}
-
-\item{y}{A numeric vector of responses.}
-
 \item{warm_start_beta}{Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.}
 
 \item{method}{Robust estimation method ("M" or "MM").}
@@ -45,6 +41,10 @@ fast_robust_regression_cpp(
 \item{warm_start_weights}{Optional initial working weights for the first IRLS iteration.}
 
 \item{warm_start_fisher_info}{Optional initial Fisher Information matrix for the first IRLS iteration.}
+
+\item{X}{A numeric matrix of predictors.}
+
+\item{y}{A numeric vector of responses.}
 }
 \value{
 A list containing coefficients, weights, and scale estimate.

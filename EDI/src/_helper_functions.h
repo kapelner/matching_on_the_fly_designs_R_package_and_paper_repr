@@ -38,7 +38,7 @@ struct ModelResult {
 };
 
 // Pure C++ internal helpers
-double compute_diagonal_inverse_entry(const Eigen::MatrixXd& M, int j);
+double compute_diagonal_inverse_entry(const Eigen::Ref<const Eigen::MatrixXd>& M, int j);
 
 struct WeibullStart {
     Eigen::VectorXd beta;
@@ -98,8 +98,8 @@ inline bool should_parallelize_replicates(int n_work_items,
            static_cast<long long>(n_work_items) * static_cast<long long>(item_size) >= min_total_work;
 }
 
-template <typename XDerived, typename WDerived>
-inline Eigen::MatrixXd weighted_crossprod(const Eigen::MatrixBase<XDerived>& X,
+template<typename Derived, typename WDerived>
+inline Eigen::MatrixXd weighted_crossprod(const Eigen::MatrixBase<Derived>& X,
                                           const Eigen::MatrixBase<WDerived>& w) {
     const int n = X.rows();
     const int p = X.cols();
@@ -107,14 +107,54 @@ inline Eigen::MatrixXd weighted_crossprod(const Eigen::MatrixBase<XDerived>& X,
         Rcpp::stop("weighted_crossprod: weight vector has incompatible dimensions");
     }
 
-    // X.transpose() * w.asDiagonal() * X is Eigen's idiomatic way to do this.
-    // It is SIMD-vectorized and does NOT materialize the N x N diagonal matrix.
-    // For small p, it's very efficient.
+    if (Derived::IsRowMajor) {
+        Eigen::MatrixXd res = Eigen::MatrixXd::Zero(p, p);
+        for (int i = 0; i < n; ++i) {
+            double wi = w(i);
+            if (wi == 0.0) continue;
+            for (int j = 0; j < p; ++j) {
+                double xij = X(i, j);
+                double w_xij = wi * xij;
+                for (int k = j; k < p; ++k) {
+                    res(j, k) += w_xij * X(i, k);
+                }
+            }
+        }
+        res.triangularView<Eigen::Lower>() = res.transpose();
+        return res;
+    }
+
     return X.transpose() * w.asDiagonal() * X;
 }
 
-template <typename XDerived, typename WDerived, typename YDerived>
-inline Eigen::VectorXd weighted_crossprod_rhs(const Eigen::MatrixBase<XDerived>& X,
+// Overload for Map
+template<typename WDerived>
+inline Eigen::MatrixXd weighted_crossprod(const Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X,
+                                          const Eigen::MatrixBase<WDerived>& w) {
+    const int n = X.rows();
+    const int p = X.cols();
+    if (w.rows() != n) {
+        Rcpp::stop("weighted_crossprod: weight vector has incompatible dimensions");
+    }
+
+    Eigen::MatrixXd res = Eigen::MatrixXd::Zero(p, p);
+    for (int i = 0; i < n; ++i) {
+        double wi = w(i);
+        if (wi == 0.0) continue;
+        for (int j = 0; j < p; ++j) {
+            double xij = X(i, j);
+            double w_xij = wi * xij;
+            for (int k = j; k < p; ++k) {
+                res(j, k) += w_xij * X(i, k);
+            }
+        }
+    }
+    res.triangularView<Eigen::Lower>() = res.transpose();
+    return res;
+}
+
+template <typename Derived, typename WDerived, typename YDerived>
+inline Eigen::VectorXd weighted_crossprod_rhs(const Eigen::MatrixBase<Derived>& X,
                                               const Eigen::MatrixBase<WDerived>& w,
                                               const Eigen::MatrixBase<YDerived>& y) {
     const int n = X.rows();
@@ -123,10 +163,41 @@ inline Eigen::VectorXd weighted_crossprod_rhs(const Eigen::MatrixBase<XDerived>&
         Rcpp::stop("weighted_crossprod_rhs: vectors have incompatible dimensions");
     }
 
-    // X^T * (w .* y) as a single GEMV: column-major X means each column is
-    // contiguous, so this vectorizes fully. The old row-by-row loop accessed
-    // X with stride-n (non-contiguous) and could not be auto-vectorized.
+    if (Derived::IsRowMajor) {
+        Eigen::VectorXd res = Eigen::VectorXd::Zero(p);
+        for (int i = 0; i < n; ++i) {
+            double wi_yi = w(i) * y(i);
+            if (wi_yi == 0.0) continue;
+            for (int j = 0; j < p; ++j) {
+                res(j) += X(i, j) * wi_yi;
+            }
+        }
+        return res;
+    }
+
     return X.transpose() * w.cwiseProduct(y);
+}
+
+// Overload for Map
+template<typename WDerived, typename YDerived>
+inline Eigen::VectorXd weighted_crossprod_rhs(const Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& X,
+                                              const Eigen::MatrixBase<WDerived>& w,
+                                              const Eigen::MatrixBase<YDerived>& y) {
+    const int n = X.rows();
+    const int p = X.cols();
+    if (w.rows() != n || w.cols() != 1 || y.rows() != n || y.cols() != 1) {
+        Rcpp::stop("weighted_crossprod_rhs: vectors have incompatible dimensions");
+    }
+
+    Eigen::VectorXd res = Eigen::VectorXd::Zero(p);
+    for (int i = 0; i < n; ++i) {
+        double wi_yi = w(i) * y(i);
+        if (wi_yi == 0.0) continue;
+        for (int j = 0; j < p; ++j) {
+            res(j) += X(i, j) * wi_yi;
+        }
+    }
+    return res;
 }
 
 struct FixedParamSpec {

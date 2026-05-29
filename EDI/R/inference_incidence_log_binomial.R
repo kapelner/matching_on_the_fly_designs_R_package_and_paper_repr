@@ -18,29 +18,23 @@ InferenceIncidLogBinomial = R6::R6Class("InferenceIncidLogBinomial",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLikStdModCache,
 	public = list(
-				
+
 		#' @description Initialize a log-binomial regression inference object.
 		#' @param des_obj A completed \code{Design} object with an incidence response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		#' @param verbose  		Whether to print progress messages.
+		#' @param verbose               Whether to print progress messages.
 		#' @param smart_cold_start_default   Whether to use smart cold start values.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 			}
-			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
+			super$initialize(des_obj, model_formula = model_formula, verbose = verbose, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-		},
-		#' @description Compute the treatment effect estimate.
-		#' @param estimate_only If TRUE, skip variance component calculations.
-		compute_estimate = function(estimate_only = FALSE){
-			private$shared(estimate_only = estimate_only)
-			private$cached_values$beta_hat_T
 		},
 		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
 		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
@@ -70,27 +64,17 @@ InferenceIncidLogBinomial = R6::R6Class("InferenceIncidLogBinomial",
 				private$cached_values$df = NA_real_
 				return(NA_real_)
 			}
-			private$set_fit_warm_start(res$b, "beta", fisher = res$fisher_information)
+			private$set_fit_warm_start(res$b, "beta", fisher = res$fisher_information, force_pd = TRUE)
 			private$cached_values$beta_hat_T = as.numeric(res$b[2L])
 			private$cached_values$s_beta_hat_T = NA_real_
 			private$cached_values$df = NA_real_
 			private$cached_values$beta_hat_T
-		},
-		#' @description Computes an approximate confidence interval.
-		#' @param alpha Confidence level.
-		compute_asymp_confidence_interval = function(alpha = 0.05){
-			private$shared(estimate_only = FALSE)
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
-		},
-		#' @description Computes an approximate two-sided p-value.
-		#' @param delta Null treatment effect value.
-		compute_asymp_two_sided_pval = function(delta = 0){
-			private$shared(estimate_only = FALSE)
-			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
 	),
 	private = list(
 		best_X_colnames = NULL,
+		logbin_X_full_cache = NULL,
+		logbin_w_cache = NULL,
 		get_complexity_tier = function() "heavy",
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
@@ -121,7 +105,7 @@ InferenceIncidLogBinomial = R6::R6Class("InferenceIncidLogBinomial",
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
-			private$set_fit_warm_start(res$b, "beta", fisher = res$fisher_information)
+			private$set_fit_warm_start(res$b, "beta", fisher = res$fisher_information, force_pd = TRUE)
 			as.numeric(res$b[2])
 		},
 		supports_reusable_bootstrap_worker = function(){
@@ -139,7 +123,7 @@ InferenceIncidLogBinomial = R6::R6Class("InferenceIncidLogBinomial",
 			y_sim      = as.numeric(rbinom(length(mu), 1L, mu))
 			X_fit      = spec$X
 			j          = spec$j
-			
+
 			# Parametric bootstrap: use observed fit as anchor
 			ws_args = private$get_backend_warm_start_args(ncol(X_fit))
 			full_fit_b = tryCatch(
@@ -226,15 +210,61 @@ InferenceIncidLogBinomial = R6::R6Class("InferenceIncidLogBinomial",
 			)
 		},
 		generate_mod = function(estimate_only = FALSE){
-			X_data = private$get_X()
-			X_full = if (is.null(X_data) || ncol(X_data) == 0) {
-				cbind(`(Intercept)` = 1, treatment = private$w)
-			} else {
-				cbind(`(Intercept)` = 1, treatment = private$w, X_data)
+			if (is.null(private$logbin_X_full_cache) || !identical(private$w, private$logbin_w_cache)) {
+				X_data = private$get_X()
+				private$logbin_X_full_cache = if (is.null(X_data) || ncol(X_data) == 0) {
+					cbind(`(Intercept)` = 1, treatment = private$w)
+				} else {
+					cbind(`(Intercept)` = 1, treatment = private$w, X_data)
+				}
+				private$logbin_w_cache = private$w
 			}
+			X_full = private$logbin_X_full_cache
+			
+			if (!private$harden) {
+				ws_args = private$get_backend_warm_start_args(ncol(X_full))
+				if (estimate_only) {
+					res = tryCatch(
+						fast_log_binomial_regression_cpp(
+							X_full, private$y,
+							warm_start_beta = ws_args$warm_start_beta,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default,
+							estimate_only = TRUE
+						),
+						error = function(e) NULL
+					)
+					if (is.null(res)) return(NULL)
+					res$beta_hat_T = as.numeric(res$b[2L])
+					res$ssq_b_j = NA_real_
+					res$ssq_b_2 = NA_real_
+				} else {
+					res = tryCatch(
+						fast_log_binomial_regression_with_var_cpp(
+							X_full, private$y, j = 2L,
+							warm_start_beta = ws_args$warm_start_beta,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default
+						),
+						error = function(e) NULL
+					)
+					if (is.null(res)) return(NULL)
+					res$j_treat = 2L
+					res$beta_hat_T = as.numeric(res$b[2L])
+					res$ssq_b_2 = res$ssq_b_j
+				}
+				private$best_X_colnames = setdiff(colnames(X_full), c("(Intercept)", "treatment"))
+				private$cached_values$likelihood_test_context = list(
+					X = X_full,
+					j_treat = 2L,
+					full_neg_loglik = res$neg_ll
+				)
+				return(res)
+			}
+
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
-				required_cols = 2L,
+				required_cols = 2L, # intercept and treatment
 				fit_fun = function(X_fit, keep){
 					j_treat = which(keep == 2L)
 					ws_args = private$get_backend_warm_start_args(ncol(X_fit))
@@ -249,7 +279,7 @@ InferenceIncidLogBinomial = R6::R6Class("InferenceIncidLogBinomial",
 							error = function(e) NULL
 						)
 						if (is.null(res)) return(NULL)
-						list(b = res$b, ssq_b_j = NA_real_, j_treat = j_treat, fisher_information = res$fisher_information)
+						list(b = res$b, ssq_b_j = NA_real_, j_treat = j_treat, fisher_information = res$fisher_information, neg_ll = res$neg_ll)
 					} else {
 						res = tryCatch(
 							fast_log_binomial_regression_with_var_cpp(
@@ -262,6 +292,7 @@ InferenceIncidLogBinomial = R6::R6Class("InferenceIncidLogBinomial",
 						)
 						if (is.null(res)) return(NULL)
 						res$j_treat = j_treat
+						res$ssq_b_2 = res$ssq_b_j
 						res
 					}
 				},
@@ -270,16 +301,15 @@ InferenceIncidLogBinomial = R6::R6Class("InferenceIncidLogBinomial",
 					j_treat = mod$j_treat
 					if (is.null(mod) || length(mod$b) < j_treat || !is.finite(mod$b[j_treat])) return(FALSE)
 					if (estimate_only) return(TRUE)
-					is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
+					is.finite(mod$ssq_b_j %||% mod$ssq_b_2)
 				}
 			)
 			if (!is.null(attempt$fit)){
-				attempt$fit$ssq_b_2 = attempt$fit$ssq_b_2 %||% attempt$fit$ssq_b_j
-				private$set_fit_warm_start(attempt$fit$b, "beta", fisher = attempt$fit$fisher_information)
 				private$best_X_colnames = setdiff(colnames(attempt$X), c("(Intercept)", "treatment"))
 				private$cached_values$likelihood_test_context = list(
 					X = attempt$X,
-					j_treat = attempt$fit$j_treat
+					j_treat = attempt$fit$j_treat,
+					full_neg_loglik = attempt$fit$neg_ll
 				)
 			} else {
 				private$cached_values$likelihood_test_context = NULL

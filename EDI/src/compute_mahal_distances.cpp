@@ -4,11 +4,19 @@ using namespace Rcpp;
 // [[Rcpp::depends(RcppEigen)]]
 // [[Rcpp::export]]
 Eigen::VectorXd compute_proportional_mahal_distances_cpp(
-	const Eigen::VectorXd& xt_prev,              // fixed vector
-	const Eigen::MatrixXd& X_prev,               // full data matrix
-	const Eigen::VectorXi& reservoir_indices,    // indices (1-based from R)
-	const Eigen::MatrixXd& S_xs_inv)             // inverse covariance matrix
+	SEXP xt_prev_sexp,              // fixed vector
+	SEXP X_prev_sexp,               // full data matrix
+	SEXP reservoir_indices_sexp,    // indices (1-based from R)
+	SEXP S_xs_inv_sexp)             // inverse covariance matrix
 {
+	Rcpp::NumericVector xt_prev_r(xt_prev_sexp);
+	Rcpp::NumericMatrix X_prev_r(X_prev_sexp);
+	Rcpp::IntegerVector reservoir_indices_r(reservoir_indices_sexp);
+	Rcpp::NumericMatrix S_xs_inv_r(S_xs_inv_sexp);
+	Eigen::Map<const Eigen::VectorXd> xt_prev(xt_prev_r.begin(), xt_prev_r.size());
+	Eigen::Map<const Eigen::MatrixXd> X_prev(X_prev_r.begin(), X_prev_r.nrow(), X_prev_r.ncol());
+	Eigen::Map<const Eigen::VectorXi> reservoir_indices(reservoir_indices_r.begin(), reservoir_indices_r.size());
+	Eigen::Map<const Eigen::MatrixXd> S_xs_inv(S_xs_inv_r.begin(), S_xs_inv_r.nrow(), S_xs_inv_r.ncol());
 	const int n_R = reservoir_indices.size();
 	const int p   = xt_prev.size();
 

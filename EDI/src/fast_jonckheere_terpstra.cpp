@@ -1,5 +1,5 @@
 // [[Rcpp::depends(RcppEigen)]]
-#include <Rcpp.h>
+#include <RcppEigen.h>
 #include <algorithm>
 #include <map>
 #include <vector>
@@ -68,19 +68,23 @@ void recurse_jt_distribution(int idx,
 }  // namespace
 
 // [[Rcpp::export]]
-List exact_jonckheere_terpstra_pval_cpp(const IntegerVector& y,
-                                        const IntegerVector& w) {
+List exact_jonckheere_terpstra_pval_cpp(SEXP y_sexp,
+                                        SEXP w_sexp) {
+  IntegerVector y_r(y_sexp);
+  IntegerVector w_r(w_sexp);
+  Eigen::Map<const Eigen::VectorXi> y(y_r.begin(), y_r.size());
+  Eigen::Map<const Eigen::VectorXi> w(w_r.begin(), w_r.size());
   const int n = y.size();
   if (w.size() != n) stop("dimension mismatch in exact_jonckheere_terpstra_pval_cpp");
   if (n == 0) stop("empty input in exact_jonckheere_terpstra_pval_cpp");
 
-  const int* y_ptr = y.begin();
-  const int* w_ptr = w.begin();
+  const int* y_ptr = y.data();
+  const int* w_ptr = w.data();
 
   int n_treat = 0;
   int n_control = 0;
   for (int i = 0; i < n; ++i) {
-    if (IntegerVector::is_na(y_ptr[i]) || IntegerVector::is_na(w_ptr[i])) {
+    if (y_ptr[i] == NA_INTEGER || w_ptr[i] == NA_INTEGER) {
       stop("missing values are not allowed in exact_jonckheere_terpstra_pval_cpp");
     }
     if (w_ptr[i] == 1) {

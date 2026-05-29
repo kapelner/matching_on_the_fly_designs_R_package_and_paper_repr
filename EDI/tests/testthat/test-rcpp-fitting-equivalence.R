@@ -336,7 +336,7 @@ test_that("fast_zinb_cpp is equivalent to glmmTMB", {
 	y <- ifelse(runif(n) < p_zi, 0, rnbinom(n, size = 2, mu = mu))
 	dat <- data.frame(y = y, x1 = X[, 1], x2 = X[, 2])
 	
-	res_cpp <- EDI:::fast_zinb_cpp(cbind(1, X), y, cbind(1, X))
+	res_cpp <- EDI:::fast_zinb_cpp(cbind(1, X), cbind(1, X), y)
 	res_r <- glmmTMB::glmmTMB(y ~ x1 + x2, ziformula = ~ x1 + x2, family = glmmTMB::nbinom2, data = dat)
 	
 	expect_equal(as.numeric(res_cpp$coefficients$cond), as.numeric(glmmTMB::fixef(res_r)$cond), tolerance = 1e-4)

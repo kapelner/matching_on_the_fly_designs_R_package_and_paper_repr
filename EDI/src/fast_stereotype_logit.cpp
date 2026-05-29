@@ -12,14 +12,14 @@ using namespace Eigen;
 
 class StereotypeLogitRegression {
 private:
-    MatrixXd m_X;
+    const Eigen::Ref<const Eigen::MatrixXd> m_X;
     std::vector<int> m_y;
     int m_n;
     int m_p;
     int m_K;
 
 public:
-    StereotypeLogitRegression(const MatrixXd& X, const VectorXd& y) :
+    StereotypeLogitRegression(const Eigen::Ref<const Eigen::MatrixXd>& X, const Eigen::Ref<const Eigen::VectorXd>& y) :
         m_X(X), m_n(X.rows()), m_p(X.cols()), m_K(0) {
         std::vector<double> levels = init_levels(y);
         m_K = static_cast<int>(levels.size());
@@ -34,7 +34,7 @@ public:
         }
     }
 
-    static std::vector<double> init_levels(const VectorXd& y) {
+    static std::vector<double> init_levels(const Eigen::Ref<const Eigen::VectorXd>& y) {
         std::vector<double> levels(y.data(), y.data() + y.size());
         std::sort(levels.begin(), levels.end());
         levels.erase(std::unique(levels.begin(), levels.end()), levels.end());
@@ -61,12 +61,12 @@ public:
     }
 
     void compute_scores(
-        const VectorXd& gamma,
+        const Eigen::Ref<const VectorXd>& gamma,
         std::vector<double>& score_vals,
-        MatrixXd& dscore_dgamma
+        Eigen::Ref<MatrixXd> dscore_dgamma
     ) const {
         score_vals.assign(m_K, 0.0);
-        dscore_dgamma.setZero(m_K, num_gamma());
+        dscore_dgamma.setZero();
 
         if (num_gamma() == 0) {
             if (m_K >= 2) {
@@ -98,9 +98,9 @@ public:
     }
 
     void compute_scores_with_second_derivatives(
-        const VectorXd& gamma,
+        const Eigen::Ref<const VectorXd>& gamma,
         std::vector<double>& score_vals,
-        MatrixXd& dscore_dgamma,
+        Eigen::Ref<MatrixXd> dscore_dgamma,
         std::vector<MatrixXd>& d2score_dgamma2
     ) const {
         const int n_gamma = num_gamma();
@@ -145,7 +145,7 @@ public:
     }
 
     double loglik_grad(
-        const VectorXd& params,
+        const Eigen::Ref<const VectorXd>& params,
         VectorXd* grad = NULL
     ) const {
         const int n_alpha = num_alpha();
@@ -156,11 +156,11 @@ public:
         VectorXd gamma = (n_gamma > 0) ? params.tail(n_gamma) : VectorXd(0);
 
         if (grad != NULL) {
-            grad->setZero(num_params());
+            grad->setZero();
         }
 
         std::vector<double> score_vals;
-        MatrixXd dscore_dgamma;
+        MatrixXd dscore_dgamma(m_K, n_gamma);
         compute_scores(gamma, score_vals, dscore_dgamma);
         const Map<const VectorXd> score_vec(score_vals.data(), m_K);
 
@@ -204,7 +204,7 @@ public:
         return ll;
     }
 
-    MatrixXd loglik_hessian(const VectorXd& params) const {
+    MatrixXd loglik_hessian(const Eigen::Ref<const VectorXd>& params) const {
         const int n_alpha = num_alpha();
         const int n_gamma = num_gamma();
         const int d = num_params();
@@ -213,7 +213,7 @@ public:
         VectorXd gamma = (n_gamma > 0) ? params.tail(n_gamma) : VectorXd(0);
 
         std::vector<double> score_vals;
-        MatrixXd dscore_dgamma;
+        MatrixXd dscore_dgamma(m_K, n_gamma);
         std::vector<MatrixXd> d2score_dgamma2;
         compute_scores_with_second_derivatives(gamma, score_vals, dscore_dgamma, d2score_dgamma2);
         const Map<const VectorXd> score_vec(score_vals.data(), m_K);
@@ -308,7 +308,7 @@ public:
 
     // Fisher information: E[-d2LL/dθ2] = Σ_i [Σ_j p_j z_j z_j^T - mean_z mean_z^T]
     // No d2score/dgamma2 needed — cheap and always PSD.
-    MatrixXd expected_hessian(const VectorXd& params) const {
+    MatrixXd expected_hessian(const Eigen::Ref<const VectorXd>& params) const {
         const int n_alpha = num_alpha();
         const int n_gamma = num_gamma();
         const int d = num_params();
@@ -317,7 +317,7 @@ public:
         const VectorXd gamma = (n_gamma > 0) ? params.tail(n_gamma) : VectorXd(0);
 
         std::vector<double> score_vals;
-        MatrixXd dscore_dgamma;
+        MatrixXd dscore_dgamma(m_K, n_gamma);
         compute_scores(gamma, score_vals, dscore_dgamma);
 
         MatrixXd I = MatrixXd::Zero(d, d);
@@ -385,14 +385,14 @@ public:
 
 static MatrixXd numeric_hessian_from_gradient(
     const StereotypeLogitRegression& model,
-    const VectorXd& params,
+    const Eigen::Ref<const VectorXd>& params,
     double h = 1e-5
 ) {
     (void)h;
     return model.loglik_hessian(params);
 }
 
-static MatrixXd pseudo_inverse_symmetric(const MatrixXd& A, double tol = 1e-8) {
+static MatrixXd pseudo_inverse_symmetric(const Eigen::Ref<const MatrixXd>& A, double tol = 1e-8) {
     JacobiSVD<MatrixXd> svd(A, ComputeThinU | ComputeThinV);
     VectorXd sing = svd.singularValues();
     MatrixXd Dinv = MatrixXd::Zero(sing.size(), sing.size());
@@ -405,7 +405,7 @@ static MatrixXd pseudo_inverse_symmetric(const MatrixXd& A, double tol = 1e-8) {
 }
 
 static VectorXd set_beta_and_pack_nuisance(
-    const VectorXd& nuisance,
+    const Eigen::Ref<const VectorXd>& nuisance,
     double beta_fixed,
     int n_alpha,
     int p,
@@ -438,7 +438,7 @@ static VectorXd set_beta_and_pack_nuisance(
 }
 
 static VectorXd extract_nuisance_params(
-    const VectorXd& params,
+    const Eigen::Ref<const VectorXd>& params,
     int n_alpha,
     int p,
     int n_gamma,
@@ -469,7 +469,7 @@ static VectorXd extract_nuisance_params(
 
 static double nuisance_loglik_grad(
     const StereotypeLogitRegression& model,
-    const VectorXd& nuisance,
+    const Eigen::Ref<const VectorXd>& nuisance,
     double beta_fixed,
     int n_alpha,
     int p,
@@ -488,7 +488,7 @@ static double nuisance_loglik_grad(
 
 static MatrixXd nuisance_numeric_hessian_from_gradient(
     const StereotypeLogitRegression& model,
-    const VectorXd& nuisance,
+    const Eigen::Ref<const VectorXd>& nuisance,
     double beta_fixed,
     int n_alpha,
     int p,
@@ -518,7 +518,7 @@ static MatrixXd nuisance_numeric_hessian_from_gradient(
 
 static VectorXd optimize_nuisance_given_beta(
     const StereotypeLogitRegression& model,
-    const VectorXd& full_params_start,
+    const Eigen::Ref<const VectorXd>& full_params_start,
     double beta_fixed,
     int n_alpha,
     int p,
@@ -574,7 +574,7 @@ static VectorXd optimize_nuisance_given_beta(
 
 static double profile_loglik_for_beta(
     const StereotypeLogitRegression& model,
-    const VectorXd& full_params_start,
+    const Eigen::Ref<const VectorXd>& full_params_start,
     double beta_fixed,
     int n_alpha,
     int p,
@@ -671,15 +671,18 @@ struct StereotypeObjective {
     const StereotypeLogitRegression& model;
     StereotypeObjective(const StereotypeLogitRegression& m) : model(m) {}
 
-    double operator()(const VectorXd& params, VectorXd& grad) const {
-        return -model.loglik_grad(params, &grad);
+    double operator()(const Eigen::Ref<const VectorXd>& params, Eigen::Ref<VectorXd> grad) const {
+        VectorXd g = VectorXd::Zero(params.size());
+        double val = -model.loglik_grad(params, &g);
+        grad = g;
+        return val;
     }
 
-    MatrixXd hessian(const VectorXd& params) const {
+    MatrixXd hessian(const Eigen::Ref<const VectorXd>& params) const {
         return -model.loglik_hessian(params);
     }
 
-    MatrixXd expected_hessian(const VectorXd& params) const {
+    MatrixXd expected_hessian(const Eigen::Ref<const VectorXd>& params) const {
         return model.expected_hessian(params);
     }
 };
@@ -693,13 +696,17 @@ struct StereotypeObjective {
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::VectorXd get_stereotype_logit_score_cpp(const Eigen::MatrixXd& X,
-											   const Eigen::VectorXd& y,
-											   const Eigen::VectorXd& params) {
-	StereotypeLogitRegression model(X, y);
-	Eigen::VectorXd grad(params.size());
-	model.loglik_grad(params, &grad);
-	return grad;
+SEXP get_stereotype_logit_score_cpp(const Rcpp::NumericMatrix& X,
+											   const Rcpp::NumericVector& y,
+											   const Rcpp::NumericVector& params) {
+    Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
+    Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
+    Eigen::Map<const Eigen::VectorXd> map_params(params.begin(), params.size());
+
+	StereotypeLogitRegression model(map_X, map_y);
+	Eigen::VectorXd grad(map_params.size());
+	model.loglik_grad(map_params, &grad);
+	return wrap(grad);
 }
 
 //' @title Compute Stereotype Logit Hessian
@@ -711,11 +718,15 @@ Eigen::VectorXd get_stereotype_logit_score_cpp(const Eigen::MatrixXd& X,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::MatrixXd get_stereotype_logit_hessian_cpp(const Eigen::MatrixXd& X,
-												 const Eigen::VectorXd& y,
-												 const Eigen::VectorXd& params) {
-	StereotypeLogitRegression model(X, y);
-	return model.loglik_hessian(params);
+SEXP get_stereotype_logit_hessian_cpp(const Rcpp::NumericMatrix& X,
+												 const Rcpp::NumericVector& y,
+												 const Rcpp::NumericVector& params) {
+    Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
+    Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
+    Eigen::Map<const Eigen::VectorXd> map_params(params.begin(), params.size());
+
+	StereotypeLogitRegression model(map_X, map_y);
+	return wrap(model.loglik_hessian(map_params));
 }
 
 //' @title Fast Stereotype Logit Regression (C++)
@@ -731,7 +742,7 @@ Eigen::MatrixXd get_stereotype_logit_hessian_cpp(const Eigen::MatrixXd& X,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
+List fast_stereotype_logit_cpp(const Rcpp::NumericMatrix& X, const Rcpp::NumericVector& y, int maxit = 100, double tol = 1e-8,
                                 bool smart_cold_start = true,
                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
@@ -740,7 +751,10 @@ List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
                                 Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
                                 Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                 bool estimate_only = false) {
-    StereotypeLogitRegression model(X, y);
+    Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
+    Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
+
+    StereotypeLogitRegression model(map_X, map_y);
     if (model.num_categories() < 2) {
         stop("Stereotype logistic regression requires at least two observed outcome categories.");
     }
@@ -748,7 +762,7 @@ List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
     VectorXd params = model.initialize_params();
     int n_par = params.size();
     int n_alpha = model.num_alpha();
-    int p = X.cols();
+    int p = map_X.cols();
     
     if (warm_start_params.isNotNull()) {
         params = as<VectorXd>(warm_start_params);
@@ -809,7 +823,7 @@ List fast_stereotype_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
+List fast_stereotype_logit_with_var_cpp(const Rcpp::NumericMatrix& X, const Rcpp::NumericVector& y, int maxit = 100, double tol = 1e-8,
                                          bool smart_cold_start = true,
                                          Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                          Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
@@ -819,7 +833,10 @@ List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::V
                                          Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                          bool estimate_only = false) {
 
-    StereotypeLogitRegression model(X, y);
+    Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
+    Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
+
+    StereotypeLogitRegression model(map_X, map_y);
     if (model.num_categories() < 2) {
         stop("Stereotype logistic regression requires at least two observed outcome categories.");
     }
@@ -832,8 +849,8 @@ List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::V
         if (params.size() != n_par) stop("warm_start_params size mismatch");
     } else if (warm_start_beta.isNotNull()) {
         VectorXd sb = as<VectorXd>(warm_start_beta);
-        if (sb.size() == X.cols()) {
-            params.segment(model.num_alpha(), X.cols()) = sb;
+        if (sb.size() == map_X.cols()) {
+            params.segment(model.num_alpha(), map_X.cols()) = sb;
         }
     }
     // smart_cold_start: alpha from initialize_params() empirical log-ratios; beta/gamma = 0
@@ -854,7 +871,7 @@ List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::V
     MatrixXd info = -H;
 
     int n_alpha = model.num_alpha();
-    int p = X.cols();
+    int p = map_X.cols();
 
     MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);
     int free_j = -1;
@@ -899,21 +916,24 @@ List fast_stereotype_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::V
 //' @keywords internal
 // [[Rcpp::export]]
 double fast_stereotype_profile_loglik_cpp(
-    const Eigen::MatrixXd& X,
-    const Eigen::VectorXd& y,
+    const Rcpp::NumericMatrix& X,
+    const Rcpp::NumericVector& y,
     double beta_fixed,
     int maxit = 100,
     double tol = 1e-8,
     Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
     Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue
 ) {
-    StereotypeLogitRegression model(X, y);
+    Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
+    Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
+
+    StereotypeLogitRegression model(map_X, map_y);
     if (model.num_categories() < 2) {
         stop("Stereotype logistic regression requires at least two observed outcome categories.");
     }
 
     int n_alpha = model.num_alpha();
-    int p = X.cols();
+    int p = map_X.cols();
     int n_gamma = model.num_gamma();
     int total = n_alpha + p + n_gamma;
 
@@ -949,15 +969,18 @@ double fast_stereotype_profile_loglik_cpp(
 //' @return Numeric vector of length nsim with treatment coefficients.
 // [[Rcpp::export]]
 NumericVector compute_stereotype_logit_distr_parallel_cpp(
-	const Eigen::MatrixXd& X,
-	const Eigen::VectorXd& y,
+	const Rcpp::NumericMatrix& X,
+	const Rcpp::NumericVector& y,
 	const Rcpp::IntegerMatrix& w_mat,
 	double delta,
 	int num_cores
 ) {
+    Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
+    Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
+
 	int nsim = w_mat.cols();
-	int n = y.size();
-	int p_covars = X.cols();
+	int n = map_y.size();
+	int p_covars = map_X.cols();
 	int p_full = p_covars + 1; // treatment + covars (no intercept — thresholds handle location)
 
 	std::vector<double> results(nsim, NA_REAL);
@@ -977,9 +1000,9 @@ NumericVector compute_stereotype_logit_distr_parallel_cpp(
 		for (int i = 0; i < n; ++i) {
 			X_full(i, 0) = (double)w_col[i];
 			for (int k = 0; k < p_covars; ++k) {
-				X_full(i, 1 + k) = X(i, k);
+				X_full(i, 1 + k) = map_X(i, k);
 			}
-			y_shifted[i] = (w_col[i] == 1) ? y[i] + delta : y[i];
+			y_shifted[i] = (w_col[i] == 1) ? map_y[i] + delta : map_y[i];
 		}
 
 

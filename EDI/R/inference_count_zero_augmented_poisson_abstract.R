@@ -229,14 +229,14 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) return(NA_real_)
 				private$set_fit_warm_start(as.numeric(fit$params), "params", fisher = fit$fisher_information)
-				return(as.numeric(fit$coefficients$cond[2]))
+				return(as.numeric(fit$params[2]))
 			} else if (private$use_rcpp && !grepl("Negative Binomial", private$za_description())) {
 				is_hurdle = identical(private$za_description(), "Hurdle Poisson")
 				n_params = ncol(X_fit) + ncol(Xzi_fit)
 				ws_args = private$get_backend_warm_start_args(n_params)
 				fit = tryCatch(
 					fast_zero_augmented_poisson_cpp(
-						X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit,
+						X_fit, as.numeric(private$y), Xzi_fit,
 						is_hurdle = is_hurdle,
 						warm_start_params = ws_args$start_params,
 						warm_start_fisher_info = ws_args$warm_start_fisher_info,
@@ -302,9 +302,9 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 						)
 					} else {
 						fast_zero_augmented_poisson_cpp(
-							X = X_fit,
-							y = y,
-							Xzi = Xzi_fit,
+							X_fit,
+							y,
+							Xzi_fit,
 							is_hurdle = is_hurdle,
 							warm_start_params = warm_start_params,
 							warm_start_fisher_info = warm_fisher,
@@ -328,7 +328,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					if (is_zinb) {
 						as.numeric(fit$score %||% get_zinb_score_cpp(X = X_fit, y = y, Xzi = Xzi_fit, params))
 					} else {
-						as.numeric(fit$score %||% get_zero_augmented_poisson_score_cpp(X = X_fit, y = y, Xzi = Xzi_fit, params, is_hurdle = is_hurdle))
+						as.numeric(fit$score %||% get_zero_augmented_poisson_score_cpp(X_fit, y, Xzi_fit, params, is_hurdle = is_hurdle))
 					}
 				},
 				observed_information = function(fit){
@@ -450,7 +450,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					j_treat = 2L,
 					is_hurdle = FALSE
 				)
-				out$beta_hat_T = as.numeric(fit$coefficients$cond[2])
+				out$beta_hat_T = as.numeric(fit$params[2])
 				if (!estimate_only) {
 					se = tryCatch(sqrt(fit$vcov[2, 2]), error = function(e) NA_real_)
 					out$ssq_b_j = if (is.finite(se) && se > 0) se^2 else NA_real_
@@ -464,7 +464,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				ws_args = private$get_backend_warm_start_args(n_params)
 				fit = tryCatch(
 					fast_zero_augmented_poisson_cpp(
-						X = X_fit, y = as.numeric(private$y), Xzi = Xzi_fit,
+						X_fit, as.numeric(private$y), Xzi_fit,
 						is_hurdle = is_hurdle,
 						warm_start_params = ws_args$start_params,
 						warm_start_fisher_info = ws_args$warm_start_fisher_info,
@@ -539,8 +539,14 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			Xzi = spec$Xzi
 			j   = spec$j
 			n   = nrow(X)
-			b_cond = as.numeric(null_fit$coefficients$cond)
-			b_zi   = as.numeric(null_fit$coefficients$zi)
+			if (is_zinb) {
+				p_null = as.numeric(null_fit$params)
+				b_cond = p_null[seq_len(ncol(X))]
+				b_zi   = p_null[ncol(X) + seq_len(ncol(Xzi))]
+			} else {
+				b_cond = as.numeric(null_fit$coefficients$cond)
+				b_zi   = as.numeric(null_fit$coefficients$zi)
+			}
 			lambda = exp(pmin(as.numeric(X %*% b_cond), 20))
 			pi     = plogis(as.numeric(Xzi %*% b_zi))
 			if (is_zinb){
@@ -571,7 +577,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					)
 				} else {
 					fast_zero_augmented_poisson_cpp(
-						X = X, y = as.numeric(y_sim), Xzi = Xzi,
+						X, as.numeric(y_sim), Xzi,
 						is_hurdle = is_hurdle,
 						smart_cold_start = private$smart_cold_start_default,
 						estimate_only = FALSE,
@@ -581,7 +587,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				error = function(e) NULL
 			)
 			if (is.null(full_res) || !isTRUE(full_res$converged)) return(NULL)
-			beta_j = as.numeric(full_res$coefficients$cond[j])
+			beta_j = if (is_zinb) as.numeric(full_res$params[j]) else as.numeric(full_res$coefficients$cond[j])
 			if (!is.finite(beta_j)) return(NULL)
 			if (is.null(full_res$params) && !is.null(full_res$coefficients)){
 				full_res$params = as.numeric(c(full_res$coefficients$cond, full_res$coefficients$zi))
@@ -603,7 +609,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 							)
 						} else {
 							fast_zero_augmented_poisson_cpp(
-								X = X, y = as.numeric(y_sim), Xzi = Xzi,
+								X, as.numeric(y_sim), Xzi,
 								is_hurdle = is_hurdle,
 								warm_start_params = ws,
 								smart_cold_start = private$smart_cold_start_default,

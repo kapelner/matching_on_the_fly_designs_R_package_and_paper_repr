@@ -13,14 +13,14 @@ namespace {
 
 class AdjacentCategoryLogitNegLogLik {
 private:
-    const MatrixXd& m_X;
+    const Eigen::Ref<const MatrixXd> m_X;
     const std::vector<int>& m_y;
     int m_n;
     int m_p;
     int m_K;
 
 public:
-    AdjacentCategoryLogitNegLogLik(const MatrixXd& X, const std::vector<int>& y, int K) :
+    AdjacentCategoryLogitNegLogLik(const Eigen::Ref<const MatrixXd>& X, const std::vector<int>& y, int K) :
         m_X(X), m_y(y), m_n(X.rows()), m_p(X.cols()), m_K(K) {}
 
     double operator()(const VectorXd& params, VectorXd& grad) const {
@@ -167,14 +167,14 @@ public:
     }
 };
 
-std::vector<double> get_levels(const VectorXd& y) {
+std::vector<double> get_levels(const Eigen::Ref<const VectorXd>& y) {
     std::vector<double> levels(y.data(), y.data() + y.size());
     std::sort(levels.begin(), levels.end());
     levels.erase(std::unique(levels.begin(), levels.end()), levels.end());
     return levels;
 }
 
-std::vector<int> map_y_to_1K(const VectorXd& y, const std::vector<double>& levels) {
+std::vector<int> map_y_to_1K(const Eigen::Ref<const VectorXd>& y, const std::vector<double>& levels) {
     int n = y.size();
     int K = levels.size();
     std::vector<int> y_mapped(n);
@@ -189,9 +189,16 @@ std::vector<int> map_y_to_1K(const VectorXd& y, const std::vector<double>& level
 } // namespace
 
 // [[Rcpp::export]]
-Eigen::VectorXd get_adjacent_category_logit_score_cpp(const Eigen::MatrixXd& X,
-                                                      const Eigen::VectorXd& y,
-                                                      const Eigen::VectorXd& params) {
+Eigen::VectorXd get_adjacent_category_logit_score_cpp(SEXP X_sexp,
+                                                      SEXP y_sexp,
+                                                      SEXP params_sexp) {
+    NumericMatrix X_r(X_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    NumericVector y_r(y_sexp);
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+    NumericVector params_r(params_sexp);
+    Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
+
     std::vector<double> levels = get_levels(y);
     std::vector<int> y_mapped = map_y_to_1K(y, levels);
     AdjacentCategoryLogitNegLogLik fun(X, y_mapped, levels.size());
@@ -201,9 +208,16 @@ Eigen::VectorXd get_adjacent_category_logit_score_cpp(const Eigen::MatrixXd& X,
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd get_adjacent_category_logit_hessian_cpp(const Eigen::MatrixXd& X,
-                                                        const Eigen::VectorXd& y,
-                                                        const Eigen::VectorXd& params) {
+Eigen::MatrixXd get_adjacent_category_logit_hessian_cpp(SEXP X_sexp,
+                                                        SEXP y_sexp,
+                                                        SEXP params_sexp) {
+    NumericMatrix X_r(X_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    NumericVector y_r(y_sexp);
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+    NumericVector params_r(params_sexp);
+    Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
+
     std::vector<double> levels = get_levels(y);
     std::vector<int> y_mapped = map_y_to_1K(y, levels);
     AdjacentCategoryLogitNegLogLik fun(X, y_mapped, levels.size());
@@ -227,7 +241,7 @@ Eigen::MatrixXd get_adjacent_category_logit_hessian_cpp(const Eigen::MatrixXd& X
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
+List fast_adjacent_category_logit_cpp(SEXP X_sexp, SEXP y_sexp, int maxit = 100, double tol = 1e-8,
                                         bool smart_cold_start = true,
                                         Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                         Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
@@ -235,6 +249,11 @@ List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::Vec
                                         Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
                                         Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
                                         Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue) {
+    NumericMatrix X_r(X_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    NumericVector y_r(y_sexp);
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+
     std::vector<double> levels = get_levels(y);
     int K = levels.size();
     if (K < 2) {
@@ -299,7 +318,7 @@ List fast_adjacent_category_logit_cpp(const Eigen::MatrixXd& X, const Eigen::Vec
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, int maxit = 100, double tol = 1e-8,
+List fast_adjacent_category_logit_with_var_cpp(SEXP X_sexp, SEXP y_sexp, int maxit = 100, double tol = 1e-8,
                                                 bool smart_cold_start = true,
                                                 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
@@ -307,6 +326,11 @@ List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const E
                                                 Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
                                                 Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
                                                 Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue) {
+    NumericMatrix X_r(X_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    NumericVector y_r(y_sexp);
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+
     std::vector<double> levels = get_levels(y);
     int K = levels.size();
     if (K < 2) {
@@ -373,12 +397,17 @@ List fast_adjacent_category_logit_with_var_cpp(const Eigen::MatrixXd& X, const E
 
 // [[Rcpp::export]]
 NumericVector compute_adj_cat_logit_distr_parallel_cpp(
-    const Eigen::MatrixXd& X,
-    const Eigen::VectorXd& y,
+    SEXP X_sexp,
+    SEXP y_sexp,
     const Rcpp::IntegerMatrix& w_mat,
     double delta,
     int num_cores
 ) {
+    NumericMatrix X_r(X_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    NumericVector y_r(y_sexp);
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+
     int nsim = w_mat.cols();
     int n = y.size();
     int p_covars = X.cols();

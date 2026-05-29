@@ -13,7 +13,7 @@ Abstract class for randomization-based inference.
 }
 \keyword{internal}
 \section{Super class}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{InferenceRand}
+\code{EDI::Inference} -> \code{InferenceRand}
 }
 \section{Methods}{
 \subsection{Public methods}{

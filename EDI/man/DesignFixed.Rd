@@ -19,7 +19,7 @@ des$assign_w_to_all_subjects()
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignBlocking]{EDI::DesignBlocking}} -> \code{\link[EDI:DesignMatching]{EDI::DesignMatching}} -> \code{DesignFixed}
+\code{EDI::Design} -> \code{EDI::DesignBlocking} -> \code{EDI::DesignMatching} -> \code{DesignFixed}
 }
 \section{Methods}{
 \subsection{Public methods}{

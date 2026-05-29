@@ -4,7 +4,12 @@
 \alias{get_identity_binomial_regression_weighted_score_cpp}
 \title{Compute Weighted Identity-Binomial Regression Score}
 \usage{
-get_identity_binomial_regression_weighted_score_cpp(X, y, weights, beta)
+get_identity_binomial_regression_weighted_score_cpp(
+  X_r,
+  y_r,
+  weights_r,
+  beta_sexp
+)
 }
 \arguments{
 \item{X}{A numeric matrix of predictors.}

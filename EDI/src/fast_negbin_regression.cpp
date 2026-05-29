@@ -6,9 +6,9 @@ using namespace Rcpp;
 
 namespace {
 
-double smart_negbin_theta_start_from_beta(const Eigen::MatrixXd& X,
-                                          const Eigen::VectorXi& y,
-                                          const Eigen::VectorXd& beta,
+double smart_negbin_theta_start_from_beta(const Eigen::Ref<const Eigen::MatrixXd>& X,
+                                          const Eigen::Ref<const Eigen::VectorXi>& y,
+                                          const Eigen::Ref<const Eigen::VectorXd>& beta,
                                           double legacy_theta_start) {
     const int n = X.rows();
     const int p = X.cols();
@@ -35,13 +35,13 @@ double smart_negbin_theta_start_from_beta(const Eigen::MatrixXd& X,
 
 class NBLogLik {
 private:
-    const Eigen::MatrixXd m_X;
-    const Eigen::VectorXi m_y;
+    const Eigen::Ref<const Eigen::MatrixXd> m_X;
+    const Eigen::Ref<const Eigen::VectorXi> m_y;
     const int m_n;
     const int m_p;
 
 public:
-    NBLogLik(const Eigen::MatrixXd& X, const Eigen::VectorXi& y) :
+    NBLogLik(const Eigen::Ref<const Eigen::MatrixXd>& X, const Eigen::Ref<const Eigen::VectorXi>& y) :
         m_X(X), m_y(y), m_n(X.rows()), m_p(X.cols()) {}
 
     double operator()(const Eigen::VectorXd& params, Eigen::VectorXd& grad) {
@@ -162,8 +162,8 @@ private:
     }
 };
 
-ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X,
-                                  const Eigen::VectorXi& y,
+ModelResult fast_neg_bin_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
+                                  const Eigen::Ref<const Eigen::VectorXi>& y,
                                   Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
                                   bool smart_cold_start = true,
                                   int maxit = 1000,
@@ -202,7 +202,7 @@ ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X,
     params = apply_fixed_values(params, fixed_spec);
 
     NBLogLik fun(X, y);
-    
+
     Eigen::MatrixXd H_start_val;
     const Eigen::MatrixXd* h_ptr = nullptr;
     if (warm_start_fisher_info.isNotNull()) {
@@ -212,7 +212,7 @@ ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X,
         H_start_val = edi_opt::negbin_smart_hessian(X, params, y);
         h_ptr = &H_start_val;
     }
-    
+
     LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, h_ptr);
     params = fit.params;
 
@@ -236,9 +236,16 @@ ModelResult fast_neg_bin_internal(const Eigen::MatrixXd& X,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::VectorXd get_negbin_regression_score_cpp(const Eigen::MatrixXd& X,
-                                                const Eigen::VectorXi& y,
-                                                const Eigen::VectorXd& params) {
+Eigen::VectorXd get_negbin_regression_score_cpp(SEXP X_sexp,
+                                                SEXP y_sexp,
+                                                SEXP params_sexp) {
+    NumericMatrix X_r(X_sexp);
+    IntegerVector y_r(y_sexp);
+    NumericVector params_r(params_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXi> y(y_r.begin(), y_r.size());
+    Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
+
     NBLogLik fun(X, y);
     Eigen::VectorXd grad(params.size());
     fun(params, grad);
@@ -254,9 +261,16 @@ Eigen::VectorXd get_negbin_regression_score_cpp(const Eigen::MatrixXd& X,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::MatrixXd get_negbin_regression_hessian_cpp(const Eigen::MatrixXd& X,
-                                                  const Eigen::VectorXi& y,
-                                                  const Eigen::VectorXd& params) {
+Eigen::MatrixXd get_negbin_regression_hessian_cpp(SEXP X_sexp,
+                                                  SEXP y_sexp,
+                                                  SEXP params_sexp) {
+    NumericMatrix X_r(X_sexp);
+    IntegerVector y_r(y_sexp);
+    NumericVector params_r(params_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXi> y(y_r.begin(), y_r.size());
+    Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
+
     NBLogLik fun(X, y);
     return -fun.hessian(params);
 }
@@ -282,8 +296,8 @@ Eigen::MatrixXd get_negbin_regression_hessian_cpp(const Eigen::MatrixXd& X,
 //' y = rpois(10, 2)
 //' fast_neg_bin_with_var_cpp(X, y)
 // [[Rcpp::export]]
-List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
-                                Eigen::VectorXi y,
+List fast_neg_bin_with_var_cpp(SEXP X_sexp,
+                                SEXP y_sexp,
                                 Nullable<NumericVector> warm_start_params = R_NilValue,
                                 bool smart_cold_start = false,
                                 int maxit = 1000,
@@ -294,6 +308,11 @@ List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
                                 std::string optimization_alg = "lbfgs",
                                 Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
                                 bool estimate_only = false) {
+    NumericMatrix X_r(X_sexp);
+    IntegerVector y_r(y_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXi> y(y_r.begin(), y_r.size());
+
     ModelResult res = fast_neg_bin_internal(X, y, warm_start_params, smart_cold_start, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols() + 1, fixed_idx, fixed_values);
     Eigen::MatrixXd H_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
@@ -331,8 +350,8 @@ List fast_neg_bin_with_var_cpp(Eigen::MatrixXd X,
 //' y = rpois(10, 2)
 //' fast_neg_bin_cpp(X, y)
 // [[Rcpp::export]]
-List fast_neg_bin_cpp(Eigen::MatrixXd X,
-                        Eigen::VectorXi y,
+List fast_neg_bin_cpp(SEXP X_sexp,
+                        SEXP y_sexp,
                         Nullable<NumericVector> warm_start_params = R_NilValue,
                         bool smart_cold_start = false,
                         int maxit = 1000,
@@ -343,6 +362,11 @@ List fast_neg_bin_cpp(Eigen::MatrixXd X,
                         std::string optimization_alg = "lbfgs",
                         Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
                         bool estimate_only = false) {
+    NumericMatrix X_r(X_sexp);
+    IntegerVector y_r(y_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXi> y(y_r.begin(), y_r.size());
+
     ModelResult res = fast_neg_bin_internal(X, y, warm_start_params, smart_cold_start, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only);
     return List::create(
         Named("b") = res.b,
@@ -353,3 +377,4 @@ List fast_neg_bin_cpp(Eigen::MatrixXd X,
         Named("fisher_information") = res.XtWX
     );
 }
+

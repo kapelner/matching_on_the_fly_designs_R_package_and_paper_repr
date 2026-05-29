@@ -5,8 +5,8 @@
 \title{Fast Beta Regression (C++ Backend)}
 \usage{
 fast_beta_regression_cpp(
-  X,
-  y,
+  X_sexp,
+  y_sexp,
   warm_start_beta = NULL,
   smart_cold_start = TRUE,
   start_phi = 10,
@@ -19,10 +19,6 @@ fast_beta_regression_cpp(
 )
 }
 \arguments{
-\item{X}{A numeric matrix of predictors.}
-
-\item{y}{A numeric vector of responses (in (0, 1)).}
-
 \item{warm_start_beta}{Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.}
 
 \item{smart_cold_start}{Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.}
@@ -38,6 +34,10 @@ fast_beta_regression_cpp(
 \item{optimization_alg}{Optimization algorithm.}
 
 \item{warm_start_fisher_info}{Optional initial Fisher Information matrix for the first IRLS iteration.}
+
+\item{X}{A numeric matrix of predictors.}
+
+\item{y}{A numeric vector of responses (in (0, 1)).}
 }
 \value{
 A list containing the following components:

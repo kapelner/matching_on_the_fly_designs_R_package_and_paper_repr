@@ -32,7 +32,9 @@ inline void clamp_probs(Eigen::VectorXd& v, double lower = 1e-8, double upper = 
 
 class ZeroOneInflatedBeta {
 public:
-	ZeroOneInflatedBeta(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& X_zero_one):
+	ZeroOneInflatedBeta(const Eigen::Ref<const Eigen::VectorXd>& y, 
+	                   const Eigen::Ref<const Eigen::MatrixXd>& X, 
+	                   const Eigen::Ref<const Eigen::MatrixXd>& X_zero_one):
 		m_y(y),
 		m_X(X),
 		m_X_zero_one(X_zero_one),
@@ -65,7 +67,7 @@ public:
 		m_log1_y_beta = (1.0 - m_y_beta.array()).log().matrix();
 	}
 
-	double operator()(const Eigen::VectorXd& params, Eigen::VectorXd& grad){
+	double operator()(const Eigen::Ref<const Eigen::VectorXd>& params, Eigen::Ref<Eigen::VectorXd> grad){
 		Eigen::VectorXd beta = params.head(m_p);
 		double log_phi = params[m_p];
 		double phi = std::exp(log_phi);
@@ -171,7 +173,7 @@ public:
 		return neg_ll;
 	}
 
-	Eigen::MatrixXd hessian(const Eigen::VectorXd& params){
+	Eigen::MatrixXd hessian(const Eigen::Ref<const Eigen::VectorXd>& params){
 		Eigen::MatrixXd H(m_p + 1 + 2 * m_p_zero_one, m_p + 1 + 2 * m_p_zero_one);
 		H.setZero();
 
@@ -285,7 +287,7 @@ public:
 		return H;
 	}
 
-	Eigen::MatrixXd expected_hessian(const Eigen::VectorXd& params){
+	Eigen::MatrixXd expected_hessian(const Eigen::Ref<const Eigen::VectorXd>& params){
 		Eigen::MatrixXd H(m_p + 1 + 2 * m_p_zero_one, m_p + 1 + 2 * m_p_zero_one);
 		H.setZero();
 		const int total_H = m_p + 1 + 2 * m_p_zero_one;
@@ -373,9 +375,9 @@ public:
 	}
 
 private:
-	const Eigen::VectorXd m_y;
-	const Eigen::MatrixXd m_X;
-	const Eigen::MatrixXd m_X_zero_one;
+	Eigen::Ref<const Eigen::VectorXd> m_y;
+	Eigen::Ref<const Eigen::MatrixXd> m_X;
+	Eigen::Ref<const Eigen::MatrixXd> m_X_zero_one;
 	Eigen::MatrixXd m_X_beta;
 	Eigen::VectorXd m_y_beta;
 	Eigen::VectorXd m_log_y_beta;
@@ -389,27 +391,39 @@ private:
 };
 
 // [[Rcpp::export]]
-Eigen::VectorXd get_zero_one_inflated_beta_score_cpp(Eigen::MatrixXd X,
-													 Eigen::MatrixXd X_zero_one,
-													 NumericVector y,
-													 NumericVector params){
-	Eigen::VectorXd y_eigen = Rcpp::as<Eigen::VectorXd>(y);
-	Eigen::VectorXd par = Rcpp::as<Eigen::VectorXd>(params);
-	ZeroOneInflatedBeta fun(y_eigen, X, X_zero_one);
-	Eigen::VectorXd grad(par.size());
-	fun(par, grad);
-	return -grad;
+SEXP get_zero_one_inflated_beta_score_cpp(SEXP X_sexp,
+                                         SEXP X_zero_one_sexp,
+                                         SEXP y_sexp,
+                                         SEXP params_sexp){
+	NumericMatrix X_mat(X_sexp);
+	NumericMatrix X_zero_one_mat(X_zero_one_sexp);
+	NumericVector y_vec(y_sexp);
+	NumericVector params_vec(params_sexp);
+	Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+	Eigen::Map<const Eigen::MatrixXd> X_zero_one(X_zero_one_mat.begin(), X_zero_one_mat.nrow(), X_zero_one_mat.ncol());
+	Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+	Eigen::Map<const Eigen::VectorXd> params(params_vec.begin(), params_vec.size());
+	ZeroOneInflatedBeta fun(y, X, X_zero_one);
+	Eigen::VectorXd grad(params.size());
+	fun(params, grad);
+	return wrap(-grad);
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd get_zero_one_inflated_beta_hessian_cpp(Eigen::MatrixXd X,
-													   Eigen::MatrixXd X_zero_one,
-													   NumericVector y,
-													   NumericVector params){
-	Eigen::VectorXd y_eigen = Rcpp::as<Eigen::VectorXd>(y);
-	Eigen::VectorXd par = Rcpp::as<Eigen::VectorXd>(params);
-	ZeroOneInflatedBeta fun(y_eigen, X, X_zero_one);
-	return -fun.hessian(par);
+SEXP get_zero_one_inflated_beta_hessian_cpp(SEXP X_sexp,
+                                           SEXP X_zero_one_sexp,
+                                           SEXP y_sexp,
+                                           SEXP params_sexp){
+	NumericMatrix X_mat(X_sexp);
+	NumericMatrix X_zero_one_mat(X_zero_one_sexp);
+	NumericVector y_vec(y_sexp);
+	NumericVector params_vec(params_sexp);
+	Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+	Eigen::Map<const Eigen::MatrixXd> X_zero_one(X_zero_one_mat.begin(), X_zero_one_mat.nrow(), X_zero_one_mat.ncol());
+	Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+	Eigen::Map<const Eigen::VectorXd> params(params_vec.begin(), params_vec.size());
+	ZeroOneInflatedBeta fun(y, X, X_zero_one);
+	return wrap(-fun.hessian(params));
 }
 
 //' @title Fast Zero/One-Inflated Beta Regression (C++)
@@ -427,9 +441,9 @@ Eigen::MatrixXd get_zero_one_inflated_beta_hessian_cpp(Eigen::MatrixXd X,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
-									 Eigen::MatrixXd X_zero_one,
-									 NumericVector y,
+List fast_zero_one_inflated_beta_cpp(SEXP X_sexp,
+									 SEXP X_zero_one_sexp,
+									 SEXP y_sexp,
 									 Nullable<NumericVector> warm_start_params = R_NilValue,
 									 bool smart_cold_start = true,
 									 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -438,7 +452,13 @@ List fast_zero_one_inflated_beta_cpp(Eigen::MatrixXd X,
 									 Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
 									 bool estimate_only = false){
 
-	Eigen::VectorXd y_eigen = Rcpp::as<Eigen::VectorXd>(y);
+    NumericMatrix X_r(X_sexp);
+    NumericMatrix X_zero_one_r(X_zero_one_sexp);
+    NumericVector y_r(y_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::MatrixXd> X_zero_one(X_zero_one_r.begin(), X_zero_one_r.nrow(), X_zero_one_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> y_eigen(y_r.begin(), y_r.size());
+
 	int p = X.cols();
 	int p_zero_one = X_zero_one.cols();
 	int total = p + 1 + 2 * p_zero_one;

@@ -175,21 +175,31 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 			dead = private$dead
 			w    = private$w
 			alpha = 0.05 # standard anchor for SE back-calculation
-			fit_T = tryCatch(survival::survfit(survival::Surv(y[w == 1], dead[w == 1]) ~ 1, conf.int = 1 - alpha), error = function(e) NULL)
-			fit_C = tryCatch(survival::survfit(survival::Surv(y[w == 0], dead[w == 0]) ~ 1, conf.int = 1 - alpha), error = function(e) NULL)
 			
-			if (is.null(fit_T) || is.null(fit_C)){
+			# Use a single grouped survfit call to match canonical R performance path
+			fit = tryCatch(survival::survfit(survival::Surv(y, dead) ~ w, conf.int = 1 - alpha), error = function(e) NULL)
+			
+			if (is.null(fit)){
 				private$cached_values$s_beta_hat_T = NA_real_
 				return(invisible(NULL))
 			}
 			
-			q_T = stats::quantile(fit_T, 0.5)
-			q_C = stats::quantile(fit_C, 0.5)
+			q = stats::quantile(fit, 0.5)
+			strata_names = rownames(q$lower)
 			
-			lo_T  = as.numeric(q_T$lower)
-			hi_T  = as.numeric(q_T$upper)
-			lo_C  = as.numeric(q_C$lower)
-			hi_C  = as.numeric(q_C$upper)
+			# Extract bounds for treatment (w=1) and control (w=0)
+			idx_T = which(strata_names == "w=1")
+			idx_C = which(strata_names == "w=0")
+			
+			if (length(idx_T) != 1L || length(idx_C) != 1L) {
+				private$cached_values$s_beta_hat_T = NA_real_
+				return(invisible(NULL))
+			}
+			
+			lo_T = as.numeric(q$lower[idx_T, 1])
+			hi_T = as.numeric(q$upper[idx_T, 1])
+			lo_C = as.numeric(q$lower[idx_C, 1])
+			hi_C = as.numeric(q$upper[idx_C, 1])
 			
 			if (!is.finite(lo_T) || !is.finite(hi_T) || !is.finite(lo_C) || !is.finite(hi_C)){
 				private$cached_values$s_beta_hat_T = NA_real_

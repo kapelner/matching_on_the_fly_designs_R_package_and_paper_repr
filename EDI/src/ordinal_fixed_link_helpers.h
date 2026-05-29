@@ -96,9 +96,9 @@ inline int level_index(const std::vector<double>& levels, double y) {
 
 class FixedOrdinalRegression {
 private:
-    const Eigen::MatrixXd m_X;
-    const Eigen::VectorXd m_y;
-    const Eigen::VectorXd m_weights;
+    const Eigen::Ref<const Eigen::MatrixXd> m_X;
+    const Eigen::Ref<const Eigen::VectorXd> m_y;
+    const Eigen::Ref<const Eigen::VectorXd> m_weights;
     const std::vector<double> m_levels;
     const int m_n;
     const int m_p;
@@ -114,7 +114,7 @@ private:
         return m_use_weights ? std::max(m_weights[i], 0.0) : 1.0;
     }
 
-    bool validate_params(const Eigen::VectorXd& params) const {
+    bool validate_params(const Eigen::Ref<const Eigen::VectorXd>& params) const {
         const int n_alpha = m_K - 1;
         if (params.size() != n_alpha + m_p) return false;
         for (int k = 1; k < n_alpha; ++k) {
@@ -126,9 +126,9 @@ private:
     void add_endpoint_derivatives(int alpha_idx,
                                   double z,
                                   double endpoint_sign,
-                                  const Eigen::RowVectorXd& x,
-                                  Eigen::VectorXd& dq,
-                                  Eigen::MatrixXd& d2q) const {
+                                  const Eigen::Ref<const Eigen::RowVectorXd>& x,
+                                  Eigen::Ref<Eigen::VectorXd> dq,
+                                  Eigen::Ref<Eigen::MatrixXd> d2q) const {
         m_scratch_v.setZero();
         m_scratch_v[alpha_idx] = 1.0;
         m_scratch_v.tail(m_p) = m_eta_sign * x.transpose();
@@ -142,31 +142,30 @@ private:
     void add_endpoint_gradient(int alpha_idx,
                                double z,
                                double endpoint_sign,
-                               const Eigen::RowVectorXd& x,
-                               Eigen::VectorXd& dq) const {
-        const int n_alpha = m_K - 1;
+                               const Eigen::Ref<const Eigen::RowVectorXd>& x,
+                               Eigen::Ref<Eigen::VectorXd> dq) const {
         const double f = pdf(m_link, z);
         dq[alpha_idx] += endpoint_sign * f;
         dq.tail(m_p).noalias() += endpoint_sign * f * m_eta_sign * x.transpose();
     }
 
 public:
-    FixedOrdinalRegression(const Eigen::MatrixXd& X,
-                           const Eigen::VectorXd& y,
+    FixedOrdinalRegression(const Eigen::Ref<const Eigen::MatrixXd>& X,
+                           const Eigen::Ref<const Eigen::VectorXd>& y,
                            Link link,
                            double eta_sign,
-                           const Eigen::VectorXd& weights = Eigen::VectorXd()) :
+                           const Eigen::Ref<const Eigen::VectorXd>& weights = Eigen::VectorXd()) :
         m_X(X), m_y(y), m_weights(weights), m_levels(init_levels(y)), m_n(X.rows()), m_p(X.cols()),
         m_K(m_levels.size()), m_link(link), m_eta_sign(eta_sign), m_use_weights(weights.size() == X.rows()),
         m_scratch_dq((m_K - 1) + m_p),
         m_scratch_d2q((m_K - 1) + m_p, (m_K - 1) + m_p),
         m_scratch_v((m_K - 1) + m_p) {}
 
-    static std::vector<double> init_levels_static(const Eigen::VectorXd& y) {
+    static std::vector<double> init_levels_static(const Eigen::Ref<const Eigen::VectorXd>& y) {
         return init_levels(y);
     }
 
-    double neg_log_likelihood(const Eigen::VectorXd& params) const {
+    double neg_log_likelihood(const Eigen::Ref<const Eigen::VectorXd>& params) const {
         if (!validate_params(params)) return 1e10;
         const int n_alpha = m_K - 1;
         const Eigen::VectorXd alpha = params.head(n_alpha);
@@ -185,9 +184,9 @@ public:
         return nll;
     }
 
-    double operator()(const Eigen::VectorXd& params, Eigen::VectorXd& grad) const {
+    double operator()(const Eigen::Ref<const Eigen::VectorXd>& params, Eigen::Ref<Eigen::VectorXd> grad) const {
         const int n_params = params.size();
-        grad = Eigen::VectorXd::Zero(n_params);
+        grad.setZero();
         if (!validate_params(params)) return 1e10;
 
         const int n_alpha = m_K - 1;
@@ -218,7 +217,7 @@ public:
         return nll;
     }
 
-    Eigen::MatrixXd hessian(const Eigen::VectorXd& params) const {
+    Eigen::MatrixXd hessian(const Eigen::Ref<const Eigen::VectorXd>& params) const {
         const int n_params = params.size();
         Eigen::MatrixXd H = Eigen::MatrixXd::Zero(n_params, n_params);
         if (!validate_params(params)) {
@@ -312,7 +311,7 @@ public:
         return H;
     }
 
-    Eigen::MatrixXd expected_hessian(const Eigen::VectorXd& params) const {
+    Eigen::MatrixXd expected_hessian(const Eigen::Ref<const Eigen::VectorXd>& params) const {
         const int n_params = params.size();
         Eigen::MatrixXd H = Eigen::MatrixXd::Zero(n_params, n_params);
         if (!validate_params(params)) return H;
@@ -327,7 +326,6 @@ public:
         std::vector<std::vector<double>> grad_pi(m_K, std::vector<double>(n_params, 0.0));
         std::vector<double> f(n_alpha, 0.0);
         std::vector<double> p(n_alpha, 0.0);
-        std::vector<double> v_k(n_params, 0.0);
 
         for (int i = 0; i < m_n; ++i) {
             const double eta_i = eta[i];

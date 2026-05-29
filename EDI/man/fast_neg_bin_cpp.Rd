@@ -5,8 +5,8 @@
 \title{Fast Negative Binomial Regression (C++ Backend)}
 \usage{
 fast_neg_bin_cpp(
-  X,
-  y,
+  X_sexp,
+  y_sexp,
   warm_start_params = NULL,
   smart_cold_start = FALSE,
   maxit = 1000L,
@@ -20,10 +20,6 @@ fast_neg_bin_cpp(
 )
 }
 \arguments{
-\item{X}{A numeric matrix of predictors.}
-
-\item{y}{A numeric vector of responses.}
-
 \item{warm_start_params}{Optional starting values for coefficients and dispersion. If provided, \code{smart_cold_start} is ignored.}
 
 \item{smart_cold_start}{Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.}
@@ -41,6 +37,10 @@ fast_neg_bin_cpp(
 \item{optimization_alg}{Optimization algorithm.}
 
 \item{warm_start_fisher_info}{Optional initial Fisher Information matrix for the first IRLS iteration.}
+
+\item{X}{A numeric matrix of predictors.}
+
+\item{y}{A numeric vector of responses.}
 }
 \value{
 A list containing the following components:

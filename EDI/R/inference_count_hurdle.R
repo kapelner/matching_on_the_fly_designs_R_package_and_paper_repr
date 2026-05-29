@@ -334,6 +334,9 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 				}
 				colnames(X_hurdle) = colnames(X_hurdle_full)[reduced_hurdle$keep]
 				private$best_hurdle_X_colnames = setdiff(colnames(X_hurdle), c("(Intercept)", "treatment"))
+			} else if (identical(private$model_formula, ~ .) && identical(private$model_formula_hurdle, ~ .)) {
+				hurdle_cols = c("(Intercept)", "treatment", private$best_hurdle_X_colnames)
+				X_hurdle = X_full[, hurdle_cols[hurdle_cols %in% colnames(X_full)], drop = FALSE]
 			} else {
 				X_hurdle = private$build_component_matrix(private$model_formula_hurdle, private$best_hurdle_X_colnames, treatment_name = "treatment")
 			}

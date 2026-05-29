@@ -5,9 +5,9 @@
 \title{Fast Weighted Identity-Binomial Regression (C++)}
 \usage{
 fast_identity_binomial_regression_weighted_cpp(
-  X,
-  y,
-  weights,
+  X_r,
+  y_r,
+  weights_r,
   maxit = 100L,
   tol = 1e-08,
   fixed_idx = NULL,
@@ -15,16 +15,11 @@ fast_identity_binomial_regression_weighted_cpp(
   warm_start_beta = NULL,
   smart_cold_start = TRUE,
   warm_start_weights = NULL,
-  warm_start_fisher_info = NULL
+  warm_start_fisher_info = NULL,
+  estimate_only = FALSE
 )
 }
 \arguments{
-\item{X}{A numeric matrix of predictors.}
-
-\item{y}{A binary numeric vector of responses.}
-
-\item{weights}{A nonnegative numeric vector of observation weights.}
-
 \item{maxit}{Maximum number of iterations.}
 
 \item{tol}{Convergence tolerance.}
@@ -38,6 +33,12 @@ fast_identity_binomial_regression_weighted_cpp(
 \item{warm_start_weights}{Optional initial working weights for the first IRLS iteration.}
 
 \item{warm_start_fisher_info}{Optional initial Fisher Information matrix for the first IRLS iteration.}
+
+\item{X}{A numeric matrix of predictors.}
+
+\item{y}{A binary numeric vector of responses.}
+
+\item{weights}{A nonnegative numeric vector of observation weights.}
 }
 \value{
 A list containing coefficients and fitted values.

@@ -165,7 +165,7 @@ make_edi_bm = function(cls_name, d) {
 
         InferenceCountHurdlePoisson     = quote(fast_zero_augmented_poisson_cpp(X_bm, y_bm, X_bm, is_hurdle = TRUE,  estimate_only = TRUE)),
         InferenceCountZeroInflatedPoisson = quote(fast_zero_augmented_poisson_cpp(X_bm, y_bm, X_bm, is_hurdle = FALSE, estimate_only = TRUE)),
-        InferenceCountZeroInflatedNegBin  = quote(fast_zinb_cpp(X_bm, y_bm, X_bm, estimate_only = TRUE)),
+        InferenceCountZeroInflatedNegBin  = quote(fast_zinb_cpp(X_bm, X_bm, y_bm, estimate_only = TRUE)),
         InferenceCountHurdleNegBin      = quote(EDI:::fast_hurdle_negbin_cpp(X_bm, as.integer(y_bm), X_bm, estimate_only = TRUE)),
 
         # No EDI C++ kernel — pre-build R6 object outside timed region, time compute_estimate() only
@@ -514,8 +514,6 @@ format_pval_stars = function(x) {
 row_bg_color = function(speedup, pval) {
   if (!is.finite(speedup) || is.na(pval)) return("#eceff1")
   if (pval < 0.05 && speedup > 1) return("#d9fdd3")
-  if (pval < 0.05 && speedup < 1) return("#ffd9d9")
-  if (pval >= 0.05) return("#fff4bf")
   ""
 }
 format_ms = function(x) {
@@ -550,11 +548,117 @@ dt$Canonical_Time_ms, dt$Speedup, dt$Timing_Pval, dt$Timing_Pval_Stars, dt$Timin
 SIMPLIFY = TRUE, USE.NAMES = FALSE)
 table_lines = c(table_lines, table_rows, "  </tbody>", "</table>")
 
+cmd_config = function(var) {
+  out = tryCatch(
+    system2(file.path(R.home("bin"), "R"), c("CMD", "config", var), stdout = TRUE, stderr = TRUE),
+    error = function(e) character(0)
+  )
+  out = out[nzchar(out)]
+  if (length(out) == 0L || any(grepl("^ERROR:", out))) "unavailable" else paste(out, collapse = " ")
+}
+
+env_flag = function(var, default) {
+  val = Sys.getenv(var, unset = NA_character_)
+  if (is.na(val) || !nzchar(val)) default else val
+}
+
+compile_context_lines = function() {
+  if (exists("edi_build_info_cpp", mode = "function")) {
+    info = tryCatch(edi_build_info_cpp(), error = function(e) NULL)
+    if (!is.null(info)) {
+      so_path = file.path(system.file("libs", package = "EDI"), paste0("EDI", .Platform$dynlib.ext))
+      so_info = if (file.exists(so_path)) file.info(so_path) else NULL
+      return(c(
+        "## Compilation Context",
+        "",
+        "These rows are read from build metadata compiled into the loaded `EDI` shared object via `edi_build_info_cpp()`.",
+        "",
+        "**Compilation warning:** EDI model-fit timings are sensitive to the compiler flags used to build the loaded `EDI.so`. If EDI is compiled without the proper optimized flags, or with flags that are known to degrade these kernels such as problematic LTO builds, the benchmark can show substantial performance regressions that reflect the binary build rather than the modeling algorithms.",
+        "",
+        paste0("*   **EDI shared object:** `", so_path, "`"),
+        paste0("*   **EDI shared object mtime:** `", if (!is.null(so_info)) format(so_info$mtime) else "unknown", "`"),
+        paste0("*   **Capture method:** `", info$capture_method, "`"),
+        paste0("*   **Build timestamp:** `", info$build_timestamp, "`"),
+        paste0("*   **Build host:** `", info$build_host, "`"),
+        paste0("*   **R version at build:** `", info$r_version, "`"),
+        paste0("*   **R `CXX20` at build:** `", info$r_cxx20, "`"),
+        paste0("*   **R `CXX20STD` at build:** `", info$r_cxx20std, "`"),
+        paste0("*   **R `CXX20FLAGS` at build:** `", info$r_cxx20flags, "`"),
+        paste0("*   **R `SHLIB_OPENMP_CXXFLAGS` at build:** `", info$r_shlib_openmp_cxxflags, "`"),
+        paste0("*   **Build env at build:** `EDI_PORTABLE=", info$env_edi_portable,
+               "`, `EDI_DISABLE_VECTORIZATION=", info$env_edi_disable_vectorization,
+               "`, `EDI_NATIVE_SPEED=", info$env_edi_native_speed,
+               "`, `EDI_NATIVE_LTO=", info$env_edi_native_lto, "`"),
+        paste0("*   **Package `PKG_CPPFLAGS` at build:** `", info$pkg_cppflags, "`"),
+        paste0("*   **Package `PKG_CXXFLAGS` at build:** `", info$pkg_cxxflags, "`"),
+        paste0("*   **Package `PKG_LIBS` at build:** `", info$pkg_libs, "`"),
+        paste0("*   **Compiler reported by binary:** `", info$compiler, "`"),
+        paste0("*   **Compiler optimization macro enabled:** `", info$compiler_optimize_macro, "`"),
+        paste0("*   **Compiler fast-math macro enabled:** `", info$compiler_fast_math_macro, "`"),
+        paste0("*   **Eigen vectorization disabled macro enabled:** `", info$eigen_dont_vectorize_macro, "`"),
+        ""
+      ))
+    }
+  }
+
+  edi_portable = env_flag("EDI_PORTABLE", "0")
+  edi_disable_vectorization = env_flag("EDI_DISABLE_VECTORIZATION", "0")
+  edi_native_speed = env_flag("EDI_NATIVE_SPEED", "1")
+  edi_native_lto = env_flag("EDI_NATIVE_LTO", "0")
+
+  pkg_cppflags = "-I../inst/include"
+  pkg_cxxflags = "$(SHLIB_OPENMP_CXXFLAGS) -DNDEBUG -DEIGEN_NO_DEBUG -Wno-ignored-attributes"
+  pkg_libs = "$(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -ltbb12 -fstack-protector"
+
+  if (identical(edi_portable, "0")) {
+    pkg_cxxflags = paste(pkg_cxxflags, "-march=native -mtune=native")
+  }
+  if (identical(edi_disable_vectorization, "1")) {
+    pkg_cppflags = paste(pkg_cppflags, "-DEIGEN_DONT_VECTORIZE -DEIGEN_UNALIGNED_VECTORIZE=0")
+    pkg_cxxflags = paste(pkg_cxxflags, "-fno-tree-vectorize")
+  }
+  if (identical(edi_native_speed, "1")) {
+    pkg_cxxflags = paste(pkg_cxxflags, "override CXXFLAGS+=-O3")
+  }
+  if (identical(edi_native_lto, "1")) {
+    pkg_cxxflags = paste(pkg_cxxflags, "-flto")
+    pkg_libs = paste(pkg_libs, "-flto")
+  } else {
+    pkg_cxxflags = paste(pkg_cxxflags, "-fno-lto")
+  }
+
+  c(
+    "## Compilation Context",
+    "",
+    "The installed EDI package does not expose compiled-in build metadata via `edi_build_info_cpp()`. These rows therefore record only the current toolchain and `EDI/src/Makevars`-derived context visible to the benchmark process; they are not proof of the flags used to build the loaded `EDI.so`.",
+    "",
+    "**Compilation warning:** EDI model-fit timings are sensitive to the compiler flags used to build the loaded `EDI.so`. If EDI is compiled without the proper optimized flags, or with flags that are known to degrade these kernels such as problematic LTO builds, the benchmark can show substantial performance regressions that reflect the binary build rather than the modeling algorithms.",
+    "",
+    paste0("*   **EDI library path:** `", system.file(package = "EDI"), "`"),
+    paste0("*   **R version:** `", R.version.string, "`"),
+    paste0("*   **R `CXX20`:** `", cmd_config("CXX20"), "`"),
+    paste0("*   **R `CXX20STD`:** `", cmd_config("CXX20STD"), "`"),
+    paste0("*   **R `CXX20FLAGS`:** `", cmd_config("CXX20FLAGS"), "`"),
+    paste0("*   **R `SHLIB_OPENMP_CXXFLAGS`:** `", cmd_config("SHLIB_OPENMP_CXXFLAGS"), "`"),
+    paste0("*   **Build env:** `EDI_PORTABLE=", edi_portable,
+           "`, `EDI_DISABLE_VECTORIZATION=", edi_disable_vectorization,
+           "`, `EDI_NATIVE_SPEED=", edi_native_speed,
+           "`, `EDI_NATIVE_LTO=", edi_native_lto, "`"),
+    paste0("*   **Effective package `PKG_CPPFLAGS`:** `", pkg_cppflags, "`"),
+    paste0("*   **Effective package `PKG_CXXFLAGS`:** `", pkg_cxxflags, "`"),
+    paste0("*   **Effective package `PKG_LIBS`:** `", pkg_libs, "`"),
+    ""
+  )
+}
+
 report = c(
   "# EDI Exhaustive C++ Model Fit Benchmarks",
   "",
+  paste0("_Generated: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"), "_"),
+  "",
   "This report compares the performance of EDI's Rcpp-optimized model fitting paths against **low-level** canonical R implementations (e.g., `glm.fit`, `lm.fit`, `coxph.fit`) where possible.",
   "",
+  compile_context_lines(),
   "## Benchmark Dataset Specification",
   "",
   "All benchmarks were performed on a synthetic clinical-trial-scale dataset generated for each response type. The data generation process ensures numerical stability and fair solver comparison by using the following parameters:",
@@ -580,7 +684,7 @@ report = c(
   "*   **Limitation:** Some canonical comparators only expose formula-based APIs. Those rows remain included but their canonical timings carry formula/model-frame overhead not present in the EDI bare-metal timing.",
   paste0("*   **Averaging:** All timings are medians over ", B_TIME, " cold estimate-only timing samples measured with adaptive batched `system.time`; paths below ", FAST_PATH_THRESHOLD_MS, " ms use `microbenchmark(times = ", FAST_PATH_MICROBENCH_REPS, ")` instead."),
   "*   **Timing P-Value:** `Timing Pval` reports a Welch two-sample t-test comparing the EDI and canonical timing replicate distributions for each row. The unlabeled final column marks thresholds with `***` for p < 0.001, `**` for p < 0.01, and `*` for p < 0.05.",
-  "*   **Row Highlighting:** Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light red rows indicate `Speedup < 1` and `Timing Pval < 0.05`; light yellow rows indicate `Timing Pval >= 0.05`; light grey rows indicate `NA` timing comparisons.",
+  "*   **Row Highlighting:** Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light grey rows indicate `NA` timing comparisons.",
   "*   **Constraints**: Matched-pair/KK and highly custom paths are excluded as per user request.",
   "",
   "## Results",

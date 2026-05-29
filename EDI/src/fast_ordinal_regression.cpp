@@ -26,26 +26,26 @@ private:
     edi_ordinal::FixedOrdinalRegression m_model;
 
 public:
-    OrdinalRegression(const MatrixXd& X, const VectorXd& y, const VectorXd& weights = VectorXd()) :
+    OrdinalRegression(const Eigen::Ref<const Eigen::MatrixXd>& X, const Eigen::Ref<const Eigen::VectorXd>& y, const Eigen::Ref<const Eigen::VectorXd>& weights = Eigen::VectorXd()) :
         m_model(X, y, edi_ordinal::Link::Logit, -1.0, weights) {}
 
-    static std::vector<double> init_levels(const VectorXd& y) {
+    static std::vector<double> init_levels(const Eigen::Ref<const Eigen::VectorXd>& y) {
         return edi_ordinal::init_levels(y);
     }
 
-    double neg_log_likelihood(const VectorXd& params) const {
+    double neg_log_likelihood(const Eigen::Ref<const Eigen::VectorXd>& params) const {
         return m_model.neg_log_likelihood(params);
     }
 
-    double operator()(const VectorXd& params, VectorXd& grad) const {
+    double operator()(const Eigen::Ref<const Eigen::VectorXd>& params, Eigen::Ref<Eigen::VectorXd> grad) const {
         return m_model(params, grad);
     }
 
-    MatrixXd hessian(const VectorXd& params) const {
+    MatrixXd hessian(const Eigen::Ref<const Eigen::VectorXd>& params) const {
         return m_model.hessian(params);
     }
 
-    MatrixXd expected_hessian(const VectorXd& params) const {
+    MatrixXd expected_hessian(const Eigen::Ref<const Eigen::VectorXd>& params) const {
         return m_model.expected_hessian(params);
     }
 };
@@ -61,11 +61,15 @@ public:
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::VectorXd get_ordinal_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params) {
-    OrdinalRegression model(X, y);
-    Eigen::VectorXd grad(params.size());
-    model(params, grad);
-    return -grad;
+SEXP get_ordinal_regression_score_cpp(const Rcpp::NumericMatrix& X, const Rcpp::NumericVector& y, const Rcpp::NumericVector& params) {
+    Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
+    Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
+    Eigen::Map<const Eigen::VectorXd> map_params(params.begin(), params.size());
+    
+    OrdinalRegression model(map_X, map_y);
+    Eigen::VectorXd grad(map_params.size());
+    model(map_params, grad);
+    return wrap(-grad);
 }
 
 //' @title Compute Ordinal Regression Hessian
@@ -77,9 +81,13 @@ Eigen::VectorXd get_ordinal_regression_score_cpp(const Eigen::MatrixXd& X, const
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::MatrixXd get_ordinal_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& params) {
-    OrdinalRegression model(X, y);
-    return -model.hessian(params);
+SEXP get_ordinal_regression_hessian_cpp(const Rcpp::NumericMatrix& X, const Rcpp::NumericVector& y, const Rcpp::NumericVector& params) {
+    Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
+    Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
+    Eigen::Map<const Eigen::VectorXd> map_params(params.begin(), params.size());
+    
+    OrdinalRegression model(map_X, map_y);
+    return wrap(-model.hessian(map_params));
 }
 
 // Simple solver using Newton-Raphson as we have a small number of parameters (usually)
@@ -99,15 +107,18 @@ Eigen::MatrixXd get_ordinal_regression_hessian_cpp(const Eigen::MatrixXd& X, con
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, Nullable<NumericVector> warm_start_params = R_NilValue, bool smart_cold_start = true, int maxit = 100, double tol = 1e-6,
+List fast_ordinal_regression_cpp(const Rcpp::NumericMatrix& X, const Rcpp::NumericVector& y, Nullable<NumericVector> warm_start_params = R_NilValue, bool smart_cold_start = true, int maxit = 100, double tol = 1e-6,
                                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                   Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                   std::string optimization_alg = "lbfgs",
                                   Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
                                   bool estimate_only = false) {
-    OrdinalRegression model(X, y);
-    int p = X.cols();
-    int K = OrdinalRegression::init_levels(y).size();
+    Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
+    Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
+
+    OrdinalRegression model(map_X, map_y);
+    int p = map_X.cols();
+    int K = OrdinalRegression::init_levels(map_y).size();
     int n_alpha = K - 1;
     int n_params = n_alpha + p;
 
@@ -126,9 +137,9 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
         
         if (smart_cold_start) {
             // Use OLS on rank-transformed y
-            Eigen::VectorXd y_rank = (y.array() - 1.0) / static_cast<double>(K - 1);
+            Eigen::VectorXd y_rank = (map_y.array() - 1.0) / static_cast<double>(K - 1);
             Eigen::VectorXd beta;
-            if (edi_opt::robust_ols_solve(X, y_rank, beta)) {
+            if (edi_opt::robust_ols_solve(map_X, y_rank, beta)) {
                 legacy_start.beta = beta;
             }
         }
@@ -193,18 +204,22 @@ List fast_ordinal_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_ordinal_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& weights,
+List fast_ordinal_regression_weighted_cpp(const Rcpp::NumericMatrix& X, const Rcpp::NumericVector& y, const Rcpp::NumericVector& weights,
                                           Nullable<NumericVector> warm_start_params = R_NilValue, bool smart_cold_start = true, int maxit = 100, double tol = 1e-6,
                                           Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                           Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                           std::string optimization_alg = "lbfgs",
                                           Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-    if (weights.size() != X.rows()) {
+    Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
+    Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
+    Eigen::Map<const Eigen::VectorXd> map_weights(weights.begin(), weights.size());
+
+    if (map_weights.size() != map_X.rows()) {
         stop("weights must have length equal to nrow(X)");
     }
-    OrdinalRegression model(X, y, weights);
-    int p = X.cols();
-    int K = OrdinalRegression::init_levels(y).size();
+    OrdinalRegression model(map_X, map_y, map_weights);
+    int p = map_X.cols();
+    int K = OrdinalRegression::init_levels(map_y).size();
     int n_alpha = K - 1;
     int n_params = n_alpha + p;
 
@@ -223,9 +238,9 @@ List fast_ordinal_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen:
         
         if (smart_cold_start) {
             // Use OLS on rank-transformed y
-            Eigen::VectorXd y_rank = (y.array() - 1.0) / static_cast<double>(K - 1);
+            Eigen::VectorXd y_rank = (map_y.array() - 1.0) / static_cast<double>(K - 1);
             Eigen::VectorXd beta;
-            if (edi_opt::robust_ols_solve(X, y_rank, beta)) {
+            if (edi_opt::robust_ols_solve(map_X, y_rank, beta)) {
                 legacy_start.beta = beta;
             }
         }
@@ -277,7 +292,7 @@ List fast_ordinal_regression_weighted_cpp(const Eigen::MatrixXd& X, const Eigen:
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y,
+List fast_ordinal_regression_with_var_cpp(const Rcpp::NumericMatrix& X, const Rcpp::NumericVector& y,
                                            Nullable<NumericVector> warm_start_params = R_NilValue,
                                            bool smart_cold_start = true,
                                            int maxit = 100, double tol = 1e-6,
@@ -288,7 +303,11 @@ List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
     List res = fast_ordinal_regression_cpp(X, y, warm_start_params, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
     VectorXd params = res["params"];
     bool converged = res["converged"];
-    OrdinalRegression model(X, y);
+    
+    Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
+    Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
+
+    OrdinalRegression model(map_X, map_y);
     MatrixXd H = model.expected_hessian(params);
     
     int n_params = params.size();
@@ -314,7 +333,7 @@ List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
     MatrixXd vcov_free = lu.inverse();
     MatrixXd vcov_full = expand_free_covariance(n_params, fixed_spec, vcov_free, true);
 
-    int p = X.cols();
+    int p = map_X.cols();
     int n_alpha = n_params - p;
     
     // We want the variance of the first covariate after alphas (which is often the treatment)
@@ -337,28 +356,33 @@ List fast_ordinal_regression_with_var_cpp(const Eigen::MatrixXd& X, const Eigen:
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List ordinal_gcomp_post_fit_cpp(const Eigen::MatrixXd& X_fit,
-                                const Eigen::VectorXd& y,
-                                const Eigen::VectorXd& coef_hat,
-                                const Eigen::VectorXd& alpha_hat,
+List ordinal_gcomp_post_fit_cpp(const Rcpp::NumericMatrix& X_fit,
+                                const Rcpp::NumericVector& y,
+                                const Rcpp::NumericVector& coef_hat,
+                                const Rcpp::NumericVector& alpha_hat,
                                 int j_treat) {
-    const int n = X_fit.rows();
-    const int p = X_fit.cols();
-    const int n_alpha = alpha_hat.size();
+    Eigen::Map<const Eigen::MatrixXd> map_X_fit(X_fit.begin(), X_fit.rows(), X_fit.cols());
+    Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
+    Eigen::Map<const Eigen::VectorXd> map_coef_hat(coef_hat.begin(), coef_hat.size());
+    Eigen::Map<const Eigen::VectorXd> map_alpha_hat(alpha_hat.begin(), alpha_hat.size());
+
+    const int n = map_X_fit.rows();
+    const int p = map_X_fit.cols();
+    const int n_alpha = map_alpha_hat.size();
     const int j_treat0 = j_treat - 1;
 
     if (j_treat0 < 0 || j_treat0 >= p) {
         stop("treatment column index is out of bounds");
     }
-    if (y.size() != n || coef_hat.size() != p) {
+    if (map_y.size() != n || map_coef_hat.size() != p) {
         stop("dimension mismatch in ordinal_gcomp_post_fit_cpp");
     }
 
     VectorXd params(n_alpha + p);
-    params.head(n_alpha) = alpha_hat;
-    params.tail(p) = coef_hat;
+    params.head(n_alpha) = map_alpha_hat;
+    params.tail(p) = map_coef_hat;
 
-    OrdinalRegression model(X_fit, y);
+    OrdinalRegression model(map_X_fit, map_y);
     MatrixXd H = model.expected_hessian(params);
     FullPivLU<MatrixXd> lu(H);
     if (!lu.isInvertible()) {
@@ -375,19 +399,19 @@ List ordinal_gcomp_post_fit_cpp(const Eigen::MatrixXd& X_fit,
         }
     }
 
-    MatrixXd X1 = X_fit;
-    MatrixXd X0 = X_fit;
+    MatrixXd X1 = map_X_fit;
+    MatrixXd X0 = map_X_fit;
     X1.col(j_treat0).setOnes();
     X0.col(j_treat0).setZero();
-    VectorXd eta1 = X1 * coef_hat;
-    VectorXd eta0 = X0 * coef_hat;
+    VectorXd eta1 = X1 * map_coef_hat;
+    VectorXd eta0 = X0 * map_coef_hat;
 
     auto compute_mean = [&](const VectorXd& eta_vec) {
         double total_mean = 0.0;
         for (int i = 0; i < n; ++i) {
             double mean_i = 1.0;
             for (int k = 0; k < n_alpha; ++k) {
-                mean_i += plogis_stable_cpp(eta_vec[i] - alpha_hat[k]);
+                mean_i += plogis_stable_cpp(eta_vec[i] - map_alpha_hat[k]);
             }
             total_mean += mean_i;
         }
@@ -458,7 +482,7 @@ List ordinal_gcomp_post_fit_cpp(const Eigen::MatrixXd& X_fit,
     for (int j = 0; j < p; ++j) {
         const double var_j = vcov_beta(j, j);
         std_err[j] = (R_finite(var_j) && var_j >= 0.0) ? std::sqrt(var_j) : NA_REAL;
-        z_vals[j] = (R_finite(std_err[j]) && std_err[j] > 0.0) ? coef_hat[j] / std_err[j] : NA_REAL;
+        z_vals[j] = (R_finite(std_err[j]) && std_err[j] > 0.0) ? map_coef_hat[j] / std_err[j] : NA_REAL;
     }
 
     return List::create(
@@ -482,19 +506,23 @@ List ordinal_gcomp_post_fit_cpp(const Eigen::MatrixXd& X_fit,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List expand_continuation_ratio_data_cpp(const Eigen::VectorXi& y, const Eigen::VectorXi& w, const Eigen::VectorXi& strata, int K) {
-    int n = y.size();
+List expand_continuation_ratio_data_cpp(const Rcpp::IntegerVector& y, const Rcpp::IntegerVector& w, const Rcpp::IntegerVector& strata, int K) {
+    Eigen::Map<const Eigen::VectorXi> map_y(y.begin(), y.size());
+    Eigen::Map<const Eigen::VectorXi> map_w(w.begin(), w.size());
+    Eigen::Map<const Eigen::VectorXi> map_strata(strata.begin(), strata.size());
+
+    int n = map_y.size();
     int n_alpha = K - 1;
-    int num_strata = strata.maxCoeff();
+    int num_strata = map_strata.maxCoeff();
     
     std::vector<int> y_stack;
     std::vector<int> w_stack;
     std::vector<int> strata_stack;
     
     for (int i = 0; i < n; ++i) {
-        int yi = y[i];
-        int wi = w[i];
-        int si = strata[i];
+        int yi = map_y[i];
+        int wi = map_w[i];
+        int si = map_strata[i];
         
         for (int j = 1; j <= std::min(yi, n_alpha); ++j) {
             y_stack.push_back((yi == j) ? 1 : 0);
@@ -520,19 +548,23 @@ List expand_continuation_ratio_data_cpp(const Eigen::VectorXi& y, const Eigen::V
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List expand_adjacent_category_data_cpp(const Eigen::VectorXi& y, const Eigen::VectorXi& w, const Eigen::VectorXi& strata, int K) {
-    int n = y.size();
+List expand_adjacent_category_data_cpp(const Rcpp::IntegerVector& y, const Rcpp::IntegerVector& w, const Rcpp::IntegerVector& strata, int K) {
+    Eigen::Map<const Eigen::VectorXi> map_y(y.begin(), y.size());
+    Eigen::Map<const Eigen::VectorXi> map_w(w.begin(), w.size());
+    Eigen::Map<const Eigen::VectorXi> map_strata(strata.begin(), strata.size());
+
+    int n = map_y.size();
     int n_alpha = K - 1;
-    int num_strata = strata.maxCoeff();
+    int num_strata = map_strata.maxCoeff();
     
     std::vector<int> y_stack;
     std::vector<int> w_stack;
     std::vector<int> strata_stack;
     
     for (int i = 0; i < n; ++i) {
-        int yi = y[i];
-        int wi = w[i];
-        int si = strata[i];
+        int yi = map_y[i];
+        int wi = map_w[i];
+        int si = map_strata[i];
         
         for (int j = 1; j <= n_alpha; ++j) {
             if (yi == j || yi == j + 1) {

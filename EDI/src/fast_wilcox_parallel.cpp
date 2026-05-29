@@ -59,16 +59,21 @@ double compute_single_wilcox_stat(int n, const double* y_ptr, const int* w_vec, 
 
 // [[Rcpp::export]]
 NumericVector compute_wilcox_distr_parallel_cpp(
-    const IntegerMatrix& w_mat,
-    const NumericVector& y,
+    SEXP w_mat_sexp,
+    SEXP y_sexp,
     double delta,
     int num_cores) {
+
+  IntegerMatrix w_int_mat(w_mat_sexp);
+  NumericVector y_vec(y_sexp);
+  Eigen::Map<const Eigen::MatrixXi> w_mat(w_int_mat.begin(), w_int_mat.nrow(), w_int_mat.ncol());
+  Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
 
   int n = y.size();
   int nsim = w_mat.cols();
   std::vector<double> results_vec(nsim);
-  const double* y_ptr = y.begin();
-  const int* w_ptr = w_mat.begin();
+  const double* y_ptr = y.data();
+  const int* w_ptr = w_mat.data();
   const bool use_parallel = should_parallelize_replicates(nsim, n, num_cores);
 
 #ifdef _OPENMP
@@ -131,14 +136,16 @@ NumericVector compute_wilcox_distr_parallel_cpp(
 // [[Rcpp::export]]
 NumericVector compute_wilcox_distr_from_list_parallel_cpp(
     const List& permutations,
-    const NumericVector& y,
+    SEXP y_sexp,
     double delta,
     int num_cores) {
 
+  NumericVector y_vec(y_sexp);
+  Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
   int n = y.size();
   int nsim = permutations.size();
   std::vector<double> results_vec(nsim);
-  const double* y_ptr = y.begin();
+  const double* y_ptr = y.data();
   const bool use_parallel = should_parallelize_replicates(nsim, n, num_cores);
 
 #ifdef _OPENMP

@@ -43,7 +43,7 @@ GHRuleHP gauss_hermite_rule_hp(int n) {
 	return rule;
 }
 
-inline double log_sum_exp_hp(const Eigen::VectorXd& x) {
+inline double log_sum_exp_hp(const Eigen::Ref<const Eigen::VectorXd>& x) {
 	const double m = x.maxCoeff();
 	if (!std::isfinite(m)) return m;
 	return m + std::log((x.array() - m).exp().sum());
@@ -126,11 +126,11 @@ struct HurdlePoissonGLMMData {
 	GHRuleHP gh;
 
 	HurdlePoissonGLMMData(
-		const Eigen::MatrixXd& X,
-		const Eigen::VectorXd& y,
+		const Eigen::Ref<const Eigen::MatrixXd>& X,
+		const Eigen::Ref<const Eigen::VectorXd>& y,
 		const std::vector<int>& group_id,
 		int n_gh
-	) : n(X.rows()), p(X.cols()), gh(gauss_hermite_rule_hp(n_gh)) {
+	) : n((int)X.rows()), p((int)X.cols()), gh(gauss_hermite_rule_hp(n_gh)) {
 
 		std::vector<int> ord(n);
 		std::iota(ord.begin(), ord.end(), 0);
@@ -167,7 +167,7 @@ class HurdlePoissonGLMMObjective {
 public:
 	explicit HurdlePoissonGLMMObjective(const HurdlePoissonGLMMData& d) : dat(d) {}
 
-	double operator()(const Eigen::VectorXd& par, Eigen::VectorXd& grad) {
+	double operator()(const Eigen::Ref<const Eigen::VectorXd>& par, Eigen::Ref<VectorXd> grad) {
 		const double log_sigma = par[dat.p];
 		const double sigma     = std::exp(log_sigma);
 		const Eigen::VectorXd beta   = par.head(dat.p);
@@ -175,7 +175,7 @@ public:
 		const int n_nodes = (int)b_vals.size();
 
 		double total_nll = soft_barrier_hp(log_sigma);
-		grad.setZero(dat.p + 1);
+		grad.setZero();
 		const double center = 5.0, scale = 10.0;
 		const double d = std::abs(log_sigma) - center;
 		if (d > 0.0) grad[dat.p] += 2.0 * scale * d * (log_sigma > 0 ? 1.0 : -1.0);
@@ -200,7 +200,7 @@ public:
 			}
 
 			const double ll_g = log_sum_exp_hp(log_terms);
-			if (!std::isfinite(ll_g)) { grad.setZero(dat.p + 1); return 1e100; }
+			if (!std::isfinite(ll_g)) { grad.setZero(); return 1e100; }
 			total_nll -= ll_g;
 
 			for (int k = 0; k < n_nodes; ++k) {
@@ -217,7 +217,7 @@ public:
 		return total_nll;
 	}
 
-	Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
+	Eigen::MatrixXd hessian(const Eigen::Ref<const Eigen::VectorXd>& par) {
 		const int total = dat.p + 1;
 		const double log_sigma = par[dat.p];
 		const double sigma = std::exp(log_sigma);
@@ -288,12 +288,20 @@ public:
 
 // [[Rcpp::export]]
 Eigen::VectorXd get_hurdle_poisson_glmm_score_cpp(
-	const Eigen::MatrixXd& X,
-	const Eigen::VectorXd& y,
-	const Eigen::VectorXi& group_id,
-	const Eigen::VectorXd& params,
+	SEXP X_r,
+	SEXP y_r,
+	SEXP group_id_r,
+	SEXP params_sexp,
 	int n_gh = 7
 ) {
+	NumericMatrix X_mat(X_r);
+	NumericVector y_vec(y_r);
+	IntegerVector group_id_int(group_id_r);
+	NumericVector params_r(params_sexp);
+	Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+	Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+	Eigen::Map<const Eigen::VectorXi> group_id(group_id_int.begin(), group_id_int.size());
+	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
 	std::vector<int> pos_idx;
 	pos_idx.reserve(X.rows());
 	for (int i = 0; i < X.rows(); ++i) {
@@ -319,12 +327,20 @@ Eigen::VectorXd get_hurdle_poisson_glmm_score_cpp(
 
 // [[Rcpp::export]]
 Eigen::MatrixXd get_hurdle_poisson_glmm_hessian_cpp(
-	const Eigen::MatrixXd& X,
-	const Eigen::VectorXd& y,
-	const Eigen::VectorXi& group_id,
-	const Eigen::VectorXd& params,
+	SEXP X_r,
+	SEXP y_r,
+	SEXP group_id_r,
+	SEXP params_sexp,
 	int n_gh = 7
 ) {
+	NumericMatrix X_mat(X_r);
+	NumericVector y_vec(y_r);
+	IntegerVector group_id_int(group_id_r);
+	NumericVector params_r(params_sexp);
+	Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+	Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+	Eigen::Map<const Eigen::VectorXi> group_id(group_id_int.begin(), group_id_int.size());
+	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
 	std::vector<int> pos_idx;
 	pos_idx.reserve(X.rows());
 	for (int i = 0; i < X.rows(); ++i) {
@@ -349,12 +365,20 @@ Eigen::MatrixXd get_hurdle_poisson_glmm_hessian_cpp(
 
 // [[Rcpp::export]]
 double get_hurdle_poisson_glmm_neg_loglik_cpp(
-	const Eigen::MatrixXd& X,
-	const Eigen::VectorXd& y,
-	const Eigen::VectorXi& group_id,
-	const Eigen::VectorXd& params,
+	SEXP X_r,
+	SEXP y_r,
+	SEXP group_id_r,
+	SEXP params_sexp,
 	int n_gh = 7
 ) {
+	NumericMatrix X_mat(X_r);
+	NumericVector y_vec(y_r);
+	IntegerVector group_id_int(group_id_r);
+	NumericVector params_r(params_sexp);
+	Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+	Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+	Eigen::Map<const Eigen::VectorXi> group_id(group_id_int.begin(), group_id_int.size());
+	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
 	std::vector<int> pos_idx;
 	pos_idx.reserve(X.rows());
 	for (int i = 0; i < X.rows(); ++i) {
@@ -377,9 +401,9 @@ double get_hurdle_poisson_glmm_neg_loglik_cpp(
 
 // [[Rcpp::export]]
 List fast_hurdle_poisson_glmm_cpp(
-	const Eigen::MatrixXd& X,
-	const Eigen::VectorXd& y,
-	const Eigen::VectorXi& group_id,
+	SEXP X_r,
+	SEXP y_r,
+	SEXP group_id_r,
 	int j_T,
 	Nullable<NumericVector> warm_start_params = R_NilValue,
 	bool smart_cold_start = true,
@@ -392,8 +416,14 @@ List fast_hurdle_poisson_glmm_cpp(
 	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
 	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
-	const int n_all = X.rows();
-	const int p     = X.cols();
+	NumericMatrix X_mat(X_r);
+	NumericVector y_vec(y_r);
+	IntegerVector group_id_int(group_id_r);
+	Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+	Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+	Eigen::Map<const Eigen::VectorXi> group_id(group_id_int.begin(), group_id_int.size());
+	const int n_all = (int)X.rows();
+	const int p     = (int)X.cols();
 	const int total = p + 1;
 
 	// Filter to positive-count observations (truncated Poisson component)

@@ -38,8 +38,8 @@ struct LMMData {
     int p;
     int G;  // number of groups
 
-    LMMData(const Eigen::VectorXd& y,
-            const Eigen::MatrixXd& X,
+    LMMData(const Eigen::Ref<const VectorXd>& y,
+            const Eigen::Ref<const MatrixXd>& X,
             const std::vector<int>& gid)   // 0-based group ids, length n
         : n(y.size()), p(X.cols())
     {
@@ -91,8 +91,8 @@ struct LMMData {
 // where W_g = Q_g - (v_b/a_g)·S_g²
 
 double neg_ll_and_grad(const LMMData& dat,
-                       const Eigen::VectorXd& par,
-                       Eigen::VectorXd& grad)
+                       const Eigen::Ref<const Eigen::VectorXd>& par,
+                       Eigen::Ref<VectorXd> grad)
 {
     const int p = dat.p, n = dat.n;
     const Eigen::VectorXd beta = par.head(p);
@@ -171,10 +171,10 @@ double neg_ll_and_grad(const LMMData& dat,
 }
 
 Eigen::MatrixXd lmm_analytic_hessian(const LMMData& dat,
-                                     const Eigen::VectorXd& par)
+                                     const Eigen::Ref<const Eigen::VectorXd>& par)
 {
     const int p = dat.p;
-    const int k = p + 2;
+    const int k = (int)par.size();
     const Eigen::VectorXd beta = par.head(p);
     const double v_e = std::exp(2.0 * par[p]);
     const double v_b = std::exp(2.0 * par[p + 1]);
@@ -264,7 +264,7 @@ public:
 
 // ── Hessian of neg_ll (for Fisher info / vcov) ─────────────────────────────
 Eigen::MatrixXd lmm_fisher_hessian(const LMMData& dat,
-                                   const Eigen::VectorXd& par,
+                                   const Eigen::Ref<const Eigen::VectorXd>& par,
                                    double h_rel = 1e-4)
 {
     (void)h_rel;
@@ -297,9 +297,9 @@ Eigen::VectorXd make_start(const LMMData& dat)
 // ── R-exported: fit Gaussian LMM ─────────────────────────────────────────────
 // [[Rcpp::export]]
 List fast_gaussian_lmm_cpp(
-    const Eigen::MatrixXd& X,       // n × p, intercept in col 0, treatment in col 1
-    const Eigen::VectorXd& y,
-    const Eigen::VectorXi& group_id, // 1-based group IDs (length n)
+    SEXP X_r,       // n × p, intercept in col 0, treatment in col 1
+    SEXP y_r,
+    SEXP group_id_r, // 1-based group IDs (length n)
     Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
     Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
     bool  estimate_only = false,
@@ -310,13 +310,21 @@ List fast_gaussian_lmm_cpp(
     std::string optimization_alg = "lbfgs",
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    IntegerVector group_id_int(group_id_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    Eigen::Map<const Eigen::VectorXi> group_id(group_id_int.begin(), group_id_int.size());
+
     const int n = y.size(), p = X.cols();
 
     // Convert group_id to 0-based sorted integer IDs
     std::vector<int> gid(n);
     {
         // Map R group ids (any positive integers) to 0-based consecutive ints
-        std::vector<int> gid_r(group_id.data(), group_id.data() + n);
+        const int* gid_ptr = group_id.data();
+        std::vector<int> gid_r(gid_ptr, gid_ptr + n);
         std::vector<int> uniq = gid_r;
         std::sort(uniq.begin(), uniq.end());
         uniq.erase(std::unique(uniq.begin(), uniq.end()), uniq.end());
@@ -417,15 +425,25 @@ List fast_gaussian_lmm_cpp(
 // ── R-exported: score (gradient of log_lik) at arbitrary par ─────────────────
 // [[Rcpp::export]]
 NumericVector get_gaussian_lmm_score_cpp(
-    const Eigen::MatrixXd& X,
-    const Eigen::VectorXd& y,
-    const Eigen::VectorXi& group_id,
-    const Eigen::VectorXd& par
+    SEXP X_r,
+    SEXP y_r,
+    SEXP group_id_r,
+    SEXP par_sexp
 ) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    IntegerVector group_id_int(group_id_r);
+    NumericVector par_r(par_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    Eigen::Map<const Eigen::VectorXi> group_id(group_id_int.begin(), group_id_int.size());
+    Eigen::Map<const Eigen::VectorXd> par(par_r.begin(), par_r.size());
+
     const int n = y.size();
     std::vector<int> gid(n);
     {
-        std::vector<int> gid_r(group_id.data(), group_id.data() + n);
+        const int* gid_ptr = group_id.data();
+        std::vector<int> gid_r(gid_ptr, gid_ptr + n);
         std::vector<int> uniq = gid_r;
         std::sort(uniq.begin(), uniq.end());
         uniq.erase(std::unique(uniq.begin(), uniq.end()), uniq.end());
@@ -443,16 +461,26 @@ NumericVector get_gaussian_lmm_score_cpp(
 // ── R-exported: observed Fisher information (Hessian of neg_ll) at par ───────
 // [[Rcpp::export]]
 NumericMatrix get_gaussian_lmm_fisher_cpp(
-    const Eigen::MatrixXd& X,
-    const Eigen::VectorXd& y,
-    const Eigen::VectorXi& group_id,
-    const Eigen::VectorXd& par,
+    SEXP X_r,
+    SEXP y_r,
+    SEXP group_id_r,
+    SEXP par_sexp,
     double h_rel = 1e-4
 ) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    IntegerVector group_id_int(group_id_r);
+    NumericVector par_r(par_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    Eigen::Map<const Eigen::VectorXi> group_id(group_id_int.begin(), group_id_int.size());
+    Eigen::Map<const Eigen::VectorXd> par(par_r.begin(), par_r.size());
+
     const int n = y.size();
     std::vector<int> gid(n);
     {
-        std::vector<int> gid_r(group_id.data(), group_id.data() + n);
+        const int* gid_ptr = group_id.data();
+        std::vector<int> gid_r(gid_ptr, gid_ptr + n);
         std::vector<int> uniq = gid_r;
         std::sort(uniq.begin(), uniq.end());
         uniq.erase(std::unique(uniq.begin(), uniq.end()), uniq.end());

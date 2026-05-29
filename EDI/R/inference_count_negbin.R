@@ -18,14 +18,14 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 	lock_objects = FALSE,
 	inherit = InferenceCountLikelihood,
 	public = list(
-				
+
 		#' @description Initialize a negative binomial regression inference object.
 		#' @param des_obj A completed \code{Design} object with a count response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
-		#' @param verbose  		Whether to print progress messages.
+		#' @param verbose               Whether to print progress messages.
 		#' @param smart_cold_start_default Whether to use smart optimizer start values by default.
 		#' @param optimization_alg  Optimization algorithm to use. Default is dispatched via policy.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = NULL, optimization_alg = NULL){
@@ -111,7 +111,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 				private$cached_values$beta_hat_T = as.numeric(fallback$b[2L])
 				private$cached_values$s_beta_hat_T = NA_real_
 				private$cached_values$df = NA_real_
-				private$set_fit_warm_start(as.numeric(fallback$b), "beta", fisher = fallback$fisher_information)
+				private$set_fit_warm_start(as.numeric(fallback$b), "beta", fisher = fallback$fisher_information, force_pd = TRUE)
 				return(private$cached_values$beta_hat_T)
 			}
 			private$cached_values$beta_hat_T = as.numeric(attempt$fit$b[2L])
@@ -120,13 +120,16 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 			private$set_fit_warm_start(
 				c(as.numeric(attempt$fit$b), log(as.numeric(attempt$fit$theta_hat))),
 				"params",
-				fisher = attempt$fit$fisher_information
+				fisher = attempt$fit$fisher_information,
+				force_pd = TRUE
 			)
 			private$cached_values$beta_hat_T
 		}
 	),
 	private = list(
 		best_X_colnames = NULL,
+		negbin_X_full_cache = NULL,
+		negbin_w_cache = NULL,
 		get_complexity_tier = function() "heavy",
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (is.null(private$best_X_colnames)){
@@ -157,7 +160,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
 			}
-			private$set_fit_warm_start(c(as.numeric(res$b), log(as.numeric(res$theta_hat))), "params", fisher = res$fisher_information)
+			private$set_fit_warm_start(c(as.numeric(res$b), log(as.numeric(res$theta_hat))), "params", fisher = res$fisher_information, force_pd = TRUE)
 			as.numeric(res$b[2])
 		},
 		supports_reusable_bootstrap_worker = function(){
@@ -205,9 +208,11 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 						error = function(e) NULL
 					)
 					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
-					list(b = as.numeric(res$b), theta_hat = res$theta_hat, neg_loglik = -as.numeric(res$logLik))
+					res
 				},
-				neg_loglik = function(fit) as.numeric(fit$neg_loglik)
+				neg_loglik = function(fit){
+					-as.numeric(fit$logLik)
+				}
 			)
 		},
 		get_likelihood_test_spec = function(){
@@ -215,60 +220,104 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 			ctx = private$cached_values$likelihood_test_context
 			if (is.null(ctx) || is.null(private$cached_mod)) return(NULL)
 			X_fit = ctx$X
-			y = as.integer(private$y)
+			y = as.numeric(private$y)
 			j_treat = as.integer(ctx$j_treat)
 			list(
-				X = X_fit, y = y, j = j_treat,
+				X = X_fit,
+				y = y,
+				j = j_treat,
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
 					ws_args = private$get_backend_warm_start_args(ncol(X_fit) + 1L)
+					fast_neg_bin_cpp(
+						X = X_fit,
+						y = as.integer(y),
+						warm_start_params = start %||% ws_args$start_params,
+						warm_start_fisher_info = ws_args$warm_start_fisher_info,
+						fixed_idx = j_treat,
+						fixed_values = delta,
+						smart_cold_start = private$smart_cold_start_default,
+						optimization_alg = private$optimization_alg
+					)
+				},
+				extract_start = function(fit){
+					c(as.numeric(fit$b), log(as.numeric(fit$theta_hat)))
+				},
+				score = function(fit){
+					get_negbin_regression_score_cpp(X_fit, y, c(as.numeric(fit$b), log(as.numeric(fit$theta_hat))))
+				},
+				observed_information = function(fit){
+					-get_negbin_regression_hessian_cpp(X_fit, y, c(as.numeric(fit$b), log(as.numeric(fit$theta_hat))))
+				},
+				fisher_information = function(fit){
+					-get_negbin_regression_hessian_cpp(X_fit, y, c(as.numeric(fit$b), log(as.numeric(fit$theta_hat))))
+				},
+				information = function(fit){
+					-get_negbin_regression_hessian_cpp(X_fit, y, c(as.numeric(fit$b), log(as.numeric(fit$theta_hat))))
+				},
+				neg_loglik = function(fit){
+					-as.numeric(fit$logLik)
+				}
+			)
+		},
+		generate_mod = function(estimate_only = FALSE){
+			if (is.null(private$negbin_X_full_cache) || !identical(private$w, private$negbin_w_cache)) {
+				X_data = private$get_X()
+				private$negbin_X_full_cache = if (is.null(X_data) || ncol(X_data) == 0) {
+					cbind(`(Intercept)` = 1, treatment = private$w)
+				} else {
+					cbind(`(Intercept)` = 1, treatment = private$w, X_data)
+				}
+				private$negbin_w_cache = private$w
+			}
+			X_full = private$negbin_X_full_cache
+			
+			if (!private$harden) {
+				ws_args = private$get_backend_warm_start_args(ncol(X_full) + 1L)
+				if (estimate_only) {
 					res = tryCatch(
 						fast_neg_bin_cpp(
-							X = X_fit, y = y,
-							warm_start_params = start %||% ws_args$start_params,
+							X = X_full, y = as.integer(private$y),
+							warm_start_params = ws_args$start_params,
 							warm_start_fisher_info = ws_args$warm_start_fisher_info,
-							fixed_idx = j_treat, fixed_values = delta,
 							smart_cold_start = private$smart_cold_start_default,
 							optimization_alg = private$optimization_alg
 						),
 						error = function(e) NULL
 					)
 					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
-					list(b = as.numeric(res$b), theta_hat = res$theta_hat, neg_loglik = -as.numeric(res$logLik), fisher_information = res$fisher_information)
-				},
-				extract_start = function(fit){
-					c(as.numeric(fit$b), log(as.numeric(fit$theta_hat)))
-				},
-				score = function(fit){
-					params = c(as.numeric(fit$b), log(as.numeric(fit$theta_hat)))
-					get_negbin_regression_score_cpp(X_fit, y, params)
-				},
-				observed_information = function(fit){
-					params = c(as.numeric(fit$b), log(as.numeric(fit$theta_hat)))
-					-get_negbin_regression_hessian_cpp(X_fit, y, params)
-				},
-				fisher_information = function(fit){
-					fit$fisher_information %||% {
-						params = c(as.numeric(fit$b), log(as.numeric(fit$theta_hat)))
-						-get_negbin_regression_hessian_cpp(X_fit, y, params)
-					}
-				},
-				information = function(fit){
-					fit$information %||% fit$fisher_information %||% {
-						params = c(as.numeric(fit$b), log(as.numeric(fit$theta_hat)))
-						-get_negbin_regression_hessian_cpp(X_fit, y, params)
-					}
-				},
-				neg_loglik = function(fit){ as.numeric(fit$neg_loglik) }
-			)
-		},
-		generate_mod = function(estimate_only = FALSE){
-			X_data = private$get_X()
-			X_full = if (is.null(X_data) || ncol(X_data) == 0) {
-				cbind(`(Intercept)` = 1, treatment = private$w)
-			} else {
-				cbind(`(Intercept)` = 1, treatment = private$w, X_data)
+					res$beta_hat_T = as.numeric(res$b[2L])
+					res$ssq_b_2 = NA_real_
+					res$params = c(as.numeric(res$b), log(as.numeric(res$theta_hat)))
+					res$neg_log_lik = -as.numeric(res$logLik)
+					res$fisher_information = res$fisher_information
+					res$j_treat = 2L
+				} else {
+					res = tryCatch(
+						fast_neg_bin_with_var_cpp(
+							X = X_full, y = as.integer(private$y),
+							warm_start_params = ws_args$start_params,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default,
+							optimization_alg = private$optimization_alg
+						),
+						error = function(e) NULL
+					)
+					if (is.null(res) || !isTRUE(res$converged)) return(NULL)
+					res$j_treat = 2L
+					res$beta_hat_T = as.numeric(res$b[2L])
+					hess = res$hess_fisher_info_matrix
+					vcov = tryCatch(solve(hess), error = function(e) matrix(NA_real_, nrow(hess), ncol(hess)))
+					res$ssq_b_2 = if (res$j_treat <= ncol(X_full)) as.numeric(vcov[res$j_treat, res$j_treat]) else NA_real_
+					res$params = c(as.numeric(res$b), log(as.numeric(res$theta_hat)))
+					res$neg_log_lik = -as.numeric(res$logLik)
+					res$fisher_information = res$hess_fisher_info_matrix
+				}
+				private$best_X_colnames = setdiff(colnames(X_full), c("(Intercept)", "treatment"))
+				private$cached_values$likelihood_test_context = list(X = X_full, j_treat = 2L)
+				return(res)
 			}
+
 			attempt = private$fit_with_hardened_qr_column_dropping(
 				X_full = X_full,
 				required_cols = 2L,
@@ -314,7 +363,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 					j_treat = mod$j_treat
 					if (is.null(mod) || length(mod$b) < j_treat || !is.finite(mod$b[j_treat])) return(FALSE)
 					if (estimate_only) return(TRUE)
-					is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
+					is.finite(mod$ssq_b_j %||% mod$ssq_b_2) && (mod$ssq_b_j %||% mod$ssq_b_2) > 0
 				}
 			)
 			if (!is.null(attempt$fit)){
@@ -325,6 +374,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 				)
 				# Important: pack parameters for the base class shared logic
 				attempt$fit$params = c(as.numeric(attempt$fit$b), log(as.numeric(attempt$fit$theta_hat)))
+				attempt$fit$ssq_b_2 = attempt$fit$ssq_b_2 %||% attempt$fit$ssq_b_j
 			} else {
 				private$cached_values$likelihood_test_context = NULL
 			}

@@ -16,7 +16,7 @@ matrix. EDI handles subject storage, responses, and validation through
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignBlocking]{EDI::DesignBlocking}} -> \code{\link[EDI:DesignMatching]{EDI::DesignMatching}} -> \code{\link[EDI:DesignFixed]{EDI::DesignFixed}} -> \code{DesignFixedCustom}
+\code{EDI::Design} -> \code{EDI::DesignBlocking} -> \code{EDI::DesignMatching} -> \code{EDI::DesignFixed} -> \code{DesignFixedCustom}
 }
 \section{Methods}{
 \subsection{Public methods}{

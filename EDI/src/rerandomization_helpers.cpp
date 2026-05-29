@@ -74,8 +74,8 @@ Rcpp::IntegerMatrix complete_randomization_imbalanced_cpp(int n, int nT, int r, 
 
 // [[Rcpp::export]]
 Rcpp::NumericVector compute_objective_vals_cpp(
-    Rcpp::NumericMatrix X,
-    Rcpp::IntegerMatrix indicTs,
+    const Rcpp::NumericMatrix& X,
+    const Rcpp::IntegerMatrix& indicTs,
     std::string         objective,
     Rcpp::Nullable<Rcpp::NumericMatrix> inv_cov_X = R_NilValue
 ) {

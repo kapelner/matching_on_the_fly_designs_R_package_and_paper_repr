@@ -46,13 +46,13 @@ inline Eigen::ArrayXd log1pexp_array(const Eigen::ArrayXd& eta) {
 //
 
 static List cpoisson_combined_score_info_cpp_impl(
-	const Eigen::VectorXd& yT_v,
-	const Eigen::VectorXd& n_k_v,
-	const Eigen::MatrixXd& X_diff_v,
-	const Eigen::VectorXd& y_r,
-	const Eigen::VectorXd& w_r,
-	const Eigen::MatrixXd& X_r,
-	const Eigen::VectorXd& params
+	const Eigen::Ref<const Eigen::VectorXd>& yT_v,
+	const Eigen::Ref<const Eigen::VectorXd>& n_k_v,
+	const Eigen::Ref<const Eigen::MatrixXd>& X_diff_v,
+	const Eigen::Ref<const Eigen::VectorXd>& y_r,
+	const Eigen::Ref<const Eigen::VectorXd>& w_r,
+	const Eigen::Ref<const Eigen::MatrixXd>& X_r,
+	const Eigen::Ref<const Eigen::VectorXd>& params
 ) {
 	const int nd = (int)yT_v.size();
 	const int nR = (int)y_r.size();
@@ -111,13 +111,13 @@ static List cpoisson_combined_score_info_cpp_impl(
 }
 
 static double cpoisson_combined_neg_loglik_cpp_impl(
-	const Eigen::VectorXd& yT_v,
-	const Eigen::VectorXd& n_k_v,
-	const Eigen::MatrixXd& X_diff_v,
-	const Eigen::VectorXd& y_r,
-	const Eigen::VectorXd& w_r,
-	const Eigen::MatrixXd& X_r,
-	const Eigen::VectorXd& params
+	const Eigen::Ref<const Eigen::VectorXd>& yT_v,
+	const Eigen::Ref<const Eigen::VectorXd>& n_k_v,
+	const Eigen::Ref<const Eigen::MatrixXd>& X_diff_v,
+	const Eigen::Ref<const Eigen::VectorXd>& y_r,
+	const Eigen::Ref<const Eigen::VectorXd>& w_r,
+	const Eigen::Ref<const Eigen::MatrixXd>& X_r,
+	const Eigen::Ref<const Eigen::VectorXd>& params
 ) {
 	const int nd = (int)yT_v.size();
 	const int nR = (int)y_r.size();
@@ -154,17 +154,25 @@ static double cpoisson_combined_neg_loglik_cpp_impl(
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::VectorXd get_cpoisson_combined_score_cpp(
-	const Eigen::VectorXd& yT_v,
-	const Eigen::VectorXd& n_k_v,
-	const Eigen::MatrixXd& X_diff_v,
-	const Eigen::VectorXd& y_r,
-	const Eigen::VectorXd& w_r,
-	const Eigen::MatrixXd& X_r,
-	const Eigen::VectorXd& params
+SEXP get_cpoisson_combined_score_cpp(
+	const NumericVector& yT_v_r,
+	const NumericVector& n_k_v_r,
+	const NumericMatrix& X_diff_v_r,
+	const NumericVector& y_r_r,
+	const NumericVector& w_r_r,
+	const NumericMatrix& X_r_r,
+	const NumericVector& params_r
 ) {
+	Eigen::Map<const Eigen::VectorXd> yT_v(yT_v_r.begin(), yT_v_r.size());
+	Eigen::Map<const Eigen::VectorXd> n_k_v(n_k_v_r.begin(), n_k_v_r.size());
+	Eigen::Map<const Eigen::MatrixXd> X_diff_v(X_diff_v_r.begin(), X_diff_v_r.rows(), X_diff_v_r.cols());
+	Eigen::Map<const Eigen::VectorXd> y_r(y_r_r.begin(), y_r_r.size());
+	Eigen::Map<const Eigen::VectorXd> w_r(w_r_r.begin(), w_r_r.size());
+	Eigen::Map<const Eigen::MatrixXd> X_r(X_r_r.begin(), X_r_r.rows(), X_r_r.cols());
+	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
+
 	List out = cpoisson_combined_score_info_cpp_impl(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params);
-	return Rcpp::as<Eigen::VectorXd>(out["score"]);
+	return wrap(Rcpp::as<Eigen::VectorXd>(out["score"]));
 }
 
 //' @title Compute Combined Conditional-Poisson Hessian
@@ -180,18 +188,26 @@ Eigen::VectorXd get_cpoisson_combined_score_cpp(
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-Eigen::MatrixXd get_cpoisson_combined_hessian_cpp(
-	const Eigen::VectorXd& yT_v,
-	const Eigen::VectorXd& n_k_v,
-	const Eigen::MatrixXd& X_diff_v,
-	const Eigen::VectorXd& y_r,
-	const Eigen::VectorXd& w_r,
-	const Eigen::MatrixXd& X_r,
-	const Eigen::VectorXd& params
+SEXP get_cpoisson_combined_hessian_cpp(
+	const NumericVector& yT_v_r,
+	const NumericVector& n_k_v_r,
+	const NumericMatrix& X_diff_v_r,
+	const NumericVector& y_r_r,
+	const NumericVector& w_r_r,
+	const NumericMatrix& X_r_r,
+	const NumericVector& params_r
 ) {
+	Eigen::Map<const Eigen::VectorXd> yT_v(yT_v_r.begin(), yT_v_r.size());
+	Eigen::Map<const Eigen::VectorXd> n_k_v(n_k_v_r.begin(), n_k_v_r.size());
+	Eigen::Map<const Eigen::MatrixXd> X_diff_v(X_diff_v_r.begin(), X_diff_v_r.rows(), X_diff_v_r.cols());
+	Eigen::Map<const Eigen::VectorXd> y_r(y_r_r.begin(), y_r_r.size());
+	Eigen::Map<const Eigen::VectorXd> w_r(w_r_r.begin(), w_r_r.size());
+	Eigen::Map<const Eigen::MatrixXd> X_r(X_r_r.begin(), X_r_r.rows(), X_r_r.cols());
+	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
+
 	List out = cpoisson_combined_score_info_cpp_impl(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params);
 	MatrixXd info = Rcpp::as<Eigen::MatrixXd>(out["info"]);
-	return -info;
+	return wrap(-info);
 }
 
 //' @title Fast Combined Conditional-Poisson Regression (C++)
@@ -210,13 +226,13 @@ Eigen::MatrixXd get_cpoisson_combined_hessian_cpp(
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_cpoisson_combined_with_var_cpp(
-	const Eigen::VectorXd& yT_v,       // treated count per valid pair (nd)
-	const Eigen::VectorXd& n_k_v,      // total count per valid pair (nd)
-	const Eigen::MatrixXd& X_diff_v,   // covariate diffs (nd x p; p=0 valid)
-	const Eigen::VectorXd& y_r,        // reservoir outcomes (nR)
-	const Eigen::VectorXd& w_r,        // reservoir treatment indicator (nR)
-	const Eigen::MatrixXd& X_r,        // reservoir covariates (nR x p)
+SEXP fast_cpoisson_combined_with_var_cpp(
+	const NumericVector& yT_v_r,       // treated count per valid pair (nd)
+	const NumericVector& n_k_v_r,      // total count per valid pair (nd)
+	const NumericMatrix& X_diff_v_r,   // covariate diffs (nd x p; p=0 valid)
+	const NumericVector& y_r_r,        // reservoir outcomes (nR)
+	const NumericVector& w_r_r,        // reservoir treatment indicator (nR)
+	const NumericMatrix& X_r_r,        // reservoir covariates (nR x p)
 	int    maxit = 100,
 	double tol   = 1e-8,
 	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -226,6 +242,13 @@ List fast_cpoisson_combined_with_var_cpp(
 	Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
 	bool estimate_only = false
 ) {
+	Eigen::Map<const Eigen::VectorXd> yT_v(yT_v_r.begin(), yT_v_r.size());
+	Eigen::Map<const Eigen::VectorXd> n_k_v(n_k_v_r.begin(), n_k_v_r.size());
+	Eigen::Map<const Eigen::MatrixXd> X_diff_v(X_diff_v_r.begin(), X_diff_v_r.rows(), X_diff_v_r.cols());
+	Eigen::Map<const Eigen::VectorXd> y_r(y_r_r.begin(), y_r_r.size());
+	Eigen::Map<const Eigen::VectorXd> w_r(w_r_r.begin(), w_r_r.size());
+	Eigen::Map<const Eigen::MatrixXd> X_r(X_r_r.begin(), X_r_r.rows(), X_r_r.cols());
+
 	const int nd = (int)yT_v.size();
 	const int nR = (int)y_r.size();
 	const int p  = (int)X_diff_v.cols();

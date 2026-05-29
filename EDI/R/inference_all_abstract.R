@@ -367,11 +367,21 @@ Inference = R6::R6Class("Inference",
 			private$fit_warm_start_weights = NULL
 			invisible(NULL)
 		},
-		set_fit_warm_start = function(start, type = c("beta", "params"), fisher = NULL, weights = NULL){
+		set_fit_warm_start = function(start, type = c("beta", "params"), fisher = NULL, weights = NULL, force_pd = FALSE){
 			if (!isTRUE(private$fit_warm_start_enabled)) {
 				private$clear_fit_warm_start()
 				return(invisible(NULL))
 			}
+			
+			if (isTRUE(force_pd)) {
+				# Direct trusted path: skip all checks
+				private$fit_warm_start = start
+				private$fit_warm_start_type = if (is.character(type)) type[1L] else "beta"
+				private$fit_warm_start_fisher = fisher
+				private$fit_warm_start_weights = weights
+				return(invisible(NULL))
+			}
+			
 			type = match.arg(type)
 			if (is.null(start)) {
 				private$clear_fit_warm_start()
@@ -683,29 +693,23 @@ Inference = R6::R6Class("Inference",
 				}
 			},
 		create_design_matrix = function(){
-			if (!is.null(private$cached_design_matrix) && 
-				identical(private$w, private$cached_w_for_design_matrix) &&
-				identical(private$harden, private$cached_harden_for_design_matrix)) {
-				return(private$cached_design_matrix)
-			}
+			dm = private$cached_design_matrix
+			if (!is.null(dm)) return(dm)
 			
-			Xc = if (!is.null(private$cached_hardened_X_cov) && identical(private$harden, private$cached_harden_for_design_matrix)) {
-				private$cached_hardened_X_cov
-			} else {
+			Xc = private$cached_hardened_X_cov
+			if (is.null(Xc)) {
 				Xc_raw = private$get_X()
 				if (is.null(Xc_raw) || !ncol(Xc_raw)) {
-					NULL
+					Xc = NULL
 				} else {
-					Xc_raw = as.matrix(Xc_raw)
-					cov_names = colnames(Xc_raw)
-					if (is.null(cov_names) || length(cov_names) != ncol(Xc_raw)) {
-						colnames(Xc_raw) = paste0("x", seq_len(ncol(Xc_raw)))
+					Xc = as.matrix(Xc_raw)
+					if (is.null(colnames(Xc))) {
+						colnames(Xc) = paste0("x", seq_len(ncol(Xc)))
 					}
 					if (isTRUE(private$harden)){
-						Xc_raw = drop_highly_correlated_cols(Xc_raw, threshold = 0.999)$M
+						Xc = drop_highly_correlated_cols(Xc, threshold = 0.999)$M
 					}
-					private$cached_hardened_X_cov = Xc_raw
-					Xc_raw
+					private$cached_hardened_X_cov = Xc
 				}
 			}
 
@@ -715,16 +719,10 @@ Inference = R6::R6Class("Inference",
 				X_full = cbind(`(Intercept)` = 1, treatment = private$w, Xc)
 			}
 			
-			if (isTRUE(private$harden)){
-				# Use a faster check if possible
-				if (ncol(X_full) > 2L) {
-					res = drop_linearly_dependent_cols(X_full)
-					X_full = res$M
-				}
+			if (isTRUE(private$harden) && ncol(X_full) > 2L){
+				X_full = drop_linearly_dependent_cols(X_full)$M
 			}
 			private$cached_design_matrix = X_full
-			private$cached_w_for_design_matrix = private$w
-			private$cached_harden_for_design_matrix = private$harden
 			X_full
 		},
 		get_X = function(){

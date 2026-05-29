@@ -13,10 +13,16 @@ using namespace Rcpp;
 
 // [[Rcpp::export]]
 NumericVector compute_matching_compound_distr_parallel_cpp(
-	const Eigen::VectorXd& y,
-	const Eigen::MatrixXi& w_mat,
-	const Eigen::MatrixXi& m_mat,
+	SEXP y_sexp,
+	SEXP w_mat_sexp,
+	SEXP m_mat_sexp,
 	int num_cores) {
+	NumericVector y_r(y_sexp);
+	IntegerMatrix w_mat_r(w_mat_sexp);
+	IntegerMatrix m_mat_r(m_mat_sexp);
+	Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+	Eigen::Map<const Eigen::MatrixXi> w_mat(w_mat_r.begin(), w_mat_r.nrow(), w_mat_r.ncol());
+	Eigen::Map<const Eigen::MatrixXi> m_mat(m_mat_r.begin(), m_mat_r.nrow(), m_mat_r.ncol());
 
 	int nsim = w_mat.cols();
 	int n = y.size();
@@ -126,10 +132,16 @@ NumericVector compute_matching_compound_distr_parallel_cpp(
 
 // [[Rcpp::export]]
 NumericVector compute_matching_compound_bootstrap_parallel_cpp(
-	const Eigen::MatrixXi& w_mat,
-	const Eigen::MatrixXi& m_mat,
-	const Eigen::MatrixXd& y_mat,
+	SEXP w_mat_sexp,
+	SEXP m_mat_sexp,
+	SEXP y_mat_sexp,
 	int num_cores) {
+	IntegerMatrix w_mat_r(w_mat_sexp);
+	IntegerMatrix m_mat_r(m_mat_sexp);
+	NumericMatrix y_mat_r(y_mat_sexp);
+	Eigen::Map<const Eigen::MatrixXi> w_mat(w_mat_r.begin(), w_mat_r.nrow(), w_mat_r.ncol());
+	Eigen::Map<const Eigen::MatrixXi> m_mat(m_mat_r.begin(), m_mat_r.nrow(), m_mat_r.ncol());
+	Eigen::Map<const Eigen::MatrixXd> y_mat(y_mat_r.begin(), y_mat_r.nrow(), y_mat_r.ncol());
 
 	int nsim = w_mat.cols();
 	int n = w_mat.rows();

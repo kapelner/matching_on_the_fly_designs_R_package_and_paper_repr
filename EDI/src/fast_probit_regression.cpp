@@ -44,18 +44,18 @@ inline double probit_gen_residual_optimized(double y, double phi, double Phi, do
 
 class ProbitLbfgsObjective : public Numer::MFuncGrad {
 private:
-    const RowMajorMatrixXd& m_X;
-    const Eigen::VectorXd& m_y;
-    const Eigen::VectorXd& m_weights;
-    const Eigen::VectorXd& m_eta_fixed;
+    const Eigen::Ref<const RowMajorMatrixXd> m_X;
+    const Eigen::Ref<const Eigen::VectorXd> m_y;
+    const Eigen::Ref<const Eigen::VectorXd> m_weights;
+    const Eigen::Ref<const Eigen::VectorXd> m_eta_fixed;
     bool m_use_weights;
     int m_n;
 
 public:
-    ProbitLbfgsObjective(const RowMajorMatrixXd& X,
-                         const Eigen::VectorXd& y,
-                         const Eigen::VectorXd& weights,
-                         const Eigen::VectorXd& eta_fixed,
+    ProbitLbfgsObjective(const Eigen::Ref<const RowMajorMatrixXd>& X,
+                         const Eigen::Ref<const Eigen::VectorXd>& y,
+                         const Eigen::Ref<const Eigen::VectorXd>& weights,
+                         const Eigen::Ref<const Eigen::VectorXd>& eta_fixed,
                          bool use_weights) :
         m_X(X), m_y(y), m_weights(weights), m_eta_fixed(eta_fixed), 
         m_use_weights(use_weights), m_n(X.rows()) {}
@@ -88,9 +88,9 @@ public:
 
 // Internal probit fitting core.
 ModelResult fast_probit_regression_internal(
-        const Eigen::MatrixXd& X_eigen,
-        const Eigen::VectorXd& y_eigen,
-        const Eigen::VectorXd& weights_eigen = Eigen::VectorXd(),
+        const Eigen::Ref<const Eigen::MatrixXd>& X_eigen,
+        const Eigen::Ref<const Eigen::VectorXd>& y_eigen,
+        const Eigen::Ref<const Eigen::VectorXd>& weights_eigen,
         Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
         bool smart_cold_start = true,
         int maxit = 100,
@@ -125,7 +125,7 @@ ModelResult fast_probit_regression_internal(
         eta_fixed += X_eigen.col(fixed_spec.fixed_idx[k]) * fixed_spec.fixed_values[k];
     }
 
-    RowMajorMatrixXd X_free(n, p_free);
+    Eigen::MatrixXd X_free(n, p_free);
     for (int j = 0; j < p_free; ++j) X_free.col(j) = X_eigen.col(fixed_spec.free_idx[j]);
 
     Eigen::VectorXd beta_free = subset_vector(beta_start, fixed_spec.free_idx);
@@ -250,7 +250,14 @@ ModelResult fast_probit_regression_internal(
 }
 
 // [[Rcpp::export]]
-Eigen::VectorXd get_probit_regression_score_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& beta) {
+Eigen::VectorXd get_probit_regression_score_cpp(SEXP X_sexp, SEXP y_sexp, SEXP beta_sexp) {
+    NumericMatrix X_r(X_sexp);
+    NumericVector y_r(y_sexp);
+    NumericVector beta_r(beta_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+    Eigen::Map<const Eigen::VectorXd> beta(beta_r.begin(), beta_r.size());
+
     const Eigen::VectorXd eta = X * beta;
     const int n = X.rows();
     Eigen::VectorXd gen_res(n);
@@ -262,7 +269,12 @@ Eigen::VectorXd get_probit_regression_score_cpp(const Eigen::MatrixXd& X, const 
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd get_probit_regression_hessian_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& beta) {
+Eigen::MatrixXd get_probit_regression_hessian_cpp(SEXP X_sexp, SEXP beta_sexp) {
+    NumericMatrix X_r(X_sexp);
+    NumericVector beta_r(beta_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> beta(beta_r.begin(), beta_r.size());
+
     const Eigen::VectorXd eta = X * beta;
     const int n = X.rows();
     Eigen::VectorXd w(n);
@@ -276,6 +288,23 @@ Eigen::MatrixXd get_probit_regression_hessian_cpp(const Eigen::MatrixXd& X, cons
     return -weighted_crossprod(X, w);
 }
 
+//' @title Fast Probit Regression (C++)
+//' @description High-performance probit GLM fitting via IRLS or L-BFGS.
+//' @param X_sexp A numeric matrix of predictors (including intercept column).
+//' @param y_sexp A numeric vector of binary responses (0/1).
+//' @param warm_start_beta Optional starting values for coefficients.
+//' @param smart_cold_start Logical. If TRUE, use an OLS-based initial guess when no warm start is provided.
+//' @param maxit Maximum number of iterations.
+//' @param tol Convergence tolerance.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm ("irls" or "lbfgs"). Default "irls".
+//' @param warm_start_weights Optional initial IRLS working weights.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix.
+//' @param estimate_only Logical. If TRUE, skip variance computation and return only coefficients.
+//' @return A list containing coefficients and convergence status.
+//' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_probit_regression_cpp(SEXP X_sexp, SEXP y_sexp,
         Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,

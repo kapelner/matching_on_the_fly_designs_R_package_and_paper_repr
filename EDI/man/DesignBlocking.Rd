@@ -13,7 +13,7 @@ des = DesignBlocking$new(n = 6, response_type = "continuous")
 }
 \keyword{internal}
 \section{Super class}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{DesignBlocking}
+\code{EDI::Design} -> \code{DesignBlocking}
 }
 \section{Methods}{
 \subsection{Public methods}{

@@ -21,16 +21,19 @@ double log1pexp(double x) {
 
 class ZeroAugmentedPoisson {
 private:
-    const Eigen::VectorXd m_y;
-    const Eigen::MatrixXd m_X;
-    const Eigen::MatrixXd m_Xzi;
+    const Eigen::Ref<const Eigen::VectorXd> m_y;
+    const Eigen::Ref<const Eigen::MatrixXd> m_X;
+    const Eigen::Ref<const Eigen::MatrixXd> m_Xzi;
     const int m_n;
     const int m_p_cond;
     const int m_p_zi;
     const bool m_is_hurdle;
 
 public:
-    ZeroAugmentedPoisson(const Eigen::VectorXd& y, const Eigen::MatrixXd& X, const Eigen::MatrixXd& Xzi, bool is_hurdle) :
+    ZeroAugmentedPoisson(const Eigen::Ref<const Eigen::VectorXd>& y, 
+                         const Eigen::Ref<const Eigen::MatrixXd>& X, 
+                         const Eigen::Ref<const Eigen::MatrixXd>& Xzi, 
+                         bool is_hurdle) :
         m_y(y), m_X(X), m_Xzi(Xzi), m_n(X.rows()), 
         m_p_cond(X.cols()), m_p_zi(Xzi.cols()), m_is_hurdle(is_hurdle) {}
 
@@ -272,11 +275,20 @@ public:
 } // namespace
 
 // [[Rcpp::export]]
-Eigen::VectorXd get_zero_augmented_poisson_score_cpp(const Eigen::MatrixXd& X,
-													 const Eigen::VectorXd& y,
-													 const Eigen::MatrixXd& Xzi,
-													 const Eigen::VectorXd& params,
+Eigen::VectorXd get_zero_augmented_poisson_score_cpp(SEXP X_sexp,
+													 SEXP y_sexp,
+													 SEXP Xzi_sexp,
+													 SEXP params_sexp,
 													 bool is_hurdle) {
+    NumericMatrix X_r(X_sexp);
+    NumericVector y_r(y_sexp);
+    NumericMatrix Xzi_r(Xzi_sexp);
+    NumericVector params_r(params_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+    Eigen::Map<const Eigen::MatrixXd> Xzi(Xzi_r.begin(), Xzi_r.nrow(), Xzi_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
+
 	ZeroAugmentedPoisson fun(y, X, Xzi, is_hurdle);
 	Eigen::VectorXd grad(params.size());
 	fun(params, grad);
@@ -284,11 +296,20 @@ Eigen::VectorXd get_zero_augmented_poisson_score_cpp(const Eigen::MatrixXd& X,
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd get_zero_augmented_poisson_hessian_cpp(const Eigen::MatrixXd& X,
-													   const Eigen::VectorXd& y,
-													   const Eigen::MatrixXd& Xzi,
-													   const Eigen::VectorXd& params,
+Eigen::MatrixXd get_zero_augmented_poisson_hessian_cpp(SEXP X_sexp,
+													   SEXP y_sexp,
+													   SEXP Xzi_sexp,
+													   SEXP params_sexp,
 													   bool is_hurdle) {
+    NumericMatrix X_r(X_sexp);
+    NumericVector y_r(y_sexp);
+    NumericMatrix Xzi_r(Xzi_sexp);
+    NumericVector params_r(params_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+    Eigen::Map<const Eigen::MatrixXd> Xzi(Xzi_r.begin(), Xzi_r.nrow(), Xzi_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
+
 	ZeroAugmentedPoisson fun(y, X, Xzi, is_hurdle);
 	return -fun.hessian(params);
 }
@@ -312,9 +333,9 @@ Eigen::MatrixXd get_zero_augmented_poisson_hessian_cpp(const Eigen::MatrixXd& X,
 //' @export
 //' @keywords internal
 // [[Rcpp::export]]
-List fast_zero_augmented_poisson_cpp(const Eigen::MatrixXd& X,
-                                     const Eigen::VectorXd& y,
-                                     const Eigen::MatrixXd& Xzi,
+List fast_zero_augmented_poisson_cpp(SEXP X_sexp,
+                                     SEXP y_sexp,
+                                     SEXP Xzi_sexp,
                                      bool is_hurdle,
                                      Nullable<NumericVector> warm_start_params = R_NilValue,
                                      bool smart_cold_start = true,
@@ -325,6 +346,13 @@ List fast_zero_augmented_poisson_cpp(const Eigen::MatrixXd& X,
                                      Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                      std::string optimization_alg = "lbfgs",
                                      Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
+    NumericMatrix X_r(X_sexp);
+    NumericVector y_r(y_sexp);
+    NumericMatrix Xzi_r(Xzi_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+    Eigen::Map<const Eigen::MatrixXd> Xzi(Xzi_r.begin(), Xzi_r.nrow(), Xzi_r.ncol());
+
     int p_cond = X.cols();
     int p_zi = Xzi.cols();
     int total_p = p_cond + p_zi;

@@ -129,11 +129,13 @@ static double compute_atkinson_weight(
 
 // [[Rcpp::export]]
 NumericVector atkinson_redraw_batch_cpp(
-	const Eigen::MatrixXd& X,     // Full covariate matrix (n x p), already numeric
+	SEXP X_sexp,                   // Full covariate matrix (n x p), already numeric
 	int n,                         // Number of subjects
 	int p_raw,                     // Number of raw covariates (for early-subject Bernoulli threshold)
 	double prob_T = 0.5           // Treatment probability for Bernoulli
 ) {
+	NumericMatrix X_r(X_sexp);
+	Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
 	std::vector<double> results_vec(n);
     double* w_ptr = results_vec.data();
 

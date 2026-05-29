@@ -19,7 +19,7 @@ des$add_all_subjects_to_experiment(data.frame(x=1:12))
 des$assign_w_to_all_subjects()
 }
 \section{Super classes}{
-\code{\link[EDI:Design]{EDI::Design}} -> \code{\link[EDI:DesignBlocking]{EDI::DesignBlocking}} -> \code{\link[EDI:DesignMatching]{EDI::DesignMatching}} -> \code{\link[EDI:DesignFixed]{EDI::DesignFixed}} -> \code{DesignFixedFactorial}
+\code{EDI::Design} -> \code{EDI::DesignBlocking} -> \code{EDI::DesignMatching} -> \code{EDI::DesignFixed} -> \code{DesignFixedFactorial}
 }
 \section{Methods}{
 \subsection{Public methods}{

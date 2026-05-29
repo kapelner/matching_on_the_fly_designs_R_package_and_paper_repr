@@ -43,7 +43,7 @@ GHRule gauss_hermite_rule_log(int n) {
 	return rule;
 }
 
-inline double log_sum_exp_v(const Eigen::VectorXd& x) {
+inline double log_sum_exp_v(const Eigen::Ref<const Eigen::VectorXd>& x) {
 	const double m = x.maxCoeff();
 	if (!std::isfinite(m)) return m;
 	return m + std::log((x.array() - m).exp().sum());
@@ -85,11 +85,11 @@ struct LogisticGLMMData {
 	GHRule gh;
 
 	LogisticGLMMData(
-		const Eigen::MatrixXd& X,
-		const std::vector<double>& y,
+		const Eigen::Ref<const Eigen::MatrixXd>& X,
+		const Eigen::Ref<const Eigen::VectorXd>& y,
 		const std::vector<int>& group_id,
 		int n_gh
-	) : n(X.rows()), p(X.cols()), gh(gauss_hermite_rule_log(n_gh)) {
+	) : n((int)X.rows()), p((int)X.cols()), gh(gauss_hermite_rule_log(n_gh)) {
 
 		// Sort by group_id for contiguous group access
 		std::vector<int> ord(n);
@@ -135,13 +135,13 @@ public:
 		  m_eta_all(d.n),
 		  m_group_y_eta0(d.G),
 		  m_ll_g_vec(d.G),
-		  m_log_terms_mat(d.G, d.gh.nodes.size()),
-		  m_mu_all_k_mat(d.n, d.gh.nodes.size()),
-		  m_mu_group_sum_mat(d.G, d.gh.nodes.size()),
+		  m_log_terms_mat(d.G, (int)d.gh.nodes.size()),
+		  m_mu_all_k_mat(d.n, (int)d.gh.nodes.size()),
+		  m_mu_group_sum_mat(d.G, (int)d.gh.nodes.size()),
 		  m_weighted_res(std::max(1, d.max_group_size)),
-		  m_n_nodes(d.gh.nodes.size()) {}
+		  m_n_nodes((int)d.gh.nodes.size()) {}
 
-	double value(const Eigen::VectorXd& par) const {
+	double value(const Eigen::Ref<const Eigen::VectorXd>& par) const {
 		const double log_sigma = par[dat.p];
 		// Soft barrier for |log_sigma| > 5 (instead of hard cut)
 		const double pen = log_sigma_penalty(log_sigma);
@@ -172,7 +172,7 @@ public:
 		return -total_ll + pen;
 	}
 
-	double operator()(const Eigen::VectorXd& par, Eigen::VectorXd& grad) {
+	double operator()(const Eigen::Ref<const Eigen::VectorXd>& par, Eigen::Ref<VectorXd> grad) {
 		const double log_sigma = par[dat.p];
 		const double sigma = std::exp(log_sigma);
 		const Eigen::VectorXd beta = par.head(dat.p);
@@ -204,11 +204,11 @@ public:
 		double total_nll = log_sigma_penalty(log_sigma);
 		for (int gi = 0; gi < dat.G; ++gi) {
 			m_ll_g_vec[gi] = log_sum_exp_v(m_log_terms_mat.row(gi));
-			if (!std::isfinite(m_ll_g_vec[gi])) { grad.setZero(dat.p + 1); return 1e100; }
+			if (!std::isfinite(m_ll_g_vec[gi])) { grad.setZero(); return 1e100; }
 			total_nll -= m_ll_g_vec[gi];
 		}
 
-		grad.setZero(dat.p + 1);
+		grad.setZero();
 		const double center = 5.0, scale = 10.0;
 		const double d_pen = std::abs(log_sigma) - center;
 		if (d_pen > 0.0) grad[dat.p] += 2.0 * scale * d_pen * (log_sigma > 0 ? 1.0 : -1.0);
@@ -241,7 +241,7 @@ public:
 		return total_nll;
 	}
 
-	Eigen::MatrixXd hessian(const Eigen::VectorXd& par) {
+	Eigen::MatrixXd hessian(const Eigen::Ref<const Eigen::VectorXd>& par) {
 		const int total = dat.p + 1;
 		const double log_sigma = par[dat.p];
 		const double sigma = std::exp(log_sigma);
@@ -361,19 +361,25 @@ public:
 
 // [[Rcpp::export]]
 Eigen::VectorXd get_logistic_glmm_score_cpp(
-	const Eigen::MatrixXd& X,
-	const Eigen::VectorXd& y,
-	const Eigen::VectorXi& group_id,
-	const Eigen::VectorXd& params,
+	SEXP X_r,
+	SEXP y_r,
+	SEXP group_id_r,
+	SEXP params_sexp,
 	int n_gh = 20
 ) {
-	std::vector<double> y_v(y.size());
-	std::vector<int> gid_v(group_id.size());
-	for (int i = 0; i < y.size(); ++i) { y_v[i] = y[i]; gid_v[i] = group_id[i]; }
-	
-	LogisticGLMMData dat(X, y_v, gid_v, n_gh);
+	NumericMatrix X_mat(X_r);
+	NumericVector y_vec(y_r);
+	IntegerVector group_id_int(group_id_r);
+	NumericVector params_r(params_sexp);
+	Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+	Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+	Eigen::Map<const Eigen::VectorXi> group_id(group_id_int.begin(), group_id_int.size());
+	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
+	std::vector<int> gid_v(group_id.data(), group_id.data() + group_id.size());
+
+	LogisticGLMMData dat(X, y, gid_v, n_gh);
 	LogisticGLMMObjective obj(dat);
-	
+
 	Eigen::VectorXd grad(params.size());
 	obj(params, grad);
 	grad[X.cols()] -= log_sigma_penalty_grad(params[X.cols()]);
@@ -382,19 +388,25 @@ Eigen::VectorXd get_logistic_glmm_score_cpp(
 
 // [[Rcpp::export]]
 Eigen::MatrixXd get_logistic_glmm_hessian_cpp(
-	const Eigen::MatrixXd& X,
-	const Eigen::VectorXd& y,
-	const Eigen::VectorXi& group_id,
-	const Eigen::VectorXd& params,
+	SEXP X_r,
+	SEXP y_r,
+	SEXP group_id_r,
+	SEXP params_sexp,
 	int n_gh = 20
 ) {
-	std::vector<double> y_v(y.size());
-	std::vector<int> gid_v(group_id.size());
-	for (int i = 0; i < y.size(); ++i) { y_v[i] = y[i]; gid_v[i] = group_id[i]; }
-	
-	LogisticGLMMData dat(X, y_v, gid_v, n_gh);
+	NumericMatrix X_mat(X_r);
+	NumericVector y_vec(y_r);
+	IntegerVector group_id_int(group_id_r);
+	NumericVector params_r(params_sexp);
+	Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+	Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+	Eigen::Map<const Eigen::VectorXi> group_id(group_id_int.begin(), group_id_int.size());
+	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
+	std::vector<int> gid_v(group_id.data(), group_id.data() + group_id.size());
+
+	LogisticGLMMData dat(X, y, gid_v, n_gh);
 	LogisticGLMMObjective obj(dat);
-	
+
 	Eigen::MatrixXd information = obj.hessian(params);
 	information(X.cols(), X.cols()) -= log_sigma_penalty_hessian(params[X.cols()]);
 	return -information;
@@ -402,26 +414,32 @@ Eigen::MatrixXd get_logistic_glmm_hessian_cpp(
 
 // [[Rcpp::export]]
 double get_logistic_glmm_neg_loglik_cpp(
-	const Eigen::MatrixXd& X,
-	const Eigen::VectorXd& y,
-	const Eigen::VectorXi& group_id,
-	const Eigen::VectorXd& params,
+	SEXP X_r,
+	SEXP y_r,
+	SEXP group_id_r,
+	SEXP params_sexp,
 	int n_gh = 20
 ) {
-	std::vector<double> y_v(y.size());
-	std::vector<int> gid_v(group_id.size());
-	for (int i = 0; i < y.size(); ++i) { y_v[i] = y[i]; gid_v[i] = group_id[i]; }
+	NumericMatrix X_mat(X_r);
+	NumericVector y_vec(y_r);
+	IntegerVector group_id_int(group_id_r);
+	NumericVector params_r(params_sexp);
+	Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+	Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+	Eigen::Map<const Eigen::VectorXi> group_id(group_id_int.begin(), group_id_int.size());
+	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
+	std::vector<int> gid_v(group_id.data(), group_id.data() + group_id.size());
 
-	LogisticGLMMData dat(X, y_v, gid_v, n_gh);
+	LogisticGLMMData dat(X, y, gid_v, n_gh);
 	LogisticGLMMObjective obj(dat);
 	return likelihood_value(obj, params) - log_sigma_penalty(params[X.cols()]);
 }
 
 // [[Rcpp::export]]
 List fast_logistic_glmm_cpp(
-	const Eigen::MatrixXd& X,       // n x p, includes intercept; treatment at col j_T (0-based)
-	const Eigen::VectorXd& y,       // responses in [0,1], length n
-	const Eigen::VectorXi& group_id,// group IDs, sorted internally
+	SEXP X_r,       // n x p, includes intercept; treatment at col j_T (0-based)
+	SEXP y_r,       // responses in [0,1], length n
+	SEXP group_id_r,// group IDs, sorted internally
 	int j_T,                        // 0-based treatment column index in X
 	Nullable<NumericVector> warm_start_params = R_NilValue,
 	bool smart_cold_start = true,
@@ -434,15 +452,19 @@ List fast_logistic_glmm_cpp(
 	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
 	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
-	const int n = X.rows();
-	const int p = X.cols();
+	NumericMatrix X_mat(X_r);
+	NumericVector y_vec(y_r);
+	IntegerVector group_id_int(group_id_r);
+	Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+	Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+	Eigen::Map<const Eigen::VectorXi> group_id(group_id_int.begin(), group_id_int.size());
+	const int n = (int)X.rows();
+	const int p = (int)X.cols();
 	const int total = p + 1; // betas + log_sigma
 
-	std::vector<double> y_v(n);
-	std::vector<int> gid_v(n);
-	for (int i = 0; i < n; ++i) { y_v[i] = y[i]; gid_v[i] = group_id[i]; }
+	std::vector<int> gid_v(group_id.data(), group_id.data() + n);
 
-	LogisticGLMMData dat(X, y_v, gid_v, n_gh);
+	LogisticGLMMData dat(X, y, gid_v, n_gh);
 
 	// Initialize
 	Eigen::VectorXd par(total);

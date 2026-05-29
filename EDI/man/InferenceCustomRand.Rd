@@ -15,7 +15,7 @@ behavior.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{\link[EDI:InferenceRand]{EDI::InferenceRand}} -> \code{InferenceCustomRand}
+\code{EDI::Inference} -> \code{EDI::InferenceRand} -> \code{InferenceCustomRand}
 }
 \section{Methods}{
 \subsection{Public methods}{

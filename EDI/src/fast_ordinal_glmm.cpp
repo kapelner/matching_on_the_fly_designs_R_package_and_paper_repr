@@ -18,7 +18,7 @@ namespace {
 
 // Maps ordinal y (1..K) to indicators I(y <= k) for k=1..K-1
 struct OrdinalGLMMData {
-	const Eigen::MatrixXd& X;
+	const Eigen::Ref<const Eigen::MatrixXd> X;
 	const std::vector<int>& y;
 	const std::vector<int>& group_id;
 	int K;
@@ -32,7 +32,7 @@ struct OrdinalGLMMData {
 	std::vector<int> m_group_end;
 	glmm::GHRule m_gh;
 
-	OrdinalGLMMData(const Eigen::MatrixXd& X_in, const std::vector<int>& y_in, 
+	OrdinalGLMMData(const Eigen::Ref<const Eigen::MatrixXd>& X_in, const std::vector<int>& y_in, 
 	                const std::vector<int>& gid_in, int K_in, int n_gh_in, double max_als)
 		: X(X_in), y(y_in), group_id(gid_in), K(K_in), n_gh(n_gh_in), max_abs_log_sigma(max_als), m_gh(glmm::gauss_hermite_rule(n_gh_in)) {
 		n = (int)y.size();
@@ -61,7 +61,7 @@ public:
 	OrdinalGLMMObjective(const OrdinalGLMMData& dat) : m_dat(dat) {}
 
 	// par = [alpha_1, log_diff_alpha_2, ..., log_diff_alpha_{K-1}, beta_1, ..., beta_p, log_sigma]
-	double operator()(const VectorXd& par, VectorXd& grad) {
+	double operator()(const Eigen::Ref<const VectorXd>& par, Eigen::Ref<VectorXd> grad) {
 		const int n_alpha = m_dat.K - 1;
 		const int p = m_dat.p;
 		const int total = n_alpha + p + 1;
@@ -158,10 +158,9 @@ public:
 		return total_neg_ll;
 	}
 
-	MatrixXd hessian(const VectorXd& par) {
+	MatrixXd hessian(const Eigen::Ref<const VectorXd>& par) {
 		const int total = (int)par.size();
 		MatrixXd H = MatrixXd::Zero(total, total);
-		VectorXd g_dummy(total);
 		double h = 1e-4;
 		for (int j = 0; j < total; ++j) {
 			VectorXd p_plus = par; p_plus[j] += h;
@@ -176,7 +175,7 @@ public:
 	}
 };
 
-VectorXd ols_start_beta(const MatrixXd& X, const VectorXd& y) {
+VectorXd ols_start_beta(const Eigen::Ref<const MatrixXd>& X, const Eigen::Ref<const VectorXd>& y) {
 	return (X.transpose() * X).ldlt().solve(X.transpose() * y);
 }
 
@@ -206,9 +205,9 @@ VectorXd ols_start_beta(const MatrixXd& X, const VectorXd& y) {
 //' @keywords internal
 // [[Rcpp::export]]
 List fast_ordinal_glmm_cpp(
-	const Eigen::MatrixXd& X,     // n x p, NO intercept column; treatment at column j_T (0-based)
-	const Eigen::VectorXi& y,     // 1-indexed ordinal outcomes, length n
-	const Eigen::VectorXi& group_id, // group IDs, length n (sorted internally)
+	const Rcpp::NumericMatrix& X,     // n x p, NO intercept column; treatment at column j_T (0-based)
+	const Rcpp::IntegerVector& y,     // 1-indexed ordinal outcomes, length n
+	const Rcpp::IntegerVector& group_id, // group IDs, length n (sorted internally)
 	int K,                        // number of ordinal levels
 	int j_T,                      // 0-based treatment column index in X
 	bool smart_cold_start = true,
@@ -224,17 +223,21 @@ List fast_ordinal_glmm_cpp(
 	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
 	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
 ) {
-	const int n = X.rows();
-	const int p = X.cols();
+    Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
+    Eigen::Map<const Eigen::VectorXi> map_y(y.begin(), y.size());
+    Eigen::Map<const Eigen::VectorXi> map_group_id(group_id.begin(), group_id.size());
+
+	const int n = map_X.rows();
+	const int p = map_X.cols();
 	const int n_alpha = K - 1;
 	const int total = n_alpha + p + 1; // cutpoint params + betas + log_sigma
 	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
 
 	// Convert Eigen/R vectors to std::vector for OrdinalGLMMData
 	std::vector<int> y_v(n), gid_v(n);
-	for (int i = 0; i < n; ++i) { y_v[i] = y[i]; gid_v[i] = group_id[i]; }
+	for (int i = 0; i < n; ++i) { y_v[i] = map_y[i]; gid_v[i] = map_group_id[i]; }
 
-	OrdinalGLMMData dat(X, y_v, gid_v, K, n_gh, max_abs_log_sigma);
+	OrdinalGLMMData dat(map_X, y_v, gid_v, K, n_gh, max_abs_log_sigma);
 
 	// Initialize parameters
 	Eigen::VectorXd par(total);
@@ -265,8 +268,8 @@ List fast_ordinal_glmm_cpp(
 		// Cutpoints: alpha_1 = 0, log_diffs = 0 (evenly spaced by 1)
 		par.head(n_alpha).setZero();
 		// Betas: OLS on y (rough)
-		Eigen::VectorXd y_double = y.cast<double>();
-		par.segment(n_alpha, p) = ols_start_beta(X, y_double);
+		Eigen::VectorXd y_double = map_y.cast<double>();
+		par.segment(n_alpha, p) = ols_start_beta(map_X, y_double);
 		par[total - 1] = -3.0;
 	} else {
 		par.head(n_alpha).setZero();
@@ -284,13 +287,11 @@ List fast_ordinal_glmm_cpp(
 	}
 
 	double neg_ll = NA_REAL;
-	int niter = maxit;
 	bool converged = false;
 	try {
 		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
 		par = fit.params;
 		neg_ll = fit.value;
-		niter = fit.niter;
 		converged = std::isfinite(neg_ll) && fit.converged;
 	} catch (...) {
 		return List::create(

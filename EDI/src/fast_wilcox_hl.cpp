@@ -1,4 +1,4 @@
-#include <Rcpp.h>
+#include <RcppEigen.h>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -7,9 +7,11 @@
 #include <vector>
 #include <map>
 
+// [[Rcpp::depends(RcppEigen)]]
 // [[Rcpp::plugins(openmp)]]
 
 using namespace Rcpp;
+using namespace Eigen;
 
 namespace {
 
@@ -141,10 +143,12 @@ double apply_shift(double y_val, double delta, int transform_code, double zero_o
 } // namespace
 
 // [[Rcpp::export]]
-double wilcox_hl_signed_rank_point_estimate_cpp(const NumericVector& dy) {
+double wilcox_hl_signed_rank_point_estimate_cpp(SEXP dy_sexp) {
+	NumericVector dy_vec(dy_sexp);
+    Eigen::Map<const Eigen::VectorXd> dy(dy_vec.begin(), dy_vec.size());
     std::vector<double> pair_diffs;
     pair_diffs.reserve(dy.size());
-    const double* dy_ptr = dy.begin();
+    const double* dy_ptr = dy.data();
     for (int i = 0; i < dy.size(); ++i) {
         if (std::isfinite(dy_ptr[i])) pair_diffs.push_back(dy_ptr[i]);
     }
@@ -152,14 +156,18 @@ double wilcox_hl_signed_rank_point_estimate_cpp(const NumericVector& dy) {
 }
 
 // [[Rcpp::export]]
-double wilcox_hl_point_estimate_cpp(const IntegerVector& w, const NumericVector& y) {
+double wilcox_hl_point_estimate_cpp(SEXP w_sexp, SEXP y_sexp) {
+	IntegerVector w_int(w_sexp);
+	NumericVector y_vec(y_sexp);
+    Eigen::Map<const Eigen::VectorXi> w(w_int.begin(), w_int.size());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
     std::vector<double> y_t;
     std::vector<double> y_c;
     y_t.reserve(y.size());
     y_c.reserve(y.size());
 
-    const double* y_ptr = y.begin();
-    const int* w_ptr = w.begin();
+    const double* y_ptr = y.data();
+    const int* w_ptr = w.data();
     int n = y.size();
 
     for (int i = 0; i < n; ++i) {
@@ -173,18 +181,25 @@ double wilcox_hl_point_estimate_cpp(const IntegerVector& w, const NumericVector&
 
 // [[Rcpp::export]]
 NumericVector compute_wilcox_hl_bootstrap_parallel_cpp(
-    const IntegerVector& w,
-    const NumericVector& y,
-    const IntegerMatrix& indices_mat,
+    SEXP w_sexp,
+    SEXP y_sexp,
+    SEXP indices_mat_sexp,
     int num_cores) {
 
+	IntegerVector w_int(w_sexp);
+	NumericVector y_vec(y_sexp);
+    Eigen::Map<const Eigen::VectorXi> w(w_int.begin(), w_int.size());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+	IntegerMatrix indices_int_mat(indices_mat_sexp);
+    Eigen::Map<const Eigen::MatrixXi> indices_mat(indices_int_mat.begin(), indices_int_mat.nrow(), indices_int_mat.ncol());
+
     const int n = y.size();
-    const int B = indices_mat.ncol();
+    const int B = indices_mat.cols();
     
     std::vector<double> results_vec(B, NA_REAL);
-    const double* y_ptr = y.begin();
-    const int* w_ptr = w.begin();
-    const int* idx_ptr = indices_mat.begin();
+    const double* y_ptr = y.data();
+    const int* w_ptr = w.data();
+    const int* idx_ptr = indices_mat.data();
     double* res_ptr = results_vec.data();
 
 #ifdef _OPENMP
@@ -223,8 +238,8 @@ NumericVector compute_wilcox_hl_bootstrap_parallel_cpp(
 
 //' Fast Wilcoxon HL Statistic for Multiple Permutations
 //'
-//' @param w_mat Integer matrix of permuted treatment assignments (n x r).
-//' @param y Numeric response vector.
+//' @param w_mat_sexp Integer matrix of permuted treatment assignments (n x r).
+//' @param y_sexp Numeric response vector.
 //' @param delta Null treatment effect shift.
 //' @param transform_code Integer code for response transformation.
 //' @param zero_one_logit_clamp Clamp value for logit transformation.
@@ -232,19 +247,24 @@ NumericVector compute_wilcox_hl_bootstrap_parallel_cpp(
 //' @return Numeric vector of HL statistics.
 // [[Rcpp::export]]
 NumericVector compute_wilcox_hl_distr_parallel_cpp(
-    const IntegerMatrix& w_mat,
-    const NumericVector& y,
+    SEXP w_mat_sexp,
+    SEXP y_sexp,
     double delta,
     int transform_code,
     double zero_one_logit_clamp,
     int num_cores) {
 
+	IntegerMatrix w_int_mat(w_mat_sexp);
+	NumericVector y_vec(y_sexp);
+    Eigen::Map<const Eigen::MatrixXi> w_mat(w_int_mat.begin(), w_int_mat.nrow(), w_int_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+
     const int n = y.size();
-    const int nsim = w_mat.ncol();
+    const int nsim = w_mat.cols();
     
     std::vector<double> results_vec(nsim, NA_REAL);
-    const double* y_ptr = y.begin();
-    const int* w_ptr = w_mat.begin();
+    const double* y_ptr = y.data();
+    const int* w_ptr = w_mat.data();
     double* res_ptr = results_vec.data();
 
     std::vector<double> y_shifted(n);
@@ -285,21 +305,32 @@ NumericVector compute_wilcox_hl_distr_parallel_cpp(
 
 // [[Rcpp::export]]
 NumericVector compute_wilcox_matching_ivwc_bootstrap_parallel_cpp(
-    const IntegerVector& w,
-    const NumericVector& y,
-    const IntegerVector& m_vec,
-    const IntegerMatrix& indices_mat,
-    const IntegerMatrix& m_mat,
+    SEXP w_sexp,
+    SEXP y_sexp,
+    SEXP m_vec_sexp,
+    SEXP indices_mat_sexp,
+    SEXP m_mat_sexp,
     int num_cores) {
 
-    int B = indices_mat.ncol();
+	IntegerVector w_int(w_sexp);
+	NumericVector y_vec(y_sexp);
+    Eigen::Map<const Eigen::VectorXi> w(w_int.begin(), w_int.size());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+	IntegerVector m_int_vec(m_vec_sexp);
+    Eigen::Map<const Eigen::VectorXi> m_vec(m_int_vec.begin(), m_int_vec.size());
+	IntegerMatrix indices_int_mat(indices_mat_sexp);
+    Eigen::Map<const Eigen::MatrixXi> indices_mat(indices_int_mat.begin(), indices_int_mat.nrow(), indices_int_mat.ncol());
+	IntegerMatrix m_int_mat(m_mat_sexp);
+    Eigen::Map<const Eigen::MatrixXi> m_mat(m_int_mat.begin(), m_int_mat.nrow(), m_int_mat.ncol());
+
+    int B = indices_mat.cols();
     int n = y.size();
     
     std::vector<double> results_vec(B, NA_REAL);
-    const double* y_ptr = y.begin();
-    const int* w_ptr = w.begin();
-    const int* idx_ptr = indices_mat.begin();
-    const int* m_ptr = m_mat.begin();
+    const double* y_ptr = y.data();
+    const int* w_ptr = w.data();
+    const int* idx_ptr = indices_mat.data();
+    const int* m_ptr = m_mat.data();
     double* res_ptr = results_vec.data();
 
 #ifdef _OPENMP

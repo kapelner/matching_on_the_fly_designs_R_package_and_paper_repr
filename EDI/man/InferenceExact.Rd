@@ -9,7 +9,7 @@ Thin interface for exact inference methods.
 }
 \keyword{internal}
 \section{Super class}{
-\code{\link[EDI:Inference]{EDI::Inference}} -> \code{InferenceExact}
+\code{EDI::Inference} -> \code{InferenceExact}
 }
 \section{Methods}{
 \subsection{Public methods}{

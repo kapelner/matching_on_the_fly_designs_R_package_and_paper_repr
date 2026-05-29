@@ -40,8 +40,8 @@ struct RobustModelResult {
 };
 
 RobustModelResult fast_robust_regression_internal(
-    const Eigen::MatrixXd& X, 
-    const Eigen::VectorXd& y, 
+    const Eigen::Ref<const Eigen::MatrixXd>& X, 
+    const Eigen::Ref<const Eigen::VectorXd>& y, 
     Nullable<NumericVector> warm_start_beta = R_NilValue,
     bool smart_cold_start = true,
     std::string method = "MM",
@@ -60,7 +60,7 @@ RobustModelResult fast_robust_regression_internal(
     int p = X.cols();
     FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
     const int p_free = fixed_spec.free_idx.size();
-    RowMajorMatrixXd X_free(n, p_free);
+    Eigen::MatrixXd X_free(n, p_free);
     for (int j = 0; j < p_free; ++j) X_free.col(j) = X.col(fixed_spec.free_idx[j]);
     Eigen::VectorXd y_adj = y;
     for (int j = 0; j < fixed_spec.fixed_idx.size(); ++j) {
@@ -173,8 +173,8 @@ RobustModelResult fast_robust_regression_internal(
 //' @keywords internal
 // [[Rcpp::export]]
 List fast_robust_regression_cpp(
-    const Eigen::MatrixXd& X, 
-    const Eigen::VectorXd& y, 
+    SEXP X_sexp, 
+    SEXP y_sexp, 
     Nullable<NumericVector> warm_start_beta = R_NilValue,
     bool smart_cold_start = true,
     std::string method = "MM",
@@ -188,6 +188,11 @@ List fast_robust_regression_cpp(
     Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
     bool estimate_only = false
 ) {
+    NumericMatrix X_r(X_sexp);
+    NumericVector y_r(y_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+
     RobustModelResult res = fast_robust_regression_internal(X, y, warm_start_beta, smart_cold_start, method, c, 4.685, maxit, tol, -1.0, fixed_idx, fixed_values, warm_start_weights, warm_start_fisher_info, estimate_only);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
     

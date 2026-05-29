@@ -131,14 +131,15 @@ inference_asymp_lik_std_mod_cache_private = list(
 			}
 			private$cached_values$beta_hat_T = model_output$beta_hat_T %||% model_output$b[2]
 			
-                        if (!is.null(model_output$b)) {
-                                private$set_fit_warm_start(
-                                        as.numeric(model_output$params %||% model_output$b),
-                                        type = if (!is.null(model_output$params)) "params" else "beta",
-                                        fisher = model_output$fisher_information %||% model_output$XtWX,
-                                        weights = model_output$w %||% model_output$mu
-                                )
-                        }
+			if (!is.null(model_output$b)) {
+				private$set_fit_warm_start(
+					as.numeric(model_output$params %||% model_output$b),
+					type = if (!is.null(model_output$params)) "params" else "beta",
+					fisher = model_output$fisher_information %||% model_output$XtWX,
+					weights = model_output$w %||% model_output$mu,
+					force_pd = TRUE
+				)
+			}
 			if (estimate_only) return(invisible(NULL))
 			ssq = model_output$ssq_b_2 %||% model_output$ssq_b_j
 			if (!is.null(ssq) && !is.na(ssq) && ssq > 0) {

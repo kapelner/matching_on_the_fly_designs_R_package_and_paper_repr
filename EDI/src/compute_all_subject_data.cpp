@@ -226,11 +226,13 @@ static SubsetResult process_subset(
 
 // [[Rcpp::export]]
 List compute_all_subject_data_cpp(
-	const Eigen::MatrixXd& X,           // Full covariate matrix (n x p), but only first t rows are valid
+	SEXP X_sexp,                        // Full covariate matrix (n x p), but only first t rows are valid
 	int t,                               // Current subject index (1-indexed)
 	const IntegerVector& i_all_y_present_R, // R indices (1-indexed) where y is present
 	double rank_tol = 1e-12
 ) {
+	NumericMatrix X_r(X_sexp);
+	Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
 	// Convert R indices (1-indexed) to C++ indices (0-indexed)
 	std::vector<int> i_past;          // indices 0 to t-2 (subjects 1 to t-1)
 	std::vector<int> i_all;           // indices 0 to t-1 (subjects 1 to t)

@@ -7,9 +7,9 @@
 using namespace Rcpp;
 using namespace Eigen;
 
-ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen, 
-                                              const Eigen::VectorXd& y_eigen, 
-                                              const Eigen::VectorXd& weights_eigen = Eigen::VectorXd(),
+ModelResult fast_logistic_regression_internal(const Eigen::Ref<const Eigen::MatrixXd>& X, 
+                                              const Eigen::Ref<const Eigen::VectorXd>& y, 
+                                              const Eigen::Ref<const Eigen::VectorXd>& weights = Eigen::VectorXd(),
                                               Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                               bool smart_cold_start = true,
                                               int maxit = 100, 
@@ -20,9 +20,9 @@ ModelResult fast_logistic_regression_internal(const Eigen::MatrixXd& X_eigen,
                                               Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
                                               Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
                                               bool estimate_only = false);
-ModelResult fast_poisson_regression_internal(const Eigen::MatrixXd& X,
-                                             const Eigen::VectorXd& y,
-                                             const Eigen::VectorXd& weights = Eigen::VectorXd(),
+ModelResult fast_poisson_regression_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
+                                             const Eigen::Ref<const Eigen::VectorXd>& y,
+                                             const Eigen::Ref<const Eigen::VectorXd>& weights = Eigen::VectorXd(),
                                              Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                              bool smart_cold_start = true,
                                              int maxit = 100,
@@ -89,12 +89,15 @@ inline MatrixXd gee_inverse_system(const MatrixXd& A) {
     return covariance_from_information((A + A.transpose()) / 2.0);
 }
 
-inline double gee_estimate_exchangeable_alpha(const VectorXd& resid, const VectorXd& mu,
-                                              const std::vector<int>& grp_start, const std::vector<int>& grp_size,
+inline double gee_estimate_exchangeable_alpha(const Eigen::Ref<const VectorXd>& resid,
+                                              const Eigen::Ref<const VectorXd>& mu,
+                                              const std::vector<int>& grp_start,
+                                              const std::vector<int>& grp_size,
                                               GEEFamily family,
-                                              const VectorXd& weights = VectorXd()) {
+                                              const Eigen::Ref<const VectorXd>& weights) {
     double num = 0.0, den = 0.0;
-    for (int gi = 0; gi < grp_start.size(); ++gi) {
+    const bool has_weights = weights.size() > 0;
+    for (int gi = 0; gi < (int)grp_start.size(); ++gi) {
         if (grp_size[gi] < 2) continue;
         int warm_start_params = grp_start[gi];
         for (int a = 0; a < grp_size[gi]; ++a) {
@@ -103,7 +106,7 @@ inline double gee_estimate_exchangeable_alpha(const VectorXd& resid, const Vecto
                 int j = warm_start_params + b;
                 double ri = resid[i] / std::sqrt(gee_variance(mu[i], family));
                 double rj = resid[j] / std::sqrt(gee_variance(mu[j], family));
-                double wij = std::sqrt(gee_obs_weight(weights, i) * gee_obs_weight(weights, j));
+                double wij = has_weights ? std::sqrt(std::max(weights[i], 0.0) * std::max(weights[j], 0.0)) : 1.0;
                 num += wij * ri * rj;
                 den += wij;
             }
@@ -113,7 +116,9 @@ inline double gee_estimate_exchangeable_alpha(const VectorXd& resid, const Vecto
     return std::min(std::max(num / den, -0.95), 0.95);
 }
 
-inline VectorXd gee_fit_independence_glm(const MatrixXd& X, const VectorXd& y, GEEFamily family, int maxit = 100, double tol = 1e-8) {
+inline VectorXd gee_fit_independence_glm(const Eigen::Ref<const MatrixXd>& X,
+                                         const Eigen::Ref<const VectorXd>& y,
+                                         GEEFamily family, int maxit = 100, double tol = 1e-8) {
     ModelResult fit = (family == GEEFamily::BINOMIAL) ?
         fast_logistic_regression_internal(X, y, Eigen::VectorXd(), R_NilValue, true, maxit, tol, R_NilValue, R_NilValue, "irls", R_NilValue, R_NilValue) :
         fast_poisson_regression_internal(X, y, Eigen::VectorXd(), R_NilValue, true, maxit, tol, R_NilValue, R_NilValue, "irls", R_NilValue, R_NilValue);
@@ -126,15 +131,17 @@ inline VectorXd gee_fit_independence_glm(const MatrixXd& X, const VectorXd& y, G
     return beta;
 }
 
-GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y, 
-                                        const std::vector<int>& grp_start, 
-                                        const std::vector<int>& grp_size, 
-                                        GEEFamily family, 
-                                        const VectorXd& weights = VectorXd(),
+GEEResult gee_pairs_singletons_cpp_impl(const Eigen::Ref<const MatrixXd>& X,
+                                        const Eigen::Ref<const VectorXd>& y,
+                                        const std::vector<int>& grp_start,
+                                        const std::vector<int>& grp_size,
+                                        GEEFamily family,
+                                        const Eigen::Ref<const VectorXd>& weights,
                                         Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                         Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
                                         int maxit = 100, double tol = 1e-8) {
-    const int n = X.rows(), p = X.cols(), G = grp_start.size();
+    const int n = (int)X.rows(), p = (int)X.cols(), G = (int)grp_start.size();
+    const bool has_weights = weights.size() > 0;
     for (int gi = 0; gi < G; ++gi) {
         if (grp_size[gi] > 2) stop("gee_pairs_singletons_cpp: cluster %d has size %d (only singletons and pairs are supported)", gi, grp_size[gi]);
     }
@@ -180,7 +187,7 @@ GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y,
             if (sz == 1) {
                 double mui = mu[warm_start_params], vi = gee_variance(mui, family), di = gee_dmu_deta(mui, family);
                 double vi_inv = 1.0 / vi;
-                double wi = gee_obs_weight(weights, warm_start_params);
+                double wi = has_weights ? std::max(weights[warm_start_params], 0.0) : 1.0;
                 double w = wi * di * di * vi_inv;
                 if (bread_is_zero) {
                     for(int r=0; r<p; r++) {
@@ -195,8 +202,8 @@ GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y,
                 double s1 = std::sqrt(v1), s2 = std::sqrt(v2), detV = v1 * v2 * (1.0 - alpha * alpha);
                 double V11 = v2/detV, V22 = v1/detV, V12 = -(alpha*s1*s2)/detV;
                 double r1 = resid[i1], r2 = resid[i2];
-                double sw1 = std::sqrt(gee_obs_weight(weights, i1));
-                double sw2 = std::sqrt(gee_obs_weight(weights, i2));
+                double sw1 = has_weights ? std::sqrt(std::max(weights[i1], 0.0)) : 1.0;
+                double sw2 = has_weights ? std::sqrt(std::max(weights[i2], 0.0)) : 1.0;
                 for(int r=0; r<p; r++) {
                     double d1xr = sw1 * d1 * X(i1, r), d2xr = sw2 * d2 * X(i2, r);
                     if (bread_is_zero) {
@@ -223,14 +230,19 @@ GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y,
     MatrixXd Meat = MatrixXd::Zero(p, p);
     VectorXd ScoreFinal = VectorXd::Zero(p);
     double quasi_loglik = 0.0; VectorXd mu(n), resid(n);
-    for (int i = 0; i < n; ++i) { mu[i] = gee_link_inv(X.row(i).dot(beta), family); resid[i] = y[i] - mu[i]; quasi_loglik += gee_obs_weight(weights, i) * gee_quasi_loglik_contrib(y[i], mu[i], family); }
+    for (int i = 0; i < n; ++i) {
+        mu[i] = gee_link_inv(X.row(i).dot(beta), family);
+        resid[i] = y[i] - mu[i];
+        double wi = has_weights ? std::max(weights[i], 0.0) : 1.0;
+        quasi_loglik += wi * gee_quasi_loglik_contrib(y[i], mu[i], family);
+    }
     alpha = gee_estimate_exchangeable_alpha(resid, mu, grp_start, grp_size, family, weights);
 
     for (int gi = 0; gi < G; ++gi) {
         int sz = grp_size[gi], gs = grp_start[gi];
         if (sz == 1) {
             double mui = mu[gs], vi = gee_variance(mui, family), di = gee_dmu_deta(mui, family);
-            double wi = gee_obs_weight(weights, gs);
+            double wi = has_weights ? std::max(weights[gs], 0.0) : 1.0;
             double Vi_inv = 1.0 / vi, w = wi * di * di * Vi_inv;
             double si_val = wi * di * Vi_inv * resid[gs];
             for(int r=0; r<p; r++) {
@@ -246,7 +258,8 @@ GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y,
             double v1 = gee_variance(mu[i1], family), v2 = gee_variance(mu[i2], family), d1 = gee_dmu_deta(mu[i1], family), d2 = gee_dmu_deta(mu[i2], family);
             double s1 = std::sqrt(v1), s2 = std::sqrt(v2), detV = v1 * v2 * (1.0 - alpha * alpha);
             double V11 = v2/detV, V22 = v1/detV, V12 = -(alpha*s1*s2)/detV, r1 = resid[i1], r2 = resid[i2];
-            double sw1 = std::sqrt(gee_obs_weight(weights, i1)), sw2 = std::sqrt(gee_obs_weight(weights, i2));
+            double sw1 = has_weights ? std::sqrt(std::max(weights[i1], 0.0)) : 1.0;
+            double sw2 = has_weights ? std::sqrt(std::max(weights[i2], 0.0)) : 1.0;
             for(int r=0; r<p; r++) {
                 double d1xr = sw1 * d1 * X(i1, r), d2xr = sw2 * d2 * X(i2, r), sir = d1xr*(V11*(sw1 * r1) + V12*(sw2 * r2)) + d2xr*(V12*(sw1 * r1) + V22*(sw2 * r2));
                 ScoreFinal[r] += sir;
@@ -264,18 +277,27 @@ GEEResult gee_pairs_singletons_cpp_impl(const MatrixXd& X, const VectorXd& y,
 }
 
 // [[Rcpp::export]]
-List gee_pairs_singletons_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, std::string family_str,
-                                       const Eigen::VectorXd& weights,
+List gee_pairs_singletons_weighted_cpp(SEXP X_r, SEXP y_r, SEXP group_id_r, std::string family_str,
+                                       SEXP weights_r,
                                        Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
                                        int maxit = 100, double tol = 1e-8) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    IntegerVector group_id_int(group_id_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    Eigen::Map<const Eigen::VectorXi> group_id(group_id_int.begin(), group_id_int.size());
+    NumericVector weights_vec(weights_r);
+    Eigen::Map<const Eigen::VectorXd> weights(weights_vec.begin(), weights_vec.size());
+
     if (weights.size() != y.size()) {
         stop("weights must have length equal to length(y)");
     }
     GEEFamily family = GEEFamily::GAUSSIAN;
     if (family_str == "binomial") family = GEEFamily::BINOMIAL;
     else if (family_str == "poisson") family = GEEFamily::POISSON;
-    int n = y.size(); std::vector<int> ord(n); for(int i=0; i<n; i++) ord[i] = i;
+    int n = (int)y.size(); std::vector<int> ord(n); for(int i=0; i<n; i++) ord[i] = i;
     std::sort(ord.begin(), ord.end(), [&](int a, int b){ return group_id[a] < group_id[b]; });
     MatrixXd X_s(n, X.cols()); VectorXd y_s(n), w_s(n);
     for(int i=0; i<n; i++) { X_s.row(i) = X.row(ord[i]); y_s[i] = y[ord[i]]; w_s[i] = weights[ord[i]]; }
@@ -299,14 +321,21 @@ List gee_pairs_singletons_weighted_cpp(const Eigen::MatrixXd& X, const Eigen::Ve
 }
 
 // [[Rcpp::export]]
-List gee_pairs_singletons_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXi& group_id, std::string family_str, 
+List gee_pairs_singletons_cpp(SEXP X_r, SEXP y_r, SEXP group_id_r, std::string family_str, 
                                Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
                                int maxit = 100, double tol = 1e-8) {
+    NumericMatrix X_mat(X_r);
+    NumericVector y_vec(y_r);
+    IntegerVector group_id_int(group_id_r);
+    Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
+    Eigen::Map<const Eigen::VectorXi> group_id(group_id_int.begin(), group_id_int.size());
+
     GEEFamily family = GEEFamily::GAUSSIAN;
     if (family_str == "binomial") family = GEEFamily::BINOMIAL;
     else if (family_str == "poisson") family = GEEFamily::POISSON;
-    int n = y.size(); std::vector<int> ord(n); for(int i=0; i<n; i++) ord[i] = i;
+    int n = (int)y.size(); std::vector<int> ord(n); for(int i=0; i<n; i++) ord[i] = i;
     std::sort(ord.begin(), ord.end(), [&](int a, int b){ return group_id[a] < group_id[b]; });
     MatrixXd X_s(n, X.cols()); VectorXd y_s(n);
     for(int i=0; i<n; i++) { X_s.row(i) = X.row(ord[i]); y_s[i] = y[ord[i]]; }
