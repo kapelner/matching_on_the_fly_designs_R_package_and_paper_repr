@@ -98,7 +98,8 @@ InferenceOrdinalJonckheereTerpstraTest = R6::R6Class(
 			y_c = y_vals[i_c]
 			w_t = row_weights[i_t]
 			w_c = row_weights[i_c]
-			comp = outer(y_t, y_c, function(a, b) ifelse(a > b, 1, ifelse(a < b, 0, 0.5)))
+			diffs = outer(y_t, y_c, "-")
+			comp = (diffs > 0) + 0.5 * (diffs == 0)
 			w_pair = outer(w_t, w_c, "*")
 			den = sum(w_pair)
 			if (!is.finite(den) || den <= 0) return(NA_real_)

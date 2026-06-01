@@ -1377,15 +1377,18 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             rep_seed = if (!is.null(seed_val)) seed_val + rep_i else NULL
             list(rep_i = rep_i, rep_seed = rep_seed)
           })
-          chunk_wall_start   = as.numeric(Sys.time())
+          chunk_iter_start   = as.numeric(Sys.time())
           chunk_results_list = parallel::clusterApply(cl_rep, chunk_items, fork_rep_worker_fn)
-          chunk_wall_elapsed = as.numeric(Sys.time()) - chunk_wall_start
 
-          # Estimate per-rep elapsed as chunk wall time divided by active rep count.
+          # Preliminary per-rep elapsed from parallel-only wall time.
+          # Will be corrected after the inner loop to include post-processing overhead.
           n_active_in_chunk = sum(vapply(rep_chunk, function(r)
             any(vapply(all_run_required_v, `[[`, FALSE, r)), logical(1L)))
+          chunk_parallel_elapsed = as.numeric(Sys.time()) - chunk_iter_start
           elapsed_per_rep = if (n_active_in_chunk > 0L)
-            chunk_wall_elapsed / n_active_in_chunk else 0
+            chunk_parallel_elapsed / n_active_in_chunk else 0
+          # Reset rep_start_capture so elapsed_in_rep ticks up correctly during the inner loop.
+          private$rep_start_capture = as.numeric(Sys.time())
 
           for (k in seq_along(rep_chunk)) {
             rep             = rep_chunk[[k]]
@@ -1461,6 +1464,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             if (rep %% private$save_to_disk_every_n_rep == 0L) private$.flush_pending_to_disk()
             private$rep_elapsed_idx = private$rep_elapsed_idx + 1L
             private$rep_elapsed_times[[private$rep_elapsed_idx]] = elapsed_per_rep
+          }
+          # Back-fill rep_elapsed_times with actual elapsed including post-processing.
+          if (n_active_in_chunk > 0L) {
+            elapsed_per_rep_actual = (as.numeric(Sys.time()) - chunk_iter_start) / n_active_in_chunk
+            idx_end = private$rep_elapsed_idx
+            private$rep_elapsed_times[seq(idx_end - n_active_in_chunk + 1L, idx_end)] = elapsed_per_rep_actual
           }
         }
       }

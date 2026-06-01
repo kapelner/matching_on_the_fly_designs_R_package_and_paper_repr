@@ -218,7 +218,7 @@ ModelResult fast_neg_bin_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
 
     res.b = params.head(p);
     res.dispersion = std::exp(params[p]); // theta
-    res.XtWX = estimate_only ? Eigen::MatrixXd::Zero(p+1, p+1) : fun.expected_hessian(params);
+    res.XtWX = estimate_only ? Eigen::MatrixXd::Zero(p+1, p+1) : fun.hessian(params);
     res.iterations = fit.niter;
     res.converged = fit.converged;
     res.sigma2_hat = -fit.value; // using sigma2_hat to store logLik temporarily

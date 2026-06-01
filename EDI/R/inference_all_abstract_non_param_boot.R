@@ -567,6 +567,16 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			w_priv$fit_warm_start_type = worker_state$base_fit_warm_start_type
 			w_priv$fit_warm_start_fisher = worker_state$base_fit_warm_start_fisher
 			w_priv$cached_mod = NULL
+			
+			# Reset all private design matrix and covariate caches
+			w_priv$cached_design_matrix = NULL
+			w_priv$cached_w_for_design_matrix = NULL
+			w_priv$cached_harden_for_design_matrix = NULL
+			w_priv$cached_hardened_X_cov = NULL
+			w_priv$cached_reduced_X = NULL
+			w_priv$cached_X_full_for_reduced = NULL
+			w_priv$cached_keep_for_reduced = NULL
+			w_priv$cached_j_treat_for_reduced = NULL
 			des_priv = worker_state$worker_des_priv
 			if (!is.null(des_priv)) {
 				des_priv$X = w_priv$X
@@ -832,6 +842,17 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			sub_inf_priv$reduced_design_keep_cache = NULL
 			sub_inf_priv$fixed_covariate_keep_cache = NULL
 			sub_inf_priv$cached_mod = NULL
+			
+			# Reset all private design matrix and covariate caches
+			sub_inf_priv$cached_design_matrix = NULL
+			sub_inf_priv$cached_w_for_design_matrix = NULL
+			sub_inf_priv$cached_harden_for_design_matrix = NULL
+			sub_inf_priv$cached_hardened_X_cov = NULL
+			sub_inf_priv$cached_reduced_X = NULL
+			sub_inf_priv$cached_X_full_for_reduced = NULL
+			sub_inf_priv$cached_keep_for_reduced = NULL
+			sub_inf_priv$cached_j_treat_for_reduced = NULL
+
 			if (!is.null(sub_des_priv$m)) sub_inf_priv$m = sub_des_priv$m
 			sub_inf
 		},
@@ -913,7 +934,10 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 					tryCatch({
 						theta = as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
 						if (is.finite(theta)) theta else NA_real_
-					}, error = function(e) NA_real_)
+					}, error = function(e) {
+						message("Jackknife error at iteration ", i, ": ", e$message)
+						NA_real_
+					})
 				}, n_cores = actual_cores, show_progress = FALSE), use.names = FALSE)
 			}
 			jack = as.numeric(jack)

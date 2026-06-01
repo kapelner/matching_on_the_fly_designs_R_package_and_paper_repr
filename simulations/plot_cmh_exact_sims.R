@@ -2,7 +2,7 @@ rm(list = ls())
 pacman::p_load(data.table, R.utils, ggplot2, gridExtra, xtable)
 
 Nrep = 10000
-raw_results_dt = data.table::fread(sprintf("cmh_exact_sims_plus_greedy_results_Nrep_%d.csv.bz2", Nrep))
+raw_results_dt = data.table::fread(sprintf("cmh_exact_sims_plus_greedy_results_high_signal_Nrep_%d.csv.bz2", Nrep))
 raw_results_dt[, reject := pval < 0.05]
 raw_results_dt[, covers := ci_lo <= true_estimand & true_estimand <= ci_hi]
 raw_results_dt[, ci_length := ci_hi - ci_lo]
@@ -46,15 +46,19 @@ results_dt[, inference_short := gsub("InferenceIncid", "", inference_short)]
 
 # Row 1: iBCRD, OptimalBlocks B=4/8/16/32; Row 2: BinaryMatch, Blocking B_target=4/8/16/32
 design_levels = c(
-  "iBCRD",                    
+  "iBCRD",               
+  "OptimalBlocks (B=2)",           
   "OptimalBlocks (B=4)",     
   "OptimalBlocks (B=8)",   
   "OptimalBlocks (B=16)",  
-  "OptimalBlocks (B=32)",  
+  "OptimalBlocks (B=32)",   
+  "OptimalBlocks (B=64)", 
+  "Blocking (B_target=2, exact_num_blocks=TRUE)",
   "Blocking (B_target=4, exact_num_blocks=TRUE)",  
   "Blocking (B_target=8, exact_num_blocks=TRUE)",  
   "Blocking (B_target=16, exact_num_blocks=TRUE)",    
-  "Blocking (B_target=32, exact_num_blocks=TRUE)",   
+  "Blocking (B_target=32, exact_num_blocks=TRUE)",    
+  "Blocking (B_target=64, exact_num_blocks=TRUE)",   
   "BinaryMatch",
   "Rerandomization (prop_acceptable=0.01)",
   'Greedy (objective=""abs_sum_diff"")',
@@ -63,15 +67,19 @@ design_levels = c(
   'MatchingGreedyPairSwitching (objective=""mahal_dist"")'
 )
 design_labels = c(
-  "iBCRD",                    
+  "iBCRD",              
+  "Optimal B=2",                    
   "Optimal B=4",     
   "Optimal B=8",   
   "Optimal B=16",  
-  "Optimal B=32",  
+  "Optimal B=32",   
+  "Optimal B=64", 
+  "B=2", 
   "B=4",  
   "B=8",  
   "B=16",    
-  "B=32",   
+  "B=32",     
+  "B=64",  
   "BinaryMatch",
   "Rerandomization",
   "GreedyAbs",

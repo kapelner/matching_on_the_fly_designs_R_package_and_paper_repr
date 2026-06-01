@@ -578,8 +578,12 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 			worker_priv$cached_values = list()
 			worker_priv$clear_likelihood_null_warm_cache()
 			worker_priv$clear_fit_warm_start()
-			worker_priv$cached_design_matrix = NULL
-			worker_priv$cached_hardened_X_cov = NULL
+			# Parametric bootstrap holds X and w fixed across draws (lines above restore both
+			# to base_X / base_w).  cached_design_matrix = [1|w|X] and cached_hardened_X_cov
+			# therefore remain valid and are deliberately preserved, avoiding an O(Np^2)
+			# drop_highly_correlated_cols recomputation on every draw.
+			# Compare: randomization preserves cached_hardened_X_cov for the same reason
+			# (X_cov fixed) but must clear cached_design_matrix because w changes.
 			worker_priv$reduced_design_keep_cache = NULL
 			worker_priv$fixed_covariate_keep_cache = NULL
 			worker_priv$best_X_colnames = NULL

@@ -401,8 +401,8 @@ inline bool try_safe_ols_solve(const Eigen::MatrixXd& X,
         beta_out = Eigen::VectorXd::Zero(p);
         return false;
     }
-    Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X);
-    beta_out = cod.solve(y);
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(X);
+    beta_out = qr.solve(y);
     if (!beta_out.allFinite()) {
         beta_out = Eigen::VectorXd::Zero(p);
         return false;

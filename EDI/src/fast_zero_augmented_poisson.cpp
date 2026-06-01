@@ -398,9 +398,8 @@ List fast_zero_augmented_poisson_cpp(SEXP X_sexp,
     }
 
     Eigen::MatrixXd observed_information = fun.hessian(params);
-    Eigen::MatrixXd fisher_information = fun.expected_hessian(params);
 
-    Eigen::MatrixXd H_free = subset_matrix(fisher_information, fixed_spec.free_idx, fixed_spec.free_idx);
+    Eigen::MatrixXd H_free = subset_matrix(observed_information, fixed_spec.free_idx, fixed_spec.free_idx);
     Eigen::MatrixXd cov_free = H_free.inverse();
     Eigen::MatrixXd vcov = expand_free_covariance(total_p, fixed_spec, cov_free, true);
 
@@ -413,9 +412,9 @@ List fast_zero_augmented_poisson_cpp(SEXP X_sexp,
         Named("converged") = fit.converged,
         Named("neg_ll") = fit.value,
         Named("observed_information") = observed_information,
-        Named("fisher_information") = fisher_information,
-        Named("information") = fisher_information,
-        Named("information_type") = "fisher",
+        Named("fisher_information") = observed_information,
+        Named("information") = observed_information,
+        Named("information_type") = "observed",
         Named("hessian") = -observed_information
     );
 }

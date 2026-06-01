@@ -378,7 +378,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 			list(beta_hat_T = beta_w, b = c(0, beta_w), ssq_b_2 = ssq_w, neg_log_lik = as.numeric(fit$neg_ll %||% fit$neg_log_lik), fisher_information = fit$fisher_information)
 		},
 		generate_mod = function(estimate_only = FALSE){
-			if (is.null(private$strat_cox_X_linear_cache) || !identical(private$w, private$strat_cox_w_cache)) {
+			if (is.null(private$strat_cox_X_linear_cache) || is.null(private$strat_cox_data_cache) || !identical(private$w, private$strat_cox_w_cache)) {
 				X_full      = private$X
 				private$strat_cox_strata_info_cache = private$compute_strata_info(X_full)
 				private$strat_cox_X_linear_cache = matrix(numeric(0), nrow = length(private$y), ncol = 0)

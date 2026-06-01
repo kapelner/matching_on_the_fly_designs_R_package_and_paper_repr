@@ -521,12 +521,11 @@ List fast_zero_one_inflated_beta_cpp(SEXP X_sexp,
 
 	Eigen::MatrixXd observed_information = fun.hessian(params);
 
-	Eigen::MatrixXd fisher_information = fun.expected_hessian(params);
 	int dim = params.size();
 	NumericMatrix vcov_mat(dim, dim);
 	bool has_vcov = false;
-	if (fisher_information.rows() == dim && fisher_information.cols() == dim && fisher_information.allFinite()){
-		Eigen::MatrixXd H_free = subset_matrix(fisher_information, fixed_spec.free_idx, fixed_spec.free_idx);
+	if (observed_information.rows() == dim && observed_information.cols() == dim && observed_information.allFinite()){
+		Eigen::MatrixXd H_free = subset_matrix(observed_information, fixed_spec.free_idx, fixed_spec.free_idx);
 		Eigen::FullPivLU<Eigen::MatrixXd> lu(H_free);
 		if (lu.isInvertible()){
 			Eigen::MatrixXd inv_free = lu.inverse();
@@ -556,9 +555,9 @@ List fast_zero_one_inflated_beta_cpp(SEXP X_sexp,
 		Named("vcov") = vcov_mat,
 		Named("neg_loglik") = fit.value,
 		Named("observed_information") = observed_information,
-		Named("fisher_information") = fisher_information,
-		Named("information") = fisher_information,
-		Named("information_type") = "fisher",
+		Named("fisher_information") = observed_information,
+		Named("information") = observed_information,
+		Named("information_type") = "observed",
 		Named("hessian") = -observed_information
 	);
 }

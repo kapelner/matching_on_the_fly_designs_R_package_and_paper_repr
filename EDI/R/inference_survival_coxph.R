@@ -310,7 +310,7 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 			)
 		},
 		generate_mod = function(estimate_only = FALSE){
-			if (is.null(private$cox_X_fit_cache) || !identical(private$w, private$cox_w_cache)) {
+			if (is.null(private$cox_X_fit_cache) || is.null(private$cox_data_cache) || !identical(private$w, private$cox_w_cache)) {
 				X_cov = private$get_X()
 				private$cox_X_fit_cache = if (!is.null(X_cov) && ncol(X_cov) > 0){
 					cbind(treatment = private$w, X_cov)

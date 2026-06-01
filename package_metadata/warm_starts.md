@@ -1,14 +1,50 @@
-# Warm Start Strategies in EDI: 2026 Final Comprehensive Report
+# Warm Start and Caching Strategies in EDI: 2026 Final Comprehensive Report
 
-This report documents the implementation and performance of **Warm Start** strategies for resampling-based inference in the `EDI` package. 
+This report documents the implementation and performance of **Warm Start and Caching** strategies for resampling-based inference in the `EDI` package. 
 
-## Rationale: Intelligent Anchoring
+## Rationale: Intelligent Anchoring and Structural Caching
+
+EDI's resampling acceleration operates on two complementary layers that together constitute the "warm state":
+
+### Layer 1: Parameter Warm Starting
 
 Warm starting involves reusing the converged state of a previous fit to initialize a new, related fit. In `EDI`, we use three distinct "Anchoring" strategies:
 
 1.  **Bootstrap and Jackknife (MLE Anchored)**: Bootstrap and Jackknife samples are "near" the original data. The original Maximum Likelihood Estimate (MLE) is a very high-quality guess for these perturbed datasets. Providing this guess often reduces convergence time from ~15 iterations to just **1 step**.
-2.  **Randomization (Sequential Null Anchoring)**: In a high-signal dataset, the MLE is far from zero. However, under randomization (permutation), the treatment effect is null. To avoid the "Bad Guess" penalty of starting at a large treatment effect, we anchor each randomization sample to the **previous iteration's result**. This allows the loop to "track" the null distribution efficiently.
+2.  **Randomization (Sequential Null Anchoring)**: The first permutation is initialized from the observed-data MLE. Each subsequent permutation is initialized from the **previous permutation's converged result**, so the solver tracks the null distribution instead of jumping back to the high-signal MLE on every iteration. This is implemented by copying `inf_priv$fit_warm_start` — which iterative fitting functions always update via `set_fit_warm_start()` at convergence — back into `worker_state$base_fit_warm_start` after each successful permutation.
 3.  **Parametric Bootstrap (Hybrid Anchoring)**: Simulated datasets are generated under the null likelihood. The primary MLE is used to anchor the **unrestricted** fit for each simulated dataset. While the treatment effect is nulled, the primary MLE provides near-perfect starting values for nuisance parameters (dispersion, shape, and covariate coefficients), which represent the bulk of the solver's work.
+
+### Layer 2: Structural Data Caching
+
+Beyond parameter initialization, EDI also caches expensive structural computations that are valid across resampling iterations whenever the underlying data they depend on does not change:
+
+*   **`cached_hardened_X_cov`**: The hardened covariate matrix produced by `drop_highly_correlated_cols` and `drop_linearly_dependent_cols`. For large $N$ and $p$, this computation is O($Np^2$) and dominates per-sample overhead for non-iterative models. It is valid when the covariate row set is unchanged (randomization: only $w$ permuted; parametric bootstrap: only $y$ simulated). It must be cleared when row indices change (non-parametric bootstrap, jackknife), because the N×p′ matrix has different rows.
+*   **`cached_design_matrix`**: The full constructed design matrix $[\mathbf{1} \mid w \mid X]$. Valid only when both $w$ and $X$ are fixed (parametric bootstrap). Must be cleared when $w$ changes (randomization) or when row indices change (non-parametric bootstrap, jackknife).
+*   **`cached_mod`** and **`cached_values`**: The fitted model object and derived scalars (e.g., `beta_hat_T`) from the primary fit, always cleared before each resampling draw because $y$ changes in every method.
+
+**Why caching is legitimately part of the warm-state advantage**: In production use, `compute_estimate()` is always called once before any resampling method to obtain the point estimate. This call populates all structural caches as a side effect. The benchmarked warm state faithfully mirrors this real-world usage pattern. A cold object — one that has never had `compute_estimate()` called — does not represent a realistic baseline for comparing resampling speed, because no user would invoke `compute_bootstrap_confidence_interval` without first obtaining the primary estimate. The measured speedups therefore reflect the end-to-end benefit a practitioner actually receives when switching from a cold to a warm EDI object.
+
+### Layer 3: Cache Validity by Resampling Method
+
+Each resampling method changes a different subset of the problem inputs. The table below records what varies per draw, and the resulting cache policy enforced by the load-into-worker functions.
+
+**Inputs that change per draw:**
+
+| Input | Randomization | NP Bootstrap | Jackknife | Param. Bootstrap |
+|---|---|---|---|---|
+| $X_{cov}$ rows | Fixed | Resampled (w/ replacement) | One row removed | Fixed |
+| $w$ | Permuted | Resampled | One element removed | Fixed |
+| $y$ | Fixed (or shifted by $\delta$) | Resampled | One element removed | Simulated under null |
+
+**Cache policy per draw:**
+
+| Cache | Depends on | Randomization | NP Bootstrap | Jackknife | Param. Bootstrap |
+|---|---|---|---|---|---|
+| `cached_hardened_X_cov` — drop-cols result, O($Np^2$) | $X_{cov}$ rows | **Preserved** — $X_{cov}$ unchanged | **Cleared** — row set changes | **Cleared** — row removed | **Preserved** — $X$ unchanged |
+| `cached_design_matrix` — $[\mathbf{1} \mid w \mid X]$ | $X$ rows and $w$ | **Cleared** — $w$ changes | **Cleared** — row set changes | **Cleared** — row set changes | **Preserved** — both fixed |
+| `fit_warm_start` ($\hat{\beta}$) | — | MLE → sequential chain across permutations | Reset to MLE each sample | Reset to MLE each leave-one-out | Reset to MLE each draw |
+| `fit_warm_start_fisher` ($X_{\text{full}}^T W X_{\text{full}}$) | $X_{\text{full}} = [\mathbf{1}\mid w\mid X]$, $\hat{\beta}$ | **NULL** — $w$ changes, invalidating all cross-terms with $w$ | MLE Fisher ≈ valid (resampled $X_{\text{full}} \approx$ original) | MLE Fisher ≈ valid ($O(1/N)$ rank-1 perturbation from removed row) | **Valid** — $X$, $w$, $\hat{\beta}$ all fixed |
+| `cached_values` / `cached_mod` | $y$ | **Cleared** | **Cleared** | **Cleared** | **Cleared** |
 
 ---
 
@@ -19,97 +55,698 @@ This benchmark evaluates the speedup across **all four resampling types** for ev
 **Scale:** High-Resolution Audit ($N=100-500$, $P=2-10$, proportional to model complexity). 
 Note: For ultra-fast models, speedups are measured relative to a sub-millisecond cold start baseline and are bounded by the numerical resolution floor.
 
-| Inference Path | Randomization | NP Bootstrap | Jackknife | Param. Bootstrap |
-| :--- | :---: | :---: | :---: | :---: |
-| **InferenceAllKKWilcoxIVWC** | +93.8% | +100.0% | +92.5% | N/S |
-| **InferenceAllSimpleMeanDiff** | +77.1% | +43.2% | +71.4% | +90.3% |
-| **InferenceAllSimpleMeanDiffPooledVar** | +80.0% | +42.7% | +68.4% | +88.6% |
-| **InferenceAllSimpleWilcox** | +32.9% | +5.7% | +0.1% | +23.9% |
-| **InferenceBaiAdjustedTKK14** | +80.8% | +25.5% | +52.5% | N/S |
-| **InferenceBaiAdjustedTKK21** | +81.5% | +26.5% | +61.5% | N/S |
-| **InferenceContinKKGLMM** | +86.0% | +30.5% | +41.4% | +56.5% |
-| **InferenceContinKKOLSIVWC** | +86.5% | +18.2% | +62.5% | N/S |
-| **InferenceContinKKOLSOneLik** | +86.9% | +2.4% | +70.0% | +83.7% |
-| **InferenceContinKKQuantileRegrIVWC** | +70.0% | +22.1% | +51.3% | N/S |
-| **InferenceContinKKQuantileRegrOneLik** | +76.3% | +20.9% | +48.6% | N/S |
-| **InferenceContinKKRobustRegrIVWC** | +70.7% | +18.2% | +66.0% | N/S |
-| **InferenceContinKKRobustRegrOneLik** | +73.3% | +10.2% | +60.8% | N/S |
-| **InferenceContinLin** | +84.3% | +17.9% | +69.2% | +87.6% |
-| **InferenceContinOLS** | +77.5% | +25.1% | +77.3% | +87.6% |
-| **InferenceContinQuantileRegr** | +82.2% | +6.2% | +28.2% | N/S |
-| **InferenceContinRobustRegr** | +55.6% | +53.7% | +12.3% | N/S |
-| **InferenceCountHurdleNegBin** | +57.1% | +23.4% | +66.5% | +26.4% |
-| **InferenceCountHurdlePoisson** | +85.6% | +1.6% | +18.4% | N/S |
-| **InferenceCountKKCondPoissonOneLik** | +78.7% | +16.5% | +70.5% | N/S |
-| **InferenceCountKKGLMM** | +63.0% | +12.9% | +36.8% | +11.5% |
-| **InferenceCountKKHurdlePoissonOneLik** | +0.1% | +0.1% | +26.0% | N/S |
-| **InferenceCountNegBin** | +5.2% | +5.8% | +65.1% | +27.4% |
-| **InferenceCountPoisson** | +5.2% | +5.4% | +57.6% | +22.9% |
-| **InferenceCountPoissonKKGEE** | +50.5% | +6.6% | +44.2% | N/S |
-| **InferenceCountQuasiPoisson** | +20.2% | +11.0% | +51.4% | +77.1% |
-| **InferenceCountRobustPoisson** | +5.7% | +10.6% | +75.0% | +16.4% |
-| **InferenceCountZeroInflatedNegBin** | +14.2% | +11.0% | +4.4% | N/S |
-| **InferenceCountZeroInflatedPoisson** | +0.1% | +6.3% | +1.3% | +34.7% |
-| **InferenceIncidBinomialIdentityRiskDiff** | +0.1% | +0.1% | +51.7% | +55.5% |
-| **InferenceIncidCMH** | +0.1% | +12.5% | +88.9% | +28.1% |
-| **InferenceIncidExactFisher** | N/S | N/S | N/S | N/S |
-| **InferenceIncidExactZhang** | N/S | N/S | N/S | N/S |
-| **InferenceIncidGCompRiskDiff** | +0.1% | +63.2% | +74.4% | N/S |
-| **InferenceIncidGCompRiskRatio** | +0.0% | +0.1% | +0.1% | N/S |
-| **InferenceIncidKKCondLogitIVWC** | +0.1% | +8.1% | +0.0% | N/S |
-| **InferenceIncidKKCondLogitOneLik** | +0.1% | +14.1% | +77.8% | +43.7% |
-| **InferenceIncidKKCondLogitPlusGLMMIVWC** | +0.1% | +20.7% | +22.5% | N/S |
-| **InferenceIncidKKCondLogitPlusGLMMOneLik** | +0.1% | +39.1% | +11.3% | N/S |
-| **InferenceIncidKKGCompRiskDiff** | +100.0% | +0.1% | +69.7% | N/S |
-| **InferenceIncidKKGCompRiskRatio** | +0.1% | +0.2% | +48.9% | N/S |
-| **InferenceIncidKKGEE** | +50.0% | +13.6% | +16.0% | N/S |
-| **InferenceIncidKKModifiedPoisson** | < 5% | +41.2% | +37.3% | N/S |
-| **InferenceIncidLogBinomial** | +0.1% | +5.5% | +48.6% | +18.4% |
-| **InferenceIncidLogRegr** | +0.1% | +0.1% | +55.0% | +37.1% |
-| **InferenceIncidMiettinenNurminenRiskDiff** | +0.1% | +15.1% | +89.5% | N/S |
-| **InferenceIncidModifiedPoisson** | +100.0% | +0.1% | +48.5% | +37.1% |
-| **InferenceIncidNewcombeRiskDiff** | +100.0% | +0.1% | +95.2% | N/S |
-| **InferenceIncidProbitRegr** | +0.1% | +0.1% | +55.6% | +6.6% |
-| **InferenceIncidRiskDiff** | +100.0% | +0.1% | +61.3% | N/S |
-| **InferenceIncidWald** | +100.0% | +0.1% | +0.0% | +0.1% |
-| **InferenceOrdinalAdjCatLogitRegr** | +44.1% | +16.7% | +17.1% | N/S |
-| **InferenceOrdinalCauchitRegr** | +12.0% | +24.0% | +8.7% | +7.8% |
-| **InferenceOrdinalCloglogRegr** | +0.9% | +8.4% | +24.8% | +6.0% |
-| **InferenceOrdinalContRatioRegr** | +1.3% | +0.1% | +2.5% | N/S |
-| **InferenceOrdinalGCompMeanDiff** | +59.0% | +9.3% | +78.0% | N/S |
-| **InferenceOrdinalJonckheereTerpstraTest** | +0.1% | +10.9% | +10.9% | N/S |
-| **InferenceOrdinalKKCLMM** | +17.0% | +2.2% | +38.8% | N/S |
-| **InferenceOrdinalKKCLMMCauchit** | +5.8% | < 2% | +7.8% | N/S |
-| **InferenceOrdinalKKCLMMCloglog** | +4.9% | +4.9% | < 2% | N/S |
-| **InferenceOrdinalKKCLMMProbit** | +4.2% | +0.5% | +29.6% | N/S |
-| **InferenceOrdinalKKCondAdjCatLogitRegr** | +0.8% | < 2% | < 2% | N/S |
-| **InferenceOrdinalKKGEE** | < 2% | < 2% | +56.9% | N/S |
-| **InferenceOrdinalKKGLMM** | < 2% | +7.4% | +75.2% | N/S |
-| **InferenceOrdinalOrderedProbitRegr** | +51.7% | < 2% | < 2% | +63.1% |
-| **InferenceOrdinalRidit** | +30.6% | < 2% | +96.2% | N/S |
-| **InferenceOrdinalStereotypeLogitRegr** | +17.3% | +0.2% | +41.6% | N/S |
-| **InferencePropBetaRegr** | +61.4% | +6.4% | +85.8% | N/S |
-| **InferencePropFractionalLogit** | +71.7% | < 2% | +51.5% | N/S |
-| **InferencePropGCompMeanDiff** | +41.0% | +50.4% | +68.3% | N/S |
-| **InferencePropKKGEE** | +6.1% | < 2% | +23.4% | N/S |
-| **InferencePropKKGLMM** | +11.2% | +2.9% | +50.9% | N/S |
-| **InferencePropKKQuantileRegrIVWC** | +50.9% | +11.2% | +77.6% | N/S |
-| **InferencePropKKQuantileRegrOneLik** | +75.2% | < 2% | +61.4% | N/S |
-| **InferencePropZeroOneInflatedBetaRegr** | +18.9% | +23.8% | +66.8% | +78.1% |
-| **InferenceSurvivalCoxPHRegr** | +21.1% | < 2% | +54.6% | +66.2% |
-| **InferenceSurvivalDepCensTransformRegr** | +28.2% | < 2% | +28.6% | N/S |
-| **InferenceSurvivalGehanWilcox** | +37.6% | < 2% | +67.8% | N/S |
-| **InferenceSurvivalKKClaytonCopulaIVWC** | +76.1% | +7.7% | +61.5% | N/S |
-| **InferenceSurvivalKKClaytonCopulaOneLik** | +25.1% | < 2% | +82.7% | +72.8% |
-| **InferenceSurvivalKKLWACoxPHIVWC** | +33.5% | < 2% | +82.7% | N/S |
-| **InferenceSurvivalKKLWACoxPHOneLik** | +28.2% | +2.1% | +10.3% | +13.9% |
-| **InferenceSurvivalKKStratCoxPHIVWC** | +67.3% | < 2% | +82.7% | N/S |
-| **InferenceSurvivalKKStratCoxPHOneLik** | +28.3% | < 2% | +41.5% | +24.5% |
-| **InferenceSurvivalKMDiff** | +46.8% | +17.7% | +83.7% | N/S |
-| **InferenceSurvivalLogRank** | +23.3% | +6.3% | +62.3% | N/S |
-| **InferenceSurvivalRestrictedMeanDiff** | +7.1% | +3.8% | +57.8% | N/S |
-| **InferenceSurvivalStratCoxPHRegr** | +72.5% | < 2% | +18.2% | +31.0% |
-| **InferenceSurvivalWeibullRegr** | +54.1% | +5.7% | +9.0% | +51.1% |
+<table border="1" style="border-collapse: collapse; width: 100%;">
+  <thead>
+    <tr style="background-color: #f2f2f2;">
+      <th style="text-align: left; padding: 8px;">Inference Path</th>
+      <th style="text-align: center; padding: 8px;">Randomization</th>
+      <th style="text-align: center; padding: 8px;">NP Bootstrap</th>
+      <th style="text-align: center; padding: 8px;">Jackknife</th>
+      <th style="text-align: center; padding: 8px;">Param. Bootstrap</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidenceExactZhang</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidExactBinomial</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidExactFisher</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidExtendedRobins</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalPairedSignTest</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalPropOddsRegr</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKKRankRegrIVWC</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+44.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceBaiAdjustedTKK14</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+13.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+39.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceBaiAdjustedTKK21</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px;">+3.1%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+20.1%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidGCompRiskDiff</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+72.1%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+69.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidGCompRiskRatio</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+74.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+68.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKCondLogitIVWC</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+56.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKCondLogitPlusGLMMIVWC</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+8.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+8.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKCondLogitPlusGLMMOneLik</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px;">+3.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+9.1%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKGCompRiskDiff</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+71.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKGCompRiskRatio</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px;">+4.1%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+69.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKGEE</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+5.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+7.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKModifiedPoisson</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px;">+3.1%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+62.1%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKNewcombeRiskDiff</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-6.1%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+9.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidMiettinenNurminenRiskDiff</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-17.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+9.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidNewcombeRiskDiff</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+14.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-13.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidRiskDiff</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+23.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+19.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceAllKKMeanDiffIVWC</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+37.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+12.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+33.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceAllKKWilcoxIVWC</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+53.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-10.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+47.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceContinKKQuantileRegrIVWC</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+32.7%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+50.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceContinKKQuantileRegrOneLik</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+44.9%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+30.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceContinKKRobustRegrIVWC</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+47.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+6.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+44.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceContinKKRobustRegrOneLik</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+47.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-6.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+46.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceContinQuantileRegr</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+63.1%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+15.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+34.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceContinRobustRegr</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+52.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+46.4%</td>
+      <td style="text-align: center; padding: 8px;">+2.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceCountKKCondPoissonOneLik</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+48.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+9.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+39.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceCountKKHurdlePoissonOneLik</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+17.6%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+51.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceCountNegBin</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+56.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+54.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+17.7%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceCountPoisson</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+5.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+40.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+57.4%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceCountPoissonKKGEE</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+15.1%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+20.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+9.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidBinomialIdentityRiskDiff</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+48.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+51.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+80.6%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidCMH</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+27.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+47.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+58.2%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKCondLogitOneLik</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+7.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+33.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+87.4%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidLogBinomial</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+5.1%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+36.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+37.4%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidLogRegr</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+54.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+59.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+73.2%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidModifiedPoisson</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+34.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+52.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+78.9%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidProbitRegr</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+48.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+52.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+75.5%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceIncidWald</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+17.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+17.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+36.8%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalAdjCatLogitRegr</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+58.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+20.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+23.7%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalContRatioRegr</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+44.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-4.7%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+19.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalGCompMeanDiff</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+25.7%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+18.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+56.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalJonckheereTerpstraTest</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+27.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+12.7%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalKKCLMM</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+20.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-3.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+12.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalKKCLMMCauchit</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+23.7%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+14.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalKKCLMMCloglog</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+23.6%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+14.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalKKCLMMProbit</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+17.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-2.1%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+18.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalKKCondAdjCatLogitRegr</b></td>
+      <td style="text-align: center; padding: 8px;">+2.1%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+10.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalKKGEE</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+33.7%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+33.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalKKGLMM</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+14.4%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+51.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalRidit</b></td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px;">+2.6%</td>
+      <td style="text-align: center; padding: 8px;">+2.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferencePropBetaRegr</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+38.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+7.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+59.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferencePropFractionalLogit</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+30.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-2.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+60.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferencePropGCompMeanDiff</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+48.7%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+74.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+76.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferencePropKKGEE</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+26.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+10.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+28.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferencePropKKGLMM</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+20.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-2.1%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+8.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferencePropKKQuantileRegrIVWC</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+36.0%</td>
+      <td style="text-align: center; padding: 8px;">+3.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+54.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferencePropKKQuantileRegrOneLik</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+49.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+6.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+41.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalDepCensTransformRegr</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+57.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+43.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+26.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalGehanWilcox</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+34.7%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+10.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+9.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKKClaytonCopulaIVWC</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+31.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+6.7%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+25.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKKLWACoxPHIVWC</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+38.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+12.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+45.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKKStratCoxPHIVWC</b></td>
+      <td style="text-align: center; padding: 8px;">+5.0%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+35.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKKWeibullFrailtyIVWC</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+55.2%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+50.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKMDiff</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+57.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+37.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+63.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalLogRank</b></td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px;">+4.3%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalRestrictedMeanDiff</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+21.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+29.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+14.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceContinKKOLSIVWC</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-59.5%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+22.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceAllSimpleMeanDiff</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+6.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+17.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+49.1%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceAllSimpleMeanDiffPooledVar</b></td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+9.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+5.4%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceAllSimpleWilcox</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+50.9%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+80.4%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceContinKKGLMM</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+46.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+22.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+7.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+80.5%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceContinKKOLSOneLik</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+53.7%</td>
+      <td style="text-align: center; padding: 8px;">+3.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+50.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+80.5%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceContinLin</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+37.4%</td>
+      <td style="text-align: center; padding: 8px;">+3.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+22.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+71.7%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceContinOLS</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+56.9%</td>
+      <td style="text-align: center; padding: 8px;">+5.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+66.7%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+92.5%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceCountHurdleNegBin</b></td>
+      <td style="text-align: center; padding: 8px;">+4.5%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+13.1%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+15.5%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceCountHurdlePoisson</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+13.3%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+18.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+56.9%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceCountKKGLMM</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+15.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+20.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+5.1%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+63.6%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceCountQuasiPoisson</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+5.4%</td>
+      <td style="text-align: center; padding: 8px;">+2.7%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+10.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+33.0%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceCountRobustPoisson</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+56.4%</td>
+      <td style="text-align: center; padding: 8px;">+2.7%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+64.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+78.8%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceCountZeroInflatedNegBin</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+25.7%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+70.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+11.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+7.1%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceCountZeroInflatedPoisson</b></td>
+      <td style="text-align: center; padding: 8px;">+3.5%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+9.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+12.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+56.5%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalCauchitRegr</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+54.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+26.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+13.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+27.1%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalCloglogRegr</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+51.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+22.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+10.2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+61.7%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalOrderedProbitRegr</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+55.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+13.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+6.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+49.8%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferencePropZeroOneInflatedBetaRegr</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+20.0%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+18.3%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+52.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+65.1%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalCoxPHRegr</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+5.2%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px;">+2.6%</td>
+      <td style="text-align: center; padding: 8px;">+3.2%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKKClaytonCopulaOneLik</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+25.4%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+50.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+74.4%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKKLWACoxPHOneLik</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+30.4%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+50.0%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKKStratCoxPHOneLik</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+29.3%</td>
+      <td style="text-align: center; padding: 8px;">< 2%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-3.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+34.7%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKKWeibullFrailtyOneLik</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+48.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+5.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+32.6%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+20.0%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalStratCoxPHRegr</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+64.1%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+5.7%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+28.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+71.9%</td>
+    </tr>
+    <tr>
+      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalWeibullRegr</b></td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+56.8%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+5.4%</td>
+      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+36.9%</td>
+      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+82.7%</td>
+    </tr>
+  </tbody>
+</table>
 
 **Legend:** 
 *   **+X.X%**: Percentage reduction in total loop time when Warm Starts are enabled.

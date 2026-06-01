@@ -624,7 +624,6 @@ List fast_hurdle_negbin_cpp(SEXP X_r,
 	}
 
 	MatrixXd observed_information = fun.hessian(params);
-	MatrixXd fisher_information = fun.expected_hessian(params);
 
 	return List::create(
 		Named("b") = beta,
@@ -633,9 +632,9 @@ List fast_hurdle_negbin_cpp(SEXP X_r,
 		Named("hurdle_b") = hurdle_b,
 		Named("hurdle_converged") = hurdle_converged,
 		Named("observed_information") = observed_information,
-		Named("fisher_information") = fisher_information,
-		Named("information") = fisher_information,
-		Named("information_type") = "fisher",
+		Named("fisher_information") = observed_information,
+		Named("information") = observed_information,
+		Named("information_type") = "observed",
 		Named("hessian") = -observed_information,
 		Named("hurdle_fisher_information") = hurdle_XtWX
 	);
@@ -716,10 +715,10 @@ List fast_hurdle_negbin_with_var_cpp(SEXP X_r,
 
 	double ssq_b_j = NA_REAL;
 	double ssq_b_2 = NA_REAL;
-	if (p > 0 && fit.containsElementNamed("theta_hat") && fit.containsElementNamed("fisher_information")) {
+	if (p > 0 && fit.containsElementNamed("theta_hat") && fit.containsElementNamed("observed_information")) {
 		double theta_hat = as<double>(fit["theta_hat"]);
 		if (R_finite(theta_hat) && p >= j) {
-			MatrixXd H = as<MatrixXd>(fit["fisher_information"]);
+			MatrixXd H = as<MatrixXd>(fit["observed_information"]);
 			if (H.allFinite() && H.rows() == p + 1) {
 				FixedParamSpec count_fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
 				MatrixXd H_free = subset_matrix(H, count_fixed_spec.free_idx, count_fixed_spec.free_idx);
@@ -842,16 +841,15 @@ List fast_truncated_negbin_count_cpp(SEXP X_r,
     }
 
     MatrixXd observed_information = fun.hessian(params);
-    MatrixXd fisher_information = fun.expected_hessian(params);
     List out = List::create(
             Named("b") = beta,
             Named("params") = params,
             Named("converged") = fit.converged,
             Named("neg_ll") = fit.value,
             Named("observed_information") = observed_information,
-            Named("fisher_information") = fisher_information,
-            Named("information") = fisher_information,
-            Named("information_type") = "fisher",
+            Named("fisher_information") = observed_information,
+            Named("information") = observed_information,
+            Named("information_type") = "observed",
             Named("hessian") = -observed_information
     );
     if (!fit.converged){

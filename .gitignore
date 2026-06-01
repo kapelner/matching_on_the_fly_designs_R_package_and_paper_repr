@@ -389,3 +389,13 @@ scripts/benchmark_ref_vs_matrixxd.cpp
 scripts/run_relevant_benchmarks.R
 scripts/verify_cox_speed.R
 scripts/verify_glm_speed.R
+.antigravitycli/*
+benchmark/test_exact_bench.R
+benchmark/test_hessian_speed.R
+benchmark/update_html_final.R
+benchmark/worker_v2.R
+benchmark_final_output.log
+simulations/*elapsed.rds
+truly_definitive_high_res_results.csv
+warm_starts_final_results.csv
+warm_starts_final_results_clean.csv

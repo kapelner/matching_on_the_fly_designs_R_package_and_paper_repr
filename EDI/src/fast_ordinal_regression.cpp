@@ -181,9 +181,9 @@ List fast_ordinal_regression_cpp(const Rcpp::NumericMatrix& X, const Rcpp::Numer
         Named("converged") = fit.converged,
         Named("iterations") = fit.niter,
         Named("observed_information") = model.hessian(params),
-        Named("fisher_information") = model.expected_hessian(params),
-        Named("information") = model.expected_hessian(params),
-        Named("information_type") = "fisher"
+        Named("fisher_information") = model.hessian(params),
+        Named("information") = model.hessian(params),
+        Named("information_type") = "observed"
     );
 }
 
@@ -270,9 +270,9 @@ List fast_ordinal_regression_weighted_cpp(const Rcpp::NumericMatrix& X, const Rc
         Named("converged") = fit.converged,
         Named("iterations") = fit.niter,
         Named("observed_information") = model.hessian(params),
-        Named("fisher_information") = model.expected_hessian(params),
-        Named("information") = model.expected_hessian(params),
-        Named("information_type") = "fisher"
+        Named("fisher_information") = model.hessian(params),
+        Named("information") = model.hessian(params),
+        Named("information_type") = "observed"
     );
 }
 
@@ -308,7 +308,7 @@ List fast_ordinal_regression_with_var_cpp(const Rcpp::NumericMatrix& X, const Rc
     Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
 
     OrdinalRegression model(map_X, map_y);
-    MatrixXd H = model.expected_hessian(params);
+    MatrixXd H = model.hessian(params);
     
     int n_params = params.size();
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
@@ -383,7 +383,7 @@ List ordinal_gcomp_post_fit_cpp(const Rcpp::NumericMatrix& X_fit,
     params.tail(p) = map_coef_hat;
 
     OrdinalRegression model(map_X_fit, map_y);
-    MatrixXd H = model.expected_hessian(params);
+    MatrixXd H = model.hessian(params);
     FullPivLU<MatrixXd> lu(H);
     if (!lu.isInvertible()) {
         stop("failed to invert ordinal Hessian");

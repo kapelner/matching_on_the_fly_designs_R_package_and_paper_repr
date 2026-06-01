@@ -17,8 +17,8 @@ inline bool robust_ols_solve(const Eigen::MatrixXd& X,
         beta_out = Eigen::VectorXd::Zero(X.cols());
         return false;
     }
-    Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X);
-    beta_out = cod.solve(y);
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(X);
+    beta_out = qr.solve(y);
     return beta_out.allFinite();
 }
 

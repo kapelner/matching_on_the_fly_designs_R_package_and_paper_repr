@@ -19,12 +19,12 @@ double compute_diagonal_inverse_entry(const Eigen::Ref<const Eigen::MatrixXd>& M
 	}
 
 	// Fall back to a rank-revealing solve for near-singular or indefinite systems.
-	Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(M);
-	if (cod.rank() == 0) {
+	Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(M);
+	if (qr.rank() == 0) {
 		return NA_REAL;
 	}
 
-	Eigen::VectorXd x = cod.solve(b);
+	Eigen::VectorXd x = qr.solve(b);
 	if (!x.allFinite()) {
 		return NA_REAL;
 	}

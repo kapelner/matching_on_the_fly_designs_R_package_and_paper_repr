@@ -35,8 +35,8 @@ ModelResult fast_ols_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
             if (ldlt.info() == Eigen::Success) {
                 beta_free = ldlt.solve(Xty_free);
             } else {
-                Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X);
-                beta_free = cod.solve(y_adj);
+                Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(X);
+                beta_free = qr.solve(y_adj);
             }
         } else {
             Eigen::MatrixXd X_free(n, p_free);
@@ -47,8 +47,8 @@ ModelResult fast_ols_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
             if (ldlt.info() == Eigen::Success) {
                 beta_free = ldlt.solve(Xty_free);
             } else {
-                Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X_free);
-                beta_free = cod.solve(y_adj);
+                Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(X_free);
+                beta_free = qr.solve(y_adj);
             }
         }
         
@@ -134,8 +134,8 @@ List fast_ols_with_var_cpp(SEXP X_sexp, SEXP y_sexp,
                 Named("converged") = true
             );
         } else {
-            Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X);
-            beta_free = cod.solve(y_to_use);
+            Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(X);
+            beta_free = qr.solve(y_to_use);
             beta = beta_free;
         }
     } else {
@@ -176,8 +176,8 @@ List fast_ols_with_var_cpp(SEXP X_sexp, SEXP y_sexp,
                 Named("converged") = true
             );
         } else {
-            Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X_free);
-            beta_free = cod.solve(y_to_use);
+            Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(X_free);
+            beta_free = qr.solve(y_to_use);
             for (int k = 0; k < p_free; ++k) beta[fixed_spec.free_idx[k]] = beta_free[k];
         }
     }

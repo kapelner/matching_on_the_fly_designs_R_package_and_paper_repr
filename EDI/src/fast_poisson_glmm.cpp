@@ -301,6 +301,11 @@ SEXP fast_poisson_glmm_cpp(
 	Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
 	Eigen::Map<const Eigen::VectorXi> group_id(group_id_r.begin(), group_id_r.size());
 
+	if (X_r.rows() != y_r.size() || X_r.rows() != group_id_r.size()) {
+		Rcpp::stop("Dimension mismatch: X_r has %d rows, y_r has %d elements, group_id_r has %d elements",
+		           X_r.rows(), y_r.size(), group_id_r.size());
+	}
+
 	const int n = X.rows();
 	const int p = X.cols();
 	const int total = p + 1;
@@ -320,8 +325,9 @@ SEXP fast_poisson_glmm_cpp(
 	} else if (smart_cold_start) {
 		// Init: beta via OLS on log(y+0.5), log_sigma = -3
 		Eigen::VectorXd log_y_safe = (y.array() + 0.5).log().matrix();
-		Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X);
-		par.head(p) = cod.solve(log_y_safe);
+		Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(X);
+		Eigen::VectorXd beta_init = qr.solve(log_y_safe);
+		par.head(p) = beta_init;
 		par[total - 1] = -3.0;
 	} else {
 		par.head(p).setZero();

@@ -16,7 +16,7 @@ inf_names = all_inf[!grepl("Abstract|Suite|Mixin|Compound|Likelihood$|Asymp$|Jac
 
 # Worker script content
 worker_script = '
-pkgload::load_all("EDI")
+library(EDI)
 library(data.table)
 args = commandArgs(trailingOnly = TRUE)
 cls_name = args[1]
@@ -28,12 +28,22 @@ J_VAL = as.numeric(args[6])
 PB_VAL = as.numeric(args[7])
 
 get_rt = function(cn) {
+    if (grepl("Ordinal|Ridit|Jonck", cn)) return("ordinal")
     if (grepl("Incid", cn)) return("incidence")
     if (grepl("Count", cn)) return("count")
     if (grepl("Prop|Beta", cn)) return("proportion")
     if (grepl("Survival|KM|Cox|Weibull|LogRank", cn)) return("survival")
-    if (grepl("Ordinal|Ridit|Jonck", cn)) return("ordinal")
     return("continuous")
+}
+
+get_design_object = function(cn, rt, n) {
+    if (grepl("KK", cn) || grepl("Exact|PairedSignTest", cn)) {
+        return(DesignFixedBinaryMatch$new(response_type = rt, n = n))
+    }
+    if (grepl("ExtendedRobins", cn)) {
+        return(DesignFixedBlocking$new(response_type = rt, n = n, m = rep(1:(n/2), each=2), equal_block_sizes = FALSE))
+    }
+    return(DesignFixedBernoulli$new(response_type = rt, n = n))
 }
 
 calc_s = function(tc, tw) {
@@ -46,7 +56,62 @@ calc_s = function(tc, tw) {
 }
 
 rt = get_rt(cls_name)
-d = if(grepl("KK", cls_name)) DesignFixedBinaryMatch$new(rt, n=N_VAL) else DesignFixedBernoulli$new(rt, n=N_VAL)
+
+# Quick trial for dynamic N/P scaling if baseline cold start is too fast (sub-millisecond)
+d_temp = get_design_object(cls_name, rt, N_VAL)
+if (rt == "ordinal") d_temp$.__enclos_env__$private$ordinal_levels = as.character(1:5)
+set.seed(42)
+X_temp = as.data.frame(matrix(rnorm(N_VAL * P_VAL), N_VAL, P_VAL))
+colnames(X_temp) = paste0("V", 2:(P_VAL+1))
+d_temp$add_all_subjects_to_experiment(X_temp)
+d_temp$assign_w_to_all_subjects()
+y_temp = if(rt == "incidence") { rbinom(N_VAL, 1, 0.5) } else if(rt == "count") { rpois(N_VAL, 1) } else if(rt == "proportion") { runif(N_VAL) } else if(rt == "survival") { rexp(N_VAL) } else { sample(1:5, N_VAL, replace=TRUE) }
+d_temp$add_all_subject_responses(y_temp)
+inf_temp = get(cls_name)$new(d_temp)
+inf_temp$.__enclos_env__$private$fit_warm_start_enabled = FALSE
+t_single = tryCatch(system.time(inf_temp$compute_estimate())["elapsed"], error = function(e) NA)
+
+if (!is.na(t_single)) {
+    if (t_single < 0.00005) { # extremely fast closed-form models (Wilcoxon, mean difference, etc.)
+        N_VAL = 20000
+        P_VAL = 5
+        B_VAL = 1000
+        R_VAL = 1000
+        J_VAL = 300
+        PB_VAL = 100
+    } else if (t_single < 0.0003) { # very fast models (OLS, simple GLM)
+        N_VAL = 8000
+        P_VAL = 35
+        B_VAL = 500
+        R_VAL = 500
+        J_VAL = 150
+        PB_VAL = 60
+    } else if (t_single < 0.001) {
+        N_VAL = 3500
+        P_VAL = 20
+        B_VAL = 250
+        R_VAL = 250
+        J_VAL = 80
+        PB_VAL = 40
+    } else if (t_single < 0.003) {
+        N_VAL = 1500
+        P_VAL = 12
+        B_VAL = 150
+        R_VAL = 150
+        J_VAL = 50
+        PB_VAL = 25
+    }
+}
+
+if (grepl("KK", cls_name) || grepl("Exact|PairedSignTest", cls_name)) {
+    N_VAL = min(N_VAL, 300)
+}
+
+if (grepl("Wilcox|Jonckheere", cls_name)) {
+    N_VAL = min(N_VAL, 1000)
+}
+
+d = get_design_object(cls_name, rt, N_VAL)
 if (rt == "ordinal") d$.__enclos_env__$private$ordinal_levels = as.character(1:5)
 
 set.seed(42)
@@ -55,11 +120,7 @@ colnames(X) = paste0("V", 2:(P_VAL+1))
 d$add_all_subjects_to_experiment(X)
 d$assign_w_to_all_subjects()
 
-y = if(rt == "incidence") rbinom(N_VAL, 1, 0.5) 
-    else if(rt == "count") rpois(N_VAL, 1) 
-    else if(rt == "proportion") runif(N_VAL) 
-    else if(rt == "survival") rexp(N_VAL) 
-    else sample(1:5, N_VAL, replace=TRUE)
+y = if(rt == "incidence") { rbinom(N_VAL, 1, 0.5) } else if(rt == "count") { rpois(N_VAL, 1) } else if(rt == "proportion") { runif(N_VAL) } else if(rt == "survival") { rexp(N_VAL) } else { sample(1:5, N_VAL, replace=TRUE) }
 d$add_all_subject_responses(y)
 
 # Warm Object Setup
@@ -79,6 +140,11 @@ if (!is.null(mle)) {
     } else {
         pw$set_fit_warm_start(as.numeric(mle), "beta")
     }
+    # Intentionally do NOT clear structural caches (cached_hardened_X_cov,
+    # cached_design_matrix, etc.) populated by compute_estimate() above.
+    # In production, compute_estimate() is always called before any resampling
+    # method, so these caches are legitimately available and are part of the
+    # measured advantage of operating in the warm state.
 }
 
 # Cold Object Setup
@@ -93,17 +159,28 @@ inf_w$.__enclos_env__$private$current_bayesian_bootstrap_context = mock_ctx
 # RAND
 res_r = "N/S"
 if (!(rt == "incidence" && is.null(inf_w$.__enclos_env__$private$custom_randomization_statistic_function))) {
+    # Warm-up (r=1): equalize CPU instruction/data cache and R allocator state for both objects.
+    # The r=1 cache key differs from r=R_VAL, so no result is reused in the timed call.
+    tryCatch(inf_c$compute_rand_two_sided_pval(r=1L, show_progress=FALSE), error=function(e)NULL)
+    tryCatch(inf_w$compute_rand_two_sided_pval(r=1L, show_progress=FALSE), error=function(e)NULL)
     t_rc = tryCatch(system.time(inf_c$compute_rand_two_sided_pval(r=R_VAL, show_progress=FALSE))["elapsed"], error=function(e) NA)
     t_rw = tryCatch(system.time(inf_w$compute_rand_two_sided_pval(r=R_VAL, show_progress=FALSE))["elapsed"], error=function(e) NA)
     res_r = calc_s(t_rc, t_rw)
 }
 
 # BOOT
+# Warm-up (B=1): equalize CPU and allocator state.  B=1 cache key != B=B_VAL.
+tryCatch(inf_c$compute_bootstrap_confidence_interval(B=1L, show_progress=FALSE), error=function(e)NULL)
+tryCatch(inf_w$compute_bootstrap_confidence_interval(B=1L, show_progress=FALSE), error=function(e)NULL)
 t_bc = tryCatch(system.time(inf_c$compute_bootstrap_confidence_interval(B=B_VAL, show_progress=FALSE))["elapsed"], error=function(e) NA)
 t_bw = tryCatch(system.time(inf_w$compute_bootstrap_confidence_interval(B=B_VAL, show_progress=FALSE))["elapsed"], error=function(e) NA)
 res_b = calc_s(t_bc, t_bw)
 
 # JK
+# Warm-up (1 iteration): populates cached_design_matrix and cached_hardened_X_cov on both
+# objects equally, and seeds the R allocator free list with same-sized objects for both.
+tryCatch({ww=rep(1,N_VAL);ww[1]=0;inf_c$compute_estimate_with_bootstrap_weights(ww,TRUE)}, error=function(e)NULL)
+tryCatch({ww=rep(1,N_VAL);ww[1]=0;inf_w$compute_estimate_with_bootstrap_weights(ww,TRUE)}, error=function(e)NULL)
 t_jc = tryCatch(system.time(for(k in 1:J_VAL){w=rep(1,N_VAL);w[k]=0;inf_c$compute_estimate_with_bootstrap_weights(w,TRUE)})["elapsed"], error=function(e) NA)
 t_jw = tryCatch(system.time(for(k in 1:J_VAL){w=rep(1,N_VAL);w[k]=0;inf_w$compute_estimate_with_bootstrap_weights(w,TRUE)})["elapsed"], error=function(e) NA)
 res_j = calc_s(t_jc, t_jw)
@@ -112,6 +189,9 @@ res_j = calc_s(t_jc, t_jw)
 is_pb_sup = tryCatch(inf_w$.__enclos_env__$private$supports_lik_ratio_param_bootstrap(), error = function(e) FALSE)
 res_p = "N/S"
 if (isTRUE(is_pb_sup)) {
+    # Warm-up (B=1): B=1 cache key != B=PB_VAL.
+    tryCatch(inf_c$compute_lik_ratio_bootstrap_two_sided_pval(B=1L, show_progress=FALSE), error=function(e)NULL)
+    tryCatch(inf_w$compute_lik_ratio_bootstrap_two_sided_pval(B=1L, show_progress=FALSE), error=function(e)NULL)
     t_pc = tryCatch(system.time(inf_c$compute_lik_ratio_bootstrap_two_sided_pval(B=PB_VAL, show_progress=FALSE))["elapsed"], error=function(e) NA)
     t_pw = tryCatch(system.time(inf_w$compute_lik_ratio_bootstrap_two_sided_pval(B=PB_VAL, show_progress=FALSE))["elapsed"], error=function(e) NA)
     res_p = calc_s(t_pc, t_pw)

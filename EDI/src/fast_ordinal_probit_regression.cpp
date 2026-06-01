@@ -172,9 +172,9 @@ List fast_ordinal_probit_regression_cpp(const Rcpp::NumericMatrix& X,
         Named("converged") = fit.converged,
         Named("iterations") = fit.niter,
         Named("observed_information") = model.hessian(params),
-        Named("fisher_information") = model.expected_hessian(params),
-        Named("information") = model.expected_hessian(params),
-        Named("information_type") = "fisher"
+        Named("fisher_information") = model.hessian(params),
+        Named("information") = model.hessian(params),
+        Named("information_type") = "observed"
     );
 }
 
@@ -212,11 +212,11 @@ List fast_ordinal_probit_regression_with_var_cpp(const Rcpp::NumericMatrix& X,
     FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
     
     double ssq_b_2 = NA_REAL;
-    MatrixXd H = model.expected_hessian(params);
+    MatrixXd H = model.hessian(params);
     if (converged) {
         FixedParameterFunctor<OrdinalProbitRegression> fixed_obj(model, fixed_spec, params);
         VectorXd params_free = subset_vector(params, fixed_spec.free_idx);
-        MatrixXd H_free = fixed_obj.expected_hessian(params_free);
+        MatrixXd H_free = fixed_obj.hessian(params_free);
         const int p = map_X.cols();
         const int n_alpha = n_params - p;
         int free_j = -1;

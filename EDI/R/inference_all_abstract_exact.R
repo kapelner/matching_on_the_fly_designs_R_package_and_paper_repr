@@ -7,8 +7,24 @@
 #' @keywords internal
 InferenceExact = R6::R6Class("InferenceExact",
 	lock_objects = FALSE,
-	inherit = Inference,
+	inherit = InferenceJackknife,
 	public = list(
+		#' @description Recomputes the exact treatment estimate under bootstrap weights.
+		#' @param subject_or_block_weights Subject-, block-, cluster-, or matched-set
+		#'   bootstrap weights.
+		#' @param estimate_only If \code{TRUE}, compute only the weighted point
+		#'   estimate.
+		#' @return A numeric treatment-effect estimate.
+		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
+			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
+			indices = rep(seq_along(row_weights), times = round(row_weights))
+			if (length(indices) == 0L) {
+				return(NA_real_)
+			}
+			sub_inf = private$bootstrap_subset_inference(indices, smooth = FALSE)
+			if (is.null(sub_inf)) return(NA_real_)
+			sub_inf$compute_estimate(estimate_only = estimate_only)
+		},
 		#' @description Computes an exact confidence interval for the requested exact method.
 		#' @param alpha            Significance level.
 		#' @param pval_epsilon     Reserved for future exact methods that invert p-values.

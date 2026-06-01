@@ -324,6 +324,35 @@ InferenceRand = R6::R6Class("InferenceRand",
 						)
 						as.numeric(private$compute_bootstrap_worker_estimate(worker_state))[1L]
 					}, error = function(e) NA_real_)
+					# Sequential null anchoring: after each successful permutation, update
+					# base_fit_warm_start to the converged parameters so the next permutation
+					# starts from the current null-distribution point rather than the MLE.
+					# Iterative models (logistic, Poisson, NegBin, ordinal, survival, etc.) call
+					# set_fit_warm_start() inside their fitting function, which writes the converged
+					# params to inf_priv$fit_warm_start.  We copy that here.
+					# Cold objects (fit_warm_start_enabled = FALSE) have set_fit_warm_start() as a
+					# no-op, so inf_priv$fit_warm_start stays NULL and no update occurs.
+					if (is.finite(out[k])) {
+						inf_priv_seq = if (!is.null(worker_state$worker_inf)) {
+							worker_state$worker_inf$.__enclos_env__$private
+						} else if (!is.null(worker_state$worker_priv)) {
+							worker_state$worker_priv
+						} else if (!is.null(worker_state$worker)) {
+							worker_state$worker$.__enclos_env__$private
+						} else NULL
+						if (!is.null(inf_priv_seq)) {
+							new_ws = inf_priv_seq$fit_warm_start
+							if (!is.null(new_ws) && length(new_ws) > 0L && all(is.finite(new_ws))) {
+								worker_state$base_fit_warm_start        = new_ws
+								worker_state$base_fit_warm_start_type   = inf_priv_seq$fit_warm_start_type
+								# Do NOT carry fit_warm_start_fisher: the Fisher information is
+								# X_full'WX_full where X_full = [1 | w | X_cov].  The treatment
+								# column w changes every permutation, invalidating all cross-terms
+								# involving w.  Force a fresh recompute from the new design matrix.
+								worker_state$base_fit_warm_start_fisher = NULL
+							}
+						}
+					}
 				}
 				out
 			}
@@ -670,6 +699,16 @@ InferenceRand = R6::R6Class("InferenceRand",
 			inf_priv$cached_values$s_beta_hat_T = NULL
 			inf_priv$likelihood_null_warm_cache = list()
 			
+			# Reset all private design matrix and covariate caches
+			inf_priv$cached_design_matrix = NULL
+			inf_priv$cached_w_for_design_matrix = NULL
+			inf_priv$cached_harden_for_design_matrix = NULL
+			# inf_priv$cached_hardened_X_cov = NULL  # Preserve covariate-only cache under randomization
+			inf_priv$cached_reduced_X = NULL
+			inf_priv$cached_X_full_for_reduced = NULL
+			inf_priv$cached_keep_for_reduced = NULL
+			inf_priv$cached_j_treat_for_reduced = NULL
+			
 			inf_priv$fit_warm_start = worker_state$base_fit_warm_start
 			inf_priv$fit_warm_start_type = worker_state$base_fit_warm_start_type
 			inf_priv$fit_warm_start_fisher = worker_state$base_fit_warm_start_fisher
@@ -689,6 +728,17 @@ InferenceRand = R6::R6Class("InferenceRand",
 			inf_priv$dead = des_priv$dead
 			if (private$has_match_structure) inf_priv$m = des_priv$m
 			if (!is.null(inf_priv$compute_basic_match_data)) inf_priv$compute_basic_match_data()
+			
+			# Reset all private design matrix and covariate caches
+			inf_priv$cached_design_matrix = NULL
+			inf_priv$cached_w_for_design_matrix = NULL
+			inf_priv$cached_harden_for_design_matrix = NULL
+			# inf_priv$cached_hardened_X_cov = NULL  # Preserve covariate-only cache under randomization
+			inf_priv$cached_reduced_X = NULL
+			inf_priv$cached_X_full_for_reduced = NULL
+			inf_priv$cached_keep_for_reduced = NULL
+			inf_priv$cached_j_treat_for_reduced = NULL
+			
 			invisible(NULL)
 		},
 		run_randomization_iteration = function(thread_des_obj, thread_inf_obj, perm_idx, permutations, delta, transform_responses, y_delta, base_template_y, base_template_dead, custom_stat_analysis, lightweight_custom_context, debug = FALSE, zero_one_logit_clamp = .Machine$double.eps){

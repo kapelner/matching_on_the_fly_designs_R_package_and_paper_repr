@@ -1305,3 +1305,64 @@ clogit_helper = function(y_m, X_m, w_m, strata_m){
 		error = function(e) NULL
 	)
 }
+
+#' Export of C++ function fast_logistic_regression_with_var_cpp
+#' @name fast_logistic_regression_with_var_cpp
+#' @export
+NULL
+
+#' Export of C++ function fast_probit_regression_with_var_cpp
+#' @name fast_probit_regression_with_var_cpp
+#' @export
+NULL
+
+#' Export of C++ function fast_continuation_ratio_regression_with_var_cpp
+#' @name fast_continuation_ratio_regression_with_var_cpp
+#' @export
+NULL
+
+#' Export of C++ function build_stratified_cox_data_cache_cpp
+#' @name build_stratified_cox_data_cache_cpp
+#' @export
+NULL
+
+#' Export of C++ function build_cox_data_cache_cpp
+#' @name build_cox_data_cache_cpp
+#' @export
+NULL
+
+#' Export of C++ function fast_coxph_regression_prebuilt_cpp
+#' @name fast_coxph_regression_prebuilt_cpp
+#' @export
+NULL
+
+#' Export of C++ function newcombe_independent_ci_cpp
+#' @name newcombe_independent_ci_cpp
+#' @export
+NULL
+
+#' Export of C++ function mn_pvalue_cpp
+#' @name mn_pvalue_cpp
+#' @export
+NULL
+
+#' Export of C++ function ols_hc2_post_fit_cpp
+#' @name ols_hc2_post_fit_cpp
+#' @export
+NULL
+
+#' Export of C++ function gcomp_logistic_post_fit_cpp
+#' @name gcomp_logistic_post_fit_cpp
+#' @export
+NULL
+
+#' Export of C++ function gcomp_ordinal_proportional_odds_post_fit_cpp
+#' @name gcomp_ordinal_proportional_odds_post_fit_cpp
+#' @export
+NULL
+
+#' Export of C++ function exact_jonckheere_terpstra_pval_cpp
+#' @name exact_jonckheere_terpstra_pval_cpp
+#' @export
+NULL
+

@@ -229,7 +229,7 @@ ModelResult fast_beta_regression_internal(const Eigen::Ref<const Eigen::MatrixXd
 
     res.b = params.head(p);
     res.dispersion = std::exp(params[p]); // phi
-    res.XtWX = estimate_only ? Eigen::MatrixXd::Zero(p+1, p+1) : fun.expected_hessian(params);
+    res.XtWX = estimate_only ? Eigen::MatrixXd::Zero(p+1, p+1) : fun.hessian(params);
     res.converged = fit.converged;
     return res;
 }

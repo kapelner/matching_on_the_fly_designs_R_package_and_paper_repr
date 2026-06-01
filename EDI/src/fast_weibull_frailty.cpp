@@ -327,8 +327,9 @@ List fast_weibull_frailty_cpp(
 		}
 	} else {
 		Eigen::VectorXd log_y = y.array().log().matrix();
-		Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(X);
-		par.head(p) = cod.solve(log_y);
+		Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(X);
+		Eigen::VectorXd beta_init = qr.solve(log_y);
+		par.head(p) = beta_init;
 		Eigen::VectorXd resid = log_y - X * par.head(p);
 		const double std_resid = std::sqrt(resid.squaredNorm() / std::max(1, (int)y.size() - p));
 		par[p]     = std::log(std_resid * 0.7797);
