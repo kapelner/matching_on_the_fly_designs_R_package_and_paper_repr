@@ -86,6 +86,7 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 \if{html}{\out{<a id="method-DesignSeqOneByOneRandomBlockSize-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneRandomBlockSize-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a random block size sequential experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneRandomBlockSize$new(
   strata_cols = NULL,
@@ -101,15 +102,58 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{strata_cols}}{A character vector of column names to use for stratification. If
+NULL, simple blocking is used.}
+
+\item{\code{block_sizes}}{A vector of positive integers representing the possible block sizes
+  to choose from.
+Each must be a multiple of the inverse of \code{prob_T} to ensure integer
+treatment/control counts.}
+
+\item{\code{response_type}}{The data type of response values which must be one of the following:
+"continuous",
+"incidence",
+"proportion",
+"count",
+"survival",
+"ordinal".}
+
+\item{\code{prob_T}}{The probability of the treatment assignment. This defaults to \code{0.5}.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{If missing data is present in a variable,
+should we include another dummy variable for its missingness? Default is \code{TRUE}.}
+
+\item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be displayed. Default is \code{FALSE}.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates.}
+
+\item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `DesignSeqOneByOneRandomBlockSize` object
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneRandomBlockSize-assign_wt"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneRandomBlockSize-assign_wt}{}}}
 \subsection{Method \code{assign_wt()}}{
+Assign the next subject to a treatment group
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneRandomBlockSize$assign_wt()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The treatment assignment (0 or 1)
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneRandomBlockSize-clone"></a>}}

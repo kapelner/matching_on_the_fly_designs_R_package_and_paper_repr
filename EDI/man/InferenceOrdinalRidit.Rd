@@ -97,6 +97,7 @@ infer
 \if{html}{\out{<a id="method-InferenceOrdinalRidit-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalRidit-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a Ridit analysis inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$new(
   des_obj,
@@ -107,20 +108,56 @@ infer
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects are assigned and
+response y is recorded within.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{reference}}{The group to use as the "Identified Distribution" (reference).
+Must be one of "control", "treatment", or "pooled". Default is "control".}
+
+\item{\code{verbose}}{A flag indicating whether messages should be displayed.}
+
+\item{\code{max_resample_attempts}}{Maximum number of times a single bootstrap replicate
+may be redrawn when the drawn sample fails validity screening. If all attempts
+fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
+Must be a positive integer. Default \code{50L}.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalRidit-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalRidit-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Returns the estimated treatment effect (Mean Ridit - 0.5).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The numeric estimate.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalRidit-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalRidit-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Recomputes the ridit treatment estimate under
+  Bayesian-bootstrap weights.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -128,42 +165,83 @@ infer
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
+bootstrap weights.}
+
+\item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
+estimate.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalRidit-get_mean_ridit_treatment"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalRidit-get_mean_ridit_treatment}{}}}
 \subsection{Method \code{get_mean_ridit_treatment()}}{
+Returns the Mean Ridit for the treatment group.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$get_mean_ridit_treatment()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The numeric Mean Ridit.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalRidit-get_ridit_scores"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalRidit-get_ridit_scores}{}}}
 \subsection{Method \code{get_ridit_scores()}}{
+Returns the ridit scores for all subjects.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$get_ridit_scores()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+A numeric vector of scores.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalRidit-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalRidit-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes the asymptotic confidence interval for the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of length 2.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalRidit-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalRidit-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes the p-value for the null hypothesis that Mean Ridit = 0.5.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null value (centered at 0, so delta=0 means Ridit=0.5).}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The p-value.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalRidit-clone"></a>}}

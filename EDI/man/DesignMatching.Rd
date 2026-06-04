@@ -75,15 +75,20 @@ des = DesignMatching$new(n = 6, response_type = "continuous")
 \if{html}{\out{<a id="method-DesignMatching-is_matching_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignMatching-is_matching_design}{}}}
 \subsection{Method \code{is_matching_design()}}{
+Check whether this design currently has matching structure.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignMatching$is_matching_design()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+\code{TRUE} if the design advertises matching support.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignMatching-assert_matching_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignMatching-assert_matching_design}{}}}
 \subsection{Method \code{assert_matching_design()}}{
+Assert that this design supports matching-specific operations.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignMatching$assert_matching_design()}\if{html}{\out{</div>}}
 }
@@ -93,19 +98,41 @@ des = DesignMatching$new(n = 6, response_type = "continuous")
 \if{html}{\out{<a id="method-DesignMatching-get_matching_cluster_ids"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignMatching-get_matching_cluster_ids}{}}}
 \subsection{Method \code{get_matching_cluster_ids()}}{
+Return cluster IDs implied by the current matching structure.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignMatching$get_matching_cluster_ids(m_vec = private$m)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{m_vec}}{Optional integer match vector. Defaults to this design's match vector.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Integer cluster IDs for matched pairs plus singleton reservoir units.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignMatching-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignMatching-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignMatching$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignMatching-clone"></a>}}

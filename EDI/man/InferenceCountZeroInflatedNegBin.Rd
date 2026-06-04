@@ -101,6 +101,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceCountZeroInflatedNegBin-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountZeroInflatedNegBin-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a zero-inflated negative binomial inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountZeroInflatedNegBin$new(
   des_obj,
@@ -112,6 +113,25 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object with a count response.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{model_formula_zero}}{Formula for the zero-inflation submodel. Defaults to
+\code{~ .}, meaning treatment plus all available covariates.}
+
+\item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), use our internal Rcpp
+implementation. If \code{FALSE}, use \pkg{glmmTMB}.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{optimization_alg}}{Optimization algorithm. Default is dispatched via policy.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountZeroInflatedNegBin-clone"></a>}}

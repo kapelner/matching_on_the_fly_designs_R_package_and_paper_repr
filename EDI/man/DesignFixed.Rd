@@ -84,6 +84,7 @@ des$assign_w_to_all_subjects()
 \if{html}{\out{<a id="method-DesignFixed-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixed-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a fixed experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixed$new(
   response_type,
@@ -98,51 +99,121 @@ des$assign_w_to_all_subjects()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
+"ordinal".}
+
+\item{\code{prob_T}}{Probability of treatment assignment.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+
+\item{\code{n}}{The sample size.}
+
+\item{\code{verbose}}{A flag for verbosity.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates.}
+
+\item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
+
+\item{\code{...}}{Extra arguments passed to the \code{Design} superclass.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `DesignFixed` object
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixed-assign_w_to_all_subjects"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixed-assign_w_to_all_subjects}{}}}
 \subsection{Method \code{assign_w_to_all_subjects()}}{
+Assign treatment to all subjects in the fixed experiment.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixed$assign_w_to_all_subjects(w_precomputed = NULL)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{w_precomputed}}{Optional numeric vector of length n. If supplied the
+allocation is used directly and \code{draw_ws_according_to_design} is
+not called (avoids e.g. the Java round-trip for \code{DesignFixedGreedy}).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixed-add_all_subjects_to_experiment"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixed-add_all_subjects_to_experiment}{}}}
 \subsection{Method \code{add_all_subjects_to_experiment()}}{
+Add all subjects' covariates to a fixed design at once.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixed$add_all_subjects_to_experiment(X_all)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{X_all}}{A data frame containing the full covariate matrix.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Invisibly returns the design object.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixed-add_all_subject_responses"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixed-add_all_subject_responses}{}}}
 \subsection{Method \code{add_all_subject_responses()}}{
+Add all subject responses for a fixed design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixed$add_all_subject_responses(ys, deads = NULL)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{ys}}{The responses as a numeric vector.}
+
+\item{\code{deads}}{The binary vector indicating if dead/censored.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixed-overwrite_all_subject_assignments"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixed-overwrite_all_subject_assignments}{}}}
 \subsection{Method \code{overwrite_all_subject_assignments()}}{
+Overwrite all subject assignments for a fixed design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixed$overwrite_all_subject_assignments(w)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{w}}{The binary responses.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixed-supports_resampling"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixed-supports_resampling}{}}}
 \subsection{Method \code{supports_resampling()}}{
+Check if the design supports resampling.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixed$supports_resampling()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+TRUE if supported.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixed-clone"></a>}}

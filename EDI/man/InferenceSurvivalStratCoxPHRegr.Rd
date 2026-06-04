@@ -105,6 +105,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceSurvivalStratCoxPHRegr-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalStratCoxPHRegr-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalStratCoxPHRegr$new(
   des_obj,
@@ -116,11 +117,32 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object with a survival response.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+covariates from the design object are included. Use \code{~ 1} for univariate.}
+
+\item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), enable internal Rcpp score/information helpers for likelihood inference.
+Cox optimization uses \pkg{survival::coxph.fit}.}
+
+\item{\code{optimization_alg}}{Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalStratCoxPHRegr-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalStratCoxPHRegr-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Recomputes the stratified Cox PH treatment estimate under
+  Bayesian-bootstrap weights.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalStratCoxPHRegr$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -128,11 +150,23 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
+bootstrap weights.}
+
+\item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
+estimate.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalStratCoxPHRegr-compute_rand_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalStratCoxPHRegr-compute_rand_confidence_interval}{}}}
 \subsection{Method \code{compute_rand_confidence_interval()}}{
+Compute confidence interval rand
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalStratCoxPHRegr$compute_rand_confidence_interval(
   alpha = 0.05,
@@ -143,6 +177,21 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The significance level (default 0.05).}
+
+\item{\code{r}}{Number of vectors to draw.}
+
+\item{\code{pval_epsilon}}{The bisection convergence tolerance.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{ci_search_control}}{Unused.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalStratCoxPHRegr-clone"></a>}}

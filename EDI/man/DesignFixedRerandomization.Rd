@@ -86,6 +86,7 @@ des = DesignFixedRerandomization$new(n = 10, response_type = 'continuous')
 \if{html}{\out{<a id="method-DesignFixedRerandomization-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedRerandomization-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a rerandomization fixed experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedRerandomization$new(
   response_type,
@@ -102,15 +103,56 @@ des = DesignFixedRerandomization$new(n = 10, response_type = 'continuous')
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{response_type}}{The data type of response values.}
+
+\item{\code{prob_T}}{The probability of the treatment assignment.}
+
+\item{\code{obj_val_cutoff}}{The maximum allowable objective value. Cannot be specified together with prop_acceptable.}
+
+\item{\code{prop_acceptable}}{The proportion of randomizations to accept (draws r/prop_acceptable total, returns r lowest). Cannot be specified together with obj_val_cutoff.}
+
+\item{\code{objective}}{The objective function to use. Default is "mahal_dist".}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+
+\item{\code{n}}{The sample size.}
+
+\item{\code{verbose}}{Flag for verbosity.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates.}
+
+\item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `DesignFixedRerandomization` object
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedRerandomization-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedRerandomization-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedRerandomization$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedRerandomization-clone"></a>}}

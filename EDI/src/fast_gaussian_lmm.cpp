@@ -250,7 +250,7 @@ public:
 
     double operator()(const Eigen::VectorXd& par, Eigen::VectorXd& grad) {
         double nll = neg_ll_and_grad(dat, par, grad);
-        if (!std::isfinite(nll)) {
+        if (!std::isfinite(nll) || nll >= 1e299) {
             grad.setZero();
             return 1e300;
         }
@@ -451,7 +451,11 @@ NumericVector get_gaussian_lmm_score_cpp(
             gid[i] = (int)(std::lower_bound(uniq.begin(), uniq.end(), gid_r[i]) - uniq.begin());
     }
     LMMData dat(y, X, gid);
-    Eigen::VectorXd grad;
+    const int k = X.cols() + 2;  // p betas + log_sigma_e + log_sigma_b
+    if (par.size() != k) {
+        return NumericVector(k, NA_REAL);
+    }
+    Eigen::VectorXd grad = Eigen::VectorXd::Zero(k);
     neg_ll_and_grad(dat, par, grad);
     // score = -grad of neg_ll
     Eigen::VectorXd score = -grad;

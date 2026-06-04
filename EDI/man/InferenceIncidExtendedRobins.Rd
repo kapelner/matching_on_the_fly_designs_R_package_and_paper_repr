@@ -103,24 +103,41 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceIncidExtendedRobins-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidExtendedRobins-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes an approximate confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExtendedRobins$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Numeric. Significance level (default 0.05).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidExtendedRobins-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidExtendedRobins-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes an approximate two-sided p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExtendedRobins$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Numeric. Null treatment effect value (default 0).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidExtendedRobins-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidExtendedRobins-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize Extended Robins blocked-design incidence inference.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceIncidExtendedRobins$new(
   des_obj,
@@ -129,6 +146,20 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed design object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{verbose}}{Logical. Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new \code{InferenceIncidExtendedRobins} object.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidExtendedRobins-clone"></a>}}

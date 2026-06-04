@@ -314,12 +314,17 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 				cache_state = if (warm_enabled) private$get_likelihood_null_warm_state(cache_key) else NULL
 				start = if (warm_enabled) last_start else NULL
 				if (warm_enabled && is.null(start) && !is.null(cache_state)) start = cache_state$start
+				if (!is.null(start) && length(start) == 0L) start = NULL
 				fit = tryCatch(
 					if (accepts_start) spec$fit_null(delta, start = start) else spec$fit_null(delta),
 					error = function(e) NULL
 				)
 				extract_start = spec$extract_start %||% function(fit_obj) NULL
-				last_start <<- if (warm_enabled && accepts_start) tryCatch(extract_start(fit), error = function(e) NULL) else NULL
+				last_start_val = if (warm_enabled && accepts_start && !is.null(fit)) {
+					tryCatch(extract_start(fit), error = function(e) NULL)
+				} else NULL
+				if (!is.null(last_start_val) && length(last_start_val) == 0L) last_start_val = NULL
+				last_start <<- last_start_val
 				last_delta <<- delta
 				if (warm_enabled && accepts_start) {
 					private$set_likelihood_null_warm_state(cache_key, delta = delta, start = last_start)

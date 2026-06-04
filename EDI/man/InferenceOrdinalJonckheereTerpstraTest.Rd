@@ -94,6 +94,7 @@ infer
 \if{html}{\out{<a id="method-InferenceOrdinalJonckheereTerpstraTest-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalJonckheereTerpstraTest-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the JT test object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalJonckheereTerpstraTest$new(
   des_obj,
@@ -102,20 +103,43 @@ infer
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{Whether to print progress.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalJonckheereTerpstraTest-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalJonckheereTerpstraTest-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Returns the estimated treatment effect (JT superiority measure).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalJonckheereTerpstraTest$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalJonckheereTerpstraTest-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalJonckheereTerpstraTest-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Returns the weighted JT superiority estimate for Bayesian-bootstrap re-estimation.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalJonckheereTerpstraTest$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -123,11 +147,21 @@ infer
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Bootstrap weights at the subject/block level.}
+
+\item{\code{estimate_only}}{If TRUE, skip exact p-value calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalJonckheereTerpstraTest-compute_exact_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalJonckheereTerpstraTest-compute_exact_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_exact_two_sided_pval_for_treatment_effect()}}{
+Returns the exact two-sided p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalJonckheereTerpstraTest$compute_exact_two_sided_pval_for_treatment_effect(
   
@@ -139,21 +173,39 @@ infer
 \if{html}{\out{<a id="method-InferenceOrdinalJonckheereTerpstraTest-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalJonckheereTerpstraTest-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes the asymptotic normal confidence interval using the same
+null-variance approximation as \code{clinfun::jonckheere.test()}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalJonckheereTerpstraTest$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The significance level (default 0.05).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalJonckheereTerpstraTest-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalJonckheereTerpstraTest-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes the asymptotic normal two-sided p-value using the same
+\eqn{Z}-approximation as \code{clinfun::jonckheere.test()}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalJonckheereTerpstraTest$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null treatment effect (default 0).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalJonckheereTerpstraTest-clone"></a>}}

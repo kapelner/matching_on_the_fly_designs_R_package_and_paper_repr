@@ -16,6 +16,16 @@ should be saved securely after each assignment e.g. on an encrypted cloud server
 \examples{
 seq_des = DesignSeqOneByOneKK21$new(n = 6, response_type = 'continuous')
 seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+
+## ------------------------------------------------
+## Method `DesignSeqOneByOneKK21$new`
+## ------------------------------------------------
+
+\donttest{
+seq_des = DesignSeqOneByOneKK21$new(n = 6, response_type = "continuous")
+seq_des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
+}
+
 }
 \section{Super classes}{
 \code{::Design} -> \code{::DesignBlocking} -> \code{::DesignMatching} -> \code{::DesignSeqOneByOne} -> \code{::DesignSeqOneByOneKK14} -> \code{DesignSeqOneByOneKK21}
@@ -87,6 +97,9 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 \if{html}{\out{<a id="method-DesignSeqOneByOneKK21-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneKK21-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a matching-on-the-fly sequential experimental design which matches based on
+Kapelner and Krieger (2021) with
+option to use matching parameters of Morrison and Owen (2025)
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneKK21$new(
   response_type,
@@ -110,33 +123,140 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{response_type}}{The data type of response values which must be one of the following:
+                                "continuous",
+                                "incidence",
+                                "proportion",
+                                "count",
+                                "survival".
+                                                                This package will enforce
+that all added responses via the \code{add_one_subject_response} method will be
+                                of the appropriate type.}
+
+\item{\code{prob_T}}{The probability of the treatment assignment. This defaults to \code{0.5}.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{If missing data is present in a variable,
+  should we include another dummy variable for its
+                                                                missingness in addition to
+imputing its value? If the feature is type factor, instead of creating
+                                a new column, we allow missingness to be its own level. The default is \code{TRUE}.}
+
+\item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be
+displayed to the user. Default is \code{FALSE}.}
+
+\item{\code{lambda}}{The quantile cutoff of the subject distance distribution for determining
+matches. If unspecified and \code{morrison = FALSE}, default is 10\%.}
+
+\item{\code{t_0_pct}}{The percentage of total sample size n where matching begins. If unspecified
+and \code{morrison = FALSE}, default is 35\%.}
+
+\item{\code{morrison}}{Default is \code{FALSE} which implies matching via the KK14
+  algorithm using \code{lambda} and \code{t_0_pct} matching.
+                                                If \code{TRUE}, we use Morrison and Owen
+(2025)'s formula for \code{lambda} which differs in the fixed n versus variable n
+                                                settings and matching begins immediately
+with no wait for a certain reservoir size like in KK14.}
+
+\item{\code{p}}{The number of covariate features. Must be specified when
+\code{morrison = TRUE} otherwise do not specify this argument.}
+
+\item{\code{num_boot}}{the number of bootstrap samples taken to approximate the subject-distance
+distribution. Default is 500.}
+
+\item{\code{count_use_speedup}}{Should we speed up the estimation of the weights in
+  the response = count case via a continuous regression on log(y + 1).
+                                                        instead of a negative binomial
+regression each time? This is at the expense of the weights being less accurate. Default is
+\code{TRUE}.}
+
+\item{\code{proportion_use_speedup}}{Should we speed up the estimation of the weights in the
+  response = proportion case via a continuous regression on log(y / (1 - y))
+                                                        instead of a beta regression each
+time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.}
+
+\item{\code{survival_use_speedup_for_no_censoring}}{Should we speed up the estimation of the
+  weights in the response = survival case via a continuous regression on log(y)
+                                                        instead of a Weibull AFT regression
+each time, but only when there is no censoring in the data collected so far?
+                                                        This is at the expense of the
+weights being less accurate when censoring is present. Default is \code{TRUE}.}
+
+\item{\code{ordinal_use_speedup}}{Should we speed up the estimation of the weights in the
+  response = ordinal case via a continuous regression on the ordinal levels coerced to
+  numeric.
+                                                        instead of a proportional odds
+model each time? This is at the expense of the weights being less accurate. Default is
+\code{TRUE}.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates.}
+
+\item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
+
+\item{\code{...}}{Extra arguments passed to the \code{DesignSeqOneByOneKK14} superclass.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `DesignSeqOneByOneKK21` object
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\donttest{
+seq_des = DesignSeqOneByOneKK21$new(n = 6, response_type = "continuous")
+seq_des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
+}
+
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneKK21-get_iteration_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneKK21-get_iteration_weights}{}}}
 \subsection{Method \code{get_iteration_weights()}}{
+Returns the weights calculated at each iteration.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneKK21$get_iteration_weights()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+A list of weights.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneKK21-get_covariate_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneKK21-get_covariate_weights}{}}}
 \subsection{Method \code{get_covariate_weights()}}{
+Get the covariate weights calculated at the current iteration.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneKK21$get_covariate_weights()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+A numeric vector of weights.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneKK21-assign_wt"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneKK21-assign_wt}{}}}
 \subsection{Method \code{assign_wt()}}{
+Assign the next subject to a treatment group using the KK21 algorithm.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneKK21$assign_wt()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The treatment assignment (0 or 1)
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneKK21-clone"></a>}}

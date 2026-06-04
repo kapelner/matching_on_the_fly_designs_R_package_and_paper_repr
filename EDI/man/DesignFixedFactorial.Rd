@@ -85,6 +85,7 @@ des$assign_w_to_all_subjects()
 \if{html}{\out{<a id="method-DesignFixedFactorial-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedFactorial-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a factorial fixed experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedFactorial$new(
   factors,
@@ -98,24 +99,64 @@ des$assign_w_to_all_subjects()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{factors}}{A list where names are factor names and values are number of
+levels (e.g. list(A=2, B=2)).}
+
+\item{\code{response_type}}{The data type of response values.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+
+\item{\code{n}}{The sample size.}
+
+\item{\code{verbose}}{Flag for verbosity.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates.}
+
+\item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `DesignFixedFactorial` object
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedFactorial-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedFactorial-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to balanced factorial randomization.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedFactorial$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedFactorial-get_w_factorial"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedFactorial-get_w_factorial}{}}}
 \subsection{Method \code{get_w_factorial()}}{
+Get the data frame of factor assignments for each subject.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedFactorial$get_w_factorial()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+A data frame with n rows and columns corresponding to factors.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedFactorial-clone"></a>}}

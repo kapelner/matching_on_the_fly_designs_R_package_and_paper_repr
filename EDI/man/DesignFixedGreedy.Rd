@@ -23,8 +23,8 @@ des = DesignFixedGreedy$new(n = 10, response_type = 'continuous')
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-DesignFixedGreedy-supports_batch_w_pregeneration}{\code{DesignFixedGreedy$supports_batch_w_pregeneration()}}
 \item \href{#method-DesignFixedGreedy-new}{\code{DesignFixedGreedy$new()}}
+\item \href{#method-DesignFixedGreedy-supports_batch_w_pregeneration}{\code{DesignFixedGreedy$supports_batch_w_pregeneration()}}
 \item \href{#method-DesignFixedGreedy-draw_ws_according_to_design}{\code{DesignFixedGreedy$draw_ws_according_to_design()}}
 \item \href{#method-DesignFixedGreedy-clone}{\code{DesignFixedGreedy$clone()}}
 }
@@ -81,18 +81,10 @@ des = DesignFixedGreedy$new(n = 10, response_type = 'continuous')
 </details>
 }}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignFixedGreedy-supports_batch_w_pregeneration"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignFixedGreedy-supports_batch_w_pregeneration}{}}}
-\subsection{Method \code{supports_batch_w_pregeneration()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixedGreedy$supports_batch_w_pregeneration()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedGreedy-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedGreedy-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a greedy search fixed experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedGreedy$new(
   response_type,
@@ -108,15 +100,70 @@ des = DesignFixedGreedy$new(n = 10, response_type = 'continuous')
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{response_type}}{The data type of response values.}
+
+\item{\code{prob_T}}{The probability of the treatment assignment. Must be 0.5.}
+
+\item{\code{objective}}{The objective function to use. Default is "mahal_dist".}
+
+\item{\code{n_iter}}{Number of swap iterations. \code{Inf} (default) uses exhaustive
+best-improvement search guaranteed to reach a strict local optimum. A positive
+integer runs that many stochastic random-pair iterations with patience-based
+early stopping.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+
+\item{\code{n}}{The sample size.}
+
+\item{\code{verbose}}{Flag for verbosity.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates.}
+
+\item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `DesignFixedGreedy` object
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DesignFixedGreedy-supports_batch_w_pregeneration"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignFixedGreedy-supports_batch_w_pregeneration}{}}}
+\subsection{Method \code{supports_batch_w_pregeneration()}}{
+Whether this design supports batch pregeneration of treatment vectors.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DesignFixedGreedy$supports_batch_w_pregeneration()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+\code{TRUE}.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedGreedy-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedGreedy-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedGreedy$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedGreedy-clone"></a>}}

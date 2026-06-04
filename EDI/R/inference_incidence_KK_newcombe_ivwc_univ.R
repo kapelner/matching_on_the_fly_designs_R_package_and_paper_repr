@@ -52,7 +52,8 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 		#' @param estimate_only flag.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
-			private$cached_values$beta_hat_T
+			est = private$cached_values$beta_hat_T
+			if (is.null(est) || length(est) != 1L) NA_real_ else est
 		}
 	))),
 	private = as.list(utils::modifyList(as.list(InferenceKKPassThroughCompoundNoParamBootstrap$private %||% list()), list(

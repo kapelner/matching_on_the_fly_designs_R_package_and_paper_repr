@@ -26,7 +26,6 @@ transformation before quantile regression (e.g., \code{identity} for continuous,
 \item \href{#method-InferenceAbstractKKQuantileRegrIVWC-compute_estimate}{\code{InferenceAbstractKKQuantileRegrIVWC$compute_estimate()}}
 \item \href{#method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_confidence_interval}{\code{InferenceAbstractKKQuantileRegrIVWC$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_two_sided_pval}{\code{InferenceAbstractKKQuantileRegrIVWC$compute_asymp_two_sided_pval()}}
-\item \href{#method-InferenceAbstractKKQuantileRegrIVWC-compute_estimate_with_bootstrap_weights}{\code{InferenceAbstractKKQuantileRegrIVWC$compute_estimate_with_bootstrap_weights()}}
 \item \href{#method-InferenceAbstractKKQuantileRegrIVWC-clone}{\code{InferenceAbstractKKQuantileRegrIVWC$clone()}}
 }
 }
@@ -82,6 +81,7 @@ transformation before quantile regression (e.g., \code{identity} for continuous,
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="get_testing_type"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>::InferenceAsympLik$get_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="set_information_preference"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>::InferenceAsympLik$set_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>::InferenceAsympLik$set_testing_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThroughCompoundNoParamBootstrap" data-id="compute_estimate_with_bootstrap_weights"><a href='../..//html/InferenceKKPassThroughCompoundNoParamBootstrap.html#method-InferenceKKPassThroughCompoundNoParamBootstrap-compute_estimate_with_bootstrap_weights'><code>::InferenceKKPassThroughCompoundNoParamBootstrap$compute_estimate_with_bootstrap_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractQuantileRandCI" data-id="compute_rand_confidence_interval"><a href='../..//html/InferenceAbstractQuantileRandCI.html#method-InferenceAbstractQuantileRandCI-compute_rand_confidence_interval'><code>::InferenceAbstractQuantileRandCI$compute_rand_confidence_interval()</code></a></span></li>
 </ul>
 </details>
@@ -90,6 +90,7 @@ transformation before quantile regression (e.g., \code{identity} for continuous,
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrIVWC-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrIVWC$new(
   des_obj,
@@ -101,11 +102,41 @@ transformation before quantile regression (e.g., \code{identity} for continuous,
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects are assigned
+and response y is recorded within.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{tau}}{The quantile level for regression, strictly between 0 and 1. The default
+\code{tau = 0.5} estimates the median treatment effect. Values of exactly 0 or 1
+are excluded because quantile regression is undefined at the boundary (the check
+function \eqn{\rho_\tau(u) = u(\tau - \mathbf{1}_{u < 0})} degenerates there);
+the bound is enforced as \code{(.Machine$double.eps, 1 - .Machine$double.eps)},
+i.e. the smallest representable positive number away from 0 and 1.}
+
+\item{\code{transform_y_fn}}{A function applied to y values before quantile regression.
+  Subclasses pass
+\code{identity} (continuous) or \code{qlogis} (proportion). Not exposed publicly.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be displayed.
+Default is \code{FALSE}.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrIVWC-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrIVWC-approximate_bootstrap_distribution_beta_hat_T}{}}}
 \subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrIVWC$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
@@ -115,47 +146,86 @@ transformation before quantile regression (e.g., \code{identity} for continuous,
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrIVWC-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrIVWC-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Computes the appropriate quantile regression compound estimate
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrIVWC$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The setting-appropriate numeric estimate of the treatment effect
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes a 1-alpha level frequentist confidence interval based on asymptotic normality
+of the quantile regression estimator (z-based).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrIVWC$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed
+confidence interval is 1 - \code{alpha}. The default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A (1 - alpha)-sized frequentist confidence interval for the treatment effect
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes a 2-sided p-value based on asymptotic normality of the quantile regression estimator.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrIVWC$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. Default is zero.}
 }
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrIVWC-compute_estimate_with_bootstrap_weights"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrIVWC-compute_estimate_with_bootstrap_weights}{}}}
-\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrIVWC$compute_estimate_with_bootstrap_weights(
-  subject_or_block_weights,
-  estimate_only = FALSE
-)}\if{html}{\out{</div>}}
+\if{html}{\out{</div>}}
 }
-
+\subsection{Returns}{
+The approximate frequentist p-value
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrIVWC-clone"></a>}}

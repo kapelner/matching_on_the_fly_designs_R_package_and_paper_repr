@@ -108,24 +108,48 @@ infer
 \if{html}{\out{<a id="method-InferenceSurvivalLogRank-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalLogRank-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the Inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalLogRank$new(des_obj, model_formula = NULL, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{The design object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{If TRUE, print additional information.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalLogRank-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalLogRank-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Computes the treatment-effect estimate on the martingale-residual mean-difference scale.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalLogRank$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalLogRank-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalLogRank-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Computes the treatment effect estimate for a weighted bootstrap sample.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalLogRank$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -133,40 +157,81 @@ infer
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Bootstrap weights at the subject or block level.}
+
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalLogRank-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalLogRank-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes a (1 - alpha)-level confidence interval based on the asymptotic
+normality of the martingale-residual mean-difference estimate.
+Falls back to bootstrap if the estimated standard error is unavailable.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalLogRank$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalLogRank-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalLogRank-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes a Wald-style 2-sided p-value by inverting the confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalLogRank$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. Default is 0.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The approximate frequentist p-value
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalLogRank-compute_asymp_log_rank_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalLogRank-compute_asymp_log_rank_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_log_rank_two_sided_pval_for_treatment_effect()}}{
+Computes the standard two-sided log-rank p-value for a zero treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalLogRank$compute_asymp_log_rank_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect to test against. Only \code{0} is supported.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalLogRank-compute_rand_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalLogRank-compute_rand_confidence_interval}{}}}
 \subsection{Method \code{compute_rand_confidence_interval()}}{
+Randomization confidence intervals are not supported for this class because
+the martingale-residual score scale is not commensurate with the transformed
+time-ratio null used by the randomization CI algorithm.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalLogRank$compute_rand_confidence_interval(
   alpha = 0.05,
@@ -177,6 +242,21 @@ infer
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Unused.}
+
+\item{\code{r}}{Unused.}
+
+\item{\code{pval_epsilon}}{Unused.}
+
+\item{\code{show_progress}}{Unused.}
+
+\item{\code{ci_search_control}}{Unused.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalLogRank-clone"></a>}}

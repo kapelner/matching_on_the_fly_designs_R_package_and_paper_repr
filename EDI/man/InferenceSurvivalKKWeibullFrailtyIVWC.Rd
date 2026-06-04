@@ -83,6 +83,7 @@ Weibull Frailty IVWC Inference for KK Designs
 \if{html}{\out{<a id="method-InferenceSurvivalKKWeibullFrailtyIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKKWeibullFrailtyIVWC-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the IVWC Weibull-frailty inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKWeibullFrailtyIVWC$new(
   des_obj,
@@ -92,6 +93,19 @@ Weibull Frailty IVWC Inference for KK Designs
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed KK survival design object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{optimization_alg}}{Optimization algorithm to use.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKKWeibullFrailtyIVWC-clone"></a>}}

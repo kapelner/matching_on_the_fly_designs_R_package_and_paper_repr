@@ -42,13 +42,19 @@ InferenceIncidCMH = R6::R6Class("InferenceIncidCMH",
 		#' @param verbose Logical. Whether to print progress messages.
 		#' @return A new \code{InferenceIncidCMH} object.
 		initialize = function(des_obj, model_formula = NULL, se_est_num_vectors = 5000L, verbose = FALSE){
+			if (des_obj$is_blocking_design()) {
+				if (des_obj$get_prob_T() != 0.5) {
+					stop("InferenceIncidCMH requires even treatment allocation for blocking designs.")
+				}
+				block_ids = des_obj$get_block_ids()
+				block_sizes = as.integer(table(block_ids))
+				if (length(block_sizes) > 1L && any(block_sizes != block_sizes[1L])) {
+					stop("InferenceIncidCMH requires equal block sizes for blocking designs.")
+				}
+			}
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
 				assertCount(se_est_num_vectors, positive = TRUE)
-				if (des_obj$is_blocking_design()) {
-					des_obj$assert_even_allocation()
-					des_obj$assert_equal_block_sizes()
-				}
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {

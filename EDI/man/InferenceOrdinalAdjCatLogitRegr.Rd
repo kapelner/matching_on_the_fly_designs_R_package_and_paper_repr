@@ -98,6 +98,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceOrdinalAdjCatLogitRegr-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalAdjCatLogitRegr-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize an adjacent-category-logit inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalAdjCatLogitRegr$new(
   des_obj,
@@ -108,11 +109,31 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object with an ordinal response.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{harden}}{Whether to apply robustness measures.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold starts.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalAdjCatLogitRegr-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalAdjCatLogitRegr-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Recomputes the ordinal treatment estimate under
+  Bayesian-bootstrap weights.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalAdjCatLogitRegr$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -120,6 +141,15 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Numeric vector. Row weights for bootstrap.}
+
+\item{\code{estimate_only}}{Logical. If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalAdjCatLogitRegr-clone"></a>}}

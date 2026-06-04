@@ -127,9 +127,14 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 			)
 		},
 		assert_finite_se = function(){
-			if (!is.finite(private$cached_values$s_beta_hat_T)){
-				return(invisible(NULL))
+		},
+		get_standard_error = function(){
+			private$shared_combined_likelihood(estimate_only = FALSE)
+			se = private$cached_values$s_beta_hat_T
+			if (is.null(se) || length(se) == 0L) {
+				return(NA_real_)
 			}
+			as.numeric(se)[1L]
 		},
 		# Fit the combined check-function loss over matched-pair differences and
 		# reservoir observations with SHARED covariate effects beta_xs.

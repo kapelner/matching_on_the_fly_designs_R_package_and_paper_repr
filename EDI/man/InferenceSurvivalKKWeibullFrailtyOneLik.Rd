@@ -86,6 +86,7 @@ Weibull Frailty Combined-Likelihood Inference for KK Designs
 \if{html}{\out{<a id="method-InferenceSurvivalKKWeibullFrailtyOneLik-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKKWeibullFrailtyOneLik-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the one-likelihood Weibull-frailty inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKWeibullFrailtyOneLik$new(
   des_obj,
@@ -96,6 +97,21 @@ Weibull Frailty Combined-Likelihood Inference for KK Designs
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed KK survival design object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{use_rcpp}}{Logical. If \code{TRUE}, use the internal Rcpp backend.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{optimization_alg}}{Optimization algorithm to use.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKKWeibullFrailtyOneLik-clone"></a>}}

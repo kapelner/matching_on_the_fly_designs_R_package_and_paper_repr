@@ -101,6 +101,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceCountHurdleNegBin-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountHurdleNegBin-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountHurdleNegBin$new(
   des_obj,
@@ -111,47 +112,96 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{model_formula_hurdle}}{Formula for the hurdle submodel. Defaults to
+\code{~ .}, meaning treatment plus all available covariates.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be displayed.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountHurdleNegBin-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountHurdleNegBin-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Compute asymp confidence interval
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountHurdleNegBin$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The significance level (default 0.05).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountHurdleNegBin-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountHurdleNegBin-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Compute asymp two sided pval for treatment effect
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountHurdleNegBin$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null treatment effect (default 0).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountHurdleNegBin-compute_gradient_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountHurdleNegBin-compute_gradient_two_sided_pval}{}}}
 \subsection{Method \code{compute_gradient_two_sided_pval()}}{
+Compute gradient / likelihood-based alternatives
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountHurdleNegBin$compute_gradient_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null treatment effect (default 0).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountHurdleNegBin-compute_gradient_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountHurdleNegBin-compute_gradient_confidence_interval}{}}}
 \subsection{Method \code{compute_gradient_confidence_interval()}}{
+Compute likelihood-based confidence interval
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountHurdleNegBin$compute_gradient_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The significance level (default 0.05).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountHurdleNegBin-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountHurdleNegBin-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Computes the treatment effect estimate for a weighted bootstrap sample.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountHurdleNegBin$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -159,6 +209,15 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Bootstrap weights at the subject or block level.}
+
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountHurdleNegBin-clone"></a>}}

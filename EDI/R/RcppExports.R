@@ -307,6 +307,27 @@ fast_beta_regression_cpp <- function(X_sexp, y_sexp, warm_start_beta = NULL, sma
     .Call(`_EDI_fast_beta_regression_cpp`, X_sexp, y_sexp, warm_start_beta, smart_cold_start, start_phi, compute_std_errs, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only)
 }
 
+#' @title Fast Weighted Beta Regression (C++)
+#' @description High-performance beta regression fitting with nonnegative row weights.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses (in (0, 1)).
+#' @param weights A nonnegative numeric vector of row weights.
+#' @param warm_start_beta Optional starting values for coefficients.
+#' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when no warm start is provided.
+#' @param start_phi Optional starting value for precision parameter phi.
+#' @param compute_std_errs Deprecated.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @param warm_start_fisher_info Optional initial Fisher Information matrix.
+#' @param estimate_only If TRUE, skip Fisher information calculation.
+#' @return A list containing coefficients, phi, negative log-likelihood, convergence status, and Fisher information.
+#' @export
+#' @keywords internal
+fast_beta_regression_weighted_cpp <- function(X_sexp, y_sexp, weights_sexp, warm_start_beta = NULL, smart_cold_start = TRUE, start_phi = 10.0, compute_std_errs = FALSE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, estimate_only = FALSE) {
+    .Call(`_EDI_fast_beta_regression_weighted_cpp`, X_sexp, y_sexp, weights_sexp, warm_start_beta, smart_cold_start, start_phi, compute_std_errs, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only)
+}
+
 #' @title Fast Beta Regression with Variance (C++)
 #' @description Beta regression with full variance-covariance matrix and standard error estimation.
 #' @param X A numeric matrix of predictors.

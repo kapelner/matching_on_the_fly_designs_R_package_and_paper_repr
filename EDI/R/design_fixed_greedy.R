@@ -29,7 +29,6 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 		#'
 		#' @return 			A new `DesignFixedGreedy` object
 		#'
-		supports_batch_w_pregeneration = function() TRUE,
 		initialize = function(
 				response_type,
 				prob_T = 0.5,
@@ -58,6 +57,10 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 			private$n_iter    = n_iter
 			private$uses_covariates = TRUE
 		},
+		#' @description Whether this design supports batch pregeneration of treatment vectors.
+		#'
+		#' @return \code{TRUE}.
+		supports_batch_w_pregeneration = function() TRUE,
 		#' @description Draw multiple treatment assignment vectors.
 		#'
 		#' @param r 	The number of designs to draw.

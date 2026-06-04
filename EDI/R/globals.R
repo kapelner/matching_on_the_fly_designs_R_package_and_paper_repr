@@ -538,6 +538,86 @@ edi_cold_start_dispatch_policy = function(inference_class) {
   }
   default_val
 }
+#' Get the default warm-start dispatch policy
+#'
+#' Returns EDI's built-in policy for choosing whether warm starts are enabled
+#' during different resampling or simulation operations.
+#'
+#' @return A named list describing the warm start policy configuration.
+#' @examples
+#' get_warm_start_dispatch_policy()
+#' @export
+get_warm_start_dispatch_policy = function() {
+  list(
+    default = TRUE,
+    jackknife = list(
+      inference_class_overrides = c(
+        "^InferenceSurvivalKKLWACoxPHOneLik$" = FALSE,
+        "^InferenceSurvivalKKStratCoxPHOneLik$" = FALSE,
+        "^InferenceSurvivalKKClaytonCopulaOneLik$" = FALSE
+      )
+    ),
+    non_param_boot = list(
+      inference_class_overrides = character(0)
+    ),
+    bayesian_boot = list(
+      inference_class_overrides = character(0)
+    ),
+    param_boot = list(
+      inference_class_overrides = character(0)
+    ),
+    rand = list(
+      inference_class_overrides = character(0)
+    )
+  )
+}
+edi_env$warm_start_dispatch_policy_config = get_warm_start_dispatch_policy()
+
+#' Update the warm-start dispatch policy
+#'
+#' @param policy Either \code{NULL} or a named list of policy overrides.
+#' @param reset If \code{TRUE}, restore the built-in default policy.
+#' @return Invisible \code{NULL} or the current policy configuration.
+#' @examples
+#' set_warm_start_dispatch_policy(reset = TRUE)
+#' @export
+set_warm_start_dispatch_policy = function(policy = NULL, reset = FALSE) {
+  checkmate::assertFlag(reset)
+  if (isTRUE(reset)) {
+    edi_env$warm_start_dispatch_policy_config = get_warm_start_dispatch_policy()
+    return(invisible(edi_env$warm_start_dispatch_policy_config))
+  }
+  if (is.null(policy)) {
+    return(invisible(edi_env$warm_start_dispatch_policy_config))
+  }
+  checkmate::assertList(policy, names = "named")
+  edi_env$warm_start_dispatch_policy_config = utils::modifyList(edi_env$warm_start_dispatch_policy_config, policy)
+  invisible(NULL)
+}
+
+edi_warm_start_dispatch_policy = function(inference_class, operation) {
+  config = edi_env$warm_start_dispatch_policy_config
+  inference_class = as.character(inference_class[[1]])
+  operation = as.character(operation[[1]])
+  
+  default_val = if (isTRUE(config$default)) TRUE else FALSE
+  
+  if (operation %in% names(config)) {
+    op_cfg = config[[operation]]
+    if (is.list(op_cfg)) {
+      overrides = op_cfg$inference_class_overrides
+      if (!is.null(overrides) && length(overrides) > 0L) {
+        for (pattern in names(overrides)) {
+          if (is.na(pattern) || pattern == "") next
+          if (grepl(pattern, inference_class, perl = TRUE)) {
+            return(isTRUE(overrides[[pattern]]))
+          }
+        }
+      }
+    }
+  }
+  default_val
+}
 #' Update the parallel dispatch policy
 #'
 #' EDI uses an empirical, blocklist-first dispatch policy to decide when an

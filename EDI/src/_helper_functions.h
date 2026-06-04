@@ -1,6 +1,15 @@
 #ifndef EDI_HELPERS_H
 #define EDI_HELPERS_H
 
+// R's CXXFLAGS includes -UNDEBUG which overrides PKG_CXXFLAGS's -DNDEBUG.
+// Source-level #define takes effect after command-line flags, so re-defining
+// NDEBUG HERE (before ALL includes) disables C assert() for Eigen/LBFGSpp
+// headers. Without this, Eigen's BDCSVD and LBFGSpp line search both fire
+// abort() on numerical edge cases, crashing R.
+#ifndef NDEBUG
+#define NDEBUG
+#endif
+
 #include "ordinal_fixed_link_helpers.h"
 #include "optimization_starts.h"
 #include <RcppEigen.h>
@@ -338,6 +347,9 @@ inline Eigen::MatrixXd expand_free_covariance(int n_params,
 
 inline Eigen::MatrixXd symmetric_pseudo_inverse(const Eigen::MatrixXd& M, double tol = 1e-10) {
     Eigen::MatrixXd Msym = (M + M.transpose()) / 2.0;
+    if (!Msym.allFinite()) {
+        return Eigen::MatrixXd::Constant(M.rows(), M.cols(), std::numeric_limits<double>::quiet_NaN());
+    }
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(Msym);
     if (es.info() != Eigen::Success) {
         return Eigen::MatrixXd::Constant(M.rows(), M.cols(), NA_REAL);
@@ -728,6 +740,9 @@ inline Eigen::MatrixXd likelihood_information(LikelihoodFunctor& fun,
 }
 
 inline Eigen::MatrixXd covariance_from_information(const Eigen::MatrixXd& information) {
+    if (!information.allFinite()) {
+        return Eigen::MatrixXd::Constant(information.rows(), information.cols(), std::numeric_limits<double>::quiet_NaN());
+    }
     Eigen::LDLT<Eigen::MatrixXd> ldlt((information + information.transpose()) / 2.0);
     if (ldlt.info() == Eigen::Success) {
         Eigen::MatrixXd inv = ldlt.solve(Eigen::MatrixXd::Identity(information.rows(), information.cols()));
@@ -801,6 +816,15 @@ inline Rcpp::List score_test_from_score_information(const Eigen::VectorXd& score
     }
 
     double info_eff = information(idx, idx);
+    if (!information.allFinite()) {
+        return Rcpp::List::create(
+            Rcpp::Named("statistic") = NA_REAL,
+            Rcpp::Named("df") = 1,
+            Rcpp::Named("p_value") = NA_REAL,
+            Rcpp::Named("score") = NA_REAL,
+            Rcpp::Named("information_effective") = NA_REAL
+        );
+    }
     if (!nuisance_idx_v.empty()) {
         Eigen::VectorXi nuisance_idx(nuisance_idx_v.size());
         for (int i = 0; i < static_cast<int>(nuisance_idx_v.size()); ++i) nuisance_idx[i] = nuisance_idx_v[i];
@@ -918,8 +942,14 @@ inline LikelihoodFitResult optimize_likelihood_lbfgs(LikelihoodFunctor& fun,
     LBFGSpp::LBFGSSolver<double> solver(lbfgs_params);
     LikelihoodFitResult fit;
     fit.params = params;
-    fit.niter = solver.minimize(fun, fit.params, fit.value);
-    fit.converged = (fit.niter < maxit);
+    try {
+        fit.niter = solver.minimize(fun, fit.params, fit.value);
+        fit.converged = (fit.niter < maxit);
+    } catch (...) {
+        fit.value = std::numeric_limits<double>::quiet_NaN();
+        fit.converged = false;
+        fit.niter = maxit;
+    }
     return fit;
 }
 

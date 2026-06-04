@@ -115,13 +115,23 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
 		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#'   Note that Bootstrap is disabled for this class as subject-level resampling violates the
+		#'   matched-pair design constraint.
 		#' @param B  					Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         Whether to return diagnostics.
 		#' @param bootstrap_type Optional resampling scheme.
 		#' @return A numeric vector of bootstrap estimates.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
-			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
+			stop("Bootstrap inference is not supported for InferenceOrdinalPairedSignTest because subject-level resampling violates the matched-pair design constraint.")
+		},
+		#' @description Creates the jackknife distribution of the estimate for the treatment effect.
+		#'   Note that Jackknife is disabled for this class as subject-level deletion violates the
+		#'   matched-pair design constraint.
+		#' @param unit Deletion unit.
+		#' @return A numeric vector of jackknife estimates.
+		approximate_jackknife_distribution_beta_hat_T = function(unit = "auto"){
+			stop("Jackknife inference is not supported for InferenceOrdinalPairedSignTest because subject-level deletion violates the matched-pair design constraint.")
 		}
 	)),
 	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(

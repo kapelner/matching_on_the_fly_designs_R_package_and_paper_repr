@@ -98,37 +98,81 @@ rather than EDI private fields.
 \if{html}{\out{<a id="method-InferenceCustomAsymp-fit"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCustomAsymp-fit}{}}}
 \subsection{Method \code{fit()}}{
+User-defined fit method.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCustomAsymp$fit(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A list with fit results.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCustomAsymp-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCustomAsymp-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Compute the treatment estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCustomAsymp$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The treatment estimate.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCustomAsymp-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCustomAsymp-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Compute asymptotic confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCustomAsymp$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Confidence interval.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCustomAsymp-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCustomAsymp-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Compute asymptotic p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCustomAsymp$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+P-value.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCustomAsymp-clone"></a>}}

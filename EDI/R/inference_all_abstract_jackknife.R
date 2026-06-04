@@ -97,9 +97,8 @@ InferenceJackknife = R6::R6Class("InferenceJackknife",
 				assertNumeric(delta, len = 1)
 			}
 			jack_summary = private$compute_jackknife_summary(unit = unit)
-			theta_j = jack_summary$estimate
 			se_j = jack_summary$std_error
-			if (!is.finite(theta_j)) {
+			if (!is.finite(jack_summary$estimate)) {
 				if (isTRUE(private$harden)) private$cache_nonestimable_estimate("jackknife_estimate_unavailable")
 				return(NA_real_)
 			}
@@ -107,7 +106,9 @@ InferenceJackknife = R6::R6Class("InferenceJackknife",
 				if (isTRUE(private$harden)) private$cache_nonestimable_se("jackknife_standard_error_unavailable")
 				return(NA_real_)
 			}
-			2 * stats::pnorm(-abs((theta_j - delta) / se_j))
+			theta_hat = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+			if (!is.finite(theta_hat)) return(NA_real_)
+			2 * stats::pnorm(-abs((theta_hat - delta) / se_j))
 		},
 		#' @description Computes a normal-approximation confidence interval using the
 		#'   jackknife estimate and jackknife standard error.
@@ -129,11 +130,10 @@ InferenceJackknife = R6::R6Class("InferenceJackknife",
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			}
 			jack_summary = private$compute_jackknife_summary(unit = unit)
-			theta_j = jack_summary$estimate
 			se_j = jack_summary$std_error
 			ci = c(NA_real_, NA_real_)
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
-			if (!is.finite(theta_j)) {
+			if (!is.finite(jack_summary$estimate)) {
 				if (isTRUE(private$harden)) private$cache_nonestimable_estimate("jackknife_estimate_unavailable")
 				return(ci)
 			}
@@ -141,8 +141,10 @@ InferenceJackknife = R6::R6Class("InferenceJackknife",
 				if (isTRUE(private$harden)) private$cache_nonestimable_se("jackknife_standard_error_unavailable")
 				return(ci)
 			}
+			theta_hat = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
+			if (!is.finite(theta_hat)) return(ci)
 			z = stats::qnorm(1 - alpha / 2)
-			ci[] = c(theta_j - z * se_j, theta_j + z * se_j)
+			ci[] = c(theta_hat - z * se_j, theta_hat + z * se_j)
 			ci
 		}
 	),

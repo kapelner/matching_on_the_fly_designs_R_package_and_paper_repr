@@ -38,10 +38,20 @@ InferenceIncidExtendedRobins = R6::R6Class("InferenceIncidExtendedRobins",
 		#' @param verbose Logical. Whether to print progress messages.
 		#' @return A new \code{InferenceIncidExtendedRobins} object.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE){
+			if (!des_obj$is_blocking_design()) {
+				stop("InferenceIncidExtendedRobins requires a blocking design with equal block sizes and even allocation.")
+			}
+			if (des_obj$get_prob_T() != 0.5) {
+				stop("InferenceIncidExtendedRobins requires a blocking design with even allocation.")
+			}
+			block_ids = des_obj$get_block_ids()
+			block_sizes = as.integer(table(block_ids))
+			if (length(block_sizes) > 1L && any(block_sizes != block_sizes[1L])) {
+				stop("InferenceIncidExtendedRobins requires a blocking design with equal block sizes.")
+			}
+
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "incidence")
-				des_obj$assert_even_allocation()
-				des_obj$assert_equal_block_sizes()
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
 			if (should_run_asserts()) {

@@ -60,6 +60,7 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 \if{html}{\out{<a id="method-Design-new"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize an experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$new(
   response_type,
@@ -74,47 +75,125 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
+"ordinal".}
+
+\item{\code{prob_T}}{Probability of treatment assignment.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+
+\item{\code{n}}{The sample size (if fixed).}
+
+\item{\code{verbose}}{Flag for verbosity.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates when building the
+model matrix for inference. One of:
+\describe{
+  \item{\code{"impute"} (default)}{Missing values are filled in using random-forest
+    imputation (\code{missRanger}, falling back to \code{missForest} on failure).
+    The response vector is included as an auxiliary predictor when available.
+    This preserves all covariates and all subjects but introduces imputed values
+    that influence inference.}
+  \item{\code{"drop_column"}}{Any covariate column that contains at least one
+    missing value is dropped entirely from the model matrix before inference.
+    No values are invented; the remaining complete columns are used as-is.
+    This is conservative but transparent.}
+  \item{\code{"error"}}{An error is thrown as soon as any missing value is
+    detected in the covariate matrix. Use this when you want to guarantee that
+    inference runs on exactly the data you supplied, with no silent modification.}
+}}
+
+\item{\code{model_formula}}{A formula object used to create the design matrix from
+covariates. Default is \code{~ .}.}
+
+\item{\code{ordinal_levels}}{If the response type is "ordinal", the labels for the levels.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `Design` object
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-add_one_subject_response"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-add_one_subject_response}{}}}
 \subsection{Method \code{add_one_subject_response()}}{
+For CARA designs, add a single subject response.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$add_one_subject_response(t, y, dead = 1)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{t}}{The subject index.}
+
+\item{\code{y}}{The response value.}
+
+\item{\code{dead}}{If the response is censored (0 for survival).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-add_all_subject_responses"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-add_all_subject_responses}{}}}
 \subsection{Method \code{add_all_subject_responses()}}{
+For non-CARA designs, add all subject responses.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$add_all_subject_responses(ys, deads = NULL)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{ys}}{The responses as a numeric vector.}
+
+\item{\code{deads}}{The binary vector indicating if dead/censored.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-overwrite_all_subject_assignments"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-overwrite_all_subject_assignments}{}}}
 \subsection{Method \code{overwrite_all_subject_assignments()}}{
+For analysis on already-completed experimental data
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$overwrite_all_subject_assignments(w)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{w}}{The binary responses.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-is_fixed_sample_size"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-is_fixed_sample_size}{}}}
 \subsection{Method \code{is_fixed_sample_size()}}{
+Check if this design was initialized with a fixed sample size n
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$is_fixed_sample_size()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+TRUE if fixed.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-assert_all_subjects_arrived"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-assert_all_subjects_arrived}{}}}
 \subsection{Method \code{assert_all_subjects_arrived()}}{
+Asserts if all subjects arrived.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$assert_all_subjects_arrived()}\if{html}{\out{</div>}}
 }
@@ -124,6 +203,7 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 \if{html}{\out{<a id="method-Design-assert_all_responses_recorded"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-assert_all_responses_recorded}{}}}
 \subsection{Method \code{assert_all_responses_recorded()}}{
+Asserts if all responses are recorded.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$assert_all_responses_recorded()}\if{html}{\out{</div>}}
 }
@@ -133,15 +213,20 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 \if{html}{\out{<a id="method-Design-check_experiment_completed"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-check_experiment_completed}{}}}
 \subsection{Method \code{check_experiment_completed()}}{
+Checks if the experiment is completed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$check_experiment_completed()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+\code{TRUE} if experiment is complete, \code{FALSE} otherwise.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-assert_even_allocation"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-assert_even_allocation}{}}}
 \subsection{Method \code{assert_even_allocation()}}{
+Checks if the experiment has a 50-50 allocation.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$assert_even_allocation()}\if{html}{\out{</div>}}
 }
@@ -151,6 +236,7 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 \if{html}{\out{<a id="method-Design-assert_fixed_sample"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-assert_fixed_sample}{}}}
 \subsection{Method \code{assert_fixed_sample()}}{
+Checks if the experiment has a fixed sample size.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$assert_fixed_sample()}\if{html}{\out{</div>}}
 }
@@ -160,159 +246,229 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 \if{html}{\out{<a id="method-Design-any_censoring"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-any_censoring}{}}}
 \subsection{Method \code{any_censoring()}}{
+Checks if the experiment has any censored responses
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$any_censoring()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+\code{TRUE} if any censored.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_t"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_t}{}}}
 \subsection{Method \code{get_t()}}{
+Get t
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$get_t()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The current number of subjects.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_X_raw"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_X_raw}{}}}
 \subsection{Method \code{get_X_raw()}}{
+Get raw X information
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$get_X_raw()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+A data frame of subject data.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_X_imp"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_X_imp}{}}}
 \subsection{Method \code{get_X_imp()}}{
+Get imputed X information
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$get_X_imp()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Same as \code{Xraw} except with imputations.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_X"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_X}{}}}
 \subsection{Method \code{get_X()}}{
+Get X matrix
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$get_X()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+A numeric matrix of subject data.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_y"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_y}{}}}
 \subsection{Method \code{get_y()}}{
+Get y
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$get_y()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+A numeric vector of subject responses.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_y_original"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_y_original}{}}}
 \subsection{Method \code{get_y_original()}}{
+Get y_original
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$get_y_original()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+A numeric vector of the original subject responses.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_w"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_w}{}}}
 \subsection{Method \code{get_w()}}{
+Get w
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$get_w()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+A binary vector of subject assignments.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_n"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_n}{}}}
 \subsection{Method \code{get_n()}}{
+Get n, the sample size
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$get_n()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The number of subjects.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_dead"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_dead}{}}}
 \subsection{Method \code{get_dead()}}{
+Get dead
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$get_dead()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+A binary vector of whether the subject is dead.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_prob_T"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_prob_T}{}}}
 \subsection{Method \code{get_prob_T()}}{
+Get probability of treatment
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$get_prob_T()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The specified probability.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-has_covariates"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-has_covariates}{}}}
 \subsection{Method \code{has_covariates()}}{
+Checks if the design contains any covariates.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$has_covariates()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+\code{TRUE} if there are covariates, \code{FALSE} otherwise.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_response_type"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_response_type}{}}}
 \subsection{Method \code{get_response_type()}}{
+Get response type
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$get_response_type()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The specified response type.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_response_type_original"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_response_type_original}{}}}
 \subsection{Method \code{get_response_type_original()}}{
+Get the original response type
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$get_response_type_original()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The original specified response type.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_ordinal_levels"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_ordinal_levels}{}}}
 \subsection{Method \code{get_ordinal_levels()}}{
+Get ordinal levels
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$get_ordinal_levels()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The levels of the ordinal response.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_original_ordinal_levels"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_original_ordinal_levels}{}}}
 \subsection{Method \code{get_original_ordinal_levels()}}{
+Get original ordinal levels
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$get_original_ordinal_levels()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The labels for the levels of the original ordinal response.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_missingness_method"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_missingness_method}{}}}
 \subsection{Method \code{get_missingness_method()}}{
+Get the missingness method
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$get_missingness_method()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The missingness handling method: \code{"impute"}, \code{"drop_column"},
+  or \code{"error"}.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-transform_y"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-transform_y}{}}}
 \subsection{Method \code{transform_y()}}{
+Transform the response vector y
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$transform_y(
   transform_fun,
@@ -321,24 +477,50 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{transform_fun}}{A function that takes y_original and returns a new y.}
+
+\item{\code{transformed_response_type}}{The response type of the transformed y.}
+
+\item{\code{ordinal_levels}}{If the transformed response type is "ordinal", the labels for the levels.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-get_model_formula"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-get_model_formula}{}}}
 \subsection{Method \code{get_model_formula()}}{
+Get the model formula
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$get_model_formula()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The model formula.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-duplicate"></a>}}
 \if{latex}{\out{\hypertarget{method-Design-duplicate}{}}}
 \subsection{Method \code{duplicate()}}{
+Duplicate this design object
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Design$duplicate(verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{verbose}}{A flag for verbosity.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `Design` object with the same data
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Design-clone"></a>}}

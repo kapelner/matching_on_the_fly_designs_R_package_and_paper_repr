@@ -100,6 +100,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceIncidKKCondLogitPlusGLMMOneLik-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidKKCondLogitPlusGLMMOneLik-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKCondLogitPlusGLMMOneLik$new(
   des_obj,
@@ -112,6 +113,25 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object with an incidence response.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{max_abs_reasonable_coef}}{Cap for reasonable coefficient estimates.}
+
+\item{\code{max_abs_log_sigma}}{Cap for reasonable log random effect variance.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart optimizer start values.}
+
+\item{\code{optimization_alg}}{Character. Optimization algorithm (default "lbfgs").}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidKKCondLogitPlusGLMMOneLik-clone"></a>}}

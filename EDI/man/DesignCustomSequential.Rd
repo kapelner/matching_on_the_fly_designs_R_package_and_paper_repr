@@ -84,19 +84,27 @@ current subject. EDI handles subject storage, responses, and redraws through
 \if{html}{\out{<a id="method-DesignCustomSequential-assignment_rule"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignCustomSequential-assignment_rule}{}}}
 \subsection{Method \code{assignment_rule()}}{
+User-defined assignment rule.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignCustomSequential$assignment_rule()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+A binary treatment assignment.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignCustomSequential-assign_wt"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignCustomSequential-assign_wt}{}}}
 \subsection{Method \code{assign_wt()}}{
+Standard internal assignment entry point.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignCustomSequential$assign_wt()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+A binary treatment assignment.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignCustomSequential-clone"></a>}}

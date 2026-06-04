@@ -60,6 +60,19 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 			private$shared(estimate_only = estimate_only)
 			private$get_effect_estimate()
 		},
+		get_standard_error = function(){
+			private$shared(estimate_only = FALSE)
+			estimand = private$get_estimand_type()
+			se = if (identical(estimand, "RD")) {
+				private$cached_values$se_rd
+			} else {
+				private$cached_values$rr * private$cached_values$se_log_rr
+			}
+			if (is.null(se) || length(se) == 0L) {
+				return(NA_real_)
+			}
+			as.numeric(se)[1L]
+		},
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
 			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
 			effects = private$weighted_gcomp_effects_from_row_weights(row_weights)
@@ -102,11 +115,11 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 		#' @param type Bootstrap p-value type. See \code{InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval}.
 		#' @param na.rm Whether to remove non-finite bootstrap replicates.
 		#' @param min_number_usable_samples Minimum number of finite bootstrap samples required.
-		compute_bootstrap_two_sided_pval = function(delta = NULL, B = 501, type = "symmetric", na.rm = FALSE, min_number_usable_samples = 5L){
+		compute_bootstrap_two_sided_pval = function(delta = NULL, B = 501, type = "symmetric", na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L){
 			if (is.null(delta)){
 				delta = private$default_null_value()
 			}
-			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, type = type, na.rm = na.rm, min_number_usable_samples = min_number_usable_samples)
+			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, type = type, na.rm = na.rm, show_progress = show_progress, min_number_usable_samples = min_number_usable_samples)
 		}
 	),
 	private = list(

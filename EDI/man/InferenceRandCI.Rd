@@ -53,6 +53,7 @@ Abstract class for randomization-based confidence interval inference.
 \if{html}{\out{<a id="method-InferenceRandCI-compute_rand_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceRandCI-compute_rand_two_sided_pval}{}}}
 \subsection{Method \code{compute_rand_two_sided_pval()}}{
+Compute a randomization-based two-sided p-value for the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceRandCI$compute_rand_two_sided_pval(
   r = 501,
@@ -67,11 +68,43 @@ Abstract class for randomization-based confidence interval inference.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{Number of randomization vectors.}
+
+\item{\code{delta}}{Null treatment effect value.}
+
+\item{\code{transform_responses}}{Response transformation to apply during the test.}
+
+\item{\code{na.rm}}{Whether to remove non-finite simulated statistics.}
+
+\item{\code{show_progress}}{Whether to show progress.}
+
+\item{\code{permutations}}{Optional pre-generated assignment draws.}
+
+\item{\code{type}}{Optional incidence-specific exact randomization type.}
+
+\item{\code{args_for_type}}{Optional arguments keyed by \code{type}.}
+
+\item{\code{zero_one_logit_clamp}}{The clamping amount for exact 0 and 1 values when logging}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A two-sided p-value.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRandCI-compute_rand_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceRandCI-compute_rand_confidence_interval}{}}}
 \subsection{Method \code{compute_rand_confidence_interval()}}{
+Computes a randomization-based confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceRandCI$compute_rand_confidence_interval(
   alpha = 0.05,
@@ -84,6 +117,36 @@ Abstract class for randomization-based confidence interval inference.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level.}
+
+\item{\code{r}}{Number of randomization vectors.}
+
+\item{\code{pval_epsilon}}{Bisection tolerance.}
+
+\item{\code{show_progress}}{Show progress.}
+
+\item{\code{type}}{Optional incidence-specific exact randomization type.}
+
+\item{\code{args_for_type}}{Optional arguments keyed by \code{type}.}
+
+\item{\code{ci_search_control}}{Optional control list for randomization-CI search. Supported
+entries are \code{fallback}, \code{seed}, \code{max_radius_se_mult},
+\code{max_radius_scale_mult}, \code{max_expansions}, \code{seed_boot_B},
+Monte Carlo settings \code{mc_enable}, \code{mc_batch_size},
+\code{mc_min_draws}, and \code{mc_conf_level}, midpoint-cache settings
+\code{pval_cache_enable} and \code{pval_cache_resolution}, and model-fit
+reuse settings \code{fit_warm_start_enable} and
+\code{fit_reuse_factorizations}. Set \code{mc_enable = FALSE} to force
+full enumeration of all requested randomization draws.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Randomization CI.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRandCI-clone"></a>}}

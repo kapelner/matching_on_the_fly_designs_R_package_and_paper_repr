@@ -101,6 +101,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceIncidProbitRegr-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidProbitRegr-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a probit-regression inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceIncidProbitRegr$new(
   des_obj,
@@ -112,11 +113,32 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object with an incidence response.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default.}
+
+\item{\code{harden}}{Whether to apply robustness measures.}
+
+\item{\code{optimization_alg}}{Optimization algorithm to use. Default is dispatched via policy.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidProbitRegr-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidProbitRegr-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Computes the treatment effect estimate for a bootstrap sample.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceIncidProbitRegr$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -124,6 +146,15 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Row weights for the bootstrap sample.}
+
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidProbitRegr-clone"></a>}}

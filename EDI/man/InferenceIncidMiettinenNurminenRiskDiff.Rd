@@ -30,6 +30,22 @@ seq_des$add_all_subject_responses(rbinom(10, 1, 0.5))
 inf = InferenceIncidMiettinenNurminenRiskDiff$new(seq_des)
 inf$compute_estimate()
 }
+
+## ------------------------------------------------
+## Method `InferenceIncidMiettinenNurminenRiskDiff$new`
+## ------------------------------------------------
+
+\dontrun{
+seq_des = DesignSeqOneByOneBernoulli$new(n = 20, response_type = "incidence")
+for (i in 1:20) {
+	x_i = data.frame(x1 = rnorm(1), x2 = rnorm(1))
+	w_i = seq_des$add_one_subject_to_experiment_and_assign(x_i)
+	p_i = plogis(-0.8 + 0.5 * w_i)
+	seq_des$add_one_subject_response(i, rbinom(1, 1, p_i))
+}
+seq_des_inf = InferenceIncidMiettinenNurminenRiskDiff$new(seq_des)
+seq_des_inf$compute_estimate()
+}
 }
 \section{Super classes}{
 \code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceNonParamBootstrap} -> \code{::InferenceBayesianBootstrap} -> \code{::InferenceJackknife} -> \code{::InferenceAsymp} -> \code{InferenceIncidMiettinenNurminenRiskDiff}
@@ -94,6 +110,8 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceIncidMiettinenNurminenRiskDiff-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidMiettinenNurminenRiskDiff-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a Miettinen-Nurminen risk-difference inference object for a
+completed design with an incidence response.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceIncidMiettinenNurminenRiskDiff$new(
   des_obj,
@@ -102,20 +120,61 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with an incidence response.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+seq_des = DesignSeqOneByOneBernoulli$new(n = 20, response_type = "incidence")
+for (i in 1:20) {
+	x_i = data.frame(x1 = rnorm(1), x2 = rnorm(1))
+	w_i = seq_des$add_one_subject_to_experiment_and_assign(x_i)
+	p_i = plogis(-0.8 + 0.5 * w_i)
+	seq_des$add_one_subject_response(i, rbinom(1, 1, p_i))
+}
+seq_des_inf = InferenceIncidMiettinenNurminenRiskDiff$new(seq_des)
+seq_des_inf$compute_estimate()
+}
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidMiettinenNurminenRiskDiff-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidMiettinenNurminenRiskDiff-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Computes the observed risk-difference estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceIncidMiettinenNurminenRiskDiff$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidMiettinenNurminenRiskDiff-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidMiettinenNurminenRiskDiff-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Computes the treatment effect estimate for a weighted bootstrap sample.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceIncidMiettinenNurminenRiskDiff$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -123,11 +182,21 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Bootstrap weights at the subject or block level.}
+
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidMiettinenNurminenRiskDiff-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidMiettinenNurminenRiskDiff-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes a 1 - \code{alpha} Miettinen-Nurminen score confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceIncidMiettinenNurminenRiskDiff$compute_asymp_confidence_interval(
   alpha = 0.05,
@@ -135,15 +204,33 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
+
+\item{\code{pval_epsilon}}{Bisection tolerance for CI bounds.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidMiettinenNurminenRiskDiff-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidMiettinenNurminenRiskDiff-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes a two-sided Miettinen-Nurminen score p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceIncidMiettinenNurminenRiskDiff$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null treatment effect on the risk-difference scale.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidMiettinenNurminenRiskDiff-clone"></a>}}

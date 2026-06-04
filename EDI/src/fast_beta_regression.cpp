@@ -22,14 +22,24 @@ class BetaRegression {
 private:
 	const Eigen::Ref<const Eigen::VectorXd> m_y;
 	const Eigen::Ref<const Eigen::MatrixXd> m_X;
+	const Eigen::VectorXd m_weights;
 	const int m_n;
 	const int m_p;
+	const double m_weight_sum;
 	const Eigen::VectorXd m_log_y;
 	const Eigen::VectorXd m_log1_y;
 
 public:
 	BetaRegression(const Eigen::Ref<const Eigen::VectorXd>& y, const Eigen::Ref<const Eigen::MatrixXd>& X) :
-		m_y(y), m_X(X), m_n(X.rows()), m_p(X.cols()),
+		m_y(y), m_X(X), m_weights(Eigen::VectorXd::Ones(X.rows())), m_n(X.rows()), m_p(X.cols()),
+		m_weight_sum(static_cast<double>(X.rows())),
+		m_log_y(y.array().log().matrix()),
+		m_log1_y((1.0 - y.array()).log().matrix()) {}
+
+	BetaRegression(const Eigen::Ref<const Eigen::VectorXd>& y, const Eigen::Ref<const Eigen::MatrixXd>& X,
+	               const Eigen::Ref<const Eigen::VectorXd>& weights) :
+		m_y(y), m_X(X), m_weights(weights), m_n(X.rows()), m_p(X.cols()),
+		m_weight_sum(weights.sum()),
 		m_log_y(y.array().log().matrix()),
 		m_log1_y((1.0 - y.array()).log().matrix()) {}
 
@@ -48,11 +58,11 @@ public:
 		}
 
 		double neg_ll = - (
-			(m_n * R::lgammafn(phi)) -
-			(mu.array() * phi).unaryExpr([](double x){ return R::lgammafn(x); }).sum() -
-			((1.0 - mu.array()) * phi).unaryExpr([](double x){ return R::lgammafn(x); }).sum() +
-			((mu.array() * phi - 1.0) * m_log_y.array()).sum() +
-			(((1.0 - mu.array()) * phi - 1.0) * m_log1_y.array()).sum()
+			(m_weight_sum * R::lgammafn(phi)) -
+			(m_weights.array() * (mu.array() * phi).unaryExpr([](double x){ return R::lgammafn(x); })).sum() -
+			(m_weights.array() * ((1.0 - mu.array()) * phi).unaryExpr([](double x){ return R::lgammafn(x); })).sum() +
+			(m_weights.array() * (mu.array() * phi - 1.0) * m_log_y.array()).sum() +
+			(m_weights.array() * ((1.0 - mu.array()) * phi - 1.0) * m_log1_y.array()).sum()
 		);
 
 		grad.resize(m_p + 1);
@@ -66,14 +76,14 @@ public:
 			m_log_y.array() + m_log1_y.array()
 		) * phi;
 
-		grad.head(m_p) = m_X.transpose() * (d_neg_ll_d_mu.array() * d_mu_d_eta.array()).matrix();
+		grad.head(m_p) = m_X.transpose() * (m_weights.array() * d_neg_ll_d_mu.array() * d_mu_d_eta.array()).matrix();
 
 		double d_neg_ll_d_phi = (
-			-m_n * R::digamma(phi) +
-			(mu.array() * mu_phi.unaryExpr(DigammaFunctor()).array()).sum() +
-			((1.0 - mu.array()) * one_minus_mu_phi.unaryExpr(DigammaFunctor()).array()).sum() -
-			(mu.array() * m_log_y.array()).sum() -
-			((1.0 - mu.array()) * m_log1_y.array()).sum()
+			-m_weight_sum * R::digamma(phi) +
+			(m_weights.array() * mu.array() * mu_phi.unaryExpr(DigammaFunctor()).array()).sum() +
+			(m_weights.array() * (1.0 - mu.array()) * one_minus_mu_phi.unaryExpr(DigammaFunctor()).array()).sum() -
+			(m_weights.array() * mu.array() * m_log_y.array()).sum() -
+			(m_weights.array() * (1.0 - mu.array()) * m_log1_y.array()).sum()
 		);
 		grad[m_p] = d_neg_ll_d_phi * phi;
 
@@ -108,7 +118,8 @@ public:
 			double C = dig_a[i] - dig_b[i] - m_log_y[i] + m_log1_y[i];
 			double B = phi * C;
 			double B_mu = phi * phi * (tri_a[i] + tri_b[i]);
-			double w_beta = B_mu * dmu * dmu + B * d2mu;
+			double obs_weight = m_weights[i];
+			double w_beta = obs_weight * (B_mu * dmu * dmu + B * d2mu);
 			const double* xi = m_X.data() + i;  // xi[j * m_n] == X(i,j)
 
 			for (int c = 0; c < m_p; ++c) {
@@ -117,19 +128,22 @@ public:
 					H_data[r + c * total_p] += wxi_c * xi[r * m_n];
 			}
 
-			double B_log_phi = phi * (C + a[i] * tri_a[i] - b[i] * tri_b[i]);
+			double B_log_phi = obs_weight * phi * (C + a[i] * tri_a[i] - b[i] * tri_b[i]);
 			const double s = B_log_phi * dmu;
 			for (int r = 0; r < m_p; ++r)
 				H_data[r + m_p * total_p] += s * xi[r * m_n];
 		}
 
-		double D = -m_n * R::digamma(phi);
-		double D_phi = -m_n * R::trigamma(phi);
+		double D = -m_weight_sum * R::digamma(phi);
+		double D_phi = -m_weight_sum * R::trigamma(phi);
 		for (int i = 0; i < m_n; ++i) {
 			double mui = mu[i];
-			D += mui * dig_a[i] + (1.0 - mui) * dig_b[i] -
-				mui * m_log_y[i] - (1.0 - mui) * m_log1_y[i];
-			D_phi += mui * mui * tri_a[i] + (1.0 - mui) * (1.0 - mui) * tri_b[i];
+			double obs_weight = m_weights[i];
+			D += obs_weight * (
+				mui * dig_a[i] + (1.0 - mui) * dig_b[i] -
+				mui * m_log_y[i] - (1.0 - mui) * m_log1_y[i]
+			);
+			D_phi += obs_weight * (mui * mui * tri_a[i] + (1.0 - mui) * (1.0 - mui) * tri_b[i]);
 		}
 		H(m_p, m_p) = phi * D + phi * phi * D_phi;
 		for (int c = 0; c < total_p; ++c)
@@ -159,9 +173,10 @@ public:
 		double* H_data = H.data();
 		for (int i = 0; i < m_n; ++i) {
 			const double mui = mu[i];
+			const double obs_weight = m_weights[i];
 			const double dmu = mui * (1.0 - mui);
-			const double w_beta = phi * phi * (tri_a[i] + tri_b[i]) * dmu * dmu;
-			const double cross = phi * (a[i] * tri_a[i] - b[i] * tri_b[i]) * dmu;
+			const double w_beta = obs_weight * phi * phi * (tri_a[i] + tri_b[i]) * dmu * dmu;
+			const double cross = obs_weight * phi * (a[i] * tri_a[i] - b[i] * tri_b[i]) * dmu;
 			const double* xi = m_X.data() + i;
 
 			for (int c = 0; c < m_p; ++c) {
@@ -171,7 +186,7 @@ public:
 			}
 			for (int r = 0; r < m_p; ++r)
 				H_data[r + m_p * total_p] += cross * xi[r * m_n];
-			H(m_p, m_p) += phi * phi * (
+			H(m_p, m_p) += obs_weight * phi * phi * (
 				-R::trigamma(phi) + mui * mui * tri_a[i] + (1.0 - mui) * (1.0 - mui) * tri_b[i]
 			);
 		}
@@ -185,6 +200,7 @@ public:
 
 ModelResult fast_beta_regression_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
                                         const Eigen::Ref<const Eigen::VectorXd>& y,
+                                        const Eigen::VectorXd* weights = nullptr,
                                         const Eigen::VectorXd* warm_start_beta = nullptr,
                                         bool smart_cold_start = true,
                                         double start_phi = 10.0,
@@ -215,7 +231,8 @@ ModelResult fast_beta_regression_internal(const Eigen::Ref<const Eigen::MatrixXd
     params[p] = std::log(start_phi);
     FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
 
-    BetaRegression fun(y, X);
+    Eigen::VectorXd weights_work = weights == nullptr ? Eigen::VectorXd::Ones(X.rows()) : *weights;
+    BetaRegression fun(y, X, weights_work);
     
     Eigen::MatrixXd H_start;
     const Eigen::MatrixXd* h_ptr = nullptr;
@@ -328,12 +345,82 @@ List fast_beta_regression_cpp(SEXP X_sexp,
         sb_ptr = &sb;
     }
 
-    ModelResult fit = fast_beta_regression_internal(X, y, sb_ptr, smart_cold_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only);
+    ModelResult fit = fast_beta_regression_internal(X, y, nullptr, sb_ptr, smart_cold_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only);
 
     Eigen::VectorXd params_full(fit.b.size() + 1);
     params_full.head(fit.b.size()) = fit.b;
     params_full[fit.b.size()] = std::log(fit.dispersion);
     BetaRegression fun_neg_ll(y, X);
+    Eigen::VectorXd dummy_grad(params_full.size());
+    double neg_loglik = fun_neg_ll(params_full, dummy_grad);
+
+	return List::create(
+		Named("coefficients") = fit.b,
+		Named("phi") = fit.dispersion,
+		Named("neg_loglik") = neg_loglik,
+		Named("converged") = fit.converged,
+		Named("fisher_information") = fit.XtWX
+	);
+}
+
+//' @title Fast Weighted Beta Regression (C++)
+//' @description High-performance beta regression fitting with nonnegative row weights.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses (in (0, 1)).
+//' @param weights A nonnegative numeric vector of row weights.
+//' @param warm_start_beta Optional starting values for coefficients.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when no warm start is provided.
+//' @param start_phi Optional starting value for precision parameter phi.
+//' @param compute_std_errs Deprecated.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix.
+//' @param estimate_only If TRUE, skip Fisher information calculation.
+//' @return A list containing coefficients, phi, negative log-likelihood, convergence status, and Fisher information.
+//' @export
+//' @keywords internal
+// [[Rcpp::export]]
+List fast_beta_regression_weighted_cpp(SEXP X_sexp,
+								SEXP y_sexp,
+								SEXP weights_sexp,
+								Nullable<NumericVector> warm_start_beta = R_NilValue,
+								bool smart_cold_start = true,
+								double start_phi = 10.0,
+                                bool compute_std_errs = false,
+                                Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                                Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                std::string optimization_alg = "lbfgs",
+                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                bool estimate_only = false) {
+
+    NumericMatrix X_r(X_sexp);
+    NumericVector y_r(y_sexp);
+    NumericVector weights_r(weights_sexp);
+    if (weights_r.size() != X_r.nrow()) {
+        stop("weights length must equal nrow(X)");
+    }
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
+    Eigen::Map<const Eigen::VectorXd> weights(weights_r.begin(), weights_r.size());
+    if ((weights.array() < 0.0).any() || !weights.allFinite() || weights.sum() <= 0.0) {
+        stop("weights must be finite, nonnegative, and have positive sum");
+    }
+    Eigen::VectorXd weights_vec = weights;
+
+    Eigen::VectorXd sb;
+    Eigen::VectorXd* sb_ptr = nullptr;
+    if (warm_start_beta.isNotNull()) {
+        sb = as<Eigen::VectorXd>(warm_start_beta);
+        sb_ptr = &sb;
+    }
+
+    ModelResult fit = fast_beta_regression_internal(X, y, &weights_vec, sb_ptr, smart_cold_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only);
+
+    Eigen::VectorXd params_full(fit.b.size() + 1);
+    params_full.head(fit.b.size()) = fit.b;
+    params_full[fit.b.size()] = std::log(fit.dispersion);
+    BetaRegression fun_neg_ll(y, X, weights);
     Eigen::VectorXd dummy_grad(params_full.size());
     double neg_loglik = fun_neg_ll(params_full, dummy_grad);
 
@@ -389,7 +476,7 @@ List fast_beta_regression_with_var_cpp(SEXP X_sexp,
         sb_ptr = &sb;
     }
 
-    ModelResult fit = fast_beta_regression_internal(X, y, sb_ptr, smart_cold_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
+    ModelResult fit = fast_beta_regression_internal(X, y, nullptr, sb_ptr, smart_cold_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
     FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols() + 1, fixed_idx, fixed_values);
     Eigen::MatrixXd H_free = subset_matrix(fit.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
 	Eigen::MatrixXd cov_free = H_free.inverse();

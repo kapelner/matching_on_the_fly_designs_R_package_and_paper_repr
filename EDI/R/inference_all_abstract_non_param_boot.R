@@ -39,6 +39,8 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 		#'   }
 		#'   Any non-\code{NULL} value is rejected for designs outside that blocking family.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
+			private$active_resampling_operation = "non_param_boot"
+			on.exit(private$active_resampling_operation <- NULL, add = TRUE)
 			if (should_run_asserts()) {
 				private$assert_design_supports_resampling("Bootstrap inference")
 				private$assert_valid_bootstrap_type(bootstrap_type)
@@ -250,7 +252,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 		#' @param na.rm  				Remove non-finite bootstrap replicates. Default FALSE.
 		#'
 		#' @return 	A bootstrap two-sided p-value.
-		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, min_number_usable_samples = 5L){
+		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L){
 			if (should_run_asserts()) {
 				assertNumeric(delta, len = 1)
 				assertCount(B, positive = TRUE)
@@ -263,6 +265,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			}
 			if (should_run_asserts()) {
 				assertFlag(na.rm)
+				assertFlag(show_progress)
 			}
 			type = tolower(private$get_bootstrap_type(type))
 			if (should_run_asserts()) {
@@ -279,11 +282,12 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				boot_stats = private$approximate_bootstrap_statistics_beta_hat_T(
 					B = B,
 					na.rm = isTRUE(na.rm),
-					require_se = TRUE
+					require_se = TRUE,
+					show_progress = show_progress
 				)
 				boot_distr = boot_stats$theta
 			} else {
-				boot_distr = self$approximate_bootstrap_distribution_beta_hat_T(B)
+				boot_distr = self$approximate_bootstrap_distribution_beta_hat_T(B = B, show_progress = show_progress)
 				boot_stats = NULL
 			}
 			if (isTRUE(na.rm)) boot_distr = boot_distr[is.finite(boot_distr)]
@@ -528,6 +532,9 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				base_y = if (!is.null(source_des_priv$y)) source_des_priv$y else NULL,
 				base_dead = if (!is.null(source_des_priv$dead)) as.numeric(source_des_priv$dead) else NULL,
 				base_m = if (!is.null(source_des_priv$m)) source_des_priv$m else NULL,
+				base_y_i_t_i = if (!is.null(source_des_priv$y_i_t_i)) source_des_priv$y_i_t_i else NULL,
+				base_za_X_cov_all = if (!is.null(private$za_X_cov_all)) private$za_X_cov_all else NULL,
+				base_za_Xzi_cov_all = if (!is.null(private$za_Xzi_cov_all)) private$za_Xzi_cov_all else NULL,
 				n = private$n
 			)
 		},
@@ -568,6 +575,17 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			w_priv$fit_warm_start_fisher = worker_state$base_fit_warm_start_fisher
 			w_priv$cached_mod = NULL
 			
+			w_priv$za_X_cov_all = if (!is.null(worker_state$base_za_X_cov_all)) {
+				worker_state$base_za_X_cov_all[indices, , drop = FALSE]
+			} else {
+				NULL
+			}
+			w_priv$za_Xzi_cov_all = if (!is.null(worker_state$base_za_Xzi_cov_all)) {
+				worker_state$base_za_Xzi_cov_all[indices, , drop = FALSE]
+			} else {
+				NULL
+			}
+			
 			# Reset all private design matrix and covariate caches
 			w_priv$cached_design_matrix = NULL
 			w_priv$cached_w_for_design_matrix = NULL
@@ -586,6 +604,19 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				des_priv$y = w_priv$y
 				des_priv$dead = w_priv$dead
 				if (!is.null(worker_state$base_m)) des_priv$m = w_priv$m
+				
+				# Subset Xraw, Ximp, and y_i_t_i in the worker's design
+				subset_field = function(x) {
+					if (is.null(x)) return(NULL)
+					if (is.data.frame(x) || is.matrix(x)) return(x[indices, , drop = FALSE])
+					if (is.list(x) && !is.data.frame(x)) return(x[indices])
+					if (is.atomic(x) && length(x) >= max(indices)) return(x[indices])
+					x
+				}
+				des_priv$Xraw = subset_field(worker_state$base_Xraw)
+				des_priv$Ximp = subset_field(worker_state$base_Ximp)
+				if (!is.null(worker_state$base_y_i_t_i)) des_priv$y_i_t_i = worker_state$base_y_i_t_i[indices]
+
 				des_priv$all_subject_data_cache = list()
 				des_priv$lin_centered_covariates = NULL
 				if (is.function(des_priv$reset_matching_caches)) des_priv$reset_matching_caches()
@@ -877,6 +908,8 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			}, error = function(e) c(theta = NA_real_, se = NA_real_))
 		},
 		approximate_bootstrap_statistics_beta_hat_T = function(B = 501, show_progress = TRUE, na.rm = TRUE, smooth = FALSE, require_se = FALSE){
+			private$active_resampling_operation = "non_param_boot"
+			on.exit(private$active_resampling_operation <- NULL, add = TRUE)
 			if (should_run_asserts()) {
 				assertCount(B, positive = TRUE)
 				assertFlag(require_se)
@@ -912,6 +945,8 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			list(theta = stats_mat[, 1L], se = stats_mat[, 2L])
 		},
 		approximate_jackknife_distribution_beta_hat_T_private = function(unit = "auto"){
+			private$active_resampling_operation = "jackknife"
+			on.exit(private$active_resampling_operation <- NULL, add = TRUE)
 			unit = private$normalize_jackknife_unit(unit)
 			deletion_draws = private$build_jackknife_deletion_draws(unit = unit)
 			n_draws = length(deletion_draws)

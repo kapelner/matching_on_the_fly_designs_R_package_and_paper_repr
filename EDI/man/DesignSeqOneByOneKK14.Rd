@@ -85,6 +85,7 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 \if{html}{\out{<a id="method-DesignSeqOneByOneKK14-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneKK14-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a KK14 sequential experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneKK14$new(
   response_type,
@@ -102,24 +103,72 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
+"ordinal".}
+
+\item{\code{prob_T}}{Probability of treatment assignment.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+
+\item{\code{n}}{The sample size.}
+
+\item{\code{verbose}}{A flag for verbosity.}
+
+\item{\code{lambda}}{The penalty parameter for covariate imbalance.}
+
+\item{\code{t_0_pct}}{The percentage of subjects to allocate before matching begins.}
+
+\item{\code{morrison}}{If TRUE, use Morrison's method for matching.}
+
+\item{\code{p}}{The number of covariates to use for matching.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates.}
+
+\item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `DesignSeqOneByOneKK14` object
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneKK14-assign_wt"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneKK14-assign_wt}{}}}
 \subsection{Method \code{assign_wt()}}{
+Assign the next subject to a treatment group
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneKK14$assign_wt()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The treatment assignment (0 or 1)
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneKK14-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneKK14-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to KK14 design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneKK14$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneKK14-clone"></a>}}

@@ -399,3 +399,5 @@ simulations/*elapsed.rds
 truly_definitive_high_res_results.csv
 warm_starts_final_results.csv
 warm_starts_final_results_clean.csv
+warm_starts_bayes_jackknife_results.csv
+warm_starts_final_results_backup.csv

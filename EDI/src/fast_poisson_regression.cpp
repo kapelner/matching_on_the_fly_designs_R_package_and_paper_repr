@@ -96,7 +96,10 @@ ModelResult fast_poisson_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
     std::string alg = normalize_optimizer_algorithm(optimization_alg, "irls", true);
     VectorXd beta_start = VectorXd::Zero(p);
     if (warm_start_beta.isNotNull()) {
-        beta_start = as<Eigen::VectorXd>(Rcpp::NumericVector(warm_start_beta));
+        Rcpp::NumericVector ws_nv(warm_start_beta);
+        if (ws_nv.size() > 0) {
+            beta_start = as<Eigen::VectorXd>(ws_nv);
+        }
     } else if (smart_cold_start) {
         beta_start = edi_opt::poisson_smart_cold_start(X, y);
     }
@@ -136,6 +139,7 @@ ModelResult fast_poisson_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
         res.converged = fit.converged;
         return res;
     }
+
 
     const int p_free = (int)fixed_spec.free_idx.size();
     const bool all_free = (p_free == p);

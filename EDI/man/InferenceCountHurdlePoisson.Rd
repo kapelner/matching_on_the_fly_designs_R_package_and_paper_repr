@@ -101,6 +101,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceCountHurdlePoisson-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountHurdlePoisson-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a hurdle Poisson inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountHurdlePoisson$new(
   des_obj,
@@ -113,6 +114,27 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object with a count response.}
+
+\item{\code{model_formula}}{Optional formula for the count submodel.}
+
+\item{\code{model_formula_hurdle}}{Formula for the hurdle submodel. Defaults to
+\code{~ .}, meaning treatment plus all available covariates.}
+
+\item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), use the internal Rcpp
+implementation. If \code{FALSE}, use \pkg{glmmTMB}.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+
+\item{\code{optimization_alg}}{Optimization algorithm. Default is dispatched via policy.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountHurdlePoisson-clone"></a>}}

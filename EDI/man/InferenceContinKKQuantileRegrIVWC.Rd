@@ -52,6 +52,25 @@ seq_des$add_all_subject_responses(rnorm(10))
 inf = InferenceContinKKQuantileRegrIVWC$new(seq_des)
 inf$compute_estimate()
 }
+
+## ------------------------------------------------
+## Method `InferenceContinKKQuantileRegrIVWC$new`
+## ------------------------------------------------
+
+set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
+FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+infer <- InferenceContinKKQuantileRegrIVWC$new(seq_des, verbose = FALSE)
+infer
+
 }
 \section{Super classes}{
 \code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceNonParamBootstrap} -> \code{::InferenceBayesianBootstrap} -> \code{::InferenceJackknife} -> \code{::InferenceAsymp} -> \code{::InferenceMLEorKMSummaryTable} -> \code{::InferenceAsympLik} -> \code{::InferenceKKPassThroughCompoundNoParamBootstrap} -> \code{::InferenceAbstractQuantileRandCI} -> \code{::InferenceAbstractKKQuantileRegrIVWC} -> \code{InferenceContinKKQuantileRegrIVWC}
@@ -128,6 +147,8 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceContinKKQuantileRegrIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKQuantileRegrIVWC-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a sequential experimental design estimation and test object
+after the sequential design is completed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKQuantileRegrIVWC$new(
   des_obj,
@@ -135,6 +156,50 @@ inf$compute_estimate()
   tau = 0.5,
   verbose = FALSE
 )}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects
+are assigned and response y is recorded within.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{tau}}{The quantile level for regression, strictly between
+  0 and 1. The default \code{tau = 0.5}
+                                                        estimates the median treatment
+effect. Pass a different value (e.g. \code{tau = 0.25} or
+                                                        \code{tau = 0.75}) to target the
+corresponding percentile of the treatment effect distribution.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be
+displayed to the user. Default is \code{FALSE}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{set.seed(1)
+x_dat <- data.frame(
+  x1 = c(-1.2, -0.7, -0.2, 0.3, 0.8, 1.3, 1.8, 2.3),
+  x2 = c(0, 1, 0, 1, 0, 1, 0, 1)
+)
+seq_des <- DesignSeqOneByOneKK14$new(n = nrow(x_dat), response_type = "continuous", verbose =
+FALSE)
+for (i in seq_len(nrow(x_dat))) {
+  seq_des$add_one_subject_to_experiment_and_assign(x_dat[i, , drop = FALSE])
+}
+seq_des$add_all_subject_responses(c(1.2, 0.9, 1.5, 1.8, 2.1, 1.7, 2.6, 2.2))
+infer <- InferenceContinKKQuantileRegrIVWC$new(seq_des, verbose = FALSE)
+infer
+
+}
+\if{html}{\out{</div>}}
+
 }
 
 }

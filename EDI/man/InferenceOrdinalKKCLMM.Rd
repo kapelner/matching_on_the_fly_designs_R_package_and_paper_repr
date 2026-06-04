@@ -98,6 +98,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceOrdinalKKCLMM-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalKKCLMM-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalKKCLMM$new(
   des_obj,
@@ -108,6 +109,21 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{use_rcpp}}{Use internal Rcpp implementation (default \code{TRUE}).}
+
+\item{\code{verbose}}{Print messages?}
+
+\item{\code{smart_cold_start_default}}{Use smart cold start values?}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalKKCLMM-clone"></a>}}

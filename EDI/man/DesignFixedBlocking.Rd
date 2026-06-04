@@ -84,6 +84,7 @@ des$assign_w_to_all_subjects()
 \if{html}{\out{<a id="method-DesignFixedBlocking-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedBlocking-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a fixed stratified blocking experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedBlocking$new(
   strata_cols = NULL,
@@ -103,15 +104,83 @@ des$assign_w_to_all_subjects()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{strata_cols}}{A character vector of column names to use for stratification.
+If `NULL` (the default), all available covariate columns are used.}
+
+\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
+"ordinal".}
+
+\item{\code{prob_T}}{Probability of treatment assignment.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+
+\item{\code{n}}{The sample size.}
+
+\item{\code{preferred_num_bins_for_continuous_covariate}}{The number of quantile bins to use for continuous strata. Default is 2.}
+
+\item{\code{B_target}}{The target number of blocks. Columns from `strata_cols`
+are added greedily in order, each column being included only if it does not push
+the total number of unique blocks beyond this target. For categorical covariates
+their natural levels are used; for continuous covariates
+`preferred_num_bins_for_continuous_covariate` quantile bins are used. Earlier columns
+are always preferred over later ones. The default is `floor(sqrt(n))` when `n`
+is known at construction time, or is resolved to `floor(sqrt(n))` when subjects
+are added. Set `B_target = NULL` to use all columns unconditionally.
+Set `exact_num_blocks = TRUE` to hard fail if the final key construction
+does not produce exactly `B_target` blocks.}
+
+\item{\code{exact_num_blocks}}{Whether to require the greedy key construction to produce
+exactly `B_target` blocks. Default `FALSE`.}
+
+\item{\code{equal_block_sizes}}{Whether to require all blocks to have the same number of
+subjects. Default `TRUE`. When `TRUE` and both `n` and `B_target` are known at
+construction time, an error is raised immediately if `n` is not divisible by
+`B_target`. A second check fires when subjects are added: if the covariate-based
+strata produce unequal block counts the design errors at that point. Set to
+`FALSE` to allow unequal blocks (note that `InferenceIncidCMH` and
+`InferenceIncidExtendedRobins` still require equal block sizes regardless).}
+
+\item{\code{m}}{Optional integer vector of explicit block identifiers, one per subject.
+If supplied, `n` must also be supplied and `length(m)` must equal `n`.
+The constructor then records this blocking structure immediately via
+`set_m()`, bypassing covariate-derived strata construction.}
+
+\item{\code{verbose}}{A flag for verbosity.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates.}
+
+\item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `DesignFixedBlocking` object
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedBlocking-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedBlocking-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to stratified blocking.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedBlocking$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedBlocking-clone"></a>}}

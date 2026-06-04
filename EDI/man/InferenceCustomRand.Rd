@@ -55,19 +55,41 @@ behavior.
 \if{html}{\out{<a id="method-InferenceCustomRand-fit"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCustomRand-fit}{}}}
 \subsection{Method \code{fit()}}{
+User-defined fit method.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCustomRand$fit(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A list with fit results.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCustomRand-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCustomRand-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Compute the treatment estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCustomRand$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The treatment estimate.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCustomRand-clone"></a>}}

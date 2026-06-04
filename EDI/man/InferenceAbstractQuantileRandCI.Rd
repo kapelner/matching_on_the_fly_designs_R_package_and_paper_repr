@@ -90,6 +90,7 @@ all subjects in the reservoir) and KK matching-on-the-fly designs
 \if{html}{\out{<a id="method-InferenceAbstractQuantileRandCI-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractQuantileRandCI-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractQuantileRandCI$new(
   des_obj,
@@ -99,11 +100,25 @@ all subjects in the reservoir) and KK matching-on-the-fly designs
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{verbose}}{Whether to print messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractQuantileRandCI-compute_rand_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractQuantileRandCI-compute_rand_confidence_interval}{}}}
 \subsection{Method \code{compute_rand_confidence_interval()}}{
+Computes a 1-alpha level frequentist confidence interval for the randomization test.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractQuantileRandCI$compute_rand_confidence_interval(
   alpha = 0.05,
@@ -114,6 +129,24 @@ all subjects in the reservoir) and KK matching-on-the-fly designs
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The significance level.}
+
+\item{\code{r}}{Number of randomization vectors.}
+
+\item{\code{pval_epsilon}}{The bisection algorithm tolerance.}
+
+\item{\code{show_progress}}{Show a text progress indicator.}
+
+\item{\code{ci_search_control}}{Optional randomization-CI search control list.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A 1 - alpha sized frequentist confidence interval.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractQuantileRandCI-clone"></a>}}

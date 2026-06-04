@@ -87,6 +87,8 @@ des$assign_w_to_all_subjects()
 \if{html}{\out{<a id="method-DesignFixedOptimalBlocks-supports_batch_w_pregeneration"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedOptimalBlocks-supports_batch_w_pregeneration}{}}}
 \subsection{Method \code{supports_batch_w_pregeneration()}}{
+Returns TRUE so the framework pre-generates all w vectors
+  once per cell (paying the clustering cost once, reusing across reps).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedOptimalBlocks$supports_batch_w_pregeneration()}\if{html}{\out{</div>}}
 }
@@ -96,6 +98,7 @@ des$assign_w_to_all_subjects()
 \if{html}{\out{<a id="method-DesignFixedOptimalBlocks-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedOptimalBlocks-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a fixed optimal-blocks design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedOptimalBlocks$new(
   B = NULL,
@@ -112,15 +115,74 @@ des$assign_w_to_all_subjects()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of blocks to form. If omitted and \code{n} is supplied,
+defaults to \code{floor(sqrt(n))}, with a minimum of 1.}
+
+\item{\code{method}}{Algorithm used to partition subjects into blocks.
+\describe{
+  \item{\code{"K-way"} (default)}{Balanced k-means anticlustering via
+    \code{anticlust::balanced_clustering}.  Requires the
+    \pkg{anticlust} package.  Produces well-spread blocks and is
+    significantly faster than \code{"greedy"} (e.g., ~10x faster
+    for \eqn{n=200, p=10, B=10}) while achieving a better
+    within-block distance objective (e.g., ~4\% lower).}
+  \item{\code{"greedy"}}{Greedy nearest-neighbour matching
+    via \code{blockTools::block}.  Requires the \pkg{blockTools}
+    package.  Fast even for large \eqn{n}.}
+  \item{\code{"ompr"}}{Exact mixed-integer programme solved with
+    GLPK via \pkg{ompr}.  Globally optimal but scales as
+    \eqn{O(n^2 B)} in variables and is only practical for small
+    \eqn{n}.}
+}}
+
+\item{\code{dist}}{Distance specification used only when \code{method = "ompr"}.
+Either a function or one of \code{"euclidean"}, \code{"sum_abs_diff"},
+or \code{"mahal"}.}
+
+\item{\code{response_type}}{The response type for the design.}
+
+\item{\code{prob_T}}{Treatment assignment probability within each block.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Whether to include missingness indicators.}
+
+\item{\code{n}}{Planned sample size.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates.}
+
+\item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new \code{DesignFixedOptimalBlocks} object.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedOptimalBlocks-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedOptimalBlocks-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw treatment assignments according to the optimal-blocks design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedOptimalBlocks$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{Number of assignment vectors to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric matrix with one assignment vector per column.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedOptimalBlocks-clone"></a>}}

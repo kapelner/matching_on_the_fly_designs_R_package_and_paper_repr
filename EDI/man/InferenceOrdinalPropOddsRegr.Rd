@@ -105,6 +105,7 @@ inf$compute_lik_ratio_bootstrap_two_sided_pval(delta = 0, B = 9, show_progress =
 \if{html}{\out{<a id="method-InferenceOrdinalPropOddsRegr-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPropOddsRegr-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a proportional-odds inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPropOddsRegr$new(
   des_obj,
@@ -114,11 +115,28 @@ inf$compute_lik_ratio_bootstrap_two_sided_pval(delta = 0, B = 9, show_progress =
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object with an ordinal response.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPropOddsRegr-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPropOddsRegr-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Computes the treatment effect estimate for a weighted bootstrap sample.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPropOddsRegr$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -126,6 +144,15 @@ inf$compute_lik_ratio_bootstrap_two_sided_pval(delta = 0, B = 9, show_progress =
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Bootstrap weights at the subject or block level.}
+
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPropOddsRegr-clone"></a>}}

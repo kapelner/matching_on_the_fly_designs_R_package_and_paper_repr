@@ -82,19 +82,41 @@ matrix. EDI handles subject storage, responses, and validation through
 \if{html}{\out{<a id="method-DesignFixedCustom-draw_assignments"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedCustom-draw_assignments}{}}}
 \subsection{Method \code{draw_assignments()}}{
+Draw assignments from the custom design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedCustom$draw_assignments(r = 1)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{Number of assignment vectors to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+An \code{n x r} matrix of 0/1 assignments.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedCustom-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedCustom-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Internal redraw utility.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedCustom$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{Number of assignment vectors.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+An \code{n x r} matrix.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedCustom-clone"></a>}}

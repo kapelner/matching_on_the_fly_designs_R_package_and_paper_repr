@@ -91,15 +91,25 @@ while the reported estimator may be robust or quasi-likelihood based.
 \if{html}{\out{<a id="method-InferenceCountCompositeLikelihood-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountCompositeLikelihood-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Computes the treatment estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountCompositeLikelihood$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountCompositeLikelihood-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountCompositeLikelihood-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Recomputes the count-model treatment estimate under
+  Bayesian-bootstrap weights.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountCompositeLikelihood$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -107,6 +117,17 @@ while the reported estimator may be robust or quasi-likelihood based.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
+bootstrap weights.}
+
+\item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
+estimate.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountCompositeLikelihood-clone"></a>}}

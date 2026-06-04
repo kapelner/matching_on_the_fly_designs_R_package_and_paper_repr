@@ -36,6 +36,7 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 			) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed, ...)
 			private$maybe_set_seed()
+			private$equal_block_sizes = FALSE
 		},
 		#' @description Checks if the design supports resampling.
 		#' @return Always TRUE for sequential designs.

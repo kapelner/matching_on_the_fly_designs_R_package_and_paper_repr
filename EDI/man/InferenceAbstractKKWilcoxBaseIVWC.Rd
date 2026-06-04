@@ -24,7 +24,6 @@ required by the full Hodges-Lehmann estimate.
 \item \href{#method-InferenceAbstractKKWilcoxBaseIVWC-new}{\code{InferenceAbstractKKWilcoxBaseIVWC$new()}}
 \item \href{#method-InferenceAbstractKKWilcoxBaseIVWC-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceAbstractKKWilcoxBaseIVWC$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferenceAbstractKKWilcoxBaseIVWC-compute_bootstrap_confidence_interval}{\code{InferenceAbstractKKWilcoxBaseIVWC$compute_bootstrap_confidence_interval()}}
-\item \href{#method-InferenceAbstractKKWilcoxBaseIVWC-compute_estimate_with_bootstrap_weights}{\code{InferenceAbstractKKWilcoxBaseIVWC$compute_estimate_with_bootstrap_weights()}}
 \item \href{#method-InferenceAbstractKKWilcoxBaseIVWC-clone}{\code{InferenceAbstractKKWilcoxBaseIVWC$clone()}}
 }
 }
@@ -55,6 +54,7 @@ required by the full Hodges-Lehmann estimate.
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_confidence_interval"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>::InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_two_sided_pval"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>::InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="compute_estimate_with_bootstrap_weights"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_estimate_with_bootstrap_weights'><code>::InferenceBayesianBootstrap$compute_estimate_with_bootstrap_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="approximate_jackknife_distribution_beta_hat_T"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>::InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_bias_estimate"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>::InferenceJackknife$compute_jackknife_bias_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_corrected_estimate"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_corrected_estimate'><code>::InferenceJackknife$compute_jackknife_corrected_estimate()</code></a></span></li>
@@ -90,6 +90,7 @@ required by the full Hodges-Lehmann estimate.
 \if{html}{\out{<a id="method-InferenceAbstractKKWilcoxBaseIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKWilcoxBaseIVWC-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the abstract base.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWilcoxBaseIVWC$new(
   des_obj,
@@ -99,11 +100,25 @@ required by the full Hodges-Lehmann estimate.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKWilcoxBaseIVWC-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKWilcoxBaseIVWC-approximate_bootstrap_distribution_beta_hat_T}{}}}
 \subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWilcoxBaseIVWC$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
@@ -113,11 +128,30 @@ required by the full Hodges-Lehmann estimate.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKWilcoxBaseIVWC-compute_bootstrap_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKWilcoxBaseIVWC-compute_bootstrap_confidence_interval}{}}}
 \subsection{Method \code{compute_bootstrap_confidence_interval()}}{
+Override to avoid O(n^2) per-resample HL computation during the bootstrap warm-start
+inside compute_rand_confidence_interval. The asymptotic MLE CI is a perfectly
+adequate starting bound for the bisection and is computed in O(1).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWilcoxBaseIVWC$compute_bootstrap_confidence_interval(
   alpha = 0.05,
@@ -125,18 +159,15 @@ required by the full Hodges-Lehmann estimate.
 )}\if{html}{\out{</div>}}
 }
 
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractKKWilcoxBaseIVWC-compute_estimate_with_bootstrap_weights"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractKKWilcoxBaseIVWC-compute_estimate_with_bootstrap_weights}{}}}
-\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKWilcoxBaseIVWC$compute_estimate_with_bootstrap_weights(
-  subject_or_block_weights,
-  estimate_only = FALSE
-)}\if{html}{\out{</div>}}
-}
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level. Default is 0.05.}
 
+\item{\code{...}}{Additional arguments passed to super.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKWilcoxBaseIVWC-clone"></a>}}

@@ -10,7 +10,8 @@ Mean Difference Inference for Continuous Responses
 }
 \details{
 Fits a simple mean difference for continuous responses using the treatment
-indicator.
+indicator. Note that warm starts are disabled for this class as the simple
+mean difference is a closed-form estimator and does not benefit from initialization.
 }
 \examples{
 \dontrun{
@@ -107,6 +108,7 @@ seq_des_inf$compute_asymp_two_sided_pval()
 \if{html}{\out{<a id="method-InferenceAllSimpleMeanDiff-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllSimpleMeanDiff-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a simple mean-difference inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllSimpleMeanDiff$new(
   des_obj,
@@ -117,11 +119,34 @@ seq_des_inf$compute_asymp_two_sided_pval()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects are assigned
+and response y is recorded within.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{Whether to print progress messages. Default \code{FALSE}.}
+
+\item{\code{max_resample_attempts}}{Maximum number of times a single bootstrap replicate
+may be redrawn when the drawn sample fails validity screening. If all attempts
+fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
+Must be a positive integer. Default \code{50L}.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllSimpleMeanDiff-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllSimpleMeanDiff-approximate_bootstrap_distribution_beta_hat_T}{}}}
 \subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllSimpleMeanDiff$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
@@ -131,38 +156,82 @@ seq_des_inf$compute_asymp_two_sided_pval()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllSimpleMeanDiff-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllSimpleMeanDiff-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes an approximate confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllSimpleMeanDiff$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Confidence level.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllSimpleMeanDiff-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllSimpleMeanDiff-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes an approximate two-sided p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllSimpleMeanDiff$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect value.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllSimpleMeanDiff-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllSimpleMeanDiff-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Computes the appropriate estimate for mean difference
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllSimpleMeanDiff$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The setting-appropriate (see description) numeric estimate of the treatment effect
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllSimpleMeanDiff-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllSimpleMeanDiff-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Computes the treatment effect estimate for a bootstrap sample.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllSimpleMeanDiff$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -170,6 +239,15 @@ seq_des_inf$compute_asymp_two_sided_pval()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Row weights for the bootstrap sample.}
+
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllSimpleMeanDiff-clone"></a>}}

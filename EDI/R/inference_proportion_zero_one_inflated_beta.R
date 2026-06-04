@@ -37,14 +37,17 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 		#'   Defaults to \code{~ .}, meaning treatment plus all available covariates.
 		#' @param verbose Whether to print progress messages.
 		#' @param smart_cold_start_default Whether to use smart cold start values.
-		initialize = function(des_obj, model_formula = NULL, model_formula_zero_one = ~ ., verbose = FALSE, smart_cold_start_default = NULL){
+		initialize = function(des_obj, model_formula = NULL, model_formula_zero_one = NULL, verbose = FALSE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "proportion")
-				assertFormula(model_formula_zero_one, null.ok = FALSE)
+				assertFormula(model_formula_zero_one, null.ok = TRUE)
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
+			}
+			if (is.null(model_formula_zero_one)) {
+				model_formula_zero_one = if (is.null(model_formula)) ~ . else model_formula
 			}
 			private$model_formula_zero_one = model_formula_zero_one
 		},
@@ -320,9 +323,7 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 				},
 				fit_ok = function(mod, X_fit, keep){
 					j_treat = mod$j_treat
-					if (is.null(mod) || length(mod$b) < j_treat || !is.finite(mod$b[j_treat])) return(FALSE)
-					if (estimate_only) return(TRUE)
-					is.finite(mod$ssq_b_j) && mod$ssq_b_j > 0
+					!is.null(mod) && length(mod$b) >= j_treat && is.finite(mod$b[j_treat])
 				}
 			)
 			if (!is.null(attempt$fit)){

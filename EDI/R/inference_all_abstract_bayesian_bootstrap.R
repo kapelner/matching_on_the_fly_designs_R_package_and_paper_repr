@@ -67,6 +67,8 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 		#'   \code{prop_iterations_with_warnings}, and
 		#'   \code{prop_illegal_values}.
 		approximate_bayesian_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, weighting_unit_type = NULL){
+			private$active_resampling_operation = "bayesian_boot"
+			on.exit(private$active_resampling_operation <- NULL, add = TRUE)
 			if (should_run_asserts()) {
 				private$assert_design_supports_resampling("Bayesian bootstrap inference")
 				private$assert_valid_bootstrap_type(weighting_unit_type)
@@ -481,6 +483,8 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 			theta
 		},
 		approximate_bayesian_bootstrap_statistics_beta_hat_T = function(B = 501, show_progress = TRUE, na.rm = TRUE, require_se = FALSE, weighting_unit_type = NULL) {
+			private$active_resampling_operation = "bayesian_boot"
+			on.exit(private$active_resampling_operation <- NULL, add = TRUE)
 			if (!isTRUE(require_se)) {
 				theta = self$approximate_bayesian_bootstrap_distribution_beta_hat_T(
 					B = B, show_progress = show_progress, weighting_unit_type = weighting_unit_type
@@ -538,6 +542,8 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 			result
 		},
 		approximate_bayesian_jackknife_distribution_beta_hat_T = function(weighting_unit_type = NULL) {
+			private$active_resampling_operation = "bayesian_boot"
+			on.exit(private$active_resampling_operation <- NULL, add = TRUE)
 			jack_cache_key = weighting_unit_type %||% "default"
 			if (!is.null(private$cached_values$bayes_jack_distr_cache[[jack_cache_key]])) {
 				return(private$cached_values$bayes_jack_distr_cache[[jack_cache_key]])

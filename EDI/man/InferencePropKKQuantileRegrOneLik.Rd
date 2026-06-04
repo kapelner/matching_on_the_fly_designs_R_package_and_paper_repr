@@ -102,6 +102,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferencePropKKQuantileRegrOneLik-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropKKQuantileRegrOneLik-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferencePropKKQuantileRegrOneLik$new(
   des_obj,
@@ -111,15 +112,41 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects
+are assigned and response y is recorded within.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{tau}}{The quantile level on the logit scale, strictly
+between 0 and 1. Default is 0.5.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropKKQuantileRegrOneLik-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropKKQuantileRegrOneLik-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Returns the estimated treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferencePropKKQuantileRegrOneLik$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropKKQuantileRegrOneLik-clone"></a>}}

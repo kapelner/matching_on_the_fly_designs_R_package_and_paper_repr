@@ -105,6 +105,7 @@ seq_des_inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceAllSimpleWilcox-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllSimpleWilcox-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllSimpleWilcox$new(
   des_obj,
@@ -115,20 +116,51 @@ seq_des_inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{Whether to print progress messages. Default \code{FALSE}.}
+
+\item{\code{max_resample_attempts}}{Maximum number of times a single bootstrap replicate
+may be redrawn when the drawn sample fails validity screening. If all attempts
+fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
+Must be a positive integer. Default \code{50L}.}
+
+\item{\code{smart_cold_start_default}}{Flag for consistent API.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllSimpleWilcox-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllSimpleWilcox-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Returns the Hodges-Lehmann pseudo-median of all pairwise treatment-minus-control
+differences.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllSimpleWilcox$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllSimpleWilcox-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllSimpleWilcox-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Computes the weighted Hodges-Lehmann style bootstrap estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllSimpleWilcox$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -136,6 +168,15 @@ seq_des_inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Bootstrap weights at the subject/block level.}
+
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllSimpleWilcox-clone"></a>}}

@@ -13,6 +13,8 @@ Fits a single stacked OLS regression over matched-pair differences and
 reservoir observations for KK matching-on-the-fly designs with continuous
 responses, using the treatment indicator and, optionally, all recorded
 covariates as predictors.
+Note that warm starts are disabled for this class as OLS is a closed-form
+estimator and does not benefit from initialization.
 }
 \examples{
 \donttest{
@@ -104,24 +106,48 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceContinKKOLSOneLik-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKOLSOneLik-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSOneLik$new(des_obj, model_formula = NULL, verbose = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKOLSOneLik-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKOLSOneLik-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Returns the combined OLS estimate of the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSOneLik$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKOLSOneLik-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKOLSOneLik-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Compute the treatment estimate with bootstrap weights.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSOneLik$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -129,33 +155,67 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Numeric vector. Row weights for bootstrap.}
+
+\item{\code{estimate_only}}{Logical. If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The treatment estimate.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKOLSOneLik-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKOLSOneLik-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes the approximate confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSOneLik$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 -
+\code{alpha}. The default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKOLSOneLik-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKOLSOneLik-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes the approximate p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSOneLik$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. For any treatment effect at all this
+is set to zero (the default).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKOLSOneLik-get_likelihood_components"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKOLSOneLik-get_likelihood_components}{}}}
 \subsection{Method \code{get_likelihood_components()}}{
+Returns the log-likelihood, gradient, and Hessian at the current estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSOneLik$get_likelihood_components()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+A list with \code{loglik}, \code{gradient}, and \code{hessian}.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKOLSOneLik-clone"></a>}}

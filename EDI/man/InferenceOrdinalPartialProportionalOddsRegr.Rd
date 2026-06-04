@@ -74,6 +74,7 @@ general R fitters.
 \if{html}{\out{<a id="method-InferenceOrdinalPartialProportionalOddsRegr-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPartialProportionalOddsRegr-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the internal PPO base object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsRegr$new(
   des_obj,
@@ -85,22 +86,56 @@ general R fitters.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{DesignSeqOneByOne} object with an ordinal
+response.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{harden}}{Whether to apply robustness measures.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{nonparallel}}{Covariate names that may vary across thresholds.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPartialProportionalOddsRegr-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPartialProportionalOddsRegr-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Retrieve the estimated treatment log-odds shift.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsRegr$compute_estimate(
   estimate_only = FALSE
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The estimated treatment effect.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPartialProportionalOddsRegr-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPartialProportionalOddsRegr-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Recomputes the partial-proportional-odds treatment estimate
+  under Bayesian-bootstrap weights.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsRegr$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -108,39 +143,90 @@ general R fitters.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
+bootstrap weights.}
+
+\item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
+estimate.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPartialProportionalOddsRegr-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPartialProportionalOddsRegr-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Compute a Wald-style confidence interval for the treatment effect. If the
+model-based standard error is unavailable, falls back to the bootstrap
+interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsRegr$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level for the interval.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A confidence interval for the treatment effect.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPartialProportionalOddsRegr-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPartialProportionalOddsRegr-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Compute a Wald-style two-sided p-value for the treatment effect. If the
+model-based standard error is unavailable, falls back to the bootstrap
+p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsRegr$compute_asymp_two_sided_pval(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect to test.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A two-sided p-value.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPartialProportionalOddsRegr-benchmark_asymp_two_sided_pval_breakdown"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPartialProportionalOddsRegr-benchmark_asymp_two_sided_pval_breakdown}{}}}
 \subsection{Method \code{benchmark_asymp_two_sided_pval_breakdown()}}{
+Benchmark the asymptotic p-value path with a timing breakdown.
+
+This is a diagnostic helper for performance investigation. It separates
+the model fit, cache/SE materialization, and final p-value arithmetic.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalPartialProportionalOddsRegr$benchmark_asymp_two_sided_pval_breakdown(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect to test.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A named list with timing and result details.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPartialProportionalOddsRegr-clone"></a>}}

@@ -86,6 +86,7 @@ indicator and, optionally, all recorded covariates as predictors.
 \if{html}{\out{<a id="method-InferenceOrdinalContRatioRegr-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalContRatioRegr-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a continuation ratio inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalContRatioRegr$new(
   des_obj,
@@ -96,11 +97,28 @@ indicator and, optionally, all recorded covariates as predictors.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object with an ordinal response.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{harden}}{Whether to apply robustness measures.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold starts.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalContRatioRegr-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalContRatioRegr-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Recomputes the continuation-ratio treatment estimate under
+  Bayesian-bootstrap weights.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalContRatioRegr$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -108,6 +126,17 @@ indicator and, optionally, all recorded covariates as predictors.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
+bootstrap weights.}
+
+\item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
+estimate.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalContRatioRegr-clone"></a>}}

@@ -4,6 +4,8 @@
 #' reservoir observations for KK matching-on-the-fly designs with continuous
 #' responses, using the treatment indicator and, optionally, all recorded
 #' covariates as predictors.
+#' Note that warm starts are disabled for this class as OLS is a closed-form
+#' estimator and does not benefit from initialization.
 #'
 #' @examples
 #' \donttest{
@@ -38,6 +40,7 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 				}
 			}
 			super$initialize(des_obj = des_obj, verbose = verbose, model_formula = model_formula)
+			private$fit_warm_start_enabled = FALSE
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}

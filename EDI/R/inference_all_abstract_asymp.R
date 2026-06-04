@@ -92,6 +92,7 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			se = private$get_standard_error()
 			df = private$get_degrees_of_freedom()
 			
+			if (length(est) != 1L || length(se) != 1L) return(c(NA_real_, NA_real_))
 			if (!is.finite(est) || !is.finite(se) || se <= 0) return(c(NA_real_, NA_real_))
 			
 			critical_val = if (is.finite(df)) stats::qt(1 - alpha / 2, df = df) else stats::qnorm(1 - alpha / 2)
@@ -105,6 +106,7 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			se = private$get_standard_error()
 			df = private$get_degrees_of_freedom()
 			
+			if (length(est) != 1L || length(se) != 1L) return(NA_real_)
 			if (!is.finite(est) || !is.finite(se) || se <= 0) return(NA_real_)
 			
 			t_stat = (est - delta) / se

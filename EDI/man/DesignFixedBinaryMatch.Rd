@@ -86,6 +86,8 @@ des$assign_w_to_all_subjects()
 \if{html}{\out{<a id="method-DesignFixedBinaryMatch-supports_batch_w_pregeneration"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedBinaryMatch-supports_batch_w_pregeneration}{}}}
 \subsection{Method \code{supports_batch_w_pregeneration()}}{
+Returns TRUE so the framework pre-generates all w vectors
+  once per cell (paying the nbpMatching cost once, reusing across reps).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedBinaryMatch$supports_batch_w_pregeneration()}\if{html}{\out{</div>}}
 }
@@ -95,6 +97,7 @@ des$assign_w_to_all_subjects()
 \if{html}{\out{<a id="method-DesignFixedBinaryMatch-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedBinaryMatch-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a binary match fixed experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedBinaryMatch$new(
   response_type,
@@ -110,24 +113,75 @@ des$assign_w_to_all_subjects()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{response_type}}{The data type of response values.}
+
+\item{\code{prob_T}}{The probability of the treatment assignment. Must be 0.5.}
+
+\item{\code{mahal_match}}{Match using Mahalanobis distance. Default is \code{FALSE} (Euclidean).}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+
+\item{\code{n}}{The sample size.}
+
+\item{\code{m}}{Optional integer vector of explicit matched-pair identifiers, one per
+subject. If supplied, `n` must also be supplied, `length(m)` must equal `n`,
+all values must be positive, and each pair ID must occur exactly twice.
+This bypasses the package-computed matching step.}
+
+\item{\code{verbose}}{Flag for verbosity.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates.}
+
+\item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `DesignFixedBinaryMatch` object
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedBinaryMatch-assign_w_to_all_subjects"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedBinaryMatch-assign_w_to_all_subjects}{}}}
 \subsection{Method \code{assign_w_to_all_subjects()}}{
+Assign treatment to all subjects. Ensures matching structure is computed
+  even when a pre-computed w vector is injected (bypassing draw_ws_according_to_design).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedBinaryMatch$assign_w_to_all_subjects(w_precomputed = NULL)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{w_precomputed}}{Optional numeric vector of length n.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedBinaryMatch-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedBinaryMatch-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to binary matching.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedBinaryMatch$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedBinaryMatch-clone"></a>}}

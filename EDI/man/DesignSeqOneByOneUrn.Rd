@@ -86,6 +86,7 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 \if{html}{\out{<a id="method-DesignSeqOneByOneUrn-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneUrn-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize an Urn sequential experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneUrn$new(
   alpha = 1,
@@ -100,15 +101,45 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The initial number of balls of each type (Treatment/Control) in the urn.}
+
+\item{\code{beta}}{The number of balls of the opposite type to add to the urn after an assignment.}
+
+\item{\code{response_type}}{The data type of response values.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+
+\item{\code{n}}{The sample size.}
+
+\item{\code{verbose}}{A flag for verbosity.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates.}
+
+\item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `DesignSeqOneByOneUrn` object
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneUrn-assign_wt"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneUrn-assign_wt}{}}}
 \subsection{Method \code{assign_wt()}}{
+Assign the next subject to a treatment group
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneUrn$assign_wt()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The treatment assignment (0 or 1)
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneUrn-clone"></a>}}

@@ -88,6 +88,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceSurvivalRestrictedMeanDiff-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalRestrictedMeanDiff-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the Inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalRestrictedMeanDiff$new(
   des_obj,
@@ -97,11 +98,28 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{The design object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{If TRUE, print additional information.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalRestrictedMeanDiff-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalRestrictedMeanDiff-approximate_bootstrap_distribution_beta_hat_T}{}}}
 \subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalRestrictedMeanDiff$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
@@ -111,20 +129,48 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalRestrictedMeanDiff-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalRestrictedMeanDiff-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Computes the appropriate estimate for mean difference
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalRestrictedMeanDiff$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The setting-appropriate (see description) numeric estimate of the treatment effect
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalRestrictedMeanDiff-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalRestrictedMeanDiff-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Computes the treatment effect estimate for a bootstrap sample.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalRestrictedMeanDiff$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -132,31 +178,71 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Row weights for the bootstrap sample.}
+
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalRestrictedMeanDiff-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalRestrictedMeanDiff-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes a 1-alpha level frequentist confidence interval
+differently for all response types, estimate types, and
+test types.
+
+Here we use the theory that MLE's computed for GLM's are asymptotically normal.
+Hence these confidence intervals are asymptotically valid
+and thus approximate for any sample size.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalRestrictedMeanDiff$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A (1 - alpha)-sized frequentist confidence interval for the treatment effect
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalRestrictedMeanDiff-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalRestrictedMeanDiff-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes a 2-sided p-value via the log rank test
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalRestrictedMeanDiff$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. For any
+treatment effect at all this is set to zero (the default).}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The approximate frequentist p-value
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalRestrictedMeanDiff-compute_rand_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalRestrictedMeanDiff-compute_rand_confidence_interval}{}}}
 \subsection{Method \code{compute_rand_confidence_interval()}}{
+Computes a 1-alpha level frequentist confidence interval for the randomization test
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalRestrictedMeanDiff$compute_rand_confidence_interval(
   alpha = 0.05,
@@ -167,6 +253,25 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
+
+\item{\code{r}}{The number of randomization vectors. The default is 501.}
+
+\item{\code{pval_epsilon}}{The bisection algorithm tolerance. The default is 0.005.}
+
+\item{\code{show_progress}}{Show a text progress indicator.}
+
+\item{\code{ci_search_control}}{Unused.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A 1 - alpha sized frequentist confidence interval
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalRestrictedMeanDiff-clone"></a>}}

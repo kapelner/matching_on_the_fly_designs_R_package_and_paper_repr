@@ -1,6 +1,7 @@
 #' Inference based on Maximum Likelihood for KK designs
 #'
-#' Inference for mean difference
+#' Inference for mean difference. Note that warm starts are disabled for this class
+#' as the Bai adjusted t-test is a closed-form estimator and does not benefit from initialization.
 #'
 #'
 #' @examples

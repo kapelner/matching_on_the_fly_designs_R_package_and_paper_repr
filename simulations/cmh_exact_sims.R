@@ -26,12 +26,14 @@ sim = SimulationFramework$new(
                                           DesignFixedOptimalBlocks =                list(B = 16),
                                           DesignFixedOptimalBlocks =                list(B = 32),
                                           DesignFixedOptimalBlocks =                list(B = 64),
+                                          DesignFixedOptimalBlocks =                list(B = 128),
                                           DesignFixedBlocking =                     list(B_target = 2,  exact_num_blocks = TRUE),
                                           DesignFixedBlocking =                     list(B_target = 4,  exact_num_blocks = TRUE),
                                           DesignFixedBlocking =                     list(B_target = 8,  exact_num_blocks = TRUE),
                                           DesignFixedBlocking =                     list(B_target = 16, exact_num_blocks = TRUE),
                                           DesignFixedBlocking =                     list(B_target = 32, exact_num_blocks = TRUE),
-                                          DesignFixedBlocking =                     list(B_target = 64, exact_num_blocks = TRUE),
+                                          DesignFixedBlocking =                     list(B_target = 64,  exact_num_blocks = TRUE),
+                                          DesignFixedBlocking =                     list(B_target = 128, exact_num_blocks = TRUE),
                                           DesignFixedGreedy =                       list(objective = "mahal_dist"),
                                           DesignFixedMatchingGreedyPairSwitching =  list(objective = "mahal_dist"),
                                           DesignFixedRerandomization =              list(prop_acceptable = 0.01) 
@@ -48,7 +50,8 @@ sim = SimulationFramework$new(
                                           # exact_ci   = list(),
                                           # exact_pval = list()
                                         ),
-        keep_all_intermediate_data    = FALSE
-      )  
+        keep_all_intermediate_data    = FALSE,
+        stop_on_error                 = FALSE
+      )
 
 suppressWarnings(sim$run())

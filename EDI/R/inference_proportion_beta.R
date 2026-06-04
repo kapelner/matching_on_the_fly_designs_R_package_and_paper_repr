@@ -56,30 +56,48 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 				required_cols = 2L,
 				fit_fun = function(X_fit, keep){
 					y_fit = sanitize_beta_response(as.numeric(private$y))
-					df = as.data.frame(X_fit[, -1, drop = FALSE])
-					df$y = y_fit
 					res = tryCatch({
-						if (check_package_installed("betareg")) {
-							suppressWarnings(
-								betareg::betareg(
-									y ~ .,
-									data = df,
-									weights = row_weights,
-									control = betareg::betareg.control(start = list(phi = 10))
-								)
-							)
+						n_params = ncol(X_fit) + 1L
+						ws_args = private$get_backend_warm_start_args(n_params)
+						start_params = ws_args$start_params
+						start_beta = if (!is.null(start_params) && length(start_params) >= ncol(X_fit)) {
+							start_params[seq_len(ncol(X_fit))]
 						} else {
-							NULL
+							ws_args$start_beta
 						}
+						start_phi = if (!is.null(start_params) && length(start_params) >= n_params) {
+							exp(start_params[n_params])
+						} else {
+							10
+						}
+						fast_beta_regression_weighted_cpp(
+							X_sexp = X_fit,
+							y_sexp = y_fit,
+							weights_sexp = row_weights,
+							warm_start_beta = start_beta,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default,
+							start_phi = start_phi,
+							estimate_only = estimate_only,
+							optimization_alg = private$optimization_alg
+						)
 					}, error = function(e) NULL)
 					if (!is.null(res)) {
-						coef_vec = stats::coef(res)[colnames(X_fit)]
+						coef_vec = as.numeric(res$coefficients)
 						if (all(is.finite(coef_vec))) {
+							ssq_b_2 = NA_real_
+							if (!estimate_only && !is.null(res$fisher_information) &&
+							    is.matrix(res$fisher_information) && nrow(res$fisher_information) >= 2L) {
+								inv_fi = tryCatch(solve(res$fisher_information), error = function(e) NULL)
+								if (!is.null(inv_fi) && is.finite(inv_fi[2L, 2L]) && inv_fi[2L, 2L] > 0) {
+									ssq_b_2 = inv_fi[2L, 2L]
+								}
+							}
 							return(list(
-								b = as.numeric(coef_vec),
-								phi = as.numeric(stats::coef(res)["(phi)"]),
-								fisher_information = tryCatch(solve(stats::vcov(res)), error = function(e) NULL),
-								ssq_b_2 = NA_real_
+								b = coef_vec,
+								phi = as.numeric(res$phi),
+								fisher_information = res$fisher_information,
+								ssq_b_2 = ssq_b_2
 							))
 						}
 					}
@@ -306,9 +324,7 @@ InferencePropBetaRegr = R6::R6Class("InferencePropBetaRegr",
 				},
 
 				fit_ok = function(mod, X_fit, keep){
-					if (is.null(mod) || length(mod$b) < 2L || !is.finite(mod$b[2])) return(FALSE)
-					if (estimate_only) return(TRUE)
-					is.finite(mod$ssq_b_2) && mod$ssq_b_2 > 0
+					!is.null(mod) && length(mod$b) >= 2L && is.finite(mod$b[2L])
 				}
 			)
 			if (!is.null(attempt$fit)){

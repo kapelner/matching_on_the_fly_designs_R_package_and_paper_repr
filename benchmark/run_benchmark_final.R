@@ -1,18 +1,19 @@
 
 library(EDI)
 library(data.table)
+library(parallel)
 
 N_VAL = 300
 P_VAL = 5
-B_VAL = 100 
-R_VAL = 100 
-J_VAL = 30  
-PB_VAL = 20
+B_VAL = 10 
+R_VAL = 10 
+J_VAL = 5  
+PB_VAL = 2
 
 RESULTS_CSV = "warm_starts_final_results.csv"
 
 all_inf = grep("^Inference[A-Z]", ls("package:EDI"), value = TRUE)
-inf_names = all_inf[!grepl("Abstract|Suite|Mixin|Compound|Likelihood$|Asymp$|Jackknife$|Bootstrap$|MLEorKMSummaryTable", all_inf)]
+inf_names = all_inf[!grepl("Abstract|Suite|Mixin|Compound|Likelihood$|Asymp$|Jackknife$|Bootstrap$|MLEorKMSummaryTable|KKRankRegrIVWC|OLS|SimpleMeanDiff|BaiAdjustedT", all_inf)]
 
 # Worker script content
 worker_script = '
@@ -26,6 +27,17 @@ B_VAL = as.numeric(args[4])
 R_VAL = as.numeric(args[5])
 J_VAL = as.numeric(args[6])
 PB_VAL = as.numeric(args[7])
+
+measure_avg_time = function(expr_fn, nrep = 50L) {
+    times = numeric(nrep)
+    for (i in 1:nrep) {
+        gc(verbose = FALSE)
+        t = tryCatch(system.time(expr_fn())["elapsed"], error = function(e) NA)
+        if (is.na(t)) return(NA)
+        times[i] = t
+    }
+    mean(times)
+}
 
 get_rt = function(cn) {
     if (grepl("Ordinal|Ridit|Jonck", cn)) return("ordinal")
@@ -75,31 +87,31 @@ if (!is.na(t_single)) {
     if (t_single < 0.00005) { # extremely fast closed-form models (Wilcoxon, mean difference, etc.)
         N_VAL = 20000
         P_VAL = 5
-        B_VAL = 1000
-        R_VAL = 1000
-        J_VAL = 300
-        PB_VAL = 100
+        B_VAL = 100
+        R_VAL = 100
+        J_VAL = 30
+        PB_VAL = 10
     } else if (t_single < 0.0003) { # very fast models (OLS, simple GLM)
         N_VAL = 8000
         P_VAL = 35
-        B_VAL = 500
-        R_VAL = 500
-        J_VAL = 150
-        PB_VAL = 60
+        B_VAL = 50
+        R_VAL = 50
+        J_VAL = 15
+        PB_VAL = 6
     } else if (t_single < 0.001) {
         N_VAL = 3500
         P_VAL = 20
-        B_VAL = 250
-        R_VAL = 250
-        J_VAL = 80
-        PB_VAL = 40
+        B_VAL = 25
+        R_VAL = 25
+        J_VAL = 8
+        PB_VAL = 4
     } else if (t_single < 0.003) {
         N_VAL = 1500
         P_VAL = 12
-        B_VAL = 150
-        R_VAL = 150
-        J_VAL = 50
-        PB_VAL = 25
+        B_VAL = 15
+        R_VAL = 15
+        J_VAL = 5
+        PB_VAL = 2
     }
 }
 
@@ -120,7 +132,17 @@ colnames(X) = paste0("V", 2:(P_VAL+1))
 d$add_all_subjects_to_experiment(X)
 d$assign_w_to_all_subjects()
 
-y = if(rt == "incidence") { rbinom(N_VAL, 1, 0.5) } else if(rt == "count") { rpois(N_VAL, 1) } else if(rt == "proportion") { runif(N_VAL) } else if(rt == "survival") { rexp(N_VAL) } else { sample(1:5, N_VAL, replace=TRUE) }
+y = if (rt == "incidence") {
+    rbinom(N_VAL, 1, 0.5)
+} else if (rt == "count") {
+    if (grepl("NegBin", cls_name)) rnbinom(N_VAL, size = 2, mu = 3) else rpois(N_VAL, 1)
+} else if (rt == "proportion") {
+    if (grepl("Beta", cls_name)) pmin(pmax(rbeta(N_VAL, 3, 7), 1e-4), 1 - 1e-4) else runif(N_VAL, 0.05, 0.95)
+} else if (rt == "survival") {
+    rexp(N_VAL)
+} else {
+    sample(1:5, N_VAL, replace = TRUE)
+}
 d$add_all_subject_responses(y)
 
 # Warm Object Setup
@@ -140,11 +162,6 @@ if (!is.null(mle)) {
     } else {
         pw$set_fit_warm_start(as.numeric(mle), "beta")
     }
-    # Intentionally do NOT clear structural caches (cached_hardened_X_cov,
-    # cached_design_matrix, etc.) populated by compute_estimate() above.
-    # In production, compute_estimate() is always called before any resampling
-    # method, so these caches are legitimately available and are part of the
-    # measured advantage of operating in the warm state.
 }
 
 # Cold Object Setup
@@ -156,45 +173,98 @@ mock_ctx = list(n_units = N_VAL, row_to_unit = 1:N_VAL)
 inf_c$.__enclos_env__$private$current_bayesian_bootstrap_context = mock_ctx
 inf_w$.__enclos_env__$private$current_bayesian_bootstrap_context = mock_ctx
 
+clear_timing_caches = function(priv) {
+    old_cache = priv$cached_values
+    priv$cached_values = list()
+    priv$cached_values$m_cache = old_cache$m_cache
+    priv$cached_values$t0s_rand = old_cache$t0s_rand
+    priv$cached_values$likelihood_test_eval_cache = list()
+    invisible(NULL)
+}
+
+# Warm-start policy helper
+edi_warm_start_dispatch_policy = getFromNamespace("edi_warm_start_dispatch_policy", "EDI")
+
 # RAND
 res_r = "N/S"
 if (!(rt == "incidence" && is.null(inf_w$.__enclos_env__$private$custom_randomization_statistic_function))) {
-    # Warm-up (r=1): equalize CPU instruction/data cache and R allocator state for both objects.
-    # The r=1 cache key differs from r=R_VAL, so no result is reused in the timed call.
-    tryCatch(inf_c$compute_rand_two_sided_pval(r=1L, show_progress=FALSE), error=function(e)NULL)
-    tryCatch(inf_w$compute_rand_two_sided_pval(r=1L, show_progress=FALSE), error=function(e)NULL)
-    t_rc = tryCatch(system.time(inf_c$compute_rand_two_sided_pval(r=R_VAL, show_progress=FALSE))["elapsed"], error=function(e) NA)
-    t_rw = tryCatch(system.time(inf_w$compute_rand_two_sided_pval(r=R_VAL, show_progress=FALSE))["elapsed"], error=function(e) NA)
-    res_r = calc_s(t_rc, t_rw)
+    if (!edi_warm_start_dispatch_policy(cls_name, "rand")) {
+        res_r = "Disabled"
+    } else {
+        tryCatch(inf_c$compute_rand_two_sided_pval(r=1L, show_progress=FALSE), error=function(e)NULL)
+        tryCatch(inf_w$compute_rand_two_sided_pval(r=1L, show_progress=FALSE), error=function(e)NULL)
+        t_rc = measure_avg_time(function() inf_c$compute_rand_two_sided_pval(r=R_VAL, show_progress=FALSE), nrep = 50L)
+        t_rw = measure_avg_time(function() inf_w$compute_rand_two_sided_pval(r=R_VAL, show_progress=FALSE), nrep = 50L)
+        res_r = calc_s(t_rc, t_rw)
+    }
 }
 
 # BOOT
-# Warm-up (B=1): equalize CPU and allocator state.  B=1 cache key != B=B_VAL.
-tryCatch(inf_c$compute_bootstrap_confidence_interval(B=1L, show_progress=FALSE), error=function(e)NULL)
-tryCatch(inf_w$compute_bootstrap_confidence_interval(B=1L, show_progress=FALSE), error=function(e)NULL)
-t_bc = tryCatch(system.time(inf_c$compute_bootstrap_confidence_interval(B=B_VAL, show_progress=FALSE))["elapsed"], error=function(e) NA)
-t_bw = tryCatch(system.time(inf_w$compute_bootstrap_confidence_interval(B=B_VAL, show_progress=FALSE))["elapsed"], error=function(e) NA)
-res_b = calc_s(t_bc, t_bw)
+res_b = "Disabled"
+if (edi_warm_start_dispatch_policy(cls_name, "non_param_boot")) {
+    set.seed(42)
+    boot_weight_draws = replicate(
+        B_VAL,
+        tabulate(sample.int(N_VAL, N_VAL, replace = TRUE), nbins = N_VAL),
+        simplify = FALSE
+    )
+    inf_c$.__enclos_env__$private$active_resampling_operation = "non_param_boot"
+    inf_w$.__enclos_env__$private$active_resampling_operation = "non_param_boot"
+    tryCatch(inf_c$compute_estimate_with_bootstrap_weights(boot_weight_draws[[1L]], TRUE), error=function(e)NULL)
+    tryCatch(inf_w$compute_estimate_with_bootstrap_weights(boot_weight_draws[[1L]], TRUE), error=function(e)NULL)
+    t_bc = measure_avg_time(function() {
+        clear_timing_caches(inf_c$.__enclos_env__$private)
+        for (w in boot_weight_draws) {
+            inf_c$compute_estimate_with_bootstrap_weights(w, TRUE)
+        }
+    }, nrep = 50L)
+    t_bw = measure_avg_time(function() {
+        clear_timing_caches(inf_w$.__enclos_env__$private)
+        for (w in boot_weight_draws) {
+            inf_w$compute_estimate_with_bootstrap_weights(w, TRUE)
+        }
+    }, nrep = 50L)
+    inf_c$.__enclos_env__$private$active_resampling_operation = NULL
+    inf_w$.__enclos_env__$private$active_resampling_operation = NULL
+    res_b = calc_s(t_bc, t_bw)
+}
 
 # JK
-# Warm-up (1 iteration): populates cached_design_matrix and cached_hardened_X_cov on both
-# objects equally, and seeds the R allocator free list with same-sized objects for both.
-tryCatch({ww=rep(1,N_VAL);ww[1]=0;inf_c$compute_estimate_with_bootstrap_weights(ww,TRUE)}, error=function(e)NULL)
-tryCatch({ww=rep(1,N_VAL);ww[1]=0;inf_w$compute_estimate_with_bootstrap_weights(ww,TRUE)}, error=function(e)NULL)
-t_jc = tryCatch(system.time(for(k in 1:J_VAL){w=rep(1,N_VAL);w[k]=0;inf_c$compute_estimate_with_bootstrap_weights(w,TRUE)})["elapsed"], error=function(e) NA)
-t_jw = tryCatch(system.time(for(k in 1:J_VAL){w=rep(1,N_VAL);w[k]=0;inf_w$compute_estimate_with_bootstrap_weights(w,TRUE)})["elapsed"], error=function(e) NA)
-res_j = calc_s(t_jc, t_jw)
+res_j = "Disabled"
+if (edi_warm_start_dispatch_policy(cls_name, "jackknife")) {
+    inf_c$.__enclos_env__$private$active_resampling_operation = "jackknife"
+    inf_w$.__enclos_env__$private$active_resampling_operation = "jackknife"
+    tryCatch({ww=rep(1,N_VAL);ww[1]=0;inf_c$compute_estimate_with_bootstrap_weights(ww,TRUE)}, error=function(e)NULL)
+    tryCatch({ww=rep(1,N_VAL);ww[1]=0;inf_w$compute_estimate_with_bootstrap_weights(ww,TRUE)}, error=function(e)NULL)
+    t_jc = measure_avg_time(function() {
+        for(k in 1:J_VAL){w=rep(1,N_VAL);w[k]=0;inf_c$compute_estimate_with_bootstrap_weights(w,TRUE)}
+    }, nrep = 50L)
+    t_jw = measure_avg_time(function() {
+        for(k in 1:J_VAL){w=rep(1,N_VAL);w[k]=0;inf_w$compute_estimate_with_bootstrap_weights(w,TRUE)}
+    }, nrep = 50L)
+    res_j = calc_s(t_jc, t_jw)
+    inf_c$.__enclos_env__$private$active_resampling_operation = NULL
+    inf_w$.__enclos_env__$private$active_resampling_operation = NULL
+}
 
 # PB
 is_pb_sup = tryCatch(inf_w$.__enclos_env__$private$supports_lik_ratio_param_bootstrap(), error = function(e) FALSE)
 res_p = "N/S"
 if (isTRUE(is_pb_sup)) {
-    # Warm-up (B=1): B=1 cache key != B=PB_VAL.
-    tryCatch(inf_c$compute_lik_ratio_bootstrap_two_sided_pval(B=1L, show_progress=FALSE), error=function(e)NULL)
-    tryCatch(inf_w$compute_lik_ratio_bootstrap_two_sided_pval(B=1L, show_progress=FALSE), error=function(e)NULL)
-    t_pc = tryCatch(system.time(inf_c$compute_lik_ratio_bootstrap_two_sided_pval(B=PB_VAL, show_progress=FALSE))["elapsed"], error=function(e) NA)
-    t_pw = tryCatch(system.time(inf_w$compute_lik_ratio_bootstrap_two_sided_pval(B=PB_VAL, show_progress=FALSE))["elapsed"], error=function(e) NA)
-    res_p = calc_s(t_pc, t_pw)
+    if (!edi_warm_start_dispatch_policy(cls_name, "param_boot")) {
+        res_p = "Disabled"
+    } else {
+        tryCatch(inf_c$compute_lik_ratio_bootstrap_two_sided_pval(B=1L, show_progress=FALSE), error=function(e)NULL)
+        tryCatch(inf_w$compute_lik_ratio_bootstrap_two_sided_pval(B=1L, show_progress=FALSE), error=function(e)NULL)
+        t_pc = measure_avg_time(function() inf_c$compute_lik_ratio_bootstrap_two_sided_pval(B=PB_VAL, show_progress=FALSE), nrep = 50L)
+        t_pw = measure_avg_time(function() inf_w$compute_lik_ratio_bootstrap_two_sided_pval(B=PB_VAL, show_progress=FALSE), nrep = 50L)
+        res_p = calc_s(t_pc, t_pw)
+    }
+}
+
+if (cls_name == "InferenceOrdinalPairedSignTest") {
+    res_b = "N/S"
+    res_j = "N/S"
 }
 
 cat(sprintf("%s,%s,%s,%s,%s\n", cls_name, res_r, res_b, res_j, res_p))
@@ -203,29 +273,59 @@ cat(sprintf("%s,%s,%s,%s,%s\n", cls_name, res_r, res_b, res_j, res_p))
 writeLines(worker_script, "benchmark/worker_v2.R")
 
 cat("Starting definitive robust benchmark...\n")
-if (!file.exists(RESULTS_CSV)) {
-    fwrite(data.table(Path=character(), Rand=character(), Boot=character(), JK=character(), PB=character()), RESULTS_CSV)
+if (file.exists(RESULTS_CSV)) {
+    file.copy(RESULTS_CSV, "warm_starts_final_results_backup.csv", overwrite = TRUE)
 }
+fwrite(data.table(Path=character(), Rand=character(), Boot=character(), JK=character(), PB=character()), RESULTS_CSV)
 
-done_paths = fread(RESULTS_CSV)$Path
+num_cores = 6
+cat(sprintf("Running with %d parallel workers...\n", num_cores))
 
-for (cn in inf_names) {
-    if (cn %in% done_paths) next
-    cat(sprintf("Processing %s... ", cn))
+mclapply(inf_names, function(cn) {
+    cat(sprintf("Processing %s...\n", cn))
+    res = tryCatch({
+        system2("Rscript", c("benchmark/worker_v2.R", cn, N_VAL, P_VAL, B_VAL, R_VAL, J_VAL, PB_VAL), stdout = TRUE, stderr = TRUE)
+    }, error = function(e) {
+        return(character(0))
+    })
     
-    res = system2("Rscript", c("benchmark/worker_v2.R", cn, N_VAL, P_VAL, B_VAL, R_VAL, J_VAL, PB_VAL), stdout = TRUE, stderr = TRUE)
-    
-    # The last line should be the CSV row
     row_str = res[length(res)]
-    if (grepl(",", row_str)) {
+    if (length(row_str) > 0 && grepl(",", row_str)) {
         write(row_str, RESULTS_CSV, append = TRUE)
-        cat("Done.\n")
+        cat(sprintf("Done %s: %s\n", cn, row_str))
     } else {
-        cat("Failed or Crashed.\n")
-        # Log failure reason to stderr
-        cat(paste(res, collapse="\n"), file=stderr())
+        cat(sprintf("Failed or Crashed: %s\n", cn))
+        if (length(res) > 0) {
+            cat(paste(res, collapse="\n"), file=stderr())
+        }
         write(sprintf("%s,N/S,N/S,N/S,N/S", cn), RESULTS_CSV, append = TRUE)
     }
+    NULL
+}, mc.cores = num_cores)
+
+# Write/append the disabled paths to CSV if they are not already there
+disabled_rows = data.table(
+    Path = c(
+        "InferenceAllSimpleMeanDiff",
+        "InferenceAllSimpleMeanDiffPooledVar",
+        "InferenceBaiAdjustedTKK14",
+        "InferenceBaiAdjustedTKK21",
+        "InferenceContinOLS",
+        "InferenceContinKKOLSIVWC",
+        "InferenceContinKKOLSOneLik"
+    ),
+    Rand = "Disabled",
+    Boot = "Disabled",
+    JK = "Disabled",
+    PB = "Disabled"
+)
+results_dt = fread(RESULTS_CSV)
+for (i in 1:nrow(disabled_rows)) {
+    row = disabled_rows[i, ]
+    if (!row$Path %in% results_dt$Path) {
+        fwrite(row, RESULTS_CSV, append = TRUE)
+    }
 }
+
 cat("Done.\n")
 unlink("benchmark/worker_v2.R")

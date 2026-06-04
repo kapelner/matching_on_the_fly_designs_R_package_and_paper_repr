@@ -56,6 +56,7 @@ Abstract class for bootstrap-based inference.
 \if{html}{\out{<a id="method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T}{}}}
 \subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
@@ -65,26 +66,101 @@ Abstract class for bootstrap-based inference.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples. The default is 501.}
+
+\item{\code{show_progress}}{A flag indicating whether a progress bar should be displayed.}
+
+\item{\code{debug}}{If \code{TRUE}, return a list with the distribution values and
+per-iteration diagnostics including error messages, warning messages, counts of each,
+and summary proportions for iterations with errors, warnings, and illegal (non-finite)
+values. Runs serially. Default \code{FALSE}.}
+
+\item{\code{bootstrap_type}}{Optional bootstrap-resampling scheme. Legal public values are:
+\describe{
+  \item{\code{NULL}}{Use the design's default row-resampling bootstrap. For ordinary
+    non-blocking designs this is the usual subject-level resample-with-replacement
+    bootstrap. For certain blocking designs, \code{NULL} maps to the same behavior
+    as \code{"within_blocks"}.}
+  \item{\code{"within_blocks"}}{Only legal for blocking-style designs that support
+    block-aware bootstrap resampling:
+    \code{DesignFixedBlocking}, \code{DesignFixedOptimalBlocks},
+    \code{DesignSeqOneByOneSPBR}, and \code{DesignFixedBlockedCluster}.
+    Resamples observational units within each observed block/stratum. For blocked
+    cluster designs this means resampling clusters within strata.}
+  \item{\code{"resample_blocks"}}{Only legal for the same blocking-style designs as
+    \code{"within_blocks"}. Resamples entire observed blocks/strata with replacement
+    rather than resampling units within each block.}
+}
+Any non-\code{NULL} value is rejected for designs outside that blocking family.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+When \code{debug = FALSE} (default), a numeric vector of length \code{B}
+  containing the bootstrap estimates. When \code{debug = TRUE}, a list with: \code{values},
+  \code{errors} (list of character vectors, one per iteration), \code{warnings} (list of
+  character vectors, one per iteration), \code{num_errors}, \code{num_warnings},
+  \code{prop_iterations_with_errors}, \code{prop_iterations_with_warnings}, and
+  \code{prop_illegal_values}.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval}{}}}
 \subsection{Method \code{compute_bootstrap_two_sided_pval()}}{
+Computes a bootstrap-based two-sided p-value for the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval(
   delta = 0,
   B = 501,
   type = NULL,
   na.rm = FALSE,
+  show_progress = TRUE,
   min_number_usable_samples = 5L
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null hypothesis value. Default 0.}
+
+\item{\code{B}}{Number of bootstrap samples. Default 501.}
+
+\item{\code{type}}{Bootstrap p-value type. Supported values are
+\code{"percentile"} (default), \code{"symmetric"}, \code{"studentized"},
+\code{"bootstrap-t"}, and \code{"bca"}.
+\code{"percentile"}: shifts the bootstrap distribution to be centred at
+\code{delta} and counts the two-tail proportion (Hall 1992).
+\code{"symmetric"}: uses \eqn{|T^* - \bar{T}^*| \ge |t_{\rm obs} - \delta|}
+for a symmetric one-sample test; recommended by Hall & Wilson (1991) when the
+null distribution may be skewed.
+\code{"studentized"} / \code{"bootstrap-t"}: pivots by the per-replicate
+standard error, giving O(n^\{-1\}) error versus O(n^\{-1/2\}) for the percentile
+method (Hall 1992; Davidson & MacKinnon 1999).
+\code{"bca"}: bias-corrected and accelerated p-value via closed-form CI
+inversion using the jackknife acceleration and bias-correction constants;
+second-order accurate (Efron 1987; Efron & Tibshirani 1993).}
+
+\item{\code{na.rm}}{Remove non-finite bootstrap replicates. Default FALSE.}
+
+\item{\code{min_number_usable_samples}}{Minimum number of finite bootstrap samples
+required after filtering. Default 50. Must be smaller than \code{B}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A bootstrap two-sided p-value.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval}{}}}
 \subsection{Method \code{compute_bootstrap_confidence_interval()}}{
+Computes a bootstrap-based confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceNonParamBootstrap$compute_bootstrap_confidence_interval(
   alpha = 0.05,
@@ -96,6 +172,32 @@ Abstract class for bootstrap-based inference.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level 1 - \code{alpha}. Default 0.05.}
+
+\item{\code{B}}{Number of bootstrap samples. Default 501.}
+
+\item{\code{type}}{Bootstrap CI type. Supported values are
+\code{"percentile"}, \code{"basic"}, \code{"studentized"},
+\code{"bootstrap-t"}, \code{"symmetric-percentile-t"},
+\code{"bca"}, \code{"prepivoted"}, \code{"double-bootstrap"},
+\code{"calibrated"}, and \code{"smoothed"}.}
+
+\item{\code{na.rm}}{Remove non-finite bootstrap replicates.
+Default TRUE. Non-finite replicates are always removed internally.}
+
+\item{\code{show_progress}}{Show progress bar.}
+
+\item{\code{min_number_usable_samples}}{Minimum number of finite bootstrap samples
+required after filtering. Default 50. Must be smaller than \code{B}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A bootstrap confidence interval.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceNonParamBootstrap-clone"></a>}}

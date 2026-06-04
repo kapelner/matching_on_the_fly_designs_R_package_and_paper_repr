@@ -85,6 +85,7 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = factor(1, level
 \if{html}{\out{<a id="method-DesignSeqOneByOnePocockSimon-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOnePocockSimon-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a Pocock & Simon sequential experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOnePocockSimon$new(
   strata_cols,
@@ -101,24 +102,71 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = factor(1, level
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{strata_cols}}{The names of the covariates to be used for minimization. These
+must be factor or categorical variables.}
+
+\item{\code{weights}}{A numeric vector of weights for each covariate. Defaults to 1 for all.}
+
+\item{\code{p_best}}{The probability of assigning the treatment that minimizes the
+imbalance. Defaults to 0.8.}
+
+\item{\code{response_type}}{The data type of response values.}
+
+\item{\code{prob_T}}{The probability of the treatment assignment.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+
+\item{\code{n}}{The sample size.}
+
+\item{\code{verbose}}{Flag for verbosity.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates.}
+
+\item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `DesignSeqOneByOnePocockSimon` object
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOnePocockSimon-assign_wt"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOnePocockSimon-assign_wt}{}}}
 \subsection{Method \code{assign_wt()}}{
+Assign the next subject to a treatment group using minimization.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOnePocockSimon$assign_wt()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The treatment assignment (0 or 1)
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOnePocockSimon-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOnePocockSimon-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to Pocock & Simon design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOnePocockSimon$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOnePocockSimon-clone"></a>}}

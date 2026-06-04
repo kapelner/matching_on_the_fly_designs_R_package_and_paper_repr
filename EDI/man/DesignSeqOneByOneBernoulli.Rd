@@ -83,6 +83,7 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 \if{html}{\out{<a id="method-DesignSeqOneByOneBernoulli-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneBernoulli-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a Bernoulli sequential experimental design
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneBernoulli$new(
   response_type,
@@ -96,24 +97,70 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{response_type}}{The data type of response values which must be one of the following:
+"continuous",
+"incidence",
+"proportion",
+"count",
+"survival",
+"ordinal".}
+
+\item{\code{prob_T}}{The probability of the treatment assignment. This defaults to \code{0.5}.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{If missing data is present in a variable,
+should we include another dummy variable for its missingness? The default is \code{TRUE}.}
+
+\item{\code{n}}{The sample size (if fixed). Default is \code{NULL}.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be displayed.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates.}
+
+\item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new `DesignSeqOneByOneBernoulli` object
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneBernoulli-assign_wt"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneBernoulli-assign_wt}{}}}
 \subsection{Method \code{assign_wt()}}{
+Assign the next subject to a treatment group
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneBernoulli$assign_wt()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The treatment assignment (0 or 1)
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneBernoulli-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneBernoulli-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to Bernoulli randomization.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneBernoulli$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneBernoulli-clone"></a>}}

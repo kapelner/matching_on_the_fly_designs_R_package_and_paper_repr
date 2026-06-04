@@ -90,6 +90,7 @@ matched pairs and reservoir subjects.
 \if{html}{\out{<a id="method-InferenceAbstractKKCondLogitPlusGLMM-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKCondLogitPlusGLMM-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKCondLogitPlusGLMM$new(
   des_obj,
@@ -102,20 +103,48 @@ matched pairs and reservoir subjects.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object with an incidence or proportion response.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{max_abs_reasonable_coef}}{Cap for reasonable coefficient estimates.}
+
+\item{\code{max_abs_log_sigma}}{Cap for reasonable log random effect variance.}
+
+\item{\code{verbose}}{Logical. Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Logical. Whether to use smart starting values for the optimizer.}
+
+\item{\code{optimization_alg}}{Character. Optimization algorithm (default "lbfgs").}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKCondLogitPlusGLMM-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKCondLogitPlusGLMM-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Compute the treatment effect estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKCondLogitPlusGLMM$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{Logical. If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKCondLogitPlusGLMM-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKCondLogitPlusGLMM-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Computes the treatment effect estimate for a bootstrap sample.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKCondLogitPlusGLMM$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -123,31 +152,57 @@ matched pairs and reservoir subjects.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Numeric vector. Row weights for bootstrap.}
+
+\item{\code{estimate_only}}{Logical. If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKCondLogitPlusGLMM-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKCondLogitPlusGLMM-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes an approximate confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKCondLogitPlusGLMM$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Numeric. Significance level (default 0.05).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKCondLogitPlusGLMM-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKCondLogitPlusGLMM-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes an approximate two-sided p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKCondLogitPlusGLMM$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Numeric. Null treatment effect value (default 0).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKCondLogitPlusGLMM-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKCondLogitPlusGLMM-approximate_bootstrap_distribution_beta_hat_T}{}}}
 \subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKCondLogitPlusGLMM$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
@@ -157,6 +212,22 @@ matched pairs and reservoir subjects.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Integer. Number of bootstrap samples (default 501).}
+
+\item{\code{show_progress}}{Logical. Whether to show a progress bar.}
+
+\item{\code{debug}}{Logical. Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Character. Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKCondLogitPlusGLMM-clone"></a>}}

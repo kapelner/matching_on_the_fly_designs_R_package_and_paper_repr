@@ -75,24 +75,47 @@ Abstract class for asymptotic inference.
 \if{html}{\out{<a id="method-InferenceAsymp-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes an asymptotic confidence interval using the configured test.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level 1 - \code{alpha}. Default 0.05.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A confidence interval.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes an asymptotic two-sided p-value using the configured test.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect to test against. Default 0.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The asymptotic p-value.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-get_supported_testing_types"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsymp-get_supported_testing_types}{}}}
 \subsection{Method \code{get_supported_testing_types()}}{
+Gets the asymptotic testing methods supported by this inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$get_supported_testing_types()}\if{html}{\out{</div>}}
 }
@@ -102,42 +125,76 @@ Abstract class for asymptotic inference.
 \if{html}{\out{<a id="method-InferenceAsymp-compute_wald_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_wald_two_sided_pval}{}}}
 \subsection{Method \code{compute_wald_two_sided_pval()}}{
+Computes the Wald two-sided p-value regardless of configured testing type.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_wald_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-compute_wald_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_wald_confidence_interval}{}}}
 \subsection{Method \code{compute_wald_confidence_interval()}}{
+Computes the Wald confidence interval regardless of configured testing type.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_wald_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level. Default 0.05.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Abstract method to compute the treatment estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A scalar treatment estimate.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-get_mod"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsymp-get_mod}{}}}
 \subsection{Method \code{get_mod()}}{
+Returns the model object from the last call that produced the treatment
+estimate and SE. Calls \code{compute_estimate()} first if needed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$get_mod()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The cached model object (type depends on the concrete class).
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-get_summary"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsymp-get_summary}{}}}
 \subsection{Method \code{get_summary()}}{
+Prints a summary of the model from the last call that produced the
+treatment estimate and SE.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAsymp$get_summary()}\if{html}{\out{</div>}}
 }

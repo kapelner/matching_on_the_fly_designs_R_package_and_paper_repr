@@ -90,6 +90,7 @@ indicator and, optionally, all recorded covariates as predictors.
 \if{html}{\out{<a id="method-InferenceOrdinalCloglogRegr-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalCloglogRegr-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a cumulative cloglog inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalCloglogRegr$new(
   des_obj,
@@ -99,11 +100,29 @@ indicator and, optionally, all recorded covariates as predictors.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object with an ordinal response.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalCloglogRegr-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalCloglogRegr-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Recomputes the ordinal treatment estimate under
+  Bayesian-bootstrap weights.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalCloglogRegr$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -111,6 +130,15 @@ indicator and, optionally, all recorded covariates as predictors.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Numeric vector. Row weights for bootstrap.}
+
+\item{\code{estimate_only}}{Logical. If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalCloglogRegr-clone"></a>}}

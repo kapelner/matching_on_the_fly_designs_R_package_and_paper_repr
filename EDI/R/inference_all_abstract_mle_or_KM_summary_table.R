@@ -31,7 +31,8 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
-			private$cached_values$beta_hat_T
+			est = private$cached_values$beta_hat_T
+			if (is.null(est) || length(est) != 1L) NA_real_ else est
 		},
 		#' @description Computes a 1-alpha level frequentist confidence interval
 		#'
@@ -80,7 +81,8 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 		},
 		get_standard_error = function(){
 			private$shared(estimate_only = FALSE)
-			private$cached_values$s_beta_hat_T
+			se = private$cached_values$s_beta_hat_T
+			if (is.null(se) || length(se) != 1L) NA_real_ else se
 		},
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))

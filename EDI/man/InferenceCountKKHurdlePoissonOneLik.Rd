@@ -14,7 +14,6 @@ KK Hurdle Poisson Combined-Likelihood Inference for Count Responses
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceCountKKHurdlePoissonOneLik-compute_estimate_with_bootstrap_weights}{\code{InferenceCountKKHurdlePoissonOneLik$compute_estimate_with_bootstrap_weights()}}
 \item \href{#method-InferenceCountKKHurdlePoissonOneLik-new}{\code{InferenceCountKKHurdlePoissonOneLik$new()}}
 \item \href{#method-InferenceCountKKHurdlePoissonOneLik-compute_estimate}{\code{InferenceCountKKHurdlePoissonOneLik$compute_estimate()}}
 \item \href{#method-InferenceCountKKHurdlePoissonOneLik-compute_asymp_confidence_interval}{\code{InferenceCountKKHurdlePoissonOneLik$compute_asymp_confidence_interval()}}
@@ -51,6 +50,7 @@ KK Hurdle Poisson Combined-Likelihood Inference for Count Responses
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_confidence_interval"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>::InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_two_sided_pval"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>::InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="compute_estimate_with_bootstrap_weights"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_estimate_with_bootstrap_weights'><code>::InferenceBayesianBootstrap$compute_estimate_with_bootstrap_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="approximate_jackknife_distribution_beta_hat_T"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>::InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_bias_estimate"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>::InferenceJackknife$compute_jackknife_bias_estimate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_corrected_estimate"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_corrected_estimate'><code>::InferenceJackknife$compute_jackknife_corrected_estimate()</code></a></span></li>
@@ -80,21 +80,10 @@ KK Hurdle Poisson Combined-Likelihood Inference for Count Responses
 </details>
 }}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceCountKKHurdlePoissonOneLik-compute_estimate_with_bootstrap_weights"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceCountKKHurdlePoissonOneLik-compute_estimate_with_bootstrap_weights}{}}}
-\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceCountKKHurdlePoissonOneLik$compute_estimate_with_bootstrap_weights(
-  subject_or_block_weights,
-  estimate_only = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountKKHurdlePoissonOneLik-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountKKHurdlePoissonOneLik-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountKKHurdlePoissonOneLik$new(
   des_obj,
@@ -106,40 +95,83 @@ KK Hurdle Poisson Combined-Likelihood Inference for Count Responses
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object with count responses.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{use_rcpp}}{Logical. If \code{TRUE} (default), use our internal Rcpp
+implementations where available. If \code{FALSE}, use \pkg{glmmTMB}.}
+
+\item{\code{optimization_alg}}{Optimization algorithm.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be displayed.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountKKHurdlePoissonOneLik-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountKKHurdlePoissonOneLik-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Compute treatment estimate
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountKKHurdlePoissonOneLik$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If \code{TRUE}, skip standard-error calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountKKHurdlePoissonOneLik-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountKKHurdlePoissonOneLik-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Compute asymp confidence interval
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountKKHurdlePoissonOneLik$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Confidence level.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountKKHurdlePoissonOneLik-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountKKHurdlePoissonOneLik-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Compute asymp two sided pval
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountKKHurdlePoissonOneLik$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect value.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountKKHurdlePoissonOneLik-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountKKHurdlePoissonOneLik-approximate_bootstrap_distribution_beta_hat_T}{}}}
 \subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountKKHurdlePoissonOneLik$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
@@ -149,6 +181,22 @@ KK Hurdle Poisson Combined-Likelihood Inference for Count Responses
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Integer. Number of bootstrap samples (default 501).}
+
+\item{\code{show_progress}}{Logical. Whether to show a progress bar.}
+
+\item{\code{debug}}{Logical. Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Character. Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountKKHurdlePoissonOneLik-clone"></a>}}

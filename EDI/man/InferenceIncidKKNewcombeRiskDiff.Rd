@@ -37,10 +37,8 @@ inf$compute_estimate()
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-InferenceIncidKKNewcombeRiskDiff-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceIncidKKNewcombeRiskDiff$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferenceIncidKKNewcombeRiskDiff-new}{\code{InferenceIncidKKNewcombeRiskDiff$new()}}
 \item \href{#method-InferenceIncidKKNewcombeRiskDiff-compute_estimate}{\code{InferenceIncidKKNewcombeRiskDiff$compute_estimate()}}
-\item \href{#method-InferenceIncidKKNewcombeRiskDiff-compute_estimate_with_bootstrap_weights}{\code{InferenceIncidKKNewcombeRiskDiff$compute_estimate_with_bootstrap_weights()}}
 \item \href{#method-InferenceIncidKKNewcombeRiskDiff-clone}{\code{InferenceIncidKKNewcombeRiskDiff$clone()}}
 }
 }
@@ -99,27 +97,16 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="get_testing_type"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>::InferenceAsympLik$get_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="set_information_preference"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>::InferenceAsympLik$set_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>::InferenceAsympLik$set_testing_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThroughCompoundNoParamBootstrap" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceKKPassThroughCompoundNoParamBootstrap.html#method-InferenceKKPassThroughCompoundNoParamBootstrap-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceKKPassThroughCompoundNoParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThroughCompoundNoParamBootstrap" data-id="compute_estimate_with_bootstrap_weights"><a href='../..//html/InferenceKKPassThroughCompoundNoParamBootstrap.html#method-InferenceKKPassThroughCompoundNoParamBootstrap-compute_estimate_with_bootstrap_weights'><code>::InferenceKKPassThroughCompoundNoParamBootstrap$compute_estimate_with_bootstrap_weights()</code></a></span></li>
 </ul>
 </details>
 }}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-approximate_bootstrap_distribution_beta_hat_T"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-approximate_bootstrap_distribution_beta_hat_T}{}}}
-\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKNewcombeRiskDiff$approximate_bootstrap_distribution_beta_hat_T(
-  B = 501,
-  show_progress = TRUE,
-  debug = FALSE,
-  bootstrap_type = NULL
-)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKNewcombeRiskDiff$new(
   des_obj,
@@ -129,27 +116,39 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed KK \code{DesignSeqOneByOne} object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{Flag for progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Computes the treatment effect estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKNewcombeRiskDiff$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{flag.}
 }
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-compute_estimate_with_bootstrap_weights"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-compute_estimate_with_bootstrap_weights}{}}}
-\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceIncidKKNewcombeRiskDiff$compute_estimate_with_bootstrap_weights(
-  subject_or_block_weights,
-  estimate_only = FALSE
-)}\if{html}{\out{</div>}}
+\if{html}{\out{</div>}}
 }
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-clone"></a>}}

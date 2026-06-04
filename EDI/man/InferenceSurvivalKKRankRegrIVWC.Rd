@@ -101,6 +101,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceSurvivalKKRankRegrIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKKRankRegrIVWC-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKRankRegrIVWC$new(
   des_obj,
@@ -109,6 +110,20 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{DesignSeqOneByOneKK14} object with a survival response.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKKRankRegrIVWC-clone"></a>}}

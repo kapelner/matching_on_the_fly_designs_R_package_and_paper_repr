@@ -40,6 +40,8 @@ InferenceRand = R6::R6Class("InferenceRand",
 		#'   \code{prop_illegal_values}.
 		#' @param zero_one_logit_clamp The clamping amount for exact 0 and 1 values when logging
 		approximate_randomization_distribution_beta_hat_T = function(r = 501, delta = 0, transform_responses = "none", show_progress = TRUE, permutations = NULL, debug = FALSE, zero_one_logit_clamp = .Machine$double.eps){
+			private$active_resampling_operation = "rand"
+			on.exit(private$active_resampling_operation <- NULL, add = TRUE)
 			if (should_run_asserts()) {
 				private$assert_design_supports_resampling("Randomization inference")
 				assertNumeric(delta); assertCount(r, positive = TRUE); assertFlag(debug)
@@ -47,8 +49,12 @@ InferenceRand = R6::R6Class("InferenceRand",
 			if (is.null(permutations)) permutations = private$generate_permutations(r)
 			setup = private$setup_randomization_template_and_shifts(delta, transform_responses, zero_one_logit_clamp)
 			if (!isTRUE(debug) && !is.null(permutations) && private$has_private_method("compute_fast_randomization_distr")) {
-				fast_distr = private$compute_fast_randomization_distr(setup$template$.__enclos_env__$private$y, permutations, delta, transform_responses, zero_one_logit_clamp)
+				fast_distr = tryCatch(
+					private$compute_fast_randomization_distr(setup$template$.__enclos_env__$private$y, permutations, delta, transform_responses, zero_one_logit_clamp),
+					error = function(e) NULL
+				)
 				if (!is.null(fast_distr)) return(fast_distr)
+				# If fast path threw, fall through to the standard reusable-worker path below.
 			}
 			if (!isTRUE(debug) && !is.null(permutations) &&
 				isTRUE(private$use_reusable_bootstrap_worker()) &&
@@ -72,7 +78,8 @@ InferenceRand = R6::R6Class("InferenceRand",
 			des_template = if (need_thread_objs) setup$template$duplicate() else NULL
 			# Warm up the design template cache if it is a sequential design that uses covariates.
 			if (!is.null(des_template) && isTRUE(des_template$.__enclos_env__$private$uses_covariates)) {
-				if (private$verbose) cat("Warming up design cache... ")
+				is_verbose = isTRUE(private$verbose)
+				if (is_verbose) cat("Warming up design cache... ")
 				tryCatch({
 					priv = des_template$.__enclos_env__$private
 					old_t = priv$t
@@ -83,10 +90,10 @@ InferenceRand = R6::R6Class("InferenceRand",
 						priv$compute_all_subject_data()
 					}
 					priv$t = old_t
-					if (private$verbose) cat("done.\n")
+					if (is_verbose) cat("done.\n")
 				}, error = function(e) {
 					if (exists("old_t")) des_template$.__enclos_env__$private$t = old_t
-					if (private$verbose) cat("failed.\n")
+					if (is_verbose) cat("failed.\n")
 				})
 			}
 			if (!is.null(inf_template) && private$has_match_structure && private$object_has_private_method(inf_template, "compute_basic_match_data"))

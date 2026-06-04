@@ -2,7 +2,7 @@
 #define EDI_BUILD_FLAGS_H
 
 #define EDI_BUILD_CAPTURE_METHOD "configure-generated header compiled into EDI.so"
-#define EDI_BUILD_TIMESTAMP "2026-06-01 01:40:42 EDT"
+#define EDI_BUILD_TIMESTAMP "2026-06-04 14:33:34 EDT"
 #define EDI_BUILD_HOST "LAPTOP-J2T9TGGB"
 #define EDI_BUILD_R_HOME "/usr/local/lib/R"
 #define EDI_BUILD_R_VERSION "R Under development (unstable) (2026-04-23 r89955) -- \"Unsuffered Consequences\""

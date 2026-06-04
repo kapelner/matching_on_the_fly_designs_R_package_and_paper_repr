@@ -62,6 +62,8 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 		#'   retries per bootstrap replicate. Default \code{2L}.
 		#' @return A scalar p-value, or \code{NA_real_} if the computation fails.
 		compute_lik_ratio_bootstrap_two_sided_pval = function(delta = 0, B = 199, show_progress = FALSE, min_number_usable_samples = 5L, max_attempts_per_replicate = 2L){
+			private$active_resampling_operation = "param_boot"
+			on.exit(private$active_resampling_operation <- NULL, add = TRUE)
 			if (!isTRUE(private$supports_lik_ratio_param_bootstrap())){
 				stop(
 					class(self)[1], " does not support parametric-bootstrap LR calibration. ",
@@ -225,6 +227,8 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 		#'   retries per bootstrap replicate. Default \code{2L}.
 		#' @return Named two-element numeric vector with the confidence-interval bounds.
 		compute_lik_ratio_bootstrap_confidence_interval = function(alpha = 0.05, B = 199, show_progress = FALSE, min_number_usable_samples = 5L, max_attempts_per_replicate = 2L){
+			private$active_resampling_operation = "param_boot"
+			on.exit(private$active_resampling_operation <- NULL, add = TRUE)
 			if (!isTRUE(private$supports_lik_ratio_param_bootstrap())){
 				stop(
 					class(self)[1], " does not support parametric-bootstrap LR calibration. ",

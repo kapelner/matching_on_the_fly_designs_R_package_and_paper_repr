@@ -193,7 +193,11 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 		},
 		get_standard_error = function(){
 			private$shared()
-			as.numeric(private$cached_values$s_beta_hat_T)
+			se = private$cached_values$s_beta_hat_T
+			if (is.null(se) || length(se) == 0L) {
+				return(NA_real_)
+			}
+			as.numeric(se)[1L]
 		},
 		get_degrees_of_freedom = function(){
 			private$shared()

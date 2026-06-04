@@ -111,6 +111,14 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$md
 		},
+		get_standard_error = function(){
+			private$shared(estimate_only = FALSE)
+			se = private$cached_values$se_md
+			if (is.null(se) || length(se) == 0L) {
+				return(NA_real_)
+			}
+			as.numeric(se)[1L]
+		},
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
 			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
 			effects = private$weighted_gcomp_effects_from_row_weights(row_weights)
@@ -169,7 +177,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		#' @param min_number_usable_samples Minimum number of finite bootstrap samples required.
 		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = "symmetric", na.rm = FALSE,
 			boundary_tol = 0.02, max_boundary_mass = 0.95, sep_tol = 0.02, min_group_n = 5L,
-			min_number_usable_samples = 5L){
+			show_progress = TRUE, min_number_usable_samples = 5L){
 			if (should_run_asserts()) {
 				assertNumeric(delta, len = 1)
 			}
@@ -181,7 +189,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				min_group_n = as.integer(min_group_n)
 			)
 			on.exit({private$bootstrap_screening_control = old_bootstrap_screening}, add = TRUE)
-			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, type = type, na.rm = na.rm, min_number_usable_samples = min_number_usable_samples)
+			super$compute_bootstrap_two_sided_pval(delta = delta, B = B, type = type, na.rm = na.rm, show_progress = show_progress, min_number_usable_samples = min_number_usable_samples)
 		},
 		#' @description Computes a bootstrap confidence interval.
 		#' @param alpha The confidence level 1 - \code{alpha}.

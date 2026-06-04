@@ -29,7 +29,6 @@ DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyP
 		#' @param seed Integer seed for reproducibility.
 		#'
 		#' @return A new \code{DesignFixedMatchingGreedyPairSwitching} object.
-		supports_batch_w_pregeneration = function() TRUE,
 		initialize = function(
 				response_type,
 				prob_T = 0.5,
@@ -56,6 +55,10 @@ DesignFixedMatchingGreedyPairSwitching = R6::R6Class("DesignFixedMatchingGreedyP
 			private$n_iter    = n_iter
 			private$uses_covariates = TRUE
 		},
+		#' @description Whether this design supports batch pregeneration of treatment vectors.
+		#'
+		#' @return \code{TRUE}.
+		supports_batch_w_pregeneration = function() TRUE,
 		#' @description Draw multiple treatment assignment vectors according to binary match followed by
 		#' greedy pair switching.
 		#'

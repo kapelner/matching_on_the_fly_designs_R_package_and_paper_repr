@@ -32,7 +32,6 @@ InferenceIncidLogRegr = R6::R6Class("InferenceIncidLogRegr",
 		#' @param verbose Whether to print progress messages.
 		#' @param smart_cold_start_default Whether to use smart cold start values by default.
 		#' @param harden                Whether to apply robustness measures.
-		#' @param smart_cold_start_default Whether to use smart cold start values by default.
 		#' @param optimization_alg  Optimization algorithm to use. Default is dispatched via policy.
 		initialize = function(des_obj, model_formula = NULL, verbose = FALSE, smart_cold_start_default = NULL, harden = TRUE, optimization_alg = NULL){
 			if (should_run_asserts()) {

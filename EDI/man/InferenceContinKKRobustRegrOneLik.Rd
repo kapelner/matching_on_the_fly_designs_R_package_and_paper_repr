@@ -87,6 +87,7 @@ observations for KK matching-on-the-fly designs with continuous responses.
 \if{html}{\out{<a id="method-InferenceContinKKRobustRegrOneLik-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrOneLik-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKRobustRegrOneLik$new(
   des_obj,
@@ -99,20 +100,58 @@ observations for KK matching-on-the-fly designs with continuous responses.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{method}}{Robust-regression fitting method for `MASS::rlm`; one of `"M"` or `"MM"`.}
+
+\item{\code{maxit}}{Maximum number of robust-regression iterations. If `NULL`, a
+data-adaptive default is chosen at fit time.}
+
+\item{\code{acc}}{Convergence tolerance for `MASS::rlm`. If `NULL`, a
+data-adaptive default is chosen at fit time.}
+
+\item{\code{start_with_ols}}{Whether to compute an OLS warm start and pass it to `MASS::rlm`
+when the fit method honors `init`. This affects the `M` path only; `MM`
+uses its own LQS-based start. Default `TRUE`.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKRobustRegrOneLik-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrOneLik-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Returns the combined robust-regression estimate of the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKRobustRegrOneLik$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations and use
+the faster \code{"M"} robust estimator regardless of the \code{method}
+argument passed at construction time.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKRobustRegrOneLik-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrOneLik-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Recomputes the combined robust-regression estimate under
+  Bayesian-bootstrap weights.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKRobustRegrOneLik$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -120,31 +159,61 @@ observations for KK matching-on-the-fly designs with continuous responses.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
+bootstrap weights.}
+
+\item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
+estimate.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKRobustRegrOneLik-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrOneLik-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes the approximate confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKRobustRegrOneLik$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence interval is 1 -
+\code{alpha}. The default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKRobustRegrOneLik-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrOneLik-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes the approximate p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKRobustRegrOneLik$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. For any treatment effect at all this
+is set to zero (the default).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKRobustRegrOneLik-duplicate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrOneLik-duplicate}{}}}
 \subsection{Method \code{duplicate()}}{
+Duplicate
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKRobustRegrOneLik$duplicate(
   verbose = FALSE,
@@ -152,6 +221,15 @@ observations for KK matching-on-the-fly designs with continuous responses.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{verbose}}{A flag indicating whether messages should be displayed.}
+
+\item{\code{make_fork_cluster}}{Whether the duplicate should be allowed to create a fork cluster.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKRobustRegrOneLik-clone"></a>}}

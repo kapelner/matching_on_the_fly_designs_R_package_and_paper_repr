@@ -47,7 +47,6 @@ seq_des_inf$compute_asymp_two_sided_pval()
 \item \href{#method-InferenceAllKKMeanDiffIVWC-compute_asymp_confidence_interval}{\code{InferenceAllKKMeanDiffIVWC$compute_asymp_confidence_interval()}}
 \item \href{#method-InferenceAllKKMeanDiffIVWC-compute_asymp_two_sided_pval}{\code{InferenceAllKKMeanDiffIVWC$compute_asymp_two_sided_pval()}}
 \item \href{#method-InferenceAllKKMeanDiffIVWC-compute_rand_confidence_interval}{\code{InferenceAllKKMeanDiffIVWC$compute_rand_confidence_interval()}}
-\item \href{#method-InferenceAllKKMeanDiffIVWC-compute_estimate_with_bootstrap_weights}{\code{InferenceAllKKMeanDiffIVWC$compute_estimate_with_bootstrap_weights()}}
 \item \href{#method-InferenceAllKKMeanDiffIVWC-clone}{\code{InferenceAllKKMeanDiffIVWC$clone()}}
 }
 }
@@ -103,6 +102,7 @@ seq_des_inf$compute_asymp_two_sided_pval()
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="get_testing_type"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>::InferenceAsympLik$get_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="set_information_preference"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>::InferenceAsympLik$set_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>::InferenceAsympLik$set_testing_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThroughCompoundNoParamBootstrap" data-id="compute_estimate_with_bootstrap_weights"><a href='../..//html/InferenceKKPassThroughCompoundNoParamBootstrap.html#method-InferenceKKPassThroughCompoundNoParamBootstrap-compute_estimate_with_bootstrap_weights'><code>::InferenceKKPassThroughCompoundNoParamBootstrap$compute_estimate_with_bootstrap_weights()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThroughCompoundNoParamBootstrap" data-id="initialize"><a href='../..//html/InferenceKKPassThroughCompoundNoParamBootstrap.html#method-InferenceKKPassThroughCompoundNoParamBootstrap-initialize'><code>::InferenceKKPassThroughCompoundNoParamBootstrap$initialize()</code></a></span></li>
 </ul>
 </details>
@@ -111,6 +111,7 @@ seq_des_inf$compute_asymp_two_sided_pval()
 \if{html}{\out{<a id="method-InferenceAllKKMeanDiffIVWC-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllKKMeanDiffIVWC-approximate_bootstrap_distribution_beta_hat_T}{}}}
 \subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKMeanDiffIVWC$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
@@ -120,74 +121,157 @@ seq_des_inf$compute_asymp_two_sided_pval()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKMeanDiffIVWC-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllKKMeanDiffIVWC-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Computes the IVWC mean-difference estimate across pairs and reservoir
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKMeanDiffIVWC$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The setting-appropriate (see description) numeric estimate of the treatment effect
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKMeanDiffIVWC-supports_lik_ratio_param_bootstrap"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllKKMeanDiffIVWC-supports_lik_ratio_param_bootstrap}{}}}
 \subsection{Method \code{supports_lik_ratio_param_bootstrap()}}{
+Whether likelihood-ratio parametric bootstrap is supported.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKMeanDiffIVWC$supports_lik_ratio_param_bootstrap()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+\code{TRUE}.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKMeanDiffIVWC-supports_likelihood_tests"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllKKMeanDiffIVWC-supports_likelihood_tests}{}}}
 \subsection{Method \code{supports_likelihood_tests()}}{
+Whether likelihood-based tests are supported.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKMeanDiffIVWC$supports_likelihood_tests()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+\code{TRUE}.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKMeanDiffIVWC-simulate_under_lik_null"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllKKMeanDiffIVWC-simulate_under_lik_null}{}}}
 \subsection{Method \code{simulate_under_lik_null()}}{
+Simulate responses under a likelihood null model.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKMeanDiffIVWC$simulate_under_lik_null(spec, delta, null_fit)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{spec}}{A likelihood-test specification list.}
+
+\item{\code{delta}}{The null treatment effect.}
+
+\item{\code{null_fit}}{The fitted null model object.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A list containing simulated full and null likelihood components.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKMeanDiffIVWC-get_likelihood_test_spec"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllKKMeanDiffIVWC-get_likelihood_test_spec}{}}}
 \subsection{Method \code{get_likelihood_test_spec()}}{
+Get the likelihood-test specification.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKMeanDiffIVWC$get_likelihood_test_spec()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+A likelihood-test specification list, or \code{NULL}.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKMeanDiffIVWC-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllKKMeanDiffIVWC-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes a 1-alpha level frequentist confidence interval
+
+The compound estimator is treated as asymptotically normal, so this
+interval is based on the estimated standard error of the inverse-variance
+weighted combination.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKMeanDiffIVWC$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A (1 - alpha)-sized frequentist confidence interval for the treatment effect
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKMeanDiffIVWC-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllKKMeanDiffIVWC-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes a 2-sided p-value
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKMeanDiffIVWC$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. For any treatment effect at all this is
+set to zero (the default).}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The approximate frequentist p-value
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKMeanDiffIVWC-compute_rand_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllKKMeanDiffIVWC-compute_rand_confidence_interval}{}}}
 \subsection{Method \code{compute_rand_confidence_interval()}}{
+Computes a 1-alpha level frequentist confidence interval for the randomization test
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKMeanDiffIVWC$compute_rand_confidence_interval(
   alpha = 0.05,
@@ -198,18 +282,26 @@ seq_des_inf$compute_asymp_two_sided_pval()
 )}\if{html}{\out{</div>}}
 }
 
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAllKKMeanDiffIVWC-compute_estimate_with_bootstrap_weights"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKMeanDiffIVWC-compute_estimate_with_bootstrap_weights}{}}}
-\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAllKKMeanDiffIVWC$compute_estimate_with_bootstrap_weights(
-  subject_or_block_weights,
-  estimate_only = FALSE
-)}\if{html}{\out{</div>}}
-}
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
 
+\item{\code{r}}{The number of randomization vectors. The default is 501.}
+
+\item{\code{pval_epsilon}}{The bisection algorithm tolerance. The default is 0.005.}
+
+\item{\code{show_progress}}{Show a text progress indicator.}
+
+\item{\code{ci_search_control}}{Optional randomization-CI search control list passed through 
+to the base method.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A 1 - alpha sized frequentist confidence interval
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKMeanDiffIVWC-clone"></a>}}

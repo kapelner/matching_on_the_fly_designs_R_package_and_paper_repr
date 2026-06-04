@@ -47,8 +47,21 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Whether likelihood-ratio parametric bootstrap is supported.
+		#'
+		#' @return \code{TRUE}.
 		supports_lik_ratio_param_bootstrap = function() TRUE,
+		#' @description Whether likelihood-based tests are supported.
+		#'
+		#' @return \code{TRUE}.
 		supports_likelihood_tests = function() TRUE,
+		#' @description Simulate responses under a likelihood null model.
+		#'
+		#' @param spec A likelihood-test specification list.
+		#' @param delta The null treatment effect.
+		#' @param null_fit The fitted null model object.
+		#'
+		#' @return A list containing simulated full and null likelihood components.
 		simulate_under_lik_null = function(spec, delta, null_fit){
 			# Generative model: Matched pairs + Reservoir Gaussian
 			KKstats = private$cached_values$KKstats
@@ -81,6 +94,9 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 				}
 			)
 		},
+		#' @description Get the likelihood-test specification.
+		#'
+		#' @return A likelihood-test specification list, or \code{NULL}.
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)
 			if (is.null(private$cached_values$beta_hat_T)) return(NULL)

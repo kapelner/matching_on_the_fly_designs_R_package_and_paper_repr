@@ -131,6 +131,8 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferencePropKKQuantileRegrIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropKKQuantileRegrIVWC-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a sequential experimental design estimation and test object
+after the sequential design is completed.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferencePropKKQuantileRegrIVWC$new(
   des_obj,
@@ -141,6 +143,30 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects
+are assigned and response y is recorded within.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{tau}}{The quantile level for regression on the logit
+scale, strictly between 0 and 1.
+                          The default \code{tau = 0.5} estimates the median log-odds-ratio treatment effect.
+                          Pass a different value (e.g. \code{tau = 0.25} or \code{tau = 0.75}) to target a
+                          different percentile of the treatment effect distribution.}
+
+\item{\code{verbose}}{A flag indicating whether messages should be
+displayed to the user. Default is \code{FALSE}.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropKKQuantileRegrIVWC-clone"></a>}}

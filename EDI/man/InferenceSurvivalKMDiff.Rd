@@ -24,6 +24,26 @@ seq_des$add_all_subject_responses(runif(10))
 inf = InferenceSurvivalKMDiff$new(seq_des)
 inf$compute_estimate()
 }
+
+## ------------------------------------------------
+## Method `InferenceSurvivalKMDiff$compute_estimate`
+## ------------------------------------------------
+
+seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "survival")
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(
+  ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
+  deads = c(1L, 0L, 1L, 1L, 0L, 1L)
+)
+
+seq_des_inf = InferenceSurvivalKMDiff$new(seq_des)
+seq_des_inf$compute_estimate()
+
 }
 \section{Super classes}{
 \code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceNonParamBootstrap} -> \code{::InferenceBayesianBootstrap} -> \code{::InferenceJackknife} -> \code{::InferenceAsymp} -> \code{InferenceSurvivalKMDiff}
@@ -89,6 +109,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceSurvivalKMDiff-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKMDiff-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the Inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$new(
   des_obj,
@@ -98,11 +119,28 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{The design object.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{If TRUE, print additional information.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values by default.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKMDiff-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKMDiff-approximate_bootstrap_distribution_beta_hat_T}{}}}
 \subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
@@ -112,13 +150,62 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKMDiff-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKMDiff-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Computes the appropriate estimate for mean difference
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The setting-appropriate (see description) numeric estimate of the treatment effect
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{seq_des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "survival")
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[1, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[2, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[3, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[4, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[5, 2 : 10])
+seq_des$add_one_subject_to_experiment_and_assign(MASS::biopsy[6, 2 : 10])
+seq_des$add_all_subject_responses(
+  ys = c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43),
+  deads = c(1L, 0L, 1L, 1L, 0L, 1L)
+)
+
+seq_des_inf = InferenceSurvivalKMDiff$new(seq_des)
+seq_des_inf$compute_estimate()
+
+}
+\if{html}{\out{</div>}}
+
 }
 
 }
@@ -126,6 +213,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceSurvivalKMDiff-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKMDiff-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Computes the treatment effect estimate for a bootstrap sample.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -133,40 +221,101 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Row weights for the bootstrap sample.}
+
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKMDiff-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKMDiff-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes a (1 - alpha)-level confidence interval for the difference in Kaplan-Meier
+median survival times (treatment minus control).
+
+The Brookmeyer-Crowley confidence interval is obtained for each group's median
+separately via \code{survival::survfit} (using a log-log transformation of the
+survival function by default). The per-group SE is back-calculated from the CI
+half-width as \eqn{\hat\sigma_i = (\text{upper}_i - \text{lower}_i) / (2 z_{\alpha/2})}.
+The two groups are independent by design, so the SE of the difference is
+\eqn{\sqrt{\hat\sigma_T^2 + \hat\sigma_C^2}}, and the CI is
+\eqn{(\hat{m}_T - \hat{m}_C) \pm z_{\alpha/2} \cdot \sqrt{\hat\sigma_T^2 +
+\hat\sigma_C^2}}.
+
+Falls back to \code{compute_bootstrap_confidence_interval} when either group's
+median is not estimable (i.e., the Kaplan-Meier curve does not reach 0.5) or
+when the Brookmeyer-Crowley CI bounds are \code{NA}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The significance level; the confidence level is 1 - \code{alpha}.
+Default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of length 2 giving the (lower, upper) confidence bounds
+			for the difference in median survival times, on the original time scale.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKMDiff-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKMDiff-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes a Wald-style 2-sided p-value based on the median difference
+and its back-calculated standard error.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. Default is 0.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The approximate frequentist p-value
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKMDiff-compute_asymp_log_rank_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKMDiff-compute_asymp_log_rank_two_sided_pval_for_treatment_effect}{}}}
 \subsection{Method \code{compute_asymp_log_rank_two_sided_pval_for_treatment_effect()}}{
+Computes a 2-sided p-value via the log rank test
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$compute_asymp_log_rank_two_sided_pval_for_treatment_effect(
   delta = 0
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. For any
+treatment effect at all this is set to zero (the default).}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The approximate frequentist p-value
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKMDiff-compute_rand_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKMDiff-compute_rand_confidence_interval}{}}}
 \subsection{Method \code{compute_rand_confidence_interval()}}{
+Computes a 1-alpha level frequentist confidence interval for the randomization test
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKMDiff$compute_rand_confidence_interval(
   alpha = 0.05,
@@ -177,6 +326,25 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed confidence
+interval is 1 - \code{alpha}. The default is 0.05.}
+
+\item{\code{r}}{The number of randomization vectors. The default is 501.}
+
+\item{\code{pval_epsilon}}{The bisection algorithm tolerance. The default is 0.005.}
+
+\item{\code{show_progress}}{Show a text progress indicator.}
+
+\item{\code{ci_search_control}}{Unused.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A 1 - alpha sized frequentist confidence interval
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKMDiff-clone"></a>}}

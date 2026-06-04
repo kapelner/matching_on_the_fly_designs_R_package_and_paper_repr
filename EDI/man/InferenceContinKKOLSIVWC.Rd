@@ -13,6 +13,8 @@ Fits a variance-weighted compound estimator for KK matching-on-the-fly designs
 with continuous responses using OLS regression for matched-pair differences
 and reservoir outcomes, with the treatment indicator and, optionally, all
 recorded covariates as predictors.
+Note that warm starts are disabled for this class as OLS is a closed-form
+estimator and does not benefit from initialization.
 }
 \examples{
 \donttest{
@@ -33,7 +35,6 @@ inf$compute_estimate()
 \itemize{
 \item \href{#method-InferenceContinKKOLSIVWC-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceContinKKOLSIVWC$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferenceContinKKOLSIVWC-new}{\code{InferenceContinKKOLSIVWC$new()}}
-\item \href{#method-InferenceContinKKOLSIVWC-compute_estimate_with_bootstrap_weights}{\code{InferenceContinKKOLSIVWC$compute_estimate_with_bootstrap_weights()}}
 \item \href{#method-InferenceContinKKOLSIVWC-clone}{\code{InferenceContinKKOLSIVWC$clone()}}
 }
 }
@@ -93,6 +94,7 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="get_testing_type"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>::InferenceAsympLik$get_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="set_information_preference"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>::InferenceAsympLik$set_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>::InferenceAsympLik$set_testing_type()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThroughCompoundNoParamBootstrap" data-id="compute_estimate_with_bootstrap_weights"><a href='../..//html/InferenceKKPassThroughCompoundNoParamBootstrap.html#method-InferenceKKPassThroughCompoundNoParamBootstrap-compute_estimate_with_bootstrap_weights'><code>::InferenceKKPassThroughCompoundNoParamBootstrap$compute_estimate_with_bootstrap_weights()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -100,6 +102,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKOLSIVWC-approximate_bootstrap_distribution_beta_hat_T}{}}}
 \subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSIVWC$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
@@ -109,11 +112,28 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKOLSIVWC-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize the inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSIVWC$new(
   des_obj,
@@ -123,18 +143,22 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-compute_estimate_with_bootstrap_weights"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceContinKKOLSIVWC-compute_estimate_with_bootstrap_weights}{}}}
-\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKOLSIVWC$compute_estimate_with_bootstrap_weights(
-  subject_or_block_weights,
-  estimate_only = FALSE
-)}\if{html}{\out{</div>}}
-}
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
 
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-clone"></a>}}

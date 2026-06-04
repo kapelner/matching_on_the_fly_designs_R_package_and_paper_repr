@@ -130,15 +130,7 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 			}
 		},
 		assert_feasible_block_sizes = function(n){
-			if (should_run_asserts()) {
-				if (private$B > n) {
-					stop(
-						"Cannot partition ", n, " subjects into ", private$B,
-						" roughly equal blocks. With the floor(n / B) / ceiling(n / B) size rule, ",
-						"B must be less than or equal to n."
-					)
-				}
-			}
+			private$assert_min_block_size(n, private$B)
 			invisible(NULL)
 		},
 		get_or_compute_block_ids = function(){

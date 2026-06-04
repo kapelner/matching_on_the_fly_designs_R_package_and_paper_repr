@@ -107,6 +107,16 @@ Inference = R6::R6Class("Inference",
 		compute_exact_confidence_interval = function(...){
 			stop("Exact inference is only supported for exact inference classes.")
 		},
+		#' @description Computes an asymptotic two-sided p-value. Subclasses that support asymptotic inference override this.
+		#' @param delta Null treatment effect.
+		compute_asymp_two_sided_pval = function(delta = 0){
+			stop("Asymptotic inference is not implemented for this inference class.")
+		},
+		#' @description Computes an asymptotic confidence interval. Subclasses that support asymptotic inference override this.
+		#' @param alpha Significance level.
+		compute_asymp_confidence_interval = function(alpha = 0.05){
+			stop("Asymptotic inference is not implemented for this inference class.")
+		},
 		#' @description Computes the treatment estimate.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		#' @return A numeric treatment estimate.
@@ -149,6 +159,12 @@ Inference = R6::R6Class("Inference",
 			i$.__enclos_env__$private$cached_values$m_cache = private$cached_values$m_cache
 			i$.__enclos_env__$private$cached_values$t0s_rand = private$cached_values$t0s_rand
 			i$.__enclos_env__$private$cached_values$likelihood_test_eval_cache = list()
+			if (!is.null(private$active_resampling_operation)) {
+				ws_val = edi_warm_start_dispatch_policy(class(self)[1], private$active_resampling_operation)
+				i$.__enclos_env__$private$fit_warm_start_enabled = ws_val
+				i$.__enclos_env__$private$null_fit_warm_start_enabled = ws_val
+				i$.__enclos_env__$private$active_resampling_operation = private$active_resampling_operation
+			}
 			if (private$has_private_method("custom_randomization_statistic_function") &&
 				!is.null(i$.__enclos_env__$private$custom_randomization_statistic_function)){
 				clone_private = i$.__enclos_env__$private
@@ -312,6 +328,7 @@ Inference = R6::R6Class("Inference",
 		optimization_alg = NULL,
 		optimization_alg_allow_irls = FALSE,
 		optimization_alg_default = "lbfgs",
+		active_resampling_operation = NULL,
 		fit_warm_start_enabled = TRUE,
 		null_fit_warm_start_enabled = TRUE,
 		reusable_bootstrap_worker_enabled = TRUE,
@@ -367,9 +384,14 @@ Inference = R6::R6Class("Inference",
 			private$fit_warm_start_weights = NULL
 			invisible(NULL)
 		},
-		set_fit_warm_start = function(start, type = c("beta", "params"), fisher = NULL, weights = NULL, force_pd = FALSE){
+		set_fit_warm_start = function(start, type = c("beta", "params"), fisher = NULL, weights = NULL, force_pd = TRUE){
 			if (!isTRUE(private$fit_warm_start_enabled)) {
 				private$clear_fit_warm_start()
+				return(invisible(NULL))
+			}
+			
+			# Exit immediately if inside a resampling loop to avoid useless caching overhead
+			if (!is.null(private$active_resampling_operation)) {
 				return(invisible(NULL))
 			}
 			

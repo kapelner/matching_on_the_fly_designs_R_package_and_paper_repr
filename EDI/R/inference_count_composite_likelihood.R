@@ -180,11 +180,14 @@ InferenceCountCompositeLikelihood = R6::R6Class("InferenceCountCompositeLikeliho
 				j = j_treat,
 				full_fit = companion_fit,
 				fit_null = function(delta, start = NULL){
+					if (!is.null(start) && length(start) == 0L) start = NULL
+					fallback = private$get_fit_warm_start_for_length("beta", ncol(X_fit))
+					final_warm = start %||% fallback
 					fast_poisson_regression_with_var_cpp(
 						X = X_fit,
 						y = y,
 						j = j_treat,
-						warm_start_beta = start %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						warm_start_beta = final_warm,
 						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
 						fixed_idx = j_treat,
 						fixed_values = delta,

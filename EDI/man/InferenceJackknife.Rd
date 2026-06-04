@@ -69,60 +69,146 @@ inference layered on top of bootstrap-capable inference classes.
 \if{html}{\out{<a id="method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T}{}}}
 \subsection{Method \code{approximate_jackknife_distribution_beta_hat_T()}}{
+Returns the leave-one-out jackknife estimate distribution.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceJackknife$approximate_jackknife_distribution_beta_hat_T(unit = "auto")}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{unit}}{Deletion unit. Default `\"auto\"`, which chooses a design-aware
+unit automatically.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of jackknife replicate estimates.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceJackknife-compute_jackknife_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceJackknife-compute_jackknife_estimate}{}}}
 \subsection{Method \code{compute_jackknife_estimate()}}{
+Computes the delete-1 jackknife bias-corrected treatment estimate.
+
+For blocking designs, this uses leave-one-block-out deletion units. For
+matching designs, it uses leave-match-out deletion units. For KK designs,
+it uses leave-match-out for matched pairs and leave-one-out for reservoir
+subjects.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceJackknife$compute_jackknife_estimate(unit = "auto")}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{unit}}{Deletion unit. Default `\"auto\"`, which chooses a design-aware
+unit automatically.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric jackknife bias-corrected treatment estimate.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceJackknife-compute_jackknife_corrected_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceJackknife-compute_jackknife_corrected_estimate}{}}}
 \subsection{Method \code{compute_jackknife_corrected_estimate()}}{
+Alias for `compute_jackknife_estimate()`.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceJackknife$compute_jackknife_corrected_estimate(unit = "auto")}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{unit}}{Deletion unit. Default `\"auto\"`.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric jackknife bias-corrected treatment estimate.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceJackknife-compute_jackknife_bias_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceJackknife-compute_jackknife_bias_estimate}{}}}
 \subsection{Method \code{compute_jackknife_bias_estimate()}}{
+Computes the jackknife bias estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceJackknife$compute_jackknife_bias_estimate(unit = "auto")}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{unit}}{Deletion unit. Default `\"auto\"`.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric jackknife bias estimate.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceJackknife-compute_jackknife_std_error"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceJackknife-compute_jackknife_std_error}{}}}
 \subsection{Method \code{compute_jackknife_std_error()}}{
+Computes the delete-1 jackknife standard error.
+
+For blocking designs, this uses leave-one-block-out deletion units. For
+matching designs, it uses leave-match-out deletion units. For KK designs,
+it uses leave-match-out for matched pairs and leave-one-out for reservoir
+subjects.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceJackknife$compute_jackknife_std_error(unit = "auto")}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{unit}}{Deletion unit. Default `\"auto\"`, which chooses a design-aware
+unit automatically.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric jackknife standard error.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceJackknife-compute_jackknife_standard_error"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceJackknife-compute_jackknife_standard_error}{}}}
 \subsection{Method \code{compute_jackknife_standard_error()}}{
+Alias for `compute_jackknife_std_error()`.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceJackknife$compute_jackknife_standard_error(unit = "auto")}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{unit}}{Deletion unit. Default `\"auto\"`.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric jackknife standard error.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceJackknife-compute_jackknife_wald_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceJackknife-compute_jackknife_wald_two_sided_pval}{}}}
 \subsection{Method \code{compute_jackknife_wald_two_sided_pval()}}{
+Computes a two-sided Wald p-value using the jackknife estimate
+  and jackknife standard error.
+
+For blocking designs, this uses leave-one-block-out deletion units. For
+matching designs, it uses leave-match-out deletion units. For KK designs,
+it uses leave-match-out for matched pairs and leave-one-out for reservoir
+subjects.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceJackknife$compute_jackknife_wald_two_sided_pval(
   delta = 0,
@@ -130,11 +216,31 @@ inference layered on top of bootstrap-capable inference classes.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment-effect value. Default 0.}
+
+\item{\code{unit}}{Deletion unit. Default `\"auto\"`, which chooses a design-aware
+unit automatically.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A two-sided jackknife-Wald p-value.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceJackknife-compute_jackknife_wald_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceJackknife-compute_jackknife_wald_confidence_interval}{}}}
 \subsection{Method \code{compute_jackknife_wald_confidence_interval()}}{
+Computes a normal-approximation confidence interval using the
+  jackknife estimate and jackknife standard error.
+
+For blocking designs, this uses leave-one-block-out deletion units. For
+matching designs, it uses leave-match-out deletion units. For KK designs,
+it uses leave-match-out for matched pairs and leave-one-out for reservoir
+subjects.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceJackknife$compute_jackknife_wald_confidence_interval(
   alpha = 0.05,
@@ -142,6 +248,19 @@ inference layered on top of bootstrap-capable inference classes.
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level. Default 0.05.}
+
+\item{\code{unit}}{Deletion unit. Default `\"auto\"`, which chooses a design-aware
+unit automatically.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A jackknife-Wald confidence interval.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceJackknife-clone"></a>}}

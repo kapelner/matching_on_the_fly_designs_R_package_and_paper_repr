@@ -120,9 +120,11 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 	),
 		private = list(
 		supports_reusable_bootstrap_worker = function(){
-			FALSE
+			isTRUE(private$use_rcpp)
 		},
 		cached_mod = NULL,
+		za_X_cov_all = NULL,
+		za_Xzi_cov_all = NULL,
 		get_standard_error = function(){
 			private$shared(estimate_only = FALSE)
 			se = private$compute_standard_error_from_information_matrix()
@@ -137,49 +139,71 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		best_Xzi_colnames = NULL,
 		use_rcpp = TRUE,
 		model_formula_zero = NULL,
-		get_complexity_tier = function() "heavy",
+		get_complexity_tier = function() "light",
 		build_component_matrix = function(model_formula, selected_colnames = NULL, treatment_name = "treatment"){
-			if (is.null(selected_colnames)) {
-				if (identical(model_formula, ~ .)) {
-					X_cov = private$get_X()
-				} else {
-					X_imp = private$des_obj$get_X_imp()
-					if (is.null(X_imp)) {
-						X_cov = matrix(NA_real_, nrow = private$n, ncol = 0)
+			# Determine if this is the zero-inflation formula or conditional formula
+			is_zero_formula = identical(model_formula, private$model_formula_zero)
+			
+			if (is_zero_formula) {
+				if (is.null(private$za_Xzi_cov_all)) {
+					if (identical(model_formula, ~ .)) {
+						X_cov_all = private$get_X()
 					} else {
-						X_cov = create_model_matrix_from_features(model_formula, X_imp)
+						X_imp = private$des_obj$get_X_imp()
+						X_cov_all = if (is.null(X_imp)) matrix(NA_real_, nrow = private$n, ncol = 0) else create_model_matrix_from_features(model_formula, X_imp)
 					}
+					private$za_Xzi_cov_all = X_cov_all
+				} else {
+					X_cov_all = private$za_Xzi_cov_all
 				}
 			} else {
-				if (identical(model_formula, ~ .)) {
-					X_cov_all = private$get_X()
+				if (is.null(private$za_X_cov_all)) {
+					if (identical(model_formula, ~ .)) {
+						X_cov_all = private$get_X()
+					} else {
+						X_imp = private$des_obj$get_X_imp()
+						X_cov_all = if (is.null(X_imp)) matrix(NA_real_, nrow = private$n, ncol = 0) else create_model_matrix_from_features(model_formula, X_imp)
+					}
+					private$za_X_cov_all = X_cov_all
 				} else {
-					X_imp = private$des_obj$get_X_imp()
-					X_cov_all = if (is.null(X_imp)) matrix(NA_real_, nrow = private$n, ncol = 0) else create_model_matrix_from_features(model_formula, X_imp)
+					X_cov_all = private$za_X_cov_all
 				}
+			}
+
+			if (is.null(selected_colnames)) {
+				X_cov = X_cov_all
+				if (is.null(X_cov) || ncol(as.matrix(X_cov)) == 0L) {
+					X_fit = cbind(1, private$w)
+					colnames(X_fit) = c("(Intercept)", treatment_name)
+					return(X_fit)
+				}
+				X_cov = as.matrix(X_cov)
+				if (isTRUE(private$harden)) {
+					X_cov = drop_highly_correlated_cols(X_cov, threshold = 0.999)$M
+				}
+				X_fit = cbind(1, private$w, X_cov)
+				colnames(X_fit)[1:2] = c("(Intercept)", treatment_name)
+				if (isTRUE(private$harden)) {
+					res = drop_linearly_dependent_cols(X_fit)
+					X_fit = res$M
+					colnames(X_fit) = c("(Intercept)", treatment_name, colnames(X_cov))[res$js]
+				}
+				X_fit
+			} else {
 				if (is.null(X_cov_all) || length(selected_colnames) == 0L) {
 					X_cov = matrix(NA_real_, nrow = private$n, ncol = 0)
 				} else {
 					X_cov = as.matrix(X_cov_all[, intersect(selected_colnames, colnames(X_cov_all)), drop = FALSE])
 				}
+				if (is.null(X_cov) || ncol(as.matrix(X_cov)) == 0L) {
+					X_fit = cbind(1, private$w)
+					colnames(X_fit) = c("(Intercept)", treatment_name)
+					return(X_fit)
+				}
+				X_fit = cbind(1, private$w, as.matrix(X_cov))
+				colnames(X_fit)[1:2] = c("(Intercept)", treatment_name)
+				X_fit
 			}
-			if (is.null(X_cov) || ncol(as.matrix(X_cov)) == 0L) {
-				X_fit = cbind(1, private$w)
-				colnames(X_fit) = c("(Intercept)", treatment_name)
-				return(X_fit)
-			}
-			X_cov = as.matrix(X_cov)
-			if (isTRUE(private$harden)) {
-				X_cov = drop_highly_correlated_cols(X_cov, threshold = 0.999)$M
-			}
-			X_fit = cbind(1, private$w, X_cov)
-			colnames(X_fit)[1:2] = c("(Intercept)", treatment_name)
-			if (isTRUE(private$harden)) {
-				res = drop_linearly_dependent_cols(X_fit)
-				X_fit = res$M
-				colnames(X_fit) = c("(Intercept)", treatment_name, colnames(X_cov))[res$js]
-			}
-			X_fit
 		},
 		build_component_frame = function(X_cond, Xzi){
 			dat = data.frame(y = private$y, w = private$w)
@@ -228,7 +252,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) return(NA_real_)
-				private$set_fit_warm_start(as.numeric(fit$params), "params", fisher = fit$fisher_information)
+				private$set_fit_warm_start(as.numeric(fit$params), "params")
 				return(as.numeric(fit$params[2]))
 			} else if (private$use_rcpp && !grepl("Negative Binomial", private$za_description())) {
 				is_hurdle = identical(private$za_description(), "Hurdle Poisson")
@@ -246,7 +270,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) return(NA_real_)
-				private$set_fit_warm_start(as.numeric(c(fit$coefficients$cond, fit$coefficients$zi)), "params", fisher = fit$fisher_information)
+				private$set_fit_warm_start(as.numeric(c(fit$coefficients$cond, fit$coefficients$zi)), "params")
 				return(as.numeric(fit$coefficients$cond[2]))
 			} else {
 				dat = private$build_component_frame(X_fit, Xzi_fit)
@@ -442,7 +466,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				}
 				
 				private$cached_mod = fit
-				private$set_fit_warm_start(as.numeric(fit$params), "params", fisher = fit$fisher_information)
+				private$set_fit_warm_start(as.numeric(fit$params), "params")
 				
 				private$cached_values$likelihood_test_context = list(
 					X = X_fit,
@@ -480,7 +504,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				
 				private$cached_mod = fit
 				full_params = as.numeric(c(fit$coefficients$cond, fit$coefficients$zi))
-				private$set_fit_warm_start(full_params, "params", fisher = fit$fisher_information)
+				private$set_fit_warm_start(full_params, "params")
 				
 				private$cached_values$likelihood_test_context = list(
 					X = X_fit,

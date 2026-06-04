@@ -110,6 +110,7 @@ inf$compute_estimate()
 \if{html}{\out{<a id="method-InferencePropZeroOneInflatedBetaRegr-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropZeroOneInflatedBetaRegr-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a zero-one-inflated beta regression inference object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferencePropZeroOneInflatedBetaRegr$new(
   des_obj,
@@ -120,20 +121,48 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object with a proportion response.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL}
+(default), the formula from the design object is used and its pre-computed
+design matrix is reused. If a formula is provided, a new design matrix is
+constructed from the design's imputed covariates.}
+
+\item{\code{model_formula_zero_one}}{Formula for the zero/one inflation submodels.
+Defaults to \code{~ .}, meaning treatment plus all available covariates.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropZeroOneInflatedBetaRegr-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropZeroOneInflatedBetaRegr-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Computes the treatment effect estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferencePropZeroOneInflatedBetaRegr$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropZeroOneInflatedBetaRegr-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropZeroOneInflatedBetaRegr-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Computes the treatment effect estimate for a weighted bootstrap sample.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferencePropZeroOneInflatedBetaRegr$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
@@ -141,31 +170,57 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Bootstrap weights at the subject or block level.}
+
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropZeroOneInflatedBetaRegr-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropZeroOneInflatedBetaRegr-compute_asymp_confidence_interval}{}}}
 \subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes an approximate confidence interval.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferencePropZeroOneInflatedBetaRegr$compute_asymp_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Confidence level.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropZeroOneInflatedBetaRegr-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropZeroOneInflatedBetaRegr-compute_asymp_two_sided_pval}{}}}
 \subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes an approximate two-sided p-value.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferencePropZeroOneInflatedBetaRegr$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect value.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropZeroOneInflatedBetaRegr-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropZeroOneInflatedBetaRegr-approximate_bootstrap_distribution_beta_hat_T}{}}}
 \subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferencePropZeroOneInflatedBetaRegr$approximate_bootstrap_distribution_beta_hat_T(
   B = 501,
@@ -175,6 +230,22 @@ inf$compute_estimate()
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropZeroOneInflatedBetaRegr-clone"></a>}}

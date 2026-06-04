@@ -2,6 +2,8 @@
 #'
 #' Fits an ordinary least squares regression for continuous responses using the
 #' treatment indicator and, optionally, all recorded covariates as predictors.
+#' Note that warm starts are disabled for this class as OLS is a closed-form
+#' estimator and does not benefit from initialization.
 #'
 #' @examples
 #' \donttest{
@@ -35,6 +37,7 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 				assertCount(max_resample_attempts, positive = TRUE)
 			}
 			super$initialize(des_obj = des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
+			private$fit_warm_start_enabled = FALSE
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}

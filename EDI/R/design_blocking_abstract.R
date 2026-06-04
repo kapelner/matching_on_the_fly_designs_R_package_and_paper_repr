@@ -120,16 +120,12 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 					block_ids = match(strata_keys, unique(strata_keys))
 				}
 			}
-			if (should_run_asserts()) {
-				if (is.null(block_ids)) {
-					stop("Block identifiers are undefined for this design.")
-				}
+			if (is.null(block_ids)) {
+				stop("Block identifiers are undefined for this design.")
 			}
 			block_ids = as.integer(block_ids)
-			if (should_run_asserts()) {
-				if (length(block_ids) != length(private$y)) {
-					stop("Block identifiers are improperly sized for this design.")
-				}
+			if (length(block_ids) != length(private$y)) {
+				stop("Block identifiers are improperly sized for this design.")
 			}
 			private$m = block_ids
 			block_ids
@@ -192,6 +188,15 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 		}
 	),
 	private = list(
+		assert_min_block_size = function(n, B) {
+			if (should_run_asserts() && floor(n / B) < 2L) {
+				stop(
+					"Cannot use B = ", B, " with n = ", n, ": ",
+					"floor(n / B) = ", floor(n / B), " < 2. Minimum block size is 2."
+				)
+			}
+			invisible(NULL)
+		},
 		m = NULL,
 		strata_cols = NULL,
 		preferred_num_bins_for_continuous_covariate = NULL,

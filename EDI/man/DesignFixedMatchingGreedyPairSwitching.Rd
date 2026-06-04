@@ -24,8 +24,8 @@ des = DesignFixedMatchingGreedyPairSwitching$new(n = 10, response_type = 'contin
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-DesignFixedMatchingGreedyPairSwitching-supports_batch_w_pregeneration}{\code{DesignFixedMatchingGreedyPairSwitching$supports_batch_w_pregeneration()}}
 \item \href{#method-DesignFixedMatchingGreedyPairSwitching-new}{\code{DesignFixedMatchingGreedyPairSwitching$new()}}
+\item \href{#method-DesignFixedMatchingGreedyPairSwitching-supports_batch_w_pregeneration}{\code{DesignFixedMatchingGreedyPairSwitching$supports_batch_w_pregeneration()}}
 \item \href{#method-DesignFixedMatchingGreedyPairSwitching-draw_ws_according_to_design}{\code{DesignFixedMatchingGreedyPairSwitching$draw_ws_according_to_design()}}
 \item \href{#method-DesignFixedMatchingGreedyPairSwitching-clone}{\code{DesignFixedMatchingGreedyPairSwitching$clone()}}
 }
@@ -82,18 +82,10 @@ des = DesignFixedMatchingGreedyPairSwitching$new(n = 10, response_type = 'contin
 </details>
 }}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignFixedMatchingGreedyPairSwitching-supports_batch_w_pregeneration"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignFixedMatchingGreedyPairSwitching-supports_batch_w_pregeneration}{}}}
-\subsection{Method \code{supports_batch_w_pregeneration()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixedMatchingGreedyPairSwitching$supports_batch_w_pregeneration()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedMatchingGreedyPairSwitching-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedMatchingGreedyPairSwitching-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a fixed design that performs binary matching followed by greedy pair switching.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedMatchingGreedyPairSwitching$new(
   response_type,
@@ -109,15 +101,71 @@ des = DesignFixedMatchingGreedyPairSwitching$new(n = 10, response_type = 'contin
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{response_type}}{The data type of response values.}
+
+\item{\code{prob_T}}{The probability of treatment assignment. Must be \code{0.5}.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+
+\item{\code{n}}{The sample size.}
+
+\item{\code{verbose}}{A flag for verbosity.}
+
+\item{\code{objective}}{The imbalance objective. Either \code{"mahal_dist"} (default) or \code{"abs_sum_diff"}.}
+
+\item{\code{n_iter}}{Number of swap iterations. \code{Inf} (default) uses exhaustive
+best-improvement search guaranteed to reach a strict local optimum. A positive
+integer runs that many stochastic random-pair iterations with patience-based
+early stopping.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates.}
+
+\item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new \code{DesignFixedMatchingGreedyPairSwitching} object.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DesignFixedMatchingGreedyPairSwitching-supports_batch_w_pregeneration"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignFixedMatchingGreedyPairSwitching-supports_batch_w_pregeneration}{}}}
+\subsection{Method \code{supports_batch_w_pregeneration()}}{
+Whether this design supports batch pregeneration of treatment vectors.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DesignFixedMatchingGreedyPairSwitching$supports_batch_w_pregeneration()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+\code{TRUE}.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedMatchingGreedyPairSwitching-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedMatchingGreedyPairSwitching-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draw multiple treatment assignment vectors according to binary match followed by
+greedy pair switching.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedMatchingGreedyPairSwitching$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{The number of designs to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedMatchingGreedyPairSwitching-clone"></a>}}

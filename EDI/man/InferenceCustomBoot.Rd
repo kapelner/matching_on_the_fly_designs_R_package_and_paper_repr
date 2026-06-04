@@ -70,19 +70,41 @@ This class uses the same \code{fit()} result contract as
 \if{html}{\out{<a id="method-InferenceCustomBoot-fit"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCustomBoot-fit}{}}}
 \subsection{Method \code{fit()}}{
+User-defined fit method.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCustomBoot$fit(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A list with fit results.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCustomBoot-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCustomBoot-compute_estimate}{}}}
 \subsection{Method \code{compute_estimate()}}{
+Compute the treatment estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCustomBoot$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The treatment estimate.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCustomBoot-clone"></a>}}

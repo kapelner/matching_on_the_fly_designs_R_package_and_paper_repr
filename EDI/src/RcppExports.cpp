@@ -652,6 +652,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_beta_regression_weighted_cpp
+List fast_beta_regression_weighted_cpp(SEXP X_sexp, SEXP y_sexp, SEXP weights_sexp, Nullable<NumericVector> warm_start_beta, bool smart_cold_start, double start_phi, bool compute_std_errs, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info, bool estimate_only);
+RcppExport SEXP _EDI_fast_beta_regression_weighted_cpp(SEXP X_sexpSEXP, SEXP y_sexpSEXP, SEXP weights_sexpSEXP, SEXP warm_start_betaSEXP, SEXP smart_cold_startSEXP, SEXP start_phiSEXP, SEXP compute_std_errsSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP, SEXP estimate_onlySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type X_sexp(X_sexpSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type y_sexp(y_sexpSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type weights_sexp(weights_sexpSEXP);
+    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type warm_start_beta(warm_start_betaSEXP);
+    Rcpp::traits::input_parameter< bool >::type smart_cold_start(smart_cold_startSEXP);
+    Rcpp::traits::input_parameter< double >::type start_phi(start_phiSEXP);
+    Rcpp::traits::input_parameter< bool >::type compute_std_errs(compute_std_errsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::IntegerVector> >::type fixed_idx(fixed_idxSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
+    Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
+    Rcpp::traits::input_parameter< bool >::type estimate_only(estimate_onlySEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_beta_regression_weighted_cpp(X_sexp, y_sexp, weights_sexp, warm_start_beta, smart_cold_start, start_phi, compute_std_errs, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fast_beta_regression_with_var_cpp
 List fast_beta_regression_with_var_cpp(SEXP X_sexp, SEXP y_sexp, Nullable<NumericVector> warm_start_beta, bool smart_cold_start, double start_phi, bool compute_std_errs, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
 RcppExport SEXP _EDI_fast_beta_regression_with_var_cpp(SEXP X_sexpSEXP, SEXP y_sexpSEXP, SEXP warm_start_betaSEXP, SEXP smart_cold_startSEXP, SEXP start_phiSEXP, SEXP compute_std_errsSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
@@ -4698,6 +4720,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_get_beta_regression_score_cpp", (DL_FUNC) &_EDI_get_beta_regression_score_cpp, 3},
     {"_EDI_get_beta_regression_hessian_cpp", (DL_FUNC) &_EDI_get_beta_regression_hessian_cpp, 3},
     {"_EDI_fast_beta_regression_cpp", (DL_FUNC) &_EDI_fast_beta_regression_cpp, 11},
+    {"_EDI_fast_beta_regression_weighted_cpp", (DL_FUNC) &_EDI_fast_beta_regression_weighted_cpp, 12},
     {"_EDI_fast_beta_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_beta_regression_with_var_cpp, 10},
     {"_EDI_get_clogit_plus_glmm_score_cpp", (DL_FUNC) &_EDI_get_clogit_plus_glmm_score_cpp, 9},
     {"_EDI_get_clogit_plus_glmm_hessian_cpp", (DL_FUNC) &_EDI_get_clogit_plus_glmm_hessian_cpp, 9},

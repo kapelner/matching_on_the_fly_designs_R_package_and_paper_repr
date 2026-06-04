@@ -1,6 +1,7 @@
 #' Inference based on Maximum Likelihood for KK designs
 #'
-#' Inference for mean difference
+#' Inference for mean difference. Note that warm starts are disabled for this class
+#' as the Bai adjusted t-test is a closed-form estimator and does not benefit from initialization.
 #'
 #' @details
 #' This class requires the \pkg{nbpMatching} package, which is listed in Suggests
@@ -33,6 +34,7 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 				}
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula)
+			private$fit_warm_start_enabled = FALSE
 			private$convex_flag = convex_flag
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)

@@ -84,6 +84,7 @@ Abstract class for Conditional Logistic Combined-Likelihood Combined Inference
 \if{html}{\out{<a id="method-InferenceAbstractKKCondLogitPlusGLMMOneLik-new"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKCondLogitPlusGLMMOneLik-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKCondLogitPlusGLMMOneLik$new(
   des_obj,
@@ -95,6 +96,23 @@ Abstract class for Conditional Logistic Combined-Likelihood Combined Inference
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A completed \code{Design} object with an incidence response.}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment.}
+
+\item{\code{max_abs_reasonable_coef}}{Cap for reasonable coefficient estimates.}
+
+\item{\code{max_abs_log_sigma}}{Cap for reasonable log random effect variance.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKCondLogitPlusGLMMOneLik-clone"></a>}}

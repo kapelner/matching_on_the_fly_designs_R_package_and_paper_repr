@@ -12,11 +12,7 @@ repo_root = normalizePath(file.path(script_dir, ".."), mustWork = TRUE)
 repo_path = function(...) file.path(repo_root, ...)
 
 pacman::p_load(doParallel, PTE, datasets, qgam, mlbench, AppliedPredictiveModeling, dplyr, ggplot2, gridExtra, profvis, data.table, profvis, devtools)
-if (dir.exists(repo_path("EDI"))) {
-	devtools::load_all(repo_path("EDI"))
-} else {
-	suppressPackageStartupMessages(library(EDI))
-}
+suppressPackageStartupMessages(library(EDI))
 
 source(repo_path("EDI", "tests", "testthat", "helper-likelihood-method-smoke.R"))
 
@@ -1084,9 +1080,12 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 		if (!seq_ok) return(invisible(NULL))
 	} else {
 		# It is a DesignFixed but not a DesignSeqOneByOne
-		des_obj$add_all_subjects_to_experiment(X_design_for_design)
-		randomize_ok = tryCatch({ des_obj$assign_w_to_all_subjects(); TRUE }, error = function(e){ message("    Skipping design: ", e$message); FALSE })
-		if (!randomize_ok) return(invisible(NULL))
+		setup_ok = tryCatch({
+			des_obj$add_all_subjects_to_experiment(X_design_for_design)
+			des_obj$assign_w_to_all_subjects()
+			TRUE
+		}, error = function(e){ message("    Skipping design: ", e$message); FALSE })
+		if (!setup_ok) return(invisible(NULL))
 		w = des_obj$get_w()
 		for (t in 1 : n){
 			y_t = apply_treatment_effect_and_noise(y[t], w[t], response_type)

@@ -62,7 +62,7 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 								y ~ .,
 								data = df,
 								weights = row_weights,
-								start = ws_args$start_params %||% NULL,
+								start = if (!is.null(ws_args$start_params) && length(ws_args$start_params) >= ncol(X_fit)) ws_args$start_params[1:ncol(X_fit)] else NULL,
 								init.theta = if (!is.null(ws_args$start_params) && length(ws_args$start_params) >= (ncol(X_fit) + 1L)) exp(ws_args$start_params[ncol(X_fit) + 1L]) else NULL
 							)
 						),

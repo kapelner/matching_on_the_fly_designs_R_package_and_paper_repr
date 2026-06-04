@@ -36,6 +36,14 @@ InferenceAbstractKKCondLogitPlusGLMM = R6::R6Class("InferenceAbstractKKCondLogit
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		get_standard_error = function(){
+			private$shared(estimate_only = FALSE)
+			se = private$cached_values$s_beta_hat_T
+			if (is.null(se) || length(se) == 0L) {
+				return(NA_real_)
+			}
+			as.numeric(se)[1L]
+		},
 		#' @description Computes the treatment effect estimate for a bootstrap sample.
 		#' @param subject_or_block_weights Numeric vector. Row weights for bootstrap.
 		#' @param estimate_only Logical. If TRUE, skip variance component calculations.

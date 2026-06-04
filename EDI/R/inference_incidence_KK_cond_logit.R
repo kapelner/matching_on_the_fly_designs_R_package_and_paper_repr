@@ -219,6 +219,14 @@ InferenceIncidKKCondLogitOneLik = R6::R6Class("InferenceIncidKKCondLogitOneLik",
 			private$cached_values$df = NA_real_
 			invisible(NULL)
 		},
+		get_standard_error = function(){
+			private$shared_combined_likelihood(estimate_only = FALSE)
+			se = private$cached_values$s_beta_hat_T
+			if (is.null(se) || length(se) == 0L) {
+				return(NA_real_)
+			}
+			as.numeric(se)[1L]
+		},
 		supports_likelihood_tests = function() TRUE,
 		get_likelihood_test_spec = function(){
 			private$shared_combined_likelihood(estimate_only = FALSE)

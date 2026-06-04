@@ -4,6 +4,8 @@
 #' with continuous responses using OLS regression for matched-pair differences
 #' and reservoir outcomes, with the treatment indicator and, optionally, all
 #' recorded covariates as predictors.
+#' Note that warm starts are disabled for this class as OLS is a closed-form
+#' estimator and does not benefit from initialization.
 #'
 #' @examples
 #' \donttest{
@@ -48,6 +50,7 @@ InferenceContinKKOLSIVWC = R6::R6Class("InferenceContinKKOLSIVWC",
 				}
 			}
 			super$initialize(des_obj = des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
+			private$fit_warm_start_enabled = FALSE
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}

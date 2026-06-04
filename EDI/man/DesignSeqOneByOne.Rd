@@ -85,6 +85,7 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 \if{html}{\out{<a id="method-DesignSeqOneByOne-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a sequential one-by-one design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$new(
   response_type,
@@ -99,56 +100,121 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{response_type}}{The data type of response values.}
+
+\item{\code{prob_T}}{The probability of the treatment assignment.}
+
+\item{\code{include_is_missing_as_a_new_feature}}{If missing data is present, include a dummy
+variable for it.}
+
+\item{\code{n}}{The sample size (if fixed).}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{missingness_method}}{How to handle missing values in covariates.}
+
+\item{\code{model_formula}}{A formula object.}
+
+\item{\code{seed}}{Integer seed for reproducibility.}
+
+\item{\code{...}}{Extra arguments passed to the \code{Design} superclass.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-supports_resampling"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-supports_resampling}{}}}
 \subsection{Method \code{supports_resampling()}}{
+Checks if the design supports resampling.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$supports_resampling()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Always TRUE for sequential designs.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-add_one_subject"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-add_one_subject}{}}}
 \subsection{Method \code{add_one_subject()}}{
+Add subject-specific measurements for the next subject entrant.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$add_one_subject(x_new, allow_new_cols = TRUE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x_new}}{A data frame with one row representing the new subject's covariates.}
+
+\item{\code{allow_new_cols}}{Allow new features in the new subject's covariates.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-add_one_subject_to_experiment_and_assign"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-add_one_subject_to_experiment_and_assign}{}}}
 \subsection{Method \code{add_one_subject_to_experiment_and_assign()}}{
+Adds a subject and assigns treatment.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$add_one_subject_to_experiment_and_assign(x_new)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x_new}}{A data frame with one row representing the new subject's covariates.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The treatment assignment (0 or 1).
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-assign_wt"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-assign_wt}{}}}
 \subsection{Method \code{assign_wt()}}{
+Assigns treatment to the current subject.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$assign_wt()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+The treatment assignment (0 or 1).
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
+Draws treatment vectors according to the design.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{Number of vectors to draw.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-print_current_subject_assignment"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-print_current_subject_assignment}{}}}
 \subsection{Method \code{print_current_subject_assignment()}}{
+Prints the current subject's assignment.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOne$print_current_subject_assignment()}\if{html}{\out{</div>}}
 }
