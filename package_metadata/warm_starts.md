@@ -48,802 +48,3033 @@ Each resampling method changes a different subset of the problem inputs. The tab
 
 ---
 
-## 2026 Truly Exhaustive Benchmark (All 90 Concrete Paths)
+## 2026 Warm-Start Benchmark (All 92 Optimization-Relevant Benchmarked Paths)
 
-This benchmark evaluates the speedup across **all five resampling types** for every concrete inferential path in the package. 
+This benchmark evaluates the speedup across **all five resampling types** for every concrete inferential path in the package where warm starts can affect numerical optimization.
 
-**Scale:** High-Resolution Audit ($N=100-500$, $P=2-10$, proportional to model complexity). 
-Note: For ultra-fast models, speedups are measured relative to a sub-millisecond cold start baseline and are bounded by the numerical resolution floor.
+**Scale:** Fixed-size audit at `n = 100`, `n = 200`, `n = 500`, and `n = 1000` with `p = 5` and 12 timing repetitions per path. Non-optimization closed-form paths `InferenceAllSimpleMeanDiff` and `InferenceAllSimpleMeanDiffPooledVar` are excluded.
+
+Cells report percent speedup from warm start relative to cold start. `N/S` means the path is not supported for that resampling method or did not produce a stable comparable timing.
+
+### n = 100
 
 <table border="1" style="border-collapse: collapse; width: 100%;">
-  <thead>
-  <tr style="background-color: #f2f2f2;">
-    <th style="text-align: left; padding: 8px;">Inference Path</th>
-    <th style="text-align: center; padding: 8px;">Random-<br>ization</th>
-    <th style="text-align: center; padding: 8px;">Nonparam Bootstrap</th>
-    <th style="text-align: center; padding: 8px;">Bayesian Bootstrap</th>
-    <th style="text-align: center; padding: 8px;">Jack-<br>knife</th>
-    <th style="text-align: center; padding: 8px;">Param. Bootstrap</th>
-  </tr>
+<thead>
+<tr>
+<th style="text-align:left; padding:4px;">Path</th>
+<th style="text-align:center; padding:4px;">Random-<br>ization</th>
+<th style="text-align:center; padding:4px;">Nonparam<br> Bootstrap</th>
+<th style="text-align:center; padding:4px;">Bayesian Bootstrap</th>
+<th style="text-align:center; padding:4px;">Jack-<br>knife</th>
+<th style="text-align:center; padding:4px;">Param. Bootstrap</th>
+</tr>
 </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalPairedSignTest</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+6.0%</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidBinomialIdentityRiskDiff</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+53.7%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidGCompRiskDiff</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+87.8%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+14.3%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidExtendedRobins</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+27.3%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKGCompRiskDiff</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+8.8%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidenceExactZhang</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+29.5%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-2.4%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+8.8%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidCMH</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+33.4%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidLogRegr</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+62.4%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+6.6%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidGCompRiskRatio</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+90.0%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKCondLogitIVWC</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px;">+3.5%</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-12.5%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+13.8%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidWald</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+29.6%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidExactBinomial</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+23.8%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+23.6%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-2.2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKCondLogitPlusGLMMOneLik</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+14.9%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-16.1%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+6.3%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKGCompRiskRatio</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px;">+2.4%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKGEE</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+31.6%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-68.7%</td>
-      <td style="text-align: center; padding: 8px;">+2.7%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidLogBinomial</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+51.9%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-13.3%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+11.5%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidExactFisher</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+20.2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+9.0%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKCondLogitOneLik</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px;">+2.7%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-6.2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+13.6%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidModifiedPoisson</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+58.1%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-41.7%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+9.6%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidMiettinenNurminenRiskDiff</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+18.2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidRiskDiff</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+13.7%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+23.1%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+6.8%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKModifiedPoisson</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKCondLogitPlusGLMMIVWC</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidKKNewcombeRiskDiff</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+8.0%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-5.4%</td>
-      <td style="text-align: center; padding: 8px;">+3.0%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidProbitRegr</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+48.1%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-6.7%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+26.8%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceIncidNewcombeRiskDiff</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px;">+4.2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">+3.4%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalDepCensTransformRegr</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+68.3%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">+2.8%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalWeibullRegr</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+43.0%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+6.4%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceAllSimpleWilcox</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+24.8%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+7.1%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-5.8%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceAllKKWilcoxIVWC</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+26.4%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-55.3%</td>
-      <td style="text-align: center; padding: 8px;">+2.6%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceAllKKMeanDiffIVWC</b></td>
-      <td style="text-align: center; padding: 8px;">+5.0%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+5.2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-4.9%</td>
-      <td style="text-align: center; padding: 8px;">+3.5%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceContinKKQuantileRegrIVWC</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+23.0%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-2.8%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+9.0%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceContinKKQuantileRegrOneLik</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+32.7%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+7.1%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+5.4%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceContinLin</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+33.7%</td>
-      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+71.9%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+33.0%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceContinRobustRegr</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+35.5%</td>
-      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+83.9%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-2.3%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-9.7%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceContinKKRobustRegrOneLik</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+37.0%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+6.0%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-8.8%</td>
-      <td style="text-align: center; padding: 8px;">+4.1%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceContinKKGLMM</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+25.6%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+33.7%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceContinKKRobustRegrIVWC</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+29.9%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+25.5%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+10.4%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceCountHurdleNegBin</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+30.1%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+46.7%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+6.1%</td>
-      <td style="text-align: center; padding: 8px;">+3.5%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceCountNegBin</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+32.1%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+38.7%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-10.3%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-63.8%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceContinQuantileRegr</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+34.7%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+24.6%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-8.9%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceCountPoisson</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+13.6%</td>
-      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+66.8%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-15.4%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-2.2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceCountKKCondPoissonOneLik</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+26.5%</td>
-      <td style="text-align: center; padding: 8px;">+3.5%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+21.9%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceCountHurdlePoisson</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+13.3%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+9.7%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceCountQuasiPoisson</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+33.0%</td>
-      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+70.9%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+6.2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+15.3%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceCountZeroInflatedPoisson</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+28.9%</td>
-      <td style="text-align: center; padding: 8px;">+4.1%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-5.5%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceCountKKHurdlePoissonOneLik</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+22.0%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-2.4%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">+2.8%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-2.0%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceCountKKGLMM</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+33.4%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+14.0%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">+3.1%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-3.7%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceCountPoissonKKGEE</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+12.5%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+17.0%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-6.0%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceCountRobustPoisson</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+30.1%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+28.8%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+33.1%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceCountZeroInflatedNegBin</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+36.8%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+17.0%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+8.6%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+8.0%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalJonckheereTerpstraTest</b></td>
-      <td style="text-align: center; padding: 8px;">+4.4%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+18.8%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+12.5%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-2.7%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalCauchitRegr</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+25.1%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+48.9%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalAdjCatLogitRegr</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+35.6%</td>
-      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+61.5%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">+2.7%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-4.8%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalGCompMeanDiff</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+30.4%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+45.6%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-7.3%</td>
-      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+53.9%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalKKGEE</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+17.9%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-3.0%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+20.4%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferencePropBetaRegr</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+15.3%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+23.0%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-8.9%</td>
-      <td style="text-align: center; padding: 8px;">+2.7%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalKKCLMM</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+23.0%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+6.3%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-7.1%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+7.0%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalKKCLMMCauchit</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+27.2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-2.3%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-8.2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalKKCondAdjCatLogitRegr</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+29.0%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+9.6%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-15.2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalOrderedProbitRegr</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+20.3%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+46.0%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-5.2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalKKGLMM</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+20.9%</td>
-      <td style="text-align: center; padding: 8px;">+3.3%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+7.1%</td>
-      <td style="text-align: center; padding: 8px;">+4.8%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferencePropKKQuantileRegrOneLik</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+30.2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferencePropGCompMeanDiff</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+14.5%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+28.0%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferencePropFractionalLogit</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+24.1%</td>
-      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+66.9%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-20.0%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKKClaytonCopulaOneLik</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+29.0%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalCoxPHRegr</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+7.4%</td>
-      <td style="text-align: center; padding: 8px;">+2.1%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-7.6%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalContRatioRegr</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+27.6%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+33.1%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">+3.4%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferencePropZeroOneInflatedBetaRegr</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+24.5%</td>
-      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+52.2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-3.2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKKWeibullFrailtyOneLik</b></td>
-      <td style="text-align: center; padding: 8px;">+5.0%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+28.2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-8.7%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKKLWACoxPHOneLik</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+25.8%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+7.8%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKKLWACoxPHIVWC</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+28.7%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+9.2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px;">+2.7%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+11.2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalKKCLMMProbit</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+22.9%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+11.2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">+3.6%</td>
-      <td style="text-align: center; padding: 8px;">+2.8%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalCloglogRegr</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+27.6%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+48.2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">+2.1%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalLogRank</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+6.4%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+16.3%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+9.1%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKMDiff</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+26.6%</td>
-      <td style="text-align: center; padding: 8px; background-color: #228b22; color: white;">+54.4%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-14.3%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+18.2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalPropOddsRegr</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+26.3%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+47.2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+9.1%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+35.7%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalKKCLMMCloglog</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+23.1%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-3.5%</td>
-      <td style="text-align: center; padding: 8px;">—</td>
-      <td style="text-align: center; padding: 8px;">—</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferencePropKKGLMM</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+26.4%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+7.4%</td>
-      <td style="text-align: center; padding: 8px;">—</td>
-      <td style="text-align: center; padding: 8px;">—</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalGehanWilcox</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+19.5%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+23.3%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+11.5%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+6.9%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferencePropKKGEE</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+20.4%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+12.1%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-8.1%</td>
-      <td style="text-align: center; padding: 8px;">+4.0%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKKStratCoxPHOneLik</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+12.0%</td>
-      <td style="text-align: center; padding: 8px;">+2.0%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKKStratCoxPHIVWC</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+9.2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+5.3%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalStratCoxPHRegr</b></td>
-      <td style="text-align: center; padding: 8px;">+3.6%</td>
-      <td style="text-align: center; padding: 8px;">+2.2%</td>
-      <td style="text-align: center; padding: 8px;">—</td>
-      <td style="text-align: center; padding: 8px;">—</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+5.4%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalRestrictedMeanDiff</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+7.5%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+16.2%</td>
-      <td style="text-align: center; padding: 8px;">—</td>
-      <td style="text-align: center; padding: 8px;">—</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceOrdinalRidit</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+25.1%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferencePropKKQuantileRegrIVWC</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+22.1%</td>
-      <td style="text-align: center; padding: 8px;">+2.2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-5.9%</td>
-      <td style="text-align: center; padding: 8px;">+4.1%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKKClaytonCopulaIVWC</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+23.5%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+24.4%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceSurvivalKKWeibullFrailtyIVWC</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+18.3%</td>
-      <td style="text-align: center; padding: 8px;">< 2%</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+8.3%</td>
-      <td style="text-align: center; padding: 8px; background-color: #ccffcc;">+7.8%</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceAllSimpleMeanDiff</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceAllSimpleMeanDiffPooledVar</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceBaiAdjustedTKK14</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #ffcccc;">-18.8%</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceBaiAdjustedTKK21</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceContinOLS</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceContinKKOLSIVWC</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">N/S</td>
-      <td style="text-align: center; padding: 8px;">+2.7%</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-    </tr>
-    <tr>
-      <td style="text-align: left; padding: 8px;"><b>InferenceContinKKOLSOneLik</b></td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-      <td style="text-align: center; padding: 8px; background-color: #eeeeee;">Disabled</td>
-    </tr>
-  </tbody>
+<tbody>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceAllKKMeanDiffIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+73.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceAllKKWilcoxIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+86.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+32.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-4.1% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceAllSimpleWilcox</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+55.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+31.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.1%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceBaiAdjustedTKK14</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+79.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceBaiAdjustedTKK21</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+76.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+31.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-4.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKGLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+83.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKOLSIVWC</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-563.1% (D)</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+36.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKOLSOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+81.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+33.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-2.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKQuantileRegrIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+82.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+45.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-2.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKQuantileRegrOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+76.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+31.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-12.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKRobustRegrIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+71.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+41.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKRobustRegrOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+80.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+29.9%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+9.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinLin</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+83.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+39.1%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinOLS</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+74.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+60.7%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinQuantileRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+80.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+25.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+4.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinRobustRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+80.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+15.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+2.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountHurdleNegBin</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+53.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-5.1% (D)</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+9.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountHurdlePoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+75.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-2.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountKKCondPoissonOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+78.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+42.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-24.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountKKGLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+74.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-8.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-15.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountKKHurdlePoissonOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+54.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+36.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.1%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountNegBin</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+78.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-107.4% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-120.4% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-127.8% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountPoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+85.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+34.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-18.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-17.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountPoissonKKGEE</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+57.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-10.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountQuasiPoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+75.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+38.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.7%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountRobustPoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+79.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+48.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-162.5%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountZeroInflatedNegBin</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+80.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-15.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-14.7% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountZeroInflatedPoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+80.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+13.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-34.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidBinomialIdentityRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+26.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+15.0%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidExactBinomial</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+17.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+21.3%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidExactFisher</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+15.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.8%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidGCompRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+69.4%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidGCompRiskRatio</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+50.8%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKCondLogitIVWC</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-32.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKCondLogitOneLik</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+28.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-22.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-34.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKCondLogitPlusGLMMIVWC</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-14.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKCondLogitPlusGLMMOneLik</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-24.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKGCompRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+49.0%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKGCompRiskRatio</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+47.4%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKGEE</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+21.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-19.3%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKModifiedPoisson</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+47.2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKNewcombeRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+18.9%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-49.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidLogBinomial</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-7.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+24.2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidLogRegr</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+38.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-14.3%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidMiettinenNurminenRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+75.0%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidModifiedPoisson</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+47.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.7%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidNewcombeRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+80.0%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidProbitRegr</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+37.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-10.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-12.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+48.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-14.3%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidWald</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidenceExactZhang</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-15.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalAdjCatLogitRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+79.4%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-30.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalCauchitRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+75.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.4%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalCloglogRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+78.2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-3.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalContRatioRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+77.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-14.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalGCompMeanDiff</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+75.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+59.9%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+32.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalJonckheereTerpstraTest</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+81.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+54.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+50.0%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+71.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+34.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-34.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCLMMCauchit</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+71.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+20.3%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCLMMCloglog</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+53.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+26.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.1%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCLMMProbit</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+61.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+16.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-34.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-8.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCondAdjCatLogitRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+64.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-14.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+20.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKGEE</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+55.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-2.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+23.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKGLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+64.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+4.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+2.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalOrderedProbitRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+79.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+18.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+9.9%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalPairedSignTest</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+75.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalPropOddsRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+79.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+27.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-18.8%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalRidit</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+73.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+60.9%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropBetaRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+77.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+29.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-9.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropFractionalLogit</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+79.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+40.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-5.6%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropGCompMeanDiff</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+44.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+72.7%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropKKGEE</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+65.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+23.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+25.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-19.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropKKGLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+68.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+20.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-8.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-12.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropKKQuantileRegrIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+70.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+24.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+28.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropKKQuantileRegrOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+71.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+18.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-14.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-8.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropZeroOneInflatedBetaRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+51.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-17.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-5.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalCoxPHRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+71.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-8.5% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-65.8% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-35.3% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalDepCensTransformRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+77.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.4%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-3.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalGehanWilcox</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+71.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+12.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+20.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-17.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKClaytonCopulaIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+75.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKClaytonCopulaOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+72.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+37.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+35.0%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKLWACoxPHIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+74.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+2.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+26.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKLWACoxPHOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+67.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-37.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-7.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+15.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKStratCoxPHIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+71.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+34.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-28.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKStratCoxPHOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+66.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+16.7%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-9.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKWeibullFrailtyIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+83.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+36.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKWeibullFrailtyOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+71.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-5.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-9.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKMDiff</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+77.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+24.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-20.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-13.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalLogRank</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+84.3%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-12.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalRestrictedMeanDiff</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+86.7%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-5.8%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalStratCoxPHRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+81.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-39.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-38.1% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-50.2% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalWeibullRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+39.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-16.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-10.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+</tbody>
 </table>
+
+### n = 200
+
+<table border="1" style="border-collapse: collapse; width: 100%;">
+<thead>
+<tr>
+<th style="text-align:left; padding:4px;">Path</th>
+<th style="text-align:center; padding:4px;">Random-<br>ization</th>
+<th style="text-align:center; padding:4px;">Nonparam<br> Bootstrap</th>
+<th style="text-align:center; padding:4px;">Bayesian Bootstrap</th>
+<th style="text-align:center; padding:4px;">Jack-<br>knife</th>
+<th style="text-align:center; padding:4px;">Param. Bootstrap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceAllKKMeanDiffIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+55.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+17.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+20.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceAllKKWilcoxIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+68.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-24.8% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceAllSimpleWilcox</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+67.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+42.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+34.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+28.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceBaiAdjustedTKK14</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+48.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-57.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceBaiAdjustedTKK21</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+64.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+25.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-52.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKGLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+77.3%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+22.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+13.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKOLSIVWC</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-308.5% (D)</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+50.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+13.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKOLSOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+77.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+24.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+27.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKQuantileRegrIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+60.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+25.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+19.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKQuantileRegrOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+68.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+47.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+36.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+25.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKRobustRegrIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+74.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-158.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKRobustRegrOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+83.5%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-15.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+38.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinLin</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+74.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+41.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-8.3%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinOLS</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+81.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+58.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+38.5%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinQuantileRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+64.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-26.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+33.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-24.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinRobustRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+62.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-21.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+30.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountHurdleNegBin</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+54.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-26.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-5.8% (D)</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+40.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountHurdlePoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+73.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-8.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-36.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountKKCondPoissonOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+78.0%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-25.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountKKGLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+35.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+4.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-4.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountKKHurdlePoissonOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+71.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-10.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-53.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountNegBin</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+67.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-231.1% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-100.3% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-73.7% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountPoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+83.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+25.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountPoissonKKGEE</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+53.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-40.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+2.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+2.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountQuasiPoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+62.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+46.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+32.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+28.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountRobustPoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+79.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+32.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-68.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-75.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountZeroInflatedNegBin</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-11.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+15.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-17.8% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountZeroInflatedPoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+61.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+17.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-13.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+41.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidBinomialIdentityRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+33.1%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidExactBinomial</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-79.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-13.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidExactFisher</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+27.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidGCompRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+73.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-5.9%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidGCompRiskRatio</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+64.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-43.7%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKCondLogitIVWC</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+32.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+9.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKCondLogitOneLik</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+22.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-4.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKCondLogitPlusGLMMIVWC</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-14.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKCondLogitPlusGLMMOneLik</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+4.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-82.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKGCompRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+50.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.8%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKGCompRiskRatio</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+47.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-66.7%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKGEE</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+22.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+18.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-9.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKModifiedPoisson</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+20.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-16.7%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKNewcombeRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+26.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidLogBinomial</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+23.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-48.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidLogRegr</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+55.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-59.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidMiettinenNurminenRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+73.5%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidModifiedPoisson</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+35.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+30.0%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidNewcombeRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+73.0%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidProbitRegr</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+33.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-11.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+29.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidWald</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+75.4%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidenceExactZhang</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+9.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalAdjCatLogitRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+82.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-13.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-23.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-11.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalCauchitRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+75.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-28.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-50.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalCloglogRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+67.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+45.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-35.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalContRatioRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+63.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalGCompMeanDiff</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+75.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+60.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-87.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+22.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalJonckheereTerpstraTest</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+65.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+51.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+29.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+20.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+47.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+25.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+48.4%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCLMMCauchit</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+52.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+18.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+19.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-45.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCLMMCloglog</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+58.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-9.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-34.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-10.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCLMMProbit</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+69.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-33.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+15.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-7.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCondAdjCatLogitRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+54.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+22.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKGEE</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+38.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+37.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+17.1%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKGLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+37.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-41.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+13.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalOrderedProbitRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+63.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-54.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-16.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalPairedSignTest</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+67.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalPropOddsRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+66.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+46.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-8.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalRidit</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+80.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+38.5%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropBetaRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+81.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+53.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-7.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+21.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropFractionalLogit</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+58.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-11.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropGCompMeanDiff</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+53.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+74.7%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropKKGEE</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+52.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+2.6%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropKKGLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+68.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+13.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-39.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropKKQuantileRegrIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+57.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+40.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-3.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropKKQuantileRegrOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+75.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+31.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-29.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-13.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropZeroOneInflatedBetaRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+46.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+19.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+49.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+34.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalCoxPHRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+70.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-48.5% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-106.8% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-45.0% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalDepCensTransformRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+66.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+16.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-2.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalGehanWilcox</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+59.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+15.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+26.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-7.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKClaytonCopulaIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+36.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-15.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKClaytonCopulaOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+60.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+44.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-36.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-45.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKLWACoxPHIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+70.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+32.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-8.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKLWACoxPHOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+70.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-27.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+15.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKStratCoxPHIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+61.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+50.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-11.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKStratCoxPHOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+70.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+41.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+17.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKWeibullFrailtyIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+61.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+31.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-24.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKWeibullFrailtyOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+50.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+29.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-13.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-43.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKMDiff</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+61.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+46.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-49.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalLogRank</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+73.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalRestrictedMeanDiff</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+77.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-48.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalStratCoxPHRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+77.8%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-54.5% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-51.8% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalWeibullRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+71.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-20.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+</tbody>
+</table>
+
+### n = 500
+
+<table border="1" style="border-collapse: collapse; width: 100%;">
+<thead>
+<tr>
+<th style="text-align:left; padding:4px;">Path</th>
+<th style="text-align:center; padding:4px;">Random-<br>ization</th>
+<th style="text-align:center; padding:4px;">Nonparam<br> Bootstrap</th>
+<th style="text-align:center; padding:4px;">Bayesian Bootstrap</th>
+<th style="text-align:center; padding:4px;">Jack-<br>knife</th>
+<th style="text-align:center; padding:4px;">Param. Bootstrap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceAllKKMeanDiffIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+53.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+21.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+20.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceAllKKWilcoxIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+50.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-7.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-3.0% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceAllSimpleWilcox</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+47.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-16.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+15.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceBaiAdjustedTKK14</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+33.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+13.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-51.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceBaiAdjustedTKK21</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+41.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-77.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKGLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+53.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-2.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+20.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-2.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKOLSIVWC</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-174.0% (D)</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+43.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-8.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKOLSOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+74.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-4.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-23.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-39.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKQuantileRegrIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+68.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-10.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-14.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKQuantileRegrOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+65.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+20.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-19.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+28.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKRobustRegrIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+61.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+24.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKRobustRegrOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+55.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+19.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-21.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+36.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinLin</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+64.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+46.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-45.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-10.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinOLS</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+50.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+56.9%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinQuantileRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+68.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-35.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-4.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+15.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinRobustRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+57.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-41.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-3.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountHurdleNegBin</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+21.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+18.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-5.1% (D)</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountHurdlePoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+73.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+12.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-5.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-18.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountKKCondPoissonOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+70.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-45.1%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-14.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountKKGLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+56.9%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+15.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountKKHurdlePoissonOneLik</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-11.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+23.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+26.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountNegBin</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+51.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-106.6% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-97.1% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-40.0% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountPoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+60.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-10.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+23.3%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountPoissonKKGEE</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+28.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+28.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-13.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+39.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountQuasiPoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+57.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+42.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-31.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountRobustPoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+52.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+30.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+20.7%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountZeroInflatedNegBin</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-29.7% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountZeroInflatedPoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+66.2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-17.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-14.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidBinomialIdentityRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+15.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+23.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidExactBinomial</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-11.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-3.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+27.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidExactFisher</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-8.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+13.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-22.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidGCompRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+70.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+12.5%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidGCompRiskRatio</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+53.1%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-9.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKCondLogitIVWC</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-37.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKCondLogitOneLik</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+24.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+32.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-18.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKCondLogitPlusGLMMIVWC</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-56.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKCondLogitPlusGLMMOneLik</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+18.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+2.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+17.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKGCompRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+75.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+41.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-45.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKGCompRiskRatio</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+67.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-113.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-26.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKGEE</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-14.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-8.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-10.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKModifiedPoisson</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+30.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-71.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+27.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKNewcombeRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+57.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-42.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidLogBinomial</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+30.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-2.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+2.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidLogRegr</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+44.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-71.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidMiettinenNurminenRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+59.7%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidModifiedPoisson</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+29.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+36.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+36.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidNewcombeRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+79.6%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidProbitRegr</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-40.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-25.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+30.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-52.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidWald</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+74.9%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidenceExactZhang</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+4.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+41.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-2.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalAdjCatLogitRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+41.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+2.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+31.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalCauchitRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+29.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+19.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+23.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+16.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalCloglogRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+55.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+25.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+26.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-18.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalContRatioRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+36.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+40.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+9.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-73.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalGCompMeanDiff</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+54.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+62.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+56.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalJonckheereTerpstraTest</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+55.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-20.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+38.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+26.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-95.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+25.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCLMMCauchit</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+31.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+24.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+32.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+9.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCLMMCloglog</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+62.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+21.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-25.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+34.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCLMMProbit</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+49.9%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+42.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-5.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCondAdjCatLogitRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+56.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-27.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-18.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKGEE</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+49.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-14.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-41.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-23.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKGLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+30.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+16.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-34.6%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalOrderedProbitRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+52.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-34.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+27.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-64.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalPairedSignTest</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+46.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalPropOddsRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+68.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+31.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+9.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalRidit</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+68.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+60.4%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-4.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropBetaRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+60.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+42.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropFractionalLogit</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+58.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+24.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+38.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-10.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropGCompMeanDiff</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+80.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+40.0%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropKKGEE</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+2.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+16.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-2.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropKKGLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+74.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-2.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropKKQuantileRegrIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+60.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+9.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropKKQuantileRegrOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+26.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-4.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+27.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropZeroOneInflatedBetaRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+44.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+13.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+4.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-42.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalCoxPHRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+62.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-67.4% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-130.2% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-92.3% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalDepCensTransformRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+39.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-13.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+33.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+31.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalGehanWilcox</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+54.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-2.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.3%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKClaytonCopulaIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+36.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+15.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKClaytonCopulaOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+48.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-33.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+2.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKLWACoxPHIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+59.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+41.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-34.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKLWACoxPHOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+55.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+31.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+37.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-11.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKStratCoxPHIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+15.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKStratCoxPHOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+34.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+17.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+18.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKWeibullFrailtyIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+38.7%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-14.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKWeibullFrailtyOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-4.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-39.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+4.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKMDiff</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+45.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-22.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+17.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalLogRank</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+61.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+9.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+12.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalRestrictedMeanDiff</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+50.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.5%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalStratCoxPHRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+56.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-58.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-77.3% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-142.2% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalWeibullRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+35.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-32.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-22.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+49.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+</tbody>
+</table>
+
+### n = 1000
+
+<table border="1" style="border-collapse: collapse; width: 100%;">
+<thead>
+<tr>
+<th style="text-align:left; padding:4px;">Path</th>
+<th style="text-align:center; padding:4px;">Random-<br>ization</th>
+<th style="text-align:center; padding:4px;">Nonparam<br> Bootstrap</th>
+<th style="text-align:center; padding:4px;">Bayesian Bootstrap</th>
+<th style="text-align:center; padding:4px;">Jack-<br>knife</th>
+<th style="text-align:center; padding:4px;">Param. Bootstrap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceAllKKMeanDiffIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+17.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+4.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+23.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceAllKKWilcoxIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+39.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-38.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-42.3% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceAllSimpleWilcox</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+46.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-64.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+12.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceBaiAdjustedTKK14</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+45.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+42.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+33.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceBaiAdjustedTKK21</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+35.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-35.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKGLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+38.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+17.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+18.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-2.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKOLSIVWC</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-93.3% (D)</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+37.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-14.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKOLSOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+19.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-13.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-22.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+20.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKQuantileRegrIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+18.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-19.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-7.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKQuantileRegrOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+41.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-13.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKRobustRegrIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+36.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-22.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-48.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinKKRobustRegrOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+46.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+19.4%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinLin</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+47.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-8.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+2.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinOLS</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+44.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+52.7%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinQuantileRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+27.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-20.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+19.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceContinRobustRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+20.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-3.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-19.8%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountHurdleNegBin</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+62.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-18.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-3.4% (D)</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+13.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountHurdlePoisson</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+21.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-2.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+2.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountKKCondPoissonOneLik</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-43.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+33.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountKKGLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+27.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountKKHurdlePoissonOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+34.2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-59.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountNegBin</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+21.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-11.1% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-37.9% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-30.6% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountPoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+24.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+34.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+25.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+32.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountPoissonKKGEE</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-28.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+4.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+21.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountQuasiPoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+25.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+45.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+23.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountRobustPoisson</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-42.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+57.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-8.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-8.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountZeroInflatedNegBin</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+61.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+13.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-31.1% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceCountZeroInflatedPoisson</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+42.9%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidBinomialIdentityRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+45.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidExactBinomial</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-11.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-12.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidExactFisher</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+9.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+25.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidGCompRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+52.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+22.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+27.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidGCompRiskRatio</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+23.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+6.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-21.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKCondLogitIVWC</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKCondLogitOneLik</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+22.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+15.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKCondLogitPlusGLMMIVWC</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKCondLogitPlusGLMMOneLik</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-3.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-3.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+4.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKGCompRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+61.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-17.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-10.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKGCompRiskRatio</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+43.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+22.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKGEE</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-4.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+22.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKModifiedPoisson</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+33.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+34.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-10.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidKKNewcombeRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+21.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-31.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+38.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidLogBinomial</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+46.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+17.5%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidLogRegr</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+54.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-27.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+9.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidMiettinenNurminenRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+78.0%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidModifiedPoisson</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+40.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+21.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-57.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidNewcombeRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+73.7%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidProbitRegr</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+27.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+9.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+50.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidRiskDiff</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+24.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-47.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidWald</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+75.9%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceIncidenceExactZhang</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+28.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-5.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-12.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalAdjCatLogitRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+39.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+13.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+26.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalCauchitRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+43.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+9.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-42.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+9.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalCloglogRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+41.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-25.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-47.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+18.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalContRatioRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+31.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-5.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-111.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+17.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalGCompMeanDiff</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+63.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+16.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+33.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalJonckheereTerpstraTest</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+4.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-26.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-54.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+40.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-18.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-43.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCLMMCauchit</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+54.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+2.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-41.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-3.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCLMMCloglog</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+45.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-14.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-106.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-75.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCLMMProbit</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+22.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+26.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKCondAdjCatLogitRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+35.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+16.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-20.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKGEE</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+38.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-5.4%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+31.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalKKGLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+35.0%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-21.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalOrderedProbitRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+34.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+20.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+12.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalPairedSignTest</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+34.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalPropOddsRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+16.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+8.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+31.6%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceOrdinalRidit</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+23.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+41.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-34.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+12.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropBetaRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+43.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+35.7%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+4.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-30.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropFractionalLogit</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+29.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+36.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-36.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-27.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropGCompMeanDiff</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+41.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+52.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-22.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropKKGEE</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+27.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-19.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+9.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+12.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropKKGLMM</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+37.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-10.1%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-8.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropKKQuantileRegrIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+39.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-6.0%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropKKQuantileRegrOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+33.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+18.7%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-43.3%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferencePropZeroOneInflatedBetaRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+43.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+16.2%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+37.4%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalCoxPHRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+43.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-45.8% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-242.4% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-94.8% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalDepCensTransformRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+38.6%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-3.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+5.1%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-4.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalGehanWilcox</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+35.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+10.0%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKClaytonCopulaIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+59.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-62.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKClaytonCopulaOneLik</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-28.4%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+11.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+20.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-47.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKLWACoxPHIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+12.5%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+13.4%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-24.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKLWACoxPHOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+52.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-76.4%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-14.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-19.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKStratCoxPHIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+42.8%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+21.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-100.8%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKStratCoxPHOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+51.9%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-9.2%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-9.2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKWeibullFrailtyIVWC</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+30.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-9.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+7.9%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKKWeibullFrailtyOneLik</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+23.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-23.1%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+14.1%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalKMDiff</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+33.3%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+2.9%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-29.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-35.7%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalLogRank</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-4.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+45.3%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-3.5%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-21.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalRestrictedMeanDiff</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+22.7%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-11.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+19.6%</td>
+<td style="text-align:center; padding:4px; background:#f8f9fb; color:#555;">&lt; 2%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalStratCoxPHRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+34.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-21.8%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-181.4% (D)</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-107.6% (D)</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+<tr>
+<td style="padding:4px; font-family:monospace;">InferenceSurvivalWeibullRegr</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+34.0%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+18.6%</td>
+<td style="text-align:center; padding:4px; background:#eaf6ec; color:#1b6b32;">+3.0%</td>
+<td style="text-align:center; padding:4px; background:#fdecea; color:#9f1d1d;">-11.1%</td>
+<td style="text-align:center; padding:4px; background:#f5f5f5; color:#777;">N/S</td>
+</tr>
+</tbody>
+</table>
+
+Note: `(D)` means the warm-start path is disabled by default for that resampling operation; the value shown is the result when the benchmark runs that disabled path anyway.
 
 **Legend:** 
 *   **+X.X%**: Percentage reduction in total loop time when Warm Starts are enabled.
 *   **< X%**: Improvement is negligible or below the measurement noise floor for this ultra-fast model.
 *   **N/S**: Not Supported (this specific resampling method is not applicable to this path or requires a different design structure).
 *   **—**: Supported, but no separate Bayesian-bootstrap warm-start timing was recorded in this benchmark table.
-*   **Disabled**: Warm Starts are disabled by default for this path (typically closed-form models where R6 environment overhead outweighs any mathematical gains).
 
 ---
 
@@ -861,7 +3092,7 @@ Switching to sequential anchoring (tracking the null distribution) transformed p
 ### 4. Convergence Insurance
 Beyond raw speed, warm starting acts as a robust **"Numerical Insurance."** It ensures the solver is protected against convergence failures on sparse bootstrap samples or ill-conditioned permutations by starting the optimization in a high-likelihood region already validated by the primary fit.
 
-**Overall Conclusion:** Warm starting is a foundational feature of `EDI`. It provides massive computational savings for heavy models and acts as a robust "convergence insurance" for the entire resampling lifecycle. As of 2026, **Warm Starts are enabled by default** for all five resampling paths across all 90 concrete inference classes.
+**Overall Conclusion:** Warm starting is a foundational feature of `EDI`. It provides massive computational savings for heavy models and acts as a robust "convergence insurance" for the optimization-based resampling lifecycle. As of 2026, **Warm Starts are enabled by default** for supported resampling paths; the table keeps negative measured cells visible rather than hiding them behind a disabled-path marker.
 
 ---
 
@@ -915,18 +3146,14 @@ The Parametric Bootstrap (PB) requires a generative likelihood model under the n
 
 ---
 
-## Detailed Rationale for 'Disabled' in Resampling
+## Notes on Negative Warm-Start Cells
 
-Several inference paths are marked as **Disabled** across all resampling methods:
+Several inference paths show negative measured speedups for one or more resampling methods:
 
 ### 1. Ordinary Least Squares (OLS) Models
 *   **Paths**: `InferenceContinOLS`, `InferenceContinKKOLSIVWC`, `InferenceContinKKOLSOneLik`.
-*   **Reason**: OLS estimators have a closed-form algebraic solution ($(X^TX)^{-1}X^Ty$). Because they do not use iterative optimization algorithms (like Newton-Raphson or IRLS), there is no solver state to "warm start". Enabling warm starts would incur unnecessary R6 environment copying and checks without any mathematical speedup, resulting in a net performance penalty.
+*   **Reason**: OLS estimators have a closed-form algebraic solution ($(X^TX)^{-1}X^Ty$). Because they do not use iterative optimization algorithms (like Newton-Raphson or IRLS), there is no solver state to "warm start". The measured cells therefore mostly reflect warm-start bookkeeping overhead rather than solver savings.
 
-### 2. Simple Mean Differences
-*   **Paths**: `InferenceAllSimpleMeanDiff`, `InferenceAllSimpleMeanDiffPooledVar`.
-*   **Reason**: Like OLS, these estimators compute statistical differences directly through closed-form formulas. The overhead of setting up, duplicating, and querying the warm-start environment for each resampling iteration is highly net-negative.
-
-### 3. Bai-Adjusted T-Tests for KK Designs
+### 2. Bai-Adjusted T-Tests for KK Designs
 *   **Paths**: `InferenceBaiAdjustedTKK14`, `InferenceBaiAdjustedTKK21`.
-*   **Reason**: These estimators compute the treatment effect and its variance analytically. Since they are computed algebraically rather than iteratively, there is no numerical solver to initialize. R6 warm-start checks and environment duplication introduce up to -776% performance degradation under resampling, so warm starts are permanently disabled.
+*   **Reason**: These estimators compute the treatment effect and its variance analytically. Since they are computed algebraically rather than iteratively, there is no numerical solver to initialize. Negative warm-start cells for these paths reflect R6 environment checks and copying rather than optimization behavior.

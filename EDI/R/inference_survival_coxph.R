@@ -234,7 +234,10 @@ InferenceSurvivalCoxPHRegr = R6::R6Class("InferenceSurvivalCoxPHRegr",
 			}
 			X_cov = private$get_X()
 			X_fit = if (!is.null(X_cov) && ncol(X_cov) > 0) cbind(treatment = private$w, X_cov) else matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
-			fit = weighted_cox_bootstrap_surrogate_fit(private$y, private$dead, X_fit, row_weights)
+			fit = weighted_cox_bootstrap_surrogate_fit(
+				private$y, private$dead, X_fit, row_weights,
+				warm_start_beta = private$get_fit_warm_start_for_length("params", ncol(X_fit)) %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit))
+			)
 			private$cached_values$beta_hat_T = if (is.null(fit)) NA_real_ else as.numeric(fit$beta_hat)
 			private$cached_values$s_beta_hat_T = NA_real_
 			private$cached_values$beta_hat_T

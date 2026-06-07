@@ -30,6 +30,8 @@ Defaults to the global budget unless overridden on the object.}
 \item \href{#method-Inference-new}{\code{Inference$new()}}
 \item \href{#method-Inference-compute_exact_two_sided_pval_for_treatment_effect}{\code{Inference$compute_exact_two_sided_pval_for_treatment_effect()}}
 \item \href{#method-Inference-compute_exact_confidence_interval}{\code{Inference$compute_exact_confidence_interval()}}
+\item \href{#method-Inference-compute_asymp_two_sided_pval}{\code{Inference$compute_asymp_two_sided_pval()}}
+\item \href{#method-Inference-compute_asymp_confidence_interval}{\code{Inference$compute_asymp_confidence_interval()}}
 \item \href{#method-Inference-compute_estimate}{\code{Inference$compute_estimate()}}
 \item \href{#method-Inference-is_nonestimable}{\code{Inference$is_nonestimable()}}
 \item \href{#method-Inference-get_nonestimable_reason}{\code{Inference$get_nonestimable_reason()}}
@@ -126,6 +128,40 @@ Computes an exact confidence interval. Subclasses that support exact inference o
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{...}}{Other arguments passed to the method.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Inference-compute_asymp_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-Inference-compute_asymp_two_sided_pval}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes an asymptotic two-sided p-value. Subclasses that support asymptotic inference override this.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Inference$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Inference-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-Inference-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes an asymptotic confidence interval. Subclasses that support asymptotic inference override this.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Inference$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level.}
 }
 \if{html}{\out{</div>}}
 }

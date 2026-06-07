@@ -57,7 +57,11 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 			X_fit = if (!is.null(X_cov) && ncol(X_cov) > 0) cbind(treatment = private$w, X_cov) else matrix(private$w, ncol = 1, dimnames = list(NULL, "treatment"))
 			strata_info = private$compute_strata_info(X_cov)
 			use_strata = isTRUE(strata_info$num_strata > 1L)
-			fit = weighted_cox_bootstrap_surrogate_fit(private$y, private$dead, X_fit, row_weights, strata = if (use_strata) strata_info$strata_id else NULL)
+			fit = weighted_cox_bootstrap_surrogate_fit(
+				private$y, private$dead, X_fit, row_weights,
+				strata = if (use_strata) strata_info$strata_id else NULL,
+				warm_start_beta = private$get_fit_warm_start_for_length("params", ncol(X_fit)) %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit))
+			)
 			private$cached_values$beta_hat_T = if (is.null(fit)) NA_real_ else as.numeric(fit$beta_hat)
 			private$cached_values$s_beta_hat_T = NA_real_
 			private$cached_values$beta_hat_T

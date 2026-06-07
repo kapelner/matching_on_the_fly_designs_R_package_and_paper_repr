@@ -54,7 +54,10 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 			}
 			X_fit = private$build_design_matrix()[, -1, drop = FALSE]
 			colnames(X_fit)[1L] = "treatment"
-			fit = weighted_cox_bootstrap_surrogate_fit(private$y, private$dead, X_fit, row_weights)
+			fit = weighted_cox_bootstrap_surrogate_fit(
+				private$y, private$dead, X_fit, row_weights,
+				warm_start_beta = private$get_fit_warm_start_for_length("params", ncol(X_fit)) %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit))
+			)
 			private$cached_values$beta_hat_T = if (is.null(fit)) NA_real_ else as.numeric(fit$beta_hat)
 			private$cached_values$s_beta_hat_T = NA_real_
 			private$cached_values$beta_hat_T

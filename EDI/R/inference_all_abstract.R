@@ -169,7 +169,6 @@ Inference = R6::R6Class("Inference",
 				!is.null(i$.__enclos_env__$private$custom_randomization_statistic_function)){
 				clone_private = i$.__enclos_env__$private
 				fn = clone_private$custom_randomization_statistic_function
-				environment(fn) = environment(i$initialize)
 				if (bindingIsLocked("custom_randomization_statistic_function", clone_private)) {
 					# Use a trick to avoid CRAN check for unsafe unlockBinding
 					get("unlockBinding", envir = asNamespace("base"))("custom_randomization_statistic_function", clone_private)
@@ -390,8 +389,12 @@ Inference = R6::R6Class("Inference",
 				return(invisible(NULL))
 			}
 			
-			# Exit immediately if inside a resampling loop to avoid useless caching overhead
-			if (!is.null(private$active_resampling_operation)) {
+			# Resampling fits should not replace the primary MLE warm state.
+			# Randomization is the intentional exception: it chains sequentially
+			# across permutations by updating the worker warm start after each
+			# successful null fit.
+			if (!is.null(private$active_resampling_operation) &&
+					!identical(private$active_resampling_operation, "rand")) {
 				return(invisible(NULL))
 			}
 			

@@ -14,9 +14,6 @@ InferenceRand = R6::R6Class("InferenceRand",
 				assertFunction(custom_randomization_statistic_function, null.ok = TRUE)
 			}
 			private[["custom_randomization_statistic_function"]] = custom_randomization_statistic_function
-			if (!is.null(custom_randomization_statistic_function)){
-				environment(private[["custom_randomization_statistic_function"]]) = environment(self$initialize)
-			}
 			private$cached_values$t0s_rand = NULL
 			private$cached_values$rand_distr_cache = list()
 			private$cached_values$custom_stat_analysis = NULL
@@ -822,14 +819,19 @@ InferenceRand = R6::R6Class("InferenceRand",
 		},
 		evaluate_lightweight_custom_randomization_statistic = function(lightweight_custom_context, y, w, dead){
 			# We simulate the environment for the custom statistic
-			eval_env = new.env(parent = .GlobalEnv)
+			fn = private$custom_randomization_statistic_function
+			eval_env = new.env(parent = environment(fn))
+			
 			private_proxy = new.env(parent = emptyenv())
 			seq_priv_proxy = new.env(parent = emptyenv())
 			seq_priv_proxy$y = y; seq_priv_proxy$w = w; seq_priv_proxy$dead = dead
 			private_proxy$des_obj_priv_int = seq_priv_proxy
-			eval_env$private = private_proxy
 			
-			fn = private$custom_randomization_statistic_function
+			eval_env$private = private_proxy
+			eval_env$inf_priv = private_proxy
+			eval_env$des_priv = seq_priv_proxy
+			eval_env$des_obj_priv_int = seq_priv_proxy
+			
 			environment(fn) = eval_env
 			fn()
 		},

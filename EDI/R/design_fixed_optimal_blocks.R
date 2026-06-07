@@ -2,7 +2,7 @@
 #'
 #' An R6 Class encapsulating the data and functionality for a fixed experimental
 #' design that first partitions subjects into \code{B} covariate-homogeneous blocks
-#' by solving a balanced clustering problem with \pkg{ompr} and glpk, then randomizes
+#' by solving a balanced clustering problem with \pkg{ompr} and \pkg{glpk}, then randomizes
 #' treatment within those blocks. When \code{B} is omitted and \code{n} is known
 #' at initialization, the default is \code{floor(sqrt(n))}, truncated below at 1.
 #'

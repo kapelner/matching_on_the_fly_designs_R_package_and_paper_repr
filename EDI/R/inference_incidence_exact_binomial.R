@@ -148,10 +148,8 @@ InferenceIncidExactBinomial = R6::R6Class("InferenceIncidExactBinomial",
 				private$des_obj_priv_int$ensure_matching_structure_computed()
 			}
 			m_vec = private$des_obj_priv_int$m
-			if (should_run_asserts()) {
-				if (is.null(m_vec)) {
-					stop("Matching structure is unavailable for exact binomial incidence inference.")
-				}
+			if (is.null(m_vec) || length(m_vec) == 0L) {
+				stop("Matching structure is unavailable for exact binomial incidence inference.")
 			}
 			m_vec = as.integer(m_vec)
 			m_vec[is.na(m_vec)] = 0L

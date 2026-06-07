@@ -1,7 +1,7 @@
 suppressPackageStartupMessages(library(EDI))
 suppressPackageStartupMessages(library(data.table))
 
-Nrep = 10000L   # Monte Carlo replications per cell
+Nrep = 10001L   # Monte Carlo replications per cell
 
 sim = SimulationFramework$new(
         Nrep                          = Nrep,
@@ -14,7 +14,7 @@ sim = SimulationFramework$new(
         norm_sq_beta_vec              = 4, #default is 1; we're increasing it here to give the x's more signal
         random_X_draws                = FALSE,
         seed                          = 1984,
-        betaT                         = c(1, 0), # 0 → size / type-I error;  1 → power / coverage
+        betaT                         = c(0, 1.5), # 0 → size / type-I error;  >0 → power / coverage
         alpha                         = 0.05,
         cond_exp_func_model           = c("linear"), #the "nonlinear" cond exp model is not as interesting for this simulation
         design_classes_and_params     = list(

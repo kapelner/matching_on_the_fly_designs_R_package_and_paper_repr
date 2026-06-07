@@ -142,18 +142,6 @@ InferencePropZeroOneInflatedBetaRegr = R6::R6Class("InferencePropZeroOneInflated
 			private$cached_values$one_coefficients = if (!is.null(one_fit)) one_fit$b else NULL
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes an approximate confidence interval.
-		#' @param alpha Confidence level.
-		compute_asymp_confidence_interval = function(alpha = 0.05){
-			private$shared(estimate_only = FALSE)
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
-		},
-		#' @description Computes an approximate two-sided p-value.
-		#' @param delta Null treatment effect value.
-		compute_asymp_two_sided_pval = function(delta = 0){
-			private$shared(estimate_only = FALSE)
-			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-		},
 		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
 		#' @param B  					Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.

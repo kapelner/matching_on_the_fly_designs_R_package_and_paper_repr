@@ -10,10 +10,16 @@ P_VAL = as.integer(Sys.getenv("WARM_START_BENCH_P", unset = "5"))
 BB_VAL = as.integer(Sys.getenv("WARM_START_BENCH_BB", unset = "10"))
 J_VAL = as.integer(Sys.getenv("WARM_START_BENCH_J", unset = "5"))
 NREP = as.integer(Sys.getenv("WARM_START_BENCH_REPS", unset = "12"))
+FIXED_N = as.integer(Sys.getenv("WARM_START_BENCH_FIXED_N", unset = "1"))
 
 md = readLines("package_metadata/warm_starts.md", warn = FALSE)
 path_lines = grep("<td .*<b>Inference", md, value = TRUE)
 inf_names = unique(sub(".*<b>(Inference[^<]+)</b>.*", "\\1", path_lines))
+excluded_paths = c(
+    "InferenceAllSimpleMeanDiff",
+    "InferenceAllSimpleMeanDiffPooledVar"
+)
+inf_names = setdiff(inf_names, excluded_paths)
 path_filter = Sys.getenv("WARM_START_BENCH_PATHS", unset = "")
 if (nzchar(path_filter)) {
     requested_paths = trimws(strsplit(path_filter, ",", fixed = TRUE)[[1L]])
@@ -30,6 +36,7 @@ P_VAL = as.integer(args[3])
 BB_VAL = as.integer(args[4])
 J_VAL = as.integer(args[5])
 NREP = as.integer(args[6])
+FIXED_N = as.logical(as.integer(args[7]))
 
 `%||%` = function(a, b) if (!is.null(a)) a else b
 
@@ -72,13 +79,11 @@ get_design_object = function(cn, rt, n) {
     DesignFixedBernoulli$new(response_type = rt, n = n)
 }
 
-edi_warm_start_dispatch_policy = getFromNamespace("edi_warm_start_dispatch_policy", "EDI")
-
 rt = get_rt(cls_name)
-if (grepl("KK", cls_name) || grepl("Exact|PairedSignTest", cls_name)) {
+if (!isTRUE(FIXED_N) && (grepl("KK", cls_name) || grepl("Exact|PairedSignTest", cls_name))) {
     N_VAL = min(N_VAL, 300L)
 }
-if (grepl("Wilcox|Jonckheere", cls_name)) {
+if (!isTRUE(FIXED_N) && grepl("Wilcox|Jonckheere", cls_name)) {
     N_VAL = min(N_VAL, 1000L)
 }
 
@@ -126,8 +131,6 @@ if (!is.null(mle)) {
             weights = mle$w %||% mle$mu,
             force_pd = TRUE
         )
-    } else {
-        priv_w$set_fit_warm_start(as.numeric(mle), "beta")
     }
 }
 
@@ -144,14 +147,8 @@ clear_timing_caches = function(priv) {
     invisible(NULL)
 }
 
-if (cls_name %in% c("InferenceAllSimpleMeanDiff", "InferenceAllSimpleMeanDiffPooledVar",
-                    "InferenceContinOLS", "InferenceContinKKOLSOneLik")) {
-    res_bb = "Disabled"
-    res_jk = "Disabled"
-} else if (grepl("BaiAdjusted|IVWC", cls_name) || cls_name == "InferenceOrdinalPairedSignTest") {
+if (grepl("BaiAdjusted|IVWC", cls_name) || cls_name == "InferenceOrdinalPairedSignTest") {
     res_bb = "N/S"
-} else if (!edi_warm_start_dispatch_policy(cls_name, "bayesian_boot")) {
-    res_bb = "Disabled"
 } else {
     set.seed(42)
     bb_draws = replicate(
@@ -172,15 +169,15 @@ if (cls_name %in% c("InferenceAllSimpleMeanDiff", "InferenceAllSimpleMeanDiffPoo
         inf_w$compute_estimate_with_bootstrap_weights(draw$subject_or_block_weights, TRUE)
     }, error = function(e) NULL)
     t_bc = measure_avg_time(function() {
-        clear_timing_caches(priv_c)
         for (draw in bb_draws) {
+            clear_timing_caches(priv_c)
             priv_c$current_bayesian_bootstrap_context = draw$context
             inf_c$compute_estimate_with_bootstrap_weights(draw$subject_or_block_weights, TRUE)
         }
     })
     t_bw = measure_avg_time(function() {
-        clear_timing_caches(priv_w)
         for (draw in bb_draws) {
+            clear_timing_caches(priv_w)
             priv_w$current_bayesian_bootstrap_context = draw$context
             inf_w$compute_estimate_with_bootstrap_weights(draw$subject_or_block_weights, TRUE)
         }
@@ -190,13 +187,8 @@ if (cls_name %in% c("InferenceAllSimpleMeanDiff", "InferenceAllSimpleMeanDiffPoo
     res_bb = calc_s(t_bc, t_bw)
 }
 
-if (cls_name %in% c("InferenceAllSimpleMeanDiff", "InferenceAllSimpleMeanDiffPooledVar",
-                    "InferenceContinOLS", "InferenceContinKKOLSOneLik")) {
-    res_jk = "Disabled"
-} else if (cls_name == "InferenceOrdinalPairedSignTest") {
+if (cls_name == "InferenceOrdinalPairedSignTest") {
     res_jk = "N/S"
-} else if (!edi_warm_start_dispatch_policy(cls_name, "jackknife")) {
-    res_jk = "Disabled"
 } else {
     priv_c$active_resampling_operation = "jackknife"
     priv_w$active_resampling_operation = "jackknife"
@@ -204,6 +196,7 @@ if (cls_name %in% c("InferenceAllSimpleMeanDiff", "InferenceAllSimpleMeanDiffPoo
     tryCatch({ ww = rep(1, N_VAL); ww[1] = 0; inf_w$compute_estimate_with_bootstrap_weights(ww, TRUE) }, error = function(e) NULL)
     t_jc = measure_avg_time(function() {
         for (k in seq_len(J_VAL)) {
+            clear_timing_caches(priv_c)
             w = rep(1, N_VAL)
             w[k] = 0
             inf_c$compute_estimate_with_bootstrap_weights(w, TRUE)
@@ -211,6 +204,7 @@ if (cls_name %in% c("InferenceAllSimpleMeanDiff", "InferenceAllSimpleMeanDiffPoo
     })
     t_jw = measure_avg_time(function() {
         for (k in seq_len(J_VAL)) {
+            clear_timing_caches(priv_w)
             w = rep(1, N_VAL)
             w[k] = 0
             inf_w$compute_estimate_with_bootstrap_weights(w, TRUE)
@@ -231,7 +225,7 @@ cat(sprintf("Running Bayesian-bootstrap and jackknife timings for %d paths with 
 mclapply(inf_names, function(cn) {
     cat(sprintf("Processing %s...\\n", cn))
     res = tryCatch({
-        system2("Rscript", c("benchmark/worker_bayes_jackknife.R", cn, N_VAL, P_VAL, BB_VAL, J_VAL, NREP), stdout = TRUE, stderr = TRUE)
+        system2("Rscript", c("benchmark/worker_bayes_jackknife.R", cn, N_VAL, P_VAL, BB_VAL, J_VAL, NREP, FIXED_N), stdout = TRUE, stderr = TRUE)
     }, error = function(e) character(0))
     row_str = res[length(res)]
     if (length(row_str) > 0 && grepl(",", row_str)) {

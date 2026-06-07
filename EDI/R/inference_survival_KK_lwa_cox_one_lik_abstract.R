@@ -57,7 +57,11 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 				cluster_ids[res_idx] = max_m + seq_along(res_idx)
 			}
 			X_fit = private$design_matrix_candidates()
-			fit = weighted_cox_bootstrap_surrogate_fit(private$y, private$dead, X_fit, row_weights, cluster = cluster_ids)
+			fit = weighted_cox_bootstrap_surrogate_fit(
+				private$y, private$dead, X_fit, row_weights,
+				cluster = cluster_ids,
+				warm_start_beta = private$get_fit_warm_start_for_length("params", ncol(X_fit)) %||% private$get_fit_warm_start_for_length("beta", ncol(X_fit))
+			)
 			private$cached_values$beta_hat_T = if (is.null(fit)) NA_real_ else as.numeric(fit$beta_hat)
 			private$cached_values$s_beta_hat_T = NA_real_
 			private$cached_values$beta_hat_T

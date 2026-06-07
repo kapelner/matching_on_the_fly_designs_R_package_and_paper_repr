@@ -101,6 +101,15 @@ List compute_zhang_match_data_cpp(const NumericMatrix& X,
                                   const NumericVector& y,
                                   const IntegerVector& w,
                                   const IntegerVector& m_vec) {
+  if (w.size() != m_vec.size()) {
+    stop("m_vec size must match w size.");
+  }
+  if (w.size() != y.size()) {
+    stop("y size must match w size.");
+  }
+  if (X.nrow() != w.size()) {
+    stop("X row count must match w size.");
+  }
   const int n = w.size();
   const int p = X.ncol();
   int m = 0;

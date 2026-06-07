@@ -617,6 +617,8 @@ safe_call = function(label, expr){
 			msg = if (length(e$message) == 0L) "" else e$message
 			is_non_fatal = grepl("not implemented", msg, fixed = TRUE) ||
 			                 grepl("must implement", msg, fixed = TRUE) ||
+			                 grepl("no informative strata are available", msg, fixed = TRUE) ||
+			                 grepl("Matching structure is unavailable", msg, fixed = TRUE) ||
 			                 grepl("Exact inference is only supported for exact inference classes.", msg, fixed = TRUE) ||
 			                 grepl("does not support parametric-bootstrap LR calibration", msg, fixed = TRUE) ||
 			                 grepl("Override private\\$supports_lik_ratio_param_bootstrap\\(\\) and simulate_under_lik_null\\(\\)", msg) ||
@@ -855,10 +857,14 @@ if (inherits(result, "edi_skip_direct")) return(invisible(NULL))
 		safe_call("compute_rand_confidence_interval", seq_des_inf$compute_rand_confidence_interval(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE))
 	}
 	if (response_type != "incidence"){
-		seq_des_inf$set_custom_randomization_statistic_function(function(){
-			yTs = private$des_obj_priv_int$y[private$des_obj_priv_int$w == 1]
-			yCs = private$des_obj_priv_int$y[private$des_obj_priv_int$w == 0]
-			(mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
+		local({
+			inf_priv = seq_des_inf$.__enclos_env__$private
+			seq_des_inf$set_custom_randomization_statistic_function(function(){
+				des_priv = inf_priv$des_obj_priv_int
+				yTs = des_priv$y[des_priv$w == 1]
+				yCs = des_priv$y[des_priv$w == 0]
+				(mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
+			})
 		})
 		if (!skip_slow && !skip_rand_pval){
 			safe_call("compute_rand_two_sided_pval(custom)", seq_des_inf$compute_rand_two_sided_pval(r = r, show_progress = FALSE))
@@ -895,7 +901,7 @@ run_exhaustive_remaining_inference_classes = function(des_obj, response_type, de
 	nms = ls(ns, all.names = TRUE)
 	gen_names = nms[vapply(nms, function(nm) inherits(get(nm, envir = ns), "R6ClassGenerator"), logical(1))]
 	gen_names = gen_names[grepl("^Inference", gen_names)]
-	gen_names = gen_names[!grepl("Abstract|Suite|Custom|RandCI$", gen_names)]
+	gen_names = gen_names[!grepl("Abstract|Suite|Custom|RandCI$|NoParamBootstrap$", gen_names)]
 	gen_names = setdiff(gen_names, c(
 		"Inference",
 		"InferenceAsymp",
@@ -1148,7 +1154,17 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 		inference_banner("InferenceIncidWald")
 		run_inference_checks(InferenceIncidWald$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 		inference_banner("InferenceIncidCMH")
-		run_inference_checks(InferenceIncidCMH$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+		err_msg_cmh = tryCatch({
+			run_inference_checks(InferenceIncidCMH$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+			NULL
+		}, error = function(e) if (length(e$message) == 0L) "" else e$message)
+		if (!is.null(err_msg_cmh)) {
+			if (grepl("equal block sizes", err_msg_cmh, fixed = TRUE) || grepl("even allocation", err_msg_cmh, fixed = TRUE)) {
+				message("  Skipping InferenceIncidCMH: ", err_msg_cmh)
+			} else {
+				stop(err_msg_cmh)
+			}
+		}
 		inference_banner("InferenceIncidExtendedRobins")
 		err_msg_er = tryCatch({
 			run_inference_checks(InferenceIncidExtendedRobins$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)

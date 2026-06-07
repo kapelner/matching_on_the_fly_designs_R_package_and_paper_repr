@@ -137,18 +137,21 @@ DesignFixedBinaryMatch = R6::R6Class("DesignFixedBinaryMatch",
 		},
 			ensure_matching_structure_computed = function(){
 				n = self$get_n()
-				if (is.null(private$bms) && !is.null(private$X) && ncol(private$X) > 0){
-				X = private$X[1:n, , drop = FALSE]
-				private$bms = compute_binary_match_structure(X, mahal_match = private$mahal_match)
-				# Build pair-ID vector m where m[i] = pair index for subject i
-				m_vec = integer(n)
-				pairs = private$bms$indicies_pairs
-				for (i in seq_len(nrow(pairs))){
-					m_vec[pairs[i, 1]] = i
-					m_vec[pairs[i, 2]] = i
-				}
-				private$m = m_vec
-				private$reset_matching_caches()
+				if (is.null(private$bms)) {
+					if (is.null(private$X) || ncol(private$X) == 0) {
+						stop("no covariates provided to run the binary matching algorithm")
+					}
+					X = private$X[1:n, , drop = FALSE]
+					private$bms = compute_binary_match_structure(X, mahal_match = private$mahal_match)
+					# Build pair-ID vector m where m[i] = pair index for subject i
+					m_vec = integer(n)
+					pairs = private$bms$indicies_pairs
+					for (i in seq_len(nrow(pairs))){
+						m_vec[pairs[i, 1]] = i
+						m_vec[pairs[i, 2]] = i
+					}
+					private$m = m_vec
+					private$reset_matching_caches()
 				}
 				invisible(NULL)
 			},

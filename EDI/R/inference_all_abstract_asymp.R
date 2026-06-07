@@ -219,13 +219,22 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			
 			start_beta = private$get_fit_warm_start_for_length("beta", p)
 			start_params = private$get_fit_warm_start_for_length("params", p)
+			coef_start = start_beta %||% start_params
 			
 			# Tier 3 (Light) or very high dimensionality: Beta-only is safest and fastest.
 			# If p > 50, matrix copying overhead for Hessian usually negates its benefit.
 			if (tier == "light" || p > 50) {
 				return(list(
-					start_beta = start_beta,
-					warm_start_beta = start_beta,
+					start_beta = coef_start,
+					warm_start_beta = coef_start,
+					start_params = start_params
+				))
+			}
+
+			if (tier == "medium" && identical(private$active_resampling_operation, "bayesian_boot")) {
+				return(list(
+					start_beta = coef_start,
+					warm_start_beta = coef_start,
 					start_params = start_params
 				))
 			}
@@ -233,8 +242,8 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			# Tier 2 (Medium): Beta + Weights
 			if (tier == "medium") {
 				return(list(
-					start_beta = start_beta,
-					warm_start_beta = start_beta,
+					start_beta = coef_start,
+					warm_start_beta = coef_start,
 					start_params = start_params,
 					warm_start_weights = private$get_fit_warm_start_weights(private$n)
 				))
@@ -242,8 +251,8 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			
 			# Tier 1 (Heavy): Full Warm Start (Beta + Info)
 			return(list(
-				start_beta = start_beta,
-				warm_start_beta = start_beta,
+				start_beta = coef_start,
+				warm_start_beta = coef_start,
 				start_params = start_params,
 				warm_start_weights = private$get_fit_warm_start_weights(private$n),
 				warm_start_fisher_info = private$get_fit_warm_start_fisher(expected_fisher_dim)

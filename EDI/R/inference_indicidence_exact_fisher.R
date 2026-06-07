@@ -44,7 +44,6 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 		}
 	),
 	private = list(
-		has_match_structure = FALSE,
 		default_exact_type = "Fisher",
 		resolve_exact_type = function(type){
 			if (is.null(type)) type = private$default_exact_type
@@ -226,10 +225,8 @@ InferenceIncidExactFisher = R6::R6Class("InferenceIncidExactFisher",
 		},
 		format_exact_fisher_tables = function(table_list){
 			table_list = Filter(function(tab) sum(tab[1, ]) > 0L && sum(tab[2, ]) > 0L, table_list)
-			if (should_run_asserts()) {
-				if (length(table_list) == 0L) {
-					stop("Cannot compute Fisher exact inference: no informative strata are available.")
-				}
+			if (length(table_list) == 0L) {
+				stop("Cannot compute Fisher exact inference: no informative strata are available.")
 			}
 			if (length(table_list) == 1L) {
 				return(list(n_strata = 1L, table = table_list[[1]]))

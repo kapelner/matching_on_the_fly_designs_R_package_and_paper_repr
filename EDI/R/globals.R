@@ -60,7 +60,7 @@ stop_bayesian_bootstrap_for_bai = function(self_obj = NULL) {
 
 # Bayesian bootstrap helpers were removed to allow Jackknife support across all paths.
 
-weighted_ordinal_bootstrap_surrogate_fit = function(X, y, row_weights, method = c("logistic", "probit", "cauchit", "cloglog")) {
+weighted_ordinal_bootstrap_surrogate_fit = function(X, y, row_weights, method = c("logistic", "probit", "cauchit", "cloglog"), warm_start_params = NULL) {
   method = match.arg(method)
   X = as.matrix(X)
   y_num = as.integer(y)
@@ -77,19 +77,39 @@ weighted_ordinal_bootstrap_surrogate_fit = function(X, y, row_weights, method = 
     colnames(X_fit)[1L] = "treatment"
   }
   dat = as.data.frame(X_fit, check.names = FALSE)
-  dat$y_ord = ordered(y_fit, levels = sort(unique(y_fit)))
-  fit = tryCatch(
-    suppressWarnings(
-      MASS::polr(
-        y_ord ~ .,
-        data = dat,
-        weights = w_fit,
-        method = method,
-        Hess = FALSE
-      )
-    ),
-    error = function(e) NULL
-  )
+  y_levels = sort(unique(y_fit))
+  dat$y_ord = ordered(y_fit, levels = y_levels)
+  fit_polr = function(start = NULL) {
+    tryCatch(
+      suppressWarnings(
+        MASS::polr(
+          y_ord ~ .,
+          data = dat,
+          weights = w_fit,
+          method = method,
+          Hess = FALSE,
+          start = start
+        )
+      ),
+      error = function(e) NULL
+    )
+  }
+  polr_start = NULL
+  warm_start_params = as.numeric(warm_start_params)
+  n_coef = ncol(X_fit)
+  n_zeta = length(y_levels) - 1L
+  if (length(warm_start_params) == n_coef + n_zeta && all(is.finite(warm_start_params))) {
+    beta_start = utils::tail(warm_start_params, n_coef)
+    zeta_start = utils::head(warm_start_params, n_zeta)
+    if (n_zeta == 0L || all(diff(zeta_start) > 0)) {
+      polr_start = c(beta_start, zeta_start)
+      names(polr_start) = c(colnames(X_fit), paste0("zeta", seq_len(n_zeta)))
+    }
+  }
+  fit = fit_polr(polr_start)
+  if (is.null(fit) && !is.null(polr_start)) {
+    fit = fit_polr(NULL)
+  }
   coef_vec = tryCatch(stats::coef(fit), error = function(e) NULL)
   beta_hat = if (!is.null(coef_vec) && ("treatment" %in% names(coef_vec))) as.numeric(coef_vec[["treatment"]]) else NA_real_
   if (is.finite(beta_hat)) {
@@ -145,7 +165,7 @@ kk_pair_and_reservoir_bootstrap_weights = function(private_env, row_weights) {
   )
 }
 
-weighted_cox_bootstrap_surrogate_fit = function(time, dead, X, row_weights, strata = NULL, cluster = NULL) {
+weighted_cox_bootstrap_surrogate_fit = function(time, dead, X, row_weights, strata = NULL, cluster = NULL, warm_start_beta = NULL) {
   X = as.matrix(X)
   row_weights = as.numeric(row_weights)
   ok = is.finite(time) & is.finite(dead) & is.finite(row_weights) & row_weights > 0
@@ -168,23 +188,39 @@ weighted_cox_bootstrap_surrogate_fit = function(time, dead, X, row_weights, stra
     dat$.cluster__ = factor(as.integer(cluster[ok]))
     rhs_terms = c(rhs_terms, "cluster(.cluster__)")
   }
+  warm_start_beta = as.numeric(warm_start_beta)
+  cox_init = if (length(warm_start_beta) == ncol(X_fit) && all(is.finite(warm_start_beta))) {
+    warm_start_beta
+  } else {
+    NULL
+  }
+  fit_cox = function(init = NULL) {
+    tryCatch(
+      suppressWarnings(
+        survival::coxph(
+          stats::as.formula(paste0("survival::Surv(.time__, .dead__) ~ ", paste(rhs_terms, collapse = " + "))),
+          data = dat,
+          weights = .wgt__,
+          init = init
+        )
+      ),
+      error = function(e) NULL
+    )
+  }
   fit = tryCatch(
-    suppressWarnings(
-      survival::coxph(
-        stats::as.formula(paste0("survival::Surv(.time__, .dead__) ~ ", paste(rhs_terms, collapse = " + "))),
-        data = dat,
-        weights = .wgt__
-      )
-    ),
+    fit_cox(cox_init),
     error = function(e) NULL
   )
+  if (is.null(fit) && !is.null(cox_init)) {
+    fit = fit_cox(NULL)
+  }
   coef_vec = tryCatch(stats::coef(fit), error = function(e) NULL)
   beta_hat = if (!is.null(coef_vec) && ("treatment" %in% names(coef_vec))) as.numeric(coef_vec[["treatment"]]) else NA_real_
   if (!is.finite(beta_hat)) return(NULL)
   list(beta_hat = beta_hat, coefficients = coef_vec, fit = fit)
 }
 
-weighted_weibull_bootstrap_surrogate_fit = function(time, dead, X, row_weights, cluster = NULL) {
+weighted_weibull_bootstrap_surrogate_fit = function(time, dead, X, row_weights, cluster = NULL, warm_start_params = NULL) {
   X = as.matrix(X)
   row_weights = as.numeric(row_weights)
   ok = is.finite(time) & is.finite(dead) & is.finite(row_weights) & row_weights > 0
@@ -201,17 +237,30 @@ weighted_weibull_bootstrap_surrogate_fit = function(time, dead, X, row_weights, 
   if (!is.null(cluster)) {
     dat$.cluster__ = factor(as.integer(cluster[ok]))
   }
-  fit = tryCatch(
-    suppressWarnings(
-      survival::survreg(
-        stats::as.formula(paste0("survival::Surv(.time__, .dead__) ~ ", paste(rhs_terms, collapse = " + "))),
-        data = dat,
-        weights = .wgt__,
-        dist = "weibull"
-      )
-    ),
-    error = function(e) NULL
-  )
+  warm_start_params = as.numeric(warm_start_params)
+  survreg_init = NULL
+  if (length(warm_start_params) >= ncol(X_fit) + 1L && all(is.finite(warm_start_params))) {
+    survreg_init = utils::head(warm_start_params, ncol(X_fit) + 1L)
+    names(survreg_init) = c("(Intercept)", colnames(X_fit))
+  }
+  fit_survreg = function(init = NULL) {
+    tryCatch(
+      suppressWarnings(
+        survival::survreg(
+          stats::as.formula(paste0("survival::Surv(.time__, .dead__) ~ ", paste(rhs_terms, collapse = " + "))),
+          data = dat,
+          weights = .wgt__,
+          dist = "weibull",
+          init = init
+        )
+      ),
+      error = function(e) NULL
+    )
+  }
+  fit = fit_survreg(survreg_init)
+  if (is.null(fit) && !is.null(survreg_init)) {
+    fit = fit_survreg(NULL)
+  }
   coef_vec = tryCatch(stats::coef(fit), error = function(e) NULL)
   beta_hat = if (!is.null(coef_vec) && ("treatment" %in% names(coef_vec))) as.numeric(coef_vec[["treatment"]]) else NA_real_
   if (!is.finite(beta_hat)) return(NULL)
@@ -552,22 +601,34 @@ get_warm_start_dispatch_policy = function() {
     default = TRUE,
     jackknife = list(
       inference_class_overrides = c(
-        "^InferenceSurvivalKKLWACoxPHOneLik$" = FALSE,
-        "^InferenceSurvivalKKStratCoxPHOneLik$" = FALSE,
-        "^InferenceSurvivalKKClaytonCopulaOneLik$" = FALSE
+        "^InferenceAllKKWilcoxIVWC$" = FALSE,
+        "^InferenceCountNegBin$" = FALSE,
+        "^InferenceCountZeroInflatedNegBin$" = FALSE,
+        "^InferenceSurvivalCoxPHRegr$" = FALSE,
+        "^InferenceSurvivalStratCoxPHRegr$" = FALSE
       )
     ),
     non_param_boot = list(
-      inference_class_overrides = character(0)
+      inference_class_overrides = c(
+        "^InferenceCountNegBin$" = FALSE,
+        "^InferenceSurvivalCoxPHRegr$" = FALSE
+      )
     ),
     bayesian_boot = list(
-      inference_class_overrides = character(0)
+      inference_class_overrides = c(
+        "^InferenceCountHurdleNegBin$" = FALSE,
+        "^InferenceCountNegBin$" = FALSE,
+        "^InferenceSurvivalCoxPHRegr$" = FALSE,
+        "^InferenceSurvivalStratCoxPHRegr$" = FALSE
+      )
     ),
     param_boot = list(
       inference_class_overrides = character(0)
     ),
     rand = list(
-      inference_class_overrides = character(0)
+      inference_class_overrides = c(
+        "^InferenceContinKKOLSIVWC$" = FALSE
+      )
     )
   )
 }

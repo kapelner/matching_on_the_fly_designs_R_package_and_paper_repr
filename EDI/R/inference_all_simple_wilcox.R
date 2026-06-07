@@ -167,6 +167,9 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		},
 		supports_lik_ratio_param_bootstrap = function() TRUE,
 		supports_likelihood_tests = function() TRUE,
+		get_supported_testing_types_impl = function(){
+			c("wald", "lik_ratio")
+		},
 		simulate_under_lik_null = function(spec, delta, null_fit){
 			b_null = as.numeric(null_fit$b)
 			vt = spec$full_fit$vt; vc = spec$full_fit$vc
