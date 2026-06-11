@@ -1,4 +1,5 @@
-run_likelihood_method_smoke_suite <- function(){
+run_likelihood_method_smoke_suite <- function(response_type_filter = NA_character_){
+	should_run = function(response_type) is.na(response_type_filter) || response_type == response_type_filter
 	old_seed = if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
 		get(".Random.seed", envir = .GlobalEnv)
 	} else {
@@ -218,81 +219,89 @@ run_likelihood_method_smoke_suite <- function(){
 	}
 
 	results = list()
-	results$count_poisson = call_all_methods(
-		InferenceCountPoisson$new(make_fixed_count_design(), model_formula = ~ x1, verbose = FALSE),
-		"InferenceCountPoisson"
-	)
-	results$count_robust_poisson = call_all_methods(
-		InferenceCountRobustPoisson$new(make_fixed_count_design(), model_formula = ~ x1, verbose = FALSE),
-		"InferenceCountRobustPoisson"
-	)
-	results$count_quasi_poisson = call_all_methods(
-		InferenceCountQuasiPoisson$new(make_fixed_count_design(), model_formula = ~ x1, verbose = FALSE),
-		"InferenceCountQuasiPoisson"
-	)
-	results$count_zip = call_all_methods(
-		InferenceCountZeroInflatedPoisson$new(make_fixed_count_design(), model_formula = ~ x1, use_rcpp = TRUE, verbose = FALSE, optimization_alg = "lbfgs"),
-		"InferenceCountZeroInflatedPoisson"
-	)
-	results$count_hurdle_poisson = call_all_methods(
-		InferenceCountHurdlePoisson$new(make_fixed_count_design(), model_formula = ~ x1, use_rcpp = TRUE, verbose = FALSE, optimization_alg = "lbfgs"),
-		"InferenceCountHurdlePoisson"
-	)
-	results$count_hurdle_negbin = call_all_methods(
-		InferenceCountHurdleNegBin$new(make_fixed_count_design(), model_formula = ~ x1, verbose = FALSE),
-		"InferenceCountHurdleNegBin"
-	)
-	results$incidence_modified_poisson = call_all_methods(
-		InferenceIncidModifiedPoisson$new(make_fixed_incidence_design(), model_formula = ~ x1, verbose = FALSE),
-		"InferenceIncidModifiedPoisson"
-	)
-	results$incidence_kk_modified_poisson = call_all_methods(
-		InferenceIncidKKModifiedPoisson$new(make_kk_incidence_design(), model_formula = ~ x1, verbose = FALSE),
-		"InferenceIncidKKModifiedPoisson"
-	)
-	results$ordinal_prop_odds = call_all_methods(
-		InferenceOrdinalPropOddsRegr$new(make_fixed_ordinal_design(), model_formula = ~ x1 + x2, verbose = FALSE),
-		"InferenceOrdinalPropOddsRegr"
-	)
-	results$ordinal_ordered_probit = call_all_methods(
-		InferenceOrdinalOrderedProbitRegr$new(make_fixed_ordinal_design(), model_formula = ~ x1 + x2, verbose = FALSE),
-		"InferenceOrdinalOrderedProbitRegr"
-	)
-	results$ordinal_cauchit = call_all_methods(
-		InferenceOrdinalCauchitRegr$new(make_fixed_ordinal_design(), model_formula = ~ x1 + x2, verbose = FALSE),
-		"InferenceOrdinalCauchitRegr"
-	)
-	results$ordinal_cloglog = call_all_methods(
-		InferenceOrdinalCloglogRegr$new(make_fixed_ordinal_design(), model_formula = ~ x1 + x2, verbose = FALSE),
-		"InferenceOrdinalCloglogRegr"
-	)
-	results$survival_cox = call_all_methods(
-		InferenceSurvivalCoxPHRegr$new(make_fixed_survival_design(), model_formula = ~ x1, use_rcpp = TRUE, verbose = FALSE),
-		"InferenceSurvivalCoxPHRegr"
-	)
-	results$survival_weibull = call_all_methods(
-		InferenceSurvivalWeibullRegr$new(make_fixed_survival_design(), model_formula = ~ x1, verbose = FALSE),
-		"InferenceSurvivalWeibullRegr"
-	)
-	results$survival_strat_cox = call_all_methods(
-		InferenceSurvivalStratCoxPHRegr$new(make_fixed_survival_design(), model_formula = ~ x1, use_rcpp = TRUE, verbose = FALSE),
-		"InferenceSurvivalStratCoxPHRegr"
-	)
-	results$kk_survival_strat_cox = call_all_methods(
-		InferenceSurvivalKKStratCoxPHOneLik$new(make_kk_survival_design(), model_formula = ~ x1, verbose = FALSE),
-		"InferenceSurvivalKKStratCoxPHOneLik"
-	)
-	results$kk_survival_lwa_cox = call_all_methods(
-		InferenceSurvivalKKLWACoxPHOneLik$new(make_kk_survival_design(), model_formula = ~ x1, verbose = FALSE),
-		"InferenceSurvivalKKLWACoxPHOneLik"
-	)
-	results$kk_survival_clayton = call_all_methods(
-		InferenceSurvivalKKClaytonCopulaOneLik$new(make_kk_survival_design(n = 64L), model_formula = ~ x1, verbose = FALSE),
-		"InferenceSurvivalKKClaytonCopulaOneLik"
-	)
-	results$ordinal_kk_glmm = call_all_methods(
-		InferenceOrdinalKKGLMM$new(make_kk_ordinal_design(), model_formula = ~ x1, use_rcpp = TRUE, verbose = FALSE),
-		"InferenceOrdinalKKGLMM"
-	)
+	if (should_run("count")) {
+		results$count_poisson = call_all_methods(
+			InferenceCountPoisson$new(make_fixed_count_design(), model_formula = ~ x1, verbose = FALSE),
+			"InferenceCountPoisson"
+		)
+		results$count_robust_poisson = call_all_methods(
+			InferenceCountRobustPoisson$new(make_fixed_count_design(), model_formula = ~ x1, verbose = FALSE),
+			"InferenceCountRobustPoisson"
+		)
+		results$count_quasi_poisson = call_all_methods(
+			InferenceCountQuasiPoisson$new(make_fixed_count_design(), model_formula = ~ x1, verbose = FALSE),
+			"InferenceCountQuasiPoisson"
+		)
+		results$count_zip = call_all_methods(
+			InferenceCountZeroInflatedPoisson$new(make_fixed_count_design(), model_formula = ~ x1, use_rcpp = TRUE, verbose = FALSE, optimization_alg = "lbfgs"),
+			"InferenceCountZeroInflatedPoisson"
+		)
+		results$count_hurdle_poisson = call_all_methods(
+			InferenceCountHurdlePoisson$new(make_fixed_count_design(), model_formula = ~ x1, use_rcpp = TRUE, verbose = FALSE, optimization_alg = "lbfgs"),
+			"InferenceCountHurdlePoisson"
+		)
+		results$count_hurdle_negbin = call_all_methods(
+			InferenceCountHurdleNegBin$new(make_fixed_count_design(), model_formula = ~ x1, verbose = FALSE),
+			"InferenceCountHurdleNegBin"
+		)
+	}
+	if (should_run("incidence")) {
+		results$incidence_modified_poisson = call_all_methods(
+			InferenceIncidModifiedPoisson$new(make_fixed_incidence_design(), model_formula = ~ x1, verbose = FALSE),
+			"InferenceIncidModifiedPoisson"
+		)
+		results$incidence_kk_modified_poisson = call_all_methods(
+			InferenceIncidKKModifiedPoisson$new(make_kk_incidence_design(), model_formula = ~ x1, verbose = FALSE),
+			"InferenceIncidKKModifiedPoisson"
+		)
+	}
+	if (should_run("ordinal")) {
+		results$ordinal_prop_odds = call_all_methods(
+			InferenceOrdinalPropOddsRegr$new(make_fixed_ordinal_design(), model_formula = ~ x1 + x2, verbose = FALSE),
+			"InferenceOrdinalPropOddsRegr"
+		)
+		results$ordinal_ordered_probit = call_all_methods(
+			InferenceOrdinalOrderedProbitRegr$new(make_fixed_ordinal_design(), model_formula = ~ x1 + x2, verbose = FALSE),
+			"InferenceOrdinalOrderedProbitRegr"
+		)
+		results$ordinal_cauchit = call_all_methods(
+			InferenceOrdinalCauchitRegr$new(make_fixed_ordinal_design(), model_formula = ~ x1 + x2, verbose = FALSE),
+			"InferenceOrdinalCauchitRegr"
+		)
+		results$ordinal_cloglog = call_all_methods(
+			InferenceOrdinalCloglogRegr$new(make_fixed_ordinal_design(), model_formula = ~ x1 + x2, verbose = FALSE),
+			"InferenceOrdinalCloglogRegr"
+		)
+		results$ordinal_kk_glmm = call_all_methods(
+			InferenceOrdinalKKGLMM$new(make_kk_ordinal_design(), model_formula = ~ x1, use_rcpp = TRUE, verbose = FALSE),
+			"InferenceOrdinalKKGLMM"
+		)
+	}
+	if (should_run("survival")) {
+		results$survival_cox = call_all_methods(
+			InferenceSurvivalCoxPHRegr$new(make_fixed_survival_design(), model_formula = ~ x1, use_rcpp = TRUE, verbose = FALSE),
+			"InferenceSurvivalCoxPHRegr"
+		)
+		results$survival_weibull = call_all_methods(
+			InferenceSurvivalWeibullRegr$new(make_fixed_survival_design(), model_formula = ~ x1, verbose = FALSE),
+			"InferenceSurvivalWeibullRegr"
+		)
+		results$survival_strat_cox = call_all_methods(
+			InferenceSurvivalStratCoxPHRegr$new(make_fixed_survival_design(), model_formula = ~ x1, use_rcpp = TRUE, verbose = FALSE),
+			"InferenceSurvivalStratCoxPHRegr"
+		)
+		results$kk_survival_strat_cox = call_all_methods(
+			InferenceSurvivalKKStratCoxPHOneLik$new(make_kk_survival_design(), model_formula = ~ x1, verbose = FALSE),
+			"InferenceSurvivalKKStratCoxPHOneLik"
+		)
+		results$kk_survival_lwa_cox = call_all_methods(
+			InferenceSurvivalKKLWACoxPHOneLik$new(make_kk_survival_design(), model_formula = ~ x1, verbose = FALSE),
+			"InferenceSurvivalKKLWACoxPHOneLik"
+		)
+		results$kk_survival_clayton = call_all_methods(
+			InferenceSurvivalKKClaytonCopulaOneLik$new(make_kk_survival_design(n = 64L), model_formula = ~ x1, verbose = FALSE),
+			"InferenceSurvivalKKClaytonCopulaOneLik"
+		)
+	}
 	invisible(results)
 }

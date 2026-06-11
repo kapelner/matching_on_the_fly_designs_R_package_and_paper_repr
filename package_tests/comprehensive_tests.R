@@ -46,7 +46,7 @@ if (!is.na(DESIGN_TYPE_FILTER) && !(DESIGN_TYPE_FILTER %in% ALL_DESIGN_TYPES)) {
 }
 set_num_cores(NUM_CORES)
 toggle_asserts(FALSE)
-if (is.na(RESPONSE_TYPE_FILTER)) run_likelihood_method_smoke_suite()
+run_likelihood_method_smoke_suite(RESPONSE_TYPE_FILTER)
 
 prob_censoring = 0.15
 r = 351
