@@ -61,12 +61,10 @@ InferenceContinLin = R6::R6Class("InferenceContinLin",
 				private$cached_values$df = NA_real_
 				return(NA_real_)
 			}
+			w_eff = as.numeric(row_weights[keep])
+			X_sub = X_fit[keep, , drop = FALSE]
 			fit = tryCatch(
-				stats::lm.wfit(
-					x = X_fit[keep, , drop = FALSE],
-					y = as.numeric(private$y[keep]),
-					w = as.numeric(row_weights[keep])
-				),
+				stats::lm.wfit(x = X_sub, y = as.numeric(private$y[keep]), w = w_eff),
 				error = function(e) NULL
 			)
 			coef_hat = if (!is.null(fit)) as.numeric(stats::coef(fit)) else numeric(0)
@@ -77,8 +75,19 @@ InferenceContinLin = R6::R6Class("InferenceContinLin",
 				return(NA_real_)
 			}
 			private$cached_values$beta_hat_T = coef_hat[j_treat]
-			private$cached_values$s_beta_hat_T = NA_real_
-			private$cached_values$df = NA_real_
+			if (!estimate_only) {
+				df = sum(keep) - length(coef_hat)
+				se = if (df > 0L) {
+					sigma2_w = sum(w_eff * fit$residuals^2) / df
+					var_j = tryCatch(solve(crossprod(X_sub * sqrt(w_eff)))[j_treat, j_treat], error = function(e) NA_real_)
+					if (is.finite(var_j) && var_j > 0) sqrt(sigma2_w * var_j) else NA_real_
+				} else NA_real_
+				private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+				private$cached_values$df = df
+			} else {
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+			}
 			private$cached_values$beta_hat_T
 		},
 		#' @description Computes a 1 - \code{alpha} confidence interval using HC2 robust standard error.
@@ -238,18 +247,19 @@ InferenceContinLin = R6::R6Class("InferenceContinLin",
 			y_orig = as.numeric(private$y)
 			X_orig = spec$X
 			rss = sum((y_orig - as.numeric(X_orig %*% as.numeric(spec$full_fit$b)))^2)
-			sigma = sqrt(rss / (nrow(X_orig) - ncol(X_orig)))
-			
+			sig2 = rss / (nrow(X_orig) - ncol(X_orig))
+			sigma = sqrt(sig2)
+
 			mu = as.numeric(spec$X %*% b_null)
 			y_sim = mu + rnorm(length(mu), mean = 0, sd = sigma)
-			
+
 			X_fit = spec$X
 			j = spec$j
-			
+
 			# full fit for simulated data
 			mod_boot = stats::lm.fit(X_fit, y_sim)
 			full_fit_boot = list(b = as.numeric(mod_boot$coefficients))
-			
+
 			list(
 				full_fit = full_fit_boot,
 				fit_null = function(d, start = NULL){
@@ -261,8 +271,8 @@ InferenceContinLin = R6::R6Class("InferenceContinLin",
 					list(b = b_full, rss = sum((y_null - as.numeric(X_fit[, -j, drop = FALSE] %*% res$coefficients))^2))
 				},
 				neg_loglik = function(fit){
-					if (!is.null(fit$rss)) return(fit$rss)
-					sum((y_sim - as.numeric(X_fit %*% as.numeric(fit$b)))^2)
+					rss_fit = if (!is.null(fit$rss)) fit$rss else sum((y_sim - as.numeric(X_fit %*% as.numeric(fit$b)))^2)
+					0.5 * rss_fit / sig2
 				}
 			)
 		},
@@ -273,6 +283,9 @@ InferenceContinLin = R6::R6Class("InferenceContinLin",
 			X_fit = ctx$X
 			y = as.numeric(private$y)
 			j_treat = as.integer(ctx$j_treat)
+			b_full = as.numeric(private$cached_mod$b)
+			rss_full = sum((y - X_fit %*% b_full)^2)
+			sig2 = rss_full / (length(y) - ncol(X_fit))
 			list(
 				X = X_fit,
 				y = y,
@@ -286,9 +299,14 @@ InferenceContinLin = R6::R6Class("InferenceContinLin",
 					b_full[-j_treat] = as.numeric(res$coefficients)
 					list(b = b_full, rss = sum((y_null - as.numeric(X_fit[, -j_treat, drop = FALSE] %*% res$coefficients))^2))
 				},
+				score = function(fit){
+					as.numeric(t(X_fit) %*% (y - X_fit %*% as.numeric(fit$b)) / sig2)
+				},
+				observed_information = function(fit) (t(X_fit) %*% X_fit) / sig2,
+				fisher_information   = function(fit) (t(X_fit) %*% X_fit) / sig2,
 				neg_loglik = function(fit){
-					if (!is.null(fit$rss)) return(fit$rss)
-					sum((y - as.numeric(X_fit %*% as.numeric(fit$b)))^2)
+					if (!is.null(fit$rss)) return(0.5 * fit$rss / sig2)
+					0.5 * sum((y - as.numeric(X_fit %*% as.numeric(fit$b)))^2) / sig2
 				}
 			)
 		}

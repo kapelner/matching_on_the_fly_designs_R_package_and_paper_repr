@@ -159,10 +159,11 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 			private$cached_values$beta_hat_T   = if (length(beta) == 1L && is.finite(beta)) beta else NA_real_
 			private$cached_values$s_beta_hat_T = if (length(se)   == 1L && is.finite(se) && se > 0) se else NA_real_
 
+			beta_hl = private$cached_values$beta_hat_T
 			private$cached_values$likelihood_test_context = list(
 				X = cbind(1, private$w),
 				j = 2L,
-				full_fit = list(b = c(mean(yC), private$cached_values$beta_hat_T), vt = var(yT), vc = var(yC))
+				full_fit = list(b = c(mean(private$y - beta_hl * private$w), beta_hl), vt = var(yT), vc = var(yC))
 			)
 		},
 		supports_lik_ratio_param_bootstrap = function() TRUE,
@@ -178,8 +179,9 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 			y_sim[w == 1] = b_null[1] + b_null[2] + rnorm(sum(w == 1), 0, sqrt(vt))
 			y_sim[w == 0] = b_null[1] + rnorm(sum(w == 0), 0, sqrt(vc))
 			
+			hl_sim = private$hl_point_estimate(y_sim, w)
 			list(
-				full_fit = list(b = c(mean(y_sim[w==0]), private$hl_point_estimate(y_sim, w)), vt = var(y_sim[w==1]), vc = var(y_sim[w==0])),
+				full_fit = list(b = c(mean(y_sim - hl_sim * w), hl_sim), vt = var(y_sim[w==1]), vc = var(y_sim[w==0])),
 				fit_null = function(d, start = NULL){
 					m_joint = mean(y_sim - w * d)
 					list(b = c(m_joint, d), vt = var(y_sim[w==1]), vc = var(y_sim[w==0]))
