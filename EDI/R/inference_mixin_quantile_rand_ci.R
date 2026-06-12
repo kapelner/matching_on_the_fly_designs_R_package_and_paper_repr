@@ -19,7 +19,7 @@ InferenceMixinQuantileRandCI = list(
 		#' @param show_progress  		Ignored.
 		#' @param ci_search_control Ignored for this Zhang-based CI implementation.
 		#' @return 	A length-2 numeric vector giving the lower and upper CI boundary.
-		compute_rand_confidence_interval = function(alpha = 0.05, r = 499, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
+		compute_rand_confidence_interval = function(alpha = 0.05, r = 501, pval_epsilon = 0.005, show_progress = TRUE, ci_search_control = NULL){
 			if (should_run_asserts()) {
 				if (!is.null(private[["custom_randomization_statistic_function"]])){
 					stop("Custom randomization statistic functions are not supported for the Zhang combined CI method used by ", class(self)[1], ". The method uses its own fixed QR-based test statistics.")

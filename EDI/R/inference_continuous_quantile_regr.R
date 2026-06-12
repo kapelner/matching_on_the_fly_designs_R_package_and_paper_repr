@@ -92,9 +92,16 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 				return(NA_real_)
 			}
 			private$cached_values$beta_hat_T = as.numeric(coef_vec[j_treat])
-			private$cached_values$s_beta_hat_T = NA_real_
-			private$cached_values$df = NA_real_
 			private$cached_values$full_coefficients = stats::setNames(coef_vec, colnames(X_fit))
+			if (!estimate_only) {
+				coef_name = if (!is.null(colnames(X_fit)) && length(colnames(X_fit)) >= j_treat) colnames(X_fit)[j_treat] else NA_character_
+				se = if (!is.null(fit) && !is.na(coef_name)) .extract_se_from_rq_fit(fit, coef_name) else NA_real_
+				private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+				private$cached_values$df = nrow(X_fit) - ncol(X_fit)
+			} else {
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+			}
 			private$cached_values$beta_hat_T
 		},
 		#' @description Computes an approximate confidence interval for the treatment effect.

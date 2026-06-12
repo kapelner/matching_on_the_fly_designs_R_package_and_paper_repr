@@ -67,14 +67,10 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 				private$cached_values$df = NA_real_
 				return(NA_real_)
 			}
-			# For weighted bootstrap, we don't have a fast C++ path yet that handles weights properly
-			# but we can at least avoid lm.wfit overhead if it's small.
+			w_eff = as.numeric(row_weights[keep])
+			X_sub = X_full[keep, , drop = FALSE]
 			fit = tryCatch(
-				stats::lm.wfit(
-					x = X_full[keep, , drop = FALSE],
-					y = as.numeric(private$y[keep]),
-					w = as.numeric(row_weights[keep])
-				),
+				stats::lm.wfit(x = X_sub, y = as.numeric(private$y[keep]), w = w_eff),
 				error = function(e) NULL
 			)
 			coef_hat = if (!is.null(fit)) as.numeric(stats::coef(fit)) else numeric(0)
@@ -85,8 +81,19 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 				return(NA_real_)
 			}
 			private$cached_values$beta_hat_T = coef_hat[2L]
-			private$cached_values$s_beta_hat_T = NA_real_
-			private$cached_values$df = NA_real_
+			if (!estimate_only) {
+				df = sum(keep) - length(coef_hat)
+				se = if (df > 0L) {
+					sigma2_w = sum(w_eff * fit$residuals^2) / df
+					var_j = tryCatch(solve(crossprod(X_sub * sqrt(w_eff)))[2L, 2L], error = function(e) NA_real_)
+					if (is.finite(var_j) && var_j > 0) sqrt(sigma2_w * var_j) else NA_real_
+				} else NA_real_
+				private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+				private$cached_values$df = df
+			} else {
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+			}
 			private$cached_values$beta_hat_T
 		},
 		#' @description Computes an approximate confidence interval for the treatment effect.
@@ -200,28 +207,20 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 			
 			full_fit_boot = fast_ols_cpp(X_fit, y_sim)
 			
+			sig2 = spec$full_fit$sigma2_hat
 			list(
 				full_fit = full_fit_boot,
 				fit_null = function(d, start = NULL){
-					# OLS null fit is just OLS on (y - X_j * d) with X_j dropped
 					y_null = y_sim - as.numeric(X_fit[, j] * d)
 					res = fast_ols_cpp(X_fit[, -j, drop = FALSE], y_null)
-					# Reconstruct b for full X
 					b_full = numeric(ncol(X_fit))
 					b_full[j] = d
 					b_full[-j] = as.numeric(res$b)
 					list(b = b_full, rss = sum((y_null - as.numeric(X_fit[, -j, drop = FALSE] %*% res$b))^2))
 				},
 				neg_loglik = function(fit){
-					# For OLS, neg loglik proportional to RSS
-					if (is.null(fit$rss)) {
-						# full fit from fast_ols_cpp has XtX etc but not rss directly in old versions?
-						# fast_ols_cpp usually returns b, XtX, Xty
-						fit_b = as.numeric(fit$b)
-						rss_val = sum((y_sim - as.numeric(X_fit %*% fit_b))^2)
-						return(rss_val)
-					}
-					fit$rss
+					rss = if (!is.null(fit$rss)) fit$rss else sum((y_sim - as.numeric(X_fit %*% as.numeric(fit$b)))^2)
+					0.5 * rss / sig2
 				}
 			)
 		},
@@ -232,6 +231,7 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 			X_fit = ctx$X
 			y = as.numeric(private$y)
 			j_treat = as.integer(ctx$j_treat)
+			sig2 = private$cached_mod$sigma2_hat
 			list(
 				X = X_fit,
 				y = y,
@@ -245,9 +245,14 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 					b_full[-j_treat] = as.numeric(res$b)
 					list(b = b_full, rss = sum((y_null - as.numeric(X_fit[, -j_treat, drop = FALSE] %*% res$b))^2))
 				},
+				score = function(fit){
+					as.numeric(t(X_fit) %*% (y - X_fit %*% as.numeric(fit$b)) / sig2)
+				},
+				observed_information = function(fit) (t(X_fit) %*% X_fit) / sig2,
+				fisher_information   = function(fit) (t(X_fit) %*% X_fit) / sig2,
 				neg_loglik = function(fit){
-					if (!is.null(fit$rss)) return(fit$rss)
-					sum((y - as.numeric(X_fit %*% as.numeric(fit$b)))^2)
+					if (!is.null(fit$rss)) return(0.5 * fit$rss / sig2)
+					0.5 * sum((y - as.numeric(X_fit %*% as.numeric(fit$b)))^2) / sig2
 				}
 			)
 		}
