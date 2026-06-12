@@ -522,9 +522,10 @@ supports_direct_testing_type = function(testing_type){
 			NULL
 		}
 		if (identical(stage, "estimate")) return(TRUE)
-		if (identical(stage, "se") && identical(label, "compute_estimate") &&
-		    !is.null(result) && !has_invalid_numeric(result)) {
-			return(FALSE)
+		if (identical(stage, "se")) {
+			# Only studentized variants genuinely require per-replicate SE; block those.
+			# Everything else runs naturally and produces its own result or NA.
+			return(grepl("studentized", label, fixed = TRUE))
 		}
 		TRUE
 	}

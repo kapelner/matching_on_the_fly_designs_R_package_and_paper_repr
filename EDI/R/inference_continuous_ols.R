@@ -134,6 +134,14 @@ InferenceContinOLS = R6::R6Class("InferenceContinOLS",
 	),
 	private = list(
 		max_resample_attempts = NULL,
+		get_standard_error = function(){
+			if (is.null(private$cached_values$s_beta_hat_T)) private$shared()
+			private$cached_values$s_beta_hat_T
+		},
+		get_degrees_of_freedom = function(){
+			if (is.null(private$cached_values$df)) private$shared()
+			private$cached_values$df
+		},
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))

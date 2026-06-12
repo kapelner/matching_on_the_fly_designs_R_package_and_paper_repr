@@ -93,16 +93,36 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 			if (!any(keep)) {
 				private$cached_values$beta_hat_T = NA_real_
 				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
 				return(NA_real_)
 			}
-			y_w = private$y[keep]
-			w_w = private$w[keep]
+			y_w  = private$y[keep]
+			w_w  = private$w[keep]
 			rw_w = row_weights[keep]
-			
-			mean_t = sum(y_w[w_w == 1] * rw_w[w_w == 1]) / sum(rw_w[w_w == 1])
-			mean_c = sum(y_w[w_w == 0] * rw_w[w_w == 0]) / sum(rw_w[w_w == 0])
-			
-			mean_t - mean_c
+			rw_T = rw_w[w_w == 1]; y_T = y_w[w_w == 1]
+			rw_C = rw_w[w_w == 0]; y_C = y_w[w_w == 0]
+			mean_t = sum(y_T * rw_T) / sum(rw_T)
+			mean_c = sum(y_C * rw_C) / sum(rw_C)
+			private$cached_values$beta_hat_T = mean_t - mean_c
+			if (!estimate_only) {
+				if (length(y_T) >= 2L && length(y_C) >= 2L) {
+					n_eff_T = sum(rw_T)^2 / sum(rw_T^2)
+					n_eff_C = sum(rw_C)^2 / sum(rw_C^2)
+					s_T_sq  = sum(rw_T * (y_T - mean_t)^2) / sum(rw_T) / (n_eff_T - 1)
+					s_C_sq  = sum(rw_C * (y_C - mean_c)^2) / sum(rw_C) / (n_eff_C - 1)
+					se = sqrt(s_T_sq + s_C_sq)
+					df = (s_T_sq + s_C_sq)^2 / (s_T_sq^2 / (n_eff_T - 1) + s_C_sq^2 / (n_eff_C - 1))
+					private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+					private$cached_values$df = if (is.finite(df) && df > 0) df else NA_real_
+				} else {
+					private$cached_values$s_beta_hat_T = NA_real_
+					private$cached_values$df = NA_real_
+				}
+			} else {
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+			}
+			private$cached_values$beta_hat_T
 		}
 	),
 	private = list(
