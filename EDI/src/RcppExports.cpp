@@ -2250,8 +2250,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fast_poisson_glmm_cpp
-SEXP fast_poisson_glmm_cpp(const NumericMatrix& X_r, const NumericVector& y_r, const IntegerVector& group_id_r, int j_T, Nullable<NumericVector> warm_start_params, bool smart_cold_start, bool estimate_only, int n_gh, int maxit, double eps_g, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info);
-RcppExport SEXP _EDI_fast_poisson_glmm_cpp(SEXP X_rSEXP, SEXP y_rSEXP, SEXP group_id_rSEXP, SEXP j_TSEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP estimate_onlySEXP, SEXP n_ghSEXP, SEXP maxitSEXP, SEXP eps_gSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP) {
+SEXP fast_poisson_glmm_cpp(const NumericMatrix& X_r, const NumericVector& y_r, const IntegerVector& group_id_r, int j_T, Nullable<NumericVector> warm_start_params, bool smart_cold_start, bool estimate_only, int n_gh, int maxit, double eps_g, Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx, Rcpp::Nullable<Rcpp::NumericVector> fixed_values, std::string optimization_alg, Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info, Rcpp::Nullable<Rcpp::NumericVector> row_weights);
+RcppExport SEXP _EDI_fast_poisson_glmm_cpp(SEXP X_rSEXP, SEXP y_rSEXP, SEXP group_id_rSEXP, SEXP j_TSEXP, SEXP warm_start_paramsSEXP, SEXP smart_cold_startSEXP, SEXP estimate_onlySEXP, SEXP n_ghSEXP, SEXP maxitSEXP, SEXP eps_gSEXP, SEXP fixed_idxSEXP, SEXP fixed_valuesSEXP, SEXP optimization_algSEXP, SEXP warm_start_fisher_infoSEXP, SEXP row_weightsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -2269,7 +2269,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type fixed_values(fixed_valuesSEXP);
     Rcpp::traits::input_parameter< std::string >::type optimization_alg(optimization_algSEXP);
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type warm_start_fisher_info(warm_start_fisher_infoSEXP);
-    rcpp_result_gen = Rcpp::wrap(fast_poisson_glmm_cpp(X_r, y_r, group_id_r, j_T, warm_start_params, smart_cold_start, estimate_only, n_gh, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type row_weights(row_weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_poisson_glmm_cpp(X_r, y_r, group_id_r, j_T, warm_start_params, smart_cold_start, estimate_only, n_gh, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, row_weights));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -4812,7 +4813,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_ordinal_gcomp_post_fit_cpp", (DL_FUNC) &_EDI_ordinal_gcomp_post_fit_cpp, 5},
     {"_EDI_expand_continuation_ratio_data_cpp", (DL_FUNC) &_EDI_expand_continuation_ratio_data_cpp, 4},
     {"_EDI_expand_adjacent_category_data_cpp", (DL_FUNC) &_EDI_expand_adjacent_category_data_cpp, 4},
-    {"_EDI_fast_poisson_glmm_cpp", (DL_FUNC) &_EDI_fast_poisson_glmm_cpp, 14},
+    {"_EDI_fast_poisson_glmm_cpp", (DL_FUNC) &_EDI_fast_poisson_glmm_cpp, 15},
     {"_EDI_get_poisson_glmm_score_cpp", (DL_FUNC) &_EDI_get_poisson_glmm_score_cpp, 5},
     {"_EDI_get_poisson_glmm_hessian_cpp", (DL_FUNC) &_EDI_get_poisson_glmm_hessian_cpp, 5},
     {"_EDI_get_poisson_regression_score_cpp", (DL_FUNC) &_EDI_get_poisson_regression_score_cpp, 3},

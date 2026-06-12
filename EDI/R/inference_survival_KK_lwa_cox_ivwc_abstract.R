@@ -213,7 +213,7 @@ InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 				y = private$y[i_matched],
 				dead = private$dead[i_matched],
 				w = private$w[i_matched],
-				X = private$get_X()[i_matched, drop = FALSE],
+				X = private$get_X()[i_matched, , drop = FALSE],
 				cluster = m_vec[i_matched]
 			)
 			if (is.null(fit)) return(invisible(NULL))
@@ -230,7 +230,7 @@ InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 				y = private$y[i_reservoir],
 				dead = private$dead[i_reservoir],
 				w = private$w[i_reservoir],
-				X = private$get_X()[i_reservoir, drop = FALSE]
+				X = private$get_X()[i_reservoir, , drop = FALSE]
 			)
 			if (is.null(fit)) return(invisible(NULL))
 			private$cached_values$beta_T_reservoir = fit$beta

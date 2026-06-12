@@ -205,7 +205,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			formula_str = "survival::Surv(y, dead) ~ w"
 			mod = NULL
 			if (ncol(as.matrix(private$X)) > 0){
-				X_m = as.matrix(private$get_X()[i_matched, drop = FALSE])
+				X_m = as.matrix(private$get_X()[i_matched, , drop = FALSE])
 				for (X_candidate in private$aft_design_candidates(w_m, X_m, cache_key = "matched")){
 					dat_try = dat
 					formula_try = formula_str

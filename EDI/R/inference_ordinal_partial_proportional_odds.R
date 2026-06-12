@@ -6,7 +6,7 @@
 #' package's fast Rcpp proportional-odds solver before falling back to the
 #' general R fitters.
 #'
-#' @keywords internal
+#' @export
 InferenceOrdinalPartialProportionalOddsRegr = R6::R6Class(
 	"InferenceOrdinalPartialProportionalOddsRegr",
 	lock_objects = FALSE,

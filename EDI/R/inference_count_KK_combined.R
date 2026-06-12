@@ -86,6 +86,60 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 	private = utils::modifyList(as.list(InferenceMixinKKGLMMShared$private), list(
 		use_rcpp = TRUE,
 		glmm_response_type = function() "count",
+		compute_weighted_glmm_bootstrap_estimate = function(row_weights){
+			if (!isTRUE(private$use_rcpp)) {
+				return(callSuper())
+			}
+			m_vec = private$m
+			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
+			m_vec[is.na(m_vec)] = 0L
+			group_id = m_vec
+			reservoir_idx = which(group_id == 0L)
+			if (length(reservoir_idx) > 0L)
+				group_id[reservoir_idx] = max(group_id) + seq_along(reservoir_idx)
+			# drop rows with zero or non-finite weight
+			ok = is.finite(row_weights) & row_weights > 0 & is.finite(as.numeric(private$y))
+			if (!any(ok)) return(NA_real_)
+			if (ncol(as.matrix(private$X)) > 0) {
+				X_fit = private$create_design_matrix()
+			} else {
+				X_fit = cbind(`(Intercept)` = 1, w = private$w)
+			}
+			X_fit = as.matrix(X_fit)[ok, , drop = FALSE]
+			y_ok = as.numeric(private$y)[ok]
+			gid_ok = as.integer(group_id)[ok]
+			rw_ok = as.numeric(row_weights)[ok]
+			j_T = 1L
+			n_params = ncol(X_fit) + 1L
+			fit = tryCatch(
+				fast_poisson_glmm_cpp(
+					X        = X_fit,
+					y        = y_ok,
+					group_id = gid_ok,
+					j_T      = j_T,
+					row_weights = rw_ok,
+					warm_start_params = private$get_fit_warm_start_for_length("params", n_params),
+					smart_cold_start  = private$smart_cold_start_default,
+					estimate_only     = TRUE,
+					optimization_alg  = private$optimization_alg
+				),
+				error = function(e) NULL
+			)
+			if (!is.null(fit) && isTRUE(fit$converged)) {
+				beta_hat_T = as.numeric(fit$b[j_T + 1L])
+				if (is.finite(beta_hat_T) && abs(beta_hat_T) <= private$max_abs_reasonable_coef)
+					return(beta_hat_T)
+			}
+			# fall back to glmmTMB weighted path
+			for (predictors_df in private$glmm_predictors_df_candidates()) {
+				mod = private$fit_weighted_glmm_on_data(predictors_df, row_weights = row_weights, se = FALSE)
+				if (!private$.is_usable_glmm_fit(mod, se = FALSE)) next
+				beta = tryCatch(glmmTMB::fixef(mod)$cond, error = function(e) NULL)
+				if (!is.null(beta) && "w" %in% names(beta) && is.finite(beta["w"]))
+					return(as.numeric(beta["w"]))
+			}
+			NA_real_
+		},
 		glmm_family        = function() stats::poisson(link = "log"),
 		supports_likelihood_tests = function(){
 			isTRUE(private$use_rcpp)

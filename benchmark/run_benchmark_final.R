@@ -15,8 +15,8 @@ FIXED_N = as.integer(Sys.getenv("WARM_START_BENCH_FIXED_N", unset = "1"))
 RESULTS_CSV = Sys.getenv("WARM_START_BENCH_RESULTS", unset = "warm_starts_final_results.csv")
 
 md = readLines("package_metadata/warm_starts.md", warn = FALSE)
-path_lines = grep("<td .*<b>Inference", md, value = TRUE)
-inf_names = unique(sub(".*<b>(Inference[^<]+)</b>.*", "\\1", path_lines))
+path_lines = grep("<td[^>]*>Inference", md, value = TRUE)
+inf_names = unique(sub(".*<td[^>]*>(Inference[^<]+)</td>.*", "\\1", path_lines))
 excluded_paths = c(
     "InferenceAllSimpleMeanDiff",
     "InferenceAllSimpleMeanDiffPooledVar"
@@ -41,7 +41,9 @@ R_VAL = as.numeric(args[5])
 J_VAL = as.numeric(args[6])
 PB_VAL = as.numeric(args[7])\nNREP = as.integer(args[8])\nFIXED_N = as.logical(as.integer(args[9]))
 
-measure_avg_time = function(expr_fn, nrep = NREP) {
+`%||%` = function(a, b) if (!is.null(a)) a else b
+
+measure_times = function(expr_fn, nrep = NREP) {
     times = numeric(nrep)
     for (i in 1:nrep) {
         gc(verbose = FALSE)
@@ -49,7 +51,7 @@ measure_avg_time = function(expr_fn, nrep = NREP) {
         if (is.na(t)) return(NA)
         times[i] = t
     }
-    mean(times)
+    times
 }
 
 get_rt = function(cn) {
@@ -78,6 +80,25 @@ calc_s = function(tc, tw) {
     if (s < 2 && s > -2) return("< 2%")
     if (s < 0) return(sprintf("%.1f%%", s))
     sprintf("+%.1f%%", s)
+}
+
+calc_sig_s = function(cold_times, warm_times, alpha = 0.01) {
+    if (length(cold_times) == 1L && is.na(cold_times)) return("N/S")
+    if (length(warm_times) == 1L && is.na(warm_times)) return("N/S")
+    ok = is.finite(cold_times) & is.finite(warm_times)
+    cold_times = cold_times[ok]
+    warm_times = warm_times[ok]
+    if (length(cold_times) < 2L) return("N/S")
+    warm_wins = sum(warm_times < cold_times)
+    cold_wins = sum(cold_times < warm_times)
+    non_ties = warm_wins + cold_wins
+    if (non_ties < 2L) return("same")
+    pval = tryCatch(
+        stats::prop.test(c(warm_wins, cold_wins), c(non_ties, non_ties), correct = FALSE)$p.value,
+        error = function(e) NA_real_
+    )
+    if (is.na(pval) || !is.finite(pval) || pval >= alpha) return("same")
+    calc_s(mean(cold_times), mean(warm_times))
 }
 
 rt = get_rt(cls_name)
@@ -193,15 +214,124 @@ clear_timing_caches = function(priv) {
     invisible(NULL)
 }
 
+set_treatment_for_timing = function(priv, w_new) {
+    priv$w = as.numeric(w_new)
+    priv$cached_design_matrix = NULL
+    priv$cached_w_for_design_matrix = NULL
+    priv$cached_reduced_X = NULL
+    priv$cached_j_treat_for_reduced = NULL
+    if (!is.null(priv$des_obj_priv_int)) {
+        priv$des_obj_priv_int$w = priv$w
+        priv$des_obj_priv_int$all_subject_data_cache = list()
+    }
+    invisible(NULL)
+}
+
+restore_treatment_for_timing = function(priv, w_orig) {
+    set_treatment_for_timing(priv, w_orig)
+    invisible(NULL)
+}
+
+compute_rand_estimate_only = function(inf_obj) {
+    priv = inf_obj$.__enclos_env__$private
+    res = tryCatch(
+        priv$compute_treatment_estimate_during_randomization_inference(estimate_only = TRUE),
+        error = function(e) tryCatch(
+            priv$compute_treatment_estimate_during_randomization_inference(),
+            error = function(e2) tryCatch(inf_obj$compute_estimate(estimate_only = TRUE), error = function(e3) NA_real_)
+        )
+    )
+    if (is.null(res)) res = priv$cached_values$beta_hat_T
+    as.numeric(res)[1L]
+}
+
+load_param_boot_response_for_timing = function(priv, draw) {
+    worker_data = draw$worker_data %||% draw
+    y_new = worker_data$y
+    if (is.null(y_new)) return(FALSE)
+    priv$y = as.numeric(y_new)
+    priv$y_temp = priv$y
+    if (!is.null(worker_data$dead)) {
+        priv$dead = as.numeric(worker_data$dead)
+        priv$any_censoring = any(priv$dead == 0)
+    }
+    extra_names = setdiff(names(worker_data), c("y", "dead"))
+    for (nm in extra_names) {
+        priv[[nm]] = worker_data[[nm]]
+    }
+    if (!is.null(priv$des_obj_priv_int)) {
+        priv$des_obj_priv_int$y = priv$y
+        if (!is.null(worker_data$dead)) priv$des_obj_priv_int$dead = priv$dead
+        priv$des_obj_priv_int$all_subject_data_cache = list()
+    }
+    invisible(TRUE)
+}
+
+restore_param_boot_response_for_timing = function(priv, y_orig, dead_orig) {
+    priv$y = y_orig
+    priv$y_temp = y_orig
+    priv$dead = dead_orig
+    priv$any_censoring = !is.null(dead_orig) && any(dead_orig == 0)
+    if (!is.null(priv$des_obj_priv_int)) {
+        priv$des_obj_priv_int$y = y_orig
+        priv$des_obj_priv_int$dead = dead_orig
+        priv$des_obj_priv_int$all_subject_data_cache = list()
+    }
+    invisible(NULL)
+}
+
+simulate_param_boot_draws_for_timing = function(priv, B, delta = 0) {
+    if (!isTRUE(tryCatch(priv$supports_lik_ratio_param_bootstrap(), error = function(e) FALSE))) return(NULL)
+    spec = tryCatch(priv$get_likelihood_test_spec(), error = function(e) NULL)
+    if (is.null(spec)) return(NULL)
+    eval_obs = tryCatch(
+        priv$get_memoized_likelihood_test_eval(
+            delta = delta,
+            testing_type = "lik_ratio",
+            spec = spec,
+            include_full_negloglik = TRUE,
+            include_null_negloglik = TRUE
+        ),
+        error = function(e) NULL
+    )
+    if (is.null(eval_obs) || isTRUE(eval_obs$invalid) || is.null(eval_obs$null_fit)) return(NULL)
+    draws = vector("list", as.integer(B))
+    for (b in seq_len(as.integer(B))) {
+        draws[[b]] = tryCatch(priv$simulate_under_lik_null(spec, delta, eval_obs$null_fit), error = function(e) NULL)
+        if (is.null(draws[[b]]) || is.null(draws[[b]]$worker_data$y)) return(NULL)
+    }
+    draws
+}
+
 # RAND
 res_r = "N/S"
-if (!(rt == "incidence" && is.null(inf_w$.__enclos_env__$private$custom_randomization_statistic_function))) {
-    tryCatch(inf_c$compute_rand_two_sided_pval(r=1L, show_progress=FALSE), error=function(e)NULL)
-    tryCatch(inf_w$compute_rand_two_sided_pval(r=1L, show_progress=FALSE), error=function(e)NULL)
-    t_rc = measure_avg_time(function() inf_c$compute_rand_two_sided_pval(r=R_VAL, show_progress=FALSE), nrep = NREP)
-    t_rw = measure_avg_time(function() inf_w$compute_rand_two_sided_pval(r=R_VAL, show_progress=FALSE), nrep = NREP)
-    res_r = calc_s(t_rc, t_rw)
-}
+set.seed(42)
+rand_w_draws = replicate(R_VAL, sample(inf_w$.__enclos_env__$private$w), simplify = FALSE)
+orig_w_c = inf_c$.__enclos_env__$private$w
+orig_w_w = inf_w$.__enclos_env__$private$w
+inf_c$.__enclos_env__$private$active_resampling_operation = "rand"
+inf_w$.__enclos_env__$private$active_resampling_operation = "rand"
+tryCatch({ set_treatment_for_timing(inf_c$.__enclos_env__$private, rand_w_draws[[1L]]); clear_timing_caches(inf_c$.__enclos_env__$private); compute_rand_estimate_only(inf_c) }, error=function(e)NULL)
+tryCatch({ set_treatment_for_timing(inf_w$.__enclos_env__$private, rand_w_draws[[1L]]); clear_timing_caches(inf_w$.__enclos_env__$private); compute_rand_estimate_only(inf_w) }, error=function(e)NULL)
+t_rc = measure_times(function() {
+    for (w_perm in rand_w_draws) {
+        set_treatment_for_timing(inf_c$.__enclos_env__$private, w_perm)
+        clear_timing_caches(inf_c$.__enclos_env__$private)
+        compute_rand_estimate_only(inf_c)
+    }
+}, nrep = NREP)
+t_rw = measure_times(function() {
+    for (w_perm in rand_w_draws) {
+        set_treatment_for_timing(inf_w$.__enclos_env__$private, w_perm)
+        clear_timing_caches(inf_w$.__enclos_env__$private)
+        compute_rand_estimate_only(inf_w)
+    }
+}, nrep = NREP)
+restore_treatment_for_timing(inf_c$.__enclos_env__$private, orig_w_c)
+restore_treatment_for_timing(inf_w$.__enclos_env__$private, orig_w_w)
+inf_c$.__enclos_env__$private$active_resampling_operation = NULL
+inf_w$.__enclos_env__$private$active_resampling_operation = NULL
+res_r = calc_sig_s(t_rc, t_rw)
 
 # BOOT
 res_b = "N/S"
@@ -216,13 +346,13 @@ if (TRUE) {
     inf_w$.__enclos_env__$private$active_resampling_operation = "non_param_boot"
     tryCatch(inf_c$compute_estimate_with_bootstrap_weights(boot_weight_draws[[1L]], TRUE), error=function(e)NULL)
     tryCatch(inf_w$compute_estimate_with_bootstrap_weights(boot_weight_draws[[1L]], TRUE), error=function(e)NULL)
-    t_bc = measure_avg_time(function() {
+    t_bc = measure_times(function() {
         for (w in boot_weight_draws) {
             clear_timing_caches(inf_c$.__enclos_env__$private)
             inf_c$compute_estimate_with_bootstrap_weights(w, TRUE)
         }
     }, nrep = NREP)
-    t_bw = measure_avg_time(function() {
+    t_bw = measure_times(function() {
         for (w in boot_weight_draws) {
             clear_timing_caches(inf_w$.__enclos_env__$private)
             inf_w$compute_estimate_with_bootstrap_weights(w, TRUE)
@@ -230,7 +360,7 @@ if (TRUE) {
     }, nrep = NREP)
     inf_c$.__enclos_env__$private$active_resampling_operation = NULL
     inf_w$.__enclos_env__$private$active_resampling_operation = NULL
-    res_b = calc_s(t_bc, t_bw)
+    res_b = calc_sig_s(t_bc, t_bw)
 }
 
 # JK
@@ -240,13 +370,13 @@ if (TRUE) {
     inf_w$.__enclos_env__$private$active_resampling_operation = "jackknife"
     tryCatch({ww=rep(1,N_VAL);ww[1]=0;inf_c$compute_estimate_with_bootstrap_weights(ww,TRUE)}, error=function(e)NULL)
     tryCatch({ww=rep(1,N_VAL);ww[1]=0;inf_w$compute_estimate_with_bootstrap_weights(ww,TRUE)}, error=function(e)NULL)
-    t_jc = measure_avg_time(function() {
+    t_jc = measure_times(function() {
         for(k in 1:J_VAL){clear_timing_caches(inf_c$.__enclos_env__$private);w=rep(1,N_VAL);w[k]=0;inf_c$compute_estimate_with_bootstrap_weights(w,TRUE)}
     }, nrep = NREP)
-    t_jw = measure_avg_time(function() {
+    t_jw = measure_times(function() {
         for(k in 1:J_VAL){clear_timing_caches(inf_w$.__enclos_env__$private);w=rep(1,N_VAL);w[k]=0;inf_w$compute_estimate_with_bootstrap_weights(w,TRUE)}
     }, nrep = NREP)
-    res_j = calc_s(t_jc, t_jw)
+    res_j = calc_sig_s(t_jc, t_jw)
     inf_c$.__enclos_env__$private$active_resampling_operation = NULL
     inf_w$.__enclos_env__$private$active_resampling_operation = NULL
 }
@@ -255,11 +385,37 @@ if (TRUE) {
 is_pb_sup = tryCatch(inf_w$.__enclos_env__$private$supports_lik_ratio_param_bootstrap(), error = function(e) FALSE)
 res_p = "N/S"
 if (isTRUE(is_pb_sup)) {
-    tryCatch(inf_c$compute_lik_ratio_bootstrap_two_sided_pval(B=1L, show_progress=FALSE), error=function(e)NULL)
-    tryCatch(inf_w$compute_lik_ratio_bootstrap_two_sided_pval(B=1L, show_progress=FALSE), error=function(e)NULL)
-    t_pc = measure_avg_time(function() inf_c$compute_lik_ratio_bootstrap_two_sided_pval(B=PB_VAL, show_progress=FALSE), nrep = NREP)
-    t_pw = measure_avg_time(function() inf_w$compute_lik_ratio_bootstrap_two_sided_pval(B=PB_VAL, show_progress=FALSE), nrep = NREP)
-    res_p = calc_s(t_pc, t_pw)
+    set.seed(42)
+    pb_draws = simulate_param_boot_draws_for_timing(inf_w$.__enclos_env__$private, PB_VAL, delta = 0)
+    if (!is.null(pb_draws)) {
+        orig_y_c = inf_c$.__enclos_env__$private$y
+        orig_y_w = inf_w$.__enclos_env__$private$y
+        orig_dead_c = inf_c$.__enclos_env__$private$dead
+        orig_dead_w = inf_w$.__enclos_env__$private$dead
+        inf_c$.__enclos_env__$private$active_resampling_operation = "param_boot"
+        inf_w$.__enclos_env__$private$active_resampling_operation = "param_boot"
+        tryCatch({ load_param_boot_response_for_timing(inf_c$.__enclos_env__$private, pb_draws[[1L]]); clear_timing_caches(inf_c$.__enclos_env__$private); inf_c$compute_estimate(estimate_only = TRUE) }, error=function(e)NULL)
+        tryCatch({ load_param_boot_response_for_timing(inf_w$.__enclos_env__$private, pb_draws[[1L]]); clear_timing_caches(inf_w$.__enclos_env__$private); inf_w$compute_estimate(estimate_only = TRUE) }, error=function(e)NULL)
+        t_pc = measure_times(function() {
+            for (draw in pb_draws) {
+                load_param_boot_response_for_timing(inf_c$.__enclos_env__$private, draw)
+                clear_timing_caches(inf_c$.__enclos_env__$private)
+                inf_c$compute_estimate(estimate_only = TRUE)
+            }
+        }, nrep = NREP)
+        t_pw = measure_times(function() {
+            for (draw in pb_draws) {
+                load_param_boot_response_for_timing(inf_w$.__enclos_env__$private, draw)
+                clear_timing_caches(inf_w$.__enclos_env__$private)
+                inf_w$compute_estimate(estimate_only = TRUE)
+            }
+        }, nrep = NREP)
+        restore_param_boot_response_for_timing(inf_c$.__enclos_env__$private, orig_y_c, orig_dead_c)
+        restore_param_boot_response_for_timing(inf_w$.__enclos_env__$private, orig_y_w, orig_dead_w)
+        inf_c$.__enclos_env__$private$active_resampling_operation = NULL
+        inf_w$.__enclos_env__$private$active_resampling_operation = NULL
+        res_p = calc_sig_s(t_pc, t_pw)
+    }
 }
 
 if (cls_name == "InferenceOrdinalPairedSignTest") {
@@ -276,12 +432,11 @@ cat("Starting definitive robust benchmark...\n")
 if (file.exists(RESULTS_CSV)) {
     file.copy(RESULTS_CSV, "warm_starts_final_results_backup.csv", overwrite = TRUE)
 }
-fwrite(data.table(Path=character(), Rand=character(), Boot=character(), JK=character(), PB=character()), RESULTS_CSV)
 
 num_cores = 6
 cat(sprintf("Running with %d parallel workers...\n", num_cores))
 
-mclapply(inf_names, function(cn) {
+rows = mclapply(inf_names, function(cn) {
     cat(sprintf("Processing %s...\n", cn))
     res = tryCatch({
         system2("Rscript", c("benchmark/worker_v2.R", cn, N_VAL, P_VAL, B_VAL, R_VAL, J_VAL, PB_VAL, NREP, FIXED_N), stdout = TRUE, stderr = TRUE)
@@ -291,17 +446,24 @@ mclapply(inf_names, function(cn) {
     
     row_str = res[length(res)]
     if (length(row_str) > 0 && grepl(",", row_str)) {
-        write(row_str, RESULTS_CSV, append = TRUE)
         cat(sprintf("Done %s: %s\n", cn, row_str))
+        return(row_str)
     } else {
         cat(sprintf("Failed or Crashed: %s\n", cn))
         if (length(res) > 0) {
             cat(paste(res, collapse="\n"), file=stderr())
         }
-        write(sprintf("%s,N/S,N/S,N/S,N/S", cn), RESULTS_CSV, append = TRUE)
+        return(sprintf("%s,N/S,N/S,N/S,N/S", cn))
     }
-    NULL
 }, mc.cores = num_cores)
+
+rows = unlist(rows, use.names = FALSE)
+parts = strsplit(rows, ",", fixed = TRUE)
+dt = rbindlist(lapply(parts, function(x) {
+    if (length(x) != 5L) x = c(x[1L], rep("N/S", 4L))
+    data.table(Path = x[1L], Rand = x[2L], Boot = x[3L], JK = x[4L], PB = x[5L])
+}))
+fwrite(dt, RESULTS_CSV)
 
 cat("Done.\n")
 unlink("benchmark/worker_v2.R")

@@ -13,8 +13,8 @@ NREP = as.integer(Sys.getenv("WARM_START_BENCH_REPS", unset = "12"))
 FIXED_N = as.integer(Sys.getenv("WARM_START_BENCH_FIXED_N", unset = "1"))
 
 md = readLines("package_metadata/warm_starts.md", warn = FALSE)
-path_lines = grep("<td .*<b>Inference", md, value = TRUE)
-inf_names = unique(sub(".*<b>(Inference[^<]+)</b>.*", "\\1", path_lines))
+path_lines = grep("<td[^>]*>Inference", md, value = TRUE)
+inf_names = unique(sub(".*<td[^>]*>(Inference[^<]+)</td>.*", "\\1", path_lines))
 excluded_paths = c(
     "InferenceAllSimpleMeanDiff",
     "InferenceAllSimpleMeanDiffPooledVar"
@@ -40,7 +40,7 @@ FIXED_N = as.logical(as.integer(args[7]))
 
 `%||%` = function(a, b) if (!is.null(a)) a else b
 
-measure_avg_time = function(expr_fn, nrep = NREP) {
+measure_times = function(expr_fn, nrep = NREP) {
     times = numeric(nrep)
     for (i in seq_len(nrep)) {
         gc(verbose = FALSE)
@@ -48,7 +48,7 @@ measure_avg_time = function(expr_fn, nrep = NREP) {
         if (is.na(t) || !is.finite(t)) return(NA_real_)
         times[i] = as.numeric(t)
     }
-    stats::median(times)
+    times
 }
 
 calc_s = function(tc, tw) {
@@ -58,6 +58,25 @@ calc_s = function(tc, tw) {
     if (s < 2 && s > -2) return("< 2%")
     if (s < 0) return(sprintf("%.1f%%", s))
     sprintf("+%.1f%%", s)
+}
+
+calc_sig_s = function(cold_times, warm_times, alpha = 0.01) {
+    if (length(cold_times) == 1L && is.na(cold_times)) return("N/S")
+    if (length(warm_times) == 1L && is.na(warm_times)) return("N/S")
+    ok = is.finite(cold_times) & is.finite(warm_times)
+    cold_times = cold_times[ok]
+    warm_times = warm_times[ok]
+    if (length(cold_times) < 2L) return("N/S")
+    warm_wins = sum(warm_times < cold_times)
+    cold_wins = sum(cold_times < warm_times)
+    non_ties = warm_wins + cold_wins
+    if (non_ties < 2L) return("same")
+    pval = tryCatch(
+        stats::prop.test(c(warm_wins, cold_wins), c(non_ties, non_ties), correct = FALSE)$p.value,
+        error = function(e) NA_real_
+    )
+    if (is.na(pval) || !is.finite(pval) || pval >= alpha) return("same")
+    calc_s(mean(cold_times), mean(warm_times))
 }
 
 get_rt = function(cn) {
@@ -168,14 +187,14 @@ if (grepl("BaiAdjusted|IVWC", cls_name) || cls_name == "InferenceOrdinalPairedSi
         priv_w$current_bayesian_bootstrap_context = draw$context
         inf_w$compute_estimate_with_bootstrap_weights(draw$subject_or_block_weights, TRUE)
     }, error = function(e) NULL)
-    t_bc = measure_avg_time(function() {
+    t_bc = measure_times(function() {
         for (draw in bb_draws) {
             clear_timing_caches(priv_c)
             priv_c$current_bayesian_bootstrap_context = draw$context
             inf_c$compute_estimate_with_bootstrap_weights(draw$subject_or_block_weights, TRUE)
         }
     })
-    t_bw = measure_avg_time(function() {
+    t_bw = measure_times(function() {
         for (draw in bb_draws) {
             clear_timing_caches(priv_w)
             priv_w$current_bayesian_bootstrap_context = draw$context
@@ -184,7 +203,7 @@ if (grepl("BaiAdjusted|IVWC", cls_name) || cls_name == "InferenceOrdinalPairedSi
     })
     priv_c$active_resampling_operation = NULL
     priv_w$active_resampling_operation = NULL
-    res_bb = calc_s(t_bc, t_bw)
+    res_bb = calc_sig_s(t_bc, t_bw)
 }
 
 if (cls_name == "InferenceOrdinalPairedSignTest") {
@@ -194,7 +213,7 @@ if (cls_name == "InferenceOrdinalPairedSignTest") {
     priv_w$active_resampling_operation = "jackknife"
     tryCatch({ ww = rep(1, N_VAL); ww[1] = 0; inf_c$compute_estimate_with_bootstrap_weights(ww, TRUE) }, error = function(e) NULL)
     tryCatch({ ww = rep(1, N_VAL); ww[1] = 0; inf_w$compute_estimate_with_bootstrap_weights(ww, TRUE) }, error = function(e) NULL)
-    t_jc = measure_avg_time(function() {
+    t_jc = measure_times(function() {
         for (k in seq_len(J_VAL)) {
             clear_timing_caches(priv_c)
             w = rep(1, N_VAL)
@@ -202,7 +221,7 @@ if (cls_name == "InferenceOrdinalPairedSignTest") {
             inf_c$compute_estimate_with_bootstrap_weights(w, TRUE)
         }
     })
-    t_jw = measure_avg_time(function() {
+    t_jw = measure_times(function() {
         for (k in seq_len(J_VAL)) {
             clear_timing_caches(priv_w)
             w = rep(1, N_VAL)
@@ -210,34 +229,40 @@ if (cls_name == "InferenceOrdinalPairedSignTest") {
             inf_w$compute_estimate_with_bootstrap_weights(w, TRUE)
         }
     })
-    res_jk = calc_s(t_jc, t_jw)
+    res_jk = calc_sig_s(t_jc, t_jw)
 }
 
 cat(sprintf("%s,%s,%s\\n", cls_name, res_bb, res_jk))
 '
 
 writeLines(worker_script, "benchmark/worker_bayes_jackknife.R")
-fwrite(data.table(Path = character(), Bayesian = character(), JK = character()), RESULTS_CSV)
 
 num_cores = min(6L, max(1L, detectCores() - 1L))
 cat(sprintf("Running Bayesian-bootstrap and jackknife timings for %d paths with %d workers...\\n", length(inf_names), num_cores))
 
-mclapply(inf_names, function(cn) {
+rows = mclapply(inf_names, function(cn) {
     cat(sprintf("Processing %s...\\n", cn))
     res = tryCatch({
         system2("Rscript", c("benchmark/worker_bayes_jackknife.R", cn, N_VAL, P_VAL, BB_VAL, J_VAL, NREP, FIXED_N), stdout = TRUE, stderr = TRUE)
     }, error = function(e) character(0))
     row_str = res[length(res)]
     if (length(row_str) > 0 && grepl(",", row_str)) {
-        write(row_str, RESULTS_CSV, append = TRUE)
         cat(sprintf("Done %s: %s\\n", cn, row_str))
+        return(row_str)
     } else {
-        write(sprintf("%s,N/S,N/S", cn), RESULTS_CSV, append = TRUE)
         cat(sprintf("Failed %s\\n", cn))
         if (length(res) > 0) cat(paste(res, collapse = "\\n"), file = stderr())
+        return(sprintf("%s,N/S,N/S", cn))
     }
-    NULL
 }, mc.cores = num_cores)
+
+rows = unlist(rows, use.names = FALSE)
+parts = strsplit(rows, ",", fixed = TRUE)
+dt = rbindlist(lapply(parts, function(x) {
+    if (length(x) != 3L) x = c(x[1L], rep("N/S", 2L))
+    data.table(Path = x[1L], Bayesian = x[2L], JK = x[3L])
+}))
+fwrite(dt, RESULTS_CSV)
 
 unlink("benchmark/worker_bayes_jackknife.R")
 cat("Done. Results: ", RESULTS_CSV, "\\n", sep = "")

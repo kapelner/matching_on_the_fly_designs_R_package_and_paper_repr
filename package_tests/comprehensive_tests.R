@@ -857,15 +857,19 @@ if (inherits(result, "edi_skip_direct")) return(invisible(NULL))
 		safe_call("compute_rand_confidence_interval", seq_des_inf$compute_rand_confidence_interval(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE))
 	}
 	if (response_type != "incidence"){
-		local({
-			inf_priv = seq_des_inf$.__enclos_env__$private
-			seq_des_inf$set_custom_randomization_statistic_function(function(){
-				des_priv = inf_priv$des_obj_priv_int
-				yTs = des_priv$y[des_priv$w == 1]
-				yCs = des_priv$y[des_priv$w == 0]
-				(mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
-			})
-		})
+		custom_stat_fn = function(){
+			priv = if (exists("inf_priv", envir = parent.frame(), inherits = TRUE)) {
+				get("inf_priv", envir = parent.frame(), inherits = TRUE)
+			} else {
+				get("private", envir = parent.frame(), inherits = TRUE)
+			}
+			des_priv = priv$des_obj_priv_int
+			yTs = des_priv$y[des_priv$w == 1]
+			yCs = des_priv$y[des_priv$w == 0]
+			(mean(yTs) - mean(yCs)) / sqrt(var(yTs) / length(yTs) + var(yCs) / length(yCs))
+		}
+		environment(custom_stat_fn) = .GlobalEnv
+		seq_des_inf$set_custom_randomization_statistic_function(custom_stat_fn)
 		if (!skip_slow && !skip_rand_pval){
 			safe_call("compute_rand_two_sided_pval(custom)", seq_des_inf$compute_rand_two_sided_pval(r = r, show_progress = FALSE))
 		}
@@ -1038,7 +1042,11 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 		for (col in strata_cols_to_use) {
 			if (is.numeric(X_design_sequential_strata[[col]])) {
 				med = stats::median(X_design_sequential_strata[[col]], na.rm = TRUE)
-				X_design_sequential_strata[[col]] = factor(ifelse(X_design_sequential_strata[[col]] <= med, "low", "high"))
+				val_vec = ifelse(X_design_sequential_strata[[col]] <= med, "low", "high")
+				if (length(unique(val_vec)) < 2) {
+					val_vec = ifelse(X_design_sequential_strata[[col]] < max(X_design_sequential_strata[[col]], na.rm = TRUE), "low", "high")
+				}
+				X_design_sequential_strata[[col]] = factor(val_vec)
 			}
 		}
 	}

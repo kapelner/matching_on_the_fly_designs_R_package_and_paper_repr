@@ -601,9 +601,7 @@ get_warm_start_dispatch_policy = function() {
     default = TRUE,
     jackknife = list(
       inference_class_overrides = c(
-        "^InferenceAllKKWilcoxIVWC$" = FALSE,
-        "^InferenceCountNegBin$" = FALSE,
-        "^InferenceCountZeroInflatedNegBin$" = FALSE,
+        "^InferenceSurvivalKKLWACoxPHIVWC$" = FALSE,
         "^InferenceSurvivalCoxPHRegr$" = FALSE,
         "^InferenceSurvivalStratCoxPHRegr$" = FALSE
       )
@@ -611,12 +609,12 @@ get_warm_start_dispatch_policy = function() {
     non_param_boot = list(
       inference_class_overrides = c(
         "^InferenceCountNegBin$" = FALSE,
-        "^InferenceSurvivalCoxPHRegr$" = FALSE
+        "^InferenceSurvivalCoxPHRegr$" = FALSE,
+        "^InferenceSurvivalStratCoxPHRegr$" = FALSE
       )
     ),
     bayesian_boot = list(
       inference_class_overrides = c(
-        "^InferenceCountHurdleNegBin$" = FALSE,
         "^InferenceCountNegBin$" = FALSE,
         "^InferenceSurvivalCoxPHRegr$" = FALSE,
         "^InferenceSurvivalStratCoxPHRegr$" = FALSE
@@ -627,7 +625,7 @@ get_warm_start_dispatch_policy = function() {
     ),
     rand = list(
       inference_class_overrides = c(
-        "^InferenceContinKKOLSIVWC$" = FALSE
+        "^InferenceIncidKKCondLogitOneLik$" = FALSE
       )
     )
   )
@@ -656,12 +654,66 @@ set_warm_start_dispatch_policy = function(policy = NULL, reset = FALSE) {
   invisible(NULL)
 }
 
-edi_warm_start_dispatch_policy = function(inference_class, operation) {
+edi_warm_start_dispatch_policy = function(inference_class, operation, n = NULL) {
   config = edi_env$warm_start_dispatch_policy_config
   inference_class = as.character(inference_class[[1]])
   operation = as.character(operation[[1]])
+  n_val = suppressWarnings(as.integer(n))
   
   default_val = if (isTRUE(config$default)) TRUE else FALSE
+
+  if (!is.na(n_val) && n_val < 200L) {
+    if (identical(operation, "non_param_boot") &&
+        (grepl("^InferenceOrdinalContRatioRegr$", inference_class, perl = TRUE) ||
+         grepl("^InferenceOrdinalKKCLMMCauchit$", inference_class, perl = TRUE) ||
+         grepl("^InferencePropKKGEE$", inference_class, perl = TRUE))) {
+      return(FALSE)
+    }
+    if (identical(operation, "bayesian_boot") &&
+        grepl("^InferenceContinQuantileRegr$", inference_class, perl = TRUE)) {
+      return(FALSE)
+    }
+  }
+
+  if (!is.na(n_val) && n_val < 500L) {
+    if (identical(operation, "rand") &&
+        (grepl("^InferenceContinKKOLSIVWC$", inference_class, perl = TRUE) ||
+         grepl("^InferenceContinKKRobustRegrIVWC$", inference_class, perl = TRUE) ||
+         grepl("^InferencePropKKQuantileRegrIVWC$", inference_class, perl = TRUE))) {
+      return(FALSE)
+    }
+    if (identical(operation, "non_param_boot") &&
+        grepl("^InferenceCountZeroInflatedNegBin$", inference_class, perl = TRUE)) {
+      return(FALSE)
+    }
+    if (identical(operation, "bayesian_boot") &&
+        (grepl("^InferenceOrdinalKKCondAdjCatLogitRegr$", inference_class, perl = TRUE) ||
+         grepl("^InferenceSurvivalGehanWilcox$", inference_class, perl = TRUE))) {
+      return(FALSE)
+    }
+    if (identical(operation, "jackknife") &&
+        grepl("^InferenceSurvivalLogRank$", inference_class, perl = TRUE)) {
+      return(FALSE)
+    }
+  }
+
+  if (!is.na(n_val) && n_val < 1000L) {
+    if (identical(operation, "rand") &&
+        (grepl("^InferenceContinKKGLMM$", inference_class, perl = TRUE) ||
+         grepl("^InferenceContinQuantileRegr$", inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidKKModifiedPoisson$", inference_class, perl = TRUE) ||
+         grepl("^InferencePropGCompMeanDiff$", inference_class, perl = TRUE))) {
+      return(FALSE)
+    }
+    if (identical(operation, "bayesian_boot") &&
+        grepl("^InferenceOrdinalKKCLMMCauchit$", inference_class, perl = TRUE)) {
+      return(FALSE)
+    }
+    if (identical(operation, "jackknife") &&
+        grepl("^InferenceCountNegBin$", inference_class, perl = TRUE)) {
+      return(FALSE)
+    }
+  }
   
   if (operation %in% names(config)) {
     op_cfg = config[[operation]]

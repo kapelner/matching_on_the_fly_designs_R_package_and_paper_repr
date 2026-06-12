@@ -72,6 +72,7 @@ struct PoissonGLMMData {
 	Eigen::MatrixXd X_s;
 	Eigen::VectorXd y_s;
 	Eigen::VectorXd log_fact_y;  // precomputed log(y!) = lgamma(y+1)
+	Eigen::VectorXd w_s;         // per-row weights (1.0 if unweighted)
 	std::vector<int> grp_start;
 	std::vector<int> grp_size;
 	int n, p, G;
@@ -81,7 +82,8 @@ struct PoissonGLMMData {
 		const Eigen::Ref<const Eigen::MatrixXd>& X,
 		const Eigen::Ref<const Eigen::VectorXd>& y,
 		const std::vector<int>& group_id,
-		int n_gh
+		int n_gh,
+		const Eigen::VectorXd* row_weights = nullptr
 	) : n(X.rows()), p(X.cols()), gh(gauss_hermite_rule_poisson(n_gh)) {
 
 		std::vector<int> ord(n);
@@ -92,10 +94,12 @@ struct PoissonGLMMData {
 		X_s.resize(n, p);
 		y_s.resize(n);
 		log_fact_y.resize(n);
+		w_s.resize(n);
 		for (int i = 0; i < n; ++i) {
 			X_s.row(i) = X.row(ord[i]);
 			y_s[i] = y[ord[i]];
 			log_fact_y[i] = std::lgamma(y_s[i] + 1.0);
+			w_s[i] = row_weights ? (*row_weights)[ord[i]] : 1.0;
 		}
 
 		int prev = -1;
@@ -135,10 +139,10 @@ public:
 		for (int k = 0; k < n_nodes; ++k) {
 			const Eigen::ArrayXd eta_all_k = eta_all.array() + b_vals[k];
 			mu_all_k_vec[k] = clamp_eta_pg(eta_all_k).exp().matrix();
-			const Eigen::ArrayXd term_all_k = y_all * eta_all_k - mu_all_k_vec[k].array() - dat.log_fact_y.array();
-			
+			const Eigen::ArrayXd term_all_k = dat.w_s.array() * (y_all * eta_all_k - mu_all_k_vec[k].array() - dat.log_fact_y.array());
+
 			for (int gi = 0; gi < dat.G; ++gi) {
-				log_terms_mat(gi, k) = dat.gh.log_norm_weights[k] + 
+				log_terms_mat(gi, k) = dat.gh.log_norm_weights[k] +
 				                       term_all_k.segment(dat.grp_start[gi], dat.grp_size[gi]).sum();
 			}
 		}
@@ -162,7 +166,7 @@ public:
 		for (int k = 0; k < n_nodes; ++k) {
 			Eigen::VectorXd post_k_expanded(dat.n);
 			double dLL_dlog_sigma_k = 0.0;
-			
+
 			for (int gi = 0; gi < dat.G; ++gi) {
 				const double pk = std::exp(log_terms_mat(gi, k) - ll_g_vec[gi]);
 				if (pk < 1e-15) {
@@ -170,14 +174,17 @@ public:
 					continue;
 				}
 				post_k_expanded.segment(dat.grp_start[gi], dat.grp_size[gi]).setConstant(pk);
-				
-				const double res_sum_k_gi = (y_all.array().segment(dat.grp_start[gi], dat.grp_size[gi]) - 
-				                             mu_all_k_vec[k].array().segment(dat.grp_start[gi], dat.grp_size[gi])).sum();
-				dLL_dlog_sigma_k += pk * res_sum_k_gi * b_vals[k];
+
+				// weighted residual sum for log-sigma score
+				const double wres_sum_k_gi = (dat.w_s.array().segment(dat.grp_start[gi], dat.grp_size[gi]) *
+				                              (y_all.array().segment(dat.grp_start[gi], dat.grp_size[gi]) -
+				                               mu_all_k_vec[k].array().segment(dat.grp_start[gi], dat.grp_size[gi]))).sum();
+				dLL_dlog_sigma_k += pk * wres_sum_k_gi * b_vals[k];
 			}
-			
-			Eigen::VectorXd res_all_k = y_all.matrix() - mu_all_k_vec[k];
-			grad_beta.noalias() -= dat.X_s.transpose() * (post_k_expanded.cwiseProduct(res_all_k));
+
+			// weighted residuals for beta score: X^T * diag(post * w) * (y - mu)
+			Eigen::VectorXd wres_all_k = dat.w_s.cwiseProduct(y_all.matrix() - mu_all_k_vec[k]);
+			grad_beta.noalias() -= dat.X_s.transpose() * (post_k_expanded.cwiseProduct(wres_all_k));
 			grad_log_sigma -= dLL_dlog_sigma_k;
 		}
 		
@@ -203,9 +210,9 @@ public:
 		for (int k = 0; k < n_nodes; ++k) {
 			const Eigen::ArrayXd eta_all_k = eta_all.array() + b_vals[k];
 			mu_all_k_vec[k] = clamp_eta_pg(eta_all_k).exp().matrix();
-			const Eigen::ArrayXd term_all_k = y_all * eta_all_k - mu_all_k_vec[k].array() - dat.log_fact_y.array();
+			const Eigen::ArrayXd term_all_k = dat.w_s.array() * (y_all * eta_all_k - mu_all_k_vec[k].array() - dat.log_fact_y.array());
 			for (int gi = 0; gi < dat.G; ++gi) {
-				log_terms_mat(gi, k) = dat.gh.log_norm_weights[k] + 
+				log_terms_mat(gi, k) = dat.gh.log_norm_weights[k] +
 				                       term_all_k.segment(dat.grp_start[gi], dat.grp_size[gi]).sum();
 			}
 		}
@@ -228,22 +235,24 @@ public:
 			for (int gi = 0; gi < dat.G; gi++) pk_expanded.segment(dat.grp_start[gi], dat.grp_size[gi]).setConstant(pk_vec[gi]);
 
 			// 1. E[H_ik]
-			// Beta-Beta block: sum_gi pk_gi * (-Xg^T * diag(mu_k_gi) * Xg) = -X_s^T * diag(pk_expanded * mu_all_k) * X_s
-			Eigen::VectorXd w_Hik_beta = pk_expanded.cwiseProduct(mu_all_k_vec[k]);
+			// Beta-Beta block: -X^T * diag(pk_expanded * w * mu_k) * X
+			Eigen::VectorXd w_Hik_beta = pk_expanded.cwiseProduct(dat.w_s).cwiseProduct(mu_all_k_vec[k]);
 			E_Hik_sum.topLeftCorner(dat.p, dat.p).noalias() -= weighted_crossprod(dat.X_s, w_Hik_beta);
-			// Sigma-Sigma block: sum_gi pk_gi * H_ik(p,p)
+			// Sigma-Sigma block: sum_gi pk_gi * H_ik(p,p) with weighted sums
 			const double node_factor = std::sqrt(2.0) * dat.gh.nodes[k];
 			for (int gi = 0; gi < dat.G; ++gi) {
 				const double pk = pk_vec[gi];
 				if (pk < 1e-15) continue;
 				const int start = dat.grp_start[gi];
 				const int sz = dat.grp_size[gi];
-				const double sum_mu_k_gi = mu_all_k_vec[k].segment(start, sz).sum();
-				const double sum_res_k_gi = (y_all.array().segment(start, sz) - mu_all_k_vec[k].array().segment(start, sz)).sum();
-				E_Hik_sum(dat.p, dat.p) += pk * ((-sum_mu_k_gi * node_factor * node_factor * sigma + sum_res_k_gi * node_factor) * sigma);
-				
-				// Beta-Sigma block
-				Eigen::VectorXd d2L_db_dlogsigma_k_gi = -(dat.X_s.middleRows(start, sz).transpose() * mu_all_k_vec[k].segment(start, sz)) * (node_factor * sigma);
+				const double sum_wmu_k_gi = (dat.w_s.array().segment(start, sz) * mu_all_k_vec[k].array().segment(start, sz)).sum();
+				const double sum_wres_k_gi = (dat.w_s.array().segment(start, sz) *
+				                              (y_all.array().segment(start, sz) - mu_all_k_vec[k].array().segment(start, sz))).sum();
+				E_Hik_sum(dat.p, dat.p) += pk * ((-sum_wmu_k_gi * node_factor * node_factor * sigma + sum_wres_k_gi * node_factor) * sigma);
+
+				// Beta-Sigma block: -X_g^T * (w_g * mu_k_g) * node_factor * sigma
+				Eigen::VectorXd wmu_k_gi = dat.w_s.segment(start, sz).cwiseProduct(mu_all_k_vec[k].segment(start, sz));
+				Eigen::VectorXd d2L_db_dlogsigma_k_gi = -(dat.X_s.middleRows(start, sz).transpose() * wmu_k_gi) * (node_factor * sigma);
 				E_Hik_sum.block(0, dat.p, dat.p, 1).noalias() += pk * d2L_db_dlogsigma_k_gi;
 			}
 		}
@@ -258,10 +267,12 @@ public:
 				const int start = dat.grp_start[gi];
 				const int sz = dat.grp_size[gi];
 				Eigen::VectorXd G_ik = Eigen::VectorXd::Zero(total);
-				Eigen::VectorXd res_k_gi = (y_all.array().segment(start, sz) - mu_all_k_vec[k].array().segment(start, sz)).matrix();
-				G_ik.head(dat.p).noalias() = dat.X_s.middleRows(start, sz).transpose() * res_k_gi;
+				// weighted residuals for score outer product
+				Eigen::VectorXd wres_k_gi = (dat.w_s.array().segment(start, sz) *
+				                             (y_all.array().segment(start, sz) - mu_all_k_vec[k].array().segment(start, sz))).matrix();
+				G_ik.head(dat.p).noalias() = dat.X_s.middleRows(start, sz).transpose() * wres_k_gi;
 				const double node_factor = std::sqrt(2.0) * dat.gh.nodes[k];
-				G_ik[dat.p] = res_k_gi.sum() * node_factor * sigma;
+				G_ik[dat.p] = wres_k_gi.sum() * node_factor * sigma;
 
 				G_avg_gi.noalias() += pk * G_ik;
 				E_GiGiT_gi.noalias() += pk * (G_ik * G_ik.transpose());
@@ -295,7 +306,8 @@ SEXP fast_poisson_glmm_cpp(
 	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
 	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
 	std::string optimization_alg = "lbfgs",
-	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue
+	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericVector> row_weights = R_NilValue
 ) {
 	Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.rows(), X_r.cols());
 	Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
@@ -313,7 +325,17 @@ SEXP fast_poisson_glmm_cpp(
 	std::vector<int> gid_v(n);
 	for (int i = 0; i < n; ++i) gid_v[i] = group_id[i];
 
-	PoissonGLMMData dat(X, y, gid_v, n_gh);
+	Eigen::VectorXd rw_vec;
+	const Eigen::VectorXd* rw_ptr = nullptr;
+	if (row_weights.isNotNull()) {
+		NumericVector rw_r(row_weights);
+		if (rw_r.size() != n)
+			Rcpp::stop("row_weights length (%d) must equal nrow(X) (%d)", rw_r.size(), n);
+		rw_vec = Eigen::Map<const Eigen::VectorXd>(rw_r.begin(), n);
+		rw_ptr = &rw_vec;
+	}
+
+	PoissonGLMMData dat(X, y, gid_v, n_gh, rw_ptr);
 
 	// Initialize
 	Eigen::VectorXd par(total);

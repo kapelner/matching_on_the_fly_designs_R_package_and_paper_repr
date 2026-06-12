@@ -4,8 +4,7 @@
 #' indicator and, optionally, all recorded covariates as predictors.
 #'
 #' @name InferenceOrdinalStereotypeLogitRegr
-#' @description Internal base class for stereotype logit regression.
-#' @keywords internal
+#' @export
 InferenceOrdinalStereotypeLogitRegr = R6::R6Class("InferenceOrdinalStereotypeLogitRegr",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLikStdModCacheNoParamBootstrap,
