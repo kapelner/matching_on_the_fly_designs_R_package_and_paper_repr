@@ -116,6 +116,14 @@ InferenceContinLin = R6::R6Class("InferenceContinLin",
 		}
 	),
 	private = list(
+		get_standard_error = function(){
+			if (is.null(private$cached_values$s_beta_hat_T)) private$shared()
+			private$cached_values$s_beta_hat_T
+		},
+		get_degrees_of_freedom = function(){
+			if (is.null(private$cached_values$df)) private$shared()
+			private$cached_values$df
+		},
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T

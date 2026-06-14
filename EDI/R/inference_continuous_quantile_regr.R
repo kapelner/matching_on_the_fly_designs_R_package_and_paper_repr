@@ -127,6 +127,14 @@ InferenceContinQuantileRegr = R6::R6Class("InferenceContinQuantileRegr",
 	private = list(
 		tau = NULL,
 		fit_warm_keep = NULL,
+		get_standard_error = function(){
+			if (is.null(private$cached_values$s_beta_hat_T)) private$shared()
+			private$cached_values$s_beta_hat_T
+		},
+		get_degrees_of_freedom = function(){
+			if (is.null(private$cached_values$df)) private$shared()
+			private$cached_values$df
+		},
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},

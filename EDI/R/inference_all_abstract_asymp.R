@@ -82,8 +82,16 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 	),
 	private = list(
 		cached_mod = NULL,
-		get_standard_error = function() stop(class(self)[1], " must implement get_standard_error() to support Wald-type inference."),
-		get_degrees_of_freedom = function() NA_real_,
+		get_standard_error = function(){
+			se = private$cached_values$s_beta_hat_T
+			if (!is.null(se) && is.finite(se) && se > 0) return(se)
+			stop(class(self)[1], " must implement get_standard_error() to support Wald-type inference.")
+		},
+		get_degrees_of_freedom = function(){
+			df = private$cached_values$df
+			if (!is.null(df)) return(df)
+			NA_real_
+		},
 		get_supported_testing_types_impl = function(){
 			"wald"
 		},

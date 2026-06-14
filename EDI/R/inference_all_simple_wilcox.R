@@ -125,6 +125,13 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 			}
 			compute_wilcox_hl_distr_parallel_cpp(as.numeric(y), as.integer(w), matrix(as.integer(indices_mat), nrow=n), private$n_cpp_threads(B))
 		},
+		get_standard_error = function(){
+			if (is.null(private$cached_values$s_beta_hat_T)) private$shared()
+			private$cached_values$s_beta_hat_T
+		},
+		get_degrees_of_freedom = function(){
+			NA_real_
+		},
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			w_mat = permutations$w_mat
