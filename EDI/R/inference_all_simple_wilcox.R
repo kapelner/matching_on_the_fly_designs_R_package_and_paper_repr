@@ -74,7 +74,34 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
 			row_weights = private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights)
-			private$hl_point_estimate(private$y, private$w, row_weights)
+			beta = private$hl_point_estimate(private$y, private$w, row_weights)
+			private$cached_values$beta_hat_T = beta
+			if (!estimate_only) {
+				y_vals = as.numeric(private$y); w_vals = as.integer(private$w); rw = as.numeric(row_weights)
+				i_t = which(w_vals == 1L & is.finite(y_vals) & is.finite(rw) & rw > 0)
+				i_c = which(w_vals == 0L & is.finite(y_vals) & is.finite(rw) & rw > 0)
+				se = NA_real_
+				if (length(i_t) >= 2L && length(i_c) >= 2L) {
+					diffs = as.numeric(outer(y_vals[i_t], y_vals[i_c], "-"))
+					wdiff = as.numeric(outer(rw[i_t], rw[i_c], "*"))
+					ok = is.finite(diffs) & is.finite(wdiff) & wdiff > 0
+					if (any(ok)) {
+						diffs = diffs[ok]; wdiff = wdiff[ok]
+						o = order(diffs); diffs = diffs[o]; wdiff = wdiff[o]
+						cw = cumsum(wdiff) / sum(wdiff)
+						q025 = diffs[which(cw >= 0.025)[1L]]
+						q975 = diffs[which(cw >= 0.975)[1L]]
+						if (is.finite(q025) && is.finite(q975) && q975 > q025)
+							se = (q975 - q025) / (2 * 1.96)
+					}
+				}
+				private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+				private$cached_values$df = NA_real_
+			} else {
+				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$df = NA_real_
+			}
+			private$cached_values$beta_hat_T
 		}
 	),
 	private = list(

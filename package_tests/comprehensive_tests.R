@@ -516,6 +516,8 @@ supports_direct_testing_type = function(testing_type){
 
 	should_record_nonestimable_as_missing = function(obj, label, result = NULL){
 		if (!is_explicitly_nonestimable(obj)) return(FALSE)
+		# If the method returned a valid (finite) result despite non-estimable state, record it normally
+		if (!is.null(result) && !has_invalid_numeric(result)) return(FALSE)
 		stage = if (!is.null(obj) && is.function(obj$get_nonestimable_stage)) {
 			tryCatch(obj$get_nonestimable_stage(), error = function(e) NULL)
 		} else {
@@ -1411,7 +1413,12 @@ for (rep_curr in 1:Nrep) {
 							next
 						}
 						pending_design_header <<- paste0("        === design: ", design_type, " ===")
-						run_tests_for_response(response_type, design_type = design_type, dataset_name = dataset_name, model_formula = model_formula)
+						tryCatch(
+							run_tests_for_response(response_type, design_type = design_type, dataset_name = dataset_name, model_formula = model_formula),
+							error = function(e){
+								message("  FATAL ERROR in run_tests_for_response(", response_type, ", ", design_type, ", ", dataset_name, "): ", e$message)
+							}
+						)
 					}
 				}
 			}
