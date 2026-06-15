@@ -76,11 +76,13 @@ InferenceAllSimpleMeanDiff = R6::R6Class("InferenceAllSimpleMeanDiff",
 			if (is.null(private$cached_values$beta_hat_T)){
 				private$cached_values$yTs = private$y[private$w == 1]
 				private$cached_values$yCs = private$y[private$w == 0]
-				# Check for empty groups in bootstrap samples
 				if (length(private$cached_values$yTs) == 0 || length(private$cached_values$yCs) == 0) {
-					return(NA_real_) # Return NA if either group is empty
+					return(NA_real_)
 				}
 				private$cached_values$beta_hat_T = mean(private$cached_values$yTs) - mean(private$cached_values$yCs)
+			}
+			if (!estimate_only && is.null(private$cached_values$s_beta_hat_T)) {
+				private$shared(estimate_only = FALSE)
 			}
 			private$cached_values$beta_hat_T
 		},

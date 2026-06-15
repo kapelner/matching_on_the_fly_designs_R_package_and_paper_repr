@@ -293,7 +293,14 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			if (isTRUE(na.rm)) boot_distr = boot_distr[is.finite(boot_distr)]
 			else if (any(!is.finite(boot_distr))) return(NA_real_)
 			if (length(boot_distr) < as.integer(min_number_usable_samples)) {
-				if (isTRUE(private$harden)) private$cache_nonestimable_estimate("bootstrap_too_few_finite_estimates")
+				if (isTRUE(private$harden)) {
+					if (!is.null(boot_stats)) {
+						# studentized path: empty because SEs are missing, not because estimates are missing
+						private$cache_nonestimable_se("bootstrap_too_few_finite_standard_errors")
+					} else {
+						private$cache_nonestimable_estimate("bootstrap_too_few_finite_estimates")
+					}
+				}
 				return(NA_real_)
 			}
 			if (length(boot_distr) == 0L) return(NA_real_)

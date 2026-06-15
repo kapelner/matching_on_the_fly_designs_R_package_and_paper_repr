@@ -306,15 +306,18 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			if (ncol(Xd) > 0){
 				Xd = private$reduce_full_rank_matrix(Xd, m)$X
 			}
-			T_obs = private$qr_intercept_pairs(yd_adj, Xd, tau, m)
-			if (!is.finite(T_obs)) return(NA_real_)
-			T_rand = replicate(private$nsim_rand, {
-				signs = 2L * sample_int_replace_cpp(2L, m) - 3L
-				private$qr_intercept_pairs(
-					signs * yd_adj,
-					sweep(Xd, 1L, signs, `*`),
-					tau, m
-				)
+			# suppressWarnings hoisted here (not inside the per-iteration helpers) to avoid
+			# repeated withCallingHandlers installation inside tryCatch inside vapply, which
+			# corrupts R devel's condition handler stack after many iterations.
+			suppressWarnings({
+				T_obs = private$qr_intercept_pairs(yd_adj, Xd, tau, m)
+				if (!is.finite(T_obs)) return(NA_real_)
+				T_rand = vapply(seq_len(private$nsim_rand), function(i) {
+					tryCatch({
+						signs = 2L * sample_int_replace_cpp(2L, m) - 3L
+						private$qr_intercept_pairs(signs * yd_adj, sweep(Xd, 1L, signs, `*`), tau, m)
+					}, error = function(e) NA_real_)
+				}, FUN.VALUE = numeric(1L))
 			})
 			T_rand = T_rand[is.finite(T_rand)]
 			if (length(T_rand) == 0L) return(NA_real_)
@@ -339,13 +342,18 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			cn[j_treat] = "trt__"
 			X_full = private$set_colnames_safely(X_full, cn)
 			y_adj_obs = ty - delta_0 * w_r
-			T_obs = private$qr_trt_coef_reservoir(y_adj_obs, X_full, tau)
-			if (!is.finite(T_obs)) return(NA_real_)
-			T_rand = replicate(private$nsim_rand, {
-				w_perm = sample(w_r)
-				X_perm = X_full
-				X_perm[, j_treat] = w_perm
-				private$qr_trt_coef_reservoir(ty - delta_0 * w_perm, X_perm, tau)
+			# suppressWarnings hoisted here for the same reason as in compute_rand_pval_matched_pairs.
+			suppressWarnings({
+				T_obs = private$qr_trt_coef_reservoir(y_adj_obs, X_full, tau)
+				if (!is.finite(T_obs)) return(NA_real_)
+				T_rand = vapply(seq_len(private$nsim_rand), function(i) {
+					tryCatch({
+						w_perm = sample(w_r)
+						X_perm = X_full
+						X_perm[, j_treat] = w_perm
+						private$qr_trt_coef_reservoir(ty - delta_0 * w_perm, X_perm, tau)
+					}, error = function(e) NA_real_)
+				}, FUN.VALUE = numeric(1L))
 			})
 			T_rand = T_rand[is.finite(T_rand)]
 			if (length(T_rand) == 0L) return(NA_real_)
@@ -356,7 +364,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			p = ncol(Xd)
 			if (p == 0L || m <= p + 1L){
 				fit = tryCatch(
-					suppressWarnings(quantreg::rq(yd ~ 1, tau = tau)),
+					quantreg::rq(yd ~ 1, tau = tau),
 					error = function(e) NULL
 				)
 				if (is.null(fit)) return(NA_real_)
@@ -366,7 +374,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			dat = as.data.frame(Xd)
 			dat$yd__ = yd
 			fit = tryCatch(
-				suppressWarnings(quantreg::rq(yd__ ~ ., tau = tau, data = dat)),
+				quantreg::rq(yd__ ~ ., tau = tau, data = dat),
 				error = function(e) NULL
 			)
 			if (is.null(fit)) return(NA_real_)
@@ -377,7 +385,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			dat = as.data.frame(X_full)
 			dat$yr__ = y_adj
 			fit = tryCatch(
-				suppressWarnings(quantreg::rq(yr__ ~ . - 1, tau = tau, data = dat)),
+				quantreg::rq(yr__ ~ . - 1, tau = tau, data = dat),
 				error = function(e) NULL
 			)
 			if (is.null(fit)) return(NA_real_)
