@@ -28,7 +28,6 @@ des$assign_w_to_all_subjects()
 \itemize{
 \item \href{#method-DesignFixedOptimalBlocks-supports_batch_w_pregeneration}{\code{DesignFixedOptimalBlocks$supports_batch_w_pregeneration()}}
 \item \href{#method-DesignFixedOptimalBlocks-new}{\code{DesignFixedOptimalBlocks$new()}}
-\item \href{#method-DesignFixedOptimalBlocks-draw_ws_according_to_design}{\code{DesignFixedOptimalBlocks$draw_ws_according_to_design()}}
 \item \href{#method-DesignFixedOptimalBlocks-clone}{\code{DesignFixedOptimalBlocks$clone()}}
 }
 }
@@ -42,6 +41,7 @@ des$assign_w_to_all_subjects()
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_even_allocation"><a href='../..//html/Design.html#method-Design-assert_even_allocation'><code>::Design$assert_even_allocation()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_fixed_sample"><a href='../..//html/Design.html#method-Design-assert_fixed_sample'><code>::Design$assert_fixed_sample()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="check_experiment_completed"><a href='../..//html/Design.html#method-Design-check_experiment_completed'><code>::Design$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="draw_ws_according_to_design"><a href='../..//html/Design.html#method-Design-draw_ws_according_to_design'><code>::Design$draw_ws_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="duplicate"><a href='../..//html/Design.html#method-Design-duplicate'><code>::Design$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X"><a href='../..//html/Design.html#method-Design-get_X'><code>::Design$get_X()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_imp"><a href='../..//html/Design.html#method-Design-get_X_imp'><code>::Design$get_X_imp()</code></a></span></li>
@@ -103,7 +103,7 @@ Initialize a fixed optimal-blocks design.
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedOptimalBlocks$new(
   B = NULL,
   method = "K-way",
-  dist = "euclidean",
+  dist = "mahal",
   response_type,
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
@@ -140,7 +140,7 @@ defaults to \code{floor(sqrt(n))}, with a minimum of 1.}
 
 \item{\code{dist}}{Distance specification used only when \code{method = "ompr"}.
 Either a function or one of \code{"euclidean"}, \code{"sum_abs_diff"},
-or \code{"mahal"}.}
+or \code{"mahal"}. Default is \code{"mahal"}.}
 
 \item{\code{response_type}}{The response type for the design.}
 
@@ -162,26 +162,6 @@ or \code{"mahal"}.}
 }
 \subsection{Returns}{
 A new \code{DesignFixedOptimalBlocks} object.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignFixedOptimalBlocks-draw_ws_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignFixedOptimalBlocks-draw_ws_according_to_design}{}}}
-\subsection{Method \code{draw_ws_according_to_design()}}{
-Draw treatment assignments according to the optimal-blocks design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixedOptimalBlocks$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{Number of assignment vectors to draw.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A numeric matrix with one assignment vector per column.
 }
 }
 \if{html}{\out{<hr>}}

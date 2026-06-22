@@ -1,8 +1,8 @@
 rm(list = ls())
-pacman::p_load(data.table, R.utils, ggplot2, gridExtra, xtable)
+pacman::p_load(data.table, R.utils, ggplot2, scales, gridExtra, xtable)
 
 Nrep = 10000
-raw_results_dt = data.table::fread(sprintf("cmh_exact_sims_plus_greedy_results_high_signal_Nrep_%d.csv.bz2", Nrep))
+raw_results_dt = fread(sprintf("cmh_exact_sims_plus_greedy_results_high_signal_Nrep_%d.csv.bz2", Nrep))
 raw_results_dt[, reject := pval < 0.05]
 raw_results_dt[, covers := ci_lo <= true_estimand & true_estimand <= ci_hi]
 raw_results_dt[, ci_length := ci_hi - ci_lo]
@@ -40,25 +40,28 @@ results_dt[, `:=`(
 
 # Shorten labels
 results_dt[, design_short    := gsub("DesignFixed", "", design)]
+table(results_dt$design)
 table(results_dt$design_short)
 results_dt[, inference_short := inference]
 results_dt[, inference_short := gsub("InferenceIncid", "", inference_short)]
 
 # Row 1: iBCRD, OptimalBlocks B=4/8/16/32; Row 2: BinaryMatch, Blocking B_target=4/8/16/32
 design_levels = c(
-  "iBCRD",               
-  "OptimalBlocks (B=2)",           
-  "OptimalBlocks (B=4)",     
-  "OptimalBlocks (B=8)",   
-  "OptimalBlocks (B=16)",  
-  "OptimalBlocks (B=32)",   
-  "OptimalBlocks (B=64)", 
+  "iBCRD",
+  "OptimalBlocks (B=2)",
+  "OptimalBlocks (B=4)",
+  "OptimalBlocks (B=8)",
+  "OptimalBlocks (B=16)",
+  "OptimalBlocks (B=32)",
+  "OptimalBlocks (B=64)",
+  "OptimalBlocks (B=128)",
   "Blocking (B_target=2, exact_num_blocks=TRUE)",
-  "Blocking (B_target=4, exact_num_blocks=TRUE)",  
-  "Blocking (B_target=8, exact_num_blocks=TRUE)",  
-  "Blocking (B_target=16, exact_num_blocks=TRUE)",    
-  "Blocking (B_target=32, exact_num_blocks=TRUE)",    
-  "Blocking (B_target=64, exact_num_blocks=TRUE)",   
+  "Blocking (B_target=4, exact_num_blocks=TRUE)",
+  "Blocking (B_target=8, exact_num_blocks=TRUE)",
+  "Blocking (B_target=16, exact_num_blocks=TRUE)",
+  "Blocking (B_target=32, exact_num_blocks=TRUE)",
+  "Blocking (B_target=64, exact_num_blocks=TRUE)",
+  "Blocking (B_target=128, exact_num_blocks=TRUE)",
   "BinaryMatch",
   "Rerandomization (prop_acceptable=0.01)",
   'Greedy (objective=""abs_sum_diff"")',
@@ -67,19 +70,21 @@ design_levels = c(
   'MatchingGreedyPairSwitching (objective=""mahal_dist"")'
 )
 design_labels = c(
-  "iBCRD",              
-  "Optimal B=2",                    
-  "Optimal B=4",     
-  "Optimal B=8",   
-  "Optimal B=16",  
-  "Optimal B=32",   
-  "Optimal B=64", 
-  "B=2", 
-  "B=4",  
-  "B=8",  
-  "B=16",    
-  "B=32",     
-  "B=64",  
+  "BCRD",
+  "Optimal B=2",
+  "Optimal B=4",
+  "Optimal B=8",
+  "Optimal B=16",
+  "Optimal B=32",
+  "Optimal B=64",
+  "Optimal B=128",
+  "Naive B=2",
+  "Naive B=4",
+  "Naive B=8",
+  "Naive B=16",
+  "Naive B=32",
+  "Naive B=64",
+  "Naive B=128",
   "BinaryMatch",
   "Rerandomization",
   "GreedyAbs",
@@ -102,7 +107,7 @@ extract_legend = function(plot_obj) {
   plot_grob$grobs[[guide_idx[1L]]]
 }
 
-build_metric_plot = function(dat, metric, xlab, hline = NULL, show_y_axis = TRUE, show_legend = FALSE, hline_linetype = "dashed", show_n_strip = TRUE, free_metric_axis = FALSE) {
+build_metric_plot = function(dat, metric, xlab, hline = NULL, show_y_axis = TRUE, show_legend = FALSE, hline_linetype = "dashed", show_n_strip = TRUE, free_metric_axis = FALSE, x_label_digits = NULL, x_breaks = NULL) {
   dat = copy(dat)
   dat[, y := get(metric)]
 
@@ -132,7 +137,7 @@ build_metric_plot = function(dat, metric, xlab, hline = NULL, show_y_axis = TRUE
       axis.text        = element_text(size = 11),
       axis.title.x     = element_text(size = 13),
       axis.title.y     = if (show_y_axis) element_blank() else element_blank(),
-      axis.text.y      = if (show_y_axis) element_text(size = 11) else element_blank(),
+      axis.text.y      = if (show_y_axis) element_text(size = 8) else element_blank(),
       axis.ticks.y     = if (show_y_axis) element_line() else element_blank(),
       panel.grid.minor = element_blank()
     )
@@ -142,6 +147,17 @@ build_metric_plot = function(dat, metric, xlab, hline = NULL, show_y_axis = TRUE
   if (has_ci_cols) {
     plot_obj = plot_obj + geom_errorbar(aes(ymin = y_lo, ymax = y_hi), width = 0.2, linewidth = 0.4, position = dodge)
   }
+  if (!is.null(x_label_digits) || !is.null(x_breaks)) {
+    acc = if (!is.null(x_label_digits)) 10^(-x_label_digits) else 0.01
+    lbl_fn = function(x) {
+      lbl = scales::label_number(accuracy = acc)(x)
+      ifelse(abs(x - 1) < 1e-9, "", lbl)
+    }
+    plot_obj = plot_obj + scale_y_continuous(
+      breaks = if (!is.null(x_breaks)) x_breaks else waiver(),
+      labels = lbl_fn
+    )
+  }
   plot_obj
 }
 
@@ -150,24 +166,29 @@ make_two_column_plot = function(
   dat_right, metric_right, xlab_right, hline_right,
   title_str, filename_stem, plot = TRUE, save_PDF = FALSE, save_PNG = FALSE,
   hline_linetype_left = "dashed", hline_linetype_right = "dashed",
-  free_metric_axis_left = FALSE, free_metric_axis_right = FALSE
+  free_metric_axis_left = FALSE, free_metric_axis_right = FALSE,
+  x_label_digits_left = NULL, x_label_digits_right = NULL,
+  x_breaks_left = NULL, x_breaks_right = NULL
 ) {
   left_plot_for_legend = build_metric_plot(
     dat_left, metric_left, xlab_left, hline = hline_left,
     show_y_axis = TRUE, show_legend = TRUE, hline_linetype = hline_linetype_left,
-    show_n_strip = FALSE, free_metric_axis = free_metric_axis_left
+    show_n_strip = FALSE, free_metric_axis = free_metric_axis_left,
+    x_label_digits = x_label_digits_left, x_breaks = x_breaks_left
   )
   legend_grob = extract_legend(left_plot_for_legend)
 
   left_plot = build_metric_plot(
     dat_left, metric_left, xlab_left, hline = hline_left,
     show_y_axis = TRUE, show_legend = FALSE, hline_linetype = hline_linetype_left,
-    show_n_strip = FALSE, free_metric_axis = free_metric_axis_left
+    show_n_strip = FALSE, free_metric_axis = free_metric_axis_left,
+    x_label_digits = x_label_digits_left, x_breaks = x_breaks_left
   )
   right_plot = build_metric_plot(
     dat_right, metric_right, xlab_right, hline = hline_right,
     show_y_axis = FALSE, show_legend = FALSE, hline_linetype = hline_linetype_right,
-    show_n_strip = TRUE, free_metric_axis = free_metric_axis_right
+    show_n_strip = TRUE, free_metric_axis = free_metric_axis_right,
+    x_label_digits = x_label_digits_right, x_breaks = x_breaks_right
   )
 
   combined_row = gridExtra::arrangeGrob(left_plot, right_plot, ncol = 2)
@@ -302,14 +323,17 @@ for (p_ in unique(results_dt$p)) {
         hline_linetype_left = "dashed",
         hline_linetype_right = "dotted",
         free_metric_axis_left = TRUE,
-        free_metric_axis_right = FALSE
+        free_metric_axis_right = FALSE,
+        x_label_digits_left = 2,
+        x_label_digits_right = 2,
+        x_breaks_right = c(0.05, 0.10, 0.15)
       )
     }
   }
 }
 
-n_ = 128
-p_ = 5
+n_ = 64
+p_ = 1
 cond_exp_func_model_ = "linear"
 pow =    results_dt[betaT == 1 & n == n_ & p == p_ & cond_exp_func_model == cond_exp_func_model_, 
                  .(power = pow_avg, design = design_short, inference = inference_short)]
@@ -330,7 +354,7 @@ tab_results = merge(
                     cov, by = c("design", "inference"), all.x = TRUE), 
                       ci_len, by = c("design", "inference"), all.x = TRUE)
 
-design_table_order = c(setdiff(design_labels, "iBCRD"), "iBCRD")
+design_table_order = c(setdiff(design_labels, "BCRD"), "BCRD")
 inference_table_order = c("CMH", "Wald", "ExtendedRobins")
 
 cmh_vs_wald = dcast(
@@ -361,20 +385,75 @@ tab_results
 
 tab_results_latex = copy(tab_results)
 tab_results_latex[, `:=`(
-  design = as.character(design),
+  design    = as.character(design),
   inference = as.character(inference)
 )]
-design_block_ends = which(tab_results_latex[, c(as.character(design[-1L]) != as.character(design[-.N]), TRUE)])
+tab_results_latex[, inference := gsub("ExtendedRobins", "Robins", inference)]
+tab_results_latex = tab_results_latex[inference != "Robins"]
+tab_results_latex[, design    := gsub("BinaryMatchThenGreedyMD", "BMGMD", design)]
+tab_results_latex[, c("size", "coverage") := NULL]
+tab_results_latex = tab_results_latex[, .(design, inference, power, cilength, percent_power_gain, percent_length_reduction)]
+
+design_block_ends = which(tab_results_latex[, c(design[-1L] != design[-.N], TRUE)])
 
 latex_table = xtable::xtable(
   as.data.frame(tab_results_latex),
-  align = c("l", "l", "l|", "r", "r", "r", "r|", "r", "r")
+  align = c("l", "l", "l|", "r", "r|", "r", "r")
 )
+
+two_row_header = paste0(
+  "\\hline\n",
+  "Design & Inference & Power & CI & Power & CI Length \\\\\n",
+  " & & & Length & Gain (\\%) & Reduction (\\%) \\\\\n",
+  "\\hline\n"
+)
+all_pos  = as.list(c(-1L, design_block_ends, nrow(tab_results_latex)))
+all_cmds = c(two_row_header, rep("\\hline\n", length(design_block_ends) + 1L))
+
 print(
   latex_table,
   include.rownames = FALSE,
-  hline.after = c(-1, 0, design_block_ends),
+  include.colnames = FALSE,
+  add.to.row = list(pos = all_pos, command = all_cmds),
+  hline.after = NULL,
   sanitize.text.function = identity,
   file = sprintf("tab_results_n_%s_p_%s_%s.tex", n_, p_, cond_exp_func_model_)
 )
+
+# CMH power vs B for OptimalBlocks at n=64, coloured by p
+opt_cmh_n64 = raw_results_dt[
+  grepl("OptimalBlocks", design) &
+  inference == "InferenceIncidCMH" &
+  inference_type == "asymp_pval" &
+  betaT == 1 &
+  n == 64 &
+  p %in% c(1, 5, 10) &
+  !is.na(pval),
+  .(power = mean(pval < 0.05), N = .N),
+  by = .(p, design)
+]
+opt_cmh_n64[, B := as.integer(sub(".*\\bB=(\\d+).*", "\\1", design))]
+opt_cmh_n64[, p_label := factor(paste0("p = ", p), levels = paste0("p = ", c(1, 5, 10)))]
+opt_cmh_n64[, pow_lo := power - z * sqrt(power * (1 - power) / N)]
+opt_cmh_n64[, pow_hi := power + z * sqrt(power * (1 - power) / N)]
+
+p_cmh_opt_n64 = ggplot(opt_cmh_n64, aes(x = B, y = power, color = p_label, fill = p_label, group = p_label)) +
+  geom_ribbon(aes(ymin = pow_lo, ymax = pow_hi), alpha = 0.15, color = NA) +
+  geom_line(linewidth = 0.8) +
+  geom_point(size = 2) +
+  scale_x_continuous(breaks = sort(unique(opt_cmh_n64$B)), trans = "log2") +
+  scale_color_brewer(palette = "Set1", name = "Covariates") +
+  scale_fill_brewer(palette = "Set1", name = "Covariates") +
+  labs(
+    x = "B",
+    y = "Power"
+  ) +
+  theme_bw(base_size = 11) +
+  theme(
+    legend.position  = "bottom",
+    panel.grid.minor = element_blank()
+  )
+
+ggsave("plot_cmh_opt_power_vs_B_n64.pdf", p_cmh_opt_n64, width = 5, height = 4)
+p_cmh_opt_n64
 

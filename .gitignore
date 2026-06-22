@@ -398,7 +398,6 @@ benchmark/worker_v2.R
 benchmark_final_output.log
 simulations/*elapsed.rds
 truly_definitive_high_res_results.csv
-warm_starts_final_results.csv
-warm_starts_final_results_clean.csv
-warm_starts_bayes_jackknife_results.csv
-warm_starts_final_results_backup.csv
+warm_starts_*.csv
+warm_starts*.log
+scratch/*

@@ -20,31 +20,31 @@ DesignFixedBinaryMatch = R6::R6Class("DesignFixedBinaryMatch",
 		#'
 		#' @param response_type 	The data type of response values.
 		#' @param prob_T  The probability of the treatment assignment. Must be 0.5.
-		#' @param mahal_match 	Match using Mahalanobis distance. Default is \code{FALSE} (Euclidean).
-			#' @param include_is_missing_as_a_new_feature  Flag for missingness indicators.
-			#' @param n  		The sample size.
-			#' @param m Optional integer vector of explicit matched-pair identifiers, one per
-			#'   subject. If supplied, `n` must also be supplied, `length(m)` must equal `n`,
-			#'   all values must be positive, and each pair ID must occur exactly twice.
-			#'   This bypasses the package-computed matching step.
-			#' @param verbose  Flag for verbosity.
-			#' @param missingness_method How to handle missing values in covariates.
-			#' @param model_formula A formula object.
-			#' @param seed Integer seed for reproducibility.
+		#' @param mahal_match 	Match using Mahalanobis distance (else use Euclidean). Default is \code{TRUE}.
+		#' @param include_is_missing_as_a_new_feature  Flag for missingness indicators.
+		#' @param n  		The sample size.
+		#' @param m Optional integer vector of explicit matched-pair identifiers, one per
+		#'   subject. If supplied, `n` must also be supplied, `length(m)` must equal `n`,
+		#'   all values must be positive, and each pair ID must occur exactly twice.
+		#'   This bypasses the package-computed matching step.
+		#' @param verbose  Flag for verbosity.
+		#' @param missingness_method How to handle missing values in covariates.
+		#' @param model_formula A formula object.
+		#' @param seed Integer seed for reproducibility.
 		#'
 		#' @return 			A new `DesignFixedBinaryMatch` object
 		#'
 		initialize = function(
 				response_type,
 				prob_T = 0.5,
-					mahal_match = FALSE,
-					include_is_missing_as_a_new_feature = TRUE,
-					n = NULL,
-					m = NULL,
-					verbose = FALSE,
-					missingness_method = "impute",
-					model_formula = ~ .,
-					seed = NULL
+				mahal_match = TRUE,
+				include_is_missing_as_a_new_feature = TRUE,
+				n = NULL,
+				m = NULL,
+				verbose = FALSE,
+				missingness_method = "impute",
+				model_formula = ~ .,
+				seed = NULL
 				) {
 				if (should_run_asserts()) {
 					if (prob_T != 0.5){
@@ -77,13 +77,12 @@ DesignFixedBinaryMatch = R6::R6Class("DesignFixedBinaryMatch",
 		assign_w_to_all_subjects = function(w_precomputed = NULL){
 			private$ensure_matching_structure_computed()
 			super$assign_w_to_all_subjects(w_precomputed)
-		},
-		#' @description Draw multiple treatment assignment vectors according to binary matching.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
+		}
+	),
+	private = list(
+		mahal_match = NULL,
+		bms = NULL,
+		draw_ws_raw = function(r = 100){
 			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				assertCount(r, positive = TRUE)
@@ -103,11 +102,7 @@ DesignFixedBinaryMatch = R6::R6Class("DesignFixedBinaryMatch",
 				as.integer(self$num_cores)
 			)
 			private$validate_allocation_matrix(w_mat, n = n, r = r)
-		}
-	),
-	private = list(
-		mahal_match = NULL,
-		bms = NULL,
+		},
 		validate_allocation_matrix = function(w_mat, n, r){
 			if (is.vector(w_mat)) {
 				w_mat = matrix(w_mat, nrow = n, ncol = 1)

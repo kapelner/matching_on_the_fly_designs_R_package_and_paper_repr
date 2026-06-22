@@ -59,13 +59,11 @@ DesignFixedBlockedCluster = R6::R6Class("DesignFixedBlockedCluster",
 			private$cluster_col = cluster_col
 			private$preferred_num_bins_for_continuous_covariate = preferred_num_bins_for_continuous_covariate
 			private$uses_covariates = TRUE
-		},
-		#' @description Draw multiple treatment assignment vectors according to blocked cluster randomization.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
+		}
+	),
+	private = list(
+		cluster_col = NULL,
+		draw_ws_raw = function(r = 100){
 			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				self$assert_all_subjects_arrived()
@@ -74,19 +72,16 @@ DesignFixedBlockedCluster = R6::R6Class("DesignFixedBlockedCluster",
 			strata_keys = private$get_strata_keys()
 
 			cluster_ids = as.character(private$Xraw[[private$cluster_col]])
-			
+
 			# Use randomizr::block_and_cluster_ra for canonical blocked and clustered randomization
 			w_mat = replicate(r, as.numeric(as.character(randomizr::block_and_cluster_ra(
-				blocks = strata_keys, 
-				clusters = cluster_ids, 
+				blocks = strata_keys,
+				clusters = cluster_ids,
 				prob = private$prob_T
 			))))
 			storage.mode(w_mat) = "numeric"
 			w_mat
-		}
-	),
-	private = list(
-		cluster_col = NULL,
+		},
 		draw_bootstrap_indices = function(bootstrap_type = NULL){
 			n = private$t
 			strata_keys = private$get_strata_keys()

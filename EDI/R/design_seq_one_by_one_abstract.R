@@ -147,7 +147,7 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 		},
 		#' @description Adds a subject and assigns treatment.
 		#' @param x_new A data frame with one row representing the new subject's covariates.
-		#' @return The treatment assignment (0 or 1).
+		#' @return The treatment assignment as {-1,+1} (+1 = treated, -1 = control).
 		add_one_subject_to_experiment_and_assign = function(x_new){
 			self$add_one_subject(x_new)
 			w_t = self$assign_wt()
@@ -160,17 +160,20 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 					private$w[private$t] = w_t
 				}
 			}
-			private$w[private$t]
+			2L * private$w[private$t] - 1L
 		},
 		#' @description Assigns treatment to the current subject.
 		#' @return The treatment assignment (0 or 1).
 		assign_wt = function(){
 			stop("Must be implemented by subclass.")
 		},
-		#' @description Draws treatment vectors according to the design.
-		#' @param r Number of vectors to draw.
-		#' @return A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
+		#' @description Prints the current subject's assignment.
+		print_current_subject_assignment = function(){
+			cat("Subject number", private$t, "is assigned to", ifelse(private$w[private$t] == 1, "TREATMENT", "CONTROL"), "via design", class(self)[1], "\n")
+		}
+	),
+	private = list(
+		draw_ws_raw = function(r = 100){
 			w_mat = matrix(NA_real_, nrow = private$t, ncol = r)
 			for (j in 1 : r){
 				if (private$fixed_sample) {
@@ -184,10 +187,6 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 				w_mat[, j] = private$w[1:private$t]
 			}
 			w_mat
-		},
-		#' @description Prints the current subject's assignment.
-		print_current_subject_assignment = function(){
-			cat("Subject number", private$t, "is assigned to", ifelse(private$w[private$t] == 1, "TREATMENT", "CONTROL"), "via design", class(self)[1], "\n")
 		}
 	)
 )

@@ -38,7 +38,7 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 			#'   }
 			#' @param dist Distance specification used only when \code{method = "ompr"}.
 			#'   Either a function or one of \code{"euclidean"}, \code{"sum_abs_diff"},
-			#'   or \code{"mahal"}.
+			#'   or \code{"mahal"}. Default is \code{"mahal"}.
 			#' @param response_type The response type for the design.
 			#' @param prob_T Treatment assignment probability within each block.
 			#' @param include_is_missing_as_a_new_feature Whether to include missingness indicators.
@@ -51,7 +51,7 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 			initialize = function(
 				B = NULL,
 				method = "K-way",
-				dist = "euclidean",
+				dist = "mahal",
 				response_type,
 				prob_T = 0.5,
 				include_is_missing_as_a_new_feature = TRUE,
@@ -98,11 +98,15 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 					if (should_run_asserts()) {
 						private$assert_feasible_block_sizes(as.integer(n))
 					}
-			},
-		#' @description Draw treatment assignments according to the optimal-blocks design.
-		#' @param r Number of assignment vectors to draw.
-		#' @return A numeric matrix with one assignment vector per column.
-		draw_ws_according_to_design = function(r = 100){
+			}
+	),
+	private = list(
+		B = NULL,
+		method = NULL,
+		dist_spec = NULL,
+		block_ids = NULL,
+		distance_matrix = NULL,
+		draw_ws_raw = function(r = 100){
 			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				self$assert_all_subjects_arrived()
@@ -111,14 +115,7 @@ DesignFixedOptimalBlocks = R6::R6Class("DesignFixedOptimalBlocks",
 			w_mat = replicate(r, as.numeric(as.character(randomizr::block_ra(blocks = block_ids, prob = private$prob_T))))
 			storage.mode(w_mat) = "numeric"
 			w_mat
-		}
-	),
-	private = list(
-		B = NULL,
-		method = NULL,
-		dist_spec = NULL,
-		block_ids = NULL,
-		distance_matrix = NULL,
+		},
 		draw_bootstrap_indices = function(bootstrap_type = NULL){
 			block_ids = as.character(private$get_or_compute_block_ids())
 			if (is.null(bootstrap_type) || bootstrap_type == "within_blocks") {

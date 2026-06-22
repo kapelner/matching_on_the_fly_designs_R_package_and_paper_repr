@@ -99,20 +99,17 @@ DesignFixedBlocking = R6::R6Class("DesignFixedBlocking",
 				if (!is.null(m)) {
 					self$set_m(m)
 				}
-			},
-		#' @description Draw multiple treatment assignment vectors according to stratified blocking.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
+			}
+	),
+	private = list(
+		draw_ws_raw = function(r = 100){
 			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				self$assert_all_subjects_arrived()
 			}
 
 			strata_keys = private$get_strata_keys()
-			
+
 			# Use randomizr::block_ra for canonical stratified blocking if available,
 			# or fallback to our C++ implementation.
 			if (check_package_installed("randomizr")) {
@@ -120,10 +117,10 @@ DesignFixedBlocking = R6::R6Class("DesignFixedBlocking",
 				storage.mode(w_mat) = "numeric"
 				return(w_mat)
 			}
-			
+
 			unique_keys = unique(strata_keys)
 			strata_indices = lapply(unique_keys, function(key) which(strata_keys == key))
-			
+
 			res = generate_permutations_blocking_cpp(
 				as.integer(self$get_n()),
 				as.integer(r),
@@ -133,9 +130,7 @@ DesignFixedBlocking = R6::R6Class("DesignFixedBlocking",
 			w_mat = res$w_mat
 			storage.mode(w_mat) = "numeric"
 			w_mat
-		}
-	),
-	private = list(
+		},
 		draw_bootstrap_indices = function(bootstrap_type = NULL){
 			strata_keys = private$get_strata_keys()
 			if (is.null(bootstrap_type) || bootstrap_type == "within_blocks") {

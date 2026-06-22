@@ -60,13 +60,12 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 		#' @description Whether this design supports batch pregeneration of treatment vectors.
 		#'
 		#' @return \code{TRUE}.
-		supports_batch_w_pregeneration = function() TRUE,
-		#' @description Draw multiple treatment assignment vectors.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
+		supports_batch_w_pregeneration = function() TRUE
+	),
+	private = list(
+		objective = NULL,
+		n_iter    = NULL,
+		draw_ws_raw = function(r = 100){
 			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				assertCount(r, positive = TRUE)
@@ -96,11 +95,7 @@ DesignFixedGreedy = R6::R6Class("DesignFixedGreedy",
 			# greedy_design_search_cpp already returns n x r
 			storage.mode(w_mat) = "numeric"
 			private$validate_allocation_matrix(w_mat, n = n, r = r)
-		}
-	),
-	private = list(
-		objective = NULL,
-		n_iter    = NULL,
+		},
 		validate_allocation_matrix = function(w_mat, n, r){
 			if (is.vector(w_mat)) {
 				w_mat = matrix(w_mat, nrow = n, ncol = 1)

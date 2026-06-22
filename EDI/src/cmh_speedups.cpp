@@ -86,7 +86,7 @@ double compute_extended_robins_block_se_cpp(const NumericVector& y,
     if (match_id == NA_INTEGER || match_id <= 0) {
       continue;
     }
-    if (!R_finite(y[i]) || !R_finite(w[i]) || (w[i] != 0.0 && w[i] != 1.0)) {
+    if (!R_finite(y[i]) || !R_finite(w[i]) || (w[i] != -1.0 && w[i] != 1.0)) {
       return NA_REAL;
     }
 

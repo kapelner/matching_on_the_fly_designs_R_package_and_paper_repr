@@ -35,13 +35,10 @@ DesignFixedBernoulli = R6::R6Class("DesignFixedBernoulli",
 				seed = NULL
 			) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
-		},
-		#' @description Draw multiple treatment assignment vectors according to Bernoulli randomization.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r){
+		}
+	),
+	private = list(
+		draw_ws_raw = function(r){
 			private$maybe_set_seed()
 			generate_permutations_bernoulli_cpp(
 				as.integer(self$get_n()),

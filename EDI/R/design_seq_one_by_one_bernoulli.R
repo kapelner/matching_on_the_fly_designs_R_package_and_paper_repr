@@ -46,13 +46,10 @@ DesignSeqOneByOneBernoulli = R6::R6Class("DesignSeqOneByOneBernoulli",
 		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){
 			rbinom(1, 1, private$prob_T)
-		},
-		#' @description Draw multiple treatment assignment vectors according to Bernoulli randomization.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
+		}
+	),
+	private = list(
+		draw_ws_raw = function(r = 100){
 			generate_permutations_bernoulli_cpp(as.integer(private$t), as.integer(r), as.numeric(private$prob_T))$w_mat
 		}
 	)

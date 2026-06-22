@@ -25,7 +25,9 @@ des$assign_w_to_all_subjects()
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-DesignFixedFactorial-new}{\code{DesignFixedFactorial$new()}}
+\item \href{#method-DesignFixedFactorial-assign_w_to_all_subjects}{\code{DesignFixedFactorial$assign_w_to_all_subjects()}}
 \item \href{#method-DesignFixedFactorial-draw_ws_according_to_design}{\code{DesignFixedFactorial$draw_ws_according_to_design()}}
+\item \href{#method-DesignFixedFactorial-get_w}{\code{DesignFixedFactorial$get_w()}}
 \item \href{#method-DesignFixedFactorial-get_w_factorial}{\code{DesignFixedFactorial$get_w_factorial()}}
 \item \href{#method-DesignFixedFactorial-clone}{\code{DesignFixedFactorial$clone()}}
 }
@@ -54,7 +56,6 @@ des$assign_w_to_all_subjects()
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_response_type"><a href='../..//html/Design.html#method-Design-get_response_type'><code>::Design$get_response_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_response_type_original"><a href='../..//html/Design.html#method-Design-get_response_type_original'><code>::Design$get_response_type_original()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_t"><a href='../..//html/Design.html#method-Design-get_t'><code>::Design$get_t()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_w"><a href='../..//html/Design.html#method-Design-get_w'><code>::Design$get_w()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_y"><a href='../..//html/Design.html#method-Design-get_y'><code>::Design$get_y()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_y_original"><a href='../..//html/Design.html#method-Design-get_y_original'><code>::Design$get_y_original()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="has_covariates"><a href='../..//html/Design.html#method-Design-has_covariates'><code>::Design$has_covariates()</code></a></span></li>
@@ -75,7 +76,6 @@ des$assign_w_to_all_subjects()
 <li><span class="pkg-link" data-pkg="" data-topic="DesignMatching" data-id="is_matching_design"><a href='../..//html/DesignMatching.html#method-DesignMatching-is_matching_design'><code>::DesignMatching$is_matching_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="DesignFixed" data-id="add_all_subject_responses"><a href='../..//html/DesignFixed.html#method-DesignFixed-add_all_subject_responses'><code>::DesignFixed$add_all_subject_responses()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="DesignFixed" data-id="add_all_subjects_to_experiment"><a href='../..//html/DesignFixed.html#method-DesignFixed-add_all_subjects_to_experiment'><code>::DesignFixed$add_all_subjects_to_experiment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignFixed" data-id="assign_w_to_all_subjects"><a href='../..//html/DesignFixed.html#method-DesignFixed-assign_w_to_all_subjects'><code>::DesignFixed$assign_w_to_all_subjects()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="DesignFixed" data-id="overwrite_all_subject_assignments"><a href='../..//html/DesignFixed.html#method-DesignFixed-overwrite_all_subject_assignments'><code>::DesignFixed$overwrite_all_subject_assignments()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="DesignFixed" data-id="supports_resampling"><a href='../..//html/DesignFixed.html#method-DesignFixed-supports_resampling'><code>::DesignFixed$supports_resampling()</code></a></span></li>
 </ul>
@@ -126,10 +126,29 @@ A new `DesignFixedFactorial` object
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DesignFixedFactorial-assign_w_to_all_subjects"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignFixedFactorial-assign_w_to_all_subjects}{}}}
+\subsection{Method \code{assign_w_to_all_subjects()}}{
+Assign treatment (factor combination) to all subjects.
+For factorial designs the w vector stores factor combination indices.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DesignFixedFactorial$assign_w_to_all_subjects(w_precomputed = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{w_precomputed}}{Optional pre-computed factor combination index vector.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedFactorial-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedFactorial-draw_ws_according_to_design}{}}}
 \subsection{Method \code{draw_ws_according_to_design()}}{
 Draw multiple treatment assignment vectors according to balanced factorial randomization.
+NOTE: Factorial designs return factor combination indices (1..num_combinations), not {-1,+1}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedFactorial$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
 }
@@ -142,7 +161,21 @@ Draw multiple treatment assignment vectors according to balanced factorial rando
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A matrix of size n x r.
+A matrix of size n x r with factor combination indices.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DesignFixedFactorial-get_w"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignFixedFactorial-get_w}{}}}
+\subsection{Method \code{get_w()}}{
+Get the factor combination index assigned to each subject.
+NOTE: For factorial designs this returns raw factor indices, not {-1,+1}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DesignFixedFactorial$get_w()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+An integer vector of factor combination indices.
 }
 }
 \if{html}{\out{<hr>}}

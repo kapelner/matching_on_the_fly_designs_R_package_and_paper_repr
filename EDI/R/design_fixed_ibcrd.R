@@ -39,13 +39,10 @@ DesignFixediBCRD = R6::R6Class("DesignFixediBCRD",
 			if (!is.null(n)) {
 				private$m = rep(1L, as.integer(n))
 			}
-		},
-		#' @description Draw multiple treatment assignment vectors according to balanced randomization.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r){
+		}
+	),
+	private = list(
+		draw_ws_raw = function(r){
 			private$maybe_set_seed()
 			generate_permutations_ibcrd_cpp(
 				as.integer(self$get_n()),

@@ -52,13 +52,14 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 			private$objective = objective
 			private$uses_covariates = TRUE
 			#note: we are not setting private$m as this is not a blocking design
-		},
-		#' @description Draw multiple treatment assignment vectors.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
+		}
+	),
+	private = list(
+		obj_val_cutoff = NULL,
+		prop_acceptable = NULL,
+		objective = NULL,
+		S_inv = NULL,
+		draw_ws_raw = function(r = 100){
 			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				assertCount(r, positive = TRUE)
@@ -135,13 +136,7 @@ DesignFixedRerandomization = R6::R6Class("DesignFixedRerandomization",
 				w_mat[, j] = private$generate_one_rerandomized_w()
 			}
 			w_mat
-		}
-	),
-	private = list(
-		obj_val_cutoff = NULL,
-		prop_acceptable = NULL,
-		objective = NULL,
-		S_inv = NULL,
+		},
 		validate_allocation_matrix = function(w_mat, n, r, require_balanced = FALSE){
 			if (is.vector(w_mat)) {
 				w_mat = matrix(w_mat, nrow = n, ncol = 1)

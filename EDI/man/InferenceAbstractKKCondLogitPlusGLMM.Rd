@@ -145,6 +145,7 @@ Compute the treatment effect estimate.
 \if{html}{\out{<a id="method-InferenceAbstractKKCondLogitPlusGLMM-get_standard_error"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKCondLogitPlusGLMM-get_standard_error}{}}}
 \subsection{Method \code{get_standard_error()}}{
+Returns the standard error of the treatment effect estimate.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKCondLogitPlusGLMM$get_standard_error()}\if{html}{\out{</div>}}
 }

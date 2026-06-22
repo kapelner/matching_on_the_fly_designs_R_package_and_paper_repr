@@ -66,13 +66,10 @@ DesignSeqOneByOneiBCRD = R6::R6Class("DesignSeqOneByOneiBCRD",
 				
 				rbinom(1, 1, nT_rem / (nT_rem + nC_rem))
 			}
-		},
-		#' @description Draw multiple treatment assignment vectors according to balanced randomization.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
+		}
+	),
+	private = list(
+		draw_ws_raw = function(r = 100){
 			generate_permutations_ibcrd_cpp(
 				as.integer(self$get_n()),
 				as.integer(r),

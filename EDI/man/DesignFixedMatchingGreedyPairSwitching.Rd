@@ -26,7 +26,6 @@ des = DesignFixedMatchingGreedyPairSwitching$new(n = 10, response_type = 'contin
 \itemize{
 \item \href{#method-DesignFixedMatchingGreedyPairSwitching-new}{\code{DesignFixedMatchingGreedyPairSwitching$new()}}
 \item \href{#method-DesignFixedMatchingGreedyPairSwitching-supports_batch_w_pregeneration}{\code{DesignFixedMatchingGreedyPairSwitching$supports_batch_w_pregeneration()}}
-\item \href{#method-DesignFixedMatchingGreedyPairSwitching-draw_ws_according_to_design}{\code{DesignFixedMatchingGreedyPairSwitching$draw_ws_according_to_design()}}
 \item \href{#method-DesignFixedMatchingGreedyPairSwitching-clone}{\code{DesignFixedMatchingGreedyPairSwitching$clone()}}
 }
 }
@@ -40,6 +39,7 @@ des = DesignFixedMatchingGreedyPairSwitching$new(n = 10, response_type = 'contin
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_even_allocation"><a href='../..//html/Design.html#method-Design-assert_even_allocation'><code>::Design$assert_even_allocation()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_fixed_sample"><a href='../..//html/Design.html#method-Design-assert_fixed_sample'><code>::Design$assert_fixed_sample()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="check_experiment_completed"><a href='../..//html/Design.html#method-Design-check_experiment_completed'><code>::Design$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="draw_ws_according_to_design"><a href='../..//html/Design.html#method-Design-draw_ws_according_to_design'><code>::Design$draw_ws_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="duplicate"><a href='../..//html/Design.html#method-Design-duplicate'><code>::Design$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X"><a href='../..//html/Design.html#method-Design-get_X'><code>::Design$get_X()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_imp"><a href='../..//html/Design.html#method-Design-get_X_imp'><code>::Design$get_X_imp()</code></a></span></li>
@@ -144,27 +144,6 @@ Whether this design supports batch pregeneration of treatment vectors.
 
 \subsection{Returns}{
 \code{TRUE}.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignFixedMatchingGreedyPairSwitching-draw_ws_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignFixedMatchingGreedyPairSwitching-draw_ws_according_to_design}{}}}
-\subsection{Method \code{draw_ws_according_to_design()}}{
-Draw multiple treatment assignment vectors according to binary match followed by
-greedy pair switching.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixedMatchingGreedyPairSwitching$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{The number of designs to draw.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A matrix of size n x r.
 }
 }
 \if{html}{\out{<hr>}}

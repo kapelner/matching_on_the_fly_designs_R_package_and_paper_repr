@@ -602,6 +602,8 @@ InferenceRand = R6::R6Class("InferenceRand",
 			if (!is.matrix(w_mat)) {
 				w_mat = matrix(as.numeric(w_mat), nrow = private$n)
 			}
+			# draw_ws_according_to_design returns {-1,+1}; convert to internal {0,1} for injection.
+			w_mat = (w_mat + 1L) / 2L
 			storage.mode(w_mat) = "numeric"
 			permutations = list(
 				w_mat = w_mat,

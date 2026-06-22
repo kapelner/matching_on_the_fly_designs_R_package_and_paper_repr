@@ -43,13 +43,11 @@ DesignFixedDOptimal = R6::R6Class("DesignFixedDOptimal",
 			}
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 			private$uses_covariates = TRUE
-		},
-		#' @description Draw treatment assignments according to the D-optimal search fixed design.
-		#'
-		#' @param r Number of designs to draw.
-		#'
-		#' @return A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
+		}
+	),
+	private = list(
+		P = NULL, # Projection matrix
+		draw_ws_raw = function(r = 100){
 			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				self$assert_all_subjects_arrived()
@@ -67,16 +65,10 @@ DesignFixedDOptimal = R6::R6Class("DesignFixedDOptimal",
 				private$P = Q %*% t(Q)
 			}
 			# Use C++ speedup
-			# Note: we don't parallelize here because C++ handles the loop over r
-			# and it's already very fast. If r is huge, we could parallelize outside.
-			# But generate_permutations... style usually does it in one call.
 			res = d_optimal_search_cpp(private$P, as.integer(r), as.integer(round(n * private$prob_T)))
 			w_mat = res
 			storage.mode(w_mat) = "numeric"
 			w_mat
 		}
-	),
-	private = list(
-		P = NULL # Projection matrix
 	)
 )

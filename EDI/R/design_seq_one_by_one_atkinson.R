@@ -58,13 +58,10 @@ DesignSeqOneByOneAtkinson = R6::R6Class("DesignSeqOneByOneAtkinson",
 					rbinom(1, 1, private$prob_T)
 				})
 			}
-		},
-		#' @description Draw multiple treatment assignment vectors.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
+		}
+	),
+	private = list(
+		draw_ws_raw = function(r = 100){
 			generate_permutations_atkinson_cpp(
 				as.matrix(private$X[1:private$t, , drop = FALSE]),
 				as.integer(private$t),

@@ -8,6 +8,13 @@ Internal method.
 An abstract R6 Class encapsulating the data and functionality for an experimental design.
 This class takes care of data storage and response handling.
 }
+\details{
+Throughout the package, treatment assignment vectors \eqn{w} use the
+\eqn{\{-1, +1\}} encoding: \eqn{+1} indicates a treated subject and \eqn{-1}
+a control subject.  All public methods that return or accept \eqn{w}
+(e.g. \code{get_w()}, \code{draw_ws_according_to_design()}) use this
+convention.
+}
 \examples{
 seq_des = Design$new(n = 6, response_type = 'continuous')
 seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
@@ -41,6 +48,7 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 \item \href{#method-Design-get_y}{\code{Design$get_y()}}
 \item \href{#method-Design-get_y_original}{\code{Design$get_y_original()}}
 \item \href{#method-Design-get_w}{\code{Design$get_w()}}
+\item \href{#method-Design-draw_ws_according_to_design}{\code{Design$draw_ws_according_to_design()}}
 \item \href{#method-Design-get_n}{\code{Design$get_n()}}
 \item \href{#method-Design-get_dead}{\code{Design$get_dead()}}
 \item \href{#method-Design-get_prob_T}{\code{Design$get_prob_T()}}
@@ -171,7 +179,7 @@ For analysis on already-completed experimental data
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{w}}{The binary responses.}
+\item{\code{w}}{A {-1,+1} vector of subject assignments (+1 = treated, -1 = control).}
 }
 \if{html}{\out{</div>}}
 }
@@ -343,7 +351,27 @@ Get w
 }
 
 \subsection{Returns}{
-A binary vector of subject assignments.
+A {-1,+1} vector of subject assignments (+1 = treated, -1 = control).
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Design-draw_ws_according_to_design"></a>}}
+\if{latex}{\out{\hypertarget{method-Design-draw_ws_according_to_design}{}}}
+\subsection{Method \code{draw_ws_according_to_design()}}{
+Draw treatment assignment vectors according to the design.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Design$draw_ws_according_to_design(r = 1L)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{r}}{Number of vectors to draw. Default is 1.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A matrix of size n x r with {-1,+1} entries (+1 = treated, -1 = control).
 }
 }
 \if{html}{\out{<hr>}}

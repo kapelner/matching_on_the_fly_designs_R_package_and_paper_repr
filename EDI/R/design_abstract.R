@@ -5,6 +5,13 @@
 #' An abstract R6 Class encapsulating the data and functionality for an experimental design.
 #' This class takes care of data storage and response handling.
 #'
+#' @details
+#' Throughout the package, treatment assignment vectors \eqn{w} use the
+#' \eqn{\{-1, +1\}} encoding: \eqn{+1} indicates a treated subject and \eqn{-1}
+#' a control subject.  All public methods that return or accept \eqn{w}
+#' (e.g. \code{get_w()}, \code{draw_ws_according_to_design()}) use this
+#' convention.
+#'
 #' @keywords internal
 #' @examples
 #' seq_des = Design$new(n = 6, response_type = 'continuous')
@@ -194,12 +201,15 @@ Design = R6::R6Class("Design",
 		},
 		#' @description For analysis on already-completed experimental data
 		#'
-		#' @param w The binary responses.
+		#' @param w A {-1,+1} vector of subject assignments (+1 = treated, -1 = control).
 		overwrite_all_subject_assignments = function(w) {
 			if (should_run_asserts()) {
-				assertIntegerish(w, lower = 0, upper = 1, any.missing = FALSE, len = private$t)
+				assertIntegerish(w, lower = -1, upper = 1, any.missing = FALSE, len = private$t)
+				if (any(!(w %in% c(-1L, 1L)))) {
+					stop("overwrite_all_subject_assignments: w must contain only -1 (control) or +1 (treated).")
+				}
 			}
-			private$w = w
+			private$w = (as.numeric(w) + 1L) / 2L
 		},
 		#' @description Check if this design was initialized with a fixed sample size n
 		#'
@@ -296,9 +306,17 @@ Design = R6::R6Class("Design",
 		},
 		#' @description Get w
 		#'
-		#' @return 			A binary vector of subject assignments.
+		#' @return 			A {-1,+1} vector of subject assignments (+1 = treated, -1 = control).
 		get_w = function(){
-			private$w
+			2L * private$w - 1L
+		},
+		#' @description Draw treatment assignment vectors according to the design.
+		#'
+		#' @param r Number of vectors to draw. Default is 1.
+		#' @return A matrix of size n x r with {-1,+1} entries (+1 = treated, -1 = control).
+		draw_ws_according_to_design = function(r = 1L){
+			result = private$draw_ws_raw(r)
+			2L * result - 1L
 		},
 		#' @description Get n, the sample size
 		#'

@@ -25,7 +25,6 @@ des$assign_w_to_all_subjects()
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-DesignFixedDOptimal-new}{\code{DesignFixedDOptimal$new()}}
-\item \href{#method-DesignFixedDOptimal-draw_ws_according_to_design}{\code{DesignFixedDOptimal$draw_ws_according_to_design()}}
 \item \href{#method-DesignFixedDOptimal-clone}{\code{DesignFixedDOptimal$clone()}}
 }
 }
@@ -39,6 +38,7 @@ des$assign_w_to_all_subjects()
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_even_allocation"><a href='../..//html/Design.html#method-Design-assert_even_allocation'><code>::Design$assert_even_allocation()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_fixed_sample"><a href='../..//html/Design.html#method-Design-assert_fixed_sample'><code>::Design$assert_fixed_sample()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="check_experiment_completed"><a href='../..//html/Design.html#method-Design-check_experiment_completed'><code>::Design$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="draw_ws_according_to_design"><a href='../..//html/Design.html#method-Design-draw_ws_according_to_design'><code>::Design$draw_ws_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="duplicate"><a href='../..//html/Design.html#method-Design-duplicate'><code>::Design$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X"><a href='../..//html/Design.html#method-Design-get_X'><code>::Design$get_X()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_imp"><a href='../..//html/Design.html#method-Design-get_X_imp'><code>::Design$get_X_imp()</code></a></span></li>
@@ -121,26 +121,6 @@ Initialize a D-optimal search fixed experimental design
 }
 \subsection{Returns}{
 A new `DesignFixedDOptimal` object
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignFixedDOptimal-draw_ws_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignFixedDOptimal-draw_ws_according_to_design}{}}}
-\subsection{Method \code{draw_ws_according_to_design()}}{
-Draw treatment assignments according to the D-optimal search fixed design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixedDOptimal$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{Number of designs to draw.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A matrix of size n x r.
 }
 }
 \if{html}{\out{<hr>}}

@@ -250,6 +250,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 		#'   inversion using the jackknife acceleration and bias-correction constants;
 		#'   second-order accurate (Efron 1987; Efron & Tibshirani 1993).
 		#' @param na.rm  				Remove non-finite bootstrap replicates. Default FALSE.
+		#' @param show_progress  		A flag indicating whether a progress bar should be displayed.
 		#'
 		#' @return 	A bootstrap two-sided p-value.
 		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L){

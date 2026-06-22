@@ -9,7 +9,7 @@ N_VAL = as.integer(Sys.getenv("WARM_START_BENCH_N", unset = "300"))
 P_VAL = as.integer(Sys.getenv("WARM_START_BENCH_P", unset = "5"))
 BB_VAL = as.integer(Sys.getenv("WARM_START_BENCH_BB", unset = "10"))
 J_VAL = as.integer(Sys.getenv("WARM_START_BENCH_J", unset = "5"))
-NREP = as.integer(Sys.getenv("WARM_START_BENCH_REPS", unset = "12"))
+NREP = as.integer(Sys.getenv("WARM_START_BENCH_REPS", unset = "100"))
 FIXED_N = as.integer(Sys.getenv("WARM_START_BENCH_FIXED_N", unset = "1"))
 
 md = readLines("package_metadata/warm_starts.md", warn = FALSE)

@@ -21,7 +21,6 @@ des = DesignMatching$new(n = 6, response_type = "continuous")
 \item \href{#method-DesignMatching-is_matching_design}{\code{DesignMatching$is_matching_design()}}
 \item \href{#method-DesignMatching-assert_matching_design}{\code{DesignMatching$assert_matching_design()}}
 \item \href{#method-DesignMatching-get_matching_cluster_ids}{\code{DesignMatching$get_matching_cluster_ids()}}
-\item \href{#method-DesignMatching-draw_ws_according_to_design}{\code{DesignMatching$draw_ws_according_to_design()}}
 \item \href{#method-DesignMatching-clone}{\code{DesignMatching$clone()}}
 }
 }
@@ -36,6 +35,7 @@ des = DesignMatching$new(n = 6, response_type = "continuous")
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_even_allocation"><a href='../..//html/Design.html#method-Design-assert_even_allocation'><code>::Design$assert_even_allocation()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_fixed_sample"><a href='../..//html/Design.html#method-Design-assert_fixed_sample'><code>::Design$assert_fixed_sample()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="check_experiment_completed"><a href='../..//html/Design.html#method-Design-check_experiment_completed'><code>::Design$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="draw_ws_according_to_design"><a href='../..//html/Design.html#method-Design-draw_ws_according_to_design'><code>::Design$draw_ws_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="duplicate"><a href='../..//html/Design.html#method-Design-duplicate'><code>::Design$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X"><a href='../..//html/Design.html#method-Design-get_X'><code>::Design$get_X()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_imp"><a href='../..//html/Design.html#method-Design-get_X_imp'><code>::Design$get_X_imp()</code></a></span></li>
@@ -112,26 +112,6 @@ Return cluster IDs implied by the current matching structure.
 }
 \subsection{Returns}{
 Integer cluster IDs for matched pairs plus singleton reservoir units.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignMatching-draw_ws_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignMatching-draw_ws_according_to_design}{}}}
-\subsection{Method \code{draw_ws_according_to_design()}}{
-Draw multiple treatment assignment vectors.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignMatching$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{The number of designs to draw.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A matrix of size n x r.
 }
 }
 \if{html}{\out{<hr>}}

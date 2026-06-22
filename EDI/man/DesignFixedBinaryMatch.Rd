@@ -28,7 +28,6 @@ des$assign_w_to_all_subjects()
 \item \href{#method-DesignFixedBinaryMatch-supports_batch_w_pregeneration}{\code{DesignFixedBinaryMatch$supports_batch_w_pregeneration()}}
 \item \href{#method-DesignFixedBinaryMatch-new}{\code{DesignFixedBinaryMatch$new()}}
 \item \href{#method-DesignFixedBinaryMatch-assign_w_to_all_subjects}{\code{DesignFixedBinaryMatch$assign_w_to_all_subjects()}}
-\item \href{#method-DesignFixedBinaryMatch-draw_ws_according_to_design}{\code{DesignFixedBinaryMatch$draw_ws_according_to_design()}}
 \item \href{#method-DesignFixedBinaryMatch-clone}{\code{DesignFixedBinaryMatch$clone()}}
 }
 }
@@ -42,6 +41,7 @@ des$assign_w_to_all_subjects()
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_even_allocation"><a href='../..//html/Design.html#method-Design-assert_even_allocation'><code>::Design$assert_even_allocation()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_fixed_sample"><a href='../..//html/Design.html#method-Design-assert_fixed_sample'><code>::Design$assert_fixed_sample()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="check_experiment_completed"><a href='../..//html/Design.html#method-Design-check_experiment_completed'><code>::Design$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="draw_ws_according_to_design"><a href='../..//html/Design.html#method-Design-draw_ws_according_to_design'><code>::Design$draw_ws_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="duplicate"><a href='../..//html/Design.html#method-Design-duplicate'><code>::Design$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X"><a href='../..//html/Design.html#method-Design-get_X'><code>::Design$get_X()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_imp"><a href='../..//html/Design.html#method-Design-get_X_imp'><code>::Design$get_X_imp()</code></a></span></li>
@@ -102,7 +102,7 @@ Initialize a binary match fixed experimental design
 \if{html}{\out{<div class="r">}}\preformatted{DesignFixedBinaryMatch$new(
   response_type,
   prob_T = 0.5,
-  mahal_match = FALSE,
+  mahal_match = TRUE,
   include_is_missing_as_a_new_feature = TRUE,
   n = NULL,
   m = NULL,
@@ -120,7 +120,7 @@ Initialize a binary match fixed experimental design
 
 \item{\code{prob_T}}{The probability of the treatment assignment. Must be 0.5.}
 
-\item{\code{mahal_match}}{Match using Mahalanobis distance. Default is \code{FALSE} (Euclidean).}
+\item{\code{mahal_match}}{Match using Mahalanobis distance (else use Euclidean). Default is \code{TRUE}.}
 
 \item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
 
@@ -161,26 +161,6 @@ Assign treatment to all subjects. Ensures matching structure is computed
 \item{\code{w_precomputed}}{Optional numeric vector of length n.}
 }
 \if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignFixedBinaryMatch-draw_ws_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignFixedBinaryMatch-draw_ws_according_to_design}{}}}
-\subsection{Method \code{draw_ws_according_to_design()}}{
-Draw multiple treatment assignment vectors according to binary matching.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixedBinaryMatch$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{The number of designs to draw.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A matrix of size n x r.
 }
 }
 \if{html}{\out{<hr>}}

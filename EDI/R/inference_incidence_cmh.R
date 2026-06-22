@@ -1,7 +1,24 @@
 #' CMH Blocked Incidence Inference
 #'
 #' Unadjusted blocked-design incidence inference using the simple mean-difference
-#' point estimate with a block-stratified standard error.
+#' point estimate with a randomization-based standard error.
+#'
+#' @details
+#' Treatment assignments are encoded as \eqn{w_i \in \{-1, +1\}}.  For a balanced
+#' design the treatment-effect estimator is \eqn{\hat\tau = (2/n)\,\mathbf{y}'\mathbf{w}},
+#' and since \eqn{E_w[\mathbf{y}'\mathbf{w}] = 0} for any balanced randomization the
+#' standard error is
+#' \deqn{SE(\hat\tau) = \frac{2}{n}\sqrt{\frac{\sum_k (\mathbf{y}'\mathbf{w}_k)^2}{K}}}{SE = (2/n) * sqrt(sum(ytw^2) / K)}
+#' where \eqn{K} draws \eqn{\mathbf{w}_1,\ldots,\mathbf{w}_K} come from the design's
+#' reference distribution.  Centering at the known zero mean (rather than the sample mean)
+#' makes the denominator \eqn{K} rather than \eqn{K-1}.
+#'
+#' For blocking designs the expectation is evaluated exactly:
+#' \deqn{SE(\hat\tau) = \frac{2}{n}\sqrt{\sum_b \frac{n_{1b}\,n_{0b}}{n_B - 1}}}{SE = (2/n) * sqrt(sum_b n1b*n0b / (nB - 1))}
+#' where \eqn{n_{1b}, n_{0b}} are the numbers of positive and negative responses in
+#' block \eqn{b} and \eqn{n_B} is the (common) block size.  This equals
+#' \eqn{2\sqrt{V_{\rm CMH}}} where \eqn{V_{\rm CMH}} is the CMH variance from
+#' Azriel et al. (2026), Equation 3.
 #'
 #' @examples
 #' \dontrun{
@@ -64,7 +81,7 @@ InferenceIncidCMH = R6::R6Class("InferenceIncidCMH",
 		}
 	),
 	private = list(
-		se_est_num_vectors = 1000L,
+		se_est_num_vectors = NULL,
 		get_standard_error = function(){
 			if (!is.null(private$cached_values$cmh_s_beta_hat_T)) {
 				return(private$cached_values$cmh_s_beta_hat_T)
@@ -79,12 +96,11 @@ InferenceIncidCMH = R6::R6Class("InferenceIncidCMH",
 				precomp = private$des_obj$get_cmh_se_w_mat()
 				w_mat = if (!is.null(precomp)) precomp else private$des_obj$draw_ws_according_to_design(private$se_est_num_vectors)
 				ytw      = drop(private$y %*% w_mat)
-				# Use sample mean of y·W_k rather than the theoretical (n/2)·ȳ.
-				# For designs where P(W_i=1) differs across subjects (greedy designs),
-				# the theoretical mean is biased, inflating SD(z) and causing anti-conservatism.
-				# The sample mean is always consistent with the actual W distribution.
+				# With {-1,+1} encoding: τ̂ = (2/n)*y'w, so SE[τ̂] = (2/n)*SD[ytw].
+				# E[y·w] = 0 exactly for all balanced designs, so the unbiased variance
+				# estimator uses K (not K-1) in the denominator.
 				K        = length(ytw)
-				private$cached_values$cmh_s_beta_hat_T = 4 / private$n * sqrt(max(0, (sum(ytw^2) - K * mean(ytw)^2) / (K - 1L)))
+				private$cached_values$cmh_s_beta_hat_T = 2 / private$n * sqrt(max(0, sum(ytw^2) / K))
 			}
 			private$cached_values$s_beta_hat_T = private$cached_values$cmh_s_beta_hat_T
 			private$cached_values$df = NA_real_

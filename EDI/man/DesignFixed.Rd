@@ -43,6 +43,7 @@ des$assign_w_to_all_subjects()
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_even_allocation"><a href='../..//html/Design.html#method-Design-assert_even_allocation'><code>::Design$assert_even_allocation()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_fixed_sample"><a href='../..//html/Design.html#method-Design-assert_fixed_sample'><code>::Design$assert_fixed_sample()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="check_experiment_completed"><a href='../..//html/Design.html#method-Design-check_experiment_completed'><code>::Design$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="draw_ws_according_to_design"><a href='../..//html/Design.html#method-Design-draw_ws_according_to_design'><code>::Design$draw_ws_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="duplicate"><a href='../..//html/Design.html#method-Design-duplicate'><code>::Design$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X"><a href='../..//html/Design.html#method-Design-get_X'><code>::Design$get_X()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_imp"><a href='../..//html/Design.html#method-Design-get_X_imp'><code>::Design$get_X_imp()</code></a></span></li>
@@ -74,7 +75,6 @@ des$assign_w_to_all_subjects()
 <li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="set_m"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-set_m'><code>::DesignBlocking$set_m()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="summarize_blocks"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-summarize_blocks'><code>::DesignBlocking$summarize_blocks()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="DesignMatching" data-id="assert_matching_design"><a href='../..//html/DesignMatching.html#method-DesignMatching-assert_matching_design'><code>::DesignMatching$assert_matching_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignMatching" data-id="draw_ws_according_to_design"><a href='../..//html/DesignMatching.html#method-DesignMatching-draw_ws_according_to_design'><code>::DesignMatching$draw_ws_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="DesignMatching" data-id="get_matching_cluster_ids"><a href='../..//html/DesignMatching.html#method-DesignMatching-get_matching_cluster_ids'><code>::DesignMatching$get_matching_cluster_ids()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="DesignMatching" data-id="is_matching_design"><a href='../..//html/DesignMatching.html#method-DesignMatching-is_matching_design'><code>::DesignMatching$is_matching_design()</code></a></span></li>
 </ul>
@@ -139,9 +139,10 @@ Assign treatment to all subjects in the fixed experiment.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{w_precomputed}}{Optional numeric vector of length n. If supplied the
-allocation is used directly and \code{draw_ws_according_to_design} is
-not called (avoids e.g. the Java round-trip for \code{DesignFixedGreedy}).}
+\item{\code{w_precomputed}}{Optional {-1,+1} numeric vector of length n. If supplied the
+allocation is used directly (converted to internal {0,1} storage) and
+\code{draw_ws_according_to_design} is not called (avoids e.g. the Java
+round-trip for \code{DesignFixedGreedy}).}
 }
 \if{html}{\out{</div>}}
 }
@@ -197,7 +198,7 @@ Overwrite all subject assignments for a fixed design.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{w}}{The binary responses.}
+\item{\code{w}}{A {-1,+1} vector of subject assignments (+1 = treated, -1 = control).}
 }
 \if{html}{\out{</div>}}
 }

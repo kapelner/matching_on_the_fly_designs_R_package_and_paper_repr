@@ -66,7 +66,7 @@ InferenceIncidExtendedRobins = R6::R6Class("InferenceIncidExtendedRobins",
 			}
 			private$cached_values$robins_s_beta_hat_T = compute_extended_robins_block_se_cpp(
 				private$des_obj_priv_int$y,
-				private$des_obj_priv_int$w,
+				private$des_obj$get_w(),
 				private$des_obj$get_block_ids(),
 				private$des_obj_priv_int$n
 			)

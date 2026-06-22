@@ -81,13 +81,10 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 				private$p_best, 
 				private$prob_T
 			)
-		},
-		#' @description Draw multiple treatment assignment vectors according to Pocock & Simon design.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
+		}
+	),
+	private = list(
+		draw_ws_raw = function(r = 100){
 			private$ensure_factor_metadata()
 			n = self$get_n()
 			x_levels_matrix = matrix(NA_integer_, nrow = n, ncol = length(private$strata_cols))
@@ -102,9 +99,7 @@ DesignSeqOneByOnePocockSimon = R6::R6Class("DesignSeqOneByOnePocockSimon",
 				private$prob_T,
 				as.integer(r)
 			)$w_mat
-		}
-	),
-	private = list(
+		},
 		p_best = NULL,
 		weights = NULL,
 		counts = NULL,

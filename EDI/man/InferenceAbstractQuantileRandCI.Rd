@@ -22,7 +22,6 @@ all subjects in the reservoir) and KK matching-on-the-fly designs
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-InferenceAbstractQuantileRandCI-new}{\code{InferenceAbstractQuantileRandCI$new()}}
-\item \href{#method-InferenceAbstractQuantileRandCI-compute_rand_confidence_interval}{\code{InferenceAbstractQuantileRandCI$compute_rand_confidence_interval()}}
 \item \href{#method-InferenceAbstractQuantileRandCI-clone}{\code{InferenceAbstractQuantileRandCI$clone()}}
 }
 }
@@ -47,6 +46,7 @@ all subjects in the reservoir) and KK matching-on-the-fly designs
 <li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="set_seed"><a href='../..//html/Inference.html#method-Inference-set_seed'><code>::Inference$set_seed()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../..//html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>::InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>::InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></span></li>
@@ -112,40 +112,6 @@ Initialize the inference object.
 \item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
 }
 \if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractQuantileRandCI-compute_rand_confidence_interval"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractQuantileRandCI-compute_rand_confidence_interval}{}}}
-\subsection{Method \code{compute_rand_confidence_interval()}}{
-Computes a 1-alpha level frequentist confidence interval for the randomization test.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractQuantileRandCI$compute_rand_confidence_interval(
-  alpha = 0.05,
-  r = 501,
-  pval_epsilon = 0.005,
-  show_progress = TRUE,
-  ci_search_control = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{The significance level.}
-
-\item{\code{r}}{Number of randomization vectors.}
-
-\item{\code{pval_epsilon}}{The bisection algorithm tolerance.}
-
-\item{\code{show_progress}}{Show a text progress indicator.}
-
-\item{\code{ci_search_control}}{Optional randomization-CI search control list.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A 1 - alpha sized frequentist confidence interval.
 }
 }
 \if{html}{\out{<hr>}}

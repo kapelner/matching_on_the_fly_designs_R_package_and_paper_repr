@@ -132,7 +132,7 @@ transform_cont_y_based_on_response_type = function(
   count_min_rate     = 0L,
   count_shift        = 0
 ) {
-  y_sh = as.numeric(scale(y_cont))
+  y_sh = as.numeric(y_cont - mean(y_cont))
   switch(response_type,
     continuous = y_sh,
     incidence  = stats::plogis(y_sh),
@@ -1017,23 +1017,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       num_cores_to_use = if (use_parallel_workers) num_cores else 1L
 
       # Pre-generate ALL w vectors for designs whose matching/clustering structure
-      # is expensive but deterministic given X (e.g. BinaryMatch, OptimalBlocks).
-      # Called ONCE per cell at session init — pays the structural cost once,
-      # then workers skip it entirely by using the cached w column for their rep.
+      # is expensive but deterministic given X (e.g. BinaryMatch, OptimalBlocks),
+      # and for non-blocking designs used with CMH inference (K = Nrep so the
+      # SE estimate uses the full population of draws, no extra parameter needed).
       if ((has_pregen_designs || has_cmh_inference) && !isTRUE(private$random_X_draws)) {
-        # Determine se_est_num_vectors from whichever inference class exposes it,
-        # respecting user-supplied constructor overrides over class defaults.
-        cmh_se_num_vectors = 1000L  # safe fallback matching InferenceIncidCMH default
-        for (ii in seq_along(private$inference_classes)) {
-          ic      = private$inference_classes[[ii]]
-          init_fn = ic$public_methods$initialize
-          if (!is.null(init_fn) && "se_est_num_vectors" %in% names(formals(init_fn))) {
-            cp  = private$inference_constructor_params[[ii]]
-            val = if (!is.null(cp[["se_est_num_vectors"]])) cp[["se_est_num_vectors"]] else formals(init_fn)[["se_est_num_vectors"]]
-            if (!is.null(val) && !is.symbol(val)) cmh_se_num_vectors = as.integer(val)
-            break
-          }
-        }
         cache_jobs = list()
         for (ci in seq_len(n_cells)) {
           cs = all_cell_states[[ci]]
@@ -1059,42 +1046,20 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             # Avoids serializing cs$design_classes / cs$inference_classes (R6 generators)
             # when jobs are dispatched to fork cluster workers via clusterApply.
             cs_cache = list(n = cs$n, response_type = cs$response_type, shared_X = cs$shared_X)
-            if (is_pregen) {
-              cache_file = private$.simulation_cache_file(
-                cs, dl, dp, "design_w", cmh_se_num_vectors = cmh_se_num_vectors
-              )
-              cache_jobs[[length(cache_jobs) + 1L]] = list(
-                cell_idx = ci,
-                design_idx = di,
-                cs = cs_cache,
-                design_gen_class = dc$classname,
-                design_label = dl,
-                design_params = dp,
-                cache_type = "design_w",
-                reps_needing = reps_needing_dl,
-                cache_file = cache_file,
-                ready = isTRUE(private$reuse_cache) && file.exists(cache_file)
-              )
-            }
-            if (has_cmh_inference && !is_pregen) {
-              # Pregen designs use design_w_cache$ws as the CMH SE W matrix
-              # (Nrep vectors, zero extra cost) — skip separate cmh_se_w_cache.
-              cache_file = private$.simulation_cache_file(
-                cs, dl, dp, "cmh_se_w", cmh_se_num_vectors = cmh_se_num_vectors
-              )
-              cache_jobs[[length(cache_jobs) + 1L]] = list(
-                cell_idx = ci,
-                design_idx = di,
-                cs = cs_cache,
-                design_gen_class = dc$classname,
-                design_label = dl,
-                design_params = dp,
-                cache_type = "cmh_se_w",
-                reps_needing = reps_needing_dl,
-                cache_file = cache_file,
-                ready = isTRUE(private$reuse_cache) && file.exists(cache_file)
-              )
-            }
+            cache_file = private$.simulation_cache_file(cs, dl, dp, "design_w")
+            cache_jobs[[length(cache_jobs) + 1L]] = list(
+              cell_idx = ci,
+              design_idx = di,
+              cs = cs_cache,
+              design_gen_class = dc$classname,
+              design_label = dl,
+              design_params = dp,
+              cache_type = "design_w",
+              is_pregen = is_pregen,
+              reps_needing = reps_needing_dl,
+              cache_file = cache_file,
+              ready = isTRUE(private$reuse_cache) && file.exists(cache_file)
+            )
           }
         }
         n_cache_jobs = length(cache_jobs)
@@ -1106,21 +1071,17 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             private$design_params[[job$design_idx]],
             job$cache_type,
             reps_needing = job$reps_needing,
-            cmh_se_num_vectors = cmh_se_num_vectors,
             restore_rng = FALSE,
             cache_file = job$cache_file
           )
           if (is.null(obj)) return(FALSE)
           dl = private$design_labels[[job$design_idx]]
           if (identical(job$cache_type, "design_w")) {
-            if (is.null(cs$design_w_cache)) cs$design_w_cache = list()
-            cs$design_w_cache[[dl]] = obj
-          } else if (identical(job$cache_type, "cmh_se_w")) {
             if (is.list(obj) && isTRUE(obj$blocking_design)) {
-              # sentinel for blocking designs — no w matrix to inject
+              # sentinel for non-pregen blocking designs — CMH uses closed-form SE, no w matrix needed
             } else {
-              if (is.null(cs$cmh_se_w_cache)) cs$cmh_se_w_cache = list()
-              cs$cmh_se_w_cache[[dl]] = obj
+              if (is.null(cs$design_w_cache)) cs$design_w_cache = list()
+              cs$design_w_cache[[dl]] = obj
             }
           }
           all_cell_states[[job$cell_idx]] <<- cs
@@ -1160,11 +1121,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           # callers don't capture the full run() call frame when serialized by clusterApply.
           cache_dispatch_env = new.env(parent = asNamespace("EDI"))
           cache_dispatch_env$RUN_FN   = RUN_CACHE_JOB_DETACHED
-          cache_dispatch_env$CMH_N    = cmh_se_num_vectors
           cache_dispatch_env$SEED_VAL = private$seed
           run_cache_job_local = function(job, job_idx) {
             seed = if (is.null(SEED_VAL)) NULL else as.integer(SEED_VAL + 1000003L + job_idx)
-            RUN_FN(job = job, cmh_se_num_vectors = CMH_N, seed = seed)
+            RUN_FN(job = job, seed = seed)
           }
           environment(run_cache_job_local) = cache_dispatch_env
           # Worker wrapper with baseenv() closure — avoids serializing the run() frame.
@@ -1179,13 +1139,11 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                 mirai::mirai({
                   RUN_CACHE_JOB_DETACHED(
                     job = job_j,
-                    cmh_se_num_vectors = cmh_se_num_vectors,
                     seed = seed_j
                   )
                 },
                 RUN_CACHE_JOB_DETACHED = RUN_CACHE_JOB_DETACHED,
                 job_j = job_j,
-                cmh_se_num_vectors = cmh_se_num_vectors,
                 seed_j = cache_job_seed(jj))
               })
               names(jobs) = as.character(chunk_idxs)
@@ -2134,8 +2092,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     .hash_object = function(x) {
       digest::digest(x, algo = "md5")
     },
-    .simulation_cache_file = function(cs, design_label, design_params,
-                                      cache_type, cmh_se_num_vectors = NULL) {
+    .simulation_cache_file = function(cs, design_label, design_params, cache_type) {
       cache_key = private$.hash_object(list(
         cache_format_version = 1L,
         cache_type = cache_type,
@@ -2152,8 +2109,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         cov_draw_method_args = cs$cov_draw_method_args,
         norm_sq_beta_vec = cs$norm_sq_beta_vec,
         design_label = design_label,
-        design_params = design_params,
-        cmh_se_num_vectors = cmh_se_num_vectors
+        design_params = design_params
       ))
       filename = paste(
         private$.safe_cache_component(cache_type),
@@ -2169,13 +2125,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     },
     .load_simulation_cache_object = function(cs, design_label, design_params,
                                              cache_type, reps_needing,
-                                             cmh_se_num_vectors = NULL,
                                              restore_rng = FALSE,
                                              cache_file = NULL) {
       if (is.null(cache_file)) {
-        cache_file = private$.simulation_cache_file(
-          cs, design_label, design_params, cache_type, cmh_se_num_vectors
-        )
+        cache_file = private$.simulation_cache_file(cs, design_label, design_params, cache_type)
       }
       if (!file.exists(cache_file)) return(NULL)
       cache_record = tryCatch(readRDS(cache_file), error = function(e) NULL)
@@ -2188,14 +2141,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         cache_record
       }
       if (identical(cache_type, "design_w")) {
+        if (is.list(obj) && isTRUE(obj$blocking_design)) return(obj)  # sentinel
         if (!is.list(obj) || is.null(obj$ws) || is.null(obj$rep_to_col)) return(NULL)
         rep_names = names(obj$rep_to_col)
         if (is.null(rep_names) ||
             any(!as.character(reps_needing) %in% rep_names)) return(NULL)
         if (!is.matrix(obj$ws) || nrow(obj$ws) != as.integer(cs$n)) return(NULL)
-      } else if (identical(cache_type, "cmh_se_w")) {
-        if (is.list(obj) && isTRUE(obj$blocking_design)) return(obj)
-        if (!is.matrix(obj) || nrow(obj) != as.integer(cs$n)) return(NULL)
       } else {
         return(NULL)
       }
@@ -2207,13 +2158,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       obj
     },
-    .save_simulation_cache_object = function(obj, cs, design_label, design_params,
-                                             cache_type, cmh_se_num_vectors = NULL) {
+    .save_simulation_cache_object = function(obj, cs, design_label, design_params, cache_type) {
       cache_dir = private$.simulation_cache_dir()
       if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
-      cache_file = private$.simulation_cache_file(
-        cs, design_label, design_params, cache_type, cmh_se_num_vectors
-      )
+      cache_file = private$.simulation_cache_file(cs, design_label, design_params, cache_type)
       tmp = tempfile(
         paste0(".", basename(cache_file), "."),
         tmpdir = dirname(cache_file),
@@ -2234,7 +2182,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       }
       invisible(cache_file)
     },
-    .run_simulation_cache_job = function(job, cmh_se_num_vectors, seed = NULL) {
+    .run_simulation_cache_job = function(job, seed = NULL) {
       if (!is.null(seed)) set.seed(seed)
       ns = asNamespace("EDI")
       prev_nc = ns$edi_env$num_cores_override
@@ -2274,6 +2222,11 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       d_pg$add_all_subjects_to_experiment(as.data.frame(cs$shared_X))
 
       if (identical(job$cache_type, "design_w")) {
+        # Non-pregen blocking designs use closed-form CMH SE — no w-pregeneration needed.
+        if (!isTRUE(job$is_pregen) && d_pg$is_blocking_design()) {
+          save_cache_record(list(blocking_design = TRUE), job$cache_file)
+          return(list(status = "skipped_blocking_design", cache_file = job$cache_file))
+        }
         w_mat = d_pg$draw_ws_according_to_design(length(job$reps_needing))
         storage.mode(w_mat) = "integer"
         obj = list(
@@ -2281,17 +2234,6 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           rep_to_col = setNames(seq_along(job$reps_needing), as.character(job$reps_needing))
         )
         save_cache_record(obj, job$cache_file)
-        return(list(status = "created", cache_file = job$cache_file))
-      }
-
-      if (identical(job$cache_type, "cmh_se_w")) {
-        if (d_pg$is_blocking_design()) {
-          save_cache_record(list(blocking_design = TRUE), job$cache_file)
-          return(list(status = "skipped_blocking_design", cache_file = job$cache_file))
-        }
-        cmh_se_w = d_pg$draw_ws_according_to_design(cmh_se_num_vectors)
-        storage.mode(cmh_se_w) = "integer"
-        save_cache_record(cmh_se_w, job$cache_file)
         return(list(status = "created", cache_file = job$cache_file))
       }
 
@@ -2672,7 +2614,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       y_linear_model = if (!is.null(state$custom_replication_data_generator)) {
         as.numeric(data$y_linear_model)
       } else {
-        as.numeric(scale(data$y_cont))
+        as.numeric(data$y_cont - mean(data$y_cont))
       }
       X = data$X
       
@@ -2765,13 +2707,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             } else {
               d$add_all_subjects_to_experiment(X)
             }
-            # For pregen designs (design_w_cache present), use the full pre-generated
-            # W matrix as the CMH SE W matrix — gives Nrep vectors at zero extra cost.
-            # Fall back to the dedicated cmh_se_w_cache for non-pregen designs.
+            # Inject the full Nrep W matrix for CMH SE estimation (K = Nrep).
+            # Covers both pregen designs and non-blocking designs with CMH inference.
             if (!is.null(state$design_w_cache) && !is.null(state$design_w_cache[[design_name]])) {
               d$inject_cmh_se_w_mat(state$design_w_cache[[design_name]]$ws)
-            } else if (!is.null(state$cmh_se_w_cache) && !is.null(state$cmh_se_w_cache[[design_name]])) {
-              d$inject_cmh_se_w_mat(state$cmh_se_w_cache[[design_name]])
             }
             d$assign_w_to_all_subjects(precomp_w)
             w = d$get_w()

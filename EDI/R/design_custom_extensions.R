@@ -15,11 +15,10 @@ DesignFixedCustom = R6::R6Class("DesignFixedCustom",
 		#' @return An \code{n x r} matrix of 0/1 assignments.
 		draw_assignments = function(r = 1){
 			stop("Custom fixed-design subclasses must implement public$draw_assignments(r).")
-		},
-		#' @description Internal redraw utility.
-		#' @param r Number of assignment vectors.
-		#' @return An \code{n x r} matrix.
-		draw_ws_according_to_design = function(r = 100){
+		}
+	),
+	private = list(
+		draw_ws_raw = function(r = 100){
 			if (should_run_asserts()) {
 				assertCount(r, positive = TRUE)
 			}

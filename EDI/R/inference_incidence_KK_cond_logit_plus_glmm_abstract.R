@@ -36,6 +36,7 @@ InferenceAbstractKKCondLogitPlusGLMM = R6::R6Class("InferenceAbstractKKCondLogit
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
+		#' @description Returns the standard error of the treatment effect estimate.
 		get_standard_error = function(){
 			private$shared(estimate_only = FALSE)
 			se = private$cached_values$s_beta_hat_T

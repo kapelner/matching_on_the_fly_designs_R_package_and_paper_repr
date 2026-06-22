@@ -34,17 +34,12 @@ DesignMatching = R6::R6Class("DesignMatching",
 		#' @return Integer cluster IDs for matched pairs plus singleton reservoir units.
 		get_matching_cluster_ids = function(m_vec = private$m){
 			private$compute_matching_cluster_ids(m_vec)
-		},
-		#' @description Draw multiple treatment assignment vectors.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
-			stop("Must be implemented by subclass.")
 		}
 	),
 	private = list(
+		draw_ws_raw = function(r = 100){
+			stop("draw_ws_raw must be implemented by a concrete design subclass.")
+		},
 		xm_structural     = NULL,
 		xm_m_vec          = NULL,
 		lin_xm_structural = NULL,

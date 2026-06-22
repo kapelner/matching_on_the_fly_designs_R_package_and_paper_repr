@@ -45,13 +45,12 @@ DesignFixedAOptimal = R6::R6Class("DesignFixedAOptimal",
 			}
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 			private$uses_covariates = TRUE
-		},
-		#' @description Draw treatment assignments according to the A-optimal search fixed design.
-		#'
-		#' @param r Number of designs to draw.
-		#'
-		#' @return A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
+		}
+	),
+	private = list(
+		P = NULL, # Projection matrix
+		H = NULL, # Trace-inverse kernel matrix
+		draw_ws_raw = function(r = 100){
 			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				self$assert_all_subjects_arrived()
@@ -63,19 +62,14 @@ DesignFixedAOptimal = R6::R6Class("DesignFixedAOptimal",
 			if (is.null(private$P)){
 				X = private$X[1:n, , drop = FALSE]
 				Z0 = cbind(1, X)
-				
+
 				# P = Z0 (Z0'Z0)^-1 Z0'
 				Z0_qr = qr(Z0)
 				Q = qr.Q(Z0_qr)
 				private$P = Q %*% t(Q)
-				
+
 				# H = Z0 (Z0'Z0)^-2 Z0'
-				# (Z0'Z0)^-1 = R^-1 Q' Q (R')^-1 = R^-1 (R')^-1
-				# (Z0'Z0)^-2 = R^-1 (R')^-1 R^-1 (R')^-1
-				# Actually, let M = (Z0'Z0)^-1
-				# H = Z0 M^2 Z0'
 				R = qr.R(Z0_qr)
-				# M = solve(t(R) %*% R) # If R is small (p+1 x p+1)
 				M = tryCatch(solve(t(R) %*% R), error = function(e) MASS::ginv(t(R) %*% R))
 				H_kernel = M %*% M
 				private$H = Z0 %*% H_kernel %*% t(Z0)
@@ -86,9 +80,5 @@ DesignFixedAOptimal = R6::R6Class("DesignFixedAOptimal",
 			storage.mode(w_mat) = "numeric"
 			w_mat
 		}
-	),
-	private = list(
-		P = NULL, # Projection matrix
-		H = NULL  # Trace-inverse kernel matrix
 	)
 )

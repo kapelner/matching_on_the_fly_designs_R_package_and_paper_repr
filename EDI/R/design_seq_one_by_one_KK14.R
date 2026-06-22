@@ -102,22 +102,17 @@ DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 				}
 			}
 			wt
-		},
-		#' @description Draw multiple treatment assignment vectors according to KK14 design.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
+		}
+	),
+	private = list(
+		m = NULL,
+		draw_ws_raw = function(r = 100){
 			generate_permutations_matching_cpp(
 				as.integer(private$m),
 				as.integer(r),
 				as.numeric(private$prob_T)
 			)$w_mat
-		}
-	),
-	private = list(
-		m = NULL,
+		},
 		lambda = NULL,
 		t_0_pct = NULL,
 		morrison = NULL,

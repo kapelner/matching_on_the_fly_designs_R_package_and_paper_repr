@@ -22,7 +22,6 @@ matrix. EDI handles subject storage, responses, and validation through
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-DesignFixedCustom-draw_assignments}{\code{DesignFixedCustom$draw_assignments()}}
-\item \href{#method-DesignFixedCustom-draw_ws_according_to_design}{\code{DesignFixedCustom$draw_ws_according_to_design()}}
 \item \href{#method-DesignFixedCustom-clone}{\code{DesignFixedCustom$clone()}}
 }
 }
@@ -36,6 +35,7 @@ matrix. EDI handles subject storage, responses, and validation through
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_even_allocation"><a href='../..//html/Design.html#method-Design-assert_even_allocation'><code>::Design$assert_even_allocation()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_fixed_sample"><a href='../..//html/Design.html#method-Design-assert_fixed_sample'><code>::Design$assert_fixed_sample()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="check_experiment_completed"><a href='../..//html/Design.html#method-Design-check_experiment_completed'><code>::Design$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="draw_ws_according_to_design"><a href='../..//html/Design.html#method-Design-draw_ws_according_to_design'><code>::Design$draw_ws_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="duplicate"><a href='../..//html/Design.html#method-Design-duplicate'><code>::Design$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X"><a href='../..//html/Design.html#method-Design-get_X'><code>::Design$get_X()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_imp"><a href='../..//html/Design.html#method-Design-get_X_imp'><code>::Design$get_X_imp()</code></a></span></li>
@@ -96,26 +96,6 @@ Draw assignments from the custom design.
 }
 \subsection{Returns}{
 An \code{n x r} matrix of 0/1 assignments.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignFixedCustom-draw_ws_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignFixedCustom-draw_ws_according_to_design}{}}}
-\subsection{Method \code{draw_ws_according_to_design()}}{
-Internal redraw utility.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixedCustom$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{Number of assignment vectors.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-An \code{n x r} matrix.
 }
 }
 \if{html}{\out{<hr>}}

@@ -70,29 +70,24 @@ DesignSeqOneByOneSPBR = R6::R6Class("DesignSeqOneByOneSPBR",
 			w_t = block[1]
 			private$strata_states[[key]] = block[-1]
 			w_t
-		},
-		#' @description Draw multiple treatment assignment vectors according to SPBR design.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
-			strata_keys = vapply(1:private$t, function(i) {
-				private$get_strata_key(private$Xraw[i, ])
-			}, character(1))
-			
-			generate_permutations_spbr_cpp(
-				as.character(unname(strata_keys)),
-				as.integer(private$block_size),
-				as.numeric(private$prob_T),
-				as.integer(r)
-			)$w_mat
 		}
 	),
 	private = list(
 		strata_cols = NULL,
 		block_size = NULL,
 		strata_states = NULL,
+		draw_ws_raw = function(r = 100){
+			strata_keys = vapply(1:private$t, function(i) {
+				private$get_strata_key(private$Xraw[i, ])
+			}, character(1))
+
+			generate_permutations_spbr_cpp(
+				as.character(unname(strata_keys)),
+				as.integer(private$block_size),
+				as.numeric(private$prob_T),
+				as.integer(r)
+			)$w_mat
+		},
 		draw_bootstrap_indices = function(bootstrap_type = NULL){
 			strata_keys = vapply(1:private$t, function(i) {
 				private$get_strata_key(private$Xraw[i, ])

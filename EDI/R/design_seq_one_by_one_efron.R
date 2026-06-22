@@ -57,13 +57,11 @@ DesignSeqOneByOneEfron = R6::R6Class("DesignSeqOneByOneEfron",
 					rbinom(1, 1, private$weighted_coin_prob)
 				}
 			}
-		},
-		#' @description Draw multiple treatment assignment vectors according to Efron's design.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
+		}
+	),
+	private = list(
+		weighted_coin_prob = NULL,
+		draw_ws_raw = function(r = 100){
 			generate_permutations_efron_cpp(
 				as.integer(self$get_n()),
 				as.integer(r),
@@ -71,8 +69,5 @@ DesignSeqOneByOneEfron = R6::R6Class("DesignSeqOneByOneEfron",
 				as.numeric(private$weighted_coin_prob)
 			)$w_mat
 		}
-	),
-	private = list(
-		weighted_coin_prob = NULL
 	)
 )

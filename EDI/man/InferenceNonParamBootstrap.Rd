@@ -149,6 +149,8 @@ second-order accurate (Efron 1987; Efron & Tibshirani 1993).}
 
 \item{\code{na.rm}}{Remove non-finite bootstrap replicates. Default FALSE.}
 
+\item{\code{show_progress}}{A flag indicating whether a progress bar should be displayed.}
+
 \item{\code{min_number_usable_samples}}{Minimum number of finite bootstrap samples
 required after filtering. Default 50. Must be smaller than \code{B}.}
 }

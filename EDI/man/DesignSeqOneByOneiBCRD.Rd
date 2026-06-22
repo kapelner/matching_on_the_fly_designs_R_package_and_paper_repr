@@ -25,7 +25,6 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 \item \href{#method-DesignSeqOneByOneiBCRD-new}{\code{DesignSeqOneByOneiBCRD$new()}}
 \item \href{#method-DesignSeqOneByOneiBCRD-add_one_subject_to_experiment_and_assign}{\code{DesignSeqOneByOneiBCRD$add_one_subject_to_experiment_and_assign()}}
 \item \href{#method-DesignSeqOneByOneiBCRD-assign_wt}{\code{DesignSeqOneByOneiBCRD$assign_wt()}}
-\item \href{#method-DesignSeqOneByOneiBCRD-draw_ws_according_to_design}{\code{DesignSeqOneByOneiBCRD$draw_ws_according_to_design()}}
 \item \href{#method-DesignSeqOneByOneiBCRD-clone}{\code{DesignSeqOneByOneiBCRD$clone()}}
 }
 }
@@ -40,6 +39,7 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_even_allocation"><a href='../..//html/Design.html#method-Design-assert_even_allocation'><code>::Design$assert_even_allocation()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_fixed_sample"><a href='../..//html/Design.html#method-Design-assert_fixed_sample'><code>::Design$assert_fixed_sample()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="check_experiment_completed"><a href='../..//html/Design.html#method-Design-check_experiment_completed'><code>::Design$check_experiment_completed()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="draw_ws_according_to_design"><a href='../..//html/Design.html#method-Design-draw_ws_according_to_design'><code>::Design$draw_ws_according_to_design()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="duplicate"><a href='../..//html/Design.html#method-Design-duplicate'><code>::Design$duplicate()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X"><a href='../..//html/Design.html#method-Design-get_X'><code>::Design$get_X()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_imp"><a href='../..//html/Design.html#method-Design-get_X_imp'><code>::Design$get_X_imp()</code></a></span></li>
@@ -156,26 +156,6 @@ Assign the next subject to a treatment group
 
 \subsection{Returns}{
 The treatment assignment (0 or 1)
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignSeqOneByOneiBCRD-draw_ws_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignSeqOneByOneiBCRD-draw_ws_according_to_design}{}}}
-\subsection{Method \code{draw_ws_according_to_design()}}{
-Draw multiple treatment assignment vectors according to balanced randomization.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneiBCRD$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{The number of designs to draw.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A matrix of size n x r.
 }
 }
 \if{html}{\out{<hr>}}

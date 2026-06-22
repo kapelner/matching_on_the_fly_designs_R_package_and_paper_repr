@@ -46,13 +46,11 @@ DesignFixedCluster = R6::R6Class("DesignFixedCluster",
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, model_formula, seed = seed)
 			private$cluster_col = cluster_col
 			private$uses_covariates = TRUE
-		},
-		#' @description Draw multiple treatment assignment vectors according to cluster randomization.
-		#'
-		#' @param r 	The number of designs to draw.
-		#'
-		#' @return 		A matrix of size n x r.
-		draw_ws_according_to_design = function(r = 100){
+		}
+	),
+	private = list(
+		cluster_col = NULL,
+		draw_ws_raw = function(r = 100){
 			private$maybe_set_seed()
 			if (should_run_asserts()) {
 				self$assert_all_subjects_arrived()
@@ -63,14 +61,11 @@ DesignFixedCluster = R6::R6Class("DesignFixedCluster",
 					stop("Cluster IDs cannot be missing.")
 				}
 			}
-			
+
 			# Use randomizr::cluster_ra for canonical cluster randomization
 			w_mat = replicate(r, as.numeric(as.character(randomizr::cluster_ra(clusters = cluster_ids, prob = private$prob_T))))
 			storage.mode(w_mat) = "numeric"
 			w_mat
 		}
-	),
-	private = list(
-		cluster_col = NULL
 	)
 )
