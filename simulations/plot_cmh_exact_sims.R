@@ -268,7 +268,7 @@ Nrep = max(results_dt$n_pow, na.rm = TRUE)
 for (p_ in unique(results_dt$p)) {
   for (dt_val in unique(results_dt$cond_exp_func_model)) {
     sub = results_dt[p == p_ & cond_exp_func_model == dt_val]
-    sub_beta1 = sub[betaT == 1]
+    sub_beta1 = sub[betaT != 0]
     sub_beta0 = sub[betaT == 0]
 
     # if (nrow(sub_beta1) > 0L) {
@@ -314,7 +314,7 @@ for (p_ in unique(results_dt$p)) {
     if (nrow(sub_beta1) > 0L && nrow(sub_beta0) > 0L) {
       stem_pow_size = sprintf("plot_power_size_p%s_%s_Nrep_%d", p_, dt_val, Nrep)
       make_two_column_plot(
-        dat_left = sub_beta1,  metric_left = "pow_avg", xlab_left = "Power", hline_left = 0.05,
+        dat_left = sub_beta1,  metric_left = "pow_avg", xlab_left = "Power", hline_left = NULL,
         dat_right = sub_beta0, metric_right = "pow_avg", xlab_right = "Size", hline_right = 0.05,
         title_str = "", #sprintf("Power and Size | p=%s, log_odds_model=%s", p_, dt_val),
         filename_stem = stem_pow_size,
@@ -335,16 +335,16 @@ for (p_ in unique(results_dt$p)) {
 n_ = 64
 p_ = 1
 cond_exp_func_model_ = "linear"
-pow =    results_dt[betaT == 1 & n == n_ & p == p_ & cond_exp_func_model == cond_exp_func_model_, 
+pow =    results_dt[betaT != 0 & n == n_ & p == p_ & cond_exp_func_model == cond_exp_func_model_, 
                  .(power = pow_avg, design = design_short, inference = inference_short)]
 pow
 size =   results_dt[betaT == 0 & n == n_ & p == p_ & cond_exp_func_model == cond_exp_func_model_, 
                   .(size = pow_avg, design = design_short, inference = inference_short)]
 size
-cov =    results_dt[betaT == 1 & n == n_ & p == p_ & cond_exp_func_model == cond_exp_func_model_, 
+cov =    results_dt[betaT != 0 & n == n_ & p == p_ & cond_exp_func_model == cond_exp_func_model_, 
                     .(coverage = cov_avg, design = design_short, inference = inference_short)]
 cov
-ci_len = results_dt[betaT == 1 & n == n_ & p == p_ & cond_exp_func_model == cond_exp_func_model_, 
+ci_len = results_dt[betaT != 0 & n == n_ & p == p_ & cond_exp_func_model == cond_exp_func_model_, 
                   .(cilength = len_avg, design = design_short, inference = inference_short)]
 ci_len
 
@@ -425,7 +425,7 @@ opt_cmh_n64 = raw_results_dt[
   grepl("OptimalBlocks", design) &
   inference == "InferenceIncidCMH" &
   inference_type == "asymp_pval" &
-  betaT == 1 &
+  betaT != 0 &
   n == 64 &
   p %in% c(1, 5, 10) &
   !is.na(pval),
