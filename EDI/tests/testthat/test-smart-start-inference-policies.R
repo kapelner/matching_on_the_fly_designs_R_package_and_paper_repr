@@ -14,7 +14,7 @@ test_that("smart_cold_start_default TRUE and FALSE agree across core optimizatio
 	set.seed(101)
 	n <- 80
 	x <- rnorm(n)
-	w <- rep(c(1, 0), length.out = n)
+	w <- rep(c(1, -1), length.out = n)
 
 	y_logit <- rbinom(n, 1, plogis(-0.3 + 0.8 * w + 0.5 * x))
 	des_logit <- make_completed_fixed_design("incidence", x, w, y_logit)

@@ -27,7 +27,7 @@ test_that("custom asymptotic inference works from an external-package-like envir
 				fit = function(estimate_only = FALSE) {
 					dat = self$get_analysis_data()
 					y_t = dat$y[dat$w == 1]
-					y_c = dat$y[dat$w == 0]
+					y_c = dat$y[dat$w == -1]
 					est = mean(y_t) - mean(y_c)
 					if (estimate_only) return(list(estimate = est))
 					se = sqrt(stats::var(y_t) / length(y_t) + stats::var(y_c) / length(y_c))
@@ -45,13 +45,13 @@ test_that("custom asymptotic inference works from an external-package-like envir
 
 	des = DesignFixedBernoulli$new(n = 20, response_type = "continuous", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = seq_len(20)))
-	des$overwrite_all_subject_assignments(rep(c(0, 1), each = 10))
+	des$overwrite_all_subject_assignments(rep(c(-1, 1), each = 10))
 	des$add_all_subject_responses(c(1:10, 12:21))
 
 	inf = ext_env$ExternalMeanDiff$new(des, verbose = FALSE)
 	expect_s3_class(inf, "ExternalMeanDiff")
 	expect_equal(inf$get_response(), c(1:10, 12:21))
-	expect_equal(inf$get_treatment(), rep(c(0, 1), each = 10))
+	expect_equal(inf$get_treatment(), rep(c(-1, 1), each = 10))
 	expect_equal(inf$get_response_type(), "continuous")
 	expect_identical(inf$get_design_object(), des)
 	expect_equal(nrow(inf$get_analysis_data()), 20)
@@ -81,14 +81,14 @@ test_that("custom design extension bases delegate user assignment rules", {
 		inherit = CustomFixedBase,
 		public = list(
 			draw_assignments = function(r = 1) {
-				matrix(rep(rep(c(0, 1), length.out = self$get_n()), r), nrow = self$get_n(), ncol = r)
+				matrix(rep(rep(c(-1, 1), length.out = self$get_n()), r), nrow = self$get_n(), ncol = r)
 			}
 		)
 	)
 	fixed = AlternatingFixed$new(n = 6, response_type = "continuous", verbose = FALSE)
 	fixed$add_all_subjects_to_experiment(data.frame(x = 1:6))
 	fixed$assign_w_to_all_subjects()
-	expect_equal(fixed$get_w(), c(0, 1, 0, 1, 0, 1))
+	expect_equal(fixed$get_w(), c(-1, 1, -1, 1, -1, 1))
 	expect_equal(dim(fixed$draw_ws_according_to_design(3)), c(6, 3))
 
 	ExternalSequential = R6::R6Class(
@@ -96,7 +96,7 @@ test_that("custom design extension bases delegate user assignment rules", {
 		inherit = CustomSequentialBase,
 		public = list(
 			assignment_rule = function() {
-				as.numeric(self$get_t() %% 2L == 0L)
+				ifelse(self$get_t() %% 2L == 0L, 1, -1)
 			}
 		)
 	)
@@ -104,5 +104,5 @@ test_that("custom design extension bases delegate user assignment rules", {
 	for (i in 1:4) {
 		seq_des$add_one_subject_to_experiment_and_assign(data.frame(x = i))
 	}
-	expect_equal(seq_des$get_w(), c(0, 1, 0, 1))
+	expect_equal(seq_des$get_w(), c(-1, 1, -1, 1))
 })

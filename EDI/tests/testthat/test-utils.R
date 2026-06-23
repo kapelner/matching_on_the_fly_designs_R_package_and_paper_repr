@@ -5,10 +5,10 @@ test_that("logit and inv_logit work correctly", {
 	x <- seq(-5, 5, by = 1)
 	expect_equal(logit(inv_logit(x)), x)
 
-	expect_error(logit(0))
-	expect_error(logit(1))
-	expect_error(logit(-0.1))
-	expect_error(logit(1.1))
+	expect_true(is.finite(logit(0)))
+	expect_true(is.finite(logit(1)))
+	expect_true(is.finite(logit(-0.1)))
+	expect_true(is.finite(logit(1.1)))
 })
 
 test_that("sample_mode works correctly", {

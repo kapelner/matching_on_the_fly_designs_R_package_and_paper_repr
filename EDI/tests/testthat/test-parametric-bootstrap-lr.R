@@ -5,7 +5,7 @@ make_param_boot_logit_design <- function(seed = 20260518L, n = 120L){
 	set.seed(seed)
 	x1 <- rnorm(n)
 	x2 <- rnorm(n)
-	w <- rep(c(1, 0), length.out = n)
+	w <- rep(c(1, -1), length.out = n)
 	p <- plogis(-0.4 + 0.8 * w + 0.35 * x1 - 0.25 * x2)
 	y <- rbinom(n, 1, p)
 

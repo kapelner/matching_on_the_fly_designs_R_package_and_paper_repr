@@ -130,8 +130,11 @@ y = if (rt == "incidence") {
 }
 d$add_all_subject_responses(y, dead = rep(1, N_VAL))
 
-res_bb = "N/S"
-res_jk = "N/S"
+bb_enabled = isTRUE(edi_warm_start_dispatch_policy(cls_name, "bayesian_boot", n = N_VAL))
+jk_enabled = isTRUE(edi_warm_start_dispatch_policy(cls_name, "jackknife",      n = N_VAL))
+
+res_bb = if (!bb_enabled) "(D)" else "N/S"
+res_jk = if (!jk_enabled) "(D)" else "N/S"
 
 inf_w = get(cls_name)$new(d)
 inf_c = get(cls_name)$new(d)
@@ -166,7 +169,9 @@ clear_timing_caches = function(priv) {
     invisible(NULL)
 }
 
-if (grepl("BaiAdjusted|IVWC", cls_name) || cls_name == "InferenceOrdinalPairedSignTest") {
+if (!bb_enabled) {
+    # already set to "(D)" above
+} else if (grepl("BaiAdjusted|IVWC", cls_name) || cls_name == "InferenceOrdinalPairedSignTest") {
     res_bb = "N/S"
 } else {
     set.seed(42)
@@ -206,7 +211,9 @@ if (grepl("BaiAdjusted|IVWC", cls_name) || cls_name == "InferenceOrdinalPairedSi
     res_bb = calc_sig_s(t_bc, t_bw)
 }
 
-if (cls_name == "InferenceOrdinalPairedSignTest") {
+if (!jk_enabled) {
+    # already set to "(D)" above
+} else if (cls_name == "InferenceOrdinalPairedSignTest") {
     res_jk = "N/S"
 } else {
     priv_c$active_resampling_operation = "jackknife"

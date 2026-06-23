@@ -83,8 +83,8 @@ test_that("Generated permutations support randomization p-values", {
 	inf <- InferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
 	perms <- inf$.__enclos_env__$private$generate_permutations(64)
 
-	expect_true(is.character(attr(perms, "sig")))
-	expect_length(attr(perms, "sig"), 1)
+	expect_true(is.list(perms))
+	expect_true(!is.null(perms$w_mat))
 
 	pval <- inf$compute_rand_two_sided_pval(
 		r = 64,

@@ -2,7 +2,7 @@ test_that("likelihood inversion paths populate and reuse null-fit warm-start cac
 	set.seed(202)
 	n <- 60
 	x <- rnorm(n)
-	w <- rep(c(1, 0), length.out = n)
+	w <- rep(c(1, -1), length.out = n)
 	des <- DesignFixed$new(n = n, response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = x))
 	des$overwrite_all_subject_assignments(w)
@@ -43,7 +43,7 @@ test_that("gradient testing type is available on representative likelihood famil
 	set.seed(505)
 	n <- 80
 	x <- rnorm(n)
-	w <- rep(c(1, 0), length.out = n)
+	w <- rep(c(1, -1), length.out = n)
 
 	des_logit <- DesignFixed$new(n = n, response_type = "incidence", verbose = FALSE)
 	des_logit$add_all_subjects_to_experiment(data.frame(x = x))
@@ -117,7 +117,7 @@ test_that("bootstrap reusable workers retain warm-start state across refits", {
 	set.seed(303)
 	n <- 50
 	x <- rnorm(n)
-	w <- rep(c(1, 0), length.out = n)
+	w <- rep(c(1, -1), length.out = n)
 	des <- DesignFixed$new(n = n, response_type = "count", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = x))
 	des$overwrite_all_subject_assignments(w)

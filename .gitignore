@@ -6,7 +6,8 @@ cpp_compile.txt
 EDI/src/*.o
 EDI/src/*.dll
 EDI/src/*.so
-EDI/src/symbols.rds
+*.rds
+*.RDS
 EDI/src/edi_build_flags.h
 Rlib/*
 

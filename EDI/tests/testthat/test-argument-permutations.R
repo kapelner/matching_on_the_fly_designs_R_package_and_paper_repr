@@ -75,7 +75,7 @@ test_that("create_design_matrix consistency", {
 	expect_equal(nrow(dm), n)
 	expect_equal(ncol(dm), 1 + 1 + 1) # Intercept + w + x1
 	expect_equal(as.numeric(dm[, 1]), rep(1, n))
-	expect_equal(as.numeric(dm[, 2]), as.numeric(seq_des$get_w()))
+	expect_equal(as.numeric(dm[, 2]), (as.numeric(seq_des$get_w()) + 1) / 2)
 })
 
 test_that("fast_beta_regression_with_var consistency", {

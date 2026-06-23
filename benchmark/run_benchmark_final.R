@@ -303,39 +303,45 @@ simulate_param_boot_draws_for_timing = function(priv, B, delta = 0) {
     draws
 }
 
+# Policy check: which operations are enabled for this class+n?
+rand_enabled  = isTRUE(edi_warm_start_dispatch_policy(cls_name, "rand",          n = N_VAL))
+boot_enabled  = isTRUE(edi_warm_start_dispatch_policy(cls_name, "non_param_boot", n = N_VAL))
+jk_enabled    = isTRUE(edi_warm_start_dispatch_policy(cls_name, "jackknife",      n = N_VAL))
+pb_enabled    = isTRUE(edi_warm_start_dispatch_policy(cls_name, "param_boot",     n = N_VAL))
+
 # RAND
-res_r = "N/S"
-set.seed(42)
-rand_w_draws = replicate(R_VAL, sample(inf_w$.__enclos_env__$private$w), simplify = FALSE)
-orig_w_c = inf_c$.__enclos_env__$private$w
-orig_w_w = inf_w$.__enclos_env__$private$w
-inf_c$.__enclos_env__$private$active_resampling_operation = "rand"
-inf_w$.__enclos_env__$private$active_resampling_operation = "rand"
-tryCatch({ set_treatment_for_timing(inf_c$.__enclos_env__$private, rand_w_draws[[1L]]); clear_timing_caches(inf_c$.__enclos_env__$private); compute_rand_estimate_only(inf_c) }, error=function(e)NULL)
-tryCatch({ set_treatment_for_timing(inf_w$.__enclos_env__$private, rand_w_draws[[1L]]); clear_timing_caches(inf_w$.__enclos_env__$private); compute_rand_estimate_only(inf_w) }, error=function(e)NULL)
-t_rc = measure_times(function() {
-    for (w_perm in rand_w_draws) {
-        set_treatment_for_timing(inf_c$.__enclos_env__$private, w_perm)
-        clear_timing_caches(inf_c$.__enclos_env__$private)
-        compute_rand_estimate_only(inf_c)
-    }
-}, nrep = NREP)
-t_rw = measure_times(function() {
-    for (w_perm in rand_w_draws) {
-        set_treatment_for_timing(inf_w$.__enclos_env__$private, w_perm)
-        clear_timing_caches(inf_w$.__enclos_env__$private)
-        compute_rand_estimate_only(inf_w)
-    }
-}, nrep = NREP)
-restore_treatment_for_timing(inf_c$.__enclos_env__$private, orig_w_c)
-restore_treatment_for_timing(inf_w$.__enclos_env__$private, orig_w_w)
-inf_c$.__enclos_env__$private$active_resampling_operation = NULL
-inf_w$.__enclos_env__$private$active_resampling_operation = NULL
-res_r = calc_sig_s(t_rc, t_rw)
+res_r = if (!rand_enabled) "(D)" else {
+    set.seed(42)
+    rand_w_draws = replicate(R_VAL, sample(inf_w$.__enclos_env__$private$w), simplify = FALSE)
+    orig_w_c = inf_c$.__enclos_env__$private$w
+    orig_w_w = inf_w$.__enclos_env__$private$w
+    inf_c$.__enclos_env__$private$active_resampling_operation = "rand"
+    inf_w$.__enclos_env__$private$active_resampling_operation = "rand"
+    tryCatch({ set_treatment_for_timing(inf_c$.__enclos_env__$private, rand_w_draws[[1L]]); clear_timing_caches(inf_c$.__enclos_env__$private); compute_rand_estimate_only(inf_c) }, error=function(e)NULL)
+    tryCatch({ set_treatment_for_timing(inf_w$.__enclos_env__$private, rand_w_draws[[1L]]); clear_timing_caches(inf_w$.__enclos_env__$private); compute_rand_estimate_only(inf_w) }, error=function(e)NULL)
+    t_rc = measure_times(function() {
+        for (w_perm in rand_w_draws) {
+            set_treatment_for_timing(inf_c$.__enclos_env__$private, w_perm)
+            clear_timing_caches(inf_c$.__enclos_env__$private)
+            compute_rand_estimate_only(inf_c)
+        }
+    }, nrep = NREP)
+    t_rw = measure_times(function() {
+        for (w_perm in rand_w_draws) {
+            set_treatment_for_timing(inf_w$.__enclos_env__$private, w_perm)
+            clear_timing_caches(inf_w$.__enclos_env__$private)
+            compute_rand_estimate_only(inf_w)
+        }
+    }, nrep = NREP)
+    restore_treatment_for_timing(inf_c$.__enclos_env__$private, orig_w_c)
+    restore_treatment_for_timing(inf_w$.__enclos_env__$private, orig_w_w)
+    inf_c$.__enclos_env__$private$active_resampling_operation = NULL
+    inf_w$.__enclos_env__$private$active_resampling_operation = NULL
+    calc_sig_s(t_rc, t_rw)
+}
 
 # BOOT
-res_b = "N/S"
-if (TRUE) {
+res_b = if (!boot_enabled) "(D)" else {
     set.seed(42)
     boot_weight_draws = replicate(
         B_VAL,
@@ -360,12 +366,11 @@ if (TRUE) {
     }, nrep = NREP)
     inf_c$.__enclos_env__$private$active_resampling_operation = NULL
     inf_w$.__enclos_env__$private$active_resampling_operation = NULL
-    res_b = calc_sig_s(t_bc, t_bw)
+    calc_sig_s(t_bc, t_bw)
 }
 
 # JK
-res_j = "N/S"
-if (TRUE) {
+res_j = if (!jk_enabled) "(D)" else {
     inf_c$.__enclos_env__$private$active_resampling_operation = "jackknife"
     inf_w$.__enclos_env__$private$active_resampling_operation = "jackknife"
     tryCatch({ww=rep(1,N_VAL);ww[1]=0;inf_c$compute_estimate_with_bootstrap_weights(ww,TRUE)}, error=function(e)NULL)
@@ -376,18 +381,19 @@ if (TRUE) {
     t_jw = measure_times(function() {
         for(k in 1:J_VAL){clear_timing_caches(inf_w$.__enclos_env__$private);w=rep(1,N_VAL);w[k]=0;inf_w$compute_estimate_with_bootstrap_weights(w,TRUE)}
     }, nrep = NREP)
-    res_j = calc_sig_s(t_jc, t_jw)
     inf_c$.__enclos_env__$private$active_resampling_operation = NULL
     inf_w$.__enclos_env__$private$active_resampling_operation = NULL
+    calc_sig_s(t_jc, t_jw)
 }
 
 # PB
 is_pb_sup = tryCatch(inf_w$.__enclos_env__$private$supports_lik_ratio_param_bootstrap(), error = function(e) FALSE)
-res_p = "N/S"
-if (isTRUE(is_pb_sup)) {
+res_p = if (!pb_enabled) "(D)" else if (!isTRUE(is_pb_sup)) "N/S" else {
     set.seed(42)
     pb_draws = simulate_param_boot_draws_for_timing(inf_w$.__enclos_env__$private, PB_VAL, delta = 0)
-    if (!is.null(pb_draws)) {
+    if (is.null(pb_draws)) {
+        "N/S"
+    } else {
         orig_y_c = inf_c$.__enclos_env__$private$y
         orig_y_w = inf_w$.__enclos_env__$private$y
         orig_dead_c = inf_c$.__enclos_env__$private$dead
@@ -414,13 +420,13 @@ if (isTRUE(is_pb_sup)) {
         restore_param_boot_response_for_timing(inf_w$.__enclos_env__$private, orig_y_w, orig_dead_w)
         inf_c$.__enclos_env__$private$active_resampling_operation = NULL
         inf_w$.__enclos_env__$private$active_resampling_operation = NULL
-        res_p = calc_sig_s(t_pc, t_pw)
+        calc_sig_s(t_pc, t_pw)
     }
 }
 
 if (cls_name == "InferenceOrdinalPairedSignTest") {
-    res_b = "N/S"
-    res_j = "N/S"
+    if (res_b != "(D)") res_b = "N/S"
+    if (res_j != "(D)") res_j = "N/S"
 }
 
 cat(sprintf("%s,%s,%s,%s,%s\n", cls_name, res_r, res_b, res_j, res_p))

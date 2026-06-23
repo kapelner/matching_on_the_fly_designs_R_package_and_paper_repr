@@ -484,22 +484,20 @@ test_that("Bayesian bootstrap matches mirai-backed parallel execution", {
 	expect_equal(unname(mirai_boot), unname(serial_boot), tolerance = 1e-10)
 })
 
-test_that("IVWC classes are gated off from Bayesian bootstrap functionality", {
+test_that("IVWC classes handle Bayesian bootstrap calls correctly", {
 	des_cont = make_kk_design_for_weighted_bayes_boot("continuous", c(0, 1, 2, 3, 4, 5, 6, 7))
 	inf_cont_ivwc = InferenceContinKKOLSIVWC$new(des_cont, verbose = FALSE)
-	expect_error(
-		inf_cont_ivwc$approximate_bayesian_bootstrap_distribution_beta_hat_T(B = 3L, show_progress = FALSE),
-		"does not support Bayesian bootstrap functionality"
+	expect_no_error(
+		inf_cont_ivwc$approximate_bayesian_bootstrap_distribution_beta_hat_T(B = 3L, show_progress = FALSE)
 	)
 	expect_error(
 		inf_cont_ivwc$compute_estimate_with_bootstrap_weights(rep(1, des_cont$get_n())),
-		"does not support Bayesian bootstrap functionality"
+		"No Bayesian-bootstrap context is installed on this inference object"
 	)
 
 	des_incid = make_kk_design_for_weighted_bayes_boot("incidence", c(0L, 1L, 0L, 1L, 1L, 0L, 1L, 0L))
 	inf_incid_ivwc = InferenceIncidKKCondLogitIVWC$new(des_incid, verbose = FALSE)
-	expect_error(
-		inf_incid_ivwc$compute_bayesian_bootstrap_confidence_interval(B = 3L, show_progress = FALSE),
-		"does not support Bayesian bootstrap functionality"
+	expect_no_error(
+		inf_incid_ivwc$compute_bayesian_bootstrap_confidence_interval(B = 3L, show_progress = FALSE)
 	)
 })

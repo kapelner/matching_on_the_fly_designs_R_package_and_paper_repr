@@ -13,6 +13,7 @@ OP_FOR_COL = list(
 )
 
 cell_style = function(val) {
+    if (val == "(D)") return('background:#f0f0f0; color:#999; font-style:italic;')
     base = sub(" \\(D\\)$", "", val)
     if (base == "N/S")   return('background:#f5f5f5; color:#777;')
     if (grepl("^same",   base)) return('background:#f5f5f5; color:#777;')
@@ -22,7 +23,7 @@ cell_style = function(val) {
 }
 
 annotate_D = function(val, cls, op, n) {
-    if (is.na(val) || val == "N/S") return(val)
+    if (is.na(val) || val == "N/S" || val == "(D)") return(val)
     enabled = tryCatch(
         edi_warm_start_dispatch_policy(cls, op, n = n),
         error = function(e) TRUE

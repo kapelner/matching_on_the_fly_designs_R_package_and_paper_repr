@@ -70,7 +70,7 @@ test_that("likelihood-test p-values memoize null fits and score-side components 
 	set.seed(111)
 	n <- 80
 	x <- rnorm(n)
-	w <- rep(c(1, 0), length.out = n)
+	w <- rep(c(1, -1), length.out = n)
 	des <- DesignFixed$new(n = n, response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = x))
 	des$overwrite_all_subject_assignments(w)
@@ -105,7 +105,7 @@ test_that("likelihood-ratio CI inversion reuses memoized null fits and neg-logli
 	set.seed(222)
 	n <- 90
 	x <- rnorm(n)
-	w <- rep(c(1, 0), length.out = n)
+	w <- rep(c(1, -1), length.out = n)
 	des <- DesignFixed$new(n = n, response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = x))
 	des$overwrite_all_subject_assignments(w)

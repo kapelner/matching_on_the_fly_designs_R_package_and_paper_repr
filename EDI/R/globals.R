@@ -625,7 +625,8 @@ get_warm_start_dispatch_policy = function() {
     ),
     rand = list(
       inference_class_overrides = c(
-        "^InferenceIncidKKCondLogitOneLik$" = FALSE
+        "^InferenceIncidKKCondLogitOneLik$" = FALSE,
+        "^InferenceAllSimpleWilcox$" = FALSE
       )
     )
   )
@@ -715,6 +716,24 @@ edi_warm_start_dispatch_policy = function(inference_class, operation, n = NULL) 
     }
   }
   
+  if (!is.na(n_val) && n_val >= 500L) {
+    # At n>=500, KKHurdlePoissonOneLik rand warm starts cause the C++ GLMM to
+    # fail convergence and fall back to slow glmmTMB
+    if (identical(operation, "rand") &&
+        grepl("^InferenceCountKKHurdlePoissonOneLik$", inference_class, perl = TRUE)) {
+      return(FALSE)
+    }
+  }
+
+  if (!is.na(n_val) && n_val >= 1000L) {
+    # At n>=1000, CondLogitPlusGLMM rand warm starts similarly trigger glmmTMB fallback
+    if (identical(operation, "rand") &&
+        (grepl("^InferenceIncidKKCondLogitPlusGLMMOneLik$", inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidKKCondLogitPlusGLMMIVWC$", inference_class, perl = TRUE))) {
+      return(FALSE)
+    }
+  }
+
   if (operation %in% names(config)) {
     op_cfg = config[[operation]]
     if (is.list(op_cfg)) {

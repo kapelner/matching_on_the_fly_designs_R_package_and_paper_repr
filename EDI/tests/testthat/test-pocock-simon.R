@@ -13,11 +13,11 @@ test_that("DesignSeqOneByOnePocockSimon works", {
 	
 	w = des$get_w()
 	expect_length(w, n)
-	expect_true(all(w %in% c(0, 1)))
+	expect_true(all(w %in% c(-1, 1)))
 	
 	# Check balance (Pocock-Simon should be reasonably balanced)
-	# For n=20, it should be close to 10/10
-	expect_lte(abs(sum(w) - n/2), 4) 
+	# For n=20 with {-1,+1} encoding, sum should be close to 0
+	expect_lte(abs(sum(w)), 8)
 	
 	# Test redraw
 	des$assign_w_to_all_subjects()

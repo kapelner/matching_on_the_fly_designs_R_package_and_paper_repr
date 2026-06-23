@@ -6,7 +6,7 @@ test_that("DesignSeqOneByOneBernoulli works", {
 
 	x_new <- data.frame(x1 = rnorm(1))
 	w <- des$add_one_subject_to_experiment_and_assign(x_new)
-	expect_true(w %in% c(0, 1))
+	expect_true(w %in% c(-1, 1))
 	expect_equal(des$get_t(), 1)
 
 	des$add_one_subject_response(1, 0.5)
@@ -25,42 +25,42 @@ test_that("DesignSeqOneByOneEfron works", {
 
 	x_new <- data.frame(x1 = rnorm(1))
 	w <- des$add_one_subject_to_experiment_and_assign(x_new)
-	expect_true(w %in% c(0, 1))
+	expect_true(w %in% c(-1, 1))
 })
 
 test_that("DesignSeqOneByOneAtkinson works", {
 	des <- DesignSeqOneByOneAtkinson$new(response_type = "continuous", n = 10, verbose = FALSE)
 	x_new <- data.frame(x1 = rnorm(1), x2 = rnorm(1))
 	w <- des$add_one_subject_to_experiment_and_assign(x_new)
-	expect_true(w %in% c(0, 1))
+	expect_true(w %in% c(-1, 1))
 })
 
 test_that("DesignSeqOneByOneKK14 works", {
 	des <- DesignSeqOneByOneKK14$new(response_type = "continuous", n = 10, verbose = FALSE)
 	x_new <- data.frame(x1 = rnorm(1), x2 = rnorm(1))
 	w <- des$add_one_subject_to_experiment_and_assign(x_new)
-	expect_true(w %in% c(0, 1))
+	expect_true(w %in% c(-1, 1))
 })
 
 test_that("DesignSeqOneByOneKK21 works", {
 	des <- DesignSeqOneByOneKK21$new(response_type = "continuous", n = 10, verbose = FALSE)
 	x_new <- data.frame(x1 = rnorm(1), x2 = rnorm(1))
 	w <- des$add_one_subject_to_experiment_and_assign(x_new)
-	expect_true(w %in% c(0, 1))
+	expect_true(w %in% c(-1, 1))
 })
 
 test_that("DesignSeqOneByOneKK21stepwise works", {
 	des <- DesignSeqOneByOneKK21stepwise$new(response_type = "continuous", n = 10, verbose = FALSE)
 	x_new <- data.frame(x1 = rnorm(1), x2 = rnorm(1))
 	w <- des$add_one_subject_to_experiment_and_assign(x_new)
-	expect_true(w %in% c(0, 1))
+	expect_true(w %in% c(-1, 1))
 })
 
 test_that("DesignSeqOneByOneiBCRD works", {
 	des <- DesignSeqOneByOneiBCRD$new(response_type = "continuous", n = 10, verbose = FALSE)
 	x_new <- data.frame(x1 = rnorm(1))
 	w <- des$add_one_subject_to_experiment_and_assign(x_new)
-	expect_true(w %in% c(0, 1))
+	expect_true(w %in% c(-1, 1))
 	expect_error(des$get_block_ids(), "undefined|improperly sized")
 	for (i in 2:10) {
 		des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
@@ -72,14 +72,14 @@ test_that("DesignSeqOneByOneUrn works", {
 	des <- DesignSeqOneByOneUrn$new(response_type = "continuous", n = 12, alpha = 1, beta = 1, verbose = FALSE)
 	for (i in 1:12) {
 		w <- des$add_one_subject_to_experiment_and_assign(data.frame(x1 = i))
-		expect_true(w %in% c(0, 1))
+		expect_true(w %in% c(-1, 1))
 	}
 	expect_equal(des$get_t(), 12)
-	expect_true(all(des$get_w()[1:12] %in% c(0, 1)))
+	expect_true(all(des$get_w()[1:12] %in% c(-1, 1)))
 
 	W <- des$draw_ws_according_to_design(r = 3)
 	expect_equal(dim(W), c(12, 3))
-	expect_true(all(W %in% c(0, 1)))
+	expect_true(all(W %in% c(-1, 1)))
 })
 
 test_that("DesignSeqOneByOneSPBR works", {
@@ -90,17 +90,17 @@ test_that("DesignSeqOneByOneSPBR works", {
 	)
 	for (i in 1:8) {
 		w <- des$add_one_subject_to_experiment_and_assign(X[i, , drop = FALSE])
-		expect_true(w %in% c(0, 1))
+		expect_true(w %in% c(-1, 1))
 	}
 
 	ws <- des$get_w()[1:8]
-	expect_equal(sum(ws[1:4]), 2)
-	expect_equal(sum(ws[5:8]), 2)
+	expect_equal(sum(ws[1:4]), 0)
+	expect_equal(sum(ws[5:8]), 0)
 
 	W <- des$draw_ws_according_to_design(r = 3)
 	expect_equal(dim(W), c(8, 3))
-	expect_true(all(colSums(W[1:4, , drop = FALSE]) == 2))
-	expect_true(all(colSums(W[5:8, , drop = FALSE]) == 2))
+	expect_true(all(colSums(W[1:4, , drop = FALSE]) == 0))
+	expect_true(all(colSums(W[5:8, , drop = FALSE]) == 0))
 })
 
 test_that("Design asserts equal block sizes", {
@@ -111,7 +111,7 @@ test_that("Design asserts equal block sizes", {
 		verbose = FALSE
 	)
 	des$add_all_subjects_to_experiment(data.frame(stratum = c(rep("A", 4), rep("B", 4))))
-	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des$overwrite_all_subject_assignments(c(1, -1, 1, -1, 1, -1, 1, -1))
 	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
 
 	expect_true(des$assert_equal_block_sizes())
@@ -124,7 +124,7 @@ test_that("Design asserts equal block sizes", {
 		verbose = FALSE
 	)
 	des_bad$add_all_subjects_to_experiment(data.frame(stratum = c(rep("A", 3), rep("B", 5))))
-	des_bad$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des_bad$overwrite_all_subject_assignments(c(1, -1, 1, -1, 1, -1, 1, -1))
 	des_bad$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
 
 	expect_error(des_bad$assert_equal_block_sizes(), "same number of subjects")
@@ -141,7 +141,7 @@ test_that("DesignFixedBlocking exact_num_blocks hard-fails when the greedy build
 		verbose = FALSE
 	)
 	des$add_all_subjects_to_experiment(data.frame(stratum = rep(c("A", "B", "C", "D"), each = 2)))
-	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des$overwrite_all_subject_assignments(c(1, -1, 1, -1, 1, -1, 1, -1))
 	des$add_all_subject_responses(c(0, 1, 0, 1, 0, 1, 0, 1))
 	expect_error(des$get_block_ids(), "exact_num_blocks = TRUE")
 })
@@ -157,7 +157,7 @@ test_that("DesignFixedBlocking exact_num_blocks overrides preferred_num_bins_for
 		verbose = FALSE
 	)
 	des$add_all_subjects_to_experiment(data.frame(x = 1:8))
-	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des$overwrite_all_subject_assignments(c(1, -1, 1, -1, 1, -1, 1, -1))
 	des$add_all_subject_responses(c(0, 1, 0, 1, 0, 1, 0, 1))
 
 	block_ids <- des$get_block_ids()
@@ -179,13 +179,13 @@ test_that("DesignSeqOneByOneRandomBlockSize works", {
 	)
 	for (i in 1:8) {
 		w <- des$add_one_subject_to_experiment_and_assign(X[i, , drop = FALSE])
-		expect_true(w %in% c(0, 1))
+		expect_true(w %in% c(-1, 1))
 	}
 
 	ws <- des$get_w()[1:8]
-	expect_true(all(ws %in% c(0, 1)))
-	expect_true(sum(ws[1:4]) >= 0 && sum(ws[1:4]) <= 4)
-	expect_true(sum(ws[5:8]) >= 0 && sum(ws[5:8]) <= 4)
+	expect_true(all(ws %in% c(-1, 1)))
+	expect_true(sum(ws[1:4]) >= -4 && sum(ws[1:4]) <= 4)
+	expect_true(sum(ws[5:8]) >= -4 && sum(ws[5:8]) <= 4)
 })
 
 test_that("Response types work", {
@@ -318,7 +318,7 @@ test_that("DesignFixedBinaryMatch constructor accepts explicit m", {
 	expect_equal(des$get_block_ids(), c(1L, 1L, 2L, 2L, 3L, 3L, 4L, 4L))
 	W <- des$draw_ws_according_to_design(r = 3L)
 	expect_equal(dim(W), c(8L, 3L))
-	expect_true(all(colSums(W) == 4L))
+	expect_true(all(colSums(W) == 0L))
 })
 
 test_that("DesignFixedBlocking with NULL strata_cols returns block IDs via all covariates", {
@@ -332,7 +332,7 @@ test_that("DesignFixedBlocking with NULL strata_cols returns block IDs via all c
 	)
 	# strata_cols = NULL → all columns used; single numeric column gets 2 equal quantile bins
 	des$add_all_subjects_to_experiment(data.frame(x = c(1, 2, 3, 4, 5, 6, 7, 8)))
-	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des$overwrite_all_subject_assignments(c(1, -1, 1, -1, 1, -1, 1, -1))
 	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
 	block_ids <- des$get_block_ids()
 	expect_equal(length(block_ids), n)
@@ -350,7 +350,7 @@ test_that("CMH and ExtendedRobins work with DesignFixedBlocking NULL strata_cols
 		verbose = FALSE
 	)
 	des$add_all_subjects_to_experiment(data.frame(x = c(1, 2, 3, 4, 5, 6, 7, 8)))
-	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
+	des$overwrite_all_subject_assignments(c(1, -1, 1, -1, 1, -1, 1, -1))
 	des$add_all_subject_responses(rbinom(n, 1L, 0.5))
 
 	expect_no_error(InferenceIncidCMH$new(des, verbose = FALSE))
@@ -364,7 +364,7 @@ test_that("m is only populated for blocking and KK designs", {
 
 	blocking_des <- DesignFixedBlocking$new(response_type = "continuous", strata_cols = "stratum", n = 4, verbose = FALSE)
 	blocking_des$add_all_subjects_to_experiment(data.frame(stratum = c("A", "A", "B", "B")))
-	blocking_des$overwrite_all_subject_assignments(c(1, 0, 1, 0))
+	blocking_des$overwrite_all_subject_assignments(c(1, -1, 1, -1))
 	blocking_des$add_all_subject_responses(c(0, 1, 0, 1))
 	expect_equal(blocking_des$get_block_ids(), c(1L, 1L, 2L, 2L))
 

@@ -179,7 +179,7 @@ test_that("compute_rand_confidence_interval throws error for unsupported types",
 	for (i in 1:n) des_incid$add_one_subject_to_experiment_and_assign(data.table(x=1))
 	add_all_subject_responses_seq(des_incid, rbinom(n, 1, 0.5))
 	inf_incid <- InferenceIncidLogRegr$new(des_incid)
-	expect_error(inf_incid$compute_rand_confidence_interval(), "Zhang randomization inference requires Bernoulli or matching designs")
+	expect_error(inf_incid$compute_rand_confidence_interval(), "Zhang incidence inference requires Bernoulli or matching designs")
 
 	des_count <- DesignSeqOneByOneBernoulli$new(n = n, response_type = "count", verbose = FALSE)
 	for (i in 1:n) des_count$add_one_subject_to_experiment_and_assign(data.table(x=1))
