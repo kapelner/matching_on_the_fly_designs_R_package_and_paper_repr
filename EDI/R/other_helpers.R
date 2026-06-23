@@ -54,13 +54,10 @@ compute_binary_match_structure = function(X, mahal_match = FALSE) {
 				}
 			}
 			if (is.null(S_inv)) stop("Covariance matrix is singular; cannot compute Mahalanobis distances.")
-			D = matrix(NA_real_, nrow = n, ncol = n)
-			for (i in seq_len(n - 1L)) {
-				for (j in seq(i + 1L, n)) {
-					xdiff = X[i, ] - X[j, ]
-					D[i, j] = D[j, i] = as.numeric(xdiff %*% (S_inv %*% xdiff))
-				}
-			}
+			# d_Mahal(xi,xj)^2 = ||U(xi-xj)||^2 where U = chol(S_inv) (U'U = S_inv).
+			# Transform X -> X %*% t(U) so squared Euclidean == squared Mahalanobis.
+			U = chol(S_inv)
+			D = as.matrix(stats::dist(X %*% t(U)))^2
 		} else {
 			D = as.matrix(stats::dist(X))^2
 		}

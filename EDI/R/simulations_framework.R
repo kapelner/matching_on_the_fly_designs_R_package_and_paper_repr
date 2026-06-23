@@ -1063,6 +1063,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           }
         }
         n_cache_jobs = length(cache_jobs)
+        # Distribute the thread budget across workers: if there are fewer cache jobs than
+        # cores, each worker gets the spare cores for its drawing step and BLAS calls.
+        # When jobs >= cores every worker gets 1 to avoid N*M thread explosion.
+        if (n_cache_jobs > 0L && use_parallel_workers) {
+          cores_per_cache_job = max(1L, num_cores_to_use %/% n_cache_jobs)
+          cache_jobs = lapply(cache_jobs, function(j) { j$num_cores_for_worker = cores_per_cache_job; j })
+        }
         attach_cache_job = function(job) {
           cs = all_cell_states[[job$cell_idx]]
           obj = private$.load_simulation_cache_object(
@@ -2187,7 +2194,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       ns = asNamespace("EDI")
       prev_nc = ns$edi_env$num_cores_override
       on.exit(assign("num_cores_override", prev_nc, envir = ns$edi_env), add = TRUE)
-      assign("num_cores_override", 1L, envir = ns$edi_env)
+      # Use the thread budget computed by the caller; default to 1 to stay safe when
+      # multiple workers run simultaneously (prevents N*M thread explosion).
+      worker_nc = if (!is.null(job$num_cores_for_worker)) as.integer(job$num_cores_for_worker) else 1L
+      assign("num_cores_override", worker_nc, envir = ns$edi_env)
 
       save_cache_record = function(obj, cache_file) {
         cache_dir = dirname(cache_file)
@@ -3204,7 +3214,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       cell_in_progress_prop = max(0, min(1, if (private$total_cells > 0) (max(0, private$current_cell_idx - 1) + task_in_progress_prop) / private$total_cells else 0))
       rep_in_progress_prop  = max(0, min(1, if (private$Nrep > 0) (max(0, private$current_rep_idx - 1) + cell_in_progress_prop) / private$Nrep else 0))
       # overall_prop accounts for work done before this session started.
-      overall_prop = if (private$progress_total > 0L) private$progress_count / private$progress_total else rep_in_progress_prop
+      # Force to 1.0 when all reps/cells/tasks are complete to avoid showing < 100%
+      # due to deduplication reducing progress_count increments.
+      overall_prop = if (is_done) 1.0 else if (private$progress_total > 0L) private$progress_count / private$progress_total else rep_in_progress_prop
 
       # ETA: rep-based once ≥1 rep has finished; task-throughput rough estimate before then.
       .fmt_secs = function(secs) {
@@ -3315,7 +3327,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       invisible(NULL)
     },
     .sync_results_bz2_from_staging = function(staging_filename = private$.results_staging_filename()) {
-      message("Compressing results into a bz2 file...")
+      private$.message_stderr("Compressing results into a bz2 file...\n")
       if (!file.exists(staging_filename)) {
         stop("Cannot update compressed results because staging CSV is missing: ", staging_filename)
       }
