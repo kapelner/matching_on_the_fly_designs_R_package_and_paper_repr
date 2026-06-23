@@ -1,3 +1,6 @@
+node_modules/*
+package-lock.json
+package.json
 EDI/R/abstract_inference_KK_passthrough.R.backup
 EDI/R/abstract_inference_KK_passthrough.R.backup2
 simple_tests.log
