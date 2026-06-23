@@ -2700,7 +2700,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
               priv = d$.__enclos_env__$private
               priv$Xraw = data.table::as.data.table(X)
               priv$Ximp = data.table::copy(priv$Xraw)
-              priv$X    = X
+              priv$X    = as.matrix(X)
               priv$t    = as.integer(state$n)
               # Block / strata IDs needed by CMH, ExtendedRobins, etc.
               if (inherits(d, "DesignFixedBinaryMatch") &&
@@ -3614,7 +3614,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         priv = des_obj$.__enclos_env__$private
         priv$Xraw = data.table::as.data.table(X)
         priv$Ximp = data.table::copy(priv$Xraw)
-        priv$X = X
+        priv$X = as.matrix(X)
         priv$w = rep(c(0L, 1L), length.out = n)
         priv$y = rep(0, n)
         priv$y_original = priv$y
