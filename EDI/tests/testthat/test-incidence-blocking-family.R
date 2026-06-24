@@ -9,7 +9,7 @@ test_that("blocked incidence inference works for CMH and Extended Robins", {
 	des$add_all_subjects_to_experiment(
 		data.frame(x1 = factor(rep(1:2, 10), levels = 1:2))
 	)
-	des$overwrite_all_subject_assignments(rep(c(1, 0), 10))
+	des$overwrite_all_subject_assignments(rep(c(1, -1), 10))
 	des$add_all_subject_responses(rep(c(1, 0, 0, 1), 5))
 
 	inf_cmh <- InferenceIncidCMH$new(des, verbose = FALSE)
@@ -43,7 +43,7 @@ test_that("jackknife for blocking designs uses leave-one-block-out resampling", 
 	des$add_all_subjects_to_experiment(
 		data.frame(x1 = factor(rep(1:3, each = 4), levels = 1:3))
 	)
-	des$overwrite_all_subject_assignments(rep(c(1, 0, 1, 0), 3))
+	des$overwrite_all_subject_assignments(rep(c(1, -1, 1, -1), 3))
 	des$add_all_subject_responses(c(
 		1, 0, 1, 0,
 		1, 1, 0, 0,
@@ -54,12 +54,12 @@ test_that("jackknife for blocking designs uses leave-one-block-out resampling", 
 	inf_robins <- InferenceIncidExtendedRobins$new(des, verbose = FALSE)
 
 	block_ids <- des$get_block_ids()
-	full_est <- mean(des$get_y()[des$get_w() == 1]) - mean(des$get_y()[des$get_w() == 0])
+	full_est <- mean(des$get_y()[des$get_w() == 1]) - mean(des$get_y()[des$get_w() == -1])
 	jack_vals <- vapply(sort(unique(block_ids)), function(block_id) {
 		keep <- block_ids != block_id
 		y <- des$get_y()[keep]
 		w <- des$get_w()[keep]
-		mean(y[w == 1]) - mean(y[w == 0])
+		mean(y[w == 1]) - mean(y[w == -1])
 	}, numeric(1))
 	n_blocks <- length(jack_vals)
 	jack_bar <- mean(jack_vals)

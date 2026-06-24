@@ -19,11 +19,11 @@ test_that("Design hierarchy supports both fixed and sequential designs", {
 test_that("plain DesignFixed supports analysis but not redraw-based resampling", {
 	des = DesignFixed$new(n = 4, response_type = "continuous", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x1 = 1:4))
-	des$overwrite_all_subject_assignments(c(0, 1, 0, 1))
+	des$overwrite_all_subject_assignments(c(-1, 1, -1, 1))
 	des$add_all_subject_responses(c(1, 3, 2, 4))
 
 	expect_false(des$supports_resampling())
-	expect_error(des$assign_w_to_all_subjects(), "Must be implemented by subclass")
+	expect_error(des$assign_w_to_all_subjects(), "draw_ws_raw must be implemented")
 
 	inf = InferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
 	expect_equal(inf$compute_estimate(), 2)

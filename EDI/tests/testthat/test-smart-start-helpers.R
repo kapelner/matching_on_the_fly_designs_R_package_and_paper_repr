@@ -7,12 +7,12 @@ test_that("OLS smart-start helpers match the expected transformed regressions", 
 	y_count <- rpois(nrow(X), lambda = exp(X %*% c(0.2, 0.1, -0.15)))
 
 	expect_equal(
-		as.numeric(EDI:::test_ols_warm_start_beta_cpp(X, y_cont)),
+		as.numeric(EDI:::test_ols_smart_cold_start_beta_cpp(X, y_cont)),
 		as.numeric(coef(lm(y_cont ~ X - 1))),
 		tolerance = 1e-8
 	)
 	expect_equal(
-		as.numeric(EDI:::test_ols_warm_start_beta_on_log1p_cpp(X, y_count)),
+		as.numeric(EDI:::test_ols_smart_cold_start_beta_on_log1p_cpp(X, y_count)),
 		as.numeric(coef(lm(log1p(y_count) ~ X - 1))),
 		tolerance = 1e-8
 	)
@@ -41,7 +41,7 @@ test_that("Weibull smart starts use uncensored rows and ordinal thresholds are o
 	y[dead == 0] <- y[dead == 0] * 20
 
 	weibull_start <- EDI:::test_weibull_aft_start_cpp(X, y, dead)
-	uncens_coef <- as.numeric(coef(lm(log(y[dead == 1]) ~ X[dead == 1, ] - 1)))
+	uncens_coef <- as.numeric(coef(lm((log(y[dead == 1]) + 0.5722) ~ X[dead == 1, ] - 1)))
 	expect_equal(as.numeric(weibull_start$beta), uncens_coef, tolerance = 1e-6)
 
 	y_ord <- as.numeric(cut(X_cov[, 1] + 0.4 * X_cov[, 2] + rnorm(nrow(X_cov)),

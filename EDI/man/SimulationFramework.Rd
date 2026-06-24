@@ -128,7 +128,8 @@ Create a new \code{SimulationFramework}.
   continue_from_last_result_row = TRUE,
   reuse_cache = TRUE,
   stop_on_error = TRUE,
-  save_to_disk_every_n_rep = 25L
+  save_to_disk_every_n_rep = 25L,
+  save_model_control_fits = TRUE
 )}\if{html}{\out{</div>}}
 }
 
@@ -394,6 +395,20 @@ the on-disk staging file only once every this many replications, and
 always after the final replication. Larger values reduce disk I/O
 overhead at the cost of losing more progress if the run is interrupted.
 Default \code{25L}.}
+
+\item{\code{save_model_control_fits}}{Logical. If \code{TRUE} (default), after the
+design/SE cache is built, saves the per-subject model-implied potential
+outcomes under treatment and control as CSV files in a \code{response_values/}
+subfolder next to \code{results_filename}.  One file is written per unique
+\code{(response_type, cond_exp_func_model, n, p, betaT)} cell.  Only
+meaningful when \code{random_X_draws = FALSE}; silently skipped otherwise.
+Column names depend on \code{response_type}:
+\describe{
+  \item{\code{"continuous"}, \code{"survival"}}{columns \code{yt} and \code{yc}}
+  \item{\code{"incidence"}, \code{"proportion"}}{columns \code{pt} and \code{pc}}
+  \item{\code{"count"}}{columns \code{rt} and \code{rc}}
+}
+Default \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }

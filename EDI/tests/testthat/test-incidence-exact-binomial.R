@@ -19,10 +19,10 @@ test_that("InferenceIncidExactBinomial matches binom.test for DesignFixedBinaryM
 		idx <- which(m == pair_id)
 		if (pair_id <= 3L) {
 			y[idx[w[idx] == 1L]] <- 1L
-			y[idx[w[idx] == 0L]] <- 0L
+			y[idx[w[idx] == -1L]] <- 0L
 		} else {
 			y[idx[w[idx] == 1L]] <- 0L
-			y[idx[w[idx] == 0L]] <- 1L
+			y[idx[w[idx] == -1L]] <- 1L
 		}
 	}
 	des$add_all_subject_responses(y)
@@ -56,10 +56,10 @@ test_that("InferenceIncidExactBinomial ignores KK reservoir data", {
 			idx <- which(m == matched_ids[j])
 			if (j == 1L) {
 				y[idx[w[idx] == 1L]] <- 1L
-				y[idx[w[idx] == 0L]] <- 0L
+				y[idx[w[idx] == -1L]] <- 0L
 			} else {
 				y[idx[w[idx] == 1L]] <- 0L
-				y[idx[w[idx] == 0L]] <- 1L
+				y[idx[w[idx] == -1L]] <- 1L
 			}
 		}
 		reservoir_idx <- which(m == 0L)

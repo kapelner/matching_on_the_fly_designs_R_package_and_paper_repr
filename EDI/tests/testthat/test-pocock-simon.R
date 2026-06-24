@@ -19,8 +19,8 @@ test_that("DesignSeqOneByOnePocockSimon works", {
 	# For n=20 with {-1,+1} encoding, sum should be close to 0
 	expect_lte(abs(sum(w)), 8)
 	
-	# Test redraw
-	des$assign_w_to_all_subjects()
-	w2 = des$get_w()
-	expect_length(w2, n)
+	# Test draw_ws
+	W2 = des$draw_ws_according_to_design(r = 1)
+	expect_equal(dim(W2), c(n, 1L))
+	expect_true(all(W2 %in% c(-1, 1)))
 })

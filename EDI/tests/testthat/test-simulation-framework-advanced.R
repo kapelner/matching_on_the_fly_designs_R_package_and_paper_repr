@@ -19,7 +19,7 @@ test_that("SimulationFramework handles multiple cells and summarizes correctly",
 	)
 	
 	sim$run()
-	sm <- sim$summarize()
+	sm <- SimulationFrameworkReport$new(sim)$summarize()
 	
 	# Grid: 2(n) * 2(p) * 2(betaT) = 8 cells.
 	expect_equal(nrow(sm), 8)
@@ -47,7 +47,7 @@ test_that("SimulationFramework continue logic works for both csv and csv.bz2", {
 			continue_from_last_result_row = FALSE
 		)
 		sim1$run()
-		expect_equal(nrow(sim1$get_results()), 1)
+		expect_equal(nrow(SimulationFrameworkReport$new(sim1)$get_results()), 1)
 		
 		# Second run: continue, total Nrep = 3
 		sim2 <- SimulationFramework$new(
@@ -61,7 +61,7 @@ test_that("SimulationFramework continue logic works for both csv and csv.bz2", {
 			continue_from_last_result_row = TRUE
 		)
 		sim2$run()
-		res <- sim2$get_results()
+		res <- SimulationFrameworkReport$new(sim2)$get_results()
 		expect_equal(nrow(res), 3)
 		expect_equal(sort(res$rep), 1:3)
 	}
@@ -81,7 +81,7 @@ test_that("SimulationFramework handles seed for reproducibility", {
 		continue_from_last_result_row = FALSE
 	)
 	sim1$run()
-	res1 <- sim1$get_results()
+	res1 <- SimulationFrameworkReport$new(sim1)$get_results()
 	
 	results_file2 <- tempfile(fileext = ".csv")
 	sim2 <- SimulationFramework$new(
@@ -96,7 +96,7 @@ test_that("SimulationFramework handles seed for reproducibility", {
 		continue_from_last_result_row = FALSE
 	)
 	sim2$run()
-	res2 <- sim2$get_results()
+	res2 <- SimulationFrameworkReport$new(sim2)$get_results()
 	
 	expect_equal(res1$estimate, res2$estimate)
 })
@@ -132,7 +132,7 @@ test_that("SimulationFramework handles factor covariate in design initialization
 	)
 	
 	sim$run()
-	expect_equal(nrow(sim$get_results()), 1)
+	expect_equal(nrow(SimulationFrameworkReport$new(sim)$get_results()), 1)
 })
 
 test_that("SimulationFramework summarize handles all-NA results", {
@@ -164,7 +164,7 @@ test_that("SimulationFramework summarize handles all-NA results", {
 	))
 	priv$results_idx = 1L
 	
-	sm <- sim$summarize()
+	sm <- SimulationFrameworkReport$new(sim)$summarize()
 	expect_true(is.na(sm$MSE[1]))
 	expect_equal(sm$n_est[1], 0L)
 })
@@ -184,7 +184,7 @@ test_that("SimulationFramework respects clamping parameters", {
 	)
 	
 	sim$run()
-	res <- sim$get_results()
+	res <- SimulationFrameworkReport$new(sim)$get_results()
 	
 	# true_estimand should be mean(clamped_p_t - clamped_p_c) <= 0.99 - 0.01 = 0.98
 	expect_true(all(res$true_estimand <= 0.99))

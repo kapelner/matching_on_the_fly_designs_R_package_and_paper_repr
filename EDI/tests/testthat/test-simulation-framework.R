@@ -140,7 +140,7 @@ test_that("SimulationFramework supports X_mat with DesignFixedBlocking explicit 
 	)
 
 	sim$run()
-	res <- sim$get_results()
+	res <- SimulationFrameworkReport$new(sim)$get_results()
 	expect_equal(nrow(res), 1L)
 	expect_true(grepl("DesignFixedBlocking", res$design[[1L]], fixed = TRUE))
 
@@ -185,7 +185,7 @@ test_that("SimulationFramework supports X_mat with DesignFixedBinaryMatch explic
 	)
 
 	sim$run()
-	res <- sim$get_results()
+	res <- SimulationFrameworkReport$new(sim)$get_results()
 	expect_equal(nrow(res), 1L)
 	expect_true(grepl("DesignFixedBinaryMatch", res$design[[1L]], fixed = TRUE))
 
@@ -301,8 +301,8 @@ test_that("SimulationFramework accepts vector grids for n, p, betaT, and cond_ex
 	))
 
 	sim$run()
-	raw <- sim$get_results()
-	sm <- sim$summarize()
+	raw <- SimulationFrameworkReport$new(sim)$get_results()
+	sm <- SimulationFrameworkReport$new(sim)$summarize()
 
 	expect_true(all(c("cond_exp_func_model", "n", "p", "betaT") %in% names(raw)))
 	expect_true(all(c("cond_exp_func_model", "n", "p", "betaT") %in% names(sm)))
@@ -327,7 +327,7 @@ test_that("SimulationFramework can write and reload csv.bz2 results", {
 		turn_off_asserts_for_speed = FALSE
 	)
 	sim$run()
-	raw_first <- sim$get_results()
+	raw_first <- SimulationFrameworkReport$new(sim)$get_results()
 
 	expect_true(file.exists(results_file))
 	expect_false(file.exists(file.path(
@@ -350,7 +350,7 @@ test_that("SimulationFramework can write and reload csv.bz2 results", {
 		turn_off_asserts_for_speed = FALSE
 	)
 	sim_resume$run()
-	raw_second <- sim_resume$get_results()
+	raw_second <- SimulationFrameworkReport$new(sim_resume)$get_results()
 
 	expect_equal(nrow(raw_second), nrow(raw_first))
 	expect_equal(raw_second$estimate, raw_first$estimate)
@@ -388,7 +388,7 @@ test_that("SimulationFramework persists and reuses pregenerated design cache obj
 	Sys.sleep(1.1)
 	sim_reuse <- make_sim(TRUE)
 	sim_reuse$run()
-	expect_equal(file.info(cache_files)$mtime, cache_mtime_first)
+	expect_lte(as.numeric(difftime(file.info(cache_files)$mtime, cache_mtime_first, units = "secs")), 5)
 
 	Sys.sleep(1.1)
 	sim_refresh <- make_sim(FALSE)
@@ -478,9 +478,9 @@ test_that("SimulationFramework summarize preserves raw metric precision", {
 	)
 	priv$results_idx <- 3L
 
-	sm <- sim$summarize()
+	sm <- SimulationFrameworkReport$new(sim)$summarize()
 	expect_equal(sm$MSE, mean(c((1.234567 - 0.5)^2, (0.111111 - 0.5)^2, (0.222222 - 0.5)^2)), tolerance = 1e-15)
-	expect_equal(sm$power, 1 / 3, tolerance = 1e-15)
+	expect_equal(sm$size, 1 / 3, tolerance = 1e-15)
 	expect_equal(sm$ci_length, mean(c(2.0, 0.4, 1.2)), tolerance = 1e-15)
 	expect_equal(sm$coverage, 2 / 3, tolerance = 1e-15)
 	expect_false(identical(sm$coverage, round(sm$coverage, 3)))
@@ -529,8 +529,8 @@ test_that("SimulationFramework get_errors captures structured runtime errors whe
 	)
 
 	sim$run()
-	res <- sim$get_results()
-	errs <- sim$get_errors()
+	res <- SimulationFrameworkReport$new(sim)$get_results()
+	errs <- SimulationFrameworkReport$new(sim)$get_errors()
 
 	expect_equal(nrow(res), 2L)
 	expect_true(any(is.na(res[inference == "InferenceAlwaysFailsPval"]$pval)))

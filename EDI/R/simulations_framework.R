@@ -106,7 +106,7 @@ generate_covariate_dataset = function(n, p,
 #'
 #' @description A helper function to transform a latent continuous signal to the scale
 #' appropriate for a given \code{response_type}, identical to the logic used
-#' within \code{SimulationFramework}.
+#' within \code{SimulationFramework} but not used within \code{SimulationFramework}. 
 #'
 #' @param y_cont Numeric vector. The latent continuous response signal.
 #' @param response_type Character scalar. One of \code{"continuous"}, \code{"incidence"},
@@ -476,6 +476,22 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #'   overhead at the cost of losing more progress if the run is interrupted.
     #'   Default \code{25L}.
     #'
+    #' @param save_model_control_fits Logical. If \code{TRUE} (default), after the
+    #'   design/SE cache is built, saves the per-subject model-implied potential
+    #'   outcomes under treatment and control as CSV files in a subfolder named
+    #'   \code{<stem>_response_values/} (where \code{<stem>} is \code{results_filename}
+    #'   with its \code{.csv}/\code{.csv.bz2} extension stripped) next to
+    #'   \code{results_filename}.  One file is written per unique
+    #'   \code{(response_type, cond_exp_func_model, n, p, betaT)} cell.  Only
+    #'   meaningful when \code{random_X_draws = FALSE}; silently skipped otherwise.
+    #'   Column names depend on \code{response_type}:
+    #'   \describe{
+    #'     \item{\code{"continuous"}, \code{"survival"}}{columns \code{yt} and \code{yc}}
+    #'     \item{\code{"incidence"}, \code{"proportion"}}{columns \code{pt} and \code{pc}}
+    #'     \item{\code{"count"}}{columns \code{rt} and \code{rc}}
+    #'   }
+    #'   Default \code{TRUE}.
+    #'
     #' @param inference_types_and_params \code{NULL} (default) or a named list
     #'   from inference type to a named list of arguments for that type's function
     #'   invocation.  The list names control which inference outputs are computed.
@@ -538,7 +554,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       continue_from_last_result_row = TRUE,
       reuse_cache           = TRUE,
       stop_on_error         = TRUE,
-      save_to_disk_every_n_rep = 25L
+      save_to_disk_every_n_rep = 25L,
+      save_model_control_fits = TRUE
     ) {
       valid_rt = c("continuous", "incidence", "proportion",
                    "count", "survival", "ordinal")
@@ -635,6 +652,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$stop_on_error        = isTRUE(stop_on_error)
       checkmate::assertCount(save_to_disk_every_n_rep, positive = TRUE)
       private$save_to_disk_every_n_rep = as.integer(save_to_disk_every_n_rep)
+      private$save_model_control_fits = isTRUE(save_model_control_fits)
       private$inf_types        = inf_types
       private$inference_type_params = inf_type_spec
       private$param_grid       = private$.build_param_grid(
@@ -956,6 +974,61 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$current_task_label = "Des/Inf"
 
       if (isTRUE(private$verbose)) private$.print_plan_summary(planned_combos_list)
+      # ── Save per-subject model-implied response values (if requested) ────────
+      if (isTRUE(private$save_model_control_fits) && !isTRUE(private$random_X_draws)) {
+        rv_dir = {
+          path = private$.results_output_path()
+          stem = sub("\\.csv(\\.bz2)?$", "", basename(path), ignore.case = TRUE)
+          file.path(dirname(path), paste0(stem, "_response_values"))
+        }
+        if (!dir.exists(rv_dir)) dir.create(rv_dir, recursive = TRUE, showWarnings = FALSE)
+        cell_grid = unique(private$param_grid[, .(response_type, cond_exp_func_model, n, p, betaT)])
+        for (gi in seq_len(nrow(cell_grid))) {
+          rt_g  = cell_grid$response_type[[gi]]
+          dt_g  = cell_grid$cond_exp_func_model[[gi]]
+          n_g   = cell_grid$n[[gi]]
+          p_g   = cell_grid$p[[gi]]
+          bt_g  = cell_grid$betaT[[gi]]
+          X_g   = shared_X_draws[[paste(n_g, p_g, sep = "|")]]
+          if (is.null(X_g)) next
+          dat_g = generate_covariate_dataset(
+            n = n_g, p = p_g,
+            cond_exp_func_model  = dt_g,
+            norm_sq_beta_vec     = private$norm_sq_beta_vec,
+            X_mat                = X_g,
+            cov_draw_method      = NULL,
+            cov_draw_method_args = private$cov_draw_method_args
+          )
+          ylm_g = as.numeric(dat_g$y_cont - mean(dat_g$y_cont))
+          rv_dt = switch(rt_g,
+            continuous = data.table::data.table(
+              yt = ylm_g + bt_g,
+              yc = ylm_g
+            ),
+            survival = data.table::data.table(
+              yt = exp(ylm_g + bt_g),
+              yc = exp(ylm_g)
+            ),
+            incidence = data.table::data.table(
+              pt = stats::plogis(ylm_g + bt_g),
+              pc = stats::plogis(ylm_g)
+            ),
+            proportion = data.table::data.table(
+              pt = stats::plogis(ylm_g + bt_g),
+              pc = stats::plogis(ylm_g)
+            ),
+            count = data.table::data.table(
+              rt = exp(ylm_g + bt_g),
+              rc = exp(ylm_g)
+            ),
+            NULL
+          )
+          if (is.null(rv_dt)) next
+          bt_str   = gsub("[^A-Za-z0-9_-]", "_", as.character(bt_g))
+          rv_fname = sprintf("rv_%s_%s_n%d_p%d_betaT%s.csv", rt_g, dt_g, n_g, p_g, bt_str)
+          data.table::fwrite(rv_dt, file.path(rv_dir, rv_fname))
+        }
+      }
       # Early exit if everything is already done (before drawing the main progress bar)
       if (private$progress_count >= private$progress_total) {
         if (isTRUE(private$verbose)) message("Simulation already complete.")
@@ -1705,6 +1778,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     reuse_cache = TRUE,
     stop_on_error = TRUE,
     save_to_disk_every_n_rep = 50L,
+    save_model_control_fits = TRUE,
     pending_file_rows = NULL,
     design_params    = NULL,
     inference_constructor_params = NULL,

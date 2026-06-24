@@ -420,6 +420,7 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 			if (is.null(full_res) || !isTRUE(full_res$converged)) return(NULL)
 			b_j = as.numeric(full_res$b[j])
 			if (!is.finite(b_j)) return(NULL)
+			warm_fisher = full_res$fisher_information
 			list(
 				full_fit = full_res,
 				fit_null = function(d, start = NULL){

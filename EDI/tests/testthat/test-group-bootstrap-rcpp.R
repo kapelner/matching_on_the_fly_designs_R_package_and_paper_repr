@@ -32,7 +32,7 @@ test_that("DesignFixedBlocking block bootstrap uses group resampling helper sema
 	des$add_all_subjects_to_experiment(
 		data.frame(x1 = factor(c("a", "a", "b", "b", "c", "c")))
 	)
-	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0))
+	des$overwrite_all_subject_assignments(c(1, -1, 1, -1, 1, -1))
 	des$add_all_subject_responses(c(1, 2, 3, 4, 5, 6))
 
 	set.seed(17)

@@ -17,7 +17,7 @@ test_that("DesignFixedOptimalBlocks is gated behind required libraries", {
 		des$assign_w_to_all_subjects()
 		w = des$get_w()
 		expect_length(w, n)
-		expect_equal(sum(w), n / 2)
+		expect_equal(sum(w), 0)
 		W = des$draw_ws_according_to_design(r = 3)
 		expect_equal(dim(W), c(n, 3))
 	}
@@ -29,6 +29,6 @@ test_that("DesignFixedOptimalBlocks errors when roughly equal block sizes are in
 
 	expect_error(
 		DesignFixedOptimalBlocks$new(response_type = "continuous", B = 7, n = 6, verbose = FALSE),
-		"Cannot partition 6 subjects into 7 roughly equal blocks"
+		"Cannot use B = 7 with n = 6"
 	)
 })

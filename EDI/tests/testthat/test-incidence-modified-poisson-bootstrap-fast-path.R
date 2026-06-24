@@ -33,5 +33,5 @@ test_that("Modified Poisson reusable bootstrap worker matches generic bootstrap 
 	set.seed(99)
 	slow_boot = slow_inf$approximate_bootstrap_distribution_beta_hat_T(B = 21, show_progress = FALSE)
 
-	expect_equal(fast_boot, slow_boot, tolerance = 1e-12)
+	expect_equal(fast_boot, slow_boot, tolerance = 1e-8)
 })

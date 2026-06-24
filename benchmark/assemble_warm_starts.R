@@ -25,7 +25,7 @@ cell_style = function(val) {
 annotate_D = function(val, cls, op, n) {
     if (is.na(val) || val == "N/S" || val == "(D)") return(val)
     enabled = tryCatch(
-        edi_warm_start_dispatch_policy(cls, op, n = n),
+        EDI:::edi_warm_start_dispatch_policy(cls, op, n = n),
         error = function(e) TRUE
     )
     if (!isTRUE(enabled) && !grepl("\\(D\\)", val)) paste0(val, " (D)") else val
@@ -93,14 +93,14 @@ for (n_val in N_VALS) {
     cat(sprintf("Built table for n=%d (%d paths).\n", n_val, nrow(merged)))
 }
 
-md_file = "package_metadata/warm_starts.md"
+md_file = "package_metadata/warm_starts.html"
 md = readLines(md_file, warn = FALSE)
 
 for (n_val in N_VALS) {
     tbl = all_tables[[as.character(n_val)]]
     if (is.null(tbl)) next
 
-    section_header = sprintf("### n = %d", n_val)
+    section_header = sprintf('<h3 id="n-%d">n = %d</h3>', n_val, n_val)
     start_idx = which(md == section_header)
     if (length(start_idx) == 0L) { cat(sprintf("Section '%s' not found.\n", section_header)); next }
     start_idx = start_idx[1L]
@@ -109,11 +109,8 @@ for (n_val in N_VALS) {
     table_end   = table_start + which(grepl("^</table>$", md[(table_start + 1L):length(md)]))[1L]
 
     md = c(md[seq_len(table_start - 1L)], tbl, md[(table_end + 1L):length(md)])
-    cat(sprintf("Replaced n=%d table in warm_starts.md.\n", n_val))
+    cat(sprintf("Replaced n=%d table in warm_starts.html.\n", n_val))
 }
 
-# Update "12 timing repetitions" to "100 timing repetitions"
-md = gsub("12 timing repetitions", "100 timing repetitions", md, fixed = TRUE)
-
 writeLines(md, md_file)
-cat("Done. warm_starts.md updated.\n")
+cat("Done. warm_starts.html updated.\n")

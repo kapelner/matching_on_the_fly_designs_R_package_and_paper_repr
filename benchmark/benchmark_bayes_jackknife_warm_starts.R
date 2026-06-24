@@ -12,9 +12,8 @@ J_VAL = as.integer(Sys.getenv("WARM_START_BENCH_J", unset = "5"))
 NREP = as.integer(Sys.getenv("WARM_START_BENCH_REPS", unset = "100"))
 FIXED_N = as.integer(Sys.getenv("WARM_START_BENCH_FIXED_N", unset = "1"))
 
-md = readLines("package_metadata/warm_starts.md", warn = FALSE)
-path_lines = grep("<td[^>]*>Inference", md, value = TRUE)
-inf_names = unique(sub(".*<td[^>]*>(Inference[^<]+)</td>.*", "\\1", path_lines))
+md = readLines("package_metadata/warm_starts.html", warn = FALSE)
+inf_names = unique(trimws(md[grepl("^\\s*Inference[A-Za-z0-9]+\\s*$", md)]))
 excluded_paths = c(
     "InferenceAllSimpleMeanDiff",
     "InferenceAllSimpleMeanDiffPooledVar"
@@ -130,8 +129,8 @@ y = if (rt == "incidence") {
 }
 d$add_all_subject_responses(y, dead = rep(1, N_VAL))
 
-bb_enabled = isTRUE(edi_warm_start_dispatch_policy(cls_name, "bayesian_boot", n = N_VAL))
-jk_enabled = isTRUE(edi_warm_start_dispatch_policy(cls_name, "jackknife",      n = N_VAL))
+bb_enabled = isTRUE(EDI:::edi_warm_start_dispatch_policy(cls_name, "bayesian_boot", n = N_VAL))
+jk_enabled = isTRUE(EDI:::edi_warm_start_dispatch_policy(cls_name, "jackknife",      n = N_VAL))
 
 res_bb = if (!bb_enabled) "(D)" else "N/S"
 res_jk = if (!jk_enabled) "(D)" else "N/S"

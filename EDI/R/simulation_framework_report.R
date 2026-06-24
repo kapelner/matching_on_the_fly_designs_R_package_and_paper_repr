@@ -128,12 +128,10 @@ SimulationFrameworkReport = R6::R6Class("SimulationFrameworkReport",
             is_zero = abs(betaT) < 1e-12
             pv_fin_zero    = pv_fin & is_zero
             pv_fin_nonzero = pv_fin & !is_zero
-            m_row$power = if (any(pv_fin_nonzero)) mean(pval[pv_fin_nonzero] < alpha) else NA_real_
-            m_row$n_pow = sum(pv_fin_nonzero)
-            if (any(is_zero)) {
-              m_row$size   = if (any(pv_fin_zero)) mean(pval[pv_fin_zero] < alpha) else NA_real_
-              m_row$n_size = sum(pv_fin_zero)
-            }
+            m_row$power  = if (any(pv_fin_nonzero)) mean(pval[pv_fin_nonzero] < alpha) else NA_real_
+            m_row$n_pow  = sum(pv_fin_nonzero)
+            m_row$size   = if (any(pv_fin_zero)) mean(pval[pv_fin_zero] < alpha) else NA_real_
+            m_row$n_size = sum(pv_fin_zero)
           }
           m_row
         }, by = by_cols]

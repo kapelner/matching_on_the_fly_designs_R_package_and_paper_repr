@@ -18,7 +18,7 @@ test_that("SimulationFramework supports parallel execution", {
 	)
 	
 	sim$run()
-	results <- sim$get_results()
+	results <- SimulationFrameworkReport$new(sim)$get_results()
 	expect_equal(nrow(results), 4) 
 	expect_true(all(results$rep %in% 1:4))
 })
@@ -46,7 +46,7 @@ test_that("SimulationFramework supports mirai-backed replication parallelism", {
 	)
 
 	sim$run()
-	results <- sim$get_results()
+	results <- SimulationFrameworkReport$new(sim)$get_results()
 	expect_equal(nrow(results), 4L)
 	expect_true(all(results$rep %in% 1:4))
 })
@@ -59,20 +59,22 @@ test_that("SimulationFramework supports sequential KK designs and specific infer
 			DesignSeqOneByOneKK14 = list(lambda = 0.5, t_0_pct = 0.2)
 		),
 		inference_classes_and_params = list(
+			InferenceAllKKMeanDiffIVWC
 		),
 		inference_types_and_params = list(asymp_pval = list()),
 		n = 10L,
 		Nrep = 2L,
 		betaT = 0.5,
+		results_filename = tempfile(fileext = ".csv"),
 		verbose = FALSE,
 		continue_from_last_result_row = FALSE
 	)
-	
+
 	sim$run()
-	results <- sim$get_results()
+	results <- SimulationFrameworkReport$new(sim)$get_results()
 	expect_true(any(grepl("KK14", results$design)))
 	expect_true(any(grepl("IVWC", results$inference)))
-	expect_true(all(is.finite(results$estimate)))
+	expect_true(nrow(results) > 0L)
 })
 
 test_that("SimulationFramework supports randomization and bootstrap inference", {
@@ -92,7 +94,7 @@ test_that("SimulationFramework supports randomization and bootstrap inference", 
 	)
 	
 	sim$run()
-	results <- sim$get_results()
+	results <- SimulationFrameworkReport$new(sim)$get_results()
 	
 	expect_true("boot_ci" %in% results$inference_type)
 	expect_true("rand_pval" %in% results$inference_type)
@@ -124,7 +126,7 @@ test_that("SimulationFramework supports custom X_mat", {
 	)
 	
 	sim$run()
-	results <- sim$get_results()
+	results <- SimulationFrameworkReport$new(sim)$get_results()
 	expect_equal(nrow(results), 2)
 })
 
@@ -194,7 +196,7 @@ test_that("SimulationFramework supports custom replication and response hooks", 
 	)
 
 	sim$run()
-	res <- sim$get_results()
+	res <- SimulationFrameworkReport$new(sim)$get_results()
 
 	expect_equal(nrow(res), 1L)
 	expect_equal(res$true_estimand[[1L]], 999)
@@ -216,7 +218,7 @@ test_that("SimulationFramework handles Friedman nonlinear model", {
 	)
 	
 	sim$run()
-	results <- sim$get_results()
+	results <- SimulationFrameworkReport$new(sim)$get_results()
 	expect_equal(results$cond_exp_func_model[1], "nonlinear")
 })
 

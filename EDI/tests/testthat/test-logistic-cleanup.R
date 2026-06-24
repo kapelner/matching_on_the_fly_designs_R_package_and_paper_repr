@@ -25,5 +25,5 @@ test_that("fast_logistic_regression_with_var_cpp works without smart_cold_start"
   
   res <- fast_logistic_regression_with_var_cpp(X, y)
   expect_equal(length(res$b), p)
-  expect_true(is.matrix(res$vcov))
+  expect_true(is.matrix(res$fisher_information))
 })

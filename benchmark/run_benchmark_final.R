@@ -14,9 +14,8 @@ FIXED_N = as.integer(Sys.getenv("WARM_START_BENCH_FIXED_N", unset = "1"))
 
 RESULTS_CSV = Sys.getenv("WARM_START_BENCH_RESULTS", unset = "warm_starts_final_results.csv")
 
-md = readLines("package_metadata/warm_starts.md", warn = FALSE)
-path_lines = grep("<td[^>]*>Inference", md, value = TRUE)
-inf_names = unique(sub(".*<td[^>]*>(Inference[^<]+)</td>.*", "\\1", path_lines))
+md = readLines("package_metadata/warm_starts.html", warn = FALSE)
+inf_names = unique(trimws(md[grepl("^\\s*Inference[A-Za-z0-9]+\\s*$", md)]))
 excluded_paths = c(
     "InferenceAllSimpleMeanDiff",
     "InferenceAllSimpleMeanDiffPooledVar"
@@ -304,10 +303,10 @@ simulate_param_boot_draws_for_timing = function(priv, B, delta = 0) {
 }
 
 # Policy check: which operations are enabled for this class+n?
-rand_enabled  = isTRUE(edi_warm_start_dispatch_policy(cls_name, "rand",          n = N_VAL))
-boot_enabled  = isTRUE(edi_warm_start_dispatch_policy(cls_name, "non_param_boot", n = N_VAL))
-jk_enabled    = isTRUE(edi_warm_start_dispatch_policy(cls_name, "jackknife",      n = N_VAL))
-pb_enabled    = isTRUE(edi_warm_start_dispatch_policy(cls_name, "param_boot",     n = N_VAL))
+rand_enabled  = isTRUE(EDI:::edi_warm_start_dispatch_policy(cls_name, "rand",          n = N_VAL))
+boot_enabled  = isTRUE(EDI:::edi_warm_start_dispatch_policy(cls_name, "non_param_boot", n = N_VAL))
+jk_enabled    = isTRUE(EDI:::edi_warm_start_dispatch_policy(cls_name, "jackknife",      n = N_VAL))
+pb_enabled    = isTRUE(EDI:::edi_warm_start_dispatch_policy(cls_name, "param_boot",     n = N_VAL))
 
 # RAND
 res_r = if (!rand_enabled) "(D)" else {

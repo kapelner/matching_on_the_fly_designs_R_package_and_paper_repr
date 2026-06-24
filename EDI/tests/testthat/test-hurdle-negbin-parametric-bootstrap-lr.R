@@ -6,8 +6,9 @@ make_param_boot_hurdle_negbin_design <- function(seed = 20260519L, n = 140L){
 	x1 <- rnorm(n)
 	x2 <- rnorm(n)
 	w <- rep(c(1, -1), length.out = n)
-	p_pos <- plogis(-0.35 + 0.75 * w + 0.30 * x1 - 0.20 * x2)
-	mu <- exp(0.45 + 0.30 * w + 0.20 * x1 - 0.15 * x2)
+	w01 <- (w + 1) / 2
+	p_pos <- plogis(-0.35 + 0.75 * w01 + 0.30 * x1 - 0.20 * x2)
+	mu <- exp(0.45 + 0.30 * w01 + 0.20 * x1 - 0.15 * x2)
 	theta <- 2.5
 	u_pos <- rbinom(n, 1L, p_pos)
 	cdf0 <- pnbinom(0, size = theta, mu = mu)

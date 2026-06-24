@@ -10,6 +10,8 @@ suppressPackageStartupMessages(library(ordinal))
 suppressPackageStartupMessages(library(pscl))
 suppressPackageStartupMessages(library(betareg))
 suppressPackageStartupMessages(library(quantreg))
+suppressPackageStartupMessages(library(sandwich))
+suppressPackageStartupMessages(library(clinfun))
 library(EDI)
 
 set.seed(42)
@@ -27,6 +29,7 @@ STYLE_BLOCK = c(
 # Global Config
 N_GLM = 1000
 N_SURV = 500
+N_WALD = 200
 B_TIME = 30
 TARGET_BATCH_MS = 200
 MIN_RESOLVED_BATCH_MS = 10
@@ -503,6 +506,25 @@ run_one = function(spec) {
     )
 }
 
+# ── Shared table-formatting helpers (used by both point-estimate and Wald tables)
+format_pval = function(x) {
+  ifelse(is.na(x), "NA", vapply(x, function(v) sprintf("%.3g", v), character(1)))
+}
+format_pval_stars = function(x) {
+  ifelse(is.na(x), "",
+    ifelse(x < 0.001, "***", ifelse(x < 0.01, "**", ifelse(x < 0.05, "*", ""))))
+}
+row_bg_color = function(speedup, pval) {
+  if (!is.finite(speedup) || is.na(pval)) return("#eceff1")
+  if (pval < 0.05 && speedup > 1) return("#d9fdd3")
+  ""
+}
+format_ms = function(x) {
+  ifelse(is.na(x), "NA",
+    ifelse(x < 0.01, format(x, scientific = TRUE, digits = 3, trim = TRUE),
+           format(round(x, 2), nsmall = 2, trim = TRUE)))
+}
+
 # Run the requested list
 # First unique classes to avoid duplicates
 unique_specs = bench_specs[!duplicated(sapply(bench_specs, `[[`, "cls"))]
@@ -512,35 +534,525 @@ for (i in seq_along(unique_specs)) {
     run_one(unique_specs[[i]])
 }
 
-# Finalize
+# ── Wald / Full-Inference Section ──────────────────────────────────────────────
+
+compute_binary_gcomp_effect = function(beta, X_base, effect = c("RD", "RR")) {
+    effect = match.arg(effect)
+    X1 = X_base; X0 = X_base
+    X1[, "treatment"] = 1; X0[, "treatment"] = 0
+    risk1_i = stats::plogis(drop(X1 %*% beta))
+    risk0_i = stats::plogis(drop(X0 %*% beta))
+    risk1 = mean(risk1_i); risk0 = mean(risk0_i)
+    grad1 = drop(crossprod(X1, risk1_i * (1 - risk1_i))) / nrow(X1)
+    grad0 = drop(crossprod(X0, risk0_i * (1 - risk0_i))) / nrow(X0)
+    if (effect == "RD") {
+        list(est = risk1 - risk0, grad = grad1 - grad0)
+    } else {
+        log_rr = log(risk1) - log(risk0)
+        list(est = exp(log_rr), log_est = log_rr, grad = grad1 / risk1 - grad0 / risk0)
+    }
+}
+
+compute_ordinal_gcomp_md = function(theta, X_base, n_alpha) {
+    alpha = theta[seq_len(n_alpha)]; beta = theta[-seq_len(n_alpha)]
+    X1 = X_base; X0 = X_base; X1[, "treatment"] = 1; X0[, "treatment"] = 0
+    mean_score = function(Xmat) {
+        eta = drop(Xmat %*% beta)
+        cumprob = vapply(alpha, function(a) stats::plogis(a - eta), numeric(nrow(Xmat)))
+        if (is.vector(cumprob)) cumprob = matrix(cumprob, ncol = 1)
+        probs = matrix(0, nrow = nrow(Xmat), ncol = n_alpha + 1L)
+        probs[, 1L] = cumprob[, 1L]
+        if (n_alpha > 1L) for (j in 2:n_alpha) probs[, j] = cumprob[, j] - cumprob[, j - 1L]
+        probs[, n_alpha + 1L] = 1 - cumprob[, n_alpha]
+        drop(probs %*% seq_len(n_alpha + 1L))
+    }
+    mean(mean_score(X1)) - mean(mean_score(X0))
+}
+
+finite_diff_grad = function(fn, theta, base_step = 1e-6) {
+    grad = numeric(length(theta))
+    for (j in seq_along(theta)) {
+        step = max(base_step, base_step * (1 + abs(theta[j])))
+        theta_plus = theta; theta_minus = theta
+        theta_plus[j] = theta[j] + step; theta_minus[j] = theta[j] - step
+        grad[j] = (fn(theta_plus) - fn(theta_minus)) / (2 * step)
+    }
+    grad
+}
+
+make_edi_wald_bm = function(cls_name, d) {
+    X_cov = d$X[, -1, drop = FALSE]; colnames(X_cov) = paste0("x", seq_len(ncol(X_cov)))
+    X_bm  = cbind(`(Intercept)` = 1, treatment = d$w, X_cov)
+    X_ord = cbind(treatment = d$w, X_cov)
+    y_bm  = as.numeric(d$y); w_bm = as.integer(d$w)
+    dead_bm = if (!is.null(d$dead)) as.integer(d$dead) else NULL
+
+    e = new.env(parent = globalenv())
+    e$d = d; e$X_bm = X_bm; e$X_ord = X_ord
+    e$y_bm = y_bm; e$w_bm = w_bm; e$dead_bm = dead_bm
+
+    e$compute_md_gradient = function(X_fit, theta, n_alpha, j_treat, base_step = 1e-6) {
+        n_params = length(theta); grad = numeric(n_params)
+        for (j in seq_len(n_params)) {
+            step = max(base_step, base_step * (1 + abs(theta[j])))
+            theta_plus = theta; theta_minus = theta
+            theta_plus[j] = theta[j] + step; theta_minus[j] = theta[j] - step
+            md_plus  = gcomp_ordinal_proportional_odds_post_fit_cpp(X_fit, theta_plus[(n_alpha+1):n_params],  theta_plus[1:n_alpha],  j_treat)$md
+            md_minus = gcomp_ordinal_proportional_odds_post_fit_cpp(X_fit, theta_minus[(n_alpha+1):n_params], theta_minus[1:n_alpha], j_treat)$md
+            grad[j] = (md_plus - md_minus) / (2 * step)
+        }
+        grad
+    }
+
+    expr = switch(cls_name,
+        InferenceContinOLS = quote({
+            res = fast_ols_with_var_cpp(X_bm, y_bm, j = 2L)
+            se = sqrt(res$ssq_b_j); t_stat = res$b[2] / se
+            2 * stats::pt(-abs(t_stat), df = length(y_bm) - ncol(X_bm))
+        }),
+        InferenceContinLin = quote({
+            Xc = scale(X_bm[, -1, drop = FALSE], scale = FALSE)
+            X_lin = cbind(1, w_bm, Xc, Xc * w_bm)
+            colnames(X_lin)[1:2] = c("(Intercept)", "treatment")
+            res_fit = fast_ols_cpp(X_lin, y_bm)
+            post_fit = ols_hc2_post_fit_cpp(X_lin, y_bm, as.numeric(res_fit$b), 2L)
+            se = sqrt(post_fit$ssq_hat); t_stat = res_fit$b[2] / se
+            2 * stats::pt(-abs(t_stat), df = length(y_bm) - ncol(X_lin))
+        }),
+        InferenceContinRobustRegr = quote({
+            res = fast_robust_regression_cpp(X_bm, y_bm, j = 2L)
+            se = sqrt(res$ssq_b_j); t_stat = res$b[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceContinQuantileRegr = quote({
+            res = quantreg::rq(y_bm ~ X_bm[, -1])
+            summary(res, se = "nid")$coefficients[2, 4]
+        }),
+        InferenceIncidLogRegr = quote({
+            res = fast_logistic_regression_with_var_cpp(X_bm, y_bm, j = 2L)
+            se = sqrt(res$ssq_b_j); t_stat = res$b[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceIncidLogBinomial = quote({
+            res = fast_log_binomial_regression_with_var_cpp(X_bm, y_bm, j = 2L)
+            se = sqrt(res$ssq_b_j); t_stat = res$b[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceIncidProbitRegr = quote({
+            res = fast_probit_regression_with_var_cpp(X_bm, y_bm, j = 2L)
+            se = sqrt(res$ssq_b_j); t_stat = res$b[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceIncidRiskDiff = quote({
+            res = fast_ols_with_var_cpp(X_bm, y_bm, j = 2L)
+            se = sqrt(res$ssq_b_j); t_stat = res$b[2] / se
+            2 * stats::pt(-abs(t_stat), df = length(y_bm) - ncol(X_bm))
+        }),
+        InferenceIncidExactFisher = quote({
+            tab = table(factor(w_bm, levels = c(1, 0)), factor(y_bm, levels = c(1, 0)))
+            stats::fisher.test(tab)$p.value
+        }),
+        InferenceIncidNewcombeRiskDiff = quote({
+            x_t = sum(y_bm[w_bm == 1]); n_t = sum(w_bm == 1)
+            x_c = sum(y_bm[w_bm == 0]); n_c = sum(w_bm == 0)
+            est = x_t / n_t - x_c / n_c
+            p_fn = function(a) { ci = newcombe_independent_ci_cpp(x_t, n_t, x_c, n_c, a); if (0 < est) ci[1] else ci[2] }
+            res = tryCatch(stats::uniroot(p_fn, interval = c(1e-10, 1 - 1e-10))$root, error = function(e) NA_real_)
+            if (!is.finite(res)) 1.0 else res
+        }),
+        InferenceIncidMiettinenNurminenRiskDiff = quote({
+            x_t = sum(y_bm[w_bm == 1]); n_t = sum(w_bm == 1)
+            x_c = sum(y_bm[w_bm == 0]); n_c = sum(w_bm == 0)
+            mn_pvalue_cpp(x_t, n_t, x_c, n_c, 0, x_t/n_t, x_c/n_c)
+        }),
+        InferenceCountPoisson = quote({
+            res = fast_poisson_regression_with_var_cpp(X_bm, y_bm, j = 2L)
+            se = sqrt(res$ssq_b_j); t_stat = res$b[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceCountQuasiPoisson = quote({
+            res = fast_quasipoisson_regression_with_var_cpp(X_bm, y_bm, j = 2L)
+            se = sqrt(res$ssq_b_j); t_stat = res$b[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceCountNegBin = quote({
+            res = fast_neg_bin_with_var_cpp(X_bm, as.integer(y_bm))
+            vcov = solve(res$hess_fisher_info_matrix); se = sqrt(vcov[2, 2])
+            t_stat = res$b[2] / se; 2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceCountHurdlePoisson = quote({
+            res = fast_zero_augmented_poisson_cpp(X_bm, y_bm, X_bm, is_hurdle = TRUE, estimate_only = FALSE)
+            se = sqrt(res$vcov[2, 2]); t_stat = res$coefficients$cond[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceCountZeroInflatedPoisson = quote({
+            res = fast_zero_augmented_poisson_cpp(X_bm, y_bm, X_bm, is_hurdle = FALSE, estimate_only = FALSE)
+            se = sqrt(res$vcov[2, 2]); t_stat = res$coefficients$cond[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceCountZeroInflatedNegBin = quote({
+            res = fast_zinb_cpp(X_bm, X_bm, y_bm, estimate_only = FALSE)
+            se = sqrt(res$vcov[2, 2]); t_stat = res$params[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceCountHurdleNegBin = quote({
+            res = fast_hurdle_negbin_with_var_cpp(X_bm, as.integer(y_bm), X_bm, j = 2L)
+            se = sqrt(res$ssq_b_j); t_stat = res$b[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceCountRobustPoisson = quote({
+            res = fast_poisson_regression_cpp(X_bm, y_bm, estimate_only = FALSE)
+            bread = solve(res$XtWX); resid = y_bm - as.numeric(res$mu)
+            meat = crossprod(X_bm, X_bm * (resid^2))
+            se = sqrt((bread %*% meat %*% bread)[2, 2])
+            2 * stats::pnorm(-abs(res$b[2] / se))
+        }),
+        InferencePropBetaRegr = quote({
+            res = fast_beta_regression_with_var_cpp(X_bm, y_bm)
+            se = sqrt(res$vcov[2, 2]); t_stat = res$coefficients[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceOrdinalPropOddsRegr = quote({
+            res = fast_ordinal_regression_with_var_cpp(X_ord, y_bm)
+            se = sqrt(res$ssq_b_j); t_stat = res$b[1] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceOrdinalAdjCatLogitRegr = quote({
+            res = fast_adjacent_category_logit_with_var_cpp(X_ord, y_bm)
+            se = sqrt(res$ssq_b_j); t_stat = res$b[1] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceOrdinalContRatioRegr = quote({
+            res = fast_continuation_ratio_regression_with_var_cpp(X_ord, y_bm)
+            se = sqrt(res$ssq_b_j); t_stat = res$b[1] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceOrdinalOrderedProbitRegr = quote({
+            res = fast_ordinal_probit_regression_with_var_cpp(X_ord, y_bm)
+            se = sqrt(res$ssq_b_j); t_stat = res$b[1] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceOrdinalCloglogRegr = quote({
+            res = fast_ordinal_cloglog_regression_with_var_cpp(X_ord, y_bm)
+            se = sqrt(res$ssq_b_j); t_stat = res$b[1] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceOrdinalCauchitRegr = quote({
+            res = fast_ordinal_cauchit_regression_with_var_cpp(X_ord, y_bm)
+            se = sqrt(res$ssq_b_j); t_stat = res$b[1] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceOrdinalRidit = quote({
+            res = EDI:::fast_ridit_analysis_cpp(w_bm, as.integer(y_bm), reference = "control")
+            2 * stats::pnorm(-abs(res$estimate / res$se))
+        }),
+        InferenceOrdinalJonckheereTerpstraTest = quote({
+            exact_jonckheere_terpstra_pval_cpp(as.integer(y_bm), w_bm)$p_exact
+        }),
+        InferenceSurvivalCoxPHRegr = quote({
+            res = fast_coxph_regression_cpp(X_ord, y_bm, dead_bm, estimate_only = FALSE)
+            se = sqrt(res$vcov[1, 1]); 2 * stats::pnorm(-abs(res$coefficients[1] / se))
+        }),
+        InferenceSurvivalStratCoxPHRegr = quote({
+            strat_inputs = build_strat_cox_canonical_inputs(d)
+            cache = if (!is.null(strat_inputs$strata))
+                build_stratified_cox_data_cache_cpp(strat_inputs$X, strat_inputs$y, strat_inputs$dead, strat_inputs$strata)
+            else
+                build_cox_data_cache_cpp(strat_inputs$X, strat_inputs$y, strat_inputs$dead)
+            res = fast_coxph_regression_prebuilt_cpp(cache, estimate_only = FALSE)
+            se = sqrt(res$vcov[1, 1]); 2 * stats::pnorm(-abs(res$coefficients[1] / se))
+        }),
+        InferenceSurvivalWeibullRegr = quote({
+            res = fast_weibull_regression_cpp(X_ord, y_bm, dead_bm, estimate_only = FALSE)
+            se = sqrt(res$vcov[2, 2]); 2 * stats::pnorm(-abs(res$params[2] / se))
+        }),
+        InferenceSurvivalLogRank = quote({
+            res = EDI:::fast_logrank_stats_cpp(w_bm, y_bm, as.integer(dead_bm))
+            stats::pchisq(res$score ^ 2 / res$var_score, df = 1, lower.tail = FALSE)
+        }),
+        InferenceSurvivalGehanWilcox = quote(
+            survival::survdiff(survival::Surv(y_bm, dead_bm) ~ w_bm, rho = 1)$pvalue
+        ),
+        InferenceSurvivalKMDiff = quote({
+            fit = survival::survfit(survival::Surv(y_bm, dead_bm) ~ w_bm, conf.int = 0.95)
+            q = stats::quantile(fit, 0.5)
+            sn = rownames(q$lower)
+            idx_T = grep("1", sn); idx_C = grep("0", sn)
+            z = stats::qnorm(0.975)
+            se = sqrt(((q$upper[idx_T,1] - q$lower[idx_T,1])/(2*z))^2 + ((q$upper[idx_C,1] - q$lower[idx_C,1])/(2*z))^2)
+            2 * stats::pnorm(-abs((q$quantile[idx_T,1] - q$quantile[idx_C,1]) / se))
+        }),
+        InferenceAllSimpleMeanDiffPooledVar = quote({
+            y_t = y_bm[w_bm == 1]; y_c = y_bm[w_bm == 0]
+            n_t = length(y_t); n_c = length(y_c); df_res = n_t + n_c - 2L
+            s2p = ((n_t-1)*var(y_t) + (n_c-1)*var(y_c)) / df_res
+            se = sqrt(s2p * (1/n_t + 1/n_c))
+            2 * stats::pt(-abs((mean(y_t) - mean(y_c)) / se), df_res)
+        }),
+        InferenceAllSimpleWilcox = quote(
+            EDI:::wilcox_hl_point_estimate_cpp(w_bm, y_bm)
+        ),
+        InferencePropGCompMeanDiff = quote({
+            fit = fast_logistic_regression_cpp(X_bm, y_bm, estimate_only = TRUE)
+            coef_hat = as.numeric(fit$b)
+            mu_hat = stats::plogis(as.numeric(X_bm %*% coef_hat))
+            res = gcomp_logistic_post_fit_cpp(X_bm, y_bm, coef_hat, mu_hat, 2L)
+            2 * stats::pnorm(-abs(res$rd / res$se_rd))
+        }),
+        InferenceIncidGCompRiskDiff = quote({
+            fit = fast_logistic_regression_cpp(X_bm, y_bm, estimate_only = TRUE)
+            coef_hat = as.numeric(fit$b)
+            mu_hat = stats::plogis(as.numeric(X_bm %*% coef_hat))
+            res = gcomp_logistic_post_fit_cpp(X_bm, y_bm, coef_hat, mu_hat, 2L)
+            2 * stats::pnorm(-abs(res$rd / res$se_rd))
+        }),
+        InferenceIncidGCompRiskRatio = quote({
+            fit = fast_logistic_regression_cpp(X_bm, y_bm, estimate_only = TRUE)
+            coef_hat = as.numeric(fit$b)
+            mu_hat = stats::plogis(as.numeric(X_bm %*% coef_hat))
+            res = gcomp_logistic_post_fit_cpp(X_bm, y_bm, coef_hat, mu_hat, 2L)
+            2 * stats::pnorm(-abs(res$log_rr / res$se_log_rr))
+        }),
+        InferenceOrdinalGCompMeanDiff = quote({
+            fit = fast_ordinal_regression_with_var_cpp(X_ord, y_bm)
+            coef_hat = as.numeric(fit$b); alpha_hat = as.numeric(fit$alpha)
+            res = gcomp_ordinal_proportional_odds_post_fit_cpp(X_ord, coef_hat, alpha_hat, 1L)
+            theta = c(alpha_hat, coef_hat)
+            grad = compute_md_gradient(X_ord, theta, length(alpha_hat), 1L)
+            se = sqrt(as.numeric(crossprod(grad, as.matrix(fit$vcov) %*% grad)))
+            2 * stats::pnorm(-abs(res$md / se))
+        }),
+        NULL
+    )
+    if (is.null(expr)) return(NULL)
+    list(env = e, expr = expr)
+}
+
+# --- Wald Benchmark Specs ---
+wald_specs = list(
+    list(cls = "InferenceAllSimpleMeanDiffPooledVar", pkg = "stats", func = "t.test(pool)", expr = quote(t.test(df$y[df$treatment==1], df$y[df$treatment==0], var.equal=TRUE)$p.value)),
+    list(cls = "InferenceAllSimpleWilcox", pkg = "stats", func = "wilcox.test", expr = quote(wilcox.test(df$y[df$treatment==1], df$y[df$treatment==0])$p.value)),
+    list(cls = "InferenceContinLin", pkg = "stats", func = "lm.fit(interact)+Wald", expr = quote({
+        X_int = model.matrix(~ treatment * (x1 + x2 + x3 + x4), data = df)
+        res = lm.fit(x = X_int, y = df$y); p = ncol(X_int); n = nrow(X_int)
+        sig2 = sum(res$residuals^2) / (n - p)
+        v = chol2inv(res$qr$qr[1:p, 1:p, drop=FALSE]) * sig2
+        2 * pt(-abs(res$coefficients[2] / sqrt(v[2,2])), n - p)
+    })),
+    list(cls = "InferenceContinOLS", pkg = "stats", func = "lm.fit+Wald", expr = quote({
+        res = lm.fit(x = X_can, y = df$y); p = ncol(X_can); n = nrow(X_can)
+        sig2 = sum(res$residuals^2) / (n - p)
+        v = chol2inv(res$qr$qr[1:p, 1:p, drop=FALSE]) * sig2
+        2 * pt(-abs(res$coefficients[2] / sqrt(v[2,2])), n - p)
+    })),
+    list(cls = "InferenceContinQuantileRegr", pkg = "quantreg", func = "rq+summary", expr = quote({
+        res = quantreg::rq(df$y ~ X_can[,-1]); summary(res, se="nid")$coefficients[2, 4]
+    })),
+    list(cls = "InferenceContinRobustRegr", pkg = "MASS", func = "rlm+summary", expr = quote({
+        summary(MASS::rlm(x = X_can, y = df$y))$coefficients[2, 3]
+    })),
+    list(cls = "InferenceIncidExactFisher", pkg = "stats", func = "fisher.test", expr = quote(fisher.test(table(df$treatment, df$y))$p.value)),
+    list(cls = "InferenceIncidGCompRiskDiff", pkg = "stats", func = "glm+gcomp(RD)+Wald", expr = quote({
+        mod = glm(y ~ treatment + x1 + x2 + x3 + x4, family=binomial(), data=df)
+        eff = compute_binary_gcomp_effect(coef(mod), X_can, "RD")
+        se = sqrt(drop(t(eff$grad) %*% vcov(mod) %*% eff$grad))
+        2 * pnorm(-abs(eff$est / se))
+    })),
+    list(cls = "InferenceIncidGCompRiskRatio", pkg = "stats", func = "glm+gcomp(RR)+Wald", expr = quote({
+        mod = glm(y ~ treatment + x1 + x2 + x3 + x4, family=binomial(), data=df)
+        eff = compute_binary_gcomp_effect(coef(mod), X_can, "RR")
+        se = sqrt(drop(t(eff$grad) %*% vcov(mod) %*% eff$grad))
+        2 * pnorm(-abs(eff$log_est / se))
+    })),
+    list(cls = "InferenceIncidLogBinomial", pkg = "stats", func = "glm.fit+Wald(log)", expr = quote({
+        res = glm.fit(x=X_can, y=df$y, family=binomial(link="log"), start=c(-2, rep(0, ncol(X_can)-1)))
+        p = ncol(X_can); R = res$qr$qr[1:p,1:p,drop=FALSE]; R[lower.tri(R)] = 0
+        v = chol2inv(R); 2 * pnorm(-abs(res$coefficients[2] / sqrt(v[2,2])))
+    })),
+    list(cls = "InferenceIncidLogRegr", pkg = "stats", func = "glm.fit+Wald", expr = quote({
+        res = glm.fit(x=X_can, y=df$y, family=binomial())
+        p = ncol(X_can); R = res$qr$qr[1:p,1:p,drop=FALSE]; R[lower.tri(R)] = 0
+        v = chol2inv(R); 2 * pnorm(-abs(res$coefficients[2] / sqrt(v[2,2])))
+    })),
+    list(cls = "InferenceIncidMiettinenNurminenRiskDiff", pkg = "DescTools", func = "BinomDiffCI(mn)", expr = quote(
+        DescTools::BinomDiffCI(sum(df$y[df$treatment==1]), sum(df$treatment==1), sum(df$y[df$treatment==0]), sum(df$treatment==0), method="mn")
+    )),
+    list(cls = "InferenceIncidNewcombeRiskDiff", pkg = "DescTools", func = "BinomDiffCI(score)", expr = quote(
+        DescTools::BinomDiffCI(sum(df$y[df$treatment==1]), sum(df$treatment==1), sum(df$y[df$treatment==0]), sum(df$treatment==0), method="score")
+    )),
+    list(cls = "InferenceIncidProbitRegr", pkg = "stats", func = "glm.fit(probit)+Wald", expr = quote({
+        res = glm.fit(x=X_can, y=df$y, family=binomial(link="probit"))
+        p = ncol(X_can); R = res$qr$qr[1:p,1:p,drop=FALSE]; R[lower.tri(R)] = 0
+        v = chol2inv(R); 2 * pnorm(-abs(res$coefficients[2] / sqrt(v[2,2])))
+    })),
+    list(cls = "InferenceIncidRiskDiff", pkg = "stats", func = "prop.test", expr = quote(prop.test(table(df$treatment, df$y))$p.value)),
+    list(cls = "InferenceCountHurdleNegBin", pkg = "pscl", func = "hurdle(nb)+summary", expr = quote(summary(pscl::hurdle(y~treatment+x1+x2+x3+x4, data=df, dist="negbin"))$coefficients$count[2,4])),
+    list(cls = "InferenceCountHurdlePoisson", pkg = "pscl", func = "hurdle+summary", expr = quote(summary(pscl::hurdle(y~treatment+x1+x2+x3+x4, data=df))$coefficients$count[2,4])),
+    list(cls = "InferenceCountNegBin", pkg = "MASS", func = "glm.nb+summary", expr = quote(summary(MASS::glm.nb(y~treatment+x1+x2+x3+x4, data=df))$coefficients[2,4])),
+    list(cls = "InferenceCountPoisson", pkg = "stats", func = "glm.fit+Wald", expr = quote({
+        res = glm.fit(x=X_can, y=df$y, family=poisson())
+        p = ncol(X_can); R = res$qr$qr[1:p,1:p,drop=FALSE]; R[lower.tri(R)] = 0
+        v = chol2inv(R); 2 * pnorm(-abs(res$coefficients[2] / sqrt(v[2,2])))
+    })),
+    list(cls = "InferenceCountQuasiPoisson", pkg = "stats", func = "glm.fit+Wald(quasi)", expr = quote({
+        res = glm.fit(x=X_can, y=df$y, family=quasipoisson())
+        p = ncol(X_can); R = res$qr$qr[1:p,1:p,drop=FALSE]; R[lower.tri(R)] = 0
+        disp = sum(res$weights * res$residuals^2) / res$df.residual
+        v = chol2inv(R) * disp; 2 * pnorm(-abs(res$coefficients[2] / sqrt(v[2,2])))
+    })),
+    list(cls = "InferenceCountRobustPoisson", pkg = "sandwich", func = "glm+vcovHC", expr = quote({
+        mod = glm(y~treatment+x1+x2+x3+x4, family=poisson, data=df)
+        v = sandwich::vcovHC(mod, type="HC0")
+        2 * pnorm(-abs(coef(mod)[2] / sqrt(v[2,2])))
+    })),
+    list(cls = "InferenceCountZeroInflatedNegBin", pkg = "pscl", func = "zeroinfl(nb)+summary", expr = quote(summary(pscl::zeroinfl(y~treatment+x1+x2+x3+x4, data=df, dist="negbin"))$coefficients$count[2,4])),
+    list(cls = "InferenceCountZeroInflatedPoisson", pkg = "pscl", func = "zeroinfl+summary", expr = quote(summary(pscl::zeroinfl(y~treatment+x1+x2+x3+x4, data=df))$coefficients$count[2,4])),
+    list(cls = "InferencePropBetaRegr", pkg = "betareg", func = "betareg+summary", expr = quote(summary(betareg::betareg(y~treatment+x1+x2+x3+x4, data=df))$coefficients$mean[2,4])),
+    list(cls = "InferencePropGCompMeanDiff", pkg = "stats", func = "glm(quasi)+gcomp+Wald", expr = quote({
+        mod = glm(y~treatment+x1+x2+x3+x4, family=quasibinomial(), data=df)
+        eff = compute_binary_gcomp_effect(coef(mod), X_can, "RD")
+        se = sqrt(drop(t(eff$grad) %*% vcov(mod) %*% eff$grad))
+        2 * pnorm(-abs(eff$est / se))
+    })),
+    list(cls = "InferenceSurvivalCoxPHRegr", pkg = "survival", func = "coxph.fit(breslow)+Wald", expr = quote({
+        x_vars = c("treatment", grep("^x", names(df), value=TRUE))
+        res = survival::coxph.fit(x=as.matrix(df[,x_vars,drop=FALSE]), y=survival::Surv(df$y,df$dead), strata=NULL, offset=NULL, init=NULL, control=survival::coxph.control(), weights=NULL, method="breslow", rownames=as.character(seq_len(nrow(df))))
+        2 * pnorm(-abs(res$coefficients[1] / sqrt(res$var[1,1])))
+    })),
+    list(cls = "InferenceSurvivalGehanWilcox", pkg = "survival", func = "survdiff(rho=1)", expr = quote(survival::survdiff(survival::Surv(y,dead)~treatment, data=df, rho=1)$pvalue)),
+    list(cls = "InferenceSurvivalKMDiff", pkg = "survival", func = "survfit(median)+CI", expr = quote({
+        fit = survival::survfit(survival::Surv(df$y, df$dead) ~ df$treatment, conf.int = 0.95)
+        stats::quantile(fit, 0.5)
+    })),
+    list(cls = "InferenceSurvivalLogRank", pkg = "survival", func = "survdiff", expr = quote(survival::survdiff(survival::Surv(y,dead)~treatment, data=df)$pvalue)),
+    list(cls = "InferenceSurvivalStratCoxPHRegr", pkg = "survival", func = "coxph.fit(strat)+Wald", expr = quote({
+        si = build_strat_cox_canonical_inputs(d)
+        res = survival::coxph.fit(x=si$X, y=survival::Surv(si$y,si$dead), strata=si$strata, offset=NULL, init=NULL, control=survival::coxph.control(), weights=NULL, method="breslow", rownames=as.character(seq_along(si$y)))
+        2 * pnorm(-abs(res$coefficients[1] / sqrt(res$var[1,1])))
+    })),
+    list(cls = "InferenceSurvivalWeibullRegr", pkg = "survival", func = "survreg+summary", expr = quote(summary(survival::survreg(survival::Surv(y,dead)~treatment+x1+x2+x3+x4, data=df, dist="weibull"))$table[2,4])),
+    list(cls = "InferenceOrdinalAdjCatLogitRegr", pkg = "VGAM", func = "vglm+summary", expr = quote(summary(VGAM::vglm(factor(y,ordered=TRUE)~treatment+x1+x2+x3+x4, VGAM::acat(), data=df))@coef3[1,4])),
+    list(cls = "InferenceOrdinalContRatioRegr", pkg = "VGAM", func = "vglm+summary", expr = quote(summary(VGAM::vglm(factor(y,ordered=TRUE)~treatment+x1+x2+x3+x4, VGAM::cratio(), data=df))@coef3[1,4])),
+    list(cls = "InferenceOrdinalGCompMeanDiff", pkg = "ordinal", func = "clm+gcomp+Wald", expr = quote({
+        mod = ordinal::clm(factor(y,ordered=TRUE)~treatment+x1+x2+x3+x4, data=df)
+        theta = coef(mod); n_alpha = length(mod$alpha)
+        fn = function(th) compute_ordinal_gcomp_md(th, X_can[,-1,drop=FALSE], n_alpha)
+        grad = finite_diff_grad(fn, theta)
+        se = sqrt(drop(t(grad) %*% vcov(mod) %*% grad))
+        2 * pnorm(-abs(fn(theta) / se))
+    })),
+    list(cls = "InferenceOrdinalJonckheereTerpstraTest", pkg = "clinfun", func = "jonckheere", expr = quote(clinfun::jonckheere.test(df$y, df$treatment)$p.value)),
+    list(cls = "InferenceOrdinalPropOddsRegr", pkg = "ordinal", func = "clm+summary", expr = quote(summary(ordinal::clm(factor(y,ordered=TRUE)~treatment+x1+x2+x3+x4, data=df))$coefficients["treatment",4])),
+    list(cls = "InferenceOrdinalRidit", pkg = "stats", func = "mean(ridit)", expr = quote({
+        y = df$y; tab = table(y); cum = cumsum(tab); prev = c(0, cum[-length(cum)])
+        ridit_map = (prev + 0.5*tab) / length(y); r = as.numeric(ridit_map[as.character(y)])
+        mean(r[df$treatment==1]) - mean(r[df$treatment==0])
+    }))
+)
+
+wald_results = list()
+
+run_one_wald = function(spec) {
+    cls_name = spec$cls
+    cat(sprintf("Wald [%d/%d] %s...\n", match(cls_name, sapply(wald_unique_specs, `[[`, "cls")), length(wald_unique_specs), cls_name))
+
+    resp_type = "continuous"; family = "continuous"
+    if (grepl("Ordinal|AdjCat|ContRatio|Ridit|Jonckheere", cls_name)) { resp_type = "ordinal"; family = "ordinal" }
+    else if (grepl("Incid|Binomial|Fisher|Newcombe|Nurminen", cls_name))  { resp_type = "incidence"; family = "logistic" }
+    else if (grepl("Count|Poisson|NegBin|ZINB|ZAP|Hurdle", cls_name))    { resp_type = "count"; family = "poisson" }
+    else if (grepl("Prop|Beta|ZOIB|Fractional", cls_name))                { resp_type = "proportion"; family = "beta" }
+    else if (grepl("Survival|Cox|Weibull|KM|Rank|LogRank|Gehan", cls_name)) { resp_type = "survival"; family = "cox" }
+    if (cls_name == "InferenceIncidLogBinomial") family = "log-binomial"
+    if (cls_name == "InferenceIncidProbitRegr")  family = "probit"
+    if (cls_name %in% c("InferenceCountNegBin","InferenceCountZeroInflatedNegBin","InferenceCountHurdleNegBin")) family = "negbin"
+
+    n = N_WALD
+    d = generate_data(n = n, family = family)
+    if (identical(cls_name, "InferenceSurvivalStratCoxPHRegr")) d = make_true_stratified_survival_data(d)
+
+    timing_edi = tryCatch({
+        bm = make_edi_wald_bm(cls_name, d)
+        if (is.null(bm$expr)) stop("no Wald mapping for this class")
+        eval(bm$expr, envir = bm$env)  # validation
+        collect_timing_ms(bm$expr, env = bm$env)
+    }, error = function(e) { cat("  EDI Error:", e$message, "\n"); list(median_ms = NA_real_, samples_ms = numeric(0)) })
+
+    timing_can = tryCatch({
+        library(spec$pkg, character.only = TRUE)
+        X_cols = d$X[,-1,drop=FALSE]; colnames(X_cols) = paste0("x", seq_len(ncol(X_cols)))
+        df = data.frame(y = d$y, treatment = d$w, dead = if (!is.null(d$dead)) d$dead else 1L)
+        df = cbind(df, X_cols)
+        X_can = cbind(`(Intercept)` = 1, treatment = d$w, as.matrix(X_cols))
+        eval(spec$expr)  # validation
+        collect_timing_ms(spec$expr)
+    }, error = function(e) { cat("  Canonical Error:", e$message, "\n"); list(median_ms = NA_real_, samples_ms = numeric(0)) })
+
+    wald_results[[length(wald_results) + 1]] <<- data.table(
+        Class = cls_name, Response = resp_type,
+        EDI_Time_ms = timing_edi$median_ms,
+        Canonical_Pkg = spec$pkg, Canonical_Func = spec$func,
+        Canonical_Time_ms = timing_can$median_ms,
+        Speedup = if (!is.na(timing_can$median_ms) && !is.na(timing_edi$median_ms) && timing_edi$median_ms > 0) timing_can$median_ms / timing_edi$median_ms else NA_real_,
+        Timing_Pval = timing_ttest_pval(timing_edi$samples_ms, timing_can$samples_ms)
+    )
+}
+
+wald_unique_specs = wald_specs[!duplicated(sapply(wald_specs, `[[`, "cls"))]
+for (i in seq_along(wald_unique_specs)) run_one_wald(wald_unique_specs[[i]])
+
+# Format Wald table
+dt_wald = rbindlist(wald_results)
+response_levels = c("all", "continuous", "incidence", "count", "proportion", "survival", "ordinal")
+dt_wald[, Response := factor(Response, levels = response_levels)]
+setorder(dt_wald, Response, Class)
+dt_wald[, Speedup_Num := Speedup]
+dt_wald[, Speedup := ifelse(!is.na(Speedup), paste0(round(Speedup, 2), "x"), "NA")]
+dt_wald[, EDI_Time_ms := format_ms(EDI_Time_ms)]
+dt_wald[, Canonical_Time_ms := format_ms(Canonical_Time_ms)]
+dt_wald[, Timing_Row_Color := mapply(row_bg_color, Speedup_Num, Timing_Pval, USE.NAMES = FALSE)]
+dt_wald[, Timing_Pval_Stars := format_pval_stars(Timing_Pval)]
+dt_wald[, Timing_Pval := format_pval(Timing_Pval)]
+dt_wald[, Response := as.character(Response)]
+
+wald_table_lines = c(
+  "<table>",
+  "  <thead>",
+  "    <tr><th>Class</th><th>Response</th><th>EDI Time (ms)</th><th>Canonical Pkg</th><th>Canonical Func</th><th>Canonical Time (ms)</th><th>Speedup</th><th>Timing Pval</th><th></th></tr>",
+  "  </thead>",
+  "  <tbody>"
+)
+wald_table_rows = mapply(function(cls, resp, edi, pkg, func, can, speed, pval, stars, bg) {
+  style = if (nzchar(bg)) paste0(" style=\"background-color: ", bg, ";\"") else ""
+  paste0("    <tr", style, "><td>", cls, "</td><td>", resp, "</td><td>", edi, "</td><td>", pkg, "</td><td>", func, "</td><td>", can, "</td><td>", speed, "</td><td>", pval, "</td><td>", stars, "</td></tr>")
+}, dt_wald$Class, dt_wald$Response, dt_wald$EDI_Time_ms, dt_wald$Canonical_Pkg, dt_wald$Canonical_Func,
+dt_wald$Canonical_Time_ms, dt_wald$Speedup, dt_wald$Timing_Pval, dt_wald$Timing_Pval_Stars, dt_wald$Timing_Row_Color,
+SIMPLIFY = TRUE, USE.NAMES = FALSE)
+wald_table_lines = c(wald_table_lines, wald_table_rows, "  </tbody>", "</table>")
+
+WALD_HEADER = c(
+  "## Wald Test Performance (Full Inference)",
+  "",
+  "This table compares the performance of **Full Inference** (Model Fit + Standard Error calculation + P-value derivation).",
+  "Unlike the point-estimation table above, these results include the computational cost of the variance-covariance matrix (Hessian or Fisher Information) and the Wald test statistic calculation.",
+  "All paths (EDI and Canonical) use a reduced sample size ($N=200$) for this full-inference benchmark to ensure iterative stability.",
+  "**Stratified Cox Exception**: For `InferenceSurvivalStratCoxPHRegr`, the benchmark injects low-cardinality covariates before outcome generation so the row exercises a genuinely stratified Cox fit rather than the unstratified fallback.",
+  "EDI regression models (Logistic, Poisson) are benchmarked using the **IRLS** optimizer for these Wald tests.",
+  "**Solver-Only Prebuilds**: Benchmark setup prebuilds exposed observed-data design matrices, reduced design matrices, strata IDs, and other fixed working inputs outside the timed region when the implementation exposes those hooks. The timed region then measures the full-inference kernel on those fixed inputs.",
+  "**Limitation**: Some canonical comparators only expose formula-based APIs rather than comparable low-level fit kernels. Those rows remain included, but their canonical timings may still contain formula/model-frame overhead beyond the numerical solver, variance, and p-value work itself.",
+  paste0("**Timing Note**: All timings are medians over ", B_TIME, " warmed runs measured with adaptive batched `system.time`; paths below ", FAST_PATH_THRESHOLD_MS, " ms use `microbenchmark(times = ", FAST_PATH_MICROBENCH_REPS, ")` instead."),
+  "**Timing P-Value**: `Timing Pval` reports a Welch two-sample t-test comparing the EDI and canonical timing replicate distributions for each row. The unlabeled final column marks thresholds with `***` for p < 0.001, `**` for p < 0.01, and `*` for p < 0.05.",
+  "**Row Highlighting**: Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light grey rows indicate `NA` timing comparisons.",
+  "",
+  wald_table_lines
+)
+
+# ── Finalize
 dt = rbindlist(results)
 response_levels = c("all", "continuous", "incidence", "count", "proportion", "survival", "ordinal")
 dt[, Response := factor(Response, levels = response_levels)]
 setorder(dt, Response, Class)
 dt[, Speedup_Num := Speedup]
 dt[, Speedup := ifelse(!is.na(Speedup), paste0(round(Speedup, 2), "x"), "NA")]
-format_pval = function(x) {
-  ifelse(is.na(x), "NA", vapply(x, function(v) sprintf("%.3g", v), character(1)))
-}
-format_pval_stars = function(x) {
-  ifelse(
-    is.na(x),
-    "",
-    ifelse(x < 0.001, "***", ifelse(x < 0.01, "**", ifelse(x < 0.05, "*", "")))
-  )
-}
-row_bg_color = function(speedup, pval) {
-  if (!is.finite(speedup) || is.na(pval)) return("#eceff1")
-  if (pval < 0.05 && speedup > 1) return("#d9fdd3")
-  ""
-}
-format_ms = function(x) {
-  ifelse(
-    is.na(x),
-    "NA",
-    ifelse(x < 0.01, format(x, scientific = TRUE, digits = 3, trim = TRUE), format(round(x, 2), nsmall = 2, trim = TRUE))
-  )
-}
 dt[, EDI_Time_ms := format_ms(EDI_Time_ms)]
 dt[, Canonical_Time_ms := format_ms(Canonical_Time_ms)]
 dt[, Timing_Row_Color := mapply(row_bg_color, Speedup_Num, Timing_Pval, USE.NAMES = FALSE)]
@@ -726,5 +1238,5 @@ METHODOLOGY_BLOCK = c(
   "EDI timings call exported C++ functions directly — no R6 objects are instantiated during benchmarking. As a result, **no R6 result caches exist to manage**. Each call to the C++ solver (e.g. `fast_logistic_regression_cpp`, `fast_ordinal_regression_cpp`) starts from a freshly zero-initialized parameter vector (or a model-specific data-driven initialization when `smart_cold_start = TRUE`). No prior-fit results are carried across timing repetitions, so every replication is a genuine cold start for the numerical optimizer."
 )
 
-writeLines(c(report, "", METHODOLOGY_BLOCK, "", STYLE_BLOCK), "package_metadata/benchmark_model_fits.md")
+writeLines(c(report, "", WALD_HEADER, "", METHODOLOGY_BLOCK, "", STYLE_BLOCK), "package_metadata/benchmark_model_fits.md")
 cat("Benchmark complete.\n")

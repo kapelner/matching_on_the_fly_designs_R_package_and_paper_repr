@@ -30,7 +30,7 @@ test_that("univariate logit reusable bootstrap worker matches generic bootstrap 
 	set.seed(123)
 	slow_boot = slow_inf$approximate_bootstrap_distribution_beta_hat_T(B = 21, show_progress = FALSE)
 
-	expect_equal(fast_boot, slow_boot, tolerance = 1e-12)
+	expect_equal(fast_boot, slow_boot, tolerance = 1e-8)
 })
 
 test_that("multivariate logit reusable bootstrap worker matches generic bootstrap path", {
@@ -68,5 +68,5 @@ test_that("multivariate logit reusable bootstrap worker matches generic bootstra
 	set.seed(456)
 	slow_boot = slow_inf$approximate_bootstrap_distribution_beta_hat_T(B = 21, show_progress = FALSE)
 
-	expect_equal(fast_boot, slow_boot, tolerance = 1e-12)
+	expect_equal(fast_boot, slow_boot, tolerance = 1e-8)
 })

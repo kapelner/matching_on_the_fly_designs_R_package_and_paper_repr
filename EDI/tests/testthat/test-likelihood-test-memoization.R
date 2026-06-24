@@ -74,7 +74,7 @@ test_that("likelihood-test p-values memoize null fits and score-side components 
 	des <- DesignFixed$new(n = n, response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = x))
 	des$overwrite_all_subject_assignments(w)
-	des$add_all_subject_responses(rbinom(n, 1, plogis(-0.25 + 0.5 * w + 0.35 * x)))
+	des$add_all_subject_responses(rbinom(n, 1, plogis(-0.25 + 0.5 * ((w+1)/2) + 0.35 * x)))
 
 	inf <- InferenceIncidLogRegr$new(des, verbose = FALSE, smart_cold_start_default = TRUE)
 	wrapped <- wrap_likelihood_spec_with_counters(inf)
@@ -109,7 +109,7 @@ test_that("likelihood-ratio CI inversion reuses memoized null fits and neg-logli
 	des <- DesignFixed$new(n = n, response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = x))
 	des$overwrite_all_subject_assignments(w)
-	des$add_all_subject_responses(rbinom(n, 1, plogis(-0.15 + 0.45 * w + 0.25 * x)))
+	des$add_all_subject_responses(rbinom(n, 1, plogis(-0.15 + 0.45 * ((w+1)/2) + 0.25 * x)))
 
 	inf <- InferenceIncidLogRegr$new(des, verbose = FALSE, smart_cold_start_default = TRUE)
 	wrapped <- wrap_likelihood_spec_with_counters(inf)

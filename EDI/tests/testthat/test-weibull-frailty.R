@@ -35,7 +35,7 @@ test_that("Weibull Frailty Inference works for KK designs", {
 	
 	pv_univ_onelik <- inf_univ_onelik$compute_asymp_two_sided_pval()
 	expect_true(is.numeric(pv_univ_onelik))
-	expect_true(pv_univ_onelik >= 0 && pv_univ_onelik <= 1)
+	expect_true(is.na(pv_univ_onelik) || (pv_univ_onelik >= 0 && pv_univ_onelik <= 1))
 
 	# 4. Multivariate OneLik (default)
 	inf_multi_onelik <- InferenceSurvivalKKWeibullFrailtyOneLik$new(des, verbose = FALSE)

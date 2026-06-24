@@ -155,7 +155,7 @@ test_that("SimulationFramework seed: same seed gives same estimates (serial)", {
 			continue_from_last_result_row = FALSE
 		)
 		sim$run()
-		sim$get_results()
+		SimulationFrameworkReport$new(sim)$get_results()
 	}
 	res1 = run_sim()
 	res2 = run_sim()
@@ -175,7 +175,7 @@ test_that("SimulationFramework seed: different seeds give different estimates", 
 			continue_from_last_result_row = FALSE
 		)
 		sim$run()
-		sim$get_results()
+		SimulationFrameworkReport$new(sim)$get_results()
 	}
 	res1 = run_sim(100)
 	res2 = run_sim(200)

@@ -265,7 +265,7 @@ test_that("CMH get_standard_error block and non-block paths agree for many D wit
 	for (k in seq_along(cases)) {
 		D <- cases[[k]]$D
 		R <- cases[[k]]$R
-		y <- c(rep(c(1L, -1L), D), rep(0L, n - 2L * D))
+		y <- c(rep(c(1L, 0L), D), rep(0L, n - 2L * D))
 
 		# block path
 		des_block <- DesignFixedBlocking$new(
@@ -344,7 +344,7 @@ test_that("Extended Robins standard error matches the blockwise formula", {
 		y_b <- des$get_y()[m == b]
 		w_b <- des$get_w()[m == b]
 		p_hat_T_b <- sum(y_b[w_b == 1]) / n_B_over_two
-		p_hat_C_b <- sum(y_b[w_b == 0]) / n_B_over_two
+		p_hat_C_b <- sum(y_b[w_b == -1]) / n_B_over_two
 		m_1_b <- max(p_hat_T_b, p_hat_C_b)
 		m_0_b <- min(p_hat_T_b, p_hat_C_b)
 		variance_tot <- variance_tot +
@@ -353,7 +353,7 @@ test_that("Extended Robins standard error matches the blockwise formula", {
 			((2 * m_0_b - m_1_b) * (1 - m_1_b) - m_0_b * (1 - m_0_b)) / n_B
 	}
 	p_hat_T <- mean(des$get_y()[des$get_w() == 1])
-	p_hat_C <- mean(des$get_y()[des$get_w() == 0])
+	p_hat_C <- mean(des$get_y()[des$get_w() == -1])
 	var_robbins_ext <- 1 / des$get_n() * (
 		p_hat_T * (1 - p_hat_T) + p_hat_C * (1 - p_hat_C)
 	)
