@@ -427,7 +427,8 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 					tryCatch(
 						fast_truncated_negbin_count_cpp(
 							X = X_pos, y = y_pos_obs,
-							warm_start_params = start %||% as.numeric(c(full_res$b, log(as.numeric(full_res$theta_hat)))),
+							warm_start_params = start %||% as.numeric(full_res$params),
+							warm_start_fisher_info = warm_fisher,
 							smart_cold_start = private$smart_cold_start_default,
 							estimate_only = FALSE,
 							optimization_alg = private$optimization_alg %||% "lbfgs",

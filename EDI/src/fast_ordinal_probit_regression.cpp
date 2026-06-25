@@ -213,6 +213,7 @@ List fast_ordinal_probit_regression_with_var_cpp(const Rcpp::NumericMatrix& X,
     
     double ssq_b_2 = NA_REAL;
     MatrixXd H = model.hessian(params);
+    SEXP vcov_sexp = R_NilValue;
     if (converged) {
         FixedParameterFunctor<OrdinalProbitRegression> fixed_obj(model, fixed_spec, params);
         VectorXd params_free = subset_vector(params, fixed_spec.free_idx);
@@ -226,6 +227,9 @@ List fast_ordinal_probit_regression_with_var_cpp(const Rcpp::NumericMatrix& X,
             ssq_b_2 = compute_diagonal_inverse_entry(H_free, free_j);
             if (!R_finite(ssq_b_2) || ssq_b_2 <= 0) ssq_b_2 = NA_REAL;
         }
+        MatrixXd cov_free = covariance_from_information(H_free);
+        MatrixXd vcov = expand_free_covariance(n_params, fixed_spec, cov_free, true);
+        vcov_sexp = Rcpp::wrap(vcov);
     }
 
     return List::create(
@@ -233,7 +237,7 @@ List fast_ordinal_probit_regression_with_var_cpp(const Rcpp::NumericMatrix& X,
         Named("alpha") = res["alpha"],
         Named("params") = params,
         Named("neg_loglik") = res["neg_loglik"],
-        Named("vcov") = R_NilValue,
+        Named("vcov") = vcov_sexp,
         Named("ssq_b_j") = ssq_b_2,
         Named("converged") = converged,
         Named("iterations") = res["iterations"],

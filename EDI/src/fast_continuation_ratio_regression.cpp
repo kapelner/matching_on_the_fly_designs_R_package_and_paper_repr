@@ -250,10 +250,16 @@ List fast_continuation_ratio_regression_with_var_cpp(SEXP X_sexp, SEXP y_sexp, i
         if (fixed_spec.free_idx[jj] == n_alpha) { free_j = jj + 1; break; }
     double ssq_b_j = (p >= 1 && free_j > 0) ? compute_diagonal_inverse_entry(info_free, free_j) : NA_REAL;
 
+    SEXP vcov_sexp = R_NilValue;
+    if (fit.converged) {
+        MatrixXd cov_free = covariance_from_information(info_free);
+        MatrixXd vcov = expand_free_covariance(n_alpha + p, fixed_spec, cov_free, true);
+        vcov_sexp = Rcpp::wrap(vcov);
+    }
     return List::create(
         Named("b") = fit.params.tail(p),
         Named("ssq_b_j") = ssq_b_j,
-        Named("vcov") = R_NilValue,
+        Named("vcov") = vcov_sexp,
         Named("converged") = fit.converged,
         Named("params") = fit.params,
         Named("fisher_information") = info

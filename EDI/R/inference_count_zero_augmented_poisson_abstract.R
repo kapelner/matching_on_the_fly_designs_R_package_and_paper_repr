@@ -480,6 +480,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					out$ssq_b_j = if (is.finite(se) && se > 0) se^2 else NA_real_
 				}
 				out$params = as.numeric(fit$params)
+				out$neg_loglik = fit$neg_loglik %||% fit$neg_ll
 				out$fisher_information = fit$fisher_information
 				out$mod = fit
 			} else if (private$use_rcpp && !grepl("Negative Binomial", private$za_description())) {

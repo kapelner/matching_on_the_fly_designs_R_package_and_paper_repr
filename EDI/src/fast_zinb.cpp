@@ -207,14 +207,25 @@ List fast_zinb_cpp(SEXP X, SEXP Xzi, SEXP y,
 
     LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_ptr);
     
+    const int p_cond = Xc.cols();
+    const int p_zi = Xz.cols();
     if (estimate_only) {
         return List::create(
             Named("params") = fit.params,
+            Named("coefficients") = List::create(
+                Named("cond") = fit.params.head(p_cond),
+                Named("zi") = fit.params.segment(p_cond, p_zi)
+            ),
             Named("converged") = fit.converged,
             Named("iterations") = fit.niter
         );
     }
 
     Eigen::MatrixXd hess = obj.hessian(fit.params);
-    return make_uniform_likelihood_fit_result(fit.params, fit.value, fit.converged, -likelihood_score(obj, fit.params), hess, false);
+    Rcpp::List out = make_uniform_likelihood_fit_result(fit.params, fit.value, fit.converged, -likelihood_score(obj, fit.params), hess, false);
+    out["coefficients"] = List::create(
+        Named("cond") = fit.params.head(p_cond),
+        Named("zi") = fit.params.segment(p_cond, p_zi)
+    );
+    return out;
 }

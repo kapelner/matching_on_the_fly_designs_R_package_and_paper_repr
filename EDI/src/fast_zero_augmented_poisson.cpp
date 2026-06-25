@@ -392,8 +392,10 @@ List fast_zero_augmented_poisson_cpp(SEXP X_sexp,
                 Named("cond") = params.head(p_cond),
                 Named("zi") = params.tail(p_zi)
             ),
+            Named("params") = params,
             Named("converged") = fit.converged,
-            Named("neg_ll") = fit.value
+            Named("neg_ll") = fit.value,
+            Named("neg_loglik") = fit.value
         );
     }
 
@@ -408,9 +410,11 @@ List fast_zero_augmented_poisson_cpp(SEXP X_sexp,
             Named("cond") = params.head(p_cond),
             Named("zi") = params.tail(p_zi)
         ),
+        Named("params") = params,
         Named("vcov") = vcov,
         Named("converged") = fit.converged,
         Named("neg_ll") = fit.value,
+        Named("neg_loglik") = fit.value,
         Named("observed_information") = observed_information,
         Named("fisher_information") = observed_information,
         Named("information") = observed_information,
