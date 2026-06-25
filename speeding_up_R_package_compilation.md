@@ -501,6 +501,13 @@ code2LazyLoadDB <-
             logical(1L))]
         complex <- closures[!closures %in% simple]
 
+        ns_assign <- function(nm, fn) {
+            locked <- bindingIsLocked(nm, ns)
+            if (locked) unlockBinding(nm, ns)
+            assign(nm, fn, envir = ns)
+            if (locked) lockBinding(nm, ns)
+        }
+
         ncores <- .makeflags_ncores()
         if (ncores > 1L && length(simple) > 0L &&
                 requireNamespace("parallel", quietly = TRUE)) {
@@ -512,17 +519,15 @@ code2LazyLoadDB <-
             for (i in seq_along(simple)) {
                 fn <- cfns[[i]]
                 environment(fn) <- ns
-                assign(simple[[i]], fn, envir = ns)
+                ns_assign(simple[[i]], fn)
             }
         } else {
             for (f in simple)
-                assign(f, compiler::cmpfun(get(f, envir = ns, inherits = FALSE)),
-                       envir = ns)
+                ns_assign(f, compiler::cmpfun(get(f, envir = ns, inherits = FALSE)))
         }
 
         for (f in complex)
-            assign(f, compiler::cmpfun(get(f, envir = ns, inherits = FALSE)),
-                   envir = ns)
+            ns_assign(f, compiler::cmpfun(get(f, envir = ns, inherits = FALSE)))
     }
 
     makeLazyLoadDB(ns, dbbase, compress = compress,
@@ -537,6 +542,16 @@ still points to the fork's copy of `ns` (now gone). Reassigning it to the
 parent's `ns` fixes variable lookup. This is safe for top-level closures
 (whose original environment IS `ns`). Closures with sub-environments (from
 `local()`) are compiled sequentially in the `complex` path.
+
+**Why `ns_assign` with `unlockBinding`**: When byte-compiling the `compiler`
+package itself, its namespace is already loaded and sealed before
+`code2LazyLoadDB` is called (R bootstraps `compiler` early). In that case
+`loadNamespace(..., partial = TRUE)` silently returns the already-sealed
+namespace, making plain `assign(..., envir = ns)` fail with
+`"cannot change value of locked binding"`. `ns_assign` unlocks each binding
+before writing and re-locks it after, handling both sealed and unsealed
+namespaces uniformly. The same helper is used for both the parallel and
+sequential paths.
 
 ---
 
@@ -741,11 +756,22 @@ This parallelizes the `** help` step directly.
 
 ## 12. Build and install
 
+**Critical**: `R CMD INSTALL` uses whichever `R` is first on `PATH`. If the
+source tree was configured with a prefix other than `/usr/local` (check with
+`grep ^S\[.prefix.\] config.status`), the `sudo make install` will NOT update
+`/usr/local/bin/R`. Reconfigure with the correct prefix before installing:
+
+```bash
+# If the configured prefix is not /usr/local, reconfigure first:
+./configure --prefix=/usr/local --enable-R-shlib --with-blas --with-lapack
+# (add any other flags that were in the original configure invocation)
+```
+
 ```bash
 # Full build (all changes):
 MAKEFLAGS="-j48" make -j48
 
-# Install to /usr/local:
+# Install (goes to the prefix set by configure — default /usr/local):
 sudo make install -j48
 
 # If only tools R files changed (faster):
