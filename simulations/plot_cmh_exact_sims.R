@@ -1,7 +1,7 @@
 rm(list = ls())
 pacman::p_load(data.table, R.utils, ggplot2, scales, gridExtra, xtable)
 
-Nrep = 10000
+Nrep = 10003
 raw_results_dt = fread(sprintf("cmh_exact_sims_plus_greedy_results_high_signal_Nrep_%d.csv.bz2", Nrep))
 raw_results_dt[, reject := pval < 0.05]
 raw_results_dt[, covers := ci_lo <= true_estimand & true_estimand <= ci_hi]

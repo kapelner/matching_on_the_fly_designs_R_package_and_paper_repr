@@ -1,17 +1,17 @@
 suppressPackageStartupMessages(library(EDI))
 suppressPackageStartupMessages(library(data.table))
 
-Nrep = 10002L   # Monte Carlo replications per cell
+Nrep = 10003L   # Monte Carlo replications per cell
 
 sim = SimulationFramework$new(
         Nrep                          = Nrep,
-        num_cores                     = 10L,
+        num_cores                     = 46L,
         results_filename              = sprintf("simulations/cmh_exact_sims_plus_greedy_results_high_signal_Nrep_%d.csv.bz2", Nrep),
         continue_from_last_result_row = TRUE,
         response_type                 = "incidence",
         n                             = c(64L, 128L, 256L),
         p                             = c(1L, 2L, 5L, 10L),
-        norm_sq_beta_vec              = 3, #default is 1; we're increasing it here to give the x's more signal
+        norm_sq_beta_vec              = 2.5, #default is 1; we're increasing it here to give the x's more signal
         random_X_draws                = FALSE,
         seed                          = 1984,
         betaT                         = c(0, 0.5), # 0 → size / type-I error;  >0 → power / coverage
