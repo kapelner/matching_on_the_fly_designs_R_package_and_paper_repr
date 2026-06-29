@@ -1,5 +1,5 @@
 
-pkgload::load_all("EDI", quiet = TRUE)
+library(EDI)
 library(data.table)
 
 N_VALS = c(100L, 200L, 500L, 1000L)
@@ -28,7 +28,8 @@ annotate_D = function(val, cls, op, n) {
         EDI:::edi_warm_start_dispatch_policy(cls, op, n = n),
         error = function(e) TRUE
     )
-    if (!isTRUE(enabled) && !grepl("\\(D\\)", val)) paste0(val, " (D)") else val
+    if (!isTRUE(enabled)) return("(D)")
+    if (grepl("^-", val)) "(D)" else val
 }
 
 make_table_html = function(merged_n, n_val) {

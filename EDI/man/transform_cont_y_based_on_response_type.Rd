@@ -37,7 +37,7 @@ A numeric vector of transformed responses on the appropriate scale.
 \description{
 A helper function to transform a latent continuous signal to the scale
 appropriate for a given \code{response_type}, identical to the logic used
-within \code{SimulationFramework}.
+within \code{SimulationFramework} but not used within \code{SimulationFramework}.
 }
 \examples{
 transform_cont_y_based_on_response_type(rnorm(10), 'incidence')

@@ -663,11 +663,66 @@ edi_warm_start_dispatch_policy = function(inference_class, operation, n = NULL) 
   
   default_val = if (isTRUE(config$default)) TRUE else FALSE
 
+  # Global disables: consistently negative across 3-4 n values or extreme single-n anomalies
+  if (identical(operation, "bayesian_boot") &&
+      (grepl("^InferenceContinKKGLMM$",                   inference_class, perl = TRUE) ||
+       grepl("^InferenceSurvivalDepCensTransformRegr$",   inference_class, perl = TRUE) ||
+       grepl("^InferenceOrdinalCloglogRegr$",             inference_class, perl = TRUE) ||
+       grepl("^InferenceCountPoisson$",                   inference_class, perl = TRUE) ||
+       grepl("^InferenceOrdinalPropOddsRegr$",            inference_class, perl = TRUE) ||
+       grepl("^InferenceIncidKKNewcombeRiskDiff$",        inference_class, perl = TRUE) ||
+       grepl("^InferenceOrdinalJonckheereTerpstraTest$",  inference_class, perl = TRUE) ||
+       grepl("^InferenceOrdinalKKCLMMProbit$",            inference_class, perl = TRUE) ||
+       grepl("^InferencePropFractionalLogit$",            inference_class, perl = TRUE) ||
+       grepl("^InferencePropGCompMeanDiff$",              inference_class, perl = TRUE) ||
+       grepl("^InferenceSurvivalWeibullRegr$",            inference_class, perl = TRUE))) {
+    return(FALSE)
+  }
+  if (identical(operation, "bayesian_boot") &&
+      grepl("^InferenceIncidBinomialIdentityRiskDiff$", inference_class, perl = TRUE)) {
+    return(FALSE)
+  }
+  if (identical(operation, "jackknife") &&
+      (grepl("^InferenceOrdinalContRatioRegr$",      inference_class, perl = TRUE) ||
+       grepl("^InferenceOrdinalAdjCatLogitRegr$",    inference_class, perl = TRUE) ||
+       grepl("^InferenceSurvivalRestrictedMeanDiff$", inference_class, perl = TRUE))) {
+    return(FALSE)
+  }
+  if (identical(operation, "non_param_boot") &&
+      grepl("^InferencePropZeroOneInflatedBetaRegr$", inference_class, perl = TRUE)) {
+    return(FALSE)
+  }
+  if (identical(operation, "rand") &&
+      grepl("^InferenceSurvivalKKLWACoxPHIVWC$", inference_class, perl = TRUE)) {
+    return(FALSE)
+  }
+
   if (!is.na(n_val) && n_val < 200L) {
     if (identical(operation, "non_param_boot") &&
-        (grepl("^InferenceOrdinalContRatioRegr$", inference_class, perl = TRUE) ||
-         grepl("^InferenceOrdinalKKCLMMCauchit$", inference_class, perl = TRUE) ||
-         grepl("^InferencePropKKGEE$", inference_class, perl = TRUE))) {
+        (grepl("^InferenceOrdinalContRatioRegr$",         inference_class, perl = TRUE) ||
+         grepl("^InferenceOrdinalKKCLMMCauchit$",         inference_class, perl = TRUE) ||
+         grepl("^InferencePropKKGEE$",                    inference_class, perl = TRUE) ||
+         grepl("^InferenceOrdinalKKCondAdjCatLogitRegr$", inference_class, perl = TRUE) ||
+         grepl("^InferenceCountQuasiPoisson$",            inference_class, perl = TRUE) ||
+         grepl("^InferencePropKKQuantileRegrOneLik$",     inference_class, perl = TRUE) ||
+         grepl("^InferenceCountHurdlePoisson$",           inference_class, perl = TRUE) ||
+         grepl("^InferenceCountZeroInflatedPoisson$",     inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidBinomialIdentityRiskDiff$",inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidGCompRiskRatio$",          inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidKKGEE$",                   inference_class, perl = TRUE) ||
+         grepl("^InferencePropBetaRegr$",                 inference_class, perl = TRUE))) {
+      return(FALSE)
+    }
+    if (identical(operation, "rand") &&
+        (grepl("^InferencePropBetaRegr$",                 inference_class, perl = TRUE) ||
+         grepl("^InferenceOrdinalKKCondAdjCatLogitRegr$", inference_class, perl = TRUE) ||
+         grepl("^InferenceSurvivalKKClaytonCopulaOneLik$",inference_class, perl = TRUE) ||
+         grepl("^InferenceSurvivalKKStratCoxPHOneLik$",   inference_class, perl = TRUE) ||
+         grepl("^InferenceSurvivalKKWeibullFrailtyIVWC$", inference_class, perl = TRUE))) {
+      return(FALSE)
+    }
+    if (identical(operation, "jackknife") &&
+        grepl("^InferenceSurvivalGehanWilcox$", inference_class, perl = TRUE)) {
       return(FALSE)
     }
     if (identical(operation, "bayesian_boot") &&
@@ -678,32 +733,63 @@ edi_warm_start_dispatch_policy = function(inference_class, operation, n = NULL) 
 
   if (!is.na(n_val) && n_val < 500L) {
     if (identical(operation, "rand") &&
-        (grepl("^InferenceContinKKOLSIVWC$", inference_class, perl = TRUE) ||
+        (grepl("^InferenceContinKKOLSIVWC$",       inference_class, perl = TRUE) ||
          grepl("^InferenceContinKKRobustRegrIVWC$", inference_class, perl = TRUE) ||
-         grepl("^InferencePropKKQuantileRegrIVWC$", inference_class, perl = TRUE))) {
+         grepl("^InferencePropKKQuantileRegrIVWC$", inference_class, perl = TRUE) ||
+         grepl("^InferenceOrdinalContRatioRegr$",   inference_class, perl = TRUE) ||
+         grepl("^InferenceSurvivalCoxPHRegr$",      inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidKKGEE$",             inference_class, perl = TRUE))) {
       return(FALSE)
     }
     if (identical(operation, "non_param_boot") &&
-        grepl("^InferenceCountZeroInflatedNegBin$", inference_class, perl = TRUE)) {
+        (grepl("^InferenceCountZeroInflatedNegBin$",     inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidLogBinomial$",            inference_class, perl = TRUE) ||
+         grepl("^InferenceAllSimpleWilcox$",             inference_class, perl = TRUE) ||
+         grepl("^InferenceContinKKGLMM$",               inference_class, perl = TRUE) ||
+         grepl("^InferenceCountPoisson$",               inference_class, perl = TRUE) ||
+         grepl("^InferenceOrdinalContRatioRegr$",       inference_class, perl = TRUE) ||
+         grepl("^InferenceSurvivalDepCensTransformRegr$",inference_class, perl = TRUE))) {
+      return(FALSE)
+    }
+    if (identical(operation, "rand") &&
+        grepl("^InferenceIncidLogBinomial$", inference_class, perl = TRUE)) {
       return(FALSE)
     }
     if (identical(operation, "bayesian_boot") &&
         (grepl("^InferenceOrdinalKKCondAdjCatLogitRegr$", inference_class, perl = TRUE) ||
-         grepl("^InferenceSurvivalGehanWilcox$", inference_class, perl = TRUE))) {
+         grepl("^InferenceSurvivalGehanWilcox$",           inference_class, perl = TRUE) ||
+         grepl("^InferenceCountKKGLMM$",                   inference_class, perl = TRUE) ||
+         grepl("^InferenceCountHurdleNegBin$",             inference_class, perl = TRUE) ||
+         grepl("^InferenceOrdinalContRatioRegr$",          inference_class, perl = TRUE) ||
+         grepl("^InferenceSurvivalKKStratCoxPHOneLik$",    inference_class, perl = TRUE))) {
       return(FALSE)
     }
     if (identical(operation, "jackknife") &&
-        grepl("^InferenceSurvivalLogRank$", inference_class, perl = TRUE)) {
+        (grepl("^InferenceSurvivalLogRank$",              inference_class, perl = TRUE) ||
+         grepl("^InferenceContinKKGLMM$",                 inference_class, perl = TRUE) ||
+         grepl("^InferenceOrdinalCauchitRegr$",           inference_class, perl = TRUE) ||
+         grepl("^InferencePropBetaRegr$",                 inference_class, perl = TRUE))) {
+      return(FALSE)
+    }
+  }
+
+  if (!is.na(n_val) && n_val >= 200L && n_val < 500L) {
+    if (identical(operation, "rand") &&
+        grepl("^InferenceContinKKQuantileRegrOneLik$", inference_class, perl = TRUE)) {
+      return(FALSE)
+    }
+    if (identical(operation, "jackknife") &&
+        grepl("^InferenceIncidKKCondLogitPlusGLMMIVWC$", inference_class, perl = TRUE)) {
       return(FALSE)
     }
   }
 
   if (!is.na(n_val) && n_val < 1000L) {
     if (identical(operation, "rand") &&
-        (grepl("^InferenceContinKKGLMM$", inference_class, perl = TRUE) ||
-         grepl("^InferenceContinQuantileRegr$", inference_class, perl = TRUE) ||
-         grepl("^InferenceIncidKKModifiedPoisson$", inference_class, perl = TRUE) ||
-         grepl("^InferencePropGCompMeanDiff$", inference_class, perl = TRUE))) {
+        (grepl("^InferenceContinKKGLMM$",         inference_class, perl = TRUE) ||
+         grepl("^InferenceContinQuantileRegr$",    inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidKKModifiedPoisson$",inference_class, perl = TRUE) ||
+         grepl("^InferencePropGCompMeanDiff$",     inference_class, perl = TRUE))) {
       return(FALSE)
     }
     if (identical(operation, "bayesian_boot") &&
@@ -714,22 +800,90 @@ edi_warm_start_dispatch_policy = function(inference_class, operation, n = NULL) 
         grepl("^InferenceCountNegBin$", inference_class, perl = TRUE)) {
       return(FALSE)
     }
+    if (identical(operation, "non_param_boot") &&
+        grepl("^InferenceCountHurdleNegBin$", inference_class, perl = TRUE)) {
+      return(FALSE)
+    }
   }
-  
-  if (!is.na(n_val) && n_val >= 500L) {
-    # At n>=500, KKHurdlePoissonOneLik rand warm starts cause the C++ GLMM to
-    # fail convergence and fall back to slow glmmTMB
+
+  if (!is.na(n_val) && n_val >= 200L) {
+    # At n>=200, KKHurdlePoissonOneLik rand warm starts cause the C++ GLMM to
+    # fail convergence and fall back to slow glmmTMB (benchmark shows -75% at n=200)
     if (identical(operation, "rand") &&
         grepl("^InferenceCountKKHurdlePoissonOneLik$", inference_class, perl = TRUE)) {
       return(FALSE)
     }
   }
 
-  if (!is.na(n_val) && n_val >= 1000L) {
-    # At n>=1000, CondLogitPlusGLMM rand warm starts similarly trigger glmmTMB fallback
+  if (!is.na(n_val) && n_val >= 500L) {
+    if (identical(operation, "bayesian_boot") &&
+        (grepl("^InferenceSurvivalKKClaytonCopulaOneLik$",  inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidKKCondLogitPlusGLMMOneLik$", inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidModifiedPoisson$",           inference_class, perl = TRUE) ||
+         grepl("^InferenceOrdinalKKCLMM$",                  inference_class, perl = TRUE) ||
+         grepl("^InferencePropZeroOneInflatedBetaRegr$",    inference_class, perl = TRUE))) {
+      return(FALSE)
+    }
     if (identical(operation, "rand") &&
-        (grepl("^InferenceIncidKKCondLogitPlusGLMMOneLik$", inference_class, perl = TRUE) ||
-         grepl("^InferenceIncidKKCondLogitPlusGLMMIVWC$", inference_class, perl = TRUE))) {
+        (grepl("^InferenceContinRobustRegr$",               inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidBinomialIdentityRiskDiff$",  inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidKKCondLogitPlusGLMMOneLik$", inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidKKCondLogitPlusGLMMIVWC$",   inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidGCompRiskRatio$",            inference_class, perl = TRUE) ||
+         grepl("^InferenceOrdinalKKCLMM$",                  inference_class, perl = TRUE))) {
+      return(FALSE)
+    }
+    if (identical(operation, "non_param_boot") &&
+        (grepl("^InferenceAllKKWilcoxIVWC$",       inference_class, perl = TRUE) ||
+         grepl("^InferenceOrdinalCloglogRegr$",     inference_class, perl = TRUE) ||
+         grepl("^InferenceOrdinalKKGLMM$",          inference_class, perl = TRUE) ||
+         grepl("^InferencePropFractionalLogit$",    inference_class, perl = TRUE) ||
+         grepl("^InferencePropKKQuantileRegrIVWC$", inference_class, perl = TRUE) ||
+         grepl("^InferenceSurvivalKMDiff$",         inference_class, perl = TRUE))) {
+      return(FALSE)
+    }
+    if (identical(operation, "jackknife") &&
+        (grepl("^InferenceContinQuantileRegr$",  inference_class, perl = TRUE) ||
+         grepl("^InferenceOrdinalGCompMeanDiff$", inference_class, perl = TRUE))) {
+      return(FALSE)
+    }
+  }
+
+  if (!is.na(n_val) && n_val >= 1000L) {
+    if (identical(operation, "rand") &&
+        grepl("^InferenceCountPoisson$", inference_class, perl = TRUE)) {
+      return(FALSE)
+    }
+    if (identical(operation, "jackknife") &&
+        (grepl("^InferenceSurvivalKKClaytonCopulaIVWC$",  inference_class, perl = TRUE) ||
+         grepl("^InferenceOrdinalOrderedProbitRegr$",      inference_class, perl = TRUE) ||
+         grepl("^InferenceSurvivalDepCensTransformRegr$",  inference_class, perl = TRUE) ||
+         grepl("^InferenceSurvivalGehanWilcox$",           inference_class, perl = TRUE) ||
+         grepl("^InferenceSurvivalWeibullRegr$",           inference_class, perl = TRUE))) {
+      return(FALSE)
+    }
+    if (identical(operation, "bayesian_boot") &&
+        (grepl("^InferenceIncidGCompRiskRatio$",          inference_class, perl = TRUE) ||
+         grepl("^InferenceContinQuantileRegr$",           inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidRiskDiff$",                inference_class, perl = TRUE) ||
+         grepl("^InferenceCountQuasiPoisson$",            inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidKKGCompRiskRatio$",        inference_class, perl = TRUE) ||
+         grepl("^InferenceCountKKCondPoissonOneLik$",     inference_class, perl = TRUE) ||
+         grepl("^InferenceCountKKGLMM$",                  inference_class, perl = TRUE) ||
+         grepl("^InferenceCountKKHurdlePoissonOneLik$",   inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidExactBinomial$",           inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidProbitRegr$",              inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidenceExactZhang$",          inference_class, perl = TRUE) ||
+         grepl("^InferenceOrdinalKKGLMM$",                inference_class, perl = TRUE) ||
+         grepl("^InferenceOrdinalOrderedProbitRegr$",     inference_class, perl = TRUE))) {
+      return(FALSE)
+    }
+    if (identical(operation, "non_param_boot") &&
+        (grepl("^InferenceIncidKKCondLogitPlusGLMMOneLik$",inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidKKGCompRiskDiff$",          inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidRiskDiff$",                 inference_class, perl = TRUE) ||
+         grepl("^InferenceOrdinalKKCLMM$",                 inference_class, perl = TRUE) ||
+         grepl("^InferenceSurvivalRestrictedMeanDiff$",    inference_class, perl = TRUE))) {
       return(FALSE)
     }
   }

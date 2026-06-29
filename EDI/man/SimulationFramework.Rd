@@ -398,8 +398,10 @@ Default \code{25L}.}
 
 \item{\code{save_model_control_fits}}{Logical. If \code{TRUE} (default), after the
 design/SE cache is built, saves the per-subject model-implied potential
-outcomes under treatment and control as CSV files in a \code{response_values/}
-subfolder next to \code{results_filename}.  One file is written per unique
+outcomes under treatment and control as CSV files in a subfolder named
+\code{<stem>_response_values/} (where \code{<stem>} is \code{results_filename}
+with its \code{.csv}/\code{.csv.bz2} extension stripped) next to
+\code{results_filename}.  One file is written per unique
 \code{(response_type, cond_exp_func_model, n, p, betaT)} cell.  Only
 meaningful when \code{random_X_draws = FALSE}; silently skipped otherwise.
 Column names depend on \code{response_type}:
