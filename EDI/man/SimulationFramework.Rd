@@ -120,6 +120,8 @@ Create a new \code{SimulationFramework}.
   custom_replication_data_generator = NULL,
   custom_apply_treatment_and_noise = NULL,
   custom_true_estimand = NULL,
+  dgp_params = list(),
+  custom_dgp = NULL,
   verbose = TRUE,
   keep_all_intermediate_data = FALSE,
   turn_off_asserts_for_speed = TRUE,
@@ -325,16 +327,47 @@ censoring probability; applied only when
 \item{\code{custom_replication_data_generator}}{Optional function for custom
 replication data. When supplied, it is called as
 \code{fn(state, rep)} and must return a list containing at least
-\code{X} and \code{y_linear_model}.}
+\code{X} and \code{y_linear_model}. Any additional fields in the
+returned list (e.g. latent frailty draws) are passed forward as
+\code{rep_data} to \code{custom_apply_treatment_and_noise} and
+\code{custom_true_estimand}.}
 
 \item{\code{custom_apply_treatment_and_noise}}{Optional function for custom
-response generation. When supplied, it is called as
-\code{fn(y_linear_model, w, state)} and must return a list with
-components \code{y} and \code{dead}.}
+response generation. Signature: \code{fn(y_linear_model, w, rep_data, state)}.
+\code{w} is in \{-1, +1\} format; convert with \code{(w+1)/2} for \{0,1\}
+semantics. \code{rep_data} is the full list returned by
+\code{custom_replication_data_generator} (or \code{NULL} for the standard
+path). Must return a list with components \code{y} and \code{dead}.
+Three-argument functions \code{fn(y_linear_model, w, state)} are still
+accepted for backwards compatibility.}
 
-\item{\code{custom_true_estimand}}{Optional function for a custom true
-estimand. When supplied, it is called as
-\code{fn(y_linear_model, state)} and must return a numeric scalar.}
+\item{\code{custom_true_estimand}}{Optional function for a custom true estimand.
+Signature: \code{fn(y_linear_model, X, w, rep_data, state)}.
+Called once per design class per replication \emph{after} the design
+completes, so \code{w} (in \{-1, +1\} format) and \code{X} reflect the
+realized assignment. Must return a numeric scalar. When supplied, its
+return value is used as the ground truth for \emph{all} inference classes
+(overriding the \code{is_mean_diff} gate). Three-argument functions
+\code{fn(y_linear_model, state)} are still accepted for backwards
+compatibility (they will not receive \code{X} or \code{w}).}
+
+\item{\code{dgp_params}}{Optional named list of DGP configuration values (e.g.
+\code{list(frailty_dist = "gamma", censoring_rate = 0.8)}). Injected into
+\code{state} as \code{state\$dgp_params} and accessible in all three
+custom-DGP hooks. Recommended over using closures to pass DGP parameters.}
+
+\item{\code{custom_dgp}}{Optional function for a fully custom DGP. Signature:
+\code{fn(n, p, rep, state)} returning a list with components
+\code{X} (data.frame, \code{n} x \code{p}),
+\code{w} (integer vector in \{0, 1\}, length \code{n}),
+\code{y} (numeric, length \code{n}),
+\code{dead} (integer \{0,1\} or \code{NULL} for non-survival),
+\code{true_estimand} (numeric scalar, optional).
+When supplied, the design class acts as a data container only; it does
+\emph{not} run its own randomization or matching. Requires a fixed design
+class (not \code{DesignSeqOneByOne} variants). Cannot be combined with
+\code{custom_replication_data_generator} or
+\code{custom_apply_treatment_and_noise}.}
 
 \item{\code{verbose}}{Logical.  If \code{TRUE}, prints a message for every
 replication and for every \code{(design, inference)} pair that is
