@@ -37,6 +37,18 @@ inline double log_sum_exp(const Eigen::VectorXd& x) {
     return m + std::log((x.array() - m).exp().sum());
 }
 
+// Fused log_sum_exp + posterior weights: computes lse(x) and fills
+// weights[k] = exp(x[k] - lse) in a single pass — avoids recomputing
+// exp(x[k] - lse) separately in the gradient accumulation loop.
+inline double log_sum_exp_and_weights(const Eigen::VectorXd& x, Eigen::VectorXd& weights) {
+    const double m = x.maxCoeff();
+    if (!std::isfinite(m)) { weights.setZero(); return m; }
+    weights = (x.array() - m).exp();
+    const double S = weights.sum();
+    weights /= S;
+    return m + std::log(S);
+}
+
 struct GLMMData {
     Eigen::MatrixXd X_s;
     Eigen::VectorXd y_s;
@@ -96,11 +108,12 @@ inline double sigma_penalty_hessian(double log_sigma, double center = 5.0, doubl
 
 // A generic GLMM Objective that uses Gauss-Hermite quadrature.
 // Model template must provide:
-// - int n_model_params()
-// - void unpack(const VectorXd& par, ...)
-// - double log_prob(double y, double eta, ...)
-// - void log_prob_derivs(double y, double eta, double& d_eta, VectorXd& d_par, ...)
-// - void log_prob_hessians(double y, double eta, double& d2_eta, MatrixXd& d2_par, MatrixXd& d2_par_eta, ...)
+// - int n_model_params() const
+// - void fill_alpha(const VectorXd& par, double* buf) const
+//     Precompute any per-step model parameters into caller-allocated buf (length n_model_params()).
+//     Called once per optimizer step before the inner loops.
+// - double log_prob(double y, double eta, const double* buf) const
+// - double log_prob_derivs(double y, double eta, const double* buf, double& d_eta, VectorXd& d_par) const
 template <typename Model>
 class GLMMObjective {
     const GLMMData& dat;
@@ -116,6 +129,9 @@ public:
         const double sigma = std::exp(log_sigma);
         const double pen = sigma_penalty(log_sigma);
 
+        std::vector<double> alpha_buf(nm);
+        model.fill_alpha(par, alpha_buf.data());
+
         const Eigen::VectorXd beta = par.segment(nm, dat.p);
         const Eigen::VectorXd b_vals = std::sqrt(2.0) * sigma * dat.gh.nodes;
         const int nn = static_cast<int>(b_vals.size());
@@ -130,7 +146,7 @@ public:
             for (int k = 0; k < nn; ++k) {
                 double ll = dat.gh.log_norm_weights[k];
                 for (int r = 0; r < sz; ++r) {
-                    ll += model.log_prob(dat.y_s[start + r], eta0[r] + b_vals[k], par);
+                    ll += model.log_prob(dat.y_s[start + r], eta0[r] + b_vals[k], alpha_buf.data());
                 }
                 log_terms[k] = ll;
             }
@@ -146,7 +162,10 @@ public:
         const double log_sigma = par[nm + dat.p];
         const double sigma = std::exp(log_sigma);
         const double pen = sigma_penalty(log_sigma);
-        
+
+        std::vector<double> alpha_buf(nm);
+        model.fill_alpha(par, alpha_buf.data());
+
         const Eigen::VectorXd beta = par.segment(nm, dat.p);
         const Eigen::VectorXd b_vals = std::sqrt(2.0) * sigma * dat.gh.nodes;
         const int nn = static_cast<int>(b_vals.size());
@@ -170,7 +189,7 @@ public:
                 double ll = dat.gh.log_norm_weights[k];
                 for (int r = 0; r < sz; ++r) {
                     double de;
-                    double lp = model.log_prob_derivs(dat.y_s[start + r], eta0[r] + b_vals[k], par, de, dp);
+                    double lp = model.log_prob_derivs(dat.y_s[start + r], eta0[r] + b_vals[k], alpha_buf.data(), de, dp);
                     ll += lp;
                     dL_dp_sum_nodes.col(k).noalias() += dp;
                     dL_de_nodes(r, k) = de;
@@ -178,11 +197,12 @@ public:
                 log_terms[k] = ll;
             }
 
-            const double ll_g = log_sum_exp(log_terms);
+            Eigen::VectorXd pk_vec(nn);
+            const double ll_g = log_sum_exp_and_weights(log_terms, pk_vec);
             total_nll -= ll_g;
 
             for (int k = 0; k < nn; ++k) {
-                double pk = std::exp(log_terms[k] - ll_g);
+                const double pk = pk_vec[k];
                 if (pk < 1e-15) continue;
 
                 const Eigen::VectorXd dLi_db = Xg.transpose() * dL_de_nodes.col(k);

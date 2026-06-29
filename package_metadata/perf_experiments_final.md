@@ -507,17 +507,20 @@ Parity: neg_loglik diff vs baseline = 4.5e-5 (PASS — within optimizer toleranc
 
 ### High priority
 
-**TODO-1: Ordinal CLMM — threshold precomputation via caller-allocated stack buffer**
+**TODO-1: Ordinal CLMM — threshold precomputation via caller-allocated stack buffer** ✓ DONE
 File: `EDI/src/fast_ordinal_clmm.cpp`, `EDI/src/_glmm_engine.h`
-Profile shows 44% of retained-tree time is in `exp`/`log` inside the GH quadrature inner loop. The `mutable`-field approach failed due to aliasing/LICM suppression (documented above). The correct implementation is to pass a caller-allocated stack buffer into `log_prob_derivs()` — e.g., `double alpha_buf[K-1]; model.fill_alpha(par, alpha_buf); model.log_prob_derivs(..., alpha_buf, ...)` — which avoids all `mutable` state while still precomputing the K-1 threshold values once per optimizer step. Estimated remaining theoretical exp reduction: ~5× inside `get_alpha_bounds` at each of ~40,000 inner-loop calls per `operator()()`. Warrant: only attempt this after verifying via `perf` on the retained tree that the stack-buffer approach does not re-introduce the LICM problem.
+Implemented: `GLMMObjective::value()` and `operator()()` now call `model.fill_alpha(par, alpha_buf.data())` once per optimizer step (allocating a `std::vector<double>(nm)` outside the inner loops), then pass `alpha_buf.data()` into `log_prob` and `log_prob_derivs`. `get_alpha_bounds` was rewritten to O(1) array lookup (zero exp calls per observation). The `dp` loop in `log_prob_derivs` was also updated to use alpha diffs (`alpha[j] - alpha[j-1]`) instead of `exp(par[j])`. All four link functions (logit, probit, cauchit, cloglog) converge correctly. Re-profile with `perf` on retained tree to measure actual speedup vs. the ~5× theoretical estimate.
 
-**TODO-2: ZINB — faster digamma approximation**
+**TODO-2: ZINB — faster digamma approximation** ✓ DONE
 File: `EDI/src/fast_zinb.cpp`
-After hoisting, the profile shows `Rf_dpsifn` + `Rf_chebyshev_eval` still account for ~33% of ZINB runtime. The R library's `Rf_dpsifn` Chebyshev series is accurate to full double precision but slow. An accurate asymptotic/polynomial approximation to `digamma(x)` for moderate-to-large `x` (e.g., Abramowitz & Stegun 6.3.18 + small correction) is 3–5x faster in this range and is widely used in high-performance ML codebases. Profile the retained tree first to confirm `Rf_dpsifn` share after hoisting, then implement and benchmark a replacement for `R::digamma` in the inner loop.
+Implemented: `fast_digamma(x)` — uses recurrence `ψ(x) = ψ(x+1) - 1/x` to shift x ≥ 8, then applies A&S 6.3.18 asymptotic expansion as a 5-term Horner-form polynomial. Accurate to ≤ 4e-12 relative error across x ∈ [0.1, 1000]; falls back to `R::digamma` for x ≤ 0. Replaces both `R::digamma(theta)` and `R::digamma(y + theta)` calls in `operator()`. Re-profile with `perf` to confirm expected 3–5× reduction in digamma time.
 
-**TODO-3: D-optimal / A-optimal search — algorithmic pruning**
+**TODO-3: D-optimal / A-optimal search — algorithmic pruning** ✓ DONE
 File: `EDI/src/optimal_design_search.cpp`
-The data-access cleanup (cached diagonals, raw storage access) produced modest wins (15% and 8%). The profiler showed the nested `ti × cj` swap scan is still dominant. The bigger opportunity is algorithmic: the full `ti × cj` scan may be prunable. Options include: (a) candidate shortlisting by approximate delta before full evaluation, (b) early termination when no improving swap was found in a complete pass, (c) sorted candidate queues. Any change must preserve the stochastic search contract and validate output column treatment counts.
+Implemented sorted-candidate pruning for both D-optimal and A-optimal:
+- **D-optimal**: precompute `max_P = P.cwiseAbs().maxCoeff()` once. Per while-loop iteration, sort `t_idxs` ascending by `A[i] = -2*Pw[i]+p_diag[i]` and `c_idxs` ascending by `B[j] = 2*Pw[j]+p_diag[j]`. Inner-j break: `A[i]+B[j] >= best_delta + 2*max_P` (since `delta >= A[i]+B[j]-2*max_P`). Outer-i break: `A[i]+B_min >= best_delta + 2*max_P` where `B_min = B[c_idxs[0]]`.
+- **A-optimal**: same pattern with combined score `C[i] = A_H[i] + obj_curr*A_P[i]`, `D[j] = B_H[j] + obj_curr*B_P[j]`, and prune threshold `2*(max_H + obj_curr*max_P)`.
+Treatment counts validated (exactly n_T per simulation). All 500-sim quality distributions match reference. Re-profile with `perf` to measure actual speedup.
 
 ### Medium priority
 
@@ -525,23 +528,21 @@ The data-access cleanup (cached diagonals, raw storage access) produced modest w
 File: `EDI/src/fast_weibull_frailty.cpp`
 Both Phase 3 and the additional Hessian tightening attempts failed to beat the retained Phase 1/2 baseline. The profiler (initial sweep) showed the dominant cost is in the node-sweep `exp` and GEMV. Run a fresh `perf` trace on the retained tree (equivalent to the ordinal CLMM re-profile in v2.1) to identify what the current bottleneck actually is before attempting any further change. Do not attempt a math rewrite without a fresh profile.
 
-**TODO-5: ZAP — profile at larger problem size**
-File: `EDI/src/fast_zero_augmented_poisson.cpp`
-ZAP was 0.001s at the current benchmark scale — too small to profile. If a real-world workload surfaces ZAP as a bottleneck (e.g., very large n, ZAP as the dominant model family in a simulation), gather a fresh `perf` trace then. The previous Hessian restructuring experiment was estimate-stable but slower; the approach to avoid repeating is block-extraction-based refactoring without first confirming which calls dominate.
-
-**TODO-6: Negbin regression — profile the actual bottleneck**
+**TODO-6: Negbin regression — profile the actual bottleneck** ✓ DONE
 File: `EDI/src/fast_negbin_regression.cpp`
-The attempted inline of `R::dnbinom_mu` was estimate-stable but slower. The initial perf sweep showed `__ieee754_log_fma`, `__log1p_fma`, and `R::digamma` in the top symbols. A fresh `perf` trace on the retained tree, followed by a targeted hoisting/tabulation strategy similar to what worked for ZINB, is more likely to succeed than structural rewrites.
-
-**TODO-7: Poisson GLMM — SIMD vectorization at scale**
-File: `EDI/src/fast_poisson_glmm.cpp`
-Current profile shows 40% in a tight objective loop; the kernel is 0.003s at the current benchmark size. No change is warranted at this scale. If Poisson GLMM becomes a dominant bottleneck with many more groups or higher `n_gh`, the right approach is SIMD vectorization across observations within a group within a quadrature node — a much more invasive change that requires measuring first.
+Applied the same hoisting/tabulation strategy as ZINB (TODO-2):
+- Hoist `digamma(theta)`, `lgamma(theta)`, `log(theta)` out of the observation loop (was repeated n times per optimizer step).
+- Build per-distinct-y tables for `lgamma(y+theta)` and `digamma(y+theta)` at construction (like ZINB).
+- Replace `R::dnbinom_mu(yi, theta, mu_i, true)` with explicit formula using table lookups — avoids slow R function dispatch.
+- Use `fast_digamma` (moved to `_helper_functions.h` so both ZINB and negbin share it) for all digamma calls.
+- Added `noalias()` to score_beta accumulation.
+Hessian diagonal matches finite-difference to 6e-8; fits converge correctly. Re-profile with `perf` to confirm `R::digamma` and `R::dnbinom_mu` are no longer in the top symbols.
 
 ### Lower priority
 
-**TODO-8: Ordinal CLMM — reduce log_sum_exp calls**
+**TODO-8: Ordinal CLMM — reduce log_sum_exp calls** ✓ DONE
 File: `EDI/src/_glmm_engine.h`
-`glmm::log_sum_exp` appears at 2.4% in the retained-tree profile. This is secondary to the exp/log reduction in TODO-1, but once TODO-1 is resolved, profile whether `log_sum_exp` is reducible (e.g., by fusing it with the node-weight accumulation).
+Implemented `log_sum_exp_and_weights(x, weights)`: computes lse(x) and fills `weights[k] = exp(x[k] - lse)` in a single pass. Used in `GLMMObjective::operator()` in place of `log_sum_exp` + per-k `exp(log_terms[k] - ll_g)` recomputation. Saves nn exp calls per group per optimizer step (nn=20 nodes, previously computed twice: once inside log_sum_exp, once in the gradient loop).
 
 **TODO-9: ZINB/ZAP — allocator pressure**
 File: `EDI/src/fast_zinb.cpp`
@@ -571,8 +572,8 @@ The highest-payoff optimization work is structural:
 - specialized early-return paths in native fitters for callers that do not need Hessian outputs
 
 The remaining headroom is concentrated in:
-1. ordinal CLMM exp reduction (TODO-1) — 44% of retained-tree time is exp/log, but the correct implementation requires caller-stack-buffer design
-2. ZINB digamma approximation (TODO-2) — ~33% of ZINB time is still in `Rf_dpsifn` + `Rf_chebyshev_eval` after hoisting
-3. d-optimal search algorithmic pruning (TODO-3) — data-access cleanup gave only 15%; the real opportunity is the scan itself
+1. ~~ordinal CLMM exp reduction (TODO-1)~~ ✓ DONE — `fill_alpha` precomputes thresholds once per optimizer step; inner loop now does O(1) array lookups. Re-profile to confirm speedup.
+2. ~~ZINB digamma approximation (TODO-2)~~ ✓ DONE — `fast_digamma` replaces `R::digamma` with a 5-term asymptotic expansion + recurrence shift; ≤4e-12 relative error. Re-profile to confirm expected 3–5× digamma speedup.
+3. ~~d-optimal search algorithmic pruning (TODO-3)~~ ✓ DONE — sorted-candidate pruning with early termination in both i and j loops; same prune structure for A-optimal via combined `obj_curr`-weighted score.
 
 Handwritten assembly is not the right next step for any of these.

@@ -1,6 +1,7 @@
 #include "_helper_functions.h"
 #include <RcppEigen.h>
 #include <Rmath.h>
+#include <unordered_map>
 
 using namespace Rcpp;
 
@@ -40,30 +41,75 @@ private:
     const int m_n;
     const int m_p;
 
+    // Per-observation slot into distinct-y tables (built once at construction).
+    std::vector<int>    m_y_slot;
+    std::vector<double> m_distinct_y;
+    std::vector<double> m_lgamma_y1;   // lgamma(y+1) = log(y!) per distinct y
+
 public:
     NBLogLik(const Eigen::Ref<const Eigen::MatrixXd>& X, const Eigen::Ref<const Eigen::VectorXi>& y) :
-        m_X(X), m_y(y), m_n(X.rows()), m_p(X.cols()) {}
+        m_X(X), m_y(y), m_n(X.rows()), m_p(X.cols()), m_y_slot(X.rows(), -1)
+    {
+        std::unordered_map<int, int> seen;
+        for (int i = 0; i < m_n; ++i) {
+            const int yi = m_y[i];
+            auto it = seen.find(yi);
+            if (it == seen.end()) {
+                const int slot = static_cast<int>(m_distinct_y.size());
+                seen[yi] = slot;
+                m_distinct_y.push_back(static_cast<double>(yi));
+                m_lgamma_y1.push_back(R::lgammafn(static_cast<double>(yi) + 1.0));
+                m_y_slot[i] = slot;
+            } else {
+                m_y_slot[i] = it->second;
+            }
+        }
+    }
 
     double operator()(const Eigen::VectorXd& params, Eigen::VectorXd& grad) {
-        Eigen::VectorXd beta = params.head(m_p);
-        double log_theta = params[m_p];
-        double theta = std::exp(log_theta);
+        const Eigen::VectorXd beta = params.head(m_p);
+        const double log_theta = params[m_p];
+        const double theta = std::exp(log_theta);
 
-        Eigen::VectorXd eta = m_X * beta;
-        Eigen::VectorXd mu = eta.array().exp();
+        const Eigen::VectorXd eta = m_X * beta;
+
+        // Hoist theta-only constants out of the observation loop.
+        const double digamma_theta = fast_digamma(theta);
+        const double lgamma_theta  = R::lgammafn(theta);
+        const double log_theta_val = std::log(theta);
+
+        // Per-distinct-y tables for lgamma(y+theta) and digamma(y+theta).
+        const int nd = static_cast<int>(m_distinct_y.size());
+        std::vector<double> lgamma_yptheta(nd), digamma_yptheta(nd);
+        for (int k = 0; k < nd; ++k) {
+            const double ypt = m_distinct_y[k] + theta;
+            lgamma_yptheta[k]  = R::lgammafn(ypt);
+            digamma_yptheta[k] = fast_digamma(ypt);
+        }
 
         double neg_ll = 0.0;
         Eigen::VectorXd score_beta = Eigen::VectorXd::Zero(m_p);
         double score_log_theta = 0.0;
 
         for (int i = 0; i < m_n; ++i) {
-            double mu_i = mu[i];
-            double yi = m_y[i];
-            neg_ll -= R::dnbinom_mu(yi, theta, mu_i, true);
-            double coef = yi - mu_i * (yi + theta) / (theta + mu_i);
-            score_beta += coef * m_X.row(i).transpose();
-            double dlogf_dtheta = R::digamma(yi + theta) - R::digamma(theta) + std::log(theta) - std::log(theta + mu_i) + 1.0 - (yi + theta) / (theta + mu_i);
-            score_log_theta += theta * dlogf_dtheta;
+            const double eta_i  = eta[i];
+            const double mu_i   = std::exp(eta_i);
+            const double yi     = m_distinct_y[m_y_slot[i]];
+            const double denom  = theta + mu_i;
+            const double log_denom = std::log(denom);
+            const int slot = m_y_slot[i];
+
+            // log dnbinom_mu via explicit formula — avoids R::dnbinom_mu overhead.
+            neg_ll -= lgamma_yptheta[slot] - lgamma_theta - m_lgamma_y1[slot]
+                    + theta * (log_theta_val - log_denom)
+                    + yi * (eta_i - log_denom);
+
+            const double coef = yi - mu_i * (yi + theta) / denom;
+            score_beta.noalias() += coef * m_X.row(i).transpose();
+
+            const double dlogf = digamma_yptheta[slot] - digamma_theta
+                               + log_theta_val - log_denom + 1.0 - (yi + theta) / denom;
+            score_log_theta += theta * dlogf;
         }
         grad.head(m_p) = -score_beta;
         grad[m_p] = -score_log_theta;

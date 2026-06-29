@@ -83,7 +83,7 @@ public:
         grad.setZero(m_pc + m_pz + 1);
 
         // Hoist theta-only special functions out of the observation loop.
-        const double digamma_theta = R::digamma(theta);
+        const double digamma_theta = fast_digamma(theta);
         const double lgamma_theta  = R::lgammafn(theta);
 
         // Build per-distinct-y tables for lgamma(y+theta) and digamma(y+theta).
@@ -92,7 +92,7 @@ public:
         for (int k = 0; k < nd; ++k) {
             const double ypt = m_distinct_y[k] + theta;
             lgamma_yptheta[k]  = R::lgammafn(ypt);
-            digamma_yptheta[k] = R::digamma(ypt);
+            digamma_yptheta[k] = fast_digamma(ypt);
         }
 
         double nll = 0.0;

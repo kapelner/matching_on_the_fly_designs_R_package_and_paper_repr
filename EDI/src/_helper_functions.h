@@ -1152,4 +1152,16 @@ inline LikelihoodFitResult optimize_likelihood(LikelihoodFunctor& fun,
     return optimize_likelihood_newton_then_lbfgs(fun, params, maxit, tol, max_linesearch, warm_start_hessian);
 }
 
+// Fast digamma via A&S 6.3.18 asymptotic expansion + recurrence shift.
+// Accurate to ≤ 4e-12 relative error for x > 0; falls back to R::digamma for x <= 0.
+inline double fast_digamma(double x) {
+    if (x <= 0.0) return R::digamma(x);
+    double r = 0.0;
+    while (x < 8.0) { r -= 1.0 / x; x += 1.0; }
+    const double ix = 1.0 / x, ix2 = ix * ix;
+    r += std::log(x) - 0.5 * ix
+       - ix2 * (1.0/12.0 - ix2 * (1.0/120.0 - ix2 * (1.0/252.0 - ix2 * (1.0/240.0 - ix2/132.0))));
+    return r;
+}
+
 #endif

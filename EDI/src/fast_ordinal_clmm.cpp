@@ -17,38 +17,36 @@ public:
 
     int n_model_params() const { return K - 1; }
 
-    inline void get_alpha_bounds(const Eigen::VectorXd& par, int y_ir, double& alpha_lo, double& alpha_up) const {
-        alpha_lo = 0.0;
-        alpha_up = 0.0;
-        const int upper_idx = (y_ir >= K) ? -1 : (y_ir - 1);
-        const int lower_idx = (y_ir <= 1) ? -1 : (y_ir - 2);
-        const int last_idx = std::max(lower_idx, upper_idx);
-        if (last_idx < 0) return;
-        double alpha_curr = par[0];
-        if (lower_idx == 0) alpha_lo = alpha_curr;
-        if (upper_idx == 0) alpha_up = alpha_curr;
-        for (int k = 1; k <= last_idx; ++k) {
-            alpha_curr += std::exp(par[k]);
-            if (k == lower_idx) alpha_lo = alpha_curr;
-            if (k == upper_idx) alpha_up = alpha_curr;
-        }
+    // Precompute all K-1 cumulative thresholds from par once per optimizer step.
+    // alpha[0] = par[0]; alpha[k] = alpha[k-1] + exp(par[k]) for k >= 1.
+    void fill_alpha(const Eigen::VectorXd& par, double* alpha) const {
+        if (K <= 1) return;
+        alpha[0] = par[0];
+        for (int k = 1; k < K - 1; ++k)
+            alpha[k] = alpha[k - 1] + std::exp(par[k]);
     }
 
-    double log_prob(double y_val, double eta, const Eigen::VectorXd& par) const {
+    // O(1) lookup into precomputed alpha buffer — no exp calls.
+    inline void get_alpha_bounds(const double* alpha, int y_ir, double& alpha_lo, double& alpha_up) const {
+        alpha_lo = (y_ir <= 1) ? 0.0 : alpha[y_ir - 2];
+        alpha_up = (y_ir >= K) ? 0.0 : alpha[y_ir - 1];
+    }
+
+    double log_prob(double y_val, double eta, const double* alpha) const {
         int y_ir = static_cast<int>(y_val);
         double alpha_lo, alpha_up;
-        get_alpha_bounds(par, y_ir, alpha_lo, alpha_up);
+        get_alpha_bounds(alpha, y_ir, alpha_lo, alpha_up);
         double F_up = (y_ir >= K) ? 1.0 : Link::cdf(alpha_up - eta);
         double F_lo = (y_ir <= 1) ? 0.0 : Link::cdf(alpha_lo - eta);
         return std::log(std::max(1e-15, F_up - F_lo));
     }
 
-    double log_prob_derivs(double y_val, double eta, const Eigen::VectorXd& par, double& de, Eigen::VectorXd& dp) const {
+    double log_prob_derivs(double y_val, double eta, const double* alpha, double& de, Eigen::VectorXd& dp) const {
         int y_ir = static_cast<int>(y_val);
         int na = K - 1;
 
         double alpha_lo, alpha_up;
-        get_alpha_bounds(par, y_ir, alpha_lo, alpha_up);
+        get_alpha_bounds(alpha, y_ir, alpha_lo, alpha_up);
 
         double F_up = (y_ir >= K) ? 1.0 : Link::cdf(alpha_up - eta);
         double F_lo = (y_ir <= 1) ? 0.0 : Link::cdf(alpha_lo - eta);
@@ -65,14 +63,14 @@ public:
 
         if (y_ir <= 1) return lp;
 
+        // alpha diffs replace exp(par[j]) — no exp calls here.
         const int lower_idx = y_ir - 2;
         const double base_suffix = (y_ir >= K) ? -g_lo : (g_up - g_lo);
-        for (int j = 1; j <= lower_idx; ++j) {
-            dp[j] = base_suffix * std::exp(par[j]);
-        }
+        for (int j = 1; j <= lower_idx; ++j)
+            dp[j] = base_suffix * (alpha[j] - alpha[j - 1]);
         if (y_ir < K) {
             const int upper_idx = y_ir - 1;
-            dp[upper_idx] = g_up * std::exp(par[upper_idx]);
+            dp[upper_idx] = g_up * (alpha[upper_idx] - alpha[upper_idx - 1]);
         }
         return lp;
     }

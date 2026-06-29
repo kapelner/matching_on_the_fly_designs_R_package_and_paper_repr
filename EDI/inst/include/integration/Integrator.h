@@ -20,11 +20,12 @@ namespace Numer
  * are provided by the class in a way that can support the future porting of additional quadrature
  * functions from the QUADPACK library.
  *
- * \todo Ensure only appropriates types are used for Scalar_, e.g. prohibit integers.
  */
 template <typename Scalar_>
 class Integrator
 {
+	static_assert(std::is_floating_point<Scalar_>::value,
+		"Integrator requires a floating-point Scalar_ type (e.g. float, double, long double).");
 public:
 	typedef Scalar_ Scalar;
 	typedef Eigen::DenseIndex DenseIndex;
@@ -58,7 +59,7 @@ public:
 	Integrator(const int maxSubintervals)
 	: m_maxSubintervals(maxSubintervals)
 	{
-		assert(maxSubintervals >= 1); // \todo use Eigen assert.
+		eigen_assert(maxSubintervals >= 1);
 
 		m_errorListIndices.resize(maxSubintervals, 1);
 		m_lowerList.resize(maxSubintervals, 1);
@@ -696,13 +697,16 @@ private:
 	 * errorCode = 4 Roundoff error on extrapolation
 	 * errorCode = 5 Divergent integral (or very slowly convergent integral)
 	 * errorCode = 6 The input is invalid, because (desiredAbsoluteError <= 0 and
-	 *               desiredRealtiveError < 50 * relativeMachineAccuracy, or
+	 *               desiredRealtiveError < 50 * m_relativeMachineAccuracy, or
 	 *               m_maxSubintervals < 1.
 	 * errorCode = 7 Applies to (D)QAWF only - limiting number of cycles has been attained
-	 *
-	 * \todo make relativeMachineAccuracy a member variable.
 	 */
 	DenseIndex m_errorCode;
+
+	/**
+	 * \brief Machine epsilon for Scalar_; used as the relative machine accuracy threshold.
+	 */
+	const Scalar m_relativeMachineAccuracy = Eigen::NumTraits<Scalar>::epsilon();
 
 	/**
 	 * \brief The number of subintervals actually produced in the subdivision process.
