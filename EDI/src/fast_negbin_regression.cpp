@@ -44,7 +44,9 @@ private:
     // Per-observation slot into distinct-y tables (built once at construction).
     std::vector<int>    m_y_slot;
     std::vector<double> m_distinct_y;
-    std::vector<double> m_lgamma_y1;   // lgamma(y+1) = log(y!) per distinct y
+    std::vector<double> m_lgamma_y1;        // lgamma(y+1) = log(y!) per distinct y
+    std::vector<double> m_lgamma_yptheta;   // preallocated; filled per operator() call
+    std::vector<double> m_digamma_yptheta;  // preallocated; filled per operator() call
 
 public:
     NBLogLik(const Eigen::Ref<const Eigen::MatrixXd>& X, const Eigen::Ref<const Eigen::VectorXi>& y) :
@@ -64,6 +66,9 @@ public:
                 m_y_slot[i] = it->second;
             }
         }
+        const int nd = static_cast<int>(m_distinct_y.size());
+        m_lgamma_yptheta.resize(nd);
+        m_digamma_yptheta.resize(nd);
     }
 
     double operator()(const Eigen::VectorXd& params, Eigen::VectorXd& grad) {
@@ -78,13 +83,12 @@ public:
         const double lgamma_theta  = R::lgammafn(theta);
         const double log_theta_val = std::log(theta);
 
-        // Per-distinct-y tables for lgamma(y+theta) and digamma(y+theta).
+        // Fill preallocated per-distinct-y tables for lgamma(y+theta) and digamma(y+theta).
         const int nd = static_cast<int>(m_distinct_y.size());
-        std::vector<double> lgamma_yptheta(nd), digamma_yptheta(nd);
         for (int k = 0; k < nd; ++k) {
             const double ypt = m_distinct_y[k] + theta;
-            lgamma_yptheta[k]  = R::lgammafn(ypt);
-            digamma_yptheta[k] = fast_digamma(ypt);
+            m_lgamma_yptheta[k]  = R::lgammafn(ypt);
+            m_digamma_yptheta[k] = fast_digamma(ypt);
         }
 
         double neg_ll = 0.0;
@@ -100,14 +104,14 @@ public:
             const int slot = m_y_slot[i];
 
             // log dnbinom_mu via explicit formula — avoids R::dnbinom_mu overhead.
-            neg_ll -= lgamma_yptheta[slot] - lgamma_theta - m_lgamma_y1[slot]
+            neg_ll -= m_lgamma_yptheta[slot] - lgamma_theta - m_lgamma_y1[slot]
                     + theta * (log_theta_val - log_denom)
                     + yi * (eta_i - log_denom);
 
             const double coef = yi - mu_i * (yi + theta) / denom;
             score_beta.noalias() += coef * m_X.row(i).transpose();
 
-            const double dlogf = digamma_yptheta[slot] - digamma_theta
+            const double dlogf = m_digamma_yptheta[slot] - digamma_theta
                                + log_theta_val - log_denom + 1.0 - (yi + theta) / denom;
             score_log_theta += theta * dlogf;
         }

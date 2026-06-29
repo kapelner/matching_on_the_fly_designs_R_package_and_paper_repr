@@ -544,9 +544,9 @@ Hessian diagonal matches finite-difference to 6e-8; fits converge correctly. Re-
 File: `EDI/src/_glmm_engine.h`
 Implemented `log_sum_exp_and_weights(x, weights)`: computes lse(x) and fills `weights[k] = exp(x[k] - lse)` in a single pass. Used in `GLMMObjective::operator()` in place of `log_sum_exp` + per-k `exp(log_terms[k] - ll_g)` recomputation. Saves nn exp calls per group per optimizer step (nn=20 nodes, previously computed twice: once inside log_sum_exp, once in the gradient loop).
 
-**TODO-9: ZINB/ZAP — allocator pressure**
-File: `EDI/src/fast_zinb.cpp`
-`malloc`/`cfree` combined is ~4.6% in the ZINB profile. The per-call `std::vector` allocations for `lgamma_yptheta[]` and `digamma_yptheta[]` tables (introduced in the hoisting optimization) are the likely cause. These could be preallocated as member vectors (non-mutable, resized at construction once distinct-y count is known) to eliminate per-call allocation. Low-risk since these are not inside the GH quadrature inner loop.
+**TODO-9: ZINB/ZAP — allocator pressure** ✓ DONE
+File: `EDI/src/fast_zinb.cpp`, `EDI/src/fast_negbin_regression.cpp`
+Added `m_lgamma_yptheta` and `m_digamma_yptheta` as preallocated member vectors (sized at construction when the distinct-y count is known) to `ZeroInflatedNegBin` and `NBLogLik`. The per-call `std::vector<double>(nd)` allocations in `operator()` are replaced with in-place fills of the preallocated buffers — eliminates 2 heap allocations per optimizer step for each model.
 
 **TODO-10: Full re-benchmark after all retained changes**
 Tooling: existing benchmark scripts

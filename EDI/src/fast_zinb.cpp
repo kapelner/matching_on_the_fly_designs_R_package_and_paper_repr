@@ -45,6 +45,8 @@ class ZeroInflatedNegBin {
     std::vector<int>    m_y_slot;
     std::vector<double> m_distinct_y;
     std::vector<double> m_lgamma_y1;
+    std::vector<double> m_lgamma_yptheta;   // preallocated; filled per operator() call
+    std::vector<double> m_digamma_yptheta;  // preallocated; filled per operator() call
 
 public:
     ZeroInflatedNegBin(const Eigen::Ref<const Eigen::VectorXd>& y,
@@ -69,6 +71,9 @@ public:
                 m_y_slot[i] = it->second;
             }
         }
+        const int nd = static_cast<int>(m_distinct_y.size());
+        m_lgamma_yptheta.resize(nd);
+        m_digamma_yptheta.resize(nd);
     }
 
     double operator()(const Eigen::VectorXd& par, Eigen::VectorXd& grad) {
@@ -86,13 +91,12 @@ public:
         const double digamma_theta = fast_digamma(theta);
         const double lgamma_theta  = R::lgammafn(theta);
 
-        // Build per-distinct-y tables for lgamma(y+theta) and digamma(y+theta).
+        // Fill preallocated per-distinct-y tables for lgamma(y+theta) and digamma(y+theta).
         const int nd = static_cast<int>(m_distinct_y.size());
-        std::vector<double> lgamma_yptheta(nd), digamma_yptheta(nd);
         for (int k = 0; k < nd; ++k) {
             const double ypt = m_distinct_y[k] + theta;
-            lgamma_yptheta[k]  = R::lgammafn(ypt);
-            digamma_yptheta[k] = fast_digamma(ypt);
+            m_lgamma_yptheta[k]  = R::lgammafn(ypt);
+            m_digamma_yptheta[k] = fast_digamma(ypt);
         }
 
         double nll = 0.0;
@@ -120,7 +124,7 @@ public:
                 d_log_theta -= (1.0 - p) * d_phi_d_theta * theta / den;
             } else {
                 nll -= std::log(1.0 - p);
-                nll -= (lgamma_yptheta[m_y_slot[i]] - lgamma_theta - m_lgamma_y1[m_y_slot[i]]);
+                nll -= (m_lgamma_yptheta[m_y_slot[i]] - lgamma_theta - m_lgamma_y1[m_y_slot[i]]);
                 nll -= theta * std::log(theta / (theta + mu)) + yi * std::log(mu / (theta + mu));
 
                 grad.segment(m_pc, m_pz) += p * m_Xz.row(i).transpose();
@@ -128,7 +132,7 @@ public:
                 const double d_nb_d_ec = (yi - mu * (yi + theta) / (theta + mu));
                 grad.head(m_pc) -= d_nb_d_ec * m_Xc.row(i).transpose();
 
-                const double d_nb_d_theta = (digamma_yptheta[m_y_slot[i]] - digamma_theta + std::log(theta / (theta + mu)) + 1.0 - (yi + theta) / (theta + mu));
+                const double d_nb_d_theta = (m_digamma_yptheta[m_y_slot[i]] - digamma_theta + std::log(theta / (theta + mu)) + 1.0 - (yi + theta) / (theta + mu));
                 d_log_theta -= d_nb_d_theta * theta;
             }
         }
