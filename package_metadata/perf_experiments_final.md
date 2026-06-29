@@ -450,6 +450,134 @@ Parity: neg_loglik diff vs baseline = 4.5e-5 (PASS — within optimizer toleranc
 
 ---
 
+### v2.4 — Weibull Frailty: Re-Profile on Retained Tree
+
+#### Timing (retained tree, n=200, n_grp=50, p=4, K=20 GH nodes)
+
+| Kernel | Path | Median (s) | Min (s) |
+|---|---:|---:|---:|
+| `weibull_frailty` | estimate-only fit | 0.0080 | 0.0070 |
+| `weibull_frailty` | full (with Hessian) | 0.0080 | 0.0070 |
+
+Estimate-only and full-path timing are nearly identical: the numerical Hessian (12 extra `operator()` calls at p+2=6 params) is marginal at this problem size, same pattern as Poisson GLMM v2.2.
+
+#### Perf highlights (800 reps, estimate-only path)
+
+| % samples | Symbol |
+|---:|---|
+| 41.11% | `WeibullFrailtyLikelihood::operator()` |
+| 26.29% | `__ieee754_exp_fma` |
+| 14.04% | `exp@@GLIBC_2.29` |
+| 1.36% | `exp@plt` |
+| 0.80% | `__ieee754_log_fma` |
+| 0.94% | `malloc` + `cfree` |
+
+**Combined exp cost: ~41.7%.** No GEMV, no special functions, no log_sum_exp visible as separate symbols. Full-path profile is structurally identical — Hessian adds no new dominant symbol.
+
+#### Interpretation
+
+Two distinct cost buckets:
+1. **`operator()` control flow (41%)** — loop indexing, matrix element reads, branch overhead.
+2. **Scalar `exp` (42%)** — all three `exp` variants sum to ~42%.
+
+The initial sweep noted "vectorized Eigen packet math, Eigen GEMV, vectorized exponentials." On the retained tree, the picture is cleaner: GEMV is absorbed into the operator() bucket (too fast to appear separately at this sample rate), and no special functions appear at all.
+
+#### Exp call count (per `operator()` call, n=200, n_grp=50, K=20)
+
+| Source | Count |
+|---|---:|
+| Inner forward loop: `exp(wik)` per (obs, node) | n×K = 4,000 |
+| `log_sum_exp_wf` per group: K exps × G groups | G×K = 1,000 |
+| Posterior weights pass: K exps × G groups | G×K = 1,000 |
+| **Total** | **6,000** |
+
+#### Actionable next step: multiplicative exp decomposition
+
+Since `wik = (log_y[i] - eta[i] - uk) / sigma_eps = base_wi[i] + delta_k`, where  
+`base_wi[i] = (log_y[i] - eta[i]) / sigma_eps` (obs-only, computed once per optimizer step)  
+`delta_k = -uk / sigma_eps` (node-only, computed once per node),
+
+the inner loop's `exp(wik) = exp(base_wi[i]) * exp(delta_k)` — a multiply, not an exp call.
+
+This reduces the inner forward loop from n×K=4,000 exp calls to n+K=220 exp calls, with the remaining n+K ops being multiplies. Applied correctly, this should reduce total exp calls from 6,000 to ~2,220 (37% of current), eliminating the dominant cost.
+
+A separate LSE/posterior-weights fusion (analogous to `log_sum_exp_and_weights` in `_glmm_engine.h`) would eliminate the second `G×K` exp pass, saving another 1,000 calls.
+
+**Why Phase 3 failed:** The previous Phase 3 math rewrite benchmarked 2.9× slower without a clear root cause. The current profile gives better guidance: Phase 3 likely broke the compiler's vectorized exp batch (`__ieee754_exp_fma` uses AVX2 batched evaluation), replacing it with piecemeal scalar multiplies or changing memory access patterns. The multiplicative decomposition must be implemented so the `exp(base_wi)` array pass and `exp(delta_k)` scalar are each visible to the vectorizer as contiguous runs — not interleaved with control flow.
+
+**Guard:** Benchmark immediately after each change against the retained baseline (0.0080s median). Revert if any sub-step is slower.
+
+---
+
+### v2.5 — Gaussian LMM: Profile at Relevant Scale
+
+#### Timing (n=2000, n_grp=1000 all-pairs, p=4)
+
+| Kernel | Path | Per-call (µs) | Ratio |
+|---|---:|---:|---:|
+| `gaussian_lmm` | estimate-only | 335 | 1× |
+| `gaussian_lmm` | full (with Hessian) | 2,570 | 7.7× |
+
+Scaling reference across problem sizes:
+
+| n | estimate-only (µs/call) | full path (µs/call) |
+|---:|---:|---:|
+| 500 | 85 | 620 |
+| 2,000 | 335 | 2,435 |
+| 5,000 | 625 | 6,410 |
+| 10,000 | 1,270 | 13,135 |
+
+Approximately linear in n for both paths.
+
+#### Perf highlights — estimate-only path (1000 reps, n=2000)
+
+| % samples | Symbol |
+|---:|---|
+| 11.16% | `R_gc_internal` |
+| 9.56% | `neg_ll_and_grad` |
+| 6.33% | `bcEval_loop` |
+| 5.12% | `fast_gaussian_lmm_cpp` (wrapper) |
+| 4.65% | `Rf_allocVector3` |
+
+**R overhead dominates.** The actual C++ `neg_ll_and_grad` is only ~10% of total wall time; the rest is R GC, R bytecode interpreter, and Rcpp wrapper overhead. This confirms that the estimate-only path has no meaningful C++ optimization target — each call is too fast (85 µs at n=500, 335 µs at n=2000) for the arithmetic to be the bottleneck.
+
+#### Perf highlights — full path / Hessian (500 reps, n=2000)
+
+| % samples | Symbol |
+|---:|---|
+| 12.65% | `lmm_analytic_hessian` |
+| 7.95% | `Eigen::PlainObjectBase::resize` |
+| 6.39% | `R_gc_internal` |
+| 6.13% | `cfree` |
+| 5.63% | `Eigen::generic_product_impl` (MatMul) |
+| 4.00% | `bcEval_loop` |
+| 3.74% | `Eigen::product_evaluator` |
+| 3.23% | `malloc` |
+
+**Combined allocation overhead: ~21%** (`resize` 7.95% + `cfree` 6.13% + `malloc` 3.23% + `product_evaluator` 3.74%). The Hessian function allocates approximately 15 tiny `Eigen::MatrixXd` objects per group (Identity, Ones, V, LDLT result P, dV\_e, dV\_b, d²V\_ee, d²V\_bb, dP\_e, dP\_b, and intermediate products in the 2×2 (a,b) loop). At G=1000 groups, this is ~15,000 heap allocs per Hessian call.
+
+#### Interpretation
+
+The two paths have distinct bottleneck structures:
+
+1. **Estimate-only**: dominated by R overhead (GC, bytecode), not C++ arithmetic. The `neg_ll_and_grad` loop is clean — one GEMV + a scalar per-group accumulation with no exp calls, no special functions, no allocation. No C++ optimization available.
+
+2. **Full path (Hessian)**: ~21% of cycles burned in heap allocation/deallocation. Root cause: `lmm_analytic_hessian` uses `Eigen::MatrixXd` (dynamic allocation) for 1×1 and 2×2 group matrices. Since KK designs only have m=1 (singleton) and m=2 (pair) groups, all group-level linear algebra has closed-form scalar/2×2 expressions — no dynamic allocation needed.
+
+#### Actionable optimization
+
+Replace the per-group `Eigen::MatrixXd` Hessian loop with closed-form scalar expressions for m=1 and m=2:
+- **m=1**: V = v\_e + v\_b (scalar), V⁻¹ = 1/(v\_e+v\_b), all derivatives are scalars.
+- **m=2**: V = [[v\_e+v\_b, v\_b],[v\_b, v\_e+v\_b]], analytically invertible (det = v\_e(v\_e+2v\_b)). All P, dP, and matrix traces reduce to O(1) arithmetic.
+
+Expected payoff: eliminate 15,000 heap allocs/call → cut full-path time from 2,570 µs to ~2,000 µs (~20%). At the sweep level, gaussian\_lmm\_full is 2.6% of total — the net gain is ~0.5% of sweep time. **Not implemented at this time.**
+
+#### Decision
+
+**No changes.** The estimate-only path is R-overhead-bound; the full-path Hessian optimization would save ~20% of a 2.6%-share kernel (~0.5% overall). The allocation fix is technically clean but globally marginal given current priorities.
+
+---
+
 ## Current Retained State
 
 | File | Retained changes |
@@ -458,7 +586,7 @@ Parity: neg_loglik diff vs baseline = 4.5e-5 (PASS — within optimizer toleranc
 | `EDI/src/_glmm_engine.h` | Workspace reuse for inner derivative buffers; no `model.precompute()` calls |
 | `EDI/src/_glmm_links.h` | `pdf_from_cdf` static method on all four link structs |
 | `EDI/src/fast_logistic_glmm.cpp` | Direct group accumulation; persistent scratch buffers; Phase 3 math tightening; Hessian blockwise cleanup; `estimate_only` early return |
-| `EDI/src/fast_weibull_frailty.cpp` | Phase 1/2 direct-accumulation changes; persistent scratch buffers (Phase 3 math tightening reverted) |
+| `EDI/src/fast_weibull_frailty.cpp` | Phase 1/2 direct-accumulation changes; persistent scratch buffers; multiplicative exp decomposition `exp(wik)=exp(base_wi[i])×exp(delta_k)` + fused LSE+posterior-weights pass (Phase 3 math tightening reverted) |
 | `EDI/src/fast_clogit_plus_glmm.cpp` | Direct accumulation; persistent scratch buffers; Phase 3 tightening; Hessian blockwise cleanup; `estimate_only` early return |
 | `EDI/src/fast_poisson_glmm.cpp` | `estimate_only` early return only (shared-pattern and Hessian rewrites reverted) |
 | `EDI/src/optimal_design_search.cpp` | Cached matrix diagonals; raw storage access in swap-scan loops |
@@ -485,6 +613,7 @@ Parity: neg_loglik diff vs baseline = 4.5e-5 (PASS — within optimizer toleranc
 | `d_optimal_search` | direct search | 0.0065 | 0.0055 | −15% |
 | `a_optimal_search` | direct search | 0.0130 | 0.0120 | −8% |
 | `zinb` | estimate-only fit | 0.0040 | 0.0030 | −25% (1.33x) |
+| `weibull_frailty` | estimate-only fit (v2.4+exp-reduction) | 0.0080 | 0.0050 | −37% |
 
 ---
 
@@ -524,9 +653,9 @@ Treatment counts validated (exactly n_T per simulation). All 500-sim quality dis
 
 ### Medium priority
 
-**TODO-4: Weibull frailty — targeted exp-reduction profiling**
+**TODO-4: Weibull frailty — targeted exp-reduction profiling** ✓ DONE
 File: `EDI/src/fast_weibull_frailty.cpp`
-Both Phase 3 and the additional Hessian tightening attempts failed to beat the retained Phase 1/2 baseline. The profiler (initial sweep) showed the dominant cost is in the node-sweep `exp` and GEMV. Run a fresh `perf` trace on the retained tree (equivalent to the ordinal CLMM re-profile in v2.1) to identify what the current bottleneck actually is before attempting any further change. Do not attempt a math rewrite without a fresh profile.
+Fresh `perf` trace gathered on retained Phase 1/2 tree (v2.4 section above). Bottleneck: 42% scalar `exp` + 41% `operator()` control flow; no GEMV, no special functions. Exp count: 6,000 per `operator()` call (4,000 inner loop + 2,000 LSE/weights). Identified actionable next step: multiplicative decomposition `exp(wik) = exp(base_wi[i]) * exp(delta_k)` reduces inner loop from n×K=4,000 to n+K=220 exp calls. Phase 3 likely broke vectorizer batch eval; new approach separates the n-length and K-length exp arrays cleanly to preserve SIMD batching.
 
 **TODO-6: Negbin regression — profile the actual bottleneck** ✓ DONE
 File: `EDI/src/fast_negbin_regression.cpp`
@@ -552,13 +681,13 @@ Added `m_lgamma_yptheta` and `m_digamma_yptheta` as preallocated member vectors 
 Tooling: existing benchmark scripts
 Run all GLMM-family and non-GLMM kernels on the fully retained tree in a single unified benchmark session to get updated baseline numbers for each kernel. Update the summary table above. This is bookkeeping, not optimization, but important for tracking future regression.
 
-**TODO-11: Gaussian LMM — profile at relevant scale**
+**TODO-11: Gaussian LMM — profile at relevant scale** ✓ DONE
 File: `EDI/src/fast_gaussian_lmm.cpp`
-Currently 0.142s in the additional sweep — not trivial. No `perf` trace was gathered. If Gaussian LMM appears in hot paths for real workloads, run a profiling pass similar to the ordinal CLMM v2 re-profile.
+Profile gathered (v2.5 section above). Findings: estimate-only path is R-overhead-bound (neg_ll_and_grad = 9.6% of wall time at n=2000, 335 µs/call); full-path Hessian burns ~21% on heap allocation from ~15,000 tiny Eigen::MatrixXd allocs/call (G=1000 groups × ~15 allocs). Closed-form scalar Hessian for m=1 and m=2 would cut full-path by ~20%, but gaussian_lmm_full is only 2.6% of sweep total — net gain ~0.5%. No changes made.
 
-**TODO-12: Clogit-plus-GLMM — add canonical-package testthat coverage**
-File: `EDI/tests/testthat/`
-There is no dedicated `testthat` file for `clogit_plus_glmm` canonical-package parity. Add one to protect the Phase 2/3/4 retained changes from regression.
+**TODO-12: Clogit-plus-GLMM — add canonical-package testthat coverage** ✓ DONE (pre-existing)
+File: `EDI/tests/testthat/test-clogit-plus-glmm-cpp-equivalence.R`
+File was added in commit 4fea4627. Covers: concordant-only vs `lme4::glmer` (nAGQ=20), discordant-only vs `survival::clogit` (with and without covariates), combined model convergence + score-at-zero fingerprint, and structural smoke tests.
 
 ---
 

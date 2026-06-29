@@ -68,6 +68,9 @@ private:
 	Eigen::MatrixXd m_w_all_k_mat;
 	Eigen::VectorXd m_ll_g_vec;
 	Eigen::VectorXd m_weighted_r;
+	Eigen::VectorXd m_base_wi;    // (log_y - eta) / sigma_eps per obs — precomputed once per optimizer step
+	Eigen::VectorXd m_base_exp;   // exp(m_base_wi) per obs — n exp calls, contiguous for SIMD
+	Eigen::MatrixXd m_post_weights; // G x K posterior weights — preallocated to avoid per-call heap alloc
 
 	void build_group_structure(const Eigen::Ref<const Eigen::VectorXi>& group_id) {
 		std::vector<int> order(m_n);
@@ -130,6 +133,9 @@ public:
 		m_w_all_k_mat.resize(m_n, m_gh.nodes.size());
 		m_ll_g_vec.resize(m_n_groups);
 		m_weighted_r.resize(m_n);
+		m_base_wi.resize(m_n);
+		m_base_exp.resize(m_n);
+		m_post_weights.resize(m_n_groups, m_gh.nodes.size());
 	}
 
 	double operator()(const Eigen::VectorXd& params, Eigen::VectorXd& grad) {
@@ -138,23 +144,33 @@ public:
 		const double sigma_eps      = std::exp(log_sigma_eps);
 		const double log_sigma_u    = std::max(-m_max_abs_log_sigma, std::min(m_max_abs_log_sigma, params[m_p + 1]));
 		const double sigma_u        = std::exp(log_sigma_u);
+		const double inv_eps        = 1.0 / sigma_eps;
 
 		m_eta_all.noalias() = m_X * beta;
 		const int K = (int)m_gh.nodes.size();
 
+		// Precompute per-obs base_wi = (log_y - eta) / sigma_eps and base_exp = exp(base_wi).
+		// n exp calls over a contiguous array — vectorized by the compiler into batched SIMD exp.
+		m_base_wi  = (m_log_y - m_eta_all) * inv_eps;
+		m_base_exp = m_base_wi.array().exp();
+
 		for (int k = 0; k < K; ++k) {
-			const double uk = sigma_u * m_u_vals[k];
+			const double uk          = sigma_u * m_u_vals[k];
+			const double delta_k     = -uk * inv_eps;          // node-only shift: wik = base_wi[i] + delta_k
+			const double exp_delta_k = std::exp(delta_k);      // one exp per node (K=20 total)
+
 			for (int g = 0; g < m_n_groups; ++g) {
 				const int start = m_group_start[g];
 				const int sz    = m_group_end[g] - start;
-				double log_lik_g_k = m_group_dead_sum[g] * (-log_sigma_eps) - m_group_dead_log_y_sum[g] / sigma_eps;
-				
+				double log_lik_g_k = m_group_dead_sum[g] * (-log_sigma_eps) - m_group_dead_log_y_sum[g] * inv_eps;
+
 				for (int i = 0; i < sz; ++i) {
 					const int idx = start + i;
-					const double wik = (m_log_y[idx] - (m_eta_all[idx] + uk)) / sigma_eps;
-					const double clamped_wik = std::min(wik, 700.0);
-					const double exp_wik = std::exp(clamped_wik);
-					log_lik_g_k += m_dead[idx] * (wik / sigma_eps) - exp_wik;
+					const double wik = m_base_wi[idx] + delta_k;
+					// exp(wik) = exp(base_wi) * exp(delta_k); fallback for rare float overflow.
+					double exp_wik = m_base_exp[idx] * exp_delta_k;
+					if (!std::isfinite(exp_wik)) exp_wik = std::exp(std::min(wik, 700.0));
+					log_lik_g_k += m_dead[idx] * (wik * inv_eps) - exp_wik;
 					m_r_all_k_mat(idx, k) = exp_wik;
 					m_w_all_k_mat(idx, k) = wik;
 				}
@@ -162,28 +178,30 @@ public:
 			}
 		}
 
+		// Fused LSE + posterior weights: compute exp(row - max) once, reuse as weights.
+		// Saves G*K=1000 exp calls vs. separate log_sum_exp + post_weights passes.
 		double total_neg_ll = 0.0;
-		for (int g = 0; g < m_n_groups; ++g) {
-			m_ll_g_vec[g] = log_sum_exp_wf(m_log_terms_mat.row(g));
-			total_neg_ll -= m_ll_g_vec[g];
-		}
-
 		grad.setZero();
-		Eigen::MatrixXd post_weights(m_n_groups, K);
 		for (int g = 0; g < m_n_groups; ++g) {
-			post_weights.row(g) = (m_log_terms_mat.row(g).array() - m_ll_g_vec[g]).exp();
+			const auto row = m_log_terms_mat.row(g);
+			const double mx = row.maxCoeff();
+			m_post_weights.row(g) = (row.array() - mx).exp();
+			const double S = m_post_weights.row(g).sum();
+			m_post_weights.row(g) /= S;
+			const double ll_g = mx + std::log(S);
+			total_neg_ll -= ll_g;
 		}
 
 		for (int k = 0; k < K; ++k) {
 			for (int g = 0; g < m_n_groups; ++g) {
-				const double pw_gk = post_weights(g, k);
+				const double pw_gk = m_post_weights(g, k);
 				const int start    = m_group_start[g];
 				const int sz       = m_group_end[g] - start;
 				for (int i = 0; i < sz; ++i) {
 					const int idx = start + i;
-					const double d_log_f_d_eta = (m_r_all_k_mat(idx, k) - m_dead[idx]) / sigma_eps;
+					const double d_log_f_d_eta = (m_r_all_k_mat(idx, k) - m_dead[idx]) * inv_eps;
 					grad.head(m_p).noalias() += pw_gk * d_log_f_d_eta * m_X.row(idx).transpose();
-					
+
 					const double wik = m_w_all_k_mat(idx, k);
 					const double d_log_f_d_log_sigma_eps = m_r_all_k_mat(idx, k) * wik - m_dead[idx] * (wik + 1.0);
 					grad[m_p] += pw_gk * d_log_f_d_log_sigma_eps;
