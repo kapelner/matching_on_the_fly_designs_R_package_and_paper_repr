@@ -109,7 +109,9 @@ SimulationFrameworkReport = R6::R6Class("SimulationFrameworkReport",
       alpha      = private$alpha
       report_cov = any(grepl("_ci$",   private$inf_types))
       report_pow = any(grepl("_pval$", private$inf_types))
-      by_cols = c("response_type", "cond_exp_func_model", "n", "p", "betaT", "design", "inference", "inference_type")
+      has_sim_mode = "simulation_mode" %in% names(dt)
+      by_cols = c("response_type", "cond_exp_func_model", "n", "p", "betaT", "design", "inference", "inference_type",
+                  if (has_sim_mode) "simulation_mode")
       if (nrow(dt) > 0L) {
         agg = dt[, {
           est_fin = is.finite(estimate)
@@ -125,7 +127,15 @@ SimulationFrameworkReport = R6::R6Class("SimulationFrameworkReport",
           }
           if (report_pow) {
             pv_fin = is.finite(pval)
-            is_zero = abs(betaT) < 1e-12
+            # For custom DGPs, use mean(true_estimand) to classify null vs alternative;
+            # fall back to betaT for the standard DGP path.
+            uses_custom_estimand = has_sim_mode &&
+              length(simulation_mode) > 0L && simulation_mode[1L] != "standard"
+            is_zero = if (uses_custom_estimand) {
+              abs(mean(true_estimand[is.finite(true_estimand)])) < 1e-12
+            } else {
+              abs(betaT) < 1e-12
+            }
             pv_fin_zero    = pv_fin & is_zero
             pv_fin_nonzero = pv_fin & !is_zero
             m_row$power  = if (any(pv_fin_nonzero)) mean(pval[pv_fin_nonzero] < alpha) else NA_real_
