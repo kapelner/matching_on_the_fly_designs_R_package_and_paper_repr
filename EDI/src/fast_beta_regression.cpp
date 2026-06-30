@@ -8,7 +8,7 @@ namespace {
 
 struct DigammaFunctor {
 	double operator()(double x) const {
-		return R::digamma(x);
+		return fast_digamma(x);
 	}
 };
 
@@ -58,9 +58,9 @@ public:
 		}
 
 		double neg_ll = - (
-			(m_weight_sum * R::lgammafn(phi)) -
-			(m_weights.array() * (mu.array() * phi).unaryExpr([](double x){ return R::lgammafn(x); })).sum() -
-			(m_weights.array() * ((1.0 - mu.array()) * phi).unaryExpr([](double x){ return R::lgammafn(x); })).sum() +
+			(m_weight_sum * std::lgamma(phi)) -
+			(m_weights.array() * (mu.array() * phi).unaryExpr([](double x){ return std::lgamma(x); })).sum() -
+			(m_weights.array() * ((1.0 - mu.array()) * phi).unaryExpr([](double x){ return std::lgamma(x); })).sum() +
 			(m_weights.array() * (mu.array() * phi - 1.0) * m_log_y.array()).sum() +
 			(m_weights.array() * ((1.0 - mu.array()) * phi - 1.0) * m_log1_y.array()).sum()
 		);
@@ -78,8 +78,9 @@ public:
 
 		grad.head(m_p) = m_X.transpose() * (m_weights.array() * d_neg_ll_d_mu.array() * d_mu_d_eta.array()).matrix();
 
+		const double digamma_phi = fast_digamma(phi);
 		double d_neg_ll_d_phi = (
-			-m_weight_sum * R::digamma(phi) +
+			-m_weight_sum * digamma_phi +
 			(m_weights.array() * mu.array() * mu_phi.unaryExpr(DigammaFunctor()).array()).sum() +
 			(m_weights.array() * (1.0 - mu.array()) * one_minus_mu_phi.unaryExpr(DigammaFunctor()).array()).sum() -
 			(m_weights.array() * mu.array() * m_log_y.array()).sum() -
@@ -134,7 +135,7 @@ public:
 				H_data[r + m_p * total_p] += s * xi[r * m_n];
 		}
 
-		double D = -m_weight_sum * R::digamma(phi);
+		double D = -m_weight_sum * fast_digamma(phi);
 		double D_phi = -m_weight_sum * R::trigamma(phi);
 		for (int i = 0; i < m_n; ++i) {
 			double mui = mu[i];
@@ -170,6 +171,7 @@ public:
 		Eigen::VectorXd tri_a = a.unaryExpr(TrigammaFunctor());
 		Eigen::VectorXd tri_b = b.unaryExpr(TrigammaFunctor());
 
+		const double trigamma_phi = R::trigamma(phi);
 		double* H_data = H.data();
 		for (int i = 0; i < m_n; ++i) {
 			const double mui = mu[i];
@@ -187,7 +189,7 @@ public:
 			for (int r = 0; r < m_p; ++r)
 				H_data[r + m_p * total_p] += cross * xi[r * m_n];
 			H(m_p, m_p) += obs_weight * phi * phi * (
-				-R::trigamma(phi) + mui * mui * tri_a[i] + (1.0 - mui) * (1.0 - mui) * tri_b[i]
+				-trigamma_phi + mui * mui * tri_a[i] + (1.0 - mui) * (1.0 - mui) * tri_b[i]
 			);
 		}
 

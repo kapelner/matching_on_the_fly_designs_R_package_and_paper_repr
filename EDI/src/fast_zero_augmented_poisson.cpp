@@ -38,71 +38,52 @@ public:
         m_p_cond(X.cols()), m_p_zi(Xzi.cols()), m_is_hurdle(is_hurdle) {}
 
     double operator()(const Eigen::VectorXd& params, Eigen::VectorXd& grad) {
-        Eigen::VectorXd beta_cond = params.head(m_p_cond);
-        Eigen::VectorXd beta_zi = params.tail(m_p_zi);
+        const Eigen::VectorXd eta_cond = m_X   * params.head(m_p_cond);
+        const Eigen::VectorXd eta_zi   = m_Xzi * params.tail(m_p_zi);
 
-        Eigen::VectorXd eta_cond = m_X * beta_cond;
-        Eigen::VectorXd eta_zi = m_Xzi * beta_zi;
+        // Vectorized precompute of per-obs transcendentals.
+        // Eigen's .array().exp() dispatches to the internal pexp kernel (AVX2,
+        // 4 doubles/cycle) — ~4-8x faster than scalar std::exp in a loop.
+        const Eigen::VectorXd lambda = eta_cond.array().min(700.0).exp();
+        const Eigen::VectorXd exp_ml = (-lambda).array().exp();  // exp(-lambda[i])
+        const Eigen::VectorXd pi     = 1.0 / (1.0 + (-eta_zi.array().max(-700.0).min(700.0)).exp());
 
-        double neg_ll = 0;
-        grad.setZero();
-        Eigen::VectorXd grad_cond = grad.head(m_p_cond);
-        Eigen::VectorXd grad_zi = grad.tail(m_p_zi);
+        double neg_ll = 0.0;
+        Eigen::VectorXd w_cond = Eigen::VectorXd::Zero(m_n);
+        Eigen::VectorXd w_zi   = Eigen::VectorXd::Zero(m_n);
 
         for (int i = 0; i < m_n; ++i) {
-            double lambda = std::exp(std::min(eta_cond[i], 700.0));
-            double pi = 1.0 / (1.0 + std::exp(-std::max(std::min(eta_zi[i], 700.0), -700.0)));
-            // pi is P(structural zero) for ZIP, P(zero) for Hurdle
+            const double lam = lambda[i];
+            const double eml = exp_ml[i];
+            const double p   = pi[i];
 
             if (m_is_hurdle) {
-                // Hurdle Poisson
                 if (m_y[i] == 0) {
-                    neg_ll -= std::log(std::max(pi, 1e-15));
-                    // d/d_eta_zi log(pi) = 1 - pi
-                    grad_zi -= m_Xzi.row(i).transpose() * (1.0 - pi);
+                    neg_ll -= std::log(std::max(p, 1e-15));
+                    w_zi[i] = -(1.0 - p);
                 } else {
-                    double log_1_minus_pi = -log1pexp(eta_zi[i]);
-                    double log_tp = m_y[i] * std::min(eta_cond[i], 700.0) - lambda - log1mexp(-lambda);
-                    neg_ll -= (log_1_minus_pi + log_tp);
-                    
-                    // d/d_eta_zi log(1-pi) = -pi
-                    grad_zi += m_Xzi.row(i).transpose() * pi;
-                    
-                    // d/d_eta_cond log_tp = y - lambda / (1 - exp(-lambda))
-                    double exp_ml = std::exp(-lambda);
-                    double d_tp = m_y[i] - lambda / (1.0 - exp_ml);
-                    grad_cond -= m_X.row(i).transpose() * d_tp;
+                    neg_ll -= (-log1pexp(eta_zi[i]) + m_y[i] * std::min(eta_cond[i], 700.0) - lam - log1mexp(-lam));
+                    w_zi[i]   = p;
+                    w_cond[i] = -(m_y[i] - lam / (1.0 - eml));
                 }
             } else {
-                // Zero-Inflated Poisson
                 if (m_y[i] == 0) {
-                    double exp_ml = std::exp(-lambda);
-                    double prob_zero = pi + (1.0 - pi) * exp_ml;
+                    const double prob_zero = p + (1.0 - p) * eml;
                     neg_ll -= std::log(std::max(prob_zero, 1e-15));
-                    
-                    // d/d_eta_zi log(prob_zero) = [pi(1-pi)(1-exp(-lambda))] / prob_zero
-                    double d_zi = (pi * (1.0 - pi) * (1.0 - exp_ml)) / prob_zero;
-                    grad_zi -= m_Xzi.row(i).transpose() * d_zi;
-                    
-                    // d/d_eta_cond log(prob_zero) = [(1-pi) * (-lambda * exp(-lambda))] / prob_zero
-                    double d_cond = ((1.0 - pi) * (-lambda * exp_ml)) / prob_zero;
-                    grad_cond -= m_X.row(i).transpose() * d_cond;
+                    const double inv_pz = 1.0 / prob_zero;
+                    w_zi[i]   = -(p * (1.0 - p) * (1.0 - eml)) * inv_pz;
+                    w_cond[i] =  (1.0 - p) * lam * eml * inv_pz;
                 } else {
-                    double log_1_minus_pi = -log1pexp(eta_zi[i]);
-                    double log_poisson = m_y[i] * std::min(eta_cond[i], 700.0) - lambda; // ignore factorial
-                    neg_ll -= (log_1_minus_pi + log_poisson);
-                    
-                    // d/d_eta_zi log(1-pi) = -pi
-                    grad_zi += m_Xzi.row(i).transpose() * pi;
-                    
-                    // d/d_eta_cond log_poisson = y - lambda
-                    grad_cond -= m_X.row(i).transpose() * (m_y[i] - lambda);
+                    neg_ll -= (-log1pexp(eta_zi[i]) + m_y[i] * std::min(eta_cond[i], 700.0) - lam);
+                    w_zi[i]   = p;
+                    w_cond[i] = -(m_y[i] - lam);
                 }
             }
         }
-        
-        grad.head(m_p_cond) = grad_cond;
-        grad.tail(m_p_zi) = grad_zi;
+
+        grad.resize(m_p_cond + m_p_zi);
+        grad.head(m_p_cond).noalias() = m_X.transpose()   * w_cond;
+        grad.tail(m_p_zi).noalias()   = m_Xzi.transpose() * w_zi;
 
         return neg_ll;
     }

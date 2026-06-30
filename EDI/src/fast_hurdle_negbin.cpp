@@ -1,6 +1,7 @@
 #include "_helper_functions.h"
 #include <RcppEigen.h>
 #include <Rmath.h>
+#include <unordered_map>
 
 using namespace Rcpp;
 using namespace Eigen;
@@ -306,17 +307,55 @@ private:
 	const int m_n;
 	const int m_p;
 
+	// Distinct-y precomputation (built once at construction)
+	std::vector<int>    m_y_slot;
+	std::vector<double> m_distinct_y;
+	std::vector<double> m_lgamma_y1;        // lgamma(y+1) per distinct y — constant
+	std::vector<double> m_lgamma_yptheta;   // preallocated; filled per operator() call
+	std::vector<double> m_digamma_yptheta;  // preallocated; filled per operator() and hessian()
+	std::vector<double> m_trigamma_yptheta; // preallocated; filled per hessian() call
+
 public:
 	TruncatedNegBinCount(const MatrixXd& X, const VectorXi& y)
-		: m_X(X), m_y(y), m_n((int)X.rows()), m_p((int)X.cols()) {}
+		: m_X(X), m_y(y), m_n((int)X.rows()), m_p((int)X.cols()), m_y_slot(X.rows(), -1)
+	{
+		std::unordered_map<int, int> seen;
+		for (int i = 0; i < m_n; ++i) {
+			const int yi = m_y[i];
+			auto it = seen.find(yi);
+			if (it == seen.end()) {
+				const int slot = (int)m_distinct_y.size();
+				seen[yi] = slot;
+				m_distinct_y.push_back((double)yi);
+				m_lgamma_y1.push_back(R::lgammafn((double)yi + 1.0));
+				m_y_slot[i] = slot;
+			} else {
+				m_y_slot[i] = it->second;
+			}
+		}
+		const int nd = (int)m_distinct_y.size();
+		m_lgamma_yptheta.resize(nd);
+		m_digamma_yptheta.resize(nd);
+		m_trigamma_yptheta.resize(nd);
+	}
 
 	double operator()(const Eigen::Ref<const VectorXd>& params, Eigen::Ref<VectorXd> grad) {
 		const VectorXd beta = params.head(m_p);
-		const double log_theta = params[m_p];
-		const double theta = std::exp(log_theta);
+		const double theta = std::exp(params[m_p]);
+		const double log_r = std::log(theta);
+		const double lgamma_r = R::lgammafn(theta);
+		const double digamma_r = fast_digamma(theta);
 
 		VectorXd eta = (m_X * beta).array().min(700.0).matrix();
 		VectorXd mu = eta.array().exp().max(1e-10).matrix();
+
+		// Fill per-call distinct-y tables
+		const int nd = (int)m_distinct_y.size();
+		for (int k = 0; k < nd; ++k) {
+			const double ypt = m_distinct_y[k] + theta;
+			m_lgamma_yptheta[k]  = R::lgammafn(ypt);
+			m_digamma_yptheta[k] = fast_digamma(ypt);
+		}
 
 		double neg_ll = 0.0;
 		VectorXd eta_score = VectorXd::Zero(m_n);
@@ -324,28 +363,33 @@ public:
 
 		for (int i = 0; i < m_n; ++i) {
 			const double mu_i = mu[i];
-			const double r = theta;
-			const double yi = static_cast<double>(m_y[i]);
+			const double yi = m_distinct_y[m_y_slot[i]];
+			const int slot = m_y_slot[i];
+			const double denom = theta + mu_i;
+			const double log_denom = std::log(denom);
 
-			double log_p0 = r * (std::log(r) - std::log(r + mu_i));
+			const double log_p0 = theta * (log_r - log_denom);
 			double p0 = std::exp(log_p0);
 			p0 = std::min(std::max(p0, 1e-12), 1.0 - 1e-12);
 			const double trunc_denom = 1.0 - p0;
 
-			neg_ll -= R::dnbinom_mu(yi, r, mu_i, true) - std::log(trunc_denom);
+			// Explicit NB log-PMF — replaces R::dnbinom_mu overhead
+			const double log_mu_i = std::log(mu_i);
+			neg_ll -= m_lgamma_yptheta[slot] - lgamma_r - m_lgamma_y1[slot]
+			        + theta * (log_r - log_denom)
+			        + yi * (log_mu_i - log_denom)
+			        - std::log(trunc_denom);
 
-			const double standard_eta_score = yi - mu_i * (yi + r) / (r + mu_i);
-			const double trunc_eta_corr = -mu_i * p0 * r / (trunc_denom * (r + mu_i));
+			const double standard_eta_score = yi - mu_i * (yi + theta) / denom;
+			const double trunc_eta_corr = -mu_i * p0 * theta / (trunc_denom * denom);
 			eta_score[i] = standard_eta_score + trunc_eta_corr;
 
 			const double dlogf_dr =
-				R::digamma(yi + r) - R::digamma(r) +
-				std::log(r) - std::log(r + mu_i) +
-				1.0 - (yi + r) / (r + mu_i);
-			const double dlogp0_dr =
-				std::log(r) - std::log(r + mu_i) +
-				1.0 - r / (r + mu_i);
-			score_log_theta += r * (dlogf_dr + (p0 * dlogp0_dr) / trunc_denom);
+				m_digamma_yptheta[slot] - digamma_r +
+				log_r - log_denom +
+				1.0 - (yi + theta) / denom;
+			const double dlogp0_dr = log_r - log_denom + 1.0 - theta / denom;
+			score_log_theta += theta * (dlogf_dr + (p0 * dlogp0_dr) / trunc_denom);
 		}
 
 		grad.resize(m_p + 1);
@@ -360,24 +404,36 @@ public:
 		MatrixXd H = MatrixXd::Zero(total_p, total_p);
 		const VectorXd beta = params.head(m_p);
 		const double r = std::exp(params[m_p]);
+		const double log_r = std::log(r);
+		const double digamma_r = fast_digamma(r);
+		const double trigamma_r = R::trigamma(r);
 		VectorXd eta = (m_X * beta).array().min(700.0).matrix();
 		VectorXd beta_weights = VectorXd::Zero(m_n);
 		VectorXd cross_weights = VectorXd::Zero(m_n);
 
+		// Fill per-call distinct-y tables for hessian
+		const int nd = (int)m_distinct_y.size();
+		for (int k = 0; k < nd; ++k) {
+			const double ypt = m_distinct_y[k] + r;
+			m_digamma_yptheta[k]  = fast_digamma(ypt);
+			m_trigamma_yptheta[k] = R::trigamma(ypt);
+		}
+
 		for (int i = 0; i < m_n; ++i) {
 			const double mu_i = std::max(std::exp(eta[i]), 1e-10);
-			const double yi = static_cast<double>(m_y[i]);
+			const double yi = m_distinct_y[m_y_slot[i]];
+			const int slot = m_y_slot[i];
 			const double denom = r + mu_i;
 			const double denom_sq = denom * denom;
+			const double log_denom = std::log(denom);
 
-			double log_p0 = r * (std::log(r) - std::log(denom));
+			double log_p0 = r * (log_r - log_denom);
 			double p0 = std::exp(log_p0);
 			p0 = std::min(std::max(p0, 1e-12), 1.0 - 1e-12);
 			const double q0 = 1.0 - p0;
 
 			const double c_eta = r * mu_i / denom;
-			const double dlogp0_dr =
-				std::log(r) - std::log(denom) + 1.0 - r / denom;
+			const double dlogp0_dr = log_r - log_denom + 1.0 - r / denom;
 
 			const double d_score_eta_d_eta =
 				- (yi + r) * r * mu_i / denom_sq
@@ -392,14 +448,13 @@ public:
 			cross_weights[i] = -d_score_eta_d_log_r;
 
 			const double dlogf_dr =
-				R::digamma(yi + r) - R::digamma(r) +
-				std::log(r) - std::log(denom) +
+				m_digamma_yptheta[slot] - digamma_r +
+				log_r - log_denom +
 				1.0 - (yi + r) / denom;
 			const double d2logf_dr2 =
-				R::trigamma(yi + r) - R::trigamma(r) +
+				m_trigamma_yptheta[slot] - trigamma_r +
 				1.0 / r - 1.0 / denom + (yi - mu_i) / denom_sq;
-			const double d2logp0_dr2 =
-				1.0 / r - 1.0 / denom - mu_i / denom_sq;
+			const double d2logp0_dr2 = 1.0 / r - 1.0 / denom - mu_i / denom_sq;
 			const double p0_over_q0 = p0 / q0;
 			const double d_score_log_r_d_log_r =
 				r * (dlogf_dr + p0_over_q0 * dlogp0_dr) +

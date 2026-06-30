@@ -592,9 +592,15 @@ Expected payoff: eliminate 15,000 heap allocs/call → cut full-path time from 2
 | `EDI/src/optimal_design_search.cpp` | Cached matrix diagonals; raw storage access in swap-scan loops |
 | `EDI/src/pair_dist_helpers.cpp` | Raw column-major pointer rewrite replacing Rcpp accessor overhead |
 | `EDI/src/fast_zinb.cpp` | Distinct-y construction precompute; digamma/lgamma/trigamma hoisting; pow→exp(log) replacement |
+| `EDI/src/fast_negbin_regression.cpp` | Distinct-y tables for lgamma/digamma(y+θ); hoist lgamma(θ), digamma(θ), log(θ); explicit NB log-PMF replacing R::dnbinom_mu; fast_digamma; preallocated table vectors |
+| `EDI/src/fast_hurdle_negbin.cpp` | TruncatedNegBinCount: distinct-y tables (lgamma/digamma/trigamma(y+θ)); hoist lgamma(θ), digamma(θ), log(θ) per step; explicit NB log-PMF + truncation correction; fast_digamma throughout; preallocated table vectors |
+| `EDI/src/fast_beta_regression.cpp` | DigammaFunctor: R::digamma → fast_digamma; R::lgammafn → std::lgamma in all unaryExpr lambdas and scalar calls; hoist digamma(φ) per operator() step; hoist trigamma(φ) before expected_hessian inner loop |
+| `EDI/src/fast_zero_augmented_poisson.cpp` | operator(): per-row rank-1 grad updates (`m_X.row(i).transpose() * scalar`) → scalar weight vectors w_cond[n], w_zi[n] filled in loop; single GEMV `X^T*w_cond`, `Xzi^T*w_zi` after loop (both ZIP and hurdle paths) |
+| `EDI/src/fast_zinb.cpp` | operator(): same GEMV refactor; additionally moved phi=pow(...) inside yi<=0 branch (avoids pow for ~60% of obs); replaced `log(theta/(theta+mu))` with `log_theta - log_denom` for positive obs (saves 1 log call per positive obs) |
+| `EDI/src/fast_log_binomial_regression.cpp` | IRLS backtracking refactor: (1) `ll_curr` cached across iterations (avoids one `loglik_constrained_binomial` call per accepted IRLS step); (2) precompute `delta_eta = X_free * direction` per iteration so each backtracking probe is O(n) vector-add + `loglik_from_eta` (no GEMV); (3) preallocate `eta_try(n)` buffer outside while-loop to avoid per-halving heap allocation; added `loglik_from_eta` helper taking precomputed eta directly |
 | `EDI/src/_helper_functions.h` | Shared contiguous-group layout helper introduced in Phase 2 |
 
-**Unchanged from baseline:** `fast_adjacent_category_logit.cpp`, `fast_zero_augmented_poisson.cpp`, `fast_negbin_regression.cpp`, `fast_gaussian_lmm.cpp`, `fast_coxph_regression.cpp`.
+**Unchanged from baseline:** `fast_adjacent_category_logit.cpp`, `fast_gaussian_lmm.cpp`, `fast_coxph_regression.cpp`.
 
 ---
 
@@ -614,6 +620,11 @@ Expected payoff: eliminate 15,000 heap allocs/call → cut full-path time from 2
 | `a_optimal_search` | direct search | 0.0130 | 0.0120 | −8% |
 | `zinb` | estimate-only fit | 0.0040 | 0.0030 | −25% (1.33x) |
 | `weibull_frailty` | estimate-only fit (v2.4+exp-reduction) | 0.0080 | 0.0050 | −37% |
+| `hurdle_negbin` (TruncatedNegBinCount) | estimate_only (benchmark n=1000) | 13.63ms | 1.85ms | **−86%** (7.4x); distinct-y lgamma/digamma tables + explicit NB log-PMF + fast_digamma |
+| `beta_regression` | estimate_only (benchmark n=1000) | 7.93ms | 1.77ms | **−78%** (4.5x); std::lgamma + fast_digamma in DigammaFunctor + hoist scalars |
+| `zero_inflated_poisson` (ZIP) | estimate_only (micro n=1000) | 4.94ms | 0.99ms | **−80%** (5x); per-row rank-1 grad updates → weight vectors + GEMV |
+| `zinb` | estimate_only (micro n=1000) | 2.73ms | 1.15ms | **−58%** (2.4x); same GEMV + hoist phi inside zero branch + log(θ/(θ+μ))→log_theta−log_denom |
+| `log_binomial` (IRLS) | estimate (benchmark n=1000) | 9.40ms | 2.16ms | **−77%** (4.4x); ll_curr caching across IRLS iters + precompute delta_eta for O(n) backtracking probes (eliminates GEMV per backtracking halving) |
 
 ---
 
@@ -677,13 +688,39 @@ Implemented `log_sum_exp_and_weights(x, weights)`: computes lse(x) and fills `we
 File: `EDI/src/fast_zinb.cpp`, `EDI/src/fast_negbin_regression.cpp`
 Added `m_lgamma_yptheta` and `m_digamma_yptheta` as preallocated member vectors (sized at construction when the distinct-y count is known) to `ZeroInflatedNegBin` and `NBLogLik`. The per-call `std::vector<double>(nd)` allocations in `operator()` are replaced with in-place fills of the preallocated buffers — eliminates 2 heap allocations per optimizer step for each model.
 
-**TODO-10: Full re-benchmark after all retained changes**
-Tooling: existing benchmark scripts
-Run all GLMM-family and non-GLMM kernels on the fully retained tree in a single unified benchmark session to get updated baseline numbers for each kernel. Update the summary table above. This is bookkeeping, not optimization, but important for tracking future regression.
+**TODO-10: Full re-benchmark after all retained changes** ✓ DONE
+Tooling: `benchmark/benchmark_model_fits.R` → `package_metadata/benchmark_model_fits.md`
+Re-run 2026-06-30 (latest: 21:48 JST). 73 paths benchmarked; no regressions. `InferenceContinQuantileRegr` shows ~1.0x (p>0.05, not significant, untouched code). HurdleNegBin: 13.63ms → 1.85ms (−86%). BetaRegr: 7.93ms → 1.77ms (−78%). All other optimized kernels at or above prior baseline.
+Full re-run 2026-07-01 (includes TODO-15/16 GEMV fixes and TODO-17 log-binomial backtracking): LogBinomial estimate 9.40ms → 2.16ms (−77%); ZIP estimate 5.07ms → 4.01ms (−21%); ZINB estimate 2.11ms → 1.69ms (−20%); HurdlePoisson estimate 1.93ms → 1.59ms (−18%); HurdleNegBin estimate → 1.72ms (−87% vs 13.63ms); BetaRegr estimate → 1.56ms (−80% vs 7.93ms).
 
 **TODO-11: Gaussian LMM — profile at relevant scale** ✓ DONE
 File: `EDI/src/fast_gaussian_lmm.cpp`
 Profile gathered (v2.5 section above). Findings: estimate-only path is R-overhead-bound (neg_ll_and_grad = 9.6% of wall time at n=2000, 335 µs/call); full-path Hessian burns ~21% on heap allocation from ~15,000 tiny Eigen::MatrixXd allocs/call (G=1000 groups × ~15 allocs). Closed-form scalar Hessian for m=1 and m=2 would cut full-path by ~20%, but gaussian_lmm_full is only 2.6% of sweep total — net gain ~0.5%. No changes made.
+
+**TODO-15: ZAP/ZIP — replace per-row rank-1 grad updates with weight vectors + GEMV** ✓ DONE
+File: `EDI/src/fast_zero_augmented_poisson.cpp`
+Replaced all `m_X.row(i).transpose() * scalar` and `m_Xzi.row(i).transpose() * scalar` rank-1 gradient updates in `operator()` with scalar weight accumulation into `w_cond[n]` and `w_zi[n]` vectors, followed by single `m_X.transpose() * w_cond` and `m_Xzi.transpose() * w_zi` GEMV calls after the observation loop. Applies to both ZIP and hurdle branches. Root cause: row access on column-major matrix is stride-n (non-contiguous); 2×n scattered writes per optimizer step were preventing BLAS vectorization. Micro-benchmark (n=1000): 4.94ms → 0.99ms (−80%, 5x). Correctness verified on ZIP and hurdle data.
+
+**TODO-16: ZINB — GEMV + phi hoisting + log_denom reuse** ✓ DONE
+File: `EDI/src/fast_zinb.cpp`
+Same per-row rank-1 → GEMV refactor for `m_Xc.row(i).transpose()` and `m_Xz.row(i).transpose()` in `operator()`. Additionally: (1) moved `phi = pow(theta/(theta+mu), theta)` inside `yi<=0.0` branch — avoids ~60% of pow calls (positive obs never use phi); (2) replaced `phi = pow(...)` with `phi = exp(theta*(log_theta - log_denom))` to reuse the precomputed `log_denom`; (3) for positive obs, replaced `theta*log(theta/(theta+mu)) + yi*log(mu/(theta+mu))` with `theta*(log_theta - log_denom) + yi*(ec - log_denom)` — saves 2 log calls per positive obs. Micro-benchmark (n=1000): 2.73ms → 1.15ms (−58%, 2.4x). Correctness verified.
+
+**TODO-13: HurdleNegBin — special-function hoisting in TruncatedNegBinCount** ✓ DONE
+File: `EDI/src/fast_hurdle_negbin.cpp`
+Applied the same distinct-y precomputation + fast_digamma pattern as negbin (TODO-6) to `TruncatedNegBinCount::operator()` and `hessian()`: added `m_y_slot[]`, `m_distinct_y[]`, `m_lgamma_y1[]`, `m_lgamma_yptheta[]`, `m_digamma_yptheta[]`, `m_trigamma_yptheta[]` members; constructor builds distinct-y table via `std::unordered_map`; operator() hoists `lgamma_r`, `digamma_r`, `log_r`, fills lgamma/digamma tables, replaces `R::dnbinom_mu` with explicit NB log-PMF (`m_lgamma_yptheta[slot] - lgamma_r - m_lgamma_y1[slot] + r*(log_r - log_denom) + y*(log_mu_i - log_denom) - log(trunc_denom)`), replaces `R::digamma(y+r) - R::digamma(r)` with table lookup; hessian() hoists digamma_r, trigamma_r, log_r, fills digamma/trigamma tables. Benchmark (n=1000): 13.63ms → 1.85ms (−86%, 7.4x speedup). Correctness verified: coefficients within noise of known truth.
+
+**TODO-14: BetaRegr — std::lgamma + fast_digamma + scalar hoisting** ✓ DONE
+File: `EDI/src/fast_beta_regression.cpp`
+Three targeted changes: (1) `DigammaFunctor::operator()`: `R::digamma(x)` → `fast_digamma(x)` — applies to all per-element digamma calls in `operator()` and `hessian()` unaryExpr passes; (2) all `R::lgammafn(x)` in unaryExpr lambdas and scalar use → `std::lgamma(x)` (avoids R error-handling dispatch overhead per element); (3) hoist `const double digamma_phi = fast_digamma(phi)` before `d_neg_ll_d_phi` computation in `operator()`, and `const double trigamma_phi = R::trigamma(phi)` before inner loop in `expected_hessian()` (was recomputed per observation). Benchmark (n=1000): 7.93ms → 1.77ms (−78%, 4.5x speedup). Correctness verified: coefficients within noise of known truth.
+
+**TODO-17: LogBinomial — IRLS backtracking refactor** ✓ DONE
+File: `EDI/src/fast_log_binomial_regression.cpp`
+Three changes applied to `fit_constrained_binomial_cpp_impl` (used by both log-link and identity-link paths):
+(1) **Cache `ll_curr` across iterations**: initialize once before IRLS loop; carry forward `ll_curr = ll_new` after each accepted step — eliminates one `loglik_constrained_binomial(X, y, beta)` call per accepted IRLS iteration (each call does an O(n*p) GEMV + O(n) exp/log1p).
+(2) **Precompute `delta_eta = X_free * direction` once per IRLS iteration**: each backtracking probe becomes O(n) vector-add `eta_try = eta + step * delta_eta` + O(n) `loglik_from_eta` scalar loop (no GEMV). Previously: each backtracking `loglik_constrained_binomial(X, y, beta_new)` recomputed X*beta_new as a full GEMV.
+(3) **Preallocate `eta_try(n)` before while-loop**: avoids one heap allocation per backtracking halving.
+Added `loglik_from_eta` helper: evaluates the log-likelihood directly from a precomputed eta vector (identical scalar loop to `loglik_constrained_binomial` but skips the X*beta GEMV).
+perf profile before (n=1000, 100 IRLS iters): 23.46% `log1p`, 19.19% XtWX GEMM, 12.38% `loglik_constrained_binomial` overhead. After: log1p reduced to 17.19% (caching eliminates one loglik pass per accepted step). Benchmark (n=1000): 9.40ms → 2.16ms (−77%, 4.4x speedup). Correctness verified vs `glm(family=binomial(link="log"))`.
 
 **TODO-12: Clogit-plus-GLMM — add canonical-package testthat coverage** ✓ DONE (pre-existing)
 File: `EDI/tests/testthat/test-clogit-plus-glmm-cpp-equivalence.R`

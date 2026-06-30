@@ -77,21 +77,17 @@ public:
     }
 
     double operator()(const Eigen::VectorXd& par, Eigen::VectorXd& grad) {
-        const Eigen::VectorXd bc  = par.head(m_pc);
-        const Eigen::VectorXd bz  = par.segment(m_pc, m_pz);
-        const double log_theta    = par[m_pc + m_pz];
-        const double theta        = std::exp(std::min(log_theta, 700.0));
+        const double log_theta = par[m_pc + m_pz];
+        const double theta     = std::exp(std::min(log_theta, 700.0));
 
-        const Eigen::VectorXd eta_c = m_Xc * bc;
-        const Eigen::VectorXd eta_z = m_Xz * bz;
-
-        grad.setZero(m_pc + m_pz + 1);
+        const Eigen::VectorXd eta_c = m_Xc * par.head(m_pc);
+        const Eigen::VectorXd eta_z = m_Xz * par.segment(m_pc, m_pz);
 
         // Hoist theta-only special functions out of the observation loop.
         const double digamma_theta = fast_digamma(theta);
         const double lgamma_theta  = R::lgammafn(theta);
 
-        // Fill preallocated per-distinct-y tables for lgamma(y+theta) and digamma(y+theta).
+        // Fill preallocated per-distinct-y tables.
         const int nd = static_cast<int>(m_distinct_y.size());
         for (int k = 0; k < nd; ++k) {
             const double ypt = m_distinct_y[k] + theta;
@@ -101,42 +97,49 @@ public:
 
         double nll = 0.0;
         double d_log_theta = 0.0;
+        Eigen::VectorXd w_c = Eigen::VectorXd::Zero(m_n);
+        Eigen::VectorXd w_z = Eigen::VectorXd::Zero(m_n);
 
         for (int i = 0; i < m_n; ++i) {
-            const double yi   = m_y[i];
-            const double ec   = eta_c[i];
-            const double ez   = eta_z[i];
-            const double p    = sigmoid_zinb(ez);
-            const double mu   = std::exp(ec);
-            const double phi  = std::pow(theta / (theta + mu), theta);
+            const double yi  = m_y[i];
+            const double ec  = eta_c[i];
+            const double ez  = eta_z[i];
+            const double p   = sigmoid_zinb(ez);
+            const double mu  = std::exp(ec);
+            const double denom     = theta + mu;
+            const double log_denom = std::log(denom);
 
             if (yi <= 0.0) {
-                const double den  = p + (1.0 - p) * phi;
+                // phi = (theta/(theta+mu))^theta = exp(theta*(log_theta - log_denom))
+                const double phi = std::exp(theta * (log_theta - log_denom));
+                const double den = p + (1.0 - p) * phi;
                 nll -= std::log(den);
 
-                const double d_den_d_ez = p * (1.0 - p) * (1.0 - phi);
-                grad.segment(m_pc, m_pz) -= (d_den_d_ez / den) * m_Xz.row(i).transpose();
+                const double inv_den = 1.0 / den;
+                w_z[i] = -(p * (1.0 - p) * (1.0 - phi)) * inv_den;
 
-                const double d_phi_d_ec = -mu * theta * phi / (theta + mu);
-                grad.head(m_pc) -= ((1.0 - p) * d_phi_d_ec / den) * m_Xc.row(i).transpose();
+                const double d_phi_d_ec = -mu * theta * phi / denom;
+                w_c[i] = -((1.0 - p) * d_phi_d_ec) * inv_den;
 
-                const double d_phi_d_theta = phi * (std::log(theta / (theta + mu)) + 1.0 - theta / (theta + mu));
-                d_log_theta -= (1.0 - p) * d_phi_d_theta * theta / den;
+                const double d_phi_d_theta = phi * (log_theta - log_denom + 1.0 - theta / denom);
+                d_log_theta -= (1.0 - p) * d_phi_d_theta * theta * inv_den;
             } else {
-                nll -= std::log(1.0 - p);
-                nll -= (m_lgamma_yptheta[m_y_slot[i]] - lgamma_theta - m_lgamma_y1[m_y_slot[i]]);
-                nll -= theta * std::log(theta / (theta + mu)) + yi * std::log(mu / (theta + mu));
+                const int slot = m_y_slot[i];
+                nll -= -lse_zinb(ez)  // log(1-p)
+                     + m_lgamma_yptheta[slot] - lgamma_theta - m_lgamma_y1[slot]
+                     + theta * (log_theta - log_denom) + yi * (ec - log_denom);
 
-                grad.segment(m_pc, m_pz) += p * m_Xz.row(i).transpose();
+                w_z[i] = p;
+                w_c[i] = -(yi - mu * (yi + theta) / denom);
 
-                const double d_nb_d_ec = (yi - mu * (yi + theta) / (theta + mu));
-                grad.head(m_pc) -= d_nb_d_ec * m_Xc.row(i).transpose();
-
-                const double d_nb_d_theta = (m_digamma_yptheta[m_y_slot[i]] - digamma_theta + std::log(theta / (theta + mu)) + 1.0 - (yi + theta) / (theta + mu));
-                d_log_theta -= d_nb_d_theta * theta;
+                d_log_theta -= (m_digamma_yptheta[slot] - digamma_theta + log_theta - log_denom + 1.0 - (yi + theta) / denom) * theta;
             }
         }
-        grad[m_pc + m_pz] = d_log_theta;
+
+        grad.resize(m_pc + m_pz + 1);
+        grad.head(m_pc).noalias()          = m_Xc.transpose() * w_c;
+        grad.segment(m_pc, m_pz).noalias() = m_Xz.transpose() * w_z;
+        grad[m_pc + m_pz]                  = d_log_theta;
         return nll;
     }
 

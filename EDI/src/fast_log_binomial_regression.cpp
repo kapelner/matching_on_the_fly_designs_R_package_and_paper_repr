@@ -93,6 +93,25 @@ bool all_finite_mat(const Eigen::Ref<const Eigen::MatrixXd>& X) {
   return true;
 }
 
+// Evaluate log-likelihood directly from precomputed eta (avoids X*beta GEMV).
+inline double loglik_from_eta(const Eigen::VectorXd& eta,
+                               const Eigen::Ref<const Eigen::VectorXd>& y,
+                               BinomialConstrainedLink link_type) {
+  const int n = (int)eta.size();
+  double ll = 0.0;
+  for (int i = 0; i < n; ++i) {
+    const double ei = eta[i];
+    if (link_type == BinomialConstrainedLink::kLog) {
+      if (ei >= kMaxEtaLog) return R_NegInf;
+      ll += y[i] * ei + (1.0 - y[i]) * std::log1p(-std::exp(ei));
+    } else {
+      if (ei <= kMinMu || ei >= kMaxMu) return R_NegInf;
+      ll += y[i] * std::log(ei) + (1.0 - y[i]) * std::log1p(-ei);
+    }
+  }
+  return ll;
+}
+
 List fit_constrained_binomial_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& X,
                                        const Eigen::Ref<const Eigen::VectorXd>& y,
                                        BinomialConstrainedLink link_type,
@@ -139,11 +158,15 @@ List fit_constrained_binomial_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& 
   Eigen::VectorXd w = Eigen::VectorXd::Constant(n, 1.0);
   Eigen::VectorXd z_adj(n);
 
+  // Cache ll at current beta — carried forward across iterations to avoid one
+  // loglik_constrained_binomial call per accepted step.
+  double ll_curr = loglik_constrained_binomial(X, y, beta, link_type);
+
   int iterations = 0;
   for (int iter = 0; iter < maxit; ++iter) {
     iterations = iter + 1;
-    Eigen::VectorXd eta = eta_fixed + X_free * beta_free;
-    
+    const Eigen::VectorXd eta = eta_fixed + X_free * beta_free;
+
     // In-place update of mu and w to avoid temporary arrays
     for (int i = 0; i < n; ++i) {
         double ei = eta[i];
@@ -196,16 +219,24 @@ List fit_constrained_binomial_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& 
       return List::create(_["b"] = beta, _["mu_hat"] = mu, _["working_weights"] = w, _["converged"] = false);
     }
 
-    const double ll_curr = loglik_constrained_binomial(X, y, beta, link_type);
+    // Precompute the step direction in eta-space once per IRLS iteration so
+    // each backtracking probe is a cheap O(n) vector-add + scalar scan rather
+    // than a full O(n*p) GEMV inside loglik_constrained_binomial.
+    const Eigen::VectorXd delta_eta = X_free * (beta_free_target - beta_free);
+
     double step = 1.0;
+
     Eigen::VectorXd beta_new = beta;
     Eigen::VectorXd beta_free_new = beta_free;
+    Eigen::VectorXd eta_try(n);
     bool accepted = false;
     while (step >= 1e-8) {
-      beta_free_new = beta_free + step * (beta_free_target - beta_free);
-      beta_new = expand_free_params(beta_free_new, beta, fixed_spec);
-      const double ll_new = loglik_constrained_binomial(X, y, beta_new, link_type);
+      eta_try.noalias() = eta + step * delta_eta;
+      const double ll_new = loglik_from_eta(eta_try, y, link_type);
       if (R_finite(ll_new) && ll_new >= ll_curr - 1e-10) {
+        beta_free_new = beta_free + step * (beta_free_target - beta_free);
+        beta_new = expand_free_params(beta_free_new, beta, fixed_spec);
+        ll_curr = ll_new;  // carry forward — avoids recomputing at next iter start
         accepted = true;
         break;
       }
