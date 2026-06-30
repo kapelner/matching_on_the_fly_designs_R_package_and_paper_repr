@@ -403,16 +403,47 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     #' @param custom_replication_data_generator Optional function for custom
     #'   replication data. When supplied, it is called as
     #'   \code{fn(state, rep)} and must return a list containing at least
-    #'   \code{X} and \code{y_linear_model}.
+    #'   \code{X} and \code{y_linear_model}. Any additional fields in the
+    #'   returned list (e.g. latent frailty draws) are passed forward as
+    #'   \code{rep_data} to \code{custom_apply_treatment_and_noise} and
+    #'   \code{custom_true_estimand}.
     #'
     #' @param custom_apply_treatment_and_noise Optional function for custom
-    #'   response generation. When supplied, it is called as
-    #'   \code{fn(y_linear_model, w, state)} and must return a list with
-    #'   components \code{y} and \code{dead}.
+    #'   response generation. Signature: \code{fn(y_linear_model, w, rep_data, state)}.
+    #'   \code{w} is in \{-1, +1\} format; convert with \code{(w+1)/2} for \{0,1\}
+    #'   semantics. \code{rep_data} is the full list returned by
+    #'   \code{custom_replication_data_generator} (or \code{NULL} for the standard
+    #'   path). Must return a list with components \code{y} and \code{dead}.
+    #'   Three-argument functions \code{fn(y_linear_model, w, state)} are still
+    #'   accepted for backwards compatibility.
     #'
-    #' @param custom_true_estimand Optional function for a custom true
-    #'   estimand. When supplied, it is called as
-    #'   \code{fn(y_linear_model, state)} and must return a numeric scalar.
+    #' @param custom_true_estimand Optional function for a custom true estimand.
+    #'   Signature: \code{fn(y_linear_model, X, w, rep_data, state)}.
+    #'   Called once per design class per replication \emph{after} the design
+    #'   completes, so \code{w} (in \{-1, +1\} format) and \code{X} reflect the
+    #'   realized assignment. Must return a numeric scalar. When supplied, its
+    #'   return value is used as the ground truth for \emph{all} inference classes
+    #'   (overriding the \code{is_mean_diff} gate). Three-argument functions
+    #'   \code{fn(y_linear_model, state)} are still accepted for backwards
+    #'   compatibility (they will not receive \code{X} or \code{w}).
+    #'
+    #' @param dgp_params Optional named list of DGP configuration values (e.g.
+    #'   \code{list(frailty_dist = "gamma", censoring_rate = 0.8)}). Injected into
+    #'   \code{state} as \code{state\$dgp_params} and accessible in all three
+    #'   custom-DGP hooks. Recommended over using closures to pass DGP parameters.
+    #'
+    #' @param custom_dgp Optional function for a fully custom DGP. Signature:
+    #'   \code{fn(n, p, rep, state)} returning a list with components
+    #'   \code{X} (data.frame, \code{n} x \code{p}),
+    #'   \code{w} (integer vector in \{0, 1\}, length \code{n}),
+    #'   \code{y} (numeric, length \code{n}),
+    #'   \code{dead} (integer \{0,1\} or \code{NULL} for non-survival),
+    #'   \code{true_estimand} (numeric scalar, optional).
+    #'   When supplied, the design class acts as a data container only; it does
+    #'   \emph{not} run its own randomization or matching. Requires a fixed design
+    #'   class (not \code{DesignSeqOneByOne} variants). Cannot be combined with
+    #'   \code{custom_replication_data_generator} or
+    #'   \code{custom_apply_treatment_and_noise}.
     #'
     #' @param verbose Logical.  If \code{TRUE}, prints a message for every
     #'   replication and for every \code{(design, inference)} pair that is
@@ -546,6 +577,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       custom_replication_data_generator = NULL,
       custom_apply_treatment_and_noise = NULL,
       custom_true_estimand = NULL,
+      dgp_params = list(),
+      custom_dgp = NULL,
       verbose                    = TRUE,
       keep_all_intermediate_data = FALSE,
       turn_off_asserts_for_speed = TRUE,
@@ -638,6 +671,18 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$custom_replication_data_generator = custom_replication_data_generator
       private$custom_apply_treatment_and_noise = custom_apply_treatment_and_noise
       private$custom_true_estimand = custom_true_estimand
+      if (!is.null(custom_dgp)) {
+        if (!is.null(custom_replication_data_generator) || !is.null(custom_apply_treatment_and_noise))
+          stop("custom_dgp cannot be combined with custom_replication_data_generator or custom_apply_treatment_and_noise")
+        if (!is.function(custom_dgp))
+          stop("custom_dgp must be a function")
+        if (all(betaT_values != 0))
+          warning("custom_dgp is set; betaT is ignored as the true estimand comes from the DGP function")
+      }
+      if (!isTRUE(random_X_draws) && !is.null(custom_replication_data_generator))
+        warning("custom_replication_data_generator overrides random_X_draws=FALSE; a new X will be drawn every replication")
+      private$dgp_params = if (is.null(dgp_params)) list() else dgp_params
+      private$custom_dgp = custom_dgp
       private$verbose                    = verbose
       private$turn_off_asserts_for_speed = turn_off_asserts_for_speed
       
@@ -1069,6 +1114,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           custom_replication_data_generator = private$custom_replication_data_generator,
           custom_apply_treatment_and_noise = private$custom_apply_treatment_and_noise,
           custom_true_estimand = private$custom_true_estimand,
+          dgp_params = private$dgp_params,
+          custom_dgp = private$custom_dgp,
           design_classes = private$design_classes, design_labels = private$design_labels, design_params = private$design_params,
           inference_classes = private$inference_classes, inference_labels = private$inference_labels, inference_ctor_params = private$inference_constructor_params,
           inf_types = private$inf_types, alpha = private$alpha, B_boot = private$B_boot, r_rand = private$r_rand,
@@ -1635,7 +1682,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
               for (di in seq_along(private$design_classes)) {
                 design_gen  = private$design_classes[[di]]; design_name = private$design_labels[[di]]
                 design_extra = if (!is.null(private$design_params)) private$design_params[[di]] else list()
-                des_obj = private$.build_design(design_gen, X, y_linear_model, design_extra)
+                des_obj = private$.build_design(design_gen, X, y_linear_model, design_extra, rep_data = rep_data)
                 private$all_intermediate_data[[rep_slot]]$designs[[design_name]] = des_obj
                 if (is.null(des_obj)) next
                 for (ii in seq_along(private$inference_classes)) {
@@ -1770,6 +1817,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     custom_replication_data_generator = NULL,
     custom_apply_treatment_and_noise = NULL,
     custom_true_estimand = NULL,
+    dgp_params = NULL,
+    custom_dgp = NULL,
     verbose          = NULL,
     results_filename = NULL,
     simulation_start_time = NULL,
@@ -2645,9 +2694,15 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         data$y_linear_model = y_linear_model
         data
       }
-      apply_treatment_and_noise = function(y_linear_model, w) {
+      apply_treatment_and_noise = function(y_linear_model, w, rep_data = NULL) {
         if (!is.null(state$custom_apply_treatment_and_noise)) {
-          out = state$custom_apply_treatment_and_noise(y_linear_model, w, state_for_rep())
+          fn = state$custom_apply_treatment_and_noise
+          fn_args = names(formals(fn))
+          out = if ("rep_data" %in% fn_args || "..." %in% fn_args) {
+            fn(y_linear_model, w, rep_data, state_for_rep())
+          } else {
+            fn(y_linear_model, w, state_for_rep())
+          }
           if (!is.list(out) || is.null(out$y) || is.null(out$dead)) {
             stop("custom_apply_treatment_and_noise must return a list with 'y' and 'dead'")
           }
@@ -2701,34 +2756,32 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         as.numeric(data$y_cont - mean(data$y_cont))
       }
       X = data$X
-      
+      rep_data = data  # full CRDG output; passed to custom hooks so extra fields (e.g. frailty draws) survive
+
       # True ATE calculation logic (extracted from compute_true_mean_diff_ate)
       clamp = function(x, lo, hi) {
         pmin(hi, pmax(lo, x))
       }
-      true_mean_diff_ate = if (!is.null(state$custom_true_estimand)) {
-        as.numeric(state$custom_true_estimand(y_linear_model, state_for_rep()))[1L]
-      } else {
-        switch(state$response_type,
-          continuous = state$betaT,
-          incidence = {
-            p_t = clamp(stats::plogis(y_linear_model + state$betaT), state$incidence_clamp, 1 - state$incidence_clamp)
-            p_c = clamp(stats::plogis(y_linear_model), state$incidence_clamp, 1 - state$incidence_clamp)
-            mean(p_t - p_c)
-          },
-          proportion = {
-            p_t = clamp(stats::plogis(y_linear_model + state$betaT), state$proportion_clamp, 1 - state$proportion_clamp)
-            p_c = clamp(stats::plogis(y_linear_model), state$proportion_clamp, 1 - state$proportion_clamp)
-            mean(p_t - p_c)
-          },
-          count = {
-            r_t = clamp(exp(y_linear_model + state$betaT), state$count_clamp, Inf)
-            r_c = clamp(exp(y_linear_model), state$count_clamp, Inf)
-            mean(r_t - r_c)
-          },
-          NA_real_
-        )
-      }
+      # Default per-rep estimand (custom_true_estimand override applied per-design inside the loop)
+      true_mean_diff_ate = switch(state$response_type,
+        continuous = state$betaT,
+        incidence = {
+          p_t = clamp(stats::plogis(y_linear_model + state$betaT), state$incidence_clamp, 1 - state$incidence_clamp)
+          p_c = clamp(stats::plogis(y_linear_model), state$incidence_clamp, 1 - state$incidence_clamp)
+          mean(p_t - p_c)
+        },
+        proportion = {
+          p_t = clamp(stats::plogis(y_linear_model + state$betaT), state$proportion_clamp, 1 - state$proportion_clamp)
+          p_c = clamp(stats::plogis(y_linear_model), state$proportion_clamp, 1 - state$proportion_clamp)
+          mean(p_t - p_c)
+        },
+        count = {
+          r_t = clamp(exp(y_linear_model + state$betaT), state$count_clamp, Inf)
+          r_c = clamp(exp(y_linear_model), state$count_clamp, Inf)
+          mean(r_t - r_c)
+        },
+        NA_real_
+      )
       results = list()
       result_keys = character()
       skipped_count = 0L
@@ -2752,12 +2805,34 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             design_extra$factors = list(treatment = 2L)
         }
         # Build design (extracted from .build_design)
+        obs_out = NULL  # reset per-design; populated in Mode 3 branch below
         des_obj = tryCatch({
           d = do.call(design_gen$new, c(list(response_type = state$response_type, n = state$n), design_extra))
-          if (inherits(d, "DesignSeqOneByOne")) {
+          if (!is.null(state$custom_dgp)) {
+            # Mode 3: load complete dataset from observational DGP; design is a data container only
+            if (grepl("SeqOneByOne", design_gen$classname, fixed = FALSE))
+              stop("custom_dgp requires a fixed design class; '",
+                   design_gen$classname, "' is a sequential design")
+            dgp_fn = state$custom_dgp
+            dgp_fn_args = names(formals(dgp_fn))
+            obs_out = if ("state" %in% dgp_fn_args || "..." %in% dgp_fn_args) {
+              dgp_fn(state$n, state$p, rep_i, state_for_rep())
+            } else {
+              dgp_fn(state$n, state$p, rep_i)
+            }
+            if (!is.list(obs_out) || is.null(obs_out$X) || is.null(obs_out$w) || is.null(obs_out$y))
+              stop("custom_dgp must return a list with 'X', 'w', and 'y'")
+            if (!is.data.frame(obs_out$X)) obs_out$X = as.data.frame(obs_out$X)
+            if (nrow(obs_out$X) != state$n)
+              stop("custom_dgp returned X with ", nrow(obs_out$X), " rows; expected ", state$n)
+            d$add_all_subjects_to_experiment(obs_out$X)
+            d$assign_w_to_all_subjects(2L * as.integer(obs_out$w) - 1L)
+            dead_obs = obs_out$dead %||% rep(1L, state$n)
+            d$add_all_subject_responses(obs_out$y, dead_obs)
+          } else if (inherits(d, "DesignSeqOneByOne")) {
             for (t in seq_len(state$n)) {
               w_t = d$add_one_subject_to_experiment_and_assign(X[t, , drop = FALSE])
-              out = apply_treatment_and_noise(y_linear_model[t], w_t)
+              out = apply_treatment_and_noise(y_linear_model[t], w_t, rep_data)
               d$add_one_subject_response(t, out$y, out$dead)
             }
           } else {
@@ -2798,7 +2873,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             }
             d$assign_w_to_all_subjects(precomp_w)
             w = d$get_w()
-            out = apply_treatment_and_noise(y_linear_model, w)
+            out = apply_treatment_and_noise(y_linear_model, w, rep_data)
             d$add_all_subject_responses(out$y, out$dead)
           }
           d
@@ -2817,8 +2892,23 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           NULL
         })
         if (is.list(des_obj) && !is.null(des_obj$fatal_error)) return(des_obj)
-        
+
         if (is.null(des_obj)) next
+        # Per-design true estimand: custom_true_estimand (Mode 2) or custom_dgp$true_estimand (Mode 3)
+        # These override the pre-rep default and apply to ALL inference class types.
+        if (!is.null(state$custom_true_estimand)) {
+          fn_cte = state$custom_true_estimand
+          fn_cte_args = names(formals(fn_cte))
+          true_mean_diff_ate = as.numeric(
+            if ("X" %in% fn_cte_args || "w" %in% fn_cte_args || "rep_data" %in% fn_cte_args || "..." %in% fn_cte_args) {
+              fn_cte(y_linear_model, X, des_obj$get_w(), rep_data, state_for_rep())
+            } else {
+              fn_cte(y_linear_model, state_for_rep())
+            }
+          )[1L]
+        } else if (!is.null(obs_out) && !is.null(obs_out$true_estimand)) {
+          true_mean_diff_ate = as.numeric(obs_out$true_estimand)[1L]
+        }
         for (ii in seq_along(state$inference_classes)) {
           inf_gen  = state$inference_classes[[ii]]
           inf_name = state$inference_labels[[ii]]
@@ -2863,7 +2953,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
                          is(inf_obj, "InferenceIncidKKNewcombeRiskDiff") ||
                          is(inf_obj, "InferenceIncidKKGCompRiskDiff") ||
                          is(inf_obj, "InferencePropGCompMeanDiff")
-          te = if (is_mean_diff) true_mean_diff_ate else state$betaT
+          te = if (!is.null(state$custom_true_estimand) || !is.null(state$custom_dgp)) {
+            true_mean_diff_ate  # custom estimand always wins regardless of inference class type
+          } else if (is_mean_diff) {
+            true_mean_diff_ate
+          } else {
+            state$betaT
+          }
           # .valid_inference_types logic (extracted)
           valid_inference_types = character(0)
           if (is(inf_obj, "InferenceAsymp")) 
@@ -2930,7 +3026,16 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           local_record = function(type, ci, pval) {
             ci2 = if (length(ci) >= 2L) as.numeric(ci[1:2]) else c(NA_real_, NA_real_)
             if (all(is.finite(ci2)) && ci2[1L] > ci2[2L]) ci2 = rev(ci2)
-            
+            sim_mode = if (!is.null(state$custom_dgp)) {
+              "observational"
+            } else {
+              parts = c(
+                if (!is.null(state$custom_replication_data_generator)) "crdg",
+                if (!is.null(state$custom_apply_treatment_and_noise))  "catn",
+                if (!is.null(state$custom_true_estimand))              "cte"
+              )
+              if (length(parts) == 0L) "standard" else paste(parts, collapse = "+")
+            }
             results[[length(results) + 1L]] <<- list(
               response_type = state$response_type,
               rep           = rep_i,
@@ -2944,9 +3049,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
               estimate      = if (is.null(est) || !is.finite(est)) NA_real_ else as.numeric(est),
               ci_lo          = ci2[1L],
               ci_hi          = ci2[2L],
-              pval          = if (is.null(pval) || length(pval) == 0L || !is.finite(pval[1L])) 
+              pval          = if (is.null(pval) || length(pval) == 0L || !is.finite(pval[1L]))
                                 NA_real_ else as.numeric(pval[1L]),
-              true_estimand = as.numeric(te)
+              true_estimand = as.numeric(te),
+              simulation_mode = sim_mode
             )
             if (!is.null(progress_cb)) progress_cb()
           }
@@ -3530,13 +3636,15 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       data$y_linear_model = y_linear_model
       data
     },
-    .apply_treatment_and_noise = function(y_linear_model, w) {
+    .apply_treatment_and_noise = function(y_linear_model, w, rep_data = NULL) {
       if (!is.null(private$custom_apply_treatment_and_noise)) {
-        out = private$custom_apply_treatment_and_noise(
-          y_linear_model,
-          w,
-          private$.state_for_current_cell()
-        )
+        fn = private$custom_apply_treatment_and_noise
+        fna = names(formals(fn))
+        out = if ("rep_data" %in% fna || "..." %in% fna) {
+          fn(y_linear_model, w, rep_data, private$.state_for_current_cell())
+        } else {
+          fn(y_linear_model, w, private$.state_for_current_cell())
+        }
         if (!is.list(out) || is.null(out$y) || is.null(out$dead)) {
           stop("custom_apply_treatment_and_noise must return a list with 'y' and 'dead'")
         }
@@ -3594,12 +3702,17 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       data$y_cont = NULL # SimulationFramework doesn't need the raw cont y anymore
       data
     },
-    compute_true_mean_diff_ate = function(y_linear_model) {
+    compute_true_mean_diff_ate = function(y_linear_model, X = NULL, w = NULL, rep_data = NULL) {
       if (!is.null(private$custom_true_estimand)) {
-        return(as.numeric(private$custom_true_estimand(
-          y_linear_model,
-          private$.state_for_current_cell()
-        ))[1L])
+        fn  = private$custom_true_estimand
+        fna = names(formals(fn))
+        return(as.numeric(
+          if ("X" %in% fna || "w" %in% fna || "rep_data" %in% fna || "..." %in% fna) {
+            fn(y_linear_model, X, w, rep_data, private$.state_for_current_cell())
+          } else {
+            fn(y_linear_model, private$.state_for_current_cell())
+          }
+        )[1L])
       }
       eta_c = y_linear_model
       eta_t = y_linear_model + private$current_betaT
@@ -3659,7 +3772,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       mean(expected_ordinal(eta_t) - expected_ordinal(eta_c))
     },
     # Instantiate design and run the full experiment (assign + observe all n).
-    .build_design = function(design_gen, X, y_linear_model, design_extra, skip_assignment = FALSE) {
+    .build_design = function(design_gen, X, y_linear_model, design_extra, skip_assignment = FALSE, rep_data = NULL) {
       n       = private$current_n
       # Auto-inject required args that depend on the covariate matrix when the
       # user has not already supplied them via design_classes_and_params.
@@ -3720,7 +3833,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         for (t in seq_len(n)) {
           w_t = des_obj$add_one_subject_to_experiment_and_assign(
             X[t, , drop = FALSE])
-          out = private$.apply_treatment_and_noise(y_linear_model[t], w_t)
+          out = private$.apply_treatment_and_noise(y_linear_model[t], w_t, rep_data)
           des_obj$add_one_subject_response(t, out$y, out$dead)
         }
       } else {
@@ -3728,7 +3841,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         des_obj$add_all_subjects_to_experiment(X)
         des_obj$assign_w_to_all_subjects()
         w   = des_obj$get_w()
-        out = private$.apply_treatment_and_noise(y_linear_model, w)
+        out = private$.apply_treatment_and_noise(y_linear_model, w, rep_data)
         des_obj$add_all_subject_responses(out$y, out$dead)
       }
       des_obj
