@@ -67,62 +67,13 @@ inline double soft_barrier_hp_hessian(double log_sigma, double center = 5.0, dou
 	return 2.0 * scale;
 }
 
-// log(1 - exp(-lambda)) with numerical stability
-inline double log_one_minus_exp_neg(double lambda) {
-	if (lambda > 30.0) return std::log1p(-std::exp(-lambda));
-	if (lambda < 1e-10) return std::log(lambda);
-	return std::log1p(-std::exp(-lambda));
-}
-
-// Score d/d(eta) of log TruncPoisson(y; exp(eta)) = y - lambda / (1 - exp(-lambda))
-inline double trunc_poisson_score(double y, double lambda) {
-	if (lambda > 30.0) return y - lambda;
-	if (lambda < 1e-8) return y - 1.0;
-	return y - lambda / (1.0 - std::exp(-lambda));
-}
-
-inline double trunc_poisson_hessian(double lambda) {
-	if (lambda > 30.0) return -lambda;
-	if (lambda < 1e-8) return -lambda / 2.0;
-	double exp_neg = std::exp(-lambda);
-	double one_minus = 1.0 - exp_neg;
-	return -lambda * (one_minus - lambda * exp_neg) / (one_minus * one_minus);
-}
-
-inline Eigen::ArrayXd clamp_eta_hp(const Eigen::ArrayXd& eta) {
-	return eta.min(700.0);
-}
-
-inline Eigen::ArrayXd trunc_poisson_score_array(const Eigen::ArrayXd& y, const Eigen::ArrayXd& lambda) {
-	const Eigen::Array<bool, Eigen::Dynamic, 1> large = (lambda > 30.0);
-	const Eigen::Array<bool, Eigen::Dynamic, 1> small = (lambda < 1e-8);
-	const Eigen::ArrayXd exp_neg = (-lambda).exp();
-	const Eigen::ArrayXd mid = y - lambda / (1.0 - exp_neg);
-	return large.select(y - lambda, small.select(y - 1.0, mid));
-}
-
-inline Eigen::ArrayXd trunc_poisson_hessian_array(const Eigen::ArrayXd& lambda) {
-	const Eigen::Array<bool, Eigen::Dynamic, 1> large = (lambda > 30.0);
-	const Eigen::Array<bool, Eigen::Dynamic, 1> small = (lambda < 1e-8);
-	const Eigen::ArrayXd exp_neg = (-lambda).exp();
-	const Eigen::ArrayXd one_minus = 1.0 - exp_neg;
-	const Eigen::ArrayXd mid = -lambda * (one_minus - lambda * exp_neg) / one_minus.square();
-	return large.select(-lambda, small.select(-lambda / 2.0, mid));
-}
-
-inline Eigen::ArrayXd log_one_minus_exp_neg_array(const Eigen::ArrayXd& lambda) {
-	Eigen::ArrayXd out(lambda.size());
-	for (Eigen::Index i = 0; i < lambda.size(); ++i) out[i] = log_one_minus_exp_neg(lambda[i]);
-	return out;
-}
-
 struct HurdlePoissonGLMMData {
 	Eigen::MatrixXd X_s;
 	Eigen::VectorXd y_s;
 	Eigen::VectorXd log_fact_y;
 	std::vector<int> grp_start;
 	std::vector<int> grp_size;
-	int n, p, G;
+	int n, p, G, max_grp_sz;
 	GHRuleHP gh;
 
 	HurdlePoissonGLMMData(
@@ -158,61 +109,115 @@ struct HurdlePoissonGLMMData {
 			}
 		}
 		G = (int)grp_start.size();
+		max_grp_sz = (G > 0) ? *std::max_element(grp_size.begin(), grp_size.end()) : 1;
 	}
 };
 
 class HurdlePoissonGLMMObjective {
 	const HurdlePoissonGLMMData& dat;
+	// Preallocated column-major buffers: element [i + k*max_grp_sz] = obs i at node k.
+	// Sized once at construction; reused across every operator() and hessian() call
+	// to eliminate G*K heap allocations per optimizer step.
+	std::vector<double> m_lam;   // exp(eta0[i] + b_vals[k])
+	std::vector<double> m_eneg;  // exp(-lam[i,k]) — shared by ll and gradient
+	std::vector<double> m_w;     // per-obs gradient weight accumulator
 
 public:
-	explicit HurdlePoissonGLMMObjective(const HurdlePoissonGLMMData& d) : dat(d) {}
+	explicit HurdlePoissonGLMMObjective(const HurdlePoissonGLMMData& d) : dat(d) {
+		const int K = (int)d.gh.nodes.size();
+		m_lam.resize(d.max_grp_sz * K);
+		m_eneg.resize(d.max_grp_sz * K);
+		m_w.resize(d.max_grp_sz);
+	}
 
-	double operator()(const Eigen::Ref<const Eigen::VectorXd>& par, Eigen::Ref<VectorXd> grad) {
+	double operator()(const Eigen::Ref<const Eigen::VectorXd>& par, Eigen::Ref<Eigen::VectorXd> grad) {
 		const double log_sigma = par[dat.p];
 		const double sigma     = std::exp(log_sigma);
-		const Eigen::VectorXd beta   = par.head(dat.p);
+		const int p = dat.p;
+		const int K = (int)dat.gh.nodes.size();
 		const Eigen::VectorXd b_vals = std::sqrt(2.0) * sigma * dat.gh.nodes;
-		const int n_nodes = (int)b_vals.size();
+
+		// Precompute exp(b_vals[k]) once per optimizer step (K exps amortized over G groups).
+		std::vector<double> exp_bvals(K);
+		for (int k = 0; k < K; ++k) exp_bvals[k] = std::exp(b_vals[k]);
 
 		double total_nll = soft_barrier_hp(log_sigma);
 		grad.setZero();
-		const double center = 5.0, scale = 10.0;
-		const double d = std::abs(log_sigma) - center;
-		if (d > 0.0) grad[dat.p] += 2.0 * scale * d * (log_sigma > 0 ? 1.0 : -1.0);
+		const double d = std::abs(log_sigma) - 5.0;
+		if (d > 0.0) grad[p] += 20.0 * d * (log_sigma > 0 ? 1.0 : -1.0);
+
+		Eigen::VectorXd log_terms(K);
 
 		for (int gi = 0; gi < dat.G; ++gi) {
-			const int warm_start_params = dat.grp_start[gi];
-			const int sz    = dat.grp_size[gi];
-			const Eigen::MatrixXd Xg   = dat.X_s.middleRows(warm_start_params, sz);
-			const Eigen::VectorXd eta0 = Xg * beta;
-			const Eigen::ArrayXd y_g = dat.y_s.segment(warm_start_params, sz).array();
-			const Eigen::ArrayXd log_fact_g = dat.log_fact_y.segment(warm_start_params, sz).array();
+			const int gs = dat.grp_start[gi];
+			const int sz = dat.grp_size[gi];
+			const Eigen::VectorXd eta0 = dat.X_s.middleRows(gs, sz) * par.head(p);
+			const double* y_g = dat.y_s.data() + gs;
+			const double* lfg = dat.log_fact_y.data() + gs;
 
-			Eigen::VectorXd log_terms(n_nodes);
-			std::vector<Eigen::VectorXd> lambda_nodes(n_nodes);  // lambda = exp(eta) per node
+			// Forward pass: multiplicative exp decomposition.
+			// lam[i,k] = exp(eta0[i]) * exp_bvals[k]  (no exp call per pair).
+			// eneg[i,k] = exp(-lam[i,k])  — computed once, reused in ll and gradient.
+			for (int k = 0; k < K; ++k) {
+				const double eb    = exp_bvals[k];
+				double* lam_k  = m_lam.data()  + k * dat.max_grp_sz;
+				double* eneg_k = m_eneg.data() + k * dat.max_grp_sz;
+				for (int i = 0; i < sz; ++i) {
+					const double lam = std::exp(std::min(eta0[i], 700.0)) * eb;
+					lam_k[i]  = lam;
+					eneg_k[i] = std::exp(-lam);
+				}
+			}
 
-			for (int k = 0; k < n_nodes; ++k) {
-				const Eigen::ArrayXd eta_k = eta0.array() + b_vals[k];
-				lambda_nodes[k] = clamp_eta_hp(eta_k).exp().matrix();
-				log_terms[k] = dat.gh.log_norm_weights[k] +
-				               (y_g * eta_k - lambda_nodes[k].array() - log_fact_g -
-				                log_one_minus_exp_neg_array(lambda_nodes[k].array())).sum();
+			// Log-likelihood contribution per node using shared lam/eneg.
+			for (int k = 0; k < K; ++k) {
+				const double bk     = b_vals[k];
+				const double* lam_k  = m_lam.data()  + k * dat.max_grp_sz;
+				const double* eneg_k = m_eneg.data() + k * dat.max_grp_sz;
+				double ll_k = dat.gh.log_norm_weights[k];
+				for (int i = 0; i < sz; ++i) {
+					const double lam    = lam_k[i];
+					const double eneg   = eneg_k[i];
+					const double eta_ki = eta0[i] + bk;
+					// log(1-exp(-lam)): for tiny lam use log(lam)=eta_ki (avoids cancellation).
+					const double lne = (lam < 1e-10) ? eta_ki : std::log1p(-eneg);
+					ll_k += y_g[i] * eta_ki - lam - lfg[i] - lne;
+				}
+				log_terms[k] = ll_k;
 			}
 
 			const double ll_g = log_sum_exp_hp(log_terms);
 			if (!std::isfinite(ll_g)) { grad.setZero(); return 1e100; }
 			total_nll -= ll_g;
 
-			for (int k = 0; k < n_nodes; ++k) {
+			// Gradient: accumulate per-obs weights across all K nodes, then one GEMV per group.
+			// Previously: K separate Xg' * res_k GEMV calls.
+			double* w_g = m_w.data();
+			std::fill(w_g, w_g + sz, 0.0);
+			double w_sigma = 0.0;
+
+			for (int k = 0; k < K; ++k) {
 				const double post_k = std::exp(log_terms[k] - ll_g);
 				if (post_k < 1e-15) continue;
-
-				Eigen::VectorXd res_k = trunc_poisson_score_array(y_g, lambda_nodes[k].array()).matrix();
-				double res_sum = res_k.sum();
-
-				grad.head(dat.p) -= post_k * (Xg.transpose() * res_k);
-				grad[dat.p] -= post_k * res_sum * b_vals[k];
+				const double* lam_k  = m_lam.data()  + k * dat.max_grp_sz;
+				const double* eneg_k = m_eneg.data() + k * dat.max_grp_sz;
+				const double pbk = post_k * b_vals[k];
+				double score_sum = 0.0;
+				for (int i = 0; i < sz; ++i) {
+					const double lam  = lam_k[i];
+					const double eneg = eneg_k[i];
+					const double si   = (lam > 30.0) ? (y_g[i] - lam)
+					                  : (lam < 1e-8)  ? (y_g[i] - 1.0)
+					                  :                  (y_g[i] - lam / (1.0 - eneg));
+					w_g[i]    += post_k * si;
+					score_sum += si;
+				}
+				w_sigma += pbk * score_sum;
 			}
+
+			const Eigen::Map<const Eigen::VectorXd> w_vec(w_g, sz);
+			grad.head(p).noalias() -= dat.X_s.middleRows(gs, sz).transpose() * w_vec;
+			grad[p] -= w_sigma;
 		}
 		return total_nll;
 	}
@@ -221,29 +226,49 @@ public:
 		const int total = dat.p + 1;
 		const double log_sigma = par[dat.p];
 		const double sigma = std::exp(log_sigma);
-		const Eigen::VectorXd beta = par.head(dat.p);
+		const int p = dat.p;
+		const int K = (int)dat.gh.nodes.size();
 		const Eigen::VectorXd b_vals = std::sqrt(2.0) * sigma * dat.gh.nodes;
-		const int n_nodes = (int)b_vals.size();
+
+		std::vector<double> exp_bvals(K);
+		for (int k = 0; k < K; ++k) exp_bvals[k] = std::exp(b_vals[k]);
 
 		Eigen::MatrixXd H = Eigen::MatrixXd::Zero(total, total);
 		H(dat.p, dat.p) = soft_barrier_hp_hessian(log_sigma);
 
-		for (int gi = 0; gi < dat.G; gi++) {
-			const int warm_start_params = dat.grp_start[gi];
-			const int sz    = dat.grp_size[gi];
-			const Eigen::MatrixXd Xg = dat.X_s.middleRows(warm_start_params, sz);
-			const Eigen::VectorXd eta0 = Xg * beta;
-			const Eigen::ArrayXd y_g = dat.y_s.segment(warm_start_params, sz).array();
-			const Eigen::ArrayXd log_fact_g = dat.log_fact_y.segment(warm_start_params, sz).array();
+		Eigen::VectorXd log_terms(K);
 
-			Eigen::VectorXd log_terms(n_nodes);
-			std::vector<Eigen::VectorXd> lambda_nodes(n_nodes);
-			for (int k = 0; k < n_nodes; k++) {
-				const Eigen::ArrayXd eta_k = eta0.array() + b_vals[k];
-				lambda_nodes[k] = clamp_eta_hp(eta_k).exp().matrix();
-				log_terms[k] = dat.gh.log_norm_weights[k] +
-				               (y_g * eta_k - lambda_nodes[k].array() - log_fact_g -
-				                log_one_minus_exp_neg_array(lambda_nodes[k].array())).sum();
+		for (int gi = 0; gi < dat.G; gi++) {
+			const int gs = dat.grp_start[gi];
+			const int sz = dat.grp_size[gi];
+			const Eigen::MatrixXd Xg = dat.X_s.middleRows(gs, sz);
+			const Eigen::VectorXd eta0 = Xg * par.head(p);
+			const double* y_g = dat.y_s.data() + gs;
+			const double* lfg = dat.log_fact_y.data() + gs;
+
+			for (int k = 0; k < K; ++k) {
+				const double eb = exp_bvals[k];
+				double* lam_k  = m_lam.data()  + k * dat.max_grp_sz;
+				double* eneg_k = m_eneg.data() + k * dat.max_grp_sz;
+				for (int i = 0; i < sz; ++i) {
+					const double lam = std::exp(std::min(eta0[i], 700.0)) * eb;
+					lam_k[i]  = lam;
+					eneg_k[i] = std::exp(-lam);
+				}
+			}
+			for (int k = 0; k < K; ++k) {
+				const double bk     = b_vals[k];
+				const double* lam_k  = m_lam.data()  + k * dat.max_grp_sz;
+				const double* eneg_k = m_eneg.data() + k * dat.max_grp_sz;
+				double ll_k = dat.gh.log_norm_weights[k];
+				for (int i = 0; i < sz; ++i) {
+					const double lam    = lam_k[i];
+					const double eneg   = eneg_k[i];
+					const double eta_ki = eta0[i] + bk;
+					const double lne    = (lam < 1e-10) ? eta_ki : std::log1p(-eneg);
+					ll_k += y_g[i] * eta_ki - lam - lfg[i] - lne;
+				}
+				log_terms[k] = ll_k;
 			}
 			const double ll_g = log_sum_exp_hp(log_terms);
 
@@ -251,26 +276,44 @@ public:
 			Eigen::MatrixXd E_GiGiT = Eigen::MatrixXd::Zero(total, total);
 			Eigen::VectorXd G_avg = Eigen::VectorXd::Zero(total);
 
-			for (int k = 0; k < n_nodes; k++) {
+			for (int k = 0; k < K; k++) {
 				const double pk = std::exp(log_terms[k] - ll_g);
 				if (pk < 1e-15) continue;
 
+				const double* lam_k  = m_lam.data()  + k * dat.max_grp_sz;
+				const double* eneg_k = m_eneg.data() + k * dat.max_grp_sz;
+
+				Eigen::VectorXd res_k(sz), d2e_k(sz);
+				for (int i = 0; i < sz; ++i) {
+					const double lam  = lam_k[i];
+					const double eneg = eneg_k[i];
+					if (lam > 30.0) {
+						res_k[i] = y_g[i] - lam;
+						d2e_k[i] = -lam;
+					} else if (lam < 1e-8) {
+						res_k[i] = y_g[i] - 1.0;
+						d2e_k[i] = -lam / 2.0;
+					} else {
+						const double one_minus = 1.0 - eneg;
+						res_k[i] = y_g[i] - lam / one_minus;
+						d2e_k[i] = -lam * (one_minus - lam * eneg) / (one_minus * one_minus);
+					}
+				}
+
 				Eigen::VectorXd G_ik = Eigen::VectorXd::Zero(total);
 				Eigen::MatrixXd H_ik = Eigen::MatrixXd::Zero(total, total);
-				Eigen::VectorXd res_k = trunc_poisson_score_array(y_g, lambda_nodes[k].array()).matrix();
-				Eigen::VectorXd d2e_k = trunc_poisson_hessian_array(lambda_nodes[k].array()).matrix();
 				const double sum_res = res_k.sum();
 				const double sum_d2e = d2e_k.sum();
 
-				G_ik.head(dat.p).noalias() = Xg.transpose() * res_k;
-				H_ik.topLeftCorner(dat.p, dat.p).noalias() = weighted_crossprod(Xg, d2e_k);
+				G_ik.head(p).noalias() = Xg.transpose() * res_k;
+				H_ik.topLeftCorner(p, p).noalias() = weighted_crossprod(Xg, d2e_k);
 
 				const double node_factor = std::sqrt(2.0) * dat.gh.nodes[k];
 				G_ik[dat.p] = sum_res * node_factor * sigma;
 
 				H_ik(dat.p, dat.p) = (sum_d2e * node_factor * node_factor * sigma + sum_res * node_factor) * sigma;
-				
-				H_ik.block(0, dat.p, dat.p, 1).noalias() = (Xg.transpose() * d2e_k) * (node_factor * sigma);
+
+				H_ik.block(0, dat.p, p, 1).noalias() = (Xg.transpose() * d2e_k) * (node_factor * sigma);
 
 				for (int r1 = 0; r1 < total; r1++) for (int c1 = 0; r1 > c1; c1++) H_ik(r1, c1) = H_ik(c1, r1);
 
@@ -501,8 +544,24 @@ List fast_hurdle_poisson_glmm_cpp(
 		);
 	}
 
-	const double pen        = soft_barrier_hp(par[total - 1]);
+	const double pen         = soft_barrier_hp(par[total - 1]);
 	const double true_neg_ll = neg_ll - pen;
+
+	// Early return: skip score/Hessian computation when only point estimates are needed.
+	if (estimate_only) {
+		return List::create(
+			Named("params")     = par,
+			Named("b")          = par.head(p),
+			Named("log_sigma")  = par[total - 1],
+			Named("ssq_b_T")    = NA_REAL,
+			Named("vcov")       = Eigen::MatrixXd::Constant(total, total, NA_REAL),
+			Named("converged")  = converged,
+			Named("neg_loglik") = true_neg_ll,
+			Named("neg_ll")     = true_neg_ll,
+			Named("loglik")     = R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL
+		);
+	}
+
 	Eigen::VectorXd score(total);
 	obj(par, score);
 	score[total - 1] -= soft_barrier_hp_grad(par[total - 1]);
@@ -512,7 +571,7 @@ List fast_hurdle_poisson_glmm_cpp(
 
 	double ssq_b_T = NA_REAL;
 	Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(total, total, NA_REAL);
-	if (!estimate_only && converged) {
+	if (converged) {
 		Eigen::MatrixXd information_free = subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx);
 		Eigen::MatrixXd cov_free = covariance_from_information(information_free);
 		vcov = expand_free_covariance(total, fixed_spec, cov_free, true);

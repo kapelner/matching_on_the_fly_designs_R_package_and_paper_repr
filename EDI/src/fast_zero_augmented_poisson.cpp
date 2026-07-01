@@ -28,62 +28,70 @@ private:
     const int m_p_cond;
     const int m_p_zi;
     const bool m_is_hurdle;
+    // Preallocated scratch vectors — avoid heap allocation on every operator() call.
+    // operator() is non-const so no mutable needed; optimizer holds functor by non-const ref.
+    Eigen::VectorXd m_eta_cond, m_eta_zi, m_w_cond, m_w_zi;
 
 public:
-    ZeroAugmentedPoisson(const Eigen::Ref<const Eigen::VectorXd>& y, 
-                         const Eigen::Ref<const Eigen::MatrixXd>& X, 
-                         const Eigen::Ref<const Eigen::MatrixXd>& Xzi, 
+    ZeroAugmentedPoisson(const Eigen::Ref<const Eigen::VectorXd>& y,
+                         const Eigen::Ref<const Eigen::MatrixXd>& X,
+                         const Eigen::Ref<const Eigen::MatrixXd>& Xzi,
                          bool is_hurdle) :
-        m_y(y), m_X(X), m_Xzi(Xzi), m_n(X.rows()), 
-        m_p_cond(X.cols()), m_p_zi(Xzi.cols()), m_is_hurdle(is_hurdle) {}
+        m_y(y), m_X(X), m_Xzi(Xzi), m_n(X.rows()),
+        m_p_cond(X.cols()), m_p_zi(Xzi.cols()), m_is_hurdle(is_hurdle),
+        m_eta_cond(m_n), m_eta_zi(m_n), m_w_cond(m_n), m_w_zi(m_n) {}
 
     double operator()(const Eigen::VectorXd& params, Eigen::VectorXd& grad) {
-        const Eigen::VectorXd eta_cond = m_X   * params.head(m_p_cond);
-        const Eigen::VectorXd eta_zi   = m_Xzi * params.tail(m_p_zi);
-
-        // Vectorized precompute of per-obs transcendentals.
-        // Eigen's .array().exp() dispatches to the internal pexp kernel (AVX2,
-        // 4 doubles/cycle) — ~4-8x faster than scalar std::exp in a loop.
-        const Eigen::VectorXd lambda = eta_cond.array().min(700.0).exp();
-        const Eigen::VectorXd exp_ml = (-lambda).array().exp();  // exp(-lambda[i])
-        const Eigen::VectorXd pi     = 1.0 / (1.0 + (-eta_zi.array().max(-700.0).min(700.0)).exp());
+        m_eta_cond.noalias() = m_X   * params.head(m_p_cond);
+        m_eta_zi.noalias()   = m_Xzi * params.tail(m_p_zi);
 
         double neg_ll = 0.0;
-        Eigen::VectorXd w_cond = Eigen::VectorXd::Zero(m_n);
-        Eigen::VectorXd w_zi   = Eigen::VectorXd::Zero(m_n);
+        m_w_cond.setZero();
+        m_w_zi.setZero();
 
         for (int i = 0; i < m_n; ++i) {
-            const double lam = lambda[i];
-            const double eml = exp_ml[i];
-            const double p   = pi[i];
+            const double eta_c = std::min(m_eta_cond[i], 700.0);
+            const double eta_z = std::max(std::min(m_eta_zi[i], 700.0), -700.0);
+            const double lam   = std::exp(eta_c);
+            // Compute exp(-eta_z) once; reuse for sigmoid AND log1pexp to save one exp() per obs.
+            const double en    = std::exp(-eta_z);
+            const double p     = 1.0 / (1.0 + en);
+            // log1pexp(eta_z) via the stable identity that reuses en:
+            //   eta_z > 0: eta_z + log1p(exp(-eta_z))  [exp(-eta_z) < 1]
+            //   eta_z <= 0: log1p(1/exp(-eta_z))        [1/exp(-eta_z) < 1]
+            const double lse   = (eta_z > 0.0)
+                ? eta_z + std::log1p(en)
+                : std::log1p(1.0 / en);
 
             if (m_is_hurdle) {
                 if (m_y[i] == 0) {
                     neg_ll -= std::log(std::max(p, 1e-15));
-                    w_zi[i] = -(1.0 - p);
+                    m_w_zi[i] = -(1.0 - p);
                 } else {
-                    neg_ll -= (-log1pexp(eta_zi[i]) + m_y[i] * std::min(eta_cond[i], 700.0) - lam - log1mexp(-lam));
-                    w_zi[i]   = p;
-                    w_cond[i] = -(m_y[i] - lam / (1.0 - eml));
+                    const double eml = std::exp(-lam);
+                    neg_ll -= (-lse + m_y[i] * eta_c - lam - log1mexp(-lam));
+                    m_w_zi[i]   = p;
+                    m_w_cond[i] = -(m_y[i] - lam / (1.0 - eml));
                 }
             } else {
                 if (m_y[i] == 0) {
+                    const double eml       = std::exp(-lam);
                     const double prob_zero = p + (1.0 - p) * eml;
                     neg_ll -= std::log(std::max(prob_zero, 1e-15));
                     const double inv_pz = 1.0 / prob_zero;
-                    w_zi[i]   = -(p * (1.0 - p) * (1.0 - eml)) * inv_pz;
-                    w_cond[i] =  (1.0 - p) * lam * eml * inv_pz;
+                    m_w_zi[i]   = -(p * (1.0 - p) * (1.0 - eml)) * inv_pz;
+                    m_w_cond[i] =  (1.0 - p) * lam * eml * inv_pz;
                 } else {
-                    neg_ll -= (-log1pexp(eta_zi[i]) + m_y[i] * std::min(eta_cond[i], 700.0) - lam);
-                    w_zi[i]   = p;
-                    w_cond[i] = -(m_y[i] - lam);
+                    neg_ll -= (-lse + m_y[i] * eta_c - lam);
+                    m_w_zi[i]   = p;
+                    m_w_cond[i] = -(m_y[i] - lam);
                 }
             }
         }
 
         grad.resize(m_p_cond + m_p_zi);
-        grad.head(m_p_cond).noalias() = m_X.transpose()   * w_cond;
-        grad.tail(m_p_zi).noalias()   = m_Xzi.transpose() * w_zi;
+        grad.head(m_p_cond).noalias() = m_X.transpose()   * m_w_cond;
+        grad.tail(m_p_zi).noalias()   = m_Xzi.transpose() * m_w_zi;
 
         return neg_ll;
     }
