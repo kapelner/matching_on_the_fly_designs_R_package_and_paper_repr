@@ -1,12 +1,12 @@
-#' Abstract class for Clayton Copula / Standard Weibull Compound Inference
+#' Clayton Copula / Standard Weibull Compound Inference for KK Designs
 #'
 #' This class implements a compound estimator for KK matching-on-the-fly designs with
 #' survival responses using a Clayton copula with Weibull AFT margins for matched
 #' pairs and a standard Weibull AFT model for the reservoir. The two treatment-effect
 #' estimates (on the log-time ratio scale) are combined by inverse-variance weighting.
 #'
-#' @keywords internal
-InferenceAbstractKKClaytonCopulaIVWC = R6::R6Class("InferenceAbstractKKClaytonCopulaIVWC",
+#' @export
+InferenceSurvivalKKClaytonCopulaIVWC = R6::R6Class("InferenceSurvivalKKClaytonCopulaIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
 	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
@@ -649,13 +649,4 @@ InferenceSurvivalKKClaytonCopulaOneLik = R6::R6Class("InferenceSurvivalKKClayton
 			)
 		}
 	)))
-)
-
-#' Clayton Copula IVWC Compound Inference for KK Designs
-#'
-#' @export
-InferenceSurvivalKKClaytonCopulaIVWC = R6::R6Class("InferenceSurvivalKKClaytonCopulaIVWC",
-	lock_objects = FALSE,
-	inherit = InferenceAbstractKKClaytonCopulaIVWC,
-	public = list()
 )

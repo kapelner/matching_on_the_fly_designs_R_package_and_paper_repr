@@ -2,18 +2,31 @@
 % Please edit documentation in R/inference_survival_KK_clayton_copula.R
 \name{InferenceSurvivalKKClaytonCopulaIVWC}
 \alias{InferenceSurvivalKKClaytonCopulaIVWC}
-\title{Clayton Copula IVWC Compound Inference for KK Designs}
+\title{Clayton Copula / Standard Weibull Compound Inference for KK Designs}
 \description{
-Clayton Copula IVWC Compound Inference for KK Designs
+Clayton Copula / Standard Weibull Compound Inference for KK Designs
 
-Clayton Copula IVWC Compound Inference for KK Designs
+Clayton Copula / Standard Weibull Compound Inference for KK Designs
+}
+\details{
+This class implements a compound estimator for KK matching-on-the-fly designs with
+survival responses using a Clayton copula with Weibull AFT margins for matched
+pairs and a standard Weibull AFT model for the reservoir. The two treatment-effect
+estimates (on the log-time ratio scale) are combined by inverse-variance weighting.
 }
 \section{Super classes}{
-\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceNonParamBootstrap} -> \code{::InferenceBayesianBootstrap} -> \code{::InferenceJackknife} -> \code{::InferenceAsymp} -> \code{::InferenceMLEorKMSummaryTable} -> \code{::InferenceAsympLik} -> \code{::InferenceAbstractKKClaytonCopulaIVWC} -> \code{InferenceSurvivalKKClaytonCopulaIVWC}
+\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceNonParamBootstrap} -> \code{::InferenceBayesianBootstrap} -> \code{::InferenceJackknife} -> \code{::InferenceAsymp} -> \code{::InferenceMLEorKMSummaryTable} -> \code{::InferenceAsympLik} -> \code{InferenceSurvivalKKClaytonCopulaIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceSurvivalKKClaytonCopulaIVWC-new}{\code{InferenceSurvivalKKClaytonCopulaIVWC$new()}}
+\item \href{#method-InferenceSurvivalKKClaytonCopulaIVWC-compute_estimate}{\code{InferenceSurvivalKKClaytonCopulaIVWC$compute_estimate()}}
+\item \href{#method-InferenceSurvivalKKClaytonCopulaIVWC-compute_estimate_with_bootstrap_weights}{\code{InferenceSurvivalKKClaytonCopulaIVWC$compute_estimate_with_bootstrap_weights()}}
+\item \href{#method-InferenceSurvivalKKClaytonCopulaIVWC-compute_asymp_confidence_interval}{\code{InferenceSurvivalKKClaytonCopulaIVWC$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceSurvivalKKClaytonCopulaIVWC-compute_asymp_two_sided_pval}{\code{InferenceSurvivalKKClaytonCopulaIVWC$compute_asymp_two_sided_pval()}}
+\item \href{#method-InferenceSurvivalKKClaytonCopulaIVWC-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceSurvivalKKClaytonCopulaIVWC$approximate_bootstrap_distribution_beta_hat_T()}}
+\item \href{#method-InferenceSurvivalKKClaytonCopulaIVWC-duplicate}{\code{InferenceSurvivalKKClaytonCopulaIVWC$duplicate()}}
 \item \href{#method-InferenceSurvivalKKClaytonCopulaIVWC-clone}{\code{InferenceSurvivalKKClaytonCopulaIVWC$clone()}}
 }
 }
@@ -69,16 +82,172 @@ Clayton Copula IVWC Compound Inference for KK Designs
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="get_testing_type"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>::InferenceAsympLik$get_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="set_information_preference"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>::InferenceAsympLik$set_information_preference()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>::InferenceAsympLik$set_testing_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKClaytonCopulaIVWC" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceAbstractKKClaytonCopulaIVWC.html#method-InferenceAbstractKKClaytonCopulaIVWC-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceAbstractKKClaytonCopulaIVWC$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKClaytonCopulaIVWC" data-id="compute_asymp_confidence_interval"><a href='../..//html/InferenceAbstractKKClaytonCopulaIVWC.html#method-InferenceAbstractKKClaytonCopulaIVWC-compute_asymp_confidence_interval'><code>::InferenceAbstractKKClaytonCopulaIVWC$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKClaytonCopulaIVWC" data-id="compute_asymp_two_sided_pval"><a href='../..//html/InferenceAbstractKKClaytonCopulaIVWC.html#method-InferenceAbstractKKClaytonCopulaIVWC-compute_asymp_two_sided_pval'><code>::InferenceAbstractKKClaytonCopulaIVWC$compute_asymp_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKClaytonCopulaIVWC" data-id="compute_estimate"><a href='../..//html/InferenceAbstractKKClaytonCopulaIVWC.html#method-InferenceAbstractKKClaytonCopulaIVWC-compute_estimate'><code>::InferenceAbstractKKClaytonCopulaIVWC$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKClaytonCopulaIVWC" data-id="compute_estimate_with_bootstrap_weights"><a href='../..//html/InferenceAbstractKKClaytonCopulaIVWC.html#method-InferenceAbstractKKClaytonCopulaIVWC-compute_estimate_with_bootstrap_weights'><code>::InferenceAbstractKKClaytonCopulaIVWC$compute_estimate_with_bootstrap_weights()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKClaytonCopulaIVWC" data-id="duplicate"><a href='../..//html/InferenceAbstractKKClaytonCopulaIVWC.html#method-InferenceAbstractKKClaytonCopulaIVWC-duplicate'><code>::InferenceAbstractKKClaytonCopulaIVWC$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKClaytonCopulaIVWC" data-id="initialize"><a href='../..//html/InferenceAbstractKKClaytonCopulaIVWC.html#method-InferenceAbstractKKClaytonCopulaIVWC-initialize'><code>::InferenceAbstractKKClaytonCopulaIVWC$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalKKClaytonCopulaIVWC-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalKKClaytonCopulaIVWC-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKClaytonCopulaIVWC$new(
+  des_obj,
+  model_formula = NULL,
+  verbose = FALSE,
+  smart_cold_start_default = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart cold start values.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalKKClaytonCopulaIVWC-compute_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalKKClaytonCopulaIVWC-compute_estimate}{}}}
+\subsection{Method \code{compute_estimate()}}{
+Returns the estimated treatment effect (log-time ratio).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKClaytonCopulaIVWC$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalKKClaytonCopulaIVWC-compute_estimate_with_bootstrap_weights"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalKKClaytonCopulaIVWC-compute_estimate_with_bootstrap_weights}{}}}
+\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
+Recomputes the IVWC Clayton-copula treatment estimate under
+  Bayesian-bootstrap weights.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKClaytonCopulaIVWC$compute_estimate_with_bootstrap_weights(
+  subject_or_block_weights,
+  estimate_only = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
+bootstrap weights.}
+
+\item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
+estimate.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalKKClaytonCopulaIVWC-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalKKClaytonCopulaIVWC-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes the asymptotic confidence interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKClaytonCopulaIVWC$compute_asymp_confidence_interval(
+  alpha = 0.05
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{The confidence level in the computed
+confidence interval is 1 - \code{alpha}. The default is 0.05.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalKKClaytonCopulaIVWC-compute_asymp_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalKKClaytonCopulaIVWC-compute_asymp_two_sided_pval}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes the asymptotic p-value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKClaytonCopulaIVWC$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{The null difference to test against. Default is 0.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalKKClaytonCopulaIVWC-approximate_bootstrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalKKClaytonCopulaIVWC-approximate_bootstrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_bootstrap_distribution_beta_hat_T()}}{
+Creates the bootstrap distribution of the estimate for the treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKClaytonCopulaIVWC$approximate_bootstrap_distribution_beta_hat_T(
+  B = 501,
+  show_progress = TRUE,
+  debug = FALSE,
+  bootstrap_type = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of bootstrap samples.}
+
+\item{\code{show_progress}}{Whether to show a progress bar.}
+
+\item{\code{debug}}{Whether to return diagnostics.}
+
+\item{\code{bootstrap_type}}{Optional resampling scheme.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceSurvivalKKClaytonCopulaIVWC-duplicate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceSurvivalKKClaytonCopulaIVWC-duplicate}{}}}
+\subsection{Method \code{duplicate()}}{
+Duplicates the object while preserving caches.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceSurvivalKKClaytonCopulaIVWC$duplicate(
+  verbose = FALSE,
+  make_fork_cluster = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{verbose}}{Whether the duplicate should be verbose.}
+
+\item{\code{make_fork_cluster}}{Whether the duplicate should be allowed to create a fork cluster.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKKClaytonCopulaIVWC-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKKClaytonCopulaIVWC-clone}{}}}

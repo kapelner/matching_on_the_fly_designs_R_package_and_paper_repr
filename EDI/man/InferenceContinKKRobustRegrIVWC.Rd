@@ -4,28 +4,26 @@
 \alias{InferenceContinKKRobustRegrIVWC}
 \title{Robust-Regression IVWC Compound Inference for KK Designs}
 \description{
+Robust-Regression IVWC Compound Inference for KK Designs
+
+Robust-Regression IVWC Compound Inference for KK Designs
+}
+\details{
 Fits a variance-weighted compound estimator for KK matching-on-the-fly designs
-with continuous responses using robust regression for matched-pair differences
-and reservoir outcomes, with treatment and, optionally, all recorded covariates
-as predictors.
-}
-\examples{
-\donttest{
-seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'continuous')
-for (i in 1:10) {
-  seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
-}
-seq_des$add_all_subject_responses(rnorm(10))
-inf = InferenceContinKKRobustRegrIVWC$new(seq_des)
-inf$compute_estimate()
-}
+with continuous responses using robust linear regression (`MASS::rlm`) for the
+matched-pair and reservoir components separately.
 }
 \section{Super classes}{
-\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceNonParamBootstrap} -> \code{::InferenceBayesianBootstrap} -> \code{::InferenceJackknife} -> \code{::InferenceAsymp} -> \code{::InferenceMLEorKMSummaryTable} -> \code{::InferenceAsympLik} -> \code{::InferenceKKPassThroughCompoundNoParamBootstrap} -> \code{::InferenceAbstractKKRobustRegrIVWC} -> \code{InferenceContinKKRobustRegrIVWC}
+\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceNonParamBootstrap} -> \code{::InferenceBayesianBootstrap} -> \code{::InferenceJackknife} -> \code{::InferenceAsymp} -> \code{::InferenceMLEorKMSummaryTable} -> \code{::InferenceAsympLik} -> \code{::InferenceKKPassThroughCompoundNoParamBootstrap} -> \code{InferenceContinKKRobustRegrIVWC}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceContinKKRobustRegrIVWC-new}{\code{InferenceContinKKRobustRegrIVWC$new()}}
+\item \href{#method-InferenceContinKKRobustRegrIVWC-compute_estimate}{\code{InferenceContinKKRobustRegrIVWC$compute_estimate()}}
+\item \href{#method-InferenceContinKKRobustRegrIVWC-compute_asymp_confidence_interval}{\code{InferenceContinKKRobustRegrIVWC$compute_asymp_confidence_interval()}}
+\item \href{#method-InferenceContinKKRobustRegrIVWC-compute_asymp_two_sided_pval}{\code{InferenceContinKKRobustRegrIVWC$compute_asymp_two_sided_pval()}}
+\item \href{#method-InferenceContinKKRobustRegrIVWC-duplicate}{\code{InferenceContinKKRobustRegrIVWC$duplicate()}}
 \item \href{#method-InferenceContinKKRobustRegrIVWC-clone}{\code{InferenceContinKKRobustRegrIVWC$clone()}}
 }
 }
@@ -83,14 +81,129 @@ inf$compute_estimate()
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>::InferenceAsympLik$set_testing_type()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThroughCompoundNoParamBootstrap" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceKKPassThroughCompoundNoParamBootstrap.html#method-InferenceKKPassThroughCompoundNoParamBootstrap-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceKKPassThroughCompoundNoParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThroughCompoundNoParamBootstrap" data-id="compute_estimate_with_bootstrap_weights"><a href='../..//html/InferenceKKPassThroughCompoundNoParamBootstrap.html#method-InferenceKKPassThroughCompoundNoParamBootstrap-compute_estimate_with_bootstrap_weights'><code>::InferenceKKPassThroughCompoundNoParamBootstrap$compute_estimate_with_bootstrap_weights()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKRobustRegrIVWC" data-id="compute_asymp_confidence_interval"><a href='../..//html/InferenceAbstractKKRobustRegrIVWC.html#method-InferenceAbstractKKRobustRegrIVWC-compute_asymp_confidence_interval'><code>::InferenceAbstractKKRobustRegrIVWC$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKRobustRegrIVWC" data-id="compute_asymp_two_sided_pval"><a href='../..//html/InferenceAbstractKKRobustRegrIVWC.html#method-InferenceAbstractKKRobustRegrIVWC-compute_asymp_two_sided_pval'><code>::InferenceAbstractKKRobustRegrIVWC$compute_asymp_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKRobustRegrIVWC" data-id="compute_estimate"><a href='../..//html/InferenceAbstractKKRobustRegrIVWC.html#method-InferenceAbstractKKRobustRegrIVWC-compute_estimate'><code>::InferenceAbstractKKRobustRegrIVWC$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKRobustRegrIVWC" data-id="duplicate"><a href='../..//html/InferenceAbstractKKRobustRegrIVWC.html#method-InferenceAbstractKKRobustRegrIVWC-duplicate'><code>::InferenceAbstractKKRobustRegrIVWC$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractKKRobustRegrIVWC" data-id="initialize"><a href='../..//html/InferenceAbstractKKRobustRegrIVWC.html#method-InferenceAbstractKKRobustRegrIVWC-initialize'><code>::InferenceAbstractKKRobustRegrIVWC$initialize()</code></a></span></li>
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceContinKKRobustRegrIVWC-new"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrIVWC-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the inference object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKRobustRegrIVWC$new(
+  des_obj,
+  model_formula = NULL,
+  method = "MM",
+  maxit = NULL,
+  acc = NULL,
+  start_with_ols = TRUE,
+  verbose = FALSE,
+  smart_cold_start_default = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{des_obj}}{A DesignSeqOneByOne object (must be a KK design).}
+
+\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+the formula from the design object is used and its pre-computed design matrix is
+reused. If a formula is provided, a new design matrix is constructed from the
+design's imputed covariates.}
+
+\item{\code{method}}{Robust-regression fitting method for `MASS::rlm`; one of `"M"` or `"MM"`.}
+
+\item{\code{maxit}}{Maximum number of robust-regression iterations. If `NULL`, a
+data-adaptive default is chosen at fit time.}
+
+\item{\code{acc}}{Convergence tolerance for `MASS::rlm`. If `NULL`, a
+data-adaptive default is chosen at fit time.}
+
+\item{\code{start_with_ols}}{Whether to compute an OLS warm start and pass it to `MASS::rlm`
+when the fit method honors `init`. This affects the `M` path only; `MM`
+uses its own LQS-based start. Default `TRUE`.}
+
+\item{\code{verbose}}{Whether to print progress messages.}
+
+\item{\code{smart_cold_start_default}}{Whether to use smart starting values for the optimizer.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceContinKKRobustRegrIVWC-compute_estimate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrIVWC-compute_estimate}{}}}
+\subsection{Method \code{compute_estimate()}}{
+Returns the estimated treatment effect.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKRobustRegrIVWC$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{estimate_only}}{Logical. If TRUE, skip variance component calculations.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceContinKKRobustRegrIVWC-compute_asymp_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrIVWC-compute_asymp_confidence_interval}{}}}
+\subsection{Method \code{compute_asymp_confidence_interval()}}{
+Computes the approximate confidence interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKRobustRegrIVWC$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Numeric. Significance level (default 0.05).}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceContinKKRobustRegrIVWC-compute_asymp_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrIVWC-compute_asymp_two_sided_pval}{}}}
+\subsection{Method \code{compute_asymp_two_sided_pval()}}{
+Computes the approximate p-value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKRobustRegrIVWC$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Numeric. Null treatment effect value (default 0).}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceContinKKRobustRegrIVWC-duplicate"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrIVWC-duplicate}{}}}
+\subsection{Method \code{duplicate()}}{
+Duplicate
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceContinKKRobustRegrIVWC$duplicate(
+  verbose = FALSE,
+  make_fork_cluster = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{verbose}}{Logical. A flag indicating whether messages should be displayed.}
+
+\item{\code{make_fork_cluster}}{Logical. Whether the duplicate should be allowed to create a fork cluster.}
+}
+\if{html}{\out{</div>}}
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKRobustRegrIVWC-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrIVWC-clone}{}}}

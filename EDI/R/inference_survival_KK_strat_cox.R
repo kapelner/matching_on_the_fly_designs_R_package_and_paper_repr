@@ -1,4 +1,4 @@
-#' Abstract class for Stratified Cox / Standard Cox Compound Inference
+#' Stratified Cox / Standard Cox Compound Inference for KK Designs
 #'
 #' This class implements a compound estimator for KK matching-on-the-fly designs with
 #' survival responses. For matched pairs, it uses stratified Cox proportional hazards
@@ -11,8 +11,8 @@
 #' correlation-based pruning. Extreme finite coefficients / standard errors are
 #' rejected and treated as non-estimable.
 #'
-#' @keywords internal
-InferenceAbstractKKStratCoxIVWC = R6::R6Class("InferenceAbstractKKStratCoxIVWC",
+#' @export
+InferenceSurvivalKKStratCoxPHIVWC = R6::R6Class("InferenceSurvivalKKStratCoxPHIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
 	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
@@ -490,12 +490,4 @@ InferenceSurvivalKKStratCoxPHOneLik = R6::R6Class("InferenceSurvivalKKStratCoxPH
 			)
 		}
 	)))
-)
-
-#' Stratified Cox / Standard Cox Compound Inference for KK Designs
-#' @export
-InferenceSurvivalKKStratCoxPHIVWC = R6::R6Class("InferenceSurvivalKKStratCoxPHIVWC",
-	lock_objects = FALSE,
-	inherit = InferenceAbstractKKStratCoxIVWC,
-	public = list()
 )

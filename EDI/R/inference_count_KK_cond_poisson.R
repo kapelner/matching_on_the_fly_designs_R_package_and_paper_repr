@@ -8,7 +8,7 @@
 #'
 #' @keywords internal
 #' @noRd
-InferenceAbstractKKHurdlePoissonIVWC = R6::R6Class("InferenceAbstractKKHurdlePoissonIVWC",
+InferenceCountKKHurdlePoissonIVWC = R6::R6Class("InferenceCountKKHurdlePoissonIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(

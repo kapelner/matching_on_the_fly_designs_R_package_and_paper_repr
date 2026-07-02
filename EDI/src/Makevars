@@ -33,6 +33,14 @@ endif
 # LTO is opt-in. GCC/RcppEigen LTO builds have shown severe slowdowns in the
 # small model-fit kernels, so keep the default benchmark/release path non-LTO.
 # Enable explicitly with: EDI_NATIVE_LTO=1 R CMD INSTALL EDI
+# Debug symbols for perf annotate / source-level profiling.
+# Enable with: EDI_DEBUG_SYMBOLS=1 R CMD INSTALL EDI
+# Keeps -O3 so profiling reflects real performance; adds DWARF info + frame pointers.
+EDI_DEBUG_SYMBOLS ?= 0
+ifeq ($(EDI_DEBUG_SYMBOLS),1)
+override CXXFLAGS += -g1 -fno-omit-frame-pointer
+endif
+
 EDI_NATIVE_LTO ?= 0
 ifeq ($(EDI_NATIVE_LTO),1)
 PKG_CXXFLAGS += -flto

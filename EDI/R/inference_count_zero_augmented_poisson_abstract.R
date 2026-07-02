@@ -270,8 +270,8 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					error = function(e) NULL
 				)
 				if (is.null(fit) || !isTRUE(fit$converged)) return(NA_real_)
-				private$set_fit_warm_start(as.numeric(c(fit$coefficients$cond, fit$coefficients$zi)), "params")
-				return(as.numeric(fit$coefficients$cond[2]))
+				private$set_fit_warm_start(as.numeric(fit$params), "params")
+				return(as.numeric(fit$params[2]))
 			} else {
 				dat = private$build_component_frame(X_fit, Xzi_fit)
 				mod = private$fit_zero_augmented_model(dat, X_fit, Xzi_fit)
@@ -504,7 +504,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 				}
 				
 				private$cached_mod = fit
-				full_params = as.numeric(c(fit$coefficients$cond, fit$coefficients$zi))
+				full_params = as.numeric(fit$params)
 				private$set_fit_warm_start(full_params, "params")
 				
 				private$cached_values$likelihood_test_context = list(
@@ -513,7 +513,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 					j_treat = 2L,
 					is_hurdle = is_hurdle
 				)
-				out$beta_hat_T = as.numeric(fit$coefficients$cond[2])
+				out$beta_hat_T = as.numeric(fit$params[2])
 				if (!estimate_only) {
 					se = tryCatch(sqrt(fit$vcov[2, 2]), error = function(e) NA_real_)
 					out$ssq_b_j = if (is.finite(se) && se > 0) se^2 else NA_real_

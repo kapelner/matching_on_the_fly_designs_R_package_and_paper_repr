@@ -377,10 +377,6 @@ List fast_zero_augmented_poisson_cpp(SEXP X_sexp,
 
     if (estimate_only) {
         return List::create(
-            Named("coefficients") = List::create(
-                Named("cond") = params.head(p_cond),
-                Named("zi") = params.tail(p_zi)
-            ),
             Named("params") = params,
             Named("converged") = fit.converged,
             Named("neg_ll") = fit.value,

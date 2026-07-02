@@ -3,7 +3,12 @@
 #' @name InferenceAsympLik
 #' @description Intermediate base class for asymptotic inference families that expose
 #' likelihood / partial-likelihood / working-likelihood test paths in addition
-#' to Wald inference.
+#' to Wald inference. The term "likelihood" is used broadly: subclasses may be
+#' backed by a true full likelihood, a partial likelihood (e.g. Cox PH), a
+#' quasi-likelihood (e.g. GEE, quasi-Poisson), or a composite/combined
+#' likelihood. Classes requiring a full generative likelihood — i.e. those
+#' supporting parametric-bootstrap LR calibration — inherit instead from
+#' \code{InferenceParamBootstrap}.
 #'
 #' @keywords internal
 InferenceAsympLik = R6::R6Class("InferenceAsympLik",

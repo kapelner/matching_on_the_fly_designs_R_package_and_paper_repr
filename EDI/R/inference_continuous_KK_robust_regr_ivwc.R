@@ -1,11 +1,11 @@
-#' Abstract class for Robust-Regression IVWC Compound Inference for KK Designs
+#' Robust-Regression IVWC Compound Inference for KK Designs
 #'
 #' Fits a variance-weighted compound estimator for KK matching-on-the-fly designs
 #' with continuous responses using robust linear regression (`MASS::rlm`) for the
 #' matched-pair and reservoir components separately.
 #'
-#' @keywords internal
-InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIVWC",
+#' @export
+InferenceContinKKRobustRegrIVWC = R6::R6Class("InferenceContinKKRobustRegrIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
 	public = list(
@@ -333,10 +333,3 @@ InferenceAbstractKKRobustRegrIVWC = R6::R6Class("InferenceAbstractKKRobustRegrIV
 #' inf = InferenceContinKKRobustRegrIVWC$new(seq_des)
 #' inf$compute_estimate()
 #' }
-#' @export
-InferenceContinKKRobustRegrIVWC = R6::R6Class("InferenceContinKKRobustRegrIVWC",
-	lock_objects = FALSE,
-	inherit = InferenceAbstractKKRobustRegrIVWC,
-	public = list(
-	)
-)
