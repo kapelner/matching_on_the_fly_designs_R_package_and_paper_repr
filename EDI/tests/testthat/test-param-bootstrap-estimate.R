@@ -17,6 +17,25 @@ make_param_boot_logit_design <- function(seed = 20260723L, n = 150L){
 	des
 }
 
+make_param_boot_cont_ratio_design <- function(seed = 20260724L, n = 96L){
+	set.seed(seed)
+	x1 <- rnorm(n)
+	x2 <- rnorm(n)
+	w <- rep(c(1, -1), length.out = n)
+	eta <- 0.45 * w + 0.25 * x1 - 0.15 * x2
+	cut_1 <- plogis(-1.1 - eta)
+	cut_2 <- plogis(-0.1 - eta)
+	cut_3 <- plogis(0.9 - eta)
+	u <- runif(n)
+	y <- ifelse(u <= cut_1, 1L, ifelse(u <= cut_2, 2L, ifelse(u <= cut_3, 3L, 4L)))
+
+	des <- EDI:::DesignFixed$new(n = n, response_type = "ordinal", verbose = FALSE)
+	des$add_all_subjects_to_experiment(data.frame(x1 = x1, x2 = x2))
+	des$overwrite_all_subject_assignments(w)
+	des$add_all_subject_responses(y)
+	des
+}
+
 test_that("compute_param_bootstrap_estimate is finite and deterministic under a fixed seed", {
 	des <- make_param_boot_logit_design()
 
@@ -39,6 +58,43 @@ test_that("compute_param_bootstrap_estimate is finite and deterministic under a 
 	expect_true(is.finite(est1))
 	expect_equal(est1, est2, tolerance = 0)
 	expect_false(isTRUE(all.equal(est1, est3)))
+})
+
+test_that("continuation-ratio parametric bootstrap exposes full-parameter refits", {
+	des <- make_param_boot_cont_ratio_design()
+	inf <- InferenceOrdinalContRatioRegr$new(des, model_formula = ~ x1 + x2, verbose = FALSE)
+	inf$set_seed(42)
+	inf$num_cores <- 1L
+
+	est <- inf$compute_param_bootstrap_estimate(
+		B = 7L,
+		min_number_usable_samples = 1L,
+		max_attempts_per_replicate = 5L,
+		show_progress = FALSE
+	)
+	pval <- inf$compute_param_bootstrap_pval(
+		delta = 0,
+		B = 7L,
+		min_number_usable_samples = 1L,
+		max_attempts_per_replicate = 5L,
+		show_progress = FALSE
+	)
+	ci <- inf$compute_param_bootstrap_confidence_interval(
+		alpha = 0.2,
+		B = 7L,
+		min_number_usable_samples = 1L,
+		max_attempts_per_replicate = 5L,
+		show_progress = FALSE
+	)
+	diag <- inf$get_last_param_bootstrap_estimate_diagnostics()
+
+	expect_true(is.finite(est))
+	expect_true(is.finite(pval))
+	expect_true(pval >= 0 && pval <= 1)
+	expect_true(all(is.finite(ci)))
+	expect_true(ci[[1]] <= ci[[2]])
+	expect_equal(diag$n_failure, 0L)
+	expect_equal(diag$n_success, 7L)
 })
 
 test_that("compute_param_bootstrap_estimate satisfies the bias-correction reconciliation identity", {

@@ -1,6 +1,7 @@
 #include <RcppEigen.h>
 #include <algorithm> // for std::sort
 #include <cmath>
+#include <limits>
 #include <vector>
 #ifdef _OPENMP
 #include <omp.h>
@@ -31,18 +32,18 @@ inline double km_stat_inline(SurvEntry* grp, int ng, bool do_rmst,
         i = j;
     }
     if (!do_rmst) {
-        // Median: first time KM drops below 0.5 with linear interpolation
+        // Match survival::quantile.survfit median semantics: the KM curve is a
+        // step function. If it lands exactly on 0.5, average this event time
+        // with the next event time; otherwise use the first time S(t) < 0.5.
         const int sz = (int)sprobs.size();
+        const double tol = std::sqrt(std::numeric_limits<double>::epsilon());
         for (int i = 0; i < sz; ++i) {
-            if (sprobs[i] < 0.5) {
-                if (i > 0) {
-                    double p1 = sprobs[i-1], p2 = sprobs[i], t1 = utimes[i-1], t2 = utimes[i];
-                    return t1 + (t2 - t1) * (0.5 - p1) / (p2 - p1);
-                }
+            if (sprobs[i] <= 0.5) {
+                if (std::abs(sprobs[i] - 0.5) < tol && i + 1 < sz) return 0.5 * (utimes[i] + utimes[i + 1]);
                 return utimes[i];
             }
         }
-        return R_PosInf;
+        return NA_REAL;
     } else {
         // RMST: area under the KM curve (trapezoidal integration)
         double rmst = 0.0;
@@ -128,21 +129,16 @@ double get_survival_stat_for_group(SEXP y_sexp, SEXP dead_sexp, std::string requ
 
 
     if (requested_stat == "median") {
+        const double tol = std::sqrt(std::numeric_limits<double>::epsilon());
         for (size_t i = 0; i < survival_probs.size(); ++i) {
-            if (survival_probs[i] < 0.5) {
-                // simple linear interpolation
-                if (i > 0){
-                    double p1 = survival_probs[i-1];
-                    double p2 = survival_probs[i];
-                    double t1 = unique_times[i-1];
-                    double t2 = unique_times[i];
-                    return t1 + (t2 - t1) * (0.5 - p1) / (p2 - p1);
-                } else {
-                    return unique_times[i]; // should be 0 if it happens at first obs
+            if (survival_probs[i] <= 0.5) {
+                if (std::abs(survival_probs[i] - 0.5) < tol && i + 1 < survival_probs.size()) {
+                    return 0.5 * (unique_times[i] + unique_times[i + 1]);
                 }
+                return unique_times[i];
             }
         }
-        return R_PosInf; // Median is beyond the last observation time
+        return NA_REAL; // Median is not estimable before the last observation time
     } else if (requested_stat == "restricted_mean") {
         double restricted_mean = 0.0;
         for (size_t i = 0; i < unique_times.size() - 1; ++i) {

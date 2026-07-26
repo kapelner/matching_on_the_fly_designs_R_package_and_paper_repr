@@ -619,6 +619,9 @@ InferenceCountKKHurdlePoissonOneLik = R6::R6Class("InferenceCountKKHurdlePoisson
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
 		},
+		#' @description Whether likelihood-ratio parametric bootstrap is supported.
+		#'
+		#' @return \code{TRUE}.
 		supports_lik_ratio_param_bootstrap = function() TRUE
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
@@ -1356,6 +1359,9 @@ InferenceCountKKCondPoissonOneLik = R6::R6Class("InferenceCountKKCondPoissonOneL
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
 		},
+		#' @description Whether likelihood-ratio parametric bootstrap is supported.
+		#'
+		#' @return \code{TRUE}.
 		supports_lik_ratio_param_bootstrap = function() TRUE
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(

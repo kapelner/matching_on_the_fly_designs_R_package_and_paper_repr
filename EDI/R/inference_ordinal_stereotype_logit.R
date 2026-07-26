@@ -444,9 +444,9 @@ InferenceOrdinalContRatioRegr = R6::R6Class("InferenceOrdinalContRatioRegr",
 			X_fit = ctx$X
 			y = as.numeric(private$y)
 			j_treat = as.integer(ctx$j_treat)
-			full_fit = list(params = ctx$full_params, neg_loglik = ctx$full_neg_loglik)
+			full_fit = list(b = ctx$full_params, params = ctx$full_params, neg_loglik = ctx$full_neg_loglik)
 			list(
-				X = X_fit, y = y, j = j_treat,
+				X = X_fit, y = y, K = length(sort(unique(private$y))), j = j_treat,
 				full_fit = full_fit,
 				fit_null = function(delta, start = NULL){
 					n_params = length(ctx$full_params)
@@ -481,7 +481,7 @@ InferenceOrdinalContRatioRegr = R6::R6Class("InferenceOrdinalContRatioRegr",
 		},
 		supports_lik_ratio_param_bootstrap = function() TRUE,
 		simulate_under_lik_null = function(spec, delta, null_fit){
-			params_null = as.numeric(null_fit$b)
+			params_null = as.numeric(null_fit$b %||% null_fit$params)
 			n_params    = length(params_null)
 			K           = as.integer(spec$K)
 			n_alpha     = K - 1L
@@ -489,6 +489,7 @@ InferenceOrdinalContRatioRegr = R6::R6Class("InferenceOrdinalContRatioRegr",
 			j           = spec$j
 			n           = nrow(X_fit)
 			p           = n_params - n_alpha
+			if (!is.finite(K) || K < 2L || p < 1L || length(params_null) < n_alpha + p) return(NULL)
 
 			alphas = params_null[seq_len(n_alpha)]
 			betas  = params_null[(n_alpha + 1L):n_params]
@@ -513,22 +514,22 @@ InferenceOrdinalContRatioRegr = R6::R6Class("InferenceOrdinalContRatioRegr",
 			ws   = private$get_fit_warm_start_for_length("beta", n_params) %||% params_null
 			full = tryCatch(
 				fast_continuation_ratio_regression_cpp(
-					X = X_fit, y = y_sim, K = K,
-					j_T = 0L, estimate_only = FALSE,
+					X_sexp = X_fit, y_sexp = y_sim,
 					warm_start_beta = ws,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params)
 				),
 				error = function(e) NULL
 			)
 			if (is.null(full) || !isTRUE(full$converged)) return(NULL)
+			full_fit_boot = list(b = as.numeric(full$params), params = as.numeric(full$params), neg_loglik = as.numeric(full$neg_loglik))
 			list(
-				full_fit = full,
+				worker_data = list(y = y_sim),
+				full_fit = full_fit_boot,
 				fit_null = function(d, start = NULL){
 					ws2 = start %||% private$get_fit_warm_start_for_length("beta", n_params) %||% params_null
 					f2  = tryCatch(
 						fast_continuation_ratio_regression_cpp(
-							X = X_fit, y = y_sim, K = K,
-							j_T = 0L, estimate_only = FALSE,
+							X_sexp = X_fit, y_sexp = y_sim,
 							warm_start_beta = ws2,
 							warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
 							fixed_idx = j, fixed_values = d
@@ -536,7 +537,7 @@ InferenceOrdinalContRatioRegr = R6::R6Class("InferenceOrdinalContRatioRegr",
 						error = function(e) NULL
 					)
 					if (is.null(f2) || !isTRUE(f2$converged)) return(NULL)
-					f2
+					list(b = as.numeric(f2$params), params = as.numeric(f2$params), neg_loglik = as.numeric(f2$neg_loglik))
 				},
 				neg_loglik = function(fit) as.numeric(fit$neg_loglik %||% fit$neg_ll)
 			)

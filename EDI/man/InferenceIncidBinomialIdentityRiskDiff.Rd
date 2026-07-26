@@ -166,12 +166,21 @@ Computes the treatment effect estimate for a weighted bootstrap sample.
 \if{html}{\out{<a id="method-InferenceIncidBinomialIdentityRiskDiff-compute_lik_ratio_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidBinomialIdentityRiskDiff-compute_lik_ratio_confidence_interval}{}}}
 \subsection{Method \code{compute_lik_ratio_confidence_interval()}}{
+Computes the likelihood-ratio confidence interval, falling back to a
+  non-estimable result if the underlying computation fails.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceIncidBinomialIdentityRiskDiff$compute_lik_ratio_confidence_interval(
   alpha = 0.05
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level. Default 0.05.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidBinomialIdentityRiskDiff-clone"></a>}}

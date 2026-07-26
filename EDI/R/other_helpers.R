@@ -169,6 +169,12 @@ create_model_matrix_from_features = function(formula, data){
 drop_linearly_dependent_cols = function(M){
 	M = as.matrix(M)
 	js = seq_len(ncol(M))
+	if (nrow(M) == 0L || ncol(M) == 0L) {
+		return(list(M = M, js = js))
+	}
+	if (!is.numeric(M) || any(!is.finite(M))) {
+		return(list(M = M, js = js))
+	}
 	if (ncol(M) > 0){
 		# Use a standard tolerance for rank detection
 		tol = 1e-7

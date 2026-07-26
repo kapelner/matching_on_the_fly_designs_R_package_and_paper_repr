@@ -30,3 +30,23 @@ test_that("qr_reduce_preserve_cols_cpp drops treatment when it is linearly depen
 	expect_false(2L %in% reduced$keep)
 	expect_equal(qr(reduced$X_reduced)$rank, ncol(reduced$X_reduced))
 })
+
+test_that("rank reduction handles empty and non-finite matrices without native crashes", {
+	X_empty_rows = matrix(numeric(0), nrow = 0, ncol = 3)
+	colnames(X_empty_rows) = paste0("x", seq_len(ncol(X_empty_rows)))
+	reduced_empty_rows = EDI:::drop_linearly_dependent_cols(X_empty_rows)
+	expect_equal(dim(reduced_empty_rows$M), c(0L, 3L))
+	expect_equal(reduced_empty_rows$js, seq_len(3L))
+	expect_equal(EDI:::matrix_rank_cpp(X_empty_rows), 0L)
+
+	X_empty_cols = matrix(numeric(0), nrow = 4, ncol = 0)
+	reduced_empty_cols = EDI:::drop_linearly_dependent_cols(X_empty_cols)
+	expect_equal(dim(reduced_empty_cols$M), c(4L, 0L))
+	expect_equal(reduced_empty_cols$js, integer(0))
+	expect_equal(EDI:::matrix_rank_cpp(X_empty_cols), 0L)
+
+	X_nonfinite = cbind(x1 = c(1, 2, NA), x2 = c(2, 4, 6))
+	reduced_nonfinite = EDI:::drop_linearly_dependent_cols(X_nonfinite)
+	expect_equal(reduced_nonfinite$M, X_nonfinite)
+	expect_equal(reduced_nonfinite$js, seq_len(ncol(X_nonfinite)))
+})

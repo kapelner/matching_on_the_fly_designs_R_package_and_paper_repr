@@ -36,6 +36,14 @@
 InferenceMixinParamBootstrapEstimate = list(
 	public = list(),
 	private = list(
+		extract_param_bootstrap_estimate_coef = function(fit, j){
+			if (is.null(fit)) return(NA_real_)
+			coef = fit$b %||% fit$params %||% fit$coefficients
+			coef = suppressWarnings(as.numeric(coef))
+			j = as.integer(j)
+			if (!length(coef) || !is.finite(j) || j < 1L || length(coef) < j) return(NA_real_)
+			coef[j]
+		},
 		# Shared batch runner used by both compute_param_bootstrap_estimate()
 		# and compute_param_bootstrap_confidence_interval(): extracts the raw
 		# (unrestricted) estimate from the likelihood-test spec, runs B
@@ -53,7 +61,7 @@ InferenceMixinParamBootstrapEstimate = list(
 				return(NULL)
 			}
 			j = as.integer(spec$j)
-			raw_estimate = as.numeric(spec$full_fit$b[j])
+			raw_estimate = private$extract_param_bootstrap_estimate_coef(spec$full_fit, j)
 			if (!is.finite(raw_estimate)) {
 				if (!isTRUE(self$is_nonestimable("estimate")))
 					private$cache_nonestimable_se("param_bootstrap_estimate_raw_estimate_nonfinite")
@@ -67,7 +75,7 @@ InferenceMixinParamBootstrapEstimate = list(
 				max_attempts_per_replicate = max_attempts_per_replicate,
 				show_progress = show_progress
 			)
-			replicate_estimates = vapply(run$results, function(res) as.numeric(res$b %||% NA_real_)[1L], numeric(1))
+			replicate_estimates = vapply(run$results, function(res) if (isTRUE(res$success)) as.numeric(res$b) else NA_real_, numeric(1))
 			finite_reps = replicate_estimates[is.finite(replicate_estimates)]
 			n_success = length(finite_reps)
 			n_failure = length(replicate_estimates) - n_success
@@ -140,15 +148,19 @@ InferenceMixinParamBootstrapEstimate = list(
 				last_result = list(success = FALSE, b = NA_real_, reason = "simulated_data_failure", attempts = 0L)
 				for (attempt in seq_len(max(1L, as.integer(max_attempts_per_replicate)))) {
 					boot_spec = tryCatch(
-						private$simulate_under_lik_null(spec, delta = full_fit$b[j], null_fit = full_fit),
+						private$simulate_under_lik_null(spec, delta = private$extract_param_bootstrap_estimate_coef(full_fit, j), null_fit = full_fit),
 						error = function(e) NULL
 					)
-					if (is.null(boot_spec) || is.null(boot_spec$full_fit) ||
-						length(boot_spec$full_fit$b) < j || !is.finite(boot_spec$full_fit$b[j])) {
+					boot_coef = if (is.null(boot_spec) || is.null(boot_spec$full_fit)) {
+						NA_real_
+					} else {
+						private$extract_param_bootstrap_estimate_coef(boot_spec$full_fit, j)
+					}
+					if (!is.finite(boot_coef)) {
 						last_result = list(success = FALSE, b = NA_real_, reason = "simulated_refit_failure", attempts = as.integer(attempt))
 						next
 					}
-					return(list(success = TRUE, b = as.numeric(boot_spec$full_fit$b[j]), reason = "success", attempts = as.integer(attempt)))
+					return(list(success = TRUE, b = boot_coef, reason = "success", attempts = as.integer(attempt)))
 				}
 				last_result
 			})

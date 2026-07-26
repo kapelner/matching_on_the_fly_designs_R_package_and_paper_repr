@@ -1274,6 +1274,14 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			if (private$mark_jackknife_nonestimable_if_block_unsupported(unit = unit)) {
 				return(numeric(0))
 			}
+			theta_hat = tryCatch(as.numeric(self$compute_estimate(estimate_only = TRUE))[1L], error = function(e) NA_real_)
+			if (is.function(self$is_nonestimable) && isTRUE(self$is_nonestimable("estimate"))) {
+				theta_hat = NA_real_
+			}
+			if (!is.finite(theta_hat)) {
+				private$cache_nonestimable_estimate("jackknife_original_estimate_unavailable")
+				return(numeric(0))
+			}
 			deletion_draws = private$build_jackknife_deletion_draws(unit = unit)
 			n_draws = length(deletion_draws)
 			if (n_draws <= 1L) return(numeric(0))

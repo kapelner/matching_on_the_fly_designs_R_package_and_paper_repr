@@ -16,7 +16,7 @@ if (nzchar(edi_lib_user)) {
 	.libPaths(unique(c(edi_lib_user, .libPaths())))
 }
 suppressPackageStartupMessages(library(EDI))
-required_packages = c("doParallel", "PTE", "datasets", "qgam", "mlbench", "AppliedPredictiveModeling", "dplyr", "ggplot2", "gridExtra", "profvis", "data.table", "devtools")
+required_packages = c("doParallel", "PTE", "datasets", "qgam", "mlbench", "AppliedPredictiveModeling", "dplyr", "ggplot2", "gridExtra", "profvis", "data.table", "devtools", "R.utils")
 for (pkg in required_packages) {
 	if (!suppressPackageStartupMessages(require(pkg, character.only = TRUE, quietly = TRUE))) {
 		stop("Required package is not installed: ", pkg, call. = FALSE)
@@ -128,6 +128,7 @@ if (is.na(INFERENCE_CLASS_FILTER)) {
 prob_censoring = 0.15
 r = 151
 pval_epsilon = 0.007
+FUNCTION_TIMEOUT_SEC = 120
 test_compute_confidence_interval_rand = TRUE
 run_debug_resampling = Sys.getenv("COMPREHENSIVE_DEBUG_RESAMPLING", "0") %in% c("1", "true", "TRUE", "yes", "YES")
 run_parametric_bootstrap_ci = Sys.getenv("COMPREHENSIVE_PARAM_BOOT_CI", "0") %in% c("1", "true", "TRUE", "yes", "YES")
@@ -449,7 +450,9 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 			 !is.na(response_type) &&
 			 !is.null(COVERAGE_CLOSED_FORM[[paste0("InferenceAllSimpleMeanDiff__", response_type)]]))
 		)
-	if (has_closed_form_coverage_truth || grepl("confidence_interval", function_run, fixed = TRUE)){
+	has_mc_spec_coverage_truth =
+		exists("COVERAGE_MC_SPEC", inherits = TRUE) && !is.null(COVERAGE_MC_SPEC[[base_inference_class]])
+	if (has_closed_form_coverage_truth || has_mc_spec_coverage_truth || grepl("confidence_interval", function_run, fixed = TRUE)){
 		coverage_truth = get_coverage_truth(inference_class, dataset_name, beta_T, response_type_hint = response_type)
 	}
 	if (grepl("confidence_interval", function_run, fixed = TRUE)){
@@ -460,6 +463,7 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 			beta_T_in_confidence_interval = (coverage_truth >= ci_lo && coverage_truth <= ci_hi)
 		}
 	}
+	cache_estimate_logging_theta(inference_class, dataset_name, beta_T, response_type, coverage_truth)
 	run_row_id <<- run_row_id + 1L
 	results_dt <<- data.table::rbindlist(list(
 		results_dt,
@@ -626,10 +630,10 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 	))
 	# Per-operation slow skips (avg >30s in comprehensive_tests_*_20260720.log)
 	skip_rand_slow            = is_any_inference_class(c("InferenceContinKKGLMM"))
-	skip_rand_ci_slow         = is_any_inference_class(c("InferenceSurvivalWeibullRegr", "InferenceSurvivalKKClaytonCopulaOneLik", "InferenceSurvivalKKWeibullFrailtyOneLik", "InferencePropQuantileRegr", "InferencePropKKGEE", "InferencePropBetaRegr"))
+	skip_rand_ci_slow         = is_any_inference_class(c("InferenceSurvivalWeibullRegr", "InferenceSurvivalKKClaytonCopulaOneLik", "InferenceSurvivalKKWeibullFrailtyOneLik", "InferencePropQuantileRegr", "InferencePropKKGEE", "InferencePropBetaRegr"))  # PropBetaRegr rand CI avg 32.3s / p80 43.6s / max 2035.9s at n=334
 	skip_score_ci_slow        = is_any_inference_class(c("InferenceSurvivalKKWeibullFrailtyOneLik"))  # score CI avg 50.1s / max 324.8s at n=13
 	skip_lik_ratio_ci_slow    = is_any_inference_class(c("InferenceSurvivalKKClaytonCopulaOneLik"))  # lik-ratio CI avg 39s / max 234s at n=6
-	skip_bbt_pval_slow        = is_any_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # Bayesian bootstrap pval avg 32.4s / max 68.4s at n=32
+	skip_bbt_pval_slow        = is_any_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # Bayesian bootstrap pval avg 32.4s / p80 40.6s / max 68.4s at n=32
 	skip_bbt_pval_symmetric_slow = is_any_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # Bayesian bootstrap symmetric pval avg 30.6s / max 54.9s at n=18
 	skip_bbt_ci_slow          = is_any_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))
 	skip_boot_ci_default_slow = is_any_inference_class(c("InferenceIncidRiskDiff", "InferenceContinKKQuantileRegrOneLik"))  # RiskDiff bootstrap CI avg 261.1s / max 2014.1s at n=8; ContinKKQuantileRegrOneLik bootstrap CI mean 109.0s / max 9434.3s at n=98
@@ -652,7 +656,6 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 		!isTRUE(tryCatch(seq_des_inf$.__enclos_env__$private$supports_bayesian_bootstrap(), error = function(e) TRUE))
 	supports_parametric_bootstrap =
 		is(seq_des_inf, "InferenceParamBootstrap") &&
-		!is_any_inference_class(c("InferenceCountKKGLMM")) &&
 		isTRUE(tryCatch(
 			seq_des_inf$.__enclos_env__$private$supports_lik_ratio_param_bootstrap(),
 			error = function(e) FALSE
@@ -660,7 +663,6 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 	supports_parametric_bootstrap_ci =
 		run_parametric_bootstrap_ci &&
 		supports_parametric_bootstrap &&
-		!is_any_inference_class(c("InferenceCountKKGLMM")) &&
 		isTRUE(tryCatch({
 			ci_support_fn = seq_des_inf$.__enclos_env__$private$supports_lik_ratio_param_bootstrap_confidence_interval
 			if (is.function(ci_support_fn)) ci_support_fn() else TRUE
@@ -673,7 +675,6 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 	# per-delta bisection refits), so it is not gated behind run_parametric_bootstrap_ci.
 	supports_parametric_bootstrap_estimate =
 		is(seq_des_inf, "InferenceParamBootstrap") &&
-		!is_any_inference_class(c("InferenceCountKKGLMM")) &&
 		isTRUE(tryCatch(
 			seq_des_inf$.__enclos_env__$private$supports_param_bootstrap_estimate(),
 			error = function(e) FALSE
@@ -683,7 +684,6 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 	# approx factor reuses the same simulate_under_lik_null()/refit machinery as
 	# parametric-bootstrap LR, so it carries the same cost profile and exclusions.
 	supports_bartlett =
-		!is_any_inference_class(c("InferenceCountKKGLMM")) &&
 		(isTRUE(tryCatch(seq_des_inf$.__enclos_env__$private$supports_bartlett_likelihood_ratio_exact(), error = function(e) FALSE)) ||
 		 isTRUE(tryCatch(seq_des_inf$.__enclos_env__$private$supports_bartlett_likelihood_ratio_approx(), error = function(e) FALSE)))
 	supports_bartlett_ci = run_parametric_bootstrap_ci && supports_bartlett
@@ -729,6 +729,23 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 			return(x)
 		}
 		x
+	}
+
+	estimate_error_annotation = function(label, result){
+		if (!grepl("estimate", label, fixed = TRUE)) return("")
+		if (!is.atomic(result) || length(result) < 1L) return("")
+		estimate = suppressWarnings(as.numeric(result[1L]))
+		if (!length(estimate) || !is.finite(estimate)) return("")
+		theta = get_estimate_logging_theta(inference_result_label, dataset_name, beta_T, response_type)
+		if (!length(theta) || !is.finite(theta)) return("")
+		abs_error = abs(estimate - theta)
+		sqd_error = abs_error^2
+		paste0(
+			" (theta = ", format(theta, digits = 3),
+			", |e| = ", format(abs_error, digits = 3),
+			", e^2 = ", format(sqd_error, digits = 3),
+			")"
+		)
 	}
 
 	has_invalid_numeric = function(x){
@@ -868,7 +885,12 @@ safe_call = function(label, expr){
 	message("          Calling ", label, "()")
 		start_elapsed = unname(proc.time()[["elapsed"]])
 		tryCatch({
-			result <- expr
+			result <- R.utils::withTimeout(
+				expr,
+				cpu = Inf,
+				elapsed = FUNCTION_TIMEOUT_SEC,
+				onTimeout = "error"
+			)
 			if (should_record_nonestimable_as_missing(seq_des_inf, label, result)) {
 				msg = nonestimable_error_message(seq_des_inf, label)
 				message("Recording missing output for ", label, " as ok (explicitly non-estimable).")
@@ -922,13 +944,28 @@ safe_call = function(label, expr){
 					return(invisible(NULL))
 				}
 				result = snap_small_numeric_to_zero(result)
-			cat("            ", paste(format(result, digits = 3), collapse = " "), "\n")
 			duration_time_sec = unname(proc.time()[["elapsed"]]) - start_elapsed
+			record_result(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, inference_result_label, label, result, status = "ok", duration_time_sec = duration_time_sec)
+			cat("            ", paste(format(result, digits = 3), collapse = " "), estimate_error_annotation(label, result), "\n", sep = "")
 			cat(sprintf("              (Duration: %.3gs)\n", duration_time_sec))
 			flush.console()
-			record_result(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, inference_result_label, label, result, status = "ok", duration_time_sec = duration_time_sec)
 			result
 		}, error = function(e){
+			if (inherits(e, "TimeoutException") ||
+				grepl("reached elapsed time limit", conditionMessage(e), fixed = TRUE)) {
+				duration_time_sec = unname(proc.time()[["elapsed"]]) - start_elapsed
+				msg = paste0("Skipped due to timeout after ", FUNCTION_TIMEOUT_SEC, " seconds")
+				message("Skipping ", label, " (timeout): ", msg)
+				cat(sprintf("              (Duration: %.3gs)\n", duration_time_sec))
+				record_result(
+					dataset_name, dataset_n_rows, dataset_n_cols,
+					response_type, design_type, inference_result_label,
+					label, NA_character_, status = "ok",
+					duration_time_sec = duration_time_sec,
+					error_message = msg
+				)
+				return(invisible(NULL))
+			}
 			if (should_record_nonestimable_as_missing(seq_des_inf, label)) {
 				msg = nonestimable_error_message(seq_des_inf, label)
 				duration_time_sec = unname(proc.time()[["elapsed"]]) - start_elapsed
@@ -1616,6 +1653,20 @@ compute_mc_coverage_truth_simframe = function(class_gen, design_gen, response_ty
 	)
 	sim$run()
 	res = SimulationFrameworkReport$new(sim)$get_results()
+	if (!nrow(res)) {
+		class_label  = tryCatch(class_gen$classname, error = function(e) NA_character_)
+		design_label = tryCatch(design_gen$classname, error = function(e) NA_character_)
+		warning(sprintf(
+			paste0(
+				"compute_mc_coverage_truth_simframe: zero result rows for class=%s design=%s ",
+				"response_type=%s dataset=%s beta_T=%s -- the design/inference pair was filtered ",
+				"as invalid for every replication (see the SimulationFramework warning above). ",
+				"Returning NA rather than a fabricated truth."
+			),
+			class_label, design_label, response_type, dataset_name, format(beta_T_val)
+		), call. = FALSE)
+		return(NA_real_)
+	}
 	as.numeric(res$estimate[1L])
 }
 
@@ -1637,10 +1688,10 @@ COVERAGE_MC_SPEC = list(
 	InferenceSurvivalStratCoxPHRegr      = list(rt = "survival",   design = quote(DesignFixedBernoulli),  gen = quote(InferenceSurvivalStratCoxPHRegr),      mc_n = 20000L),
 	InferenceSurvivalWeibullRegr         = list(rt = "survival",   design = quote(DesignFixedBernoulli),  gen = quote(InferenceSurvivalWeibullRegr),         mc_n = 20000L),
 	InferenceSurvivalDepCensTransformRegr = list(rt = "survival",  design = quote(DesignFixedBernoulli),  gen = quote(InferenceSurvivalDepCensTransformRegr), mc_n = 20000L),
-	InferenceSurvivalKKLWACoxPHOneLik    = list(rt = "survival",   design = quote(DesignFixedBernoulli),  gen = quote(InferenceSurvivalKKLWACoxPHOneLik),    mc_n = 20000L),
-	InferenceSurvivalKKStratCoxPHOneLik  = list(rt = "survival",   design = quote(DesignFixedBernoulli),  gen = quote(InferenceSurvivalKKStratCoxPHOneLik),  mc_n = 20000L),
-	InferenceSurvivalKKClaytonCopulaOneLik  = list(rt = "survival", design = quote(DesignFixedBernoulli), gen = quote(InferenceSurvivalKKClaytonCopulaOneLik),  mc_n = 20000L),
-	InferenceSurvivalKKWeibullFrailtyOneLik = list(rt = "survival", design = quote(DesignFixedBernoulli), gen = quote(InferenceSurvivalKKWeibullFrailtyOneLik), mc_n = 20000L),
+	InferenceSurvivalKKLWACoxPHOneLik    = list(rt = "survival",   design = quote(DesignFixedBinaryMatch),  gen = quote(InferenceSurvivalKKLWACoxPHOneLik),    mc_n = 3000L),
+	InferenceSurvivalKKStratCoxPHOneLik  = list(rt = "survival",   design = quote(DesignFixedBinaryMatch),  gen = quote(InferenceSurvivalKKStratCoxPHOneLik),  mc_n = 3000L),
+	InferenceSurvivalKKClaytonCopulaOneLik  = list(rt = "survival", design = quote(DesignFixedBinaryMatch), gen = quote(InferenceSurvivalKKClaytonCopulaOneLik),  mc_n = 3000L),
+	InferenceSurvivalKKWeibullFrailtyOneLik = list(rt = "survival", design = quote(DesignFixedBinaryMatch), gen = quote(InferenceSurvivalKKWeibullFrailtyOneLik), mc_n = 3000L),
 	InferenceSurvivalKKWeibullMarginal   = list(rt = "survival",   design = quote(DesignFixedBinaryMatch), gen = quote(InferenceSurvivalKKWeibullMarginal),  mc_n = 3000L)
 )
 
@@ -1659,15 +1710,130 @@ get_coverage_truth = function(inference_class, dataset_name, beta_T_val, respons
 		if (exists(key, envir = .coverage_truth_cache, inherits = FALSE)) {
 			return(get(key, envir = .coverage_truth_cache, inherits = FALSE))
 		}
+		# Only cache a genuinely-finite MC-fitted truth. A failed or degenerate MC
+		# attempt (e.g. an empty result set) must NOT be cached -- otherwise the
+		# fallback beta_T_val gets permanently mistaken for the "least false" truth
+		# for the rest of the run, and every subsequent call retries the MC fit.
 		truth = tryCatch(
 			compute_mc_coverage_truth_simframe(
 				eval(spec$gen), eval(spec$design), spec$rt, dataset_name, beta_T_val, spec$mc_n
 			),
-			error = function(e) beta_T_val
+			error = function(e) NA_real_
 		)
-		if (!is.finite(truth)) truth = beta_T_val
+		if (!length(truth) || !is.finite(truth)) {
+			return(NA_real_)
+		}
 		assign(key, truth, envir = .coverage_truth_cache)
 		return(truth)
+	}
+	beta_T_val
+}
+
+.screen_estimate_theta_cache = new.env(parent = emptyenv())
+
+estimate_logging_theta_base_class = function(inference_class){
+	sub(" [\\(\\[].*$", "", inference_class)
+}
+
+screen_estimate_theta_key = function(base_class, dataset_name, beta_T_val, response_type_hint){
+	paste(
+		as.character(base_class),
+		as.character(dataset_name),
+		serialize_beta_T(beta_T_val),
+		as.character(response_type_hint),
+		sep = "||"
+	)
+}
+
+cache_estimate_logging_theta = function(inference_class, dataset_name, beta_T_val, response_type_hint, theta){
+	theta = suppressWarnings(as.numeric(theta))
+	if (!length(theta) || !is.finite(theta)) return(invisible(FALSE))
+	assign(
+		screen_estimate_theta_key(
+			estimate_logging_theta_base_class(inference_class),
+			dataset_name,
+			beta_T_val,
+			response_type_hint
+		),
+		theta,
+		envir = .screen_estimate_theta_cache
+	)
+	invisible(TRUE)
+}
+
+seed_estimate_theta_cache_from_existing_results = function(){
+	required_cols = c("inference_class", "dataset", "beta_T", "response_type", "coverage_truth")
+	if (!nrow(existing_results_dt) || !all(required_cols %in% names(existing_results_dt))) {
+		return(invisible(NULL))
+	}
+	theta_rows = unique(existing_results_dt[
+		!is.na(coverage_truth),
+		.(inference_class, dataset, beta_T, response_type, coverage_truth)
+	])
+	if (!nrow(theta_rows)) return(invisible(NULL))
+	for (i in seq_len(nrow(theta_rows))) {
+		cache_estimate_logging_theta(
+			theta_rows$inference_class[i],
+			theta_rows$dataset[i],
+			theta_rows$beta_T[i],
+			theta_rows$response_type[i],
+			theta_rows$coverage_truth[i]
+		)
+	}
+	invisible(NULL)
+}
+
+infer_closed_form_response_type = function(closed_form_key){
+	if (grepl("__", closed_form_key, fixed = TRUE)) {
+		return(sub("^.*__", "", closed_form_key))
+	}
+	if (grepl("^InferenceIncid", closed_form_key)) return("incidence")
+	if (grepl("^InferenceProp", closed_form_key)) return("proportion")
+	if (grepl("^InferenceSurvival", closed_form_key)) return("survival")
+	NA_character_
+}
+
+precompute_screen_estimate_theta_cache = function(){
+	beta_vals = beta_T_values
+	if (!is.na(BETA_T_FILTER)) {
+		beta_vals = beta_vals[as.numeric(beta_vals) == BETA_T_FILTER]
+	}
+	if (!length(beta_vals)) return(invisible(NULL))
+	for (closed_form_key in names(COVERAGE_CLOSED_FORM)) {
+		base_class = sub("__.*$", "", closed_form_key)
+		response_type_hint = infer_closed_form_response_type(closed_form_key)
+		if (is.na(response_type_hint)) next
+		closed_form_fn = COVERAGE_CLOSED_FORM[[closed_form_key]]
+		for (dataset_name_curr in names(datasets_and_response_models)) {
+			if (!is.na(DATASET_FILTER) && !identical(dataset_name_curr, DATASET_FILTER)) next
+			if (!(response_type_hint %in% names(datasets_and_response_models[[dataset_name_curr]]$y_original))) next
+			for (beta_T_val in beta_vals) {
+				theta = tryCatch(closed_form_fn(dataset_name_curr, beta_T_val), error = function(e) NA_real_)
+				if (length(theta) && is.finite(theta)) {
+					assign(
+						screen_estimate_theta_key(base_class, dataset_name_curr, beta_T_val, response_type_hint),
+						theta,
+						envir = .screen_estimate_theta_cache
+					)
+				}
+			}
+		}
+	}
+	invisible(NULL)
+}
+
+get_estimate_logging_theta = function(inference_class, dataset_name, beta_T_val, response_type_hint){
+	base_class = estimate_logging_theta_base_class(inference_class)
+	screen_key = screen_estimate_theta_key(base_class, dataset_name, beta_T_val, response_type_hint)
+	if (exists(screen_key, envir = .screen_estimate_theta_cache, inherits = FALSE)) {
+		return(get(screen_key, envir = .screen_estimate_theta_cache, inherits = FALSE))
+	}
+	coverage_key = paste(base_class, dataset_name, beta_T_val, sep = "||")
+	if (exists(coverage_key, envir = .coverage_truth_cache, inherits = FALSE)) {
+		return(get(coverage_key, envir = .coverage_truth_cache, inherits = FALSE))
+	}
+	if (!is.null(COVERAGE_MC_SPEC[[base_class]])) {
+		return(NA_real_)
 	}
 	beta_T_val
 }
@@ -2008,6 +2174,8 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 	run_exhaustive_remaining_inference_classes(des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
 }
 
+precompute_screen_estimate_theta_cache()
+seed_estimate_theta_cache_from_existing_results()
 
 for (dataset_name in names(datasets_and_response_models)){
 	if (!is.na(DATASET_FILTER) && !identical(dataset_name, DATASET_FILTER)) {

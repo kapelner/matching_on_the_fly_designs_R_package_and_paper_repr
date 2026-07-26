@@ -97,6 +97,9 @@ InferenceIncidLogBinomial = R6::R6Class("InferenceIncidLogBinomial",
 			private$cached_values$df = NA_real_
 			private$cached_values$beta_hat_T
 		},
+		#' @description Computes the score confidence interval, falling back to a
+		#'   non-estimable result if the underlying computation fails or is degenerate.
+		#' @param alpha Significance level. Default 0.05.
 		compute_score_confidence_interval = function(alpha = 0.05){
 			ci = tryCatch(
 				super$compute_score_confidence_interval(alpha = alpha),
@@ -116,6 +119,9 @@ InferenceIncidLogBinomial = R6::R6Class("InferenceIncidLogBinomial",
 			}
 			ci
 		},
+		#' @description Computes the gradient confidence interval, falling back to a
+		#'   non-estimable result if the underlying computation fails or is degenerate.
+		#' @param alpha Significance level. Default 0.05.
 		compute_gradient_confidence_interval = function(alpha = 0.05){
 			ci = tryCatch(
 				super$compute_gradient_confidence_interval(alpha = alpha),

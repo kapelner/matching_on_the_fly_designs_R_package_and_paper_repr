@@ -2746,6 +2746,23 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           }
         }
       }
+      if (length(combos) == 0L &&
+          length(private$design_classes) > 0L &&
+          length(private$inference_classes) > 0L) {
+        warning(sprintf(
+          paste0(
+            "SimulationFramework: every design/inference combo was filtered out as invalid for cell ",
+            "(response_type=%s, n=%s, p=%s, cond_exp_func_model=%s, betaT=%s) -- designs tried: %s; ",
+            "inferences tried: %s. This cell will contribute ZERO result rows. If this is unexpected, ",
+            "check design/inference compatibility (e.g. an inference class requiring a KK matching-on-the-fly ",
+            "design paired with a non-matching design)."
+          ),
+          private$current_response_type, private$current_n, private$current_p,
+          private$current_cond_exp_func_model, format(private$current_betaT),
+          paste(unlist(private$design_labels), collapse = ", "),
+          paste(unlist(private$inference_labels), collapse = ", ")
+        ), call. = FALSE)
+      }
       combos
     },
     .run_single_replication_in_worker = function(w_rep_i, state, progress_cb = NULL, is_forked = FALSE) {

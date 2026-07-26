@@ -92,6 +92,9 @@ InferenceIncidBinomialIdentityRiskDiff = R6::R6Class("InferenceIncidBinomialIden
 			private$cached_values$df = NA_real_
 			private$cached_values$beta_hat_T
 		},
+		#' @description Computes the likelihood-ratio confidence interval, falling back to a
+		#'   non-estimable result if the underlying computation fails.
+		#' @param alpha Significance level. Default 0.05.
 		compute_lik_ratio_confidence_interval = function(alpha = 0.05){
 			tryCatch(
 				super$compute_lik_ratio_confidence_interval(alpha = alpha),

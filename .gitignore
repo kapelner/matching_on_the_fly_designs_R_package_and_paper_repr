@@ -410,5 +410,5 @@ sgconfig.yml
 grammars/*
 rules/*
 package_tests/comprehensive_tests_*.log
-
+package_tests/comprehensive_tests_results_*.csv.bak_pre_theta_fix
 

@@ -110,6 +110,11 @@ EDI_MIXIN_CONTRACTS = list(
 		),
 		private_state = "null_fit_warm_start_enabled"
 	),
+	InferenceMixinOffOptimumLikelihoodEval = list(
+		file = "inference_mixin_off_optimum_likelihood_eval.R",
+		private_methods = c("get_default_information_source", "get_likelihood_test_spec"),
+		private_state = character()
+	),
 	InferenceMixinParamBootstrapEstimate = list(
 		file = "inference_mixin_param_bootstrap_estimate.R",
 		private_methods = c(

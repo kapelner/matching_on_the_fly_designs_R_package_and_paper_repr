@@ -420,7 +420,9 @@ InferenceOrdinalKKGLMM = R6::R6Class("InferenceOrdinalKKGLMM",
 				X = X_fit,
 				y = y,
 				group_id = group_id,
+				K = K,
 				j = j_treat,
+				n_gh = n_gh,
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
 					run_fit = function(s){

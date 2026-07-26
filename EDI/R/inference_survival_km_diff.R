@@ -292,19 +292,16 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 				}
 				i = j
 			}
+			tol = sqrt(.Machine$double.eps)
 			for (k in seq_along(survival_probs)) {
-				if (survival_probs[k] < 0.5) {
-					if (k > 1L) {
-						p1 = survival_probs[k - 1L]
-						p2 = survival_probs[k]
-						t1 = unique_times[k - 1L]
-						t2 = unique_times[k]
-						return(as.numeric(t1 + (t2 - t1) * (0.5 - p1) / (p2 - p1)))
+				if (survival_probs[k] <= 0.5) {
+					if (abs(survival_probs[k] - 0.5) < tol && k < length(unique_times)) {
+						return(as.numeric(0.5 * (unique_times[k] + unique_times[k + 1L])))
 					}
 					return(as.numeric(unique_times[k]))
 				}
 			}
-			Inf
+			NA_real_
 		}
 	)
 )

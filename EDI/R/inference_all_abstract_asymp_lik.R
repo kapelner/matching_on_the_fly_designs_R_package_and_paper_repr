@@ -348,6 +348,26 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 		},
 
 
+		#' Returns NULL, or a list describing the likelihood surface at the
+		#' fitted point, consumed by InferenceMixinInformationMatrix,
+		#' InferenceMixinLikelihoodTestMemoization, and (optionally)
+		#' InferenceMixinOffOptimumLikelihoodEval. Concrete classes typically
+		#' include X, y, j, full_fit, fit_null(delta, start), extract_start(fit),
+		#' score(fit), observed_information(fit), fisher_information(fit), and
+		#' neg_loglik(fit) -- all evaluated at a completed fit object, never at
+		#' an arbitrary theta.
+		#'
+		#' Two additional fields are optional and independent of the above:
+		#' neg_loglik_at(theta) and information_at(theta, source) evaluate the
+		#' negative log-likelihood / information matrix at an arbitrary
+		#' parameter vector rather than a completed fit. Only add these if a
+		#' genuine f(theta) native evaluator already backs the *_information(fit)
+		#' closures above (see e.g. get_negbin_regression_hessian_cpp(X, y,
+		#' theta) in inference_count_negbin.R); do not synthesize one via
+		#' numerical differentiation just to satisfy this contract. Classes
+		#' that add these two fields may splice in
+		#' InferenceMixinOffOptimumLikelihoodEval to get
+		#' evaluate_penalized_neg_loglik_at() for free.
 		get_likelihood_test_spec = function(){
 			NULL
 		},

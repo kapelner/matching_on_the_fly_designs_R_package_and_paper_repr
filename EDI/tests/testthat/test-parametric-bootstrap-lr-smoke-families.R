@@ -92,6 +92,22 @@ make_param_boot_count_kk_glmm_design <- function(seed = 20260524L, n = 72L){
 	des
 }
 
+make_param_boot_ordinal_kk_glmm_design <- function(seed = 20260724L, n = 48L){
+	set.seed(seed)
+	x1 <- rnorm(n)
+	x2 <- rnorm(n)
+	des <- DesignSeqOneByOneKK14$new(n = n, response_type = "ordinal", verbose = FALSE)
+	for (i in seq_len(n)) {
+		w_i <- des$add_one_subject_to_experiment_and_assign(data.frame(x1 = x1[i], x2 = x2[i]))
+		eta_i <- 0.35 * w_i + 0.20 * x1[i] - 0.10 * x2[i]
+		cuts <- plogis(c(-1.1, -0.1, 0.9) - eta_i)
+		probs <- c(cuts[1L], diff(cuts), 1 - cuts[3L])
+		y_i <- sample.int(4L, 1L, prob = pmax(probs, 0))
+		des$add_one_subject_response(i, y_i, 1L)
+	}
+	des
+}
+
 assert_param_bootstrap_lr_smoke <- function(inf, B = 9L, min_success = 3L, seed = 9001L){
 	priv <- inf$.__enclos_env__$private
 	expect_true(isTRUE(priv$supports_lik_ratio_param_bootstrap()))
@@ -173,4 +189,24 @@ test_that("parametric bootstrap LR smoke tests cover censoring, mixture, ordinal
 		min_success = 3L,
 		seed = 9204L
 	)
+})
+
+test_that("ordinal KK GLMM likelihood-test spec carries scalar bootstrap simulation metadata", {
+	inf <- InferenceOrdinalKKGLMM$new(
+		make_param_boot_ordinal_kk_glmm_design(),
+		model_formula = ~ x1 + x2,
+		use_rcpp = TRUE,
+		verbose = FALSE
+	)
+	priv <- inf$.__enclos_env__$private
+	spec <- priv$get_likelihood_test_spec()
+
+	expect_true(is.list(spec))
+	expect_true(all(c("K", "n_gh") %in% names(spec)))
+	expect_length(spec$K, 1L)
+	expect_length(spec$n_gh, 1L)
+	expect_true(is.finite(spec$K))
+	expect_true(is.finite(spec$n_gh))
+	expect_equal(as.integer(spec$K), length(unique(spec$y)))
+	expect_gte(as.integer(spec$n_gh), 1L)
 })

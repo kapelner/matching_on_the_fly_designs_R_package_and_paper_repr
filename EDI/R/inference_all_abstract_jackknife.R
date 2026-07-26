@@ -243,17 +243,20 @@ InferenceJackknife = R6::R6Class("InferenceJackknife",
 			if (!is.null(private$cached_values$jackknife_summary[[cache_key]])) {
 				return(private$cached_values$jackknife_summary[[cache_key]])
 			}
-			jack = as.numeric(private$approximate_jackknife_distribution_beta_hat_T_private(unit = unit))
-			n_units = length(jack)
-			if (n_units <= 1L) {
+			theta_hat = tryCatch(as.numeric(self$compute_estimate(estimate_only = TRUE))[1L], error = function(e) NA_real_)
+			if (is.function(self$is_nonestimable) && isTRUE(self$is_nonestimable("estimate"))) {
+				theta_hat = NA_real_
+			}
+			if (!is.finite(theta_hat)) {
+				private$cache_nonestimable_estimate("jackknife_original_estimate_unavailable")
 				summary = list(estimate = NA_real_, bias = NA_real_, std_error = NA_real_, distribution = numeric(0))
 				private$cached_values$jackknife_summary[[cache_key]] = summary
 				return(summary)
 			}
-			theta_hat = as.numeric(self$compute_estimate(estimate_only = TRUE))[1L]
-			if (!is.finite(theta_hat)) {
-				private$cache_nonestimable_estimate("jackknife_original_estimate_unavailable")
-				summary = list(estimate = NA_real_, bias = NA_real_, std_error = NA_real_, distribution = jack)
+			jack = as.numeric(private$approximate_jackknife_distribution_beta_hat_T_private(unit = unit))
+			n_units = length(jack)
+			if (n_units <= 1L) {
+				summary = list(estimate = NA_real_, bias = NA_real_, std_error = NA_real_, distribution = numeric(0))
 				private$cached_values$jackknife_summary[[cache_key]] = summary
 				return(summary)
 			}

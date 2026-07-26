@@ -382,10 +382,14 @@ A numeric vector of bootstrap estimates.
 \if{html}{\out{<a id="method-InferenceCountKKCondPoissonOneLik-supports_lik_ratio_param_bootstrap"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountKKCondPoissonOneLik-supports_lik_ratio_param_bootstrap}{}}}
 \subsection{Method \code{supports_lik_ratio_param_bootstrap()}}{
+Whether likelihood-ratio parametric bootstrap is supported.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{InferenceCountKKCondPoissonOneLik$supports_lik_ratio_param_bootstrap()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+\code{TRUE}.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountKKCondPoissonOneLik-clone"></a>}}

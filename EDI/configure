@@ -30,7 +30,7 @@ edi_disable_vectorization="$(env_or_default EDI_DISABLE_VECTORIZATION 0)"
 edi_native_speed="$(env_or_default EDI_NATIVE_SPEED 1)"
 edi_native_lto="$(env_or_default EDI_NATIVE_LTO 0)"
 
-pkg_cppflags="-I../inst/include"
+pkg_cppflags=""
 pkg_cxxflags="\$(SHLIB_OPENMP_CXXFLAGS) -DNDEBUG -DEIGEN_NO_DEBUG -Wno-ignored-attributes"
 pkg_cxxstdflags=""
 pkg_libs="\$(SHLIB_OPENMP_CXXFLAGS) \$(LAPACK_LIBS) \$(BLAS_LIBS) \$(FLIBS) -ltbb12 -fstack-protector"

@@ -38,8 +38,10 @@ Suggests:
     mirai,
     aftgee,
     betareg,
+    copula,
     doParallel,
     fixest,
+    gamlss.dist,
     geepack,
     glmmTMB,
     glmnet,
@@ -94,6 +96,7 @@ Collate:
     'inference_mixin_ci_inversion.R'
     'inference_mixin_information_matrix.R'
     'inference_mixin_likelihood_test_memoization.R'
+    'inference_mixin_off_optimum_likelihood_eval.R'
     'inference_all_abstract_asymp_lik.R'
     'inference_mixin_bartlett_approx.R'
     'inference_mixin_cordeiro_ferrari_approx.R'
