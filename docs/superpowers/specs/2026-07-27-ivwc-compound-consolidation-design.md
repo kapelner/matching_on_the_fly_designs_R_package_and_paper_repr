@@ -163,63 +163,127 @@ Three alternative restructurings came up while scoping this and were rejected:
    is the real one, but that's cross-cutting rather than something a class name should assert.
 
 4. **Restructure the whole hierarchy as a strict linear chain** `NoLikelihood < PartialLikelihood <
-   FullLikelihood < ...`, so that likelihood taxonomy and capability level are the same axis encoded
-   via inheritance depth. Rejected: the codebase already contains concrete counterexamples showing
-   taxonomy and capability are orthogonal, not nested:
-   - **Cox PH is partial-likelihood yet reaches top capability** (`StratCoxPHOneLik`, see #3 above) —
-     a "partial" family outranking families the taxonomy would call more "full."
-   - **Quasi-Poisson and robust-Poisson are quasi-likelihood yet reach zero capability** despite
-     inheriting through `InferenceCountCompositeLikelihood -> InferenceParamBootstrap`: their
-     `supports_likelihood_tests` and `supports_lik_ratio_param_bootstrap` are both hard-`FALSE` on
-     the shared base class and neither subclass overrides them. Class-chain position and actual
-     capability are decoupled.
-   - **GEE, also quasi-likelihood, sits entirely outside the `InferenceAsympLik` subtree**
-     (`inherit = InferenceAsymp` directly), with no likelihood-test dispatch machinery at all — while
-     quasi-Poisson (same taxonomic bucket) is nested three levels inside that subtree. Two
-     quasi-likelihood families are incomparable in capability, not merely unordered.
-   - **`InferenceAbstractKKOrdinalCLMM` is a full joint (mixed-model) likelihood yet is flagged to
-     zero capability** (`supports_likelihood_tests = FALSE`), same as the taxonomically "lesser"
-     compound/IVWC classes.
+   FullLikelihood < ...`. Originally rejected here on the grounds that Cox PH (partial likelihood)
+   reaches top capability, quasi-Poisson (quasi-likelihood) reaches zero capability despite being
+   chained under `InferenceParamBootstrap`, GEE sits outside the whole subtree while taxonomically
+   identical quasi-Poisson sits inside it, and `InferenceAbstractKKOrdinalCLMM` is a full joint
+   likelihood flagged to zero capability — all read at the time as proof that taxonomy and capability
+   are orthogonal, not nested.
 
-   A linear chain requires every class to occupy exactly one rank in a total order; these families
-   are genuinely incomparable on the taxonomy axis vs. the capability axis, which is why the
-   codebase encodes capability as orthogonal boolean flags (`supports_likelihood_tests`,
-   `supports_lik_ratio_param_bootstrap`, `supports_bartlett_likelihood_ratio_exact/approx`,
-   `supports_fisher_information`) — several of them runtime-conditional functions rather than fixed
-   per-class constants — dispatched generically from `InferenceAsympLik`, instead of via inheritance
-   depth. That mechanism is left as-is.
+   **⚠ Superseded.** On further pressure this conclusion doesn't hold: every one of those
+   counterexamples conflates likelihood strength with two *different* things — whether an estimator
+   is a compound of two separately-fit models (an orthogonal structural axis), and engineering gaps
+   (an inconsistently-wired GEE, an unfinished R fallback path) that look like theory violations but
+   aren't. Once those are separated out, a natural, textbook-grounded superset/subset chain does
+   exist. See the new section below, which replaces this entry as the actual design going forward.
 
-   **Visual evidence — two capability-lattice matrices** (class × capability flag, saved as
-   standalone self-contained HTML, viewable directly in a browser):
-   `package_metadata/ivwc_capability_lattice.html` (the IVWC/OneLik pairs plus GEE, robust-regr,
-   CLMM, paired-sign-test) and `package_metadata/non_ivwc_capability_lattice.html` (everything
-   else: the 11-class abstract backbone plus every remaining concrete family across continuous,
-   count, ordinal, proportion, incidence, and survival). The second sweep surfaced further
-   confirmation beyond the four bullets above:
+## Revised: a theory-grounded 4-tier likelihood taxonomy, with everything else as mixins
 
-   - **A third major abstract branch**, `InferenceAsympLikStdModCache` / its `NoParamBootstrap`
-     sibling — structurally the same role as `InferenceKKPassThroughCompound(NoParamBootstrap)` —
-     turns out to be the single *largest* branch in the package (hosts most non-KK GLM-style
-     families: logistic, probit, cauchit, cloglog, ordered-probit, proportional-odds,
-     stereotype-logit, adjacent-category-logit, log-binomial, beta, zero-one-inflated-beta, Cox,
-     stratified Cox, Weibull, dependent-censoring transform).
-   - **The `use_rcpp`-conditional pattern recurs 8 more times** beyond Weibull-frailty: continuous/
-     count/ordinal GLMM, non-KK Cox and stratified Cox, and the whole zero-augmented-Poisson family
-     (Hurdle-Poisson/ZIP/ZINB) all silently drop to Wald-only on the pure-R fallback path — another
-     case where capability is a runtime condition, not a chain position.
-   - **A naming-convention break**: four classes named `...OneLik` (continuous and proportion
-     quantile-regression, continuous robust-regression) are named like the full-capability branch
-     established by Cox/Copula/Frailty/CondLogit/OLS, but actually inherit
-     `InferenceKKPassThroughCompoundNoParamBootstrap` — zero likelihood-test capability.
-   - **The "inside `InferenceParamBootstrap`'s static chain, flagged to zero capability" pattern**
-     (first seen with quasi-Poisson/robust-Poisson) recurs on a much larger group: simple mean-diff
-     (+ pooled-var), simple Wilcoxon, incidence Wald/CMH/extended-Robins, the KK-marginal g-comp
-     family, fractional logit, risk-diff, and non-KK modified-Poisson — reinforcing that chain
-     position and capability are decoupled throughout the package, not just in one or two spots.
-   - A second **dead-flag instance** (`InferenceSurvivalKKWeibullMarginal`, outside the `AsympLik`
-     subtree entirely, `supports_likelihood_tests = FALSE` but never consulted by anything) and a
-     **terminology collision** (`InferenceOrdinalPartialProportionalOdds` — "partial" names the
-     *partial proportional odds* statistical model, unrelated to "partial likelihood").
+**Scope note:** everything below is a second, independent design, much larger in scope than the
+six-file migration specified in "In scope" above (which remains valid, fully specified, and safe to
+implement on its own). This section is the conceptual architecture only — it is not yet a
+file-by-file implementation plan. It touches the abstract backbone and, transitively, every one of
+the roughly 130 concrete inference kernels' `inherit =` line. See "Scope and sequencing" at the end
+of this section for how the two relate.
+
+### The four tiers
+
+Grounded in the standard likelihood-methods spectrum (Cox 1975 partial likelihood; Wedderburn/
+McCullagh quasi-likelihood; ordinary full-MLE theory — the same spectrum covered in e.g. Severini's
+*Likelihood Methods in Statistics*). Each tier is a strict statistical and syntactic superset of the
+one below it:
+
+0. **`InferenceNoLik`** — no likelihood object of any kind. Wald/permutation-only.
+   Houses: rank-based tests (Wilcoxon, sign test, Jonckheere-Terpstra, ridit), KM-based survival
+   tests (log-rank, Gehan-Wilcox, RMST, KM-diff), exact tests, g-computation without a model
+   likelihood, quantile regression (check-loss, not a true likelihood).
+
+1. **`InferenceQuasiLik`** — an estimating-equation/working-variance construct; not a true density,
+   so there is no valid likelihood-ratio statistic without ad hoc correction. Mechanically
+   Wald-only, same as tier 0, but semantically distinct and a home for quasi-likelihood-specific
+   shared logic (e.g. quasi-deviance helpers) as it gets built out.
+   Houses: GEE (moving here fixes its current inconsistent wiring outside the whole subtree),
+   quasi-Poisson, robust-Poisson, robust/sandwich-corrected regression.
+
+2. **`InferencePartialLik`** — a genuine likelihood function with rigorously valid score/Wald/
+   gradient/LR asymptotics (this is exactly what Cox 1975 proves), but it does not fully specify the
+   joint density — a nuisance function is left unspecified (the baseline hazard for Cox, the
+   conditioning distribution for conditional logistic).
+   Houses: Cox PH, stratified Cox, conditional logistic regression, adjacent-category conditional
+   logit, LWA-Cox.
+
+3. **`InferenceFullLik`** — a fully specified generative density. Superset of tier 2's capability,
+   plus trivial parametric simulation from `p(y|θ,X)`, plus eligibility for exact analytic
+   corrections (Fisher information, Bartlett-exact) since the density is known in closed form.
+   Houses: Poisson, NegBin, Hurdle/ZI mixtures, logistic, probit, cauchit, cloglog, ordered-probit,
+   proportional-odds, stereotype-logit, log-binomial, beta, zero-one-inflated-beta, OLS, Weibull,
+   Clayton-copula-with-parametric-margins, dependent-censoring transform.
+
+### Mixins, each gated by a minimum tier, layered orthogonally
+
+- **`InferenceMixinParamBootstrapSimulate`** — today's `InferenceParamBootstrap`, converted from an
+  inheritance-chain class into an actual Pattern-1 mixin (like `InferenceMixinKKPassThrough` already
+  is). Requires **≥ tier 2 (Partial)**. Provides `simulate_under_lik_null()` and the public
+  `compute_lik_ratio_bootstrap_*` methods. A tier-2 class (Cox, via Breslow-plug-in semiparametric
+  simulation) and a tier-3 class (Poisson, via direct parametric simulation) can both splice this in
+  — which is exactly why Cox reaching "param bootstrap" was never actually a taxonomy violation: the
+  mixin's requirement is "≥ Partial," not "== Full."
+- **`InferenceMixinBartlettApprox`** — requires the simulate mixin above (already built this way
+  today; unchanged).
+- **`InferenceMixinBartlettExact`** / Cordeiro-Ferrari / Lemonte-gradient-approx — requires
+  **== tier 3 (Full) only**. Gives the two currently-scaffolded-but-unused mixins
+  (`InferenceMixinCordeiroFerrariApprox`, `InferenceMixinLemonteGradientApprox`) an actual home.
+- **`InferenceMixinFisherInformation`** — requires **== tier 3 (Full) only**.
+- **`InferenceMixinKKPassThroughCompound`** (already exists, unchanged) — orthogonal to all tiers.
+  Caps the composing class's effective capability to Wald-only regardless of its components' tier,
+  since a weighted combination of two separately-fit estimates has no single joint likelihood. Under
+  this design every concrete IVWC compound class is `InferenceNoLik` + this mixin, regardless of
+  whether its sub-model pieces are tier-2 (Cox) or tier-3 (Poisson) — composition, not likelihood
+  strength, is what caps it.
+- **`InferenceMixinKKPassThrough`** (already exists, already correctly a mixin) — unaffected.
+
+### What happens to today's abstract backbone
+
+| Today | Under this design |
+|---|---|
+| `InferenceAsymp`, `InferenceMLEorKMSummaryTable` | unchanged — pre-likelihood ancestors, no likelihood needed at any point above `InferenceAsympLik` |
+| `InferenceAsympLik` | unchanged — stays the generic wald/score/gradient/lik_ratio/bartlett dispatcher; tiers 0–3 all sit under it |
+| *(new)* `InferenceNoLik`, `InferenceQuasiLik`, `InferencePartialLik`, `InferenceFullLik` | replace the ~25+ scattered `supports_likelihood_tests = function() FALSE/TRUE` overrides with one authoritative definition per tier |
+| `InferenceParamBootstrap` | retired as an inheritance-chain class; becomes `InferenceMixinParamBootstrapSimulate`, spliceable into tier 2 or tier 3 daughters |
+| `InferenceCountLikelihood(NoParamBootstrap)` | plumbing (warm-starts, parameter packing) extracted into `InferenceMixinCountLikelihoodPlumbing`, spliced onto `InferenceFullLik` daughters; class retired |
+| `InferenceAsympLikStdModCache(NoParamBootstrap)` | plumbing (caching) extracted into `InferenceMixinStdModCache`, spliced onto `InferenceFullLik` daughters; class retired — the single biggest mechanical change here, since this is the largest branch in the package (see the non-IVWC lattice) |
+| `InferenceKKPassThroughCompound(NoParamBootstrap)` | retired as inheritance-chain classes; `InferenceMixinKKPassThroughCompound` gets spliced directly onto `InferenceNoLik` (every current concrete IVWC compound lands here, per the point above) |
+
+### Where the original counterexamples land now
+
+- **Cox reaching "param bootstrap"**: tier 2 + `InferenceMixinParamBootstrapSimulate` — the mixin's
+  gate is "≥ Partial," so this was never a violation.
+- **Quasi-Poisson flagged to zero capability**: correctly tier 1 (Quasi) — the taxonomy predicts
+  exactly this, it isn't an anomaly.
+- **GEE outside the `AsympLik` subtree**: a real inconsistency to fix by moving it into tier 1
+  alongside quasi-Poisson — evidence the current *wiring* is incomplete, not that the taxonomy fails.
+- **IVWC/CLMM compounds flagged to zero capability despite "full" sub-models**: `InferenceNoLik` +
+  `InferenceMixinKKPassThroughCompound` — composition is orthogonal to tier, exactly your instinct
+  that this should be a mixin.
+- **`use_rcpp`-conditional capability drops** (9 classes across the two lattices): not a fifth tier —
+  an engineering gap (the pure-R fallback was never built out to the same feature level as the Rcpp
+  path). Flagged as follow-up tech debt, not modeled as a permanent axis.
+- **Bartlett-exact implemented for exactly one class**: `InferenceMixinBartlettExact`, gated at
+  tier 3 as necessary-but-not-sufficient — an optional top-tier mixin, not a fifth level.
+
+The two published capability-lattice artifacts (`package_metadata/ivwc_capability_lattice.html`,
+`package_metadata/non_ivwc_capability_lattice.html`) remain useful as the raw evidence base for this
+mapping — every row in both tables now has an unambiguous (tier, mixin-set) home under this design.
+
+### Scope and sequencing
+
+This restructuring is independent of, and much larger than, the six-file IVWC migration specified
+earlier in this document. The six-file migration can proceed on its own schedule without waiting on
+this. Converting `InferenceParamBootstrap` into a mixin and retiring `InferenceAsympLikStdModCache`
+in particular touch the majority of the package's ~130 kernels, so this needs its own dedicated
+implementation plan — most plausibly executed tier-by-tier (introduce the four tier classes and the
+mixin conversions first, with the existing abstract classes as deprecated pass-throughs, then migrate
+concrete families in batches) rather than as one atomic change.
 
 ## Follow-ups (explicitly not doing now)
 
