@@ -275,15 +275,23 @@ The two published capability-lattice artifacts (`package_metadata/ivwc_capabilit
 `package_metadata/non_ivwc_capability_lattice.html`) remain useful as the raw evidence base for this
 mapping — every row in both tables now has an unambiguous (tier, mixin-set) home under this design.
 
-### Scope and sequencing
+### Scope and sequencing (decided)
 
-This restructuring is independent of, and much larger than, the six-file IVWC migration specified
-earlier in this document. The six-file migration can proceed on its own schedule without waiting on
-this. Converting `InferenceParamBootstrap` into a mixin and retiring `InferenceAsympLikStdModCache`
-in particular touch the majority of the package's ~130 kernels, so this needs its own dedicated
-implementation plan — most plausibly executed tier-by-tier (introduce the four tier classes and the
-mixin conversions first, with the existing abstract classes as deprecated pass-throughs, then migrate
-concrete families in batches) rather than as one atomic change.
+**Decision: proceed with the six-file IVWC migration now, as already specified, and explicitly treat
+those six files as a known future touch-point.** They land on `InferenceKKPassThroughCompoundNoParamBootstrap`
+today; once this tier restructuring lands, that class is retired in favor of `InferenceNoLik` +
+`InferenceMixinKKPassThroughCompound`, and the six files move a second time — a mechanical
+`inherit =` + mixin-splice change, not a behavioral one, so the double-touch is cheap. This was chosen
+over (a) blocking the six-file migration on the restructuring's implementation plan, which doesn't
+exist yet, or (b) folding the six-file migration directly into the restructuring, which would leave a
+ready, numerically-inert cleanup sitting idle for no benefit.
+
+The restructuring itself remains out of scope for immediate implementation: converting
+`InferenceParamBootstrap` into a mixin and retiring `InferenceAsympLikStdModCache` in particular touch
+the majority of the package's ~130 kernels, so it needs its own dedicated implementation plan —
+most plausibly executed tier-by-tier (introduce the four tier classes and the mixin conversions first,
+with the existing abstract classes as deprecated pass-throughs, then migrate concrete families in
+batches) rather than as one atomic change. That plan is not written yet.
 
 ## Follow-ups (explicitly not doing now)
 
