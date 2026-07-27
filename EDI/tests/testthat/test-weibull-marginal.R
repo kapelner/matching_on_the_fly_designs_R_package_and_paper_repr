@@ -78,3 +78,21 @@ test_that("InferenceSurvivalKKWeibullMarginal randomization inference path retur
 	expect_true(is.finite(pv))
 	expect_true(pv >= 0 && pv <= 1)
 })
+
+test_that("InferenceSurvivalKKWeibullMarginal reports wald as its only supported testing type", {
+	# The KK passthrough mixin's get_supported_testing_types_impl() calls
+	# private$supports_likelihood_tests(). This class inherits InferenceAsymp (not
+	# InferenceAsympLik), which does not supply that method, so it must define it itself
+	# or this call dies with "attempt to apply non-function".
+	n <- 40
+	des <- DesignSeqOneByOneKK14$new(n = n, response_type = "survival", verbose = FALSE)
+	set.seed(8)
+	for (i in 1:n) des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
+	y <- rexp(n) * exp(0.8 * as.numeric(des$get_w() == 1))
+	add_all_subject_responses_seq(des, y, deads = rep(1L, n))
+
+	inf <- InferenceSurvivalKKWeibullMarginal$new(des, verbose = FALSE)
+	expect_equal(inf$get_supported_testing_types(), "wald")
+	# working-independence AFT + post hoc sandwich SE is not a true likelihood to test against
+	expect_false(inf$.__enclos_env__$private$supports_likelihood_tests())
+})

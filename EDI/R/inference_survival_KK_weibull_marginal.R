@@ -119,6 +119,11 @@ InferenceSurvivalKKWeibullMarginal = R6::R6Class("InferenceSurvivalKKWeibullMarg
 		cached_vc_params = NULL,
 		max_abs_reasonable_coef = 1e4,
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
+		# Wald only: this class fits a working-independence AFT and corrects the SE post hoc,
+		# so the sandwich-corrected likelihood is not a true likelihood to test against. The
+		# KK passthrough mixin's get_supported_testing_types_impl() calls this, so it must be
+		# defined here -- the class inherits InferenceAsymp, which does not supply it.
+		supports_likelihood_tests = function() FALSE,
 		# Matched-pair members share a cluster id; reservoir (unmatched) subjects each
 		# get a unique singleton id. Mirrors InferenceAbstractKKMarginalIncid's private
 		# get_cluster_ids() (inference_incidence_KK_marginal_abstract.R), duplicated here
