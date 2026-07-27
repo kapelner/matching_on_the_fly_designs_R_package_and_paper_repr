@@ -374,8 +374,8 @@ factor. Default 99.}
 Computes the exact (closed-form analytic) Bartlett-corrected
 likelihood-ratio two-sided p-value regardless of configured testing type.
 Returns \code{NA_real_} for subclasses that do not implement an exact,
-bespoke analytic Bartlett correction factor (no family does yet; see
-\code{get_bartlett_factor_exact()}).
+bespoke analytic Bartlett correction factor. Concrete families opt in
+through \code{get_bartlett_factor_exact()}.
 
 Unlike \code{compute_lik_ratio_bartlett_approx_two_sided_pval()}, this path
 involves no simulation and no Monte-Carlo replicate count.
@@ -544,8 +544,7 @@ the number of null-simulated replicates (ignored by classes that don't
 simulate). Default NULL (unimplemented).
 Whether this class exposes an exact (closed-form analytic) Bartlett-corrected
 likelihood-ratio test/CI via get_bartlett_factor_exact(). Default FALSE;
-no family implements this yet -- individual families opt in once their
-bespoke analytic factor is derived.
+individual families opt in once their bespoke analytic factor is derived.
 Closed-form analytic Bartlett correction factor c(delta) (e.g. a
 Cordeiro-style GLM correction). No simulation, no replicate count.
 Default NULL (unimplemented).

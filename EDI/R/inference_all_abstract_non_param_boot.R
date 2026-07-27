@@ -695,7 +695,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 		# Cache for bootstrap distributions
 		boot_distr_cache = list(),
 		jack_distr_cache = list(),
-		bootstrap_extreme_estimate_threshold = 1e6,
+		bootstrap_extreme_estimate_threshold = EDI_SEPARATION_THRESHOLD,
 		bootstrap_extreme_ci_width_threshold = 5,
 		assert_valid_bootstrap_type = function(bootstrap_type){
 			if (is.null(bootstrap_type)) return(invisible(NULL))
@@ -767,7 +767,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			theta = theta[is.finite(theta)]
 			if (!length(theta)) return(FALSE)
 			max_abs = as.numeric(max_abs)[1L]
-			if (!is.finite(max_abs) || max_abs <= 0) max_abs = 1e6
+			if (!is.finite(max_abs) || max_abs <= 0) max_abs = EDI_SEPARATION_THRESHOLD
 			if (any(abs(theta) > max_abs)) return(TRUE)
 			scale_ref = max(1, abs(as.numeric(est)[1L]), stats::median(abs(theta)), na.rm = TRUE)
 			if (!is.finite(scale_ref) || scale_ref <= 0) scale_ref = 1
@@ -778,7 +778,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			ci = as.numeric(ci)
 			if (length(ci) < 2L || !all(is.finite(ci[1:2]))) return(FALSE)
 			max_abs = as.numeric(max_abs)[1L]
-			if (!is.finite(max_abs) || max_abs <= 0) max_abs = 1e6
+			if (!is.finite(max_abs) || max_abs <= 0) max_abs = EDI_SEPARATION_THRESHOLD
 			if (any(abs(ci[1:2]) > max_abs)) return(TRUE)
 			scale_ref = max(1, abs(as.numeric(est)[1L]), na.rm = TRUE)
 			width = abs(diff(ci[1:2]))

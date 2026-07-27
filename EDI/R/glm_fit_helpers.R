@@ -376,10 +376,9 @@ fast_logistic_regression = function(X, y, optimization_alg = "lbfgs", warm_start
 #' @export
 fast_logistic_regression_with_var = function(X, y, j = 2, optimization_alg = "lbfgs", warm_start_beta = NULL, warm_start_fisher_info = NULL){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = TRUE, default = "lbfgs")
-	# Logistic regression coefficients beyond this magnitude indicate complete/quasi-complete
+	# Coefficients beyond EDI_SEPARATION_THRESHOLD indicate complete/quasi-complete
 	# separation: the MLE does not exist and the IWLS optimizer has diverged to a large
 	# but finite value (which passes is.finite() checks and would silently corrupt CIs).
-	SEPARATION_THRESHOLD = 1e6
 
 	# Attempt a single fit on matrix X; always returns a list with (b, ssq_b_j, ssq_b_2, converged).
 	# 'converged' is FALSE when separation is detected so the caller can retry with fewer covariates.
@@ -387,7 +386,7 @@ fast_logistic_regression_with_var = function(X, y, j = 2, optimization_alg = "lb
 		tryCatch({
 			mod = fast_logistic_regression_with_var_cpp(X, as.numeric(y), j = j, optimization_alg = optimization_alg, warm_start_beta = warm_start_beta, warm_start_fisher_info = warm_start_fisher_info)
 			b = as.vector(mod$b)
-			list(b = b, ssq_b_j = mod$ssq_b_j, ssq_b_2 = mod$ssq_b_2, converged = (is.null(mod$converged) || isTRUE(mod$converged)) && max(abs(b), na.rm = TRUE) <= SEPARATION_THRESHOLD)
+			list(b = b, ssq_b_j = mod$ssq_b_j, ssq_b_2 = mod$ssq_b_2, converged = (is.null(mod$converged) || isTRUE(mod$converged)) && !is_separated_coefficient_magnitude(b))
 		}, error = function(e) {
 			list(b = rep(NA_real_, ncol(X)), ssq_b_j = NA_real_, ssq_b_2 = NA_real_, converged = FALSE)
 		})

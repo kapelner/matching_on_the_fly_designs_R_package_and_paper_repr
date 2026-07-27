@@ -68,7 +68,9 @@ NumericVector compute_ols_distr_parallel_cpp(
                 Eigen::VectorXd y_sim(n);
                 double sum_w = 0;
                 double sum_y = 0;
+                double sum_wy = 0;
 
+#pragma omp simd reduction(+:sum_w,sum_y,sum_wy)
                 for (int i = 0; i < n; ++i) {
                         double w_val = (double)w_col[i];
                         w_d[i] = w_val;
@@ -76,6 +78,7 @@ NumericVector compute_ols_distr_parallel_cpp(
                         double y_val = y_ptr[i] + (w_col[i] == 1 ? delta : 0.0);
                         y_sim[i] = y_val;
                         sum_y += y_val;
+                        sum_wy += w_val * y_val;
                 }
 
                 Eigen::VectorXd Xt_w = X.transpose() * w_d;
@@ -96,7 +99,7 @@ NumericVector compute_ols_distr_parallel_cpp(
 
                 Eigen::VectorXd Xty(p_full);
                 Xty[0] = sum_y;
-                Xty[1] = w_d.dot(y_sim);
+                Xty[1] = sum_wy;
                 Xty.tail(p_covars) = X.transpose() * y_sim;
 
                 Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(XtX);
@@ -165,7 +168,7 @@ NumericVector compute_ols_bootstrap_parallel_cpp(
                 Eigen::MatrixXd X_b(n_boot, p_covars);
 
                 double sum_1 = (double)n_boot;
-                double sum_w = 0.0, sum_y = 0.0;
+                double sum_w = 0.0, sum_y = 0.0, sum_wy = 0.0;
 
                 for (int i = 0; i < n_boot; ++i) {
                         int idx = idx_col[i];
@@ -174,6 +177,7 @@ NumericVector compute_ols_bootstrap_parallel_cpp(
                         w_b[i] = wv;
                         sum_w += wv;
                         sum_y += y_b[i];
+                        sum_wy += wv * y_b[i];
                         X_b.row(i) = X.row(idx);
                 }
 
@@ -197,7 +201,7 @@ NumericVector compute_ols_bootstrap_parallel_cpp(
 
                 Eigen::VectorXd Xty(p_full);
                 Xty[0] = sum_y;
-                Xty[1] = w_b.dot(y_b);
+                Xty[1] = sum_wy;
                 Xty.tail(p_covars) = X_b.transpose() * y_b;
 
                 Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(XtX);
@@ -207,4 +211,3 @@ NumericVector compute_ols_bootstrap_parallel_cpp(
 
         return wrap(results_vec);
 }
-

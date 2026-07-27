@@ -69,8 +69,8 @@ audit_classes = list(
   # ── COUNT ────────────────────────────────────────────────────────────────────
   list(name="InferenceCountPoissonKKGEE",           section="Count",      resp="count", kk=TRUE,  types="wald",           skip_asymp=FALSE, skip_ci=FALSE, skip_boot=TRUE,  skip_bbt=TRUE,  jack=TRUE,  skip_rand=FALSE, rand_resp="count",  skip_rpv=FALSE, skip_rci=TRUE,  rci_resp="", pboot=NA,    notes="InferenceAsymp; rand/rci N/A for count"),
   list(name="InferenceCountKKGLMM",                 section="Count",      resp="count", kk=TRUE,  types="full",           skip_asymp=FALSE, skip_ci=FALSE, skip_boot=TRUE,  skip_bbt=TRUE,  jack=TRUE, skip_jack_slow=TRUE, skip_rand=FALSE, rand_resp="count",  skip_rpv=FALSE, skip_rci=TRUE,  rci_resp="", pboot=TRUE,  notes="InferenceParamBootstrap; supports_lik_ratio_param_bootstrap=TRUE when use_rcpp; parametric-bootstrap/Bartlett paths run as regular paths; jackknife hard-excluded in comprehensive_tests.R (supports_jackknife name exclusion), displayed as SLOW"),
-  list(name="InferenceCountKKHurdlePoissonOneLik",  section="Count",      resp="count", kk=TRUE,  types="full",           skip_asymp=FALSE, skip_ci=FALSE, skip_boot=FALSE, skip_bbt=FALSE, jack=TRUE,  skip_rand=FALSE, rand_resp="count",  skip_rpv=FALSE, skip_rci=TRUE,  rci_resp="", pboot=FALSE, notes="InferenceParamBootstrap; current comprehensive-test package gate reports pboot unsupported; in skip_ci_rand; rand N/A count"),
-  list(name="InferenceCountKKCondPoissonOneLik",    section="Count",      resp="count", kk=TRUE,  types="full",           skip_asymp=FALSE, skip_ci=FALSE, skip_boot=FALSE, skip_bbt=FALSE, jack=TRUE,  skip_rand=FALSE, rand_resp="count",  skip_rpv=FALSE, skip_rci=TRUE,  rci_resp="", pboot=FALSE, notes="InferenceParamBootstrap; current comprehensive-test package gate reports pboot unsupported; in skip_ci_rand; rand N/A count"),
+  list(name="InferenceCountKKHurdlePoissonOneLik",  section="Count",      resp="count", kk=TRUE,  types="full",           skip_asymp=FALSE, skip_ci=FALSE, skip_boot=FALSE, skip_bbt=FALSE, jack=TRUE,  skip_rand=FALSE, rand_resp="count",  skip_rpv=FALSE, skip_rci=TRUE,  rci_resp="", pboot=TRUE, notes="InferenceParamBootstrap; supports_lik_ratio_param_bootstrap=TRUE with simulate_under_lik_null(); in skip_ci_rand; rand N/A count"),
+  list(name="InferenceCountKKCondPoissonOneLik",    section="Count",      resp="count", kk=TRUE,  types="full",           skip_asymp=FALSE, skip_ci=FALSE, skip_boot=FALSE, skip_bbt=FALSE, jack=TRUE,  skip_rand=FALSE, rand_resp="count",  skip_rpv=FALSE, skip_rci=TRUE,  rci_resp="", pboot=TRUE, notes="InferenceParamBootstrap; supports_lik_ratio_param_bootstrap=TRUE with simulate_under_lik_null(); in skip_ci_rand; rand N/A count"),
   list(name="InferenceCountPoisson",                section="Count",      resp="count", kk=FALSE, types="full",           skip_asymp=FALSE, skip_ci=FALSE, skip_boot=FALSE, skip_bbt=FALSE, jack=TRUE,  skip_rand=FALSE, rand_resp="count",  skip_rpv=FALSE, skip_rci=TRUE,  rci_resp="", pboot=TRUE,  notes="CountLikelihood → AsympLikStdModCache"),
   list(name="InferenceCountRobustPoisson",          section="Count",      resp="count", kk=FALSE, types="wald",           skip_asymp=FALSE, skip_ci=FALSE, skip_boot=FALSE, skip_bbt=FALSE, jack=TRUE,  skip_rand=FALSE, rand_resp="count",  skip_rpv=FALSE, skip_rci=TRUE,  rci_resp="", pboot=NA, notes="CountCompositeLikelihood; explicit FALSE"),
   list(name="InferenceCountQuasiPoisson",           section="Count",      resp="count", kk=FALSE, types="wald",           skip_asymp=FALSE, skip_ci=FALSE, skip_boot=FALSE, skip_bbt=FALSE, jack=TRUE,  skip_rand=FALSE, rand_resp="count",  skip_rpv=FALSE, skip_rci=TRUE,  rci_resp="", pboot=NA, notes="CountCompositeLikelihood; explicit FALSE"),
@@ -186,9 +186,92 @@ load_nonestimability_stats = function(result_dir = "package_tests") {
   stats_env_from_rates(rates)
 }
 
+validate_bartlett_exact_metadata = function(classes, r_dirs = c(file.path("EDI", "R"), file.path("..", "EDI", "R"))) {
+  r_dir = r_dirs[dir.exists(r_dirs)][1]
+  if (is.na(r_dir)) return(invisible(NULL))
+
+  exact_re = "supports_bartlett_likelihood_ratio_exact\\s*=\\s*function\\s*\\([^)]*\\)\\s*TRUE"
+  class_re = "^\\s*([A-Za-z][A-Za-z0-9_.]*)\\s*=\\s*R6::R6Class\\s*\\("
+  files = list.files(r_dir, pattern = "\\.R$", full.names = TRUE)
+  source_exact = character()
+
+  for (f in files) {
+    lines = readLines(f, warn = FALSE)
+    exact_idx = grep(exact_re, lines, perl = TRUE)
+    if (!length(exact_idx)) next
+    class_idx = grep(class_re, lines, perl = TRUE)
+    for (idx in exact_idx) {
+      prior_class_idx = class_idx[class_idx < idx]
+      if (!length(prior_class_idx)) next
+      class_line = lines[max(prior_class_idx)]
+      source_exact = c(source_exact, sub("^\\s*([A-Za-z][A-Za-z0-9_.]*)\\s*=.*$", "\\1", class_line, perl = TRUE))
+    }
+  }
+
+  source_exact = sort(unique(source_exact))
+  audit_exact = sort(unique(vapply(
+    Filter(function(r) isTRUE(r$bartlett_exact), classes),
+    function(r) r$name,
+    character(1)
+  )))
+  extra = setdiff(audit_exact, source_exact)
+  missing = setdiff(source_exact, audit_exact)
+  if (length(extra) || length(missing)) {
+    stop(
+      "LR-Bart-ex audit metadata mismatch. ",
+      if (length(extra)) paste0("Marked exact but no source hook: ", paste(extra, collapse = ", "), ". ") else "",
+      if (length(missing)) paste0("Source hook missing from audit metadata: ", paste(missing, collapse = ", "), ".") else "",
+      call. = FALSE
+    )
+  }
+  invisible(source_exact)
+}
+
+validate_bartlett_approx_metadata = function(classes, r_dirs = c(file.path("EDI", "R"), file.path("..", "EDI", "R"))) {
+  r_dir = r_dirs[dir.exists(r_dirs)][1]
+  if (is.na(r_dir)) return(invisible(NULL))
+
+  support_true_re = "supports_lik_ratio_param_bootstrap\\s*=\\s*function\\s*\\([^)]*\\)\\s*TRUE"
+  class_re = "^\\s*([A-Za-z][A-Za-z0-9_.]*)\\s*=\\s*R6::R6Class\\s*\\("
+  files = list.files(r_dir, pattern = "\\.R$", full.names = TRUE)
+  source_pboot_true = character()
+
+  for (f in files) {
+    lines = readLines(f, warn = FALSE)
+    support_idx = grep(support_true_re, lines, perl = TRUE)
+    if (!length(support_idx)) next
+    class_idx = grep(class_re, lines, perl = TRUE)
+    for (idx in support_idx) {
+      prior_class_idx = class_idx[class_idx < idx]
+      if (!length(prior_class_idx)) next
+      class_line = lines[max(prior_class_idx)]
+      source_pboot_true = c(source_pboot_true, sub("^\\s*([A-Za-z][A-Za-z0-9_.]*)\\s*=.*$", "\\1", class_line, perl = TRUE))
+    }
+  }
+
+  audit_by_name = stats::setNames(classes, vapply(classes, function(r) r$name, character(1)))
+  conflicting = Filter(
+    function(name) {
+      r = audit_by_name[[name]]
+      !is.null(r) && identical(r$types, "full") && identical(r$pboot, FALSE)
+    },
+    sort(unique(source_pboot_true))
+  )
+  if (length(conflicting)) {
+    stop(
+      "LR-Bart-app audit metadata mismatch. Source says parametric-bootstrap LR is supported but audit has pboot=FALSE: ",
+      paste(conflicting, collapse = ", "),
+      call. = FALSE
+    )
+  }
+  invisible(sort(unique(source_pboot_true)))
+}
+
 html_from_audit = function(classes, outfile = "path_audits.html") {
   GREEN = "#2e7d32"; LIGHT_GREEN = "#a5d6a7"; PALE_GREEN = "#dff3df"; LIME = "#dce775"; YELLOW = "#fff176"; ORANGE_LIGHT = "#ffcc80"; ORANGE = "#ff9800"; ORANGE_DARK = "#ef6c00"; LIGHT_RED = "#ffcdd2"; DARK_GREY = "#333333"; GREY = "#e0e0e0"
   `%||%` = function(x, y) if (is.null(x)) y else x
+  validate_bartlett_exact_metadata(classes)
+  validate_bartlett_approx_metadata(classes)
   nonestimability_stats = load_nonestimability_stats(dirname(outfile))
   html_escape = function(x) {
     x = gsub("&", "&amp;", x, fixed = TRUE)
@@ -382,17 +465,18 @@ html_from_audit = function(classes, outfile = "path_audits.html") {
   # machinery for free. Classes without any likelihood/partial-likelihood LR test at all (same
   # type_ok("lr") gate used by the "LR" column itself) are structurally NTS here, same as "LR".
   # Among the remainder, rows follow pboot exactly: pboot=TRUE -> maybe, pboot=FALSE/NA -> NI.
+  # Exact Bartlett rows can still expose this approximate path directly; the public
+  # best-available compute_lik_ratio_bartlett_* wrapper will prefer exact, but
+  # compute_lik_ratio_bartlett_approx_* remains backed by the parametric-bootstrap mixin.
   cell_likrat_bart_p = function(r) {
     method_id = "compute_lik_ratio_bartlett_two_sided_pval"
     if (!type_ok(r, "lr")) return(method_cell(r, method_id, "unsupported"))
-    if (isTRUE(r$bartlett_exact)) return(method_cell(r, method_id, "not_implemented"))
     if (!isTRUE(r$pboot)) return(method_cell(r, method_id, "not_implemented"))
     method_cell(r, method_id, "maybe")
   }
   cell_likrat_bart_c = function(r) {
     method_id = "compute_lik_ratio_bartlett_confidence_interval"
     if (!type_ok(r, "lr")) return(method_cell(r, method_id, "unsupported"))
-    if (isTRUE(r$bartlett_exact)) return(method_cell(r, method_id, "not_implemented"))
     if (!isTRUE(r$pboot)) return(method_cell(r, method_id, "not_implemented"))
     if (!isTRUE(r$run_pboot_ci)) return(method_cell(r, method_id, "slow"))
     method_cell(r, method_id, "maybe")
@@ -404,6 +488,9 @@ html_from_audit = function(classes, outfile = "path_audits.html") {
   # finite-sample pivot (verified against base R's lm()), not a Cordeiro-style
   # tensor derivation. Every other family remains NI -- see
   # package_metadata/likrat_correction_bartlett.md's practical-derivation-risk table.
+  # The comprehensive harness records the public best-available method label
+  # compute_lik_ratio_bartlett_*; for bartlett_exact rows that dispatches to the
+  # exact implementation because supports_bartlett_likelihood_ratio_exact() is TRUE.
   cell_likrat_bart_ex_p = function(r) {
     method_id = "compute_lik_ratio_bartlett_two_sided_pval"
     if (!type_ok(r, "lr")) return(method_cell(r, method_id, "unsupported"))
@@ -591,7 +678,7 @@ html_from_audit = function(classes, outfile = "path_audits.html") {
 
   # ── Four frozen header rows ──────────────────────────────────────────────────
   # Data cols: 14 (model-based, incl. 1 model "est", 1 log-rank "other", and the
-  #            2-col "LR-Bart-app" + 2-col "LR-Bart-ex" plumbing-only pairs next to "LR")
+  #            2-col "LR-Bart-app" + 2-col "LR-Bart-ex" pairs next to "LR")
   #            + 2 (exact-other) + 5 (exact-rand) + 18 (npboot, incl. 10 for the 6 bayes flavors)
   #            + 5 (pboot: 3-col parametric-bootstrap-estimate [blank subheader, est/pval/ci]
   #                + 2-col "LR" pval/ci) + 3 (jack, incl. 1 jackknife "est") + 9 (brt) = 56
@@ -617,8 +704,8 @@ html_from_audit = function(classes, outfile = "path_audits.html") {
     '</tr>',
     # Row 2: test types
     '<tr class="hdr2">',
-      # Model-Based: model "est" (colspan=1), then 4 types × colspan=2, plus "LR-Bart-app"
-      # and "LR-Bart-ex" (colspan=2 each, plumbing only, always NI) and "other" (pval-only, colspan=1)
+      # Model-Based: model "est" (colspan=1), then 4 types x colspan=2, plus "LR-Bart-app"
+      # and "LR-Bart-ex" (colspan=2 each) and "other" (pval-only, colspan=1)
       '<th colspan="1">est</th>',
       '<th colspan="2">wald</th>',
       '<th colspan="2">score</th>',
@@ -663,8 +750,8 @@ html_from_audit = function(classes, outfile = "path_audits.html") {
       '<th>pval</th><th>ci</th>',   # wald
       '<th>pval</th><th>ci</th>',   # score
       '<th>pval</th><th>ci</th>',   # likrat
-      '<th>pval</th><th>ci</th>',   # LR-Bart-app (plumbing only, always NI)
-      '<th>pval</th><th>ci</th>',   # LR-Bart-ex (plumbing only, always NI)
+      '<th>pval</th><th>ci</th>',   # LR-Bart-app
+      '<th>pval</th><th>ci</th>',   # LR-Bart-ex
       '<th>pval</th><th>ci</th>',   # grad
       '<th>pval</th>',              # other (log-rank, pval only)
       # Nonparam Boot (18)

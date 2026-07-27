@@ -541,11 +541,11 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 		}
 	),
 	private = c(InferenceMixinBartlettApprox$private, InferenceMixinParamBootstrapEstimate$private, list(
-		param_bootstrap_extreme_lr_threshold = 1e6,
+		param_bootstrap_extreme_lr_threshold = EDI_SEPARATION_THRESHOLD,
 		param_bootstrap_lr_extreme = function(lr, max_abs = private$param_bootstrap_extreme_lr_threshold){
 			lr = as.numeric(lr)
 			max_abs = as.numeric(max_abs)[1L]
-			if (!is.finite(max_abs) || max_abs <= 0) max_abs = 1e6
+			if (!is.finite(max_abs) || max_abs <= 0) max_abs = EDI_SEPARATION_THRESHOLD
 			is.finite(lr) & abs(lr) > max_abs
 		},
 		#' Shared replicate-running core for anything built on B simulated null

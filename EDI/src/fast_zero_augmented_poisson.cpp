@@ -367,7 +367,7 @@ List fast_zero_augmented_poisson_cpp(SEXP X_sexp,
     try {
         fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, h_ptr);
     } catch (...) {
-        return List::create(Named("converged") = false);
+        return List::create(Named("converged") = false, Named("gradient_norm") = NA_REAL);
     }
     params = fit.params;
 
@@ -376,7 +376,8 @@ List fast_zero_augmented_poisson_cpp(SEXP X_sexp,
             Named("params") = params,
             Named("converged") = fit.converged,
             Named("neg_ll") = fit.value,
-            Named("neg_loglik") = fit.value
+            Named("neg_loglik") = fit.value,
+            Named("gradient_norm") = fit.gradient_norm
         );
     }
 
@@ -400,6 +401,7 @@ List fast_zero_augmented_poisson_cpp(SEXP X_sexp,
         Named("fisher_information") = observed_information,
         Named("information") = observed_information,
         Named("information_type") = "observed",
-        Named("hessian") = -observed_information
+        Named("hessian") = -observed_information,
+        Named("gradient_norm") = fit.gradient_norm
     );
 }

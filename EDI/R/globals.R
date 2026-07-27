@@ -3,6 +3,35 @@ edi_env = new.env(parent = emptyenv())
 
 `%||%` <- function(a, b) if (!is.null(a)) a else b
 
+# Coefficient/statistic magnitude beyond which a fit is treated as
+# complete/quasi-complete separation or otherwise extreme: the MLE does not
+# exist (or a bootstrap/LR replicate has diverged) and the optimizer has
+# stopped at a large-but-finite value that would otherwise silently corrupt
+# CIs/SEs. Centralized here because this exact 1e6 heuristic was previously
+# copy-pasted independently in glm_fit_helpers.R,
+# inference_all_abstract_param_boot.R, inference_all_abstract_non_param_boot.R,
+# and other_helpers.R, with no guarantee the copies stayed in sync.
+#
+# Note: inference_mixin_kk_gee_shared.R's private$max_abs_reasonable_coef
+# (default 1e4) is a deliberately different, tighter threshold for that
+# family and is intentionally left as its own separately-configured value
+# rather than folded into this constant.
+#' @keywords internal
+#' @noRd
+EDI_SEPARATION_THRESHOLD = 1e6
+
+#' Whether a coefficient vector's magnitude indicates complete/quasi-complete
+#' separation (the MLE does not exist and the optimizer diverged to a
+#' large-but-finite value). Returns FALSE if no finite entries are present
+#' (that is a different failure mode -- a non-finite estimate -- not this one).
+#' @keywords internal
+#' @noRd
+is_separated_coefficient_magnitude = function(x, threshold = EDI_SEPARATION_THRESHOLD) {
+  x = as.numeric(x)
+  if (!any(is.finite(x))) return(FALSE)
+  max(abs(x), na.rm = TRUE) > threshold
+}
+
 # Closure to encapsulate the internal assertion override flag (used by SimulationFramework)
 .assert_manager = (function() {
   internal_run_asserts = TRUE

@@ -126,15 +126,26 @@ ModelResult fast_logistic_regression_internal(const Eigen::Ref<const Eigen::Matr
 
         bool converged = true;
         double fopt = NA_REAL;
+        double grad_norm = NA_REAL;
         if (p_free > 0) {
             LogisticLbfgsObjective nll(X_free, y, weights, eta_fixed, use_weights);
             int status = Numer::optim_lbfgs(nll, beta_free, fopt, maxit, tol, tol);
             converged = (status >= 0) && beta_free.allFinite();
+            // Numer::optim_lbfgs owns its LBFGSSolver locally and does not expose
+            // its internal gradient norm, so this is one extra gradient
+            // evaluation at the returned point (not free, but cheap relative to
+            // the whole optimization).
+            if (beta_free.allFinite()) {
+                Eigen::VectorXd grad(p_free);
+                nll.f_grad(beta_free, grad);
+                grad_norm = grad.norm();
+            }
         }
 
         ModelResult res;
         res.b = expand_free_params(beta_free, beta, fixed_spec);
         res.neg_ll = fopt;
+        res.gradient_norm = grad_norm;
         if (!estimate_only) {
             Eigen::VectorXd eta = X * res.b;
             res.mu = plogis_array_safe(eta.array()).matrix();
@@ -160,6 +171,7 @@ ModelResult fast_logistic_regression_internal(const Eigen::Ref<const Eigen::Matr
     Eigen::VectorXd diff(n);
     bool converged = false;
     int iterations = 0;
+    double last_grad_norm = NA_REAL;
 
     for (int iter = 0; iter < maxit; iter++) {
         iterations++;
@@ -194,7 +206,8 @@ ModelResult fast_logistic_regression_internal(const Eigen::Ref<const Eigen::Matr
             }
         }
 
-        if (score_free.norm() < tol) { converged = true; break; }
+        last_grad_norm = score_free.norm();
+        if (last_grad_norm < tol) { converged = true; break; }
 
         Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX);
         if (ldlt.info() != Eigen::Success) break;
@@ -223,6 +236,7 @@ ModelResult fast_logistic_regression_internal(const Eigen::Ref<const Eigen::Matr
     }
     res.iterations = iterations;
     res.converged = converged;
+    res.gradient_norm = last_grad_norm;
     return res;
 }
 
@@ -316,7 +330,8 @@ List fast_logistic_regression_cpp(SEXP X_sexp, SEXP y_sexp,
         return List::create(
             Named("b") = res.b,
             Named("converged") = res.converged,
-            Named("iterations") = res.iterations
+            Named("iterations") = res.iterations,
+            Named("gradient_norm") = res.gradient_norm
         );
     }
     Eigen::VectorXd weights_vec = res.mu.array() * (1.0 - res.mu.array());
@@ -327,7 +342,8 @@ List fast_logistic_regression_cpp(SEXP X_sexp, SEXP y_sexp,
         Named("fisher_information") = res.XtWX,
         Named("score") = res.score,
         Named("neg_ll") = res.neg_ll,
-        Named("converged") = res.converged
+        Named("converged") = res.converged,
+        Named("gradient_norm") = res.gradient_norm
     );
 }
 
@@ -356,7 +372,8 @@ List fast_logistic_regression_weighted_cpp(SEXP X_sexp, SEXP y_sexp, SEXP weight
         Named("score") = res.score,
         Named("neg_ll") = res.neg_ll,
         Named("converged") = res.converged,
-        Named("iterations") = res.iterations
+        Named("iterations") = res.iterations,
+        Named("gradient_norm") = res.gradient_norm
     );
 }
 
@@ -405,6 +422,7 @@ List fast_logistic_regression_with_var_cpp(SEXP X_sexp, SEXP y_sexp, int j = 2,
         Named("neg_ll") = res.neg_ll,
         Named("loglik") = R_finite(res.neg_ll) ? -res.neg_ll : NA_REAL,
         Named("converged") = res.converged,
-        Named("iterations") = res.iterations
+        Named("iterations") = res.iterations,
+        Named("gradient_norm") = res.gradient_norm
     );
 }

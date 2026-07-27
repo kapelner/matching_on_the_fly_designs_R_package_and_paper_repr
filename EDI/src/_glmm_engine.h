@@ -88,22 +88,38 @@ struct GLMMData {
     }
 };
 
-inline double sigma_penalty(double log_sigma, double center = 5.0, double scale = 10.0) {
+// kSigmaPenaltyCenter doubles as the variance-component boundary threshold
+// used by consumers of this engine to flag a fit as having landed near/at
+// the soft barrier (distinct from dat.max_abs_log_sigma, the harder wall
+// above) -- named once here so that diagnostic can't drift out of sync with
+// the penalty it describes.
+constexpr double kSigmaPenaltyCenter = 5.0;
+constexpr double kSigmaPenaltyScale = 10.0;
+
+inline double sigma_penalty(double log_sigma, double center = kSigmaPenaltyCenter, double scale = kSigmaPenaltyScale) {
     const double d = std::abs(log_sigma) - center;
     if (d <= 0.0) return 0.0;
     return scale * d * d;
 }
 
-inline double sigma_penalty_grad(double log_sigma, double center = 5.0, double scale = 10.0) {
+inline double sigma_penalty_grad(double log_sigma, double center = kSigmaPenaltyCenter, double scale = kSigmaPenaltyScale) {
     const double d = std::abs(log_sigma) - center;
     if (d <= 0.0) return 0.0;
     return 2.0 * scale * d * (log_sigma > 0 ? 1.0 : -1.0);
 }
 
-inline double sigma_penalty_hessian(double log_sigma, double center = 5.0, double scale = 10.0) {
+inline double sigma_penalty_hessian(double log_sigma, double center = kSigmaPenaltyCenter, double scale = kSigmaPenaltyScale) {
     const double d = std::abs(log_sigma) - center;
     if (d <= 0.0) return 0.0;
     return 2.0 * scale;
+}
+
+// Whether the fitted random-effect log-variance landed at or beyond the
+// soft-barrier boundary -- a distinct pathology from separation (a
+// collapsing/diverging variance component, not a diverging fixed-effect
+// coefficient).
+inline bool glmm_variance_boundary_hit(double log_sigma) {
+    return std::isfinite(log_sigma) && std::abs(log_sigma) >= kSigmaPenaltyCenter;
 }
 
 // A generic GLMM Objective that uses Gauss-Hermite quadrature.

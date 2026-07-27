@@ -137,6 +137,7 @@ ModelResult fast_poisson_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
         }
         res.iterations = fit.niter;
         res.converged = fit.converged;
+        res.gradient_norm = fit.gradient_norm;
         return res;
     }
 
@@ -212,7 +213,8 @@ ModelResult fast_poisson_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
         if (use_weights) diff.array() *= weights.array();
         score_free.noalias() = X_f.transpose() * diff;
 
-        if (score_free.norm() < tol) {
+        res.gradient_norm = score_free.norm();
+        if (res.gradient_norm < tol) {
             res.converged = true;
             break;
         }
@@ -379,7 +381,8 @@ List fast_poisson_regression_cpp(SEXP X_sexp, SEXP y_sexp,
 		return List::create(
 			Named("b") = res.b,
 			Named("converged") = res.converged,
-			Named("iterations") = res.iterations
+			Named("iterations") = res.iterations,
+			Named("gradient_norm") = res.gradient_norm
 		);
 	}
 	return List::create(
@@ -390,7 +393,8 @@ List fast_poisson_regression_cpp(SEXP X_sexp, SEXP y_sexp,
         Named("score") = res.score,
         Named("neg_ll") = res.neg_ll,
 		Named("converged") = res.converged,
-		Named("iterations") = res.iterations
+		Named("iterations") = res.iterations,
+		Named("gradient_norm") = res.gradient_norm
 	);
 }
 
@@ -420,7 +424,8 @@ List fast_poisson_regression_weighted_cpp(SEXP X_sexp,
         Named("score") = res.score,
         Named("neg_ll") = res.neg_ll,
 		Named("converged") = res.converged,
-		Named("iterations") = res.iterations
+		Named("iterations") = res.iterations,
+		Named("gradient_norm") = res.gradient_norm
 	);
 }
 
@@ -468,7 +473,8 @@ List fast_poisson_regression_with_var_cpp(SEXP X_sexp, SEXP y_sexp, int j = 2,
 		Named("hessian") = -res.XtWX,
 		Named("neg_loglik") = res.neg_ll,
 		Named("neg_ll") = res.neg_ll,
-		Named("loglik") = R_finite(res.neg_ll) ? -res.neg_ll : NA_REAL
+		Named("loglik") = R_finite(res.neg_ll) ? -res.neg_ll : NA_REAL,
+		Named("gradient_norm") = res.gradient_norm
 	);
 }
 
@@ -535,6 +541,7 @@ List fast_quasipoisson_regression_with_var_cpp(SEXP X_sexp,
 		Named("dispersion") = res.dispersion,
 		Named("mu") = res.mu,
 		Named("converged") = res.converged,
-		Named("iterations") = res.iterations
+		Named("iterations") = res.iterations,
+		Named("gradient_norm") = res.gradient_norm
 	);
 }

@@ -454,8 +454,13 @@
 "InferenceCountKKGLMM","compute_estimate",312,0,0
 "InferenceCountKKGLMM","compute_gradient_confidence_interval",312,0,0
 "InferenceCountKKGLMM","compute_gradient_two_sided_pval",312,0,0
+"InferenceCountKKGLMM","compute_lik_ratio_bartlett_two_sided_pval",36,1,0.0277777777777778
+"InferenceCountKKGLMM","compute_lik_ratio_bootstrap_two_sided_pval",36,0,0
 "InferenceCountKKGLMM","compute_lik_ratio_confidence_interval",312,0,0
 "InferenceCountKKGLMM","compute_lik_ratio_two_sided_pval",312,0,0
+"InferenceCountKKGLMM","compute_param_bootstrap_confidence_interval",36,0,0
+"InferenceCountKKGLMM","compute_param_bootstrap_estimate",36,0,0
+"InferenceCountKKGLMM","compute_param_bootstrap_pval",36,0,0
 "InferenceCountKKGLMM","compute_rand_two_sided_pval",208,0,0
 "InferenceCountKKGLMM","compute_rand_two_sided_pval(custom)",208,0,0
 "InferenceCountKKGLMM","compute_rand_two_sided_pval(delta=0.5)",208,0,0

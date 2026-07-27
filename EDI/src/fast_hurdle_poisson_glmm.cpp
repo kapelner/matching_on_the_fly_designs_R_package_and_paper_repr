@@ -699,7 +699,9 @@ List fast_hurdle_poisson_glmm_cpp(
 			Named("log_sigma")  = NA_REAL,
 			Named("ssq_b_T")    = NA_REAL,
 			Named("converged")  = false,
-			Named("neg_loglik") = NA_REAL
+			Named("neg_loglik") = NA_REAL,
+			Named("gradient_norm") = NA_REAL,
+			Named("variance_boundary_hit") = NA_LOGICAL
 		);
 	}
 
@@ -743,11 +745,13 @@ List fast_hurdle_poisson_glmm_cpp(
 
 	double neg_ll = NA_REAL;
 	bool converged = false;
+	double gradient_norm = NA_REAL;
 	try {
 		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
 		par       = fit.params;
 		neg_ll    = fit.value;
 		converged = std::isfinite(neg_ll) && fit.converged;
+		gradient_norm = fit.gradient_norm;
 	} catch (...) {
 		return List::create(
 			Named("params")     = par,
@@ -755,9 +759,12 @@ List fast_hurdle_poisson_glmm_cpp(
 			Named("log_sigma")  = par[total - 1],
 			Named("ssq_b_T")    = NA_REAL,
 			Named("converged")  = false,
-			Named("neg_loglik") = NA_REAL
+			Named("neg_loglik") = NA_REAL,
+			Named("gradient_norm") = NA_REAL,
+			Named("variance_boundary_hit") = NA_LOGICAL
 		);
 	}
+	const bool variance_boundary_hit = glmm::glmm_variance_boundary_hit(par[total - 1]);
 
 	const double pen         = soft_barrier_hp(par[total - 1]);
 	const double true_neg_ll = neg_ll - pen;
@@ -773,7 +780,9 @@ List fast_hurdle_poisson_glmm_cpp(
 			Named("converged")  = converged,
 			Named("neg_loglik") = true_neg_ll,
 			Named("neg_ll")     = true_neg_ll,
-			Named("loglik")     = R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL
+			Named("loglik")     = R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL,
+			Named("gradient_norm") = gradient_norm,
+			Named("variance_boundary_hit") = variance_boundary_hit
 		);
 	}
 
@@ -808,6 +817,8 @@ List fast_hurdle_poisson_glmm_cpp(
 		Named("neg_loglik") = true_neg_ll,
 		Named("neg_ll")     = true_neg_ll,
 		Named("loglik")     = R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL,
-		Named("fisher_information") = information
+		Named("fisher_information") = information,
+		Named("gradient_norm") = gradient_norm,
+		Named("variance_boundary_hit") = variance_boundary_hit
 	);
 }

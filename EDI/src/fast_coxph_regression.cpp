@@ -230,8 +230,13 @@ struct CoxFitResult {
     double neg_ll;
     bool converged;
     int iterations;
+    // Norm of the score at the returned beta. cox_newton_raphson's own
+    // convergence check is objective-value-based (|old_ll - ll| < tol), not
+    // gradient-based, so this is a genuinely independent diagnostic -- but it
+    // reuses total_grad, already computed each iteration, at zero extra cost.
+    double gradient_norm;
 
-    CoxFitResult() : neg_ll(NA_REAL), converged(false), iterations(0) {}
+    CoxFitResult() : neg_ll(NA_REAL), converged(false), iterations(0), gradient_norm(NA_REAL) {}
 };
 
 CoxFitResult cox_newton_raphson(
@@ -347,6 +352,7 @@ CoxFitResult cox_newton_raphson(
     res.converged = (iter < maxit);
     res.iterations = iter;
     res.hess_mat = total_hess;
+    res.gradient_norm = total_grad.norm();
 
     if (!estimate_only) {
         Eigen::MatrixXd H_free = subset_matrix(res.hess_mat, fixed_spec.free_idx, fixed_spec.free_idx);
@@ -443,6 +449,7 @@ CoxFitResult cox_lbfgs(
     res.neg_ll    = fit.value;
     res.converged = fit.converged;
     res.iterations = fit.niter;
+    res.gradient_norm = fit.gradient_norm;
 
     if (!estimate_only && (fit.converged || true)) { // Always try to get Hessian if not estimate_only
         res.hess_mat = obj.hessian(fit.params);
@@ -633,9 +640,9 @@ List fast_coxph_regression_prebuilt_cpp(
     NumericVector coef_r(p);
     for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];
     if (estimate_only) {
-        return List::create(_["coefficients"] = coef_r, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat);
+        return List::create(_["coefficients"] = coef_r, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat, _["gradient_norm"] = fit.gradient_norm);
     }
-    return List::create(_["coefficients"] = coef_r, _["vcov"] = fit.vcov, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat);
+    return List::create(_["coefficients"] = coef_r, _["vcov"] = fit.vcov, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat, _["gradient_norm"] = fit.gradient_norm);
 }
 
 // [[Rcpp::export]]
@@ -658,10 +665,10 @@ List fast_coxph_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
     NumericVector coef_r(p);
     for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];
     if (estimate_only) {
-        return List::create(_["coefficients"] = coef_r, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat);
+        return List::create(_["coefficients"] = coef_r, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat, _["gradient_norm"] = fit.gradient_norm);
     }
     Eigen::MatrixXd vcov_mat = (cluster.isNotNull()) ? compute_robust_vcov(strata_data, fit.beta, fit.vcov, std::vector<int>(IntegerVector(cluster).begin(), IntegerVector(cluster).end())) : fit.vcov;
-    return List::create(_["coefficients"] = coef_r, _["vcov"] = vcov_mat, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat);
+    return List::create(_["coefficients"] = coef_r, _["vcov"] = vcov_mat, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat, _["gradient_norm"] = fit.gradient_norm);
 }
 
 // [[Rcpp::export]]
@@ -706,9 +713,9 @@ List fast_stratified_coxph_regression_cpp(
     NumericVector coef_r(p);
     for (int q = 0; q < p; ++q) coef_r[q] = (p > 0 && !fit.beta.empty()) ? fit.beta[q] : NA_REAL;
     if (estimate_only) {
-        return List::create(_["coefficients"] = coef_r, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat);
+        return List::create(_["coefficients"] = coef_r, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat, _["gradient_norm"] = fit.gradient_norm);
     }
-    return List::create(_["coefficients"] = coef_r, _["vcov"] = fit.vcov, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat);
+    return List::create(_["coefficients"] = coef_r, _["vcov"] = fit.vcov, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat, _["gradient_norm"] = fit.gradient_norm);
 }
 
 // [[Rcpp::export]]

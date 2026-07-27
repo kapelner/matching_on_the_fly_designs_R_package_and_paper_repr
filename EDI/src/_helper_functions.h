@@ -45,8 +45,12 @@ struct ModelResult {
     double sigma2_hat;
     int iterations;
     bool converged;
+    // Gradient/score norm at the returned b, populated from values already
+    // computed as part of the fitter's own convergence check (never a new
+    // evaluation, except where noted at the call site). NA_REAL if unavailable.
+    double gradient_norm;
 
-    ModelResult() : neg_ll(NA_REAL), ssq_b_j(NA_REAL), ssq_b_2(NA_REAL), dispersion(NA_REAL), sigma2_hat(NA_REAL), iterations(0), converged(false) {}
+    ModelResult() : neg_ll(NA_REAL), ssq_b_j(NA_REAL), ssq_b_2(NA_REAL), dispersion(NA_REAL), sigma2_hat(NA_REAL), iterations(0), converged(false), gradient_norm(NA_REAL) {}
 };
 
 // Pure C++ internal helpers
@@ -120,13 +124,14 @@ inline Eigen::MatrixXd weighted_crossprod(const Eigen::MatrixBase<Derived>& X,
     }
 
     if (Derived::IsRowMajor) {
-        Eigen::MatrixXd res = Eigen::MatrixXd::Zero(p, p);
+        RowMajorMatrixXd res = RowMajorMatrixXd::Zero(p, p);
         for (int i = 0; i < n; ++i) {
             double wi = w(i);
             if (wi == 0.0) continue;
             for (int j = 0; j < p; ++j) {
                 double xij = X(i, j);
                 double w_xij = wi * xij;
+#pragma omp simd
                 for (int k = j; k < p; ++k) {
                     res(j, k) += w_xij * X(i, k);
                 }
@@ -160,13 +165,14 @@ inline Eigen::MatrixXd weighted_crossprod(const Eigen::Map<const Eigen::Matrix<d
         Rcpp::stop("weighted_crossprod: weight vector has incompatible dimensions");
     }
 
-    Eigen::MatrixXd res = Eigen::MatrixXd::Zero(p, p);
+    RowMajorMatrixXd res = RowMajorMatrixXd::Zero(p, p);
     for (int i = 0; i < n; ++i) {
         double wi = w(i);
         if (wi == 0.0) continue;
         for (int j = 0; j < p; ++j) {
             double xij = X(i, j);
             double w_xij = wi * xij;
+#pragma omp simd
             for (int k = j; k < p; ++k) {
                 res(j, k) += w_xij * X(i, k);
             }
@@ -191,6 +197,7 @@ inline Eigen::VectorXd weighted_crossprod_rhs(const Eigen::MatrixBase<Derived>& 
         for (int i = 0; i < n; ++i) {
             double wi_yi = w(i) * y(i);
             if (wi_yi == 0.0) continue;
+#pragma omp simd
             for (int j = 0; j < p; ++j) {
                 res(j) += X(i, j) * wi_yi;
             }
@@ -216,6 +223,7 @@ inline Eigen::VectorXd weighted_crossprod_rhs(const Eigen::Map<const Eigen::Matr
     for (int i = 0; i < n; ++i) {
         double wi_yi = w(i) * y(i);
         if (wi_yi == 0.0) continue;
+#pragma omp simd
         for (int j = 0; j < p; ++j) {
             res(j) += X(i, j) * wi_yi;
         }
@@ -752,11 +760,18 @@ struct LikelihoodFitResult {
     double value;
     int niter;
     bool converged;
+    // Gradient norm at the returned params. Populated from values the
+    // optimizer already computes as part of its own stopping check (LBFGSpp's
+    // internal m_gnorm; Newton's per-iteration grad.norm()) -- never a new
+    // evaluation. NaN if unavailable (e.g. the optimizer errored before any
+    // gradient was computed).
+    double gradient_norm;
 
     LikelihoodFitResult() :
         value(std::numeric_limits<double>::quiet_NaN()),
         niter(0),
-        converged(false) {}
+        converged(false),
+        gradient_norm(std::numeric_limits<double>::quiet_NaN()) {}
 };
 
 inline std::string normalize_optimizer_algorithm(const std::string& optimization_alg,
@@ -1005,6 +1020,9 @@ inline LikelihoodFitResult optimize_likelihood_lbfgs(LikelihoodFunctor& fun,
     try {
         fit.niter = solver.minimize(fun, fit.params, fit.value);
         fit.converged = (fit.niter < maxit);
+        // Already tracked internally at every iteration as part of LBFGSpp's
+        // own stopping check (m_gnorm); reading it back is not a new evaluation.
+        fit.gradient_norm = solver.final_grad_norm();
     } catch (...) {
         fit.value = std::numeric_limits<double>::quiet_NaN();
         fit.converged = false;
@@ -1046,16 +1064,23 @@ inline LikelihoodFitResult optimize_likelihood_newton(LikelihoodFunctor& fun,
     (void)warm_start_hessian;
     LikelihoodFitResult fit;
     fit.params = params;
+    // Carries the last finite gradient norm computed inside the loop below
+    // out to the non-converged fallback return, so that path can report a
+    // gradient norm too without a re-evaluation.
+    double last_grad_norm = std::numeric_limits<double>::quiet_NaN();
 
     for (int iter = 0; iter < maxit; ++iter) {
         Eigen::VectorXd grad(params.size());
         double current_value = fun(params, grad);
         if (!std::isfinite(current_value) || !grad.allFinite()) break;
-        if (grad.norm() < tol) {
+        double gnorm = grad.norm();
+        last_grad_norm = gnorm;
+        if (gnorm < tol) {
             fit.value = current_value;
             fit.niter = iter;
             fit.converged = true;
             fit.params = params;
+            fit.gradient_norm = gnorm;
             return fit;
         }
 
@@ -1086,6 +1111,10 @@ inline LikelihoodFitResult optimize_likelihood_newton(LikelihoodFunctor& fun,
         if ((step_scale * step).norm() < tol) {
             fit.converged = true;
             fit.params = params;
+            // Gradient at the pre-step point (the last one actually computed);
+            // Newton does not re-evaluate the gradient after accepting a step
+            // within the same iteration, so this is the freshest value on hand.
+            fit.gradient_norm = last_grad_norm;
             return fit;
         }
     }
@@ -1093,6 +1122,7 @@ inline LikelihoodFitResult optimize_likelihood_newton(LikelihoodFunctor& fun,
     fit.params = params;
     fit.value = likelihood_value(fun, params);
     fit.converged = false;
+    fit.gradient_norm = last_grad_norm;
     return fit;
 }
 

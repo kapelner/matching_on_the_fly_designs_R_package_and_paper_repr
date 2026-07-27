@@ -622,7 +622,7 @@ NULL
 }
 
 .extract_se_from_rq_fit = function(fit, coef_name){
-	is_bad_se = function(x) !is.finite(x) || x <= 0 || x > 1e6
+	is_bad_se = function(x) !is.finite(x) || x <= 0 || x > EDI_SEPARATION_THRESHOLD
 
 	se = tryCatch({
 		s_fit = suppressWarnings(summary(fit, se = "nid"))

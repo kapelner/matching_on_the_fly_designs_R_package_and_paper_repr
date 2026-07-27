@@ -40,6 +40,7 @@ NumericVector compute_simple_mean_diff_parallel_cpp(
 		double sum_T = 0, sum_C = 0;
 		int n_T = 0;
 
+#pragma omp simd reduction(+:sum_T,sum_C,n_T)
 		for (int i = 0; i < n; ++i) {
 			const int is_t = (w_col[i] == 1);
 			sum_T += is_t * (y_ptr[i] + delta);
