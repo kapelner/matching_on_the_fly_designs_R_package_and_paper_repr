@@ -136,6 +136,59 @@ bootstrap distribution) for the six migrated classes should be bit-identical bef
 - `devtools::check()` / R CMD check to catch any method resolution issue from the flattened
   `inherit` chain.
 
+## Considered and rejected
+
+Three alternative restructurings came up while scoping this and were rejected:
+
+1. **New `InferenceAsympPartialLik` class**, sitting above or below `InferenceAsympLik` to hold
+   "partial-likelihood-only" methods. Rejected: `InferenceAsympLik` already documents itself as
+   spanning full/partial/quasi/composite likelihoods generically via capability flags, and the
+   actual duplication turned out to be the IVWC compound-estimator pattern addressed above, not a
+   missing likelihood tier.
+
+2. **Rename `InferenceMLEorKMSummaryTable` to something like `InferenceAsympFullPartialQuasiCompLik`**
+   to describe the likelihood taxonomy it spans. Rejected: this class requires no likelihood at all
+   (it's inherited by Kaplan-Meier-based inference, which is nonparametric) — its real contract is
+   "produces a coef+SE+df summary supporting Wald z/t inference," which is broader and more accurate
+   than any likelihood descriptor. The likelihood taxonomy is already correctly documented one level
+   down, on `InferenceAsympLik`.
+
+3. **Rename `InferenceParamBootstrap` to `InferenceFullLikParamBootstrap`**, to assert that every
+   daughter implements a full likelihood. Rejected on a direct counterexample:
+   `InferenceSurvivalKKStratCoxPHOneLik` (header: "Stratified Cox **Combined**-Likelihood Compound
+   Inference," `shared_combined_likelihood()`) inherits `InferenceParamBootstrap` and sets
+   `supports_lik_ratio_param_bootstrap = TRUE`, despite Cox's partial likelihood being the textbook
+   example of a likelihood that is explicitly *not* full. "Full" is the wrong invariant; "a single
+   likelihood coherent enough to simulate from" (i.e. `simulate_under_lik_null()` is implementable)
+   is the real one, but that's cross-cutting rather than something a class name should assert.
+
+4. **Restructure the whole hierarchy as a strict linear chain** `NoLikelihood < PartialLikelihood <
+   FullLikelihood < ...`, so that likelihood taxonomy and capability level are the same axis encoded
+   via inheritance depth. Rejected: the codebase already contains concrete counterexamples showing
+   taxonomy and capability are orthogonal, not nested:
+   - **Cox PH is partial-likelihood yet reaches top capability** (`StratCoxPHOneLik`, see #3 above) —
+     a "partial" family outranking families the taxonomy would call more "full."
+   - **Quasi-Poisson and robust-Poisson are quasi-likelihood yet reach zero capability** despite
+     inheriting through `InferenceCountCompositeLikelihood -> InferenceParamBootstrap`: their
+     `supports_likelihood_tests` and `supports_lik_ratio_param_bootstrap` are both hard-`FALSE` on
+     the shared base class and neither subclass overrides them. Class-chain position and actual
+     capability are decoupled.
+   - **GEE, also quasi-likelihood, sits entirely outside the `InferenceAsympLik` subtree**
+     (`inherit = InferenceAsymp` directly), with no likelihood-test dispatch machinery at all — while
+     quasi-Poisson (same taxonomic bucket) is nested three levels inside that subtree. Two
+     quasi-likelihood families are incomparable in capability, not merely unordered.
+   - **`InferenceAbstractKKOrdinalCLMM` is a full joint (mixed-model) likelihood yet is flagged to
+     zero capability** (`supports_likelihood_tests = FALSE`), same as the taxonomically "lesser"
+     compound/IVWC classes.
+
+   A linear chain requires every class to occupy exactly one rank in a total order; these families
+   are genuinely incomparable on the taxonomy axis vs. the capability axis, which is why the
+   codebase encodes capability as orthogonal boolean flags (`supports_likelihood_tests`,
+   `supports_lik_ratio_param_bootstrap`, `supports_bartlett_likelihood_ratio_exact/approx`,
+   `supports_fisher_information`) — several of them runtime-conditional functions rather than fixed
+   per-class constants — dispatched generically from `InferenceAsympLik`, instead of via inheritance
+   depth. That mechanism is left as-is.
+
 ## Follow-ups (explicitly not doing now)
 
 - Auditing/removing the now-provably-dead `supports_lik_ratio_param_bootstrap` override on
