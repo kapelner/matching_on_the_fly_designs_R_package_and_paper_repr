@@ -189,6 +189,38 @@ Three alternative restructurings came up while scoping this and were rejected:
    per-class constants — dispatched generically from `InferenceAsympLik`, instead of via inheritance
    depth. That mechanism is left as-is.
 
+   **Visual evidence — two capability-lattice matrices** (class × capability flag, saved as
+   standalone self-contained HTML, viewable directly in a browser):
+   `package_metadata/ivwc_capability_lattice.html` (the IVWC/OneLik pairs plus GEE, robust-regr,
+   CLMM, paired-sign-test) and `package_metadata/non_ivwc_capability_lattice.html` (everything
+   else: the 11-class abstract backbone plus every remaining concrete family across continuous,
+   count, ordinal, proportion, incidence, and survival). The second sweep surfaced further
+   confirmation beyond the four bullets above:
+
+   - **A third major abstract branch**, `InferenceAsympLikStdModCache` / its `NoParamBootstrap`
+     sibling — structurally the same role as `InferenceKKPassThroughCompound(NoParamBootstrap)` —
+     turns out to be the single *largest* branch in the package (hosts most non-KK GLM-style
+     families: logistic, probit, cauchit, cloglog, ordered-probit, proportional-odds,
+     stereotype-logit, adjacent-category-logit, log-binomial, beta, zero-one-inflated-beta, Cox,
+     stratified Cox, Weibull, dependent-censoring transform).
+   - **The `use_rcpp`-conditional pattern recurs 8 more times** beyond Weibull-frailty: continuous/
+     count/ordinal GLMM, non-KK Cox and stratified Cox, and the whole zero-augmented-Poisson family
+     (Hurdle-Poisson/ZIP/ZINB) all silently drop to Wald-only on the pure-R fallback path — another
+     case where capability is a runtime condition, not a chain position.
+   - **A naming-convention break**: four classes named `...OneLik` (continuous and proportion
+     quantile-regression, continuous robust-regression) are named like the full-capability branch
+     established by Cox/Copula/Frailty/CondLogit/OLS, but actually inherit
+     `InferenceKKPassThroughCompoundNoParamBootstrap` — zero likelihood-test capability.
+   - **The "inside `InferenceParamBootstrap`'s static chain, flagged to zero capability" pattern**
+     (first seen with quasi-Poisson/robust-Poisson) recurs on a much larger group: simple mean-diff
+     (+ pooled-var), simple Wilcoxon, incidence Wald/CMH/extended-Robins, the KK-marginal g-comp
+     family, fractional logit, risk-diff, and non-KK modified-Poisson — reinforcing that chain
+     position and capability are decoupled throughout the package, not just in one or two spots.
+   - A second **dead-flag instance** (`InferenceSurvivalKKWeibullMarginal`, outside the `AsympLik`
+     subtree entirely, `supports_likelihood_tests = FALSE` but never consulted by anything) and a
+     **terminology collision** (`InferenceOrdinalPartialProportionalOdds` — "partial" names the
+     *partial proportional odds* statistical model, unrelated to "partial likelihood").
+
 ## Follow-ups (explicitly not doing now)
 
 - Auditing/removing the now-provably-dead `supports_lik_ratio_param_bootstrap` override on
