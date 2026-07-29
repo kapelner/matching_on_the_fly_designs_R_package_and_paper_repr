@@ -15,6 +15,7 @@ InferenceMixinKKPassThroughCompound = list(
 	public = list(),
 	private = list(
 		kk_passthrough_compound = TRUE,
+		is_a_kk_compound_estimator = function() TRUE,
 
 		supports_likelihood_tests = function() FALSE,
 

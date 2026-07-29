@@ -10,6 +10,8 @@
 DesignFixedBernoulli = R6::R6Class("DesignFixedBernoulli",
 	inherit = DesignFixed,
 	public = list(
+		#' @description Characterization: this is a Bernoulli-randomized design.
+		is_a_bernoulli_capable = function() TRUE,
 		#' @description Initialize a fixed Bernoulli experimental design
 		#'
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or

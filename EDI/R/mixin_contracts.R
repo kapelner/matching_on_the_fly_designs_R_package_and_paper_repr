@@ -7,6 +7,12 @@
 #' empty future extension point). These contracts are deliberately narrow: a
 #' method supplied by the mixin itself is not repeated as a host requirement.
 #'
+#' Single-class-use extensions (\code{InferenceExt*}) are file-splits, not
+#' reusable mixins, and are deliberately not tracked here -- this registry
+#' exists to guard against silent method-name collisions when two or more
+#' mixins are spliced into the same host, which cannot happen for an
+#' extension spliced into exactly one class.
+#'
 #' \code{EDI_MIXIN_COMPOSITIONS} lists every base class that combines two or
 #' more mixins. \code{EDI_MIXIN_ALLOWED_COLLISIONS} records the sole deliberate
 #' overwrite: the compound KK mixin replaces the pass-through implementation of
@@ -16,43 +22,10 @@
 #' @keywords internal
 #' @noRd
 EDI_MIXIN_CONTRACTS = list(
-	InferenceMixinBartlettApprox = list(
-		file = "inference_mixin_bartlett_approx.R",
-		private_methods = c(
-			"supports_lik_ratio_param_bootstrap", "run_param_bootstrap_replicates",
-			"param_bootstrap_lr_extreme"
-		),
-		private_state = "active_resampling_operation"
-	),
-	InferenceMixinBcaBootstrapCI = list(
-		file = "inference_mixin_bca_bootstrap_ci.R",
-		private_methods = character(),
-		private_state = character()
-	),
-	InferenceMixinCIInversion = list(
-		file = "inference_mixin_ci_inversion.R",
-		private_methods = c(
-			"cache_nonestimable_se", "compute_wald_confidence_interval_impl",
-			"get_likelihood_test_spec", "get_memoized_likelihood_test_eval",
-			"get_memoized_likelihood_test_pval", "get_standard_error",
-			"normalize_testing_type"
-		),
-		private_state = c("likelihood_ci_max_abs", "testing_type")
-	),
 	InferenceMixinCordeiroFerrariApprox = list(
 		file = "inference_mixin_cordeiro_ferrari_approx.R",
 		private_methods = character(),
 		private_state = character()
-	),
-	InferenceMixinCustomRandomizationStatistic = list(
-		file = "inference_mixin_custom_randomization_statistic.R",
-		private_methods = character(),
-		private_state = "cached_values"
-	),
-	InferenceMixinInformationMatrix = list(
-		file = "inference_mixin_information_matrix.R",
-		private_methods = c("get_default_information_source", "get_likelihood_test_spec"),
-		private_state = c("cached_mod", "information_preference", "information_source_used")
 	),
 	InferenceMixinKKGEEShared = list(
 		file = "inference_mixin_kk_gee_shared.R",
@@ -97,61 +70,17 @@ EDI_MIXIN_CONTRACTS = list(
 		private_methods = character(),
 		private_state = character()
 	),
-	InferenceMixinLikelihoodTestMemoization = list(
-		file = "inference_mixin_likelihood_test_memoization.R",
-		private_methods = c(
-			"cache_nonestimable_estimate", "cache_nonestimable_se",
-			"get_bartlett_factor_approx", "get_bartlett_factor_exact",
-			"get_likelihood_null_warm_state", "get_likelihood_test_eval_entry",
-			"get_likelihood_test_spec", "get_score_test_information_matrix",
-			"normalize_likelihood_test_delta", "set_likelihood_null_warm_state",
-			"set_likelihood_test_eval_entry", "supports_bartlett_likelihood_ratio_approx",
-			"supports_bartlett_likelihood_ratio_exact"
-		),
-		private_state = "null_fit_warm_start_enabled"
-	),
 	InferenceMixinOffOptimumLikelihoodEval = list(
 		file = "inference_mixin_off_optimum_likelihood_eval.R",
 		private_methods = c("get_default_information_source", "get_likelihood_test_spec"),
-		private_state = character()
-	),
-	InferenceMixinParamBootstrapEstimate = list(
-		file = "inference_mixin_param_bootstrap_estimate.R",
-		private_methods = c(
-			"cache_nonestimable_se", "effective_parallel_cores", "get_likelihood_test_spec",
-			"par_lapply", "simulate_under_lik_null", "supports_lik_ratio_param_bootstrap",
-			"use_deterministic_param_bootstrap", "with_param_bootstrap_seed"
-		),
-		private_state = c("cached_values", "seed")
-	),
-	InferenceMixinQuantileRandCI = list(
-		file = "inference_mixin_quantile_rand_ci.R",
-		private_methods = c("compute_rand_pval_matched_pairs", "compute_rand_pval_reservoir"),
-		private_state = "cached_values"
-	),
-	InferenceMixinSequentialMCPval = list(
-		file = "inference_mixin_sequential_mc_pval.R",
-		private_methods = "compute_two_sided_randomization_pval_band",
 		private_state = character()
 	)
 )
 
 EDI_MIXIN_COMPOSITIONS = list(
-	InferenceAsympLik = c(
-		"InferenceMixinCIInversion", "InferenceMixinInformationMatrix",
-		"InferenceMixinLikelihoodTestMemoization"
-	),
 	InferenceKKPassThroughCompound = c(
 		"InferenceMixinKKPassThrough", "InferenceMixinKKPassThroughCompound"
-	),
-	InferenceNonParamBootstrap = "InferenceMixinBcaBootstrapCI",
-	InferenceParamBootstrap = c(
-		"InferenceMixinBartlettApprox", "InferenceMixinParamBootstrapEstimate"
-	),
-	InferenceRand = c(
-		"InferenceMixinCustomRandomizationStatistic", "InferenceMixinSequentialMCPval"
-	),
-	InferenceRandQuantileCI = "InferenceMixinQuantileRandCI"
+	)
 )
 
 EDI_MIXIN_ALLOWED_COLLISIONS = list(

@@ -153,6 +153,47 @@ public:
     }
 };
 
+LikelihoodFitResult fast_zinb_internal(const Eigen::Ref<const Eigen::MatrixXd>& Xc,
+                                       const Eigen::Ref<const Eigen::MatrixXd>& Xz,
+                                       const Eigen::Ref<const Eigen::VectorXd>& y_vec,
+                                       std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+                                       int maxit = 1000, double tol = 1e-8,
+                                       std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+                                       std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+                                       std::string optimization_alg = "lbfgs",
+                                       bool smart_cold_start = true,
+                                       std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt) {
+    ZeroInflatedNegBin obj(y_vec, Xc, Xz);
+    int n_par = Xc.cols() + Xz.cols() + 1;
+    Eigen::VectorXd par = Eigen::VectorXd::Zero(n_par);
+
+    if (warm_start_params.has_value()) {
+        par = *warm_start_params;
+        if (par.size() != n_par) stop("warm_start_params must have length equal to the number of model parameters");
+    } else if (smart_cold_start) {
+        // Simple initialization
+        double mean_y = y_vec.mean();
+        if (mean_y < 1e-8) mean_y = 1e-8;
+        par.head(Xc.cols()).setZero();
+        if (Xc.cols() > 0) par[0] = std::log(mean_y);
+        par.segment(Xc.cols(), Xz.cols()).setZero();
+        par[n_par - 1] = std::log(1.0); // theta = 1
+    }
+
+    FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
+
+    Eigen::MatrixXd info;
+    const Eigen::MatrixXd* info_ptr = nullptr;
+    if (warm_start_fisher_info.has_value()) {
+        info = *warm_start_fisher_info;
+        if (info.rows() == n_par && info.cols() == n_par) {
+            info_ptr = &info;
+        }
+    }
+
+    return optimize_fixed_likelihood(obj, par, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_ptr);
+}
+
 } // namespace
 
 //' @title Fast Zero-Inflated Negative Binomial Regression (C++)
@@ -189,36 +230,16 @@ List fast_zinb_cpp(SEXP X, SEXP Xzi, SEXP y,
     Eigen::Map<const Eigen::MatrixXd> Xz(Xz_r.begin(), Xz_r.nrow(), Xz_r.ncol());
     Eigen::Map<const Eigen::VectorXd> y_vec(y_r.begin(), y_r.size());
 
+    LikelihoodFitResult fit = fast_zinb_internal(
+        Xc, Xz, y_vec,
+        nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+        maxit, tol,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg, smart_cold_start,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
+
     ZeroInflatedNegBin obj(y_vec, Xc, Xz);
-    int n_par = Xc.cols() + Xz.cols() + 1;
-    Eigen::VectorXd par = Eigen::VectorXd::Zero(n_par);
-    
-    if (warm_start_params.isNotNull()) {
-        par = as<Eigen::VectorXd>(NumericVector(warm_start_params));
-        if (par.size() != n_par) stop("warm_start_params must have length equal to the number of model parameters");
-    } else if (smart_cold_start) {
-        // Simple initialization
-        double mean_y = y_vec.mean();
-        if (mean_y < 1e-8) mean_y = 1e-8;
-        par.head(Xc.cols()).setZero();
-        if (Xc.cols() > 0) par[0] = std::log(mean_y);
-        par.segment(Xc.cols(), Xz.cols()).setZero();
-        par[n_par - 1] = std::log(1.0); // theta = 1
-    }
-
-    FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
-    
-    Eigen::MatrixXd info;
-    const Eigen::MatrixXd* info_ptr = nullptr;
-    if (warm_start_fisher_info.isNotNull()) {
-        info = as<Eigen::MatrixXd>(warm_start_fisher_info);
-        if (info.rows() == n_par && info.cols() == n_par) {
-            info_ptr = &info;
-        }
-    }
-
-    LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_ptr);
-    
     const int p_cond = Xc.cols();
     const int p_zi = Xz.cols();
     if (estimate_only) {

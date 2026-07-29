@@ -1,18 +1,21 @@
-#' Mixin for Memoized Likelihood-Test Evaluation
+#' Extension for Memoized Likelihood-Test Evaluation
 #'
-#' A Pattern-1 mixin (plain list with code{$public} and code{$private} slots)
-#' providing warm constrained fits, per-null cached likelihood-test components,
-#' and score, gradient, likelihood-ratio, and Bartlett p-values. Consumers must
-#' provide code{get_likelihood_test_spec()}, likelihood-test cache helpers from
+#' A Pattern-1 file-split extension (plain list with code{$public} and
+#' code{$private} slots), spliced into exactly one class
+#' (\code{InferenceAsympLik}) -- not a reusable mixin. Provides warm
+#' constrained fits, per-null cached likelihood-test components, and score,
+#' gradient, likelihood-ratio, and Bartlett p-values. Requires
+#' code{get_likelihood_test_spec()}, likelihood-test cache helpers from
 #' code{Inference}, code{get_score_test_information_matrix()}, and the
-#' testing-type capability hooks used by the Bartlett paths.
+#' testing-type capability hooks used by the Bartlett paths, all provided by
+#' the host class.
 #'
-#' Splice into a class with
-#' code{private = c(InferenceMixinLikelihoodTestMemoization$private, list(...))}.
+#' Splice into \code{InferenceAsympLik} with
+#' code{private = c(InferenceExtLikelihoodTestMemoization$private, list(...))}.
 #'
 #' @keywords internal
 #' @noRd
-InferenceMixinLikelihoodTestMemoization = list(
+InferenceExtLikelihoodTestMemoization = list(
 	public = list(),
 	private = list(
 		make_warm_fit_null_wrapper = function(spec, cache_key){

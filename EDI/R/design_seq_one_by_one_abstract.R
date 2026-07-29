@@ -13,6 +13,8 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 	lock_objects = FALSE,
 	inherit = DesignMatching,
 	public = list(
+		#' @description Characterization: this is a sequential one-by-one design.
+		is_a_seq_one_by_one = function() TRUE,
 		#' @description Initialize a sequential one-by-one design.
 		#' @param response_type The data type of response values.
 		#' @param prob_T The probability of the treatment assignment.

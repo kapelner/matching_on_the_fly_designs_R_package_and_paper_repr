@@ -5,6 +5,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include "fast_gamma_functions.h"
 
 namespace edi_opt {
 
@@ -92,9 +93,9 @@ inline Eigen::MatrixXd negbin_smart_hessian(const Eigen::MatrixXd& X,
         double d_score_beta_d_log_theta = theta * mu_i * (yi - mu_i) / (denom * denom);
         H.topRightCorner(p, 1).noalias() -= d_score_beta_d_log_theta * x;
 
-        double A = R::digamma(yi + theta) - R::digamma(theta) +
+        double A = fast_digamma(yi + theta) - fast_digamma(theta) +
             std::log(theta) - std::log(denom) + 1.0 - (yi + theta) / denom;
-        double dA_dtheta = R::trigamma(yi + theta) - R::trigamma(theta) +
+        double dA_dtheta = fast_trigamma(yi + theta) - fast_trigamma(theta) +
             1.0 / theta - 1.0 / denom + (yi - mu_i) / (denom * denom);
         H(p, p) -= theta * A + theta * theta * dA_dtheta;
     }

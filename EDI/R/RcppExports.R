@@ -194,6 +194,10 @@ efron_redraw_cpp <- function(t, prob_T, weighted_coin_prob) {
     .Call(`_EDI_efron_redraw_cpp`, t, prob_T, weighted_coin_prob)
 }
 
+exchangeable_resampling_draws_cpp <- function(units, strata_ids_sexp, unit_kind_sexp, m_vec_full_sexp, B, size, replace, stratified, preserve_order, unit_type, size_label) {
+    .Call(`_EDI_exchangeable_resampling_draws_cpp`, units, strata_ids_sexp, unit_kind_sexp, m_vec_full_sexp, B, size, replace, stratified, preserve_order, unit_type, size_label)
+}
+
 get_adjacent_category_logit_score_cpp <- function(X_sexp, y_sexp, params_sexp) {
     .Call(`_EDI_get_adjacent_category_logit_score_cpp`, X_sexp, y_sexp, params_sexp)
 }
@@ -959,6 +963,32 @@ fast_neg_bin_cpp <- function(X_sexp, y_sexp, warm_start_params = NULL, smart_col
     .Call(`_EDI_fast_neg_bin_cpp`, X_sexp, y_sexp, warm_start_params, smart_cold_start, maxit, eps_f, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only)
 }
 
+#' @title Fast Weighted Negative Binomial Regression (C++)
+#' @description High-performance negative binomial regression fitting with nonnegative row weights.
+#' @param X A numeric matrix of predictors.
+#' @param y A numeric vector of responses.
+#' @param weights A nonnegative numeric vector of row weights.
+#' @param warm_start_params Optional starting values for coefficients and dispersion. If provided, \code{smart_cold_start} is ignored.
+#' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
+#' @param maxit Maximum number of iterations.
+#' @param eps_f Convergence tolerance for function value.
+#' @param eps_g Convergence tolerance for gradient.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
+#' @param estimate_only If TRUE, skip Fisher information calculation.
+#' @return A list containing coefficients, theta, and convergence status.
+#' @export
+#' @keywords internal
+#' @examples
+#' X = matrix(rnorm(100), 10, 10)
+#' y = rpois(10, 2)
+#' fast_neg_bin_weighted_cpp(X, y, weights = rep(1, 10))
+fast_neg_bin_weighted_cpp <- function(X_sexp, y_sexp, weights_sexp, warm_start_params = NULL, smart_cold_start = FALSE, maxit = 1000L, eps_f = 1e-8, eps_g = 1e-6, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, estimate_only = FALSE) {
+    .Call(`_EDI_fast_neg_bin_weighted_cpp`, X_sexp, y_sexp, weights_sexp, warm_start_params, smart_cold_start, maxit, eps_f, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only)
+}
+
 fast_ols_cpp <- function(X_sexp, y_sexp, fixed_idx = NULL, fixed_values = NULL) {
     .Call(`_EDI_fast_ols_cpp`, X_sexp, y_sexp, fixed_idx, fixed_values)
 }
@@ -1703,14 +1733,6 @@ fast_zero_augmented_poisson_cpp <- function(X_sexp, y_sexp, Xzi_sexp, is_hurdle,
     .Call(`_EDI_fast_zero_augmented_poisson_cpp`, X_sexp, y_sexp, Xzi_sexp, is_hurdle, warm_start_params, smart_cold_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
-get_zero_one_inflated_beta_score_cpp <- function(X_sexp, X_zero_one_sexp, y_sexp, params_sexp) {
-    .Call(`_EDI_get_zero_one_inflated_beta_score_cpp`, X_sexp, X_zero_one_sexp, y_sexp, params_sexp)
-}
-
-get_zero_one_inflated_beta_hessian_cpp <- function(X_sexp, X_zero_one_sexp, y_sexp, params_sexp) {
-    .Call(`_EDI_get_zero_one_inflated_beta_hessian_cpp`, X_sexp, X_zero_one_sexp, y_sexp, params_sexp)
-}
-
 #' @title Fast Zero/One-Inflated Beta Regression (C++)
 #' @description High-performance zero/one-inflated beta regression fitting using Newton-Raphson or L-BFGS.
 #' @param X Matrix of predictors for the beta component.
@@ -1725,6 +1747,16 @@ get_zero_one_inflated_beta_hessian_cpp <- function(X_sexp, X_zero_one_sexp, y_se
 #' @return A list containing coefficients, vcov, and convergence status.
 #' @export
 #' @keywords internal
+NULL
+
+get_zero_one_inflated_beta_score_cpp <- function(X_sexp, X_zero_one_sexp, y_sexp, params_sexp) {
+    .Call(`_EDI_get_zero_one_inflated_beta_score_cpp`, X_sexp, X_zero_one_sexp, y_sexp, params_sexp)
+}
+
+get_zero_one_inflated_beta_hessian_cpp <- function(X_sexp, X_zero_one_sexp, y_sexp, params_sexp) {
+    .Call(`_EDI_get_zero_one_inflated_beta_hessian_cpp`, X_sexp, X_zero_one_sexp, y_sexp, params_sexp)
+}
+
 fast_zero_one_inflated_beta_cpp <- function(X_sexp, X_zero_one_sexp, y_sexp, warm_start_params = NULL, smart_cold_start = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, estimate_only = FALSE) {
     .Call(`_EDI_fast_zero_one_inflated_beta_cpp`, X_sexp, X_zero_one_sexp, y_sexp, warm_start_params, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only)
 }

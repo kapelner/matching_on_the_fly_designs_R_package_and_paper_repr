@@ -11,15 +11,15 @@ ModelResult fast_logistic_regression_internal(
 	const Eigen::Ref<const Eigen::MatrixXd>& X,
 	const Eigen::Ref<const Eigen::VectorXd>& y,
 	const Eigen::Ref<const Eigen::VectorXd>& weights = Eigen::VectorXd(),
-	Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
+	std::optional<Eigen::VectorXd> warm_start_beta = std::nullopt,
 	bool smart_cold_start = true,
 	int maxit = 100,
 	double tol = 1e-8,
-	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+	std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+	std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
 	std::string optimization_alg = "lbfgs",
-	Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+	std::optional<Eigen::VectorXd> warm_start_weights = std::nullopt,
+	std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt,
 	bool estimate_only = false);
 
 namespace {
@@ -32,10 +32,10 @@ class TruncatedNegBinCount;
 
 void validate_truncated_negbin_inputs(const Eigen::Ref<const MatrixXd>& X,
 									  const Eigen::Ref<const VectorXd>& y,
-									  const Nullable<NumericVector>& warm_start_params,
-									  const Nullable<NumericMatrix>& warm_start_fisher_info,
-									  const Nullable<IntegerVector>& fixed_idx,
-									  const Nullable<NumericVector>& fixed_values) {
+									  const std::optional<Eigen::VectorXd>& warm_start_params,
+									  const std::optional<Eigen::MatrixXd>& warm_start_fisher_info,
+									  const std::optional<Eigen::VectorXi>& fixed_idx,
+									  const std::optional<Eigen::VectorXd>& fixed_values) {
 	if (X.rows() != y.size()) {
 		Rcpp::stop("X and y must have compatible dimensions");
 	}
@@ -56,8 +56,8 @@ void validate_truncated_negbin_inputs(const Eigen::Ref<const MatrixXd>& X,
 	}
 
 	const int n_params = (int)X.cols() + 1;
-	if (warm_start_params.isNotNull()) {
-		NumericVector warm = NumericVector(warm_start_params);
+	if (warm_start_params.has_value()) {
+		const Eigen::VectorXd& warm = *warm_start_params;
 		if (warm.size() != n_params) {
 			Rcpp::stop("warm_start_params must have length ncol(X) + 1");
 		}
@@ -67,13 +67,13 @@ void validate_truncated_negbin_inputs(const Eigen::Ref<const MatrixXd>& X,
 			}
 		}
 	}
-	if (warm_start_fisher_info.isNotNull()) {
-		NumericMatrix warm_info(warm_start_fisher_info);
-		if (warm_info.nrow() != n_params || warm_info.ncol() != n_params) {
+	if (warm_start_fisher_info.has_value()) {
+		const Eigen::MatrixXd& warm_info = *warm_start_fisher_info;
+		if (warm_info.rows() != n_params || warm_info.cols() != n_params) {
 			Rcpp::stop("warm_start_fisher_info must be a square matrix with ncol(X) + 1 rows");
 		}
-		for (int j = 0; j < warm_info.ncol(); ++j) {
-			for (int i = 0; i < warm_info.nrow(); ++i) {
+		for (int j = 0; j < warm_info.cols(); ++j) {
+			for (int i = 0; i < warm_info.rows(); ++i) {
 				if (!R_finite(warm_info(i, j))) {
 					Rcpp::stop("warm_start_fisher_info must contain only finite values");
 				}
@@ -408,18 +408,20 @@ public:
 		const double r = std::exp(params[m_p]);
 		const double log_r = std::log(r);
 		const double digamma_r = fast_digamma(r);
-		const double trigamma_r = R::trigamma(r);
+		const double trigamma_r = fast_trigamma(r);
 		VectorXd eta = (m_X * beta).array().min(700.0).matrix();
 		VectorXd beta_weights = VectorXd::Zero(m_n);
 		VectorXd cross_weights = VectorXd::Zero(m_n);
 
 		// Fill per-call distinct-y tables for hessian
 		const int nd = (int)m_distinct_y.size();
+		Eigen::ArrayXd ypt_arr(nd);
 		for (int k = 0; k < nd; ++k) {
 			const double ypt = m_distinct_y[k] + r;
-			m_digamma_yptheta[k]  = fast_digamma(ypt);
-			m_trigamma_yptheta[k] = R::trigamma(ypt);
+			ypt_arr[k] = ypt;
+			m_digamma_yptheta[k] = fast_digamma(ypt);
 		}
+		Eigen::Map<Eigen::ArrayXd>(m_trigamma_yptheta.data(), nd) = fast_trigamma_vec(ypt_arr);
 
 		for (int i = 0; i < m_n; ++i) {
 			const double mu_i = std::max(std::exp(eta[i]), 1e-10);
@@ -493,7 +495,7 @@ public:
 			MatrixXd Xi(1, m_p);
 			Xi.row(0) = m_X.row(i);
 			for (int yv = 1; yv <= max_y; ++yv) {
-				const double prob = R::dnbinom_mu(static_cast<double>(yv), r, mu_i, false) / q_pos;
+				const double prob = fast_dnbinom_mu(static_cast<double>(yv), r, mu_i, false) / q_pos;
 				if (prob > 0.0 && std::isfinite(prob)) {
 					VectorXi yi(1);
 					yi[0] = yv;
@@ -589,7 +591,10 @@ List fast_hurdle_negbin_cpp(SEXP X_r,
 	const int p = (int)X.cols();
 	const int p_hurdle = (int)X_hurdle.cols();
 	std::string alg = normalize_optimizer_algorithm(optimization_alg, "lbfgs", false);
-	FixedParamSpec count_fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
+	FixedParamSpec count_fixed_spec = make_fixed_param_spec(
+		p + 1,
+		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+		nullable_to_optional<Eigen::VectorXd>(fixed_values));
 
 	VectorXd y_pos_ind = (y.array() > 0.0).cast<double>();
 	Eigen::VectorXd hurdle_b = Eigen::VectorXd::Constant(p_hurdle, NA_REAL);
@@ -597,7 +602,11 @@ List fast_hurdle_negbin_cpp(SEXP X_r,
 	bool hurdle_converged = false;
 
 	if (y_pos_ind.minCoeff() < y_pos_ind.maxCoeff()) {
-		ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, R_NilValue, R_NilValue, alg, R_NilValue, warm_start_hurdle_fisher_info, estimate_only);
+		ModelResult hurdle_res = fast_logistic_regression_internal(
+			X_hurdle, y_pos_ind, Eigen::VectorXd(),
+			std::nullopt, true, 100, 1e-8, std::nullopt, std::nullopt, alg, std::nullopt,
+			nullable_to_optional<Eigen::MatrixXd>(warm_start_hurdle_fisher_info),
+			estimate_only);
 		hurdle_b = hurdle_res.b;
 		hurdle_XtWX = hurdle_res.XtWX;
 		hurdle_converged = hurdle_res.converged;
@@ -628,8 +637,9 @@ List fast_hurdle_negbin_cpp(SEXP X_r,
 
 	std::vector<VectorXd> start_candidates = make_truncated_negbin_candidate_starts(X_pos, y_pos);
 	VectorXd params = start_candidates.front();
-	if (warm_start_params.isNotNull()) {
-		params = as<VectorXd>(NumericVector(warm_start_params));
+	std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
+	if (warm_start_params_opt.has_value()) {
+		params = *warm_start_params_opt;
 	} else if (!smart_cold_start) {
 		params.setZero();
 		params[p] = std::log(1.0);
@@ -641,8 +651,9 @@ List fast_hurdle_negbin_cpp(SEXP X_r,
 
 	Eigen::MatrixXd info_start;
 	const Eigen::MatrixXd* info_start_ptr = nullptr;
-	if (warm_start_fisher_info.isNotNull()) {
-		info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+	std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
+	if (warm_start_fisher_info_opt.has_value()) {
+		info_start = *warm_start_fisher_info_opt;
 		info_start_ptr = &info_start;
 	}
 
@@ -753,10 +764,12 @@ List fast_hurdle_negbin_with_var_cpp(SEXP X_r,
 				have_hurdle_info = hurdle_XtWX.allFinite() && hurdle_XtWX.rows() == X_hurdle.cols();
 			}
 			if (!have_hurdle_info) {
-				ModelResult hurdle_res = fast_logistic_regression_internal(X_hurdle, y_pos_ind, Eigen::VectorXd(), R_NilValue, true, 100, 1e-8, R_NilValue, R_NilValue, optimization_alg, R_NilValue, R_NilValue);
+				ModelResult hurdle_res = fast_logistic_regression_internal(
+					X_hurdle, y_pos_ind, Eigen::VectorXd(),
+					std::nullopt, true, 100, 1e-8, std::nullopt, std::nullopt, optimization_alg, std::nullopt, std::nullopt);
 				hurdle_XtWX = hurdle_res.XtWX;
 			}
-			FixedParamSpec hurdle_spec = make_fixed_param_spec((int)X_hurdle.cols(), R_NilValue, R_NilValue);
+			FixedParamSpec hurdle_spec = make_fixed_param_spec((int)X_hurdle.cols(), std::nullopt, std::nullopt);
 			MatrixXd info_free = subset_matrix(hurdle_XtWX, hurdle_spec.free_idx, hurdle_spec.free_idx);
 			auto hurdle_free_idx_of = [&](int k) -> int {
 				for (int jj = 0; jj < (int)hurdle_spec.free_idx.size(); ++jj)
@@ -777,7 +790,10 @@ List fast_hurdle_negbin_with_var_cpp(SEXP X_r,
 		if (R_finite(theta_hat) && p >= j) {
 			MatrixXd H = as<MatrixXd>(fit["observed_information"]);
 			if (H.allFinite() && H.rows() == p + 1) {
-				FixedParamSpec count_fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
+				FixedParamSpec count_fixed_spec = make_fixed_param_spec(
+					p + 1,
+					nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+					nullable_to_optional<Eigen::VectorXd>(fixed_values));
 				MatrixXd H_free = subset_matrix(H, count_fixed_spec.free_idx, count_fixed_spec.free_idx);
 				auto cnt_free_idx_of = [&](int k) -> int {
 					for (int jj = 0; jj < (int)count_fixed_spec.free_idx.size(); ++jj)
@@ -817,7 +833,12 @@ List fast_truncated_negbin_count_cpp(SEXP X_r,
     Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
 
     optimization_alg = normalize_optimizer_algorithm(optimization_alg, "lbfgs", false);
-	validate_truncated_negbin_inputs(X, y, warm_start_params, warm_start_fisher_info, fixed_idx, fixed_values);
+	validate_truncated_negbin_inputs(
+		X, y,
+		nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+		nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+		nullable_to_optional<Eigen::VectorXd>(fixed_values));
 
     List pos = build_positive_hurdle_negbin_data(X, y);
     MatrixXd X_pos = pos["X_pos"];
@@ -835,8 +856,9 @@ List fast_truncated_negbin_count_cpp(SEXP X_r,
     std::vector<VectorXd> start_candidates = make_truncated_negbin_candidate_starts(X_pos, y_pos);
     VectorXd heuristic_start = start_candidates.front();
     VectorXd params = heuristic_start;
-    if (warm_start_params.isNotNull()) {
-            params = as<VectorXd>(NumericVector(warm_start_params));
+    std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
+    if (warm_start_params_opt.has_value()) {
+            params = *warm_start_params_opt;
     } else if (!smart_cold_start) {
             params.setZero();
             params[p] = std::log(1.0);
@@ -846,13 +868,17 @@ List fast_truncated_negbin_count_cpp(SEXP X_r,
 		Rcpp::stop(start_error);
 	}
 
-    FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        p + 1,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
     TruncatedNegBinCount fun(X_pos, y_pos);
 
     Eigen::MatrixXd info_start;
     const Eigen::MatrixXd* info_start_ptr = nullptr;
-    if (warm_start_fisher_info.isNotNull()) {
-        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt2 = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
+    if (warm_start_fisher_info_opt2.has_value()) {
+        info_start = *warm_start_fisher_info_opt2;
         info_start_ptr = &info_start;
     }
 

@@ -477,6 +477,7 @@ InferenceRandBootstrap = R6::R6Class("InferenceRandBootstrap",
 		}
 	),
 	private = list(
+		is_a_rand_bootstrap = function() TRUE,
 		rand_boot_draws_counter = 0L,
 		brt_mc_control = NULL,
 		# Maps (transform_responses, response_type) to the shared C++ shift code used by all

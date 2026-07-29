@@ -53,28 +53,25 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 				X_full = X_full,
 				required_cols = 2L,
 				fit_fun = function(X_fit, keep){
-					df = as.data.frame(X_fit[, -1, drop = FALSE])
-					df$y = as.numeric(private$y)
 					ws_args = private$get_backend_warm_start_args(ncol(X_fit) + 1L)
 					fit = tryCatch(
-						suppressWarnings(
-							MASS::glm.nb(
-								y ~ .,
-								data = df,
-								weights = row_weights,
-								start = if (!is.null(ws_args$start_params) && length(ws_args$start_params) >= ncol(X_fit)) ws_args$start_params[1:ncol(X_fit)] else NULL,
-								init.theta = if (!is.null(ws_args$start_params) && length(ws_args$start_params) >= (ncol(X_fit) + 1L)) exp(ws_args$start_params[ncol(X_fit) + 1L]) else NULL
-							)
+						fast_neg_bin_weighted_cpp(
+							X = X_fit,
+							y = as.integer(private$y),
+							weights = row_weights,
+							warm_start_params = ws_args$start_params,
+							warm_start_fisher_info = ws_args$warm_start_fisher_info,
+							smart_cold_start = private$smart_cold_start_default
 						),
 						error = function(e) NULL
 					)
-					if (is.null(fit)) return(NULL)
-					coef_vec = stats::coef(fit)[colnames(X_fit)]
+					if (is.null(fit) || !isTRUE(fit$converged)) return(NULL)
+					coef_vec = as.numeric(fit$b)
 					if (length(coef_vec) != ncol(X_fit) || any(!is.finite(coef_vec))) return(NULL)
 					list(
-						b = as.numeric(coef_vec),
-						theta_hat = fit$theta,
-						fisher_information = tryCatch(solve(stats::vcov(fit)), error = function(e) NULL),
+						b = coef_vec,
+						theta_hat = fit$theta_hat,
+						fisher_information = fit$fisher_information,
 						ssq_b_j = NA_real_
 					)
 				},

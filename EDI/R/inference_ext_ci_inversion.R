@@ -1,7 +1,9 @@
-#' Mixin for Likelihood-Test Confidence-Interval Inversion
+#' Extension for Likelihood-Test Confidence-Interval Inversion
 #'
-#' A Pattern-1 mixin (plain list with \code{$public} and \code{$private} slots)
-#' bundling \code{InferenceAsympLik}'s three CI-inversion engines --
+#' A Pattern-1 file-split extension (plain list with \code{$public} and
+#' \code{$private} slots), spliced into exactly one class
+#' (\code{InferenceAsympLik}) -- not a reusable mixin. Bundles
+#' \code{InferenceAsympLik}'s three CI-inversion engines --
 #' \code{invert_test_pval_confidence_interval()} (score / lik-ratio / Bartlett
 #' pval inversion via root-finding on a supplied \code{pval_fn}),
 #' \code{invert_gradient_ci_uniroot()} (gradient-test CI via the same
@@ -14,14 +16,14 @@
 #' nonestimable-reason string) and now lives once, in
 #' \code{finalize_inverted_ci()}.
 #'
-#' Splice into \code{InferenceAsympLik} via
-#' \code{private = c(InferenceMixinCIInversion$private, list(...))}.
+#' Splice into \code{InferenceAsympLik} (the only host) via
+#' \code{private = c(InferenceExtCIInversion$private, list(...))}.
 #' All 13 direct \code{InferenceAsympLik} subclasses (and everything below
 #' them) get these through ordinary R6 private-environment inheritance.
 #'
 #' @keywords internal
 #' @noRd
-InferenceMixinCIInversion = list(
+InferenceExtCIInversion = list(
 	public = list(),
 	private = list(
 		# Shared "accept, fall back to Wald, or give up" policy for an inverted CI.

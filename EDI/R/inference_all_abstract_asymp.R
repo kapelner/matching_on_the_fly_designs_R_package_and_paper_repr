@@ -104,6 +104,7 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 		}
 	),
 	private = list(
+		is_a_asymp = function() TRUE,
 		cached_mod = NULL,
 		get_standard_error = function(){
 			se = private$cached_values$s_beta_hat_T

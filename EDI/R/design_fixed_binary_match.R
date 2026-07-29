@@ -13,6 +13,8 @@
 DesignFixedBinaryMatch = R6::R6Class("DesignFixedBinaryMatch",
 	inherit = DesignFixed,
 	public = list(
+		#' @description Characterization: this is a KK matching-on-the-fly-capable design.
+		is_a_kk_matching_capable = function() TRUE,
 		#' @description Returns TRUE so the framework pre-generates all w vectors
 		#'   once per cell (paying the nbpMatching cost once, reusing across reps).
 		supports_batch_w_pregeneration = function() TRUE,

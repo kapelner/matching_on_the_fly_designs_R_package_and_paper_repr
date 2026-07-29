@@ -123,16 +123,15 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			if (should_run_asserts()) {
 				private$assert_no_incidence_only_randomization_args(resp_type, type, args_for_type)
 			}
-			is_glm = inherits(self, "InferenceAsympLikStdModCache") ||
-			         inherits(self, "InferenceAsympLikStdModCacheNoParamBootstrap") ||
-			         inherits(self, "InferenceCountLikelihoodNoParamBootstrap") ||
-			         isTRUE(private$kk_gee_engine) ||
-			         isTRUE(private$kk_glmm_engine) ||
-			         isTRUE(private$kk_passthrough) ||
-			         inherits(self, "InferencePropZeroOneInflatedBetaRegr") ||
+			is_glm = private$has_private_method("is_a_asymp_lik_std_mod_cache") ||
+			         private$has_private_method("is_a_asymp_lik_std_mod_cache_no_param_bootstrap") ||
+			         private$has_private_method("is_a_count_likelihood_no_param_bootstrap") ||
+			         private$has_private_method("is_a_gee_family") ||
+			         private$has_private_method("is_a_glmm_family") ||
+			         private$has_private_method("is_a_kk_passthrough_design") ||
 			         inherits(self, "InferencePropQuantileRegr") ||
-			         inherits(self, "InferencePropGCompAbstract") ||
-			         inherits(self, "InferenceCountZeroAugmentedPoissonAbstract") ||
+			         private$has_private_method("is_a_prop_gcomp") ||
+			         private$has_private_method("is_a_count_zero_augmented_poisson") ||
 			         inherits(self, "InferenceCountHurdleNegBin")
 			temp_inf = if (resp_type %in% c("count", "proportion", "survival")) self$duplicate() else self
 			transform_arg = "none"
@@ -195,6 +194,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 		}
 	),
 	private = list(
+		is_a_rand_ci = function() TRUE,
 		assert_no_incidence_only_randomization_args = function(resp_type, type, args_for_type){
 			if (should_run_asserts()) {
 				if (!is.null(type)) {

@@ -118,9 +118,7 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 		gee_response_type = function() "ordinal",
 		gee_family        = function() stats::binomial(link = "logit"),
 		# Ordinal response requires ordLORgee, not geeglm.
-		shared_gee_dispatch = function(estimate_only = FALSE){
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+		fit_ordinal_gee_mod = function(bstart = NULL){
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
 			m_vec[is.na(m_vec)] = 0L
@@ -132,13 +130,11 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 			dat = data.frame(y = factor(private$y, ordered = TRUE), pred_df, group_id = group_id)
 			dat = dat[order(dat$group_id), ]
 			id_sorted = dat$group_id
-			
+
 			fixed_terms = setdiff(colnames(dat), c("y", "group_id"))
 			formula_gee = stats::as.formula(paste("y ~", paste(fixed_terms, collapse = " + ")))
-			
-			bstart = private$get_fit_warm_start_for_length("beta", length(fixed_terms) + nlevels(dat$y) - 1L)
-			
-			mod = tryCatch({
+
+			tryCatch({
 				utils::capture.output(m <- suppressMessages(suppressWarnings(
 					multgee::ordLORgee(
 						formula_gee,
@@ -151,13 +147,32 @@ InferenceOrdinalKKGEE = R6::R6Class("InferenceOrdinalKKGEE",
 				)))
 				m
 			}, error = function(e) NULL)
+		},
+		# Randomization inference must reuse the ordLORgee fit (not the generic
+		# geeglm-based mixin fallback, which errors on >2-level responses and
+		# silently returns NA for every permutation replicate) and must not
+		# write into cached_values, since permuted data is fit repeatedly.
+		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
+			mod = private$fit_ordinal_gee_mod()
+			if (is.null(mod)) return(NA_real_)
+			beta = stats::coef(mod)
+			j_treat = private$gee_treatment_index(beta)
+			if (!is.finite(j_treat) || is.na(j_treat) || j_treat < 1L || j_treat > length(beta)) return(NA_real_)
+			as.numeric(beta[[j_treat]])
+		},
+		shared_gee_dispatch = function(estimate_only = FALSE){
+			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			n_beta = ncol(private$gee_predictors_df()) + length(unique(private$y)) - 1L
+			bstart = private$get_fit_warm_start_for_length("beta", n_beta)
+			mod = private$fit_ordinal_gee_mod(bstart = bstart)
 			if (is.null(mod)){
 				private$cache_nonestimable_estimate("ordinal_kk_gee_fit_unavailable")
 				return(invisible(NULL))
 			}
 			beta = stats::coef(mod)
 			private$set_fit_warm_start(beta, "beta")
-			
+
 			j_treat = private$gee_treatment_index(beta)
 			private$cached_values$beta_hat_T = as.numeric(beta[j_treat])
 			if (estimate_only) return(invisible(NULL))

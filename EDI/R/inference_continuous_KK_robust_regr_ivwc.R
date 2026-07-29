@@ -25,9 +25,11 @@ InferenceContinKKRobustRegrIVWC = R6::R6Class("InferenceContinKKRobustRegrIVWC",
 		#' @param start_with_ols  Whether to compute an OLS warm start and pass it to `MASS::rlm`
 		#'   when the fit method honors `init`. This affects the `M` path only; `MM`
 		#'   uses its own LQS-based start. Default `TRUE`.
+		#' @param use_rcpp Logical. If \code{TRUE} (default), use the internal Rcpp IRLS
+		#'   robust-regression kernel. Set \code{FALSE} to fall back to \pkg{MASS}.
 		#' @param verbose  		Whether to print progress messages.
 		#' @param smart_cold_start_default Whether to use smart starting values for the optimizer.
-		initialize = function(des_obj, model_formula = NULL, method = "MM", maxit = NULL, acc = NULL, start_with_ols = TRUE, verbose = FALSE, smart_cold_start_default = NULL){
+		initialize = function(des_obj, model_formula = NULL, method = "MM", maxit = NULL, acc = NULL, start_with_ols = TRUE, use_rcpp = TRUE, verbose = FALSE, smart_cold_start_default = NULL){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
 				assertFormula(model_formula, null.ok = TRUE)
@@ -35,9 +37,10 @@ InferenceContinKKRobustRegrIVWC = R6::R6Class("InferenceContinKKRobustRegrIVWC",
 				if (!is.null(maxit)) assertCount(maxit, positive = TRUE)
 				if (!is.null(acc)) assertNumeric(acc, lower = .Machine$double.xmin, upper = 1)
 				assertFlag(start_with_ols)
+				assertFlag(use_rcpp)
 			}
 			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
+				if (!des_obj$is_a_kk_matching_capable()){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
@@ -45,11 +48,12 @@ InferenceContinKKRobustRegrIVWC = R6::R6Class("InferenceContinKKRobustRegrIVWC",
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-			
+
 			private$rlm_method = method
 			private$rlm_maxit = maxit
 			private$rlm_acc = acc
 			private$rlm_start_with_ols = start_with_ols
+			private$use_rcpp = use_rcpp
 		},
 		#' @description Returns the estimated treatment effect.
 		#' @param estimate_only Logical. If TRUE, skip variance component calculations.
@@ -94,6 +98,7 @@ InferenceContinKKRobustRegrIVWC = R6::R6Class("InferenceContinKKRobustRegrIVWC",
 		rlm_maxit = NULL,
 		rlm_acc = NULL,
 		rlm_start_with_ols = TRUE,
+		use_rcpp = TRUE,
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			preserve = if (is.null(permutations$m_mat)) c("kk_robust_ivwc_matched_reduced_design", "kk_robust_ivwc_reservoir_reduced_design") else character()
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, preserve_cache_keys = preserve, zero_one_logit_clamp = zero_one_logit_clamp)
@@ -182,6 +187,38 @@ InferenceContinKKRobustRegrIVWC = R6::R6Class("InferenceContinKKRobustRegrIVWC",
 		fit_rlm_with_treatment = function(X, y, j_treat, estimate_only = FALSE){
 			if (nrow(X) <= ncol(X)) return(NULL)
 			ctrl = private$resolve_rlm_control(X)
+			if (private$use_rcpp) {
+				method_to_try = if (estimate_only || isTRUE(private$rlm_force_M)) "M" else private$rlm_method
+				start_coef = NULL
+				if (isTRUE(private$rlm_start_with_ols)) {
+					start_coef = tryCatch(as.numeric(stats::coef(stats::lm.fit(x = X, y = y))), error = function(e) NULL)
+					if (!is.null(start_coef) && (length(start_coef) != ncol(X) || any(!is.finite(start_coef)))) {
+						start_coef = NULL
+					}
+				}
+				fit = tryCatch(
+					fast_robust_regression_cpp(
+						X = X,
+						y = y,
+						warm_start_beta = start_coef,
+						smart_cold_start = is.null(start_coef),
+						method = method_to_try,
+						j = j_treat,
+						maxit = ctrl$maxit,
+						tol = ctrl$acc,
+						estimate_only = estimate_only
+					),
+					error = function(e) NULL
+				)
+				if (is.null(fit)) return(NULL)
+				coef_vec = as.numeric(fit$coefficients)
+				if (length(coef_vec) < j_treat || !is.finite(coef_vec[j_treat])) return(NULL)
+				beta = coef_vec[j_treat]
+				if (estimate_only) return(list(beta = beta, ssq = NA_real_))
+				se = if (is.finite(fit$ssq_b_j) && fit$ssq_b_j > 0) sqrt(fit$ssq_b_j) else NA_real_
+				if (!is.finite(se)) return(NULL)
+				return(list(beta = beta, ssq = se^2))
+			}
 			run_rlm = function(method, init = NULL){
 				nonconverged = FALSE
 				tryCatch({

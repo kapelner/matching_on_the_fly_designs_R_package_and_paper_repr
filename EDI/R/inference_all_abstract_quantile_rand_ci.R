@@ -9,7 +9,7 @@
 InferenceAbstractQuantileRandCI = R6::R6Class("InferenceAbstractQuantileRandCI",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
-	public = utils::modifyList(as.list(InferenceMixinQuantileRandCI$public), list(
+	public = utils::modifyList(as.list(InferenceExtQuantileRandCI$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj         A DesignSeqOneByOne object.
 		#' @param model_formula   Optional formula for covariate adjustment.
@@ -19,5 +19,7 @@ InferenceAbstractQuantileRandCI = R6::R6Class("InferenceAbstractQuantileRandCI",
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 		}
 	)),
-	private = utils::modifyList(as.list(InferenceMixinQuantileRandCI$private), list())
+	private = utils::modifyList(as.list(InferenceExtQuantileRandCI$private), list(
+		is_a_quantile_rand_ci = function() TRUE
+	))
 )

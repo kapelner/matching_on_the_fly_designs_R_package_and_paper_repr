@@ -1,25 +1,26 @@
-#' Mixin for Parametric-Bootstrap Point-Estimate Bias Correction
+#' Extension for Parametric-Bootstrap Point-Estimate Bias Correction
 #'
-#' A Pattern-1 mixin (plain list with \code{$public} and \code{$private} slots)
-#' providing the private implementation of the parametric-bootstrap
-#' bias-corrected point estimate, its "basic"/reflected-quantile confidence
-#' interval, and its reflected-empirical-CDF p-value -- the Monte-Carlo analog
-#' of an analytic Cox-Snell (1968) first-order bias correction. Shared by every
-#' \code{InferenceParamBootstrap} family that already implements
-#' \code{simulate_under_lik_null()} for parametric-bootstrap LR calibration,
-#' since all three public methods (defined directly on \code{InferenceParamBootstrap},
-#' not this mixin -- see note below) reuse that same simulate-and-refit contract,
-#' just anchored at the unrestricted fit instead of a null-restricted one.
+#' A Pattern-1 file-split extension (plain list with \code{$public} and
+#' \code{$private} slots), spliced into exactly one class
+#' (\code{InferenceParamBootstrap}) -- not a reusable mixin. Provides the
+#' private implementation of the parametric-bootstrap bias-corrected point
+#' estimate, its "basic"/reflected-quantile confidence interval, and its
+#' reflected-empirical-CDF p-value -- the Monte-Carlo analog of an analytic
+#' Cox-Snell (1968) first-order bias correction. All three public methods
+#' (defined directly on \code{InferenceParamBootstrap}, not this extension --
+#' see note below) reuse the same simulate-and-refit contract as
+#' \code{simulate_under_lik_null()}, just anchored at the unrestricted fit
+#' instead of a null-restricted one.
 #'
-#' Public methods are deliberately \emph{not} spliced from this mixin:
+#' Public methods are deliberately \emph{not} spliced from this extension:
 #' roxygen2's R6 method-doc collector only associates description and argument
 #' documentation comments with methods physically defined in the same file as
-#' the \code{R6Class()} call, so a mixin-supplied public method silently loses
-#' its documentation. This mirrors every other Pattern-1 mixin in this package
-#' (e.g. \code{InferenceMixinBartlettApprox}), which are all private-only for
-#' the same reason. Splice this mixin's private list into a daughter class (in
-#' practice, just \code{InferenceParamBootstrap} itself, once) via
-#' \code{private = c(InferenceMixinParamBootstrapEstimate$private, list(...))}.
+#' the \code{R6Class()} call, so an extension-supplied public method silently
+#' loses its documentation. This mirrors every other Pattern-1 extension in
+#' this package (e.g. \code{InferenceExtBartlettApprox}), which are all
+#' private-only for the same reason. Splice this extension's private list into
+#' \code{InferenceParamBootstrap} (the only host) via
+#' \code{private = c(InferenceExtParamBootstrapEstimate$private, list(...))}.
 #'
 #' Depends on host-private \code{get_likelihood_test_spec()},
 #' \code{effective_parallel_cores()}, \code{par_lapply()},
@@ -33,7 +34,7 @@
 #'
 #' @keywords internal
 #' @noRd
-InferenceMixinParamBootstrapEstimate = list(
+InferenceExtParamBootstrapEstimate = list(
 	public = list(),
 	private = list(
 		extract_param_bootstrap_estimate_coef = function(fit, j){

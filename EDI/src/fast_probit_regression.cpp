@@ -1,4 +1,5 @@
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 // [[Rcpp::depends(RcppNumerical)]]
 #include <RcppNumerical.h>
@@ -7,14 +8,15 @@ using namespace Rcpp;
 
 namespace {
 
-// Log-scale pnorm: falls back to R for |x| > 6 where direct log(erfc) loses precision.
+// Log-scale pnorm: falls back to fast_log_pnorm's wider-range series for |x| > 6
+// where direct log(erfc) loses precision.
 inline double log_pnorm_lower(double x) {
     if (x > -6.0 && x < 6.0) return std::log(0.5 * fast_erfc(-x * kSqrt1_2));
-    return R::pnorm5(x, 0.0, 1.0, 1, 1);
+    return fast_log_pnorm(x);
 }
 inline double log_pnorm_upper(double x) {
     if (x > -6.0 && x < 6.0) return std::log(0.5 * fast_erfc(x * kSqrt1_2));
-    return R::pnorm5(x, 0.0, 1.0, 0, 1);
+    return fast_log_pnorm(-x);
 }
 
 // Generalized residual for Probit: y*phi/Phi - (1-y)*phi/(1-Phi)
@@ -106,15 +108,15 @@ ModelResult fast_probit_regression_internal(
         const Eigen::Ref<const Eigen::MatrixXd>& X_eigen,
         const Eigen::Ref<const Eigen::VectorXd>& y_eigen,
         const Eigen::Ref<const Eigen::VectorXd>& weights_eigen,
-        Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
+        std::optional<Eigen::VectorXd> warm_start_beta = std::nullopt,
         bool smart_cold_start = true,
         int maxit = 100,
         double tol = 1e-8,
-        Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-        Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+        std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+        std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
         std::string optimization_alg = "irls",
-        Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+        std::optional<Eigen::VectorXd> warm_start_weights = std::nullopt,
+        std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt,
         bool estimate_only = false) {
 
     const int n = X_eigen.rows();
@@ -124,13 +126,13 @@ ModelResult fast_probit_regression_internal(
     const int p_free = static_cast<int>(fixed_spec.free_idx.size());
 
     Eigen::VectorXd beta_start = Eigen::VectorXd::Zero(p);
-    if (warm_start_beta.isNotNull()) {
-        beta_start = as<Eigen::VectorXd>(Rcpp::NumericVector(warm_start_beta));
+    if (warm_start_beta.has_value()) {
+        beta_start = *warm_start_beta;
         if (static_cast<int>(beta_start.size()) != p)
             Rcpp::stop("warm_start_beta must have length equal to ncol(X)");
     } else if (smart_cold_start) {
         beta_start = ols_smart_cold_start_beta(X_eigen, y_eigen.array().unaryExpr([](double v){
-            return R::qnorm5((v + 0.5) / 2.0, 0.0, 1.0, 1, 0);
+            return fast_qnorm((v + 0.5) / 2.0);
         }));
     }
     beta_start = apply_fixed_values(beta_start, fixed_spec);
@@ -181,13 +183,12 @@ ModelResult fast_probit_regression_internal(
                 gen_res[i] = wi * probit_gen_residual_optimized(y_eigen[i], phi, Phi, Phi_inv);
             }
 
-            const bool use_warm_xtwx = (iter == 0) && warm_start_fisher_info.isNotNull();
+            const bool use_warm_xtwx = (iter == 0) && warm_start_fisher_info.has_value();
             if (!use_warm_xtwx) {
                 score_weighted_crossprod_colwise_assign(X_free, gen_res, w, score_free, XtWX);
             } else {
                 score_free.noalias() = X_free.transpose() * gen_res;
-                Eigen::MatrixXd info_full = as<Eigen::MatrixXd>(Rcpp::NumericMatrix(warm_start_fisher_info));
-                XtWX = subset_matrix(info_full, fixed_spec.free_idx, fixed_spec.free_idx);
+                XtWX = subset_matrix(*warm_start_fisher_info, fixed_spec.free_idx, fixed_spec.free_idx);
             }
             if (score_free.norm() < tol) { res.converged = true; break; }
 
@@ -319,15 +320,21 @@ List fast_probit_regression_cpp(SEXP X_sexp, SEXP y_sexp,
     Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
     Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
 
-    ModelResult res = fast_probit_regression_internal(X, y, Eigen::VectorXd(), warm_start_beta,
-        smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg,
-        warm_start_weights, warm_start_fisher_info, estimate_only);
+    ModelResult res = fast_probit_regression_internal(
+        X, y, Eigen::VectorXd(),
+        nullable_to_optional<Eigen::VectorXd>(warm_start_beta),
+        smart_cold_start, maxit, tol,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg,
+        nullable_to_optional<Eigen::VectorXd>(warm_start_weights),
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+        estimate_only);
     if (estimate_only) {
-        return List::create(
-            Named("b") = res.b,
-            Named("converged") = res.converged,
-            Named("iterations") = res.iterations
-        );
+        return edi::to_rcpp_list(edi::ResultMap()
+            .set("b", res.b)
+            .set("converged", res.converged)
+            .set("iterations", res.iterations));
     }
     const int n = X.rows();
     const Eigen::VectorXd eta = X * res.b;
@@ -339,15 +346,14 @@ List fast_probit_regression_cpp(SEXP X_sexp, SEXP y_sexp,
         const double vm = std::max(1e-15, Phi * (1.0 - Phi));
         weights_vec[i] = phi * phi / vm;
     }
-    return List::create(
-        Named("b") = res.b,
-        Named("w") = weights_vec,
-        Named("iterations") = res.iterations,
-        Named("fisher_information") = res.XtWX,
-        Named("score") = res.score,
-        Named("neg_ll") = res.neg_ll,
-        Named("converged") = res.converged
-    );
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("b", res.b)
+        .set("w", weights_vec)
+        .set("iterations", res.iterations)
+        .set("fisher_information", res.XtWX)
+        .set("score", res.score)
+        .set("neg_ll", res.neg_ll)
+        .set("converged", res.converged));
 }
 
 // [[Rcpp::export]]
@@ -368,19 +374,24 @@ List fast_probit_regression_weighted_cpp(SEXP X_sexp, SEXP y_sexp,
     Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
     Eigen::Map<const Eigen::VectorXd> weights(w_r.begin(), w_r.size());
 
-    ModelResult res = fast_probit_regression_internal(X, y, weights, warm_start_beta,
-        smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg,
-        warm_start_weights, warm_start_fisher_info);
-    return List::create(
-        Named("b") = res.b,
-        Named("mu") = res.mu,
-        Named("XtWX") = res.XtWX,
-        Named("fisher_information") = res.XtWX,
-        Named("score") = res.score,
-        Named("neg_ll") = res.neg_ll,
-        Named("converged") = res.converged,
-        Named("iterations") = res.iterations
-    );
+    ModelResult res = fast_probit_regression_internal(
+        X, y, weights,
+        nullable_to_optional<Eigen::VectorXd>(warm_start_beta),
+        smart_cold_start, maxit, tol,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg,
+        nullable_to_optional<Eigen::VectorXd>(warm_start_weights),
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("b", res.b)
+        .set("mu", res.mu)
+        .set("XtWX", res.XtWX)
+        .set("fisher_information", res.XtWX)
+        .set("score", res.score)
+        .set("neg_ll", res.neg_ll)
+        .set("converged", res.converged)
+        .set("iterations", res.iterations));
 }
 
 // [[Rcpp::export]]
@@ -397,11 +408,21 @@ List fast_probit_regression_with_var_cpp(SEXP X_sexp, SEXP y_sexp, int j = 2,
     Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
     Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
 
-    ModelResult res = fast_probit_regression_internal(X, y, Eigen::VectorXd(), warm_start_beta,
-        smart_cold_start, 100, 1e-8, fixed_idx, fixed_values, optimization_alg,
-        warm_start_weights, warm_start_fisher_info, false);
-    
-    FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
+    ModelResult res = fast_probit_regression_internal(
+        X, y, Eigen::VectorXd(),
+        nullable_to_optional<Eigen::VectorXd>(warm_start_beta),
+        smart_cold_start, 100, 1e-8,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg,
+        nullable_to_optional<Eigen::VectorXd>(warm_start_weights),
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+        false);
+
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        X.cols(),
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
     Eigen::MatrixXd info_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
 
     auto free_idx_of = [&](int overall_j) -> int {
@@ -416,21 +437,21 @@ List fast_probit_regression_with_var_cpp(SEXP X_sexp, SEXP y_sexp, int j = 2,
     int free_2 = (X.cols() >= 2) ? free_idx_of(1) : -1;
     res.ssq_b_2 = (free_2 > 0) ? compute_diagonal_inverse_entry(info_free, free_2) : NA_REAL;
 
-    return List::create(
-        Named("b") = res.b,
-        Named("params") = res.b,
-        Named("ssq_b_j") = res.ssq_b_j,
-        Named("ssq_b_2") = res.ssq_b_2,
-        Named("score") = res.score,
-        Named("observed_information") = res.XtWX,
-        Named("fisher_information") = res.XtWX,
-        Named("information") = res.XtWX,
-        Named("information_type") = "fisher",
-        Named("hessian") = -res.XtWX,
-        Named("neg_loglik") = res.neg_ll,
-        Named("neg_ll") = res.neg_ll,
-        Named("loglik") = R_finite(res.neg_ll) ? -res.neg_ll : NA_REAL,
-        Named("converged") = res.converged,
-        Named("iterations") = res.iterations
-    );
+    Eigen::MatrixXd neg_XtWX = -res.XtWX;
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("b", res.b)
+        .set("params", res.b)
+        .set("ssq_b_j", res.ssq_b_j)
+        .set("ssq_b_2", res.ssq_b_2)
+        .set("score", res.score)
+        .set("observed_information", res.XtWX)
+        .set("fisher_information", res.XtWX)
+        .set("information", res.XtWX)
+        .set("information_type", std::string("fisher"))
+        .set("hessian", neg_XtWX)
+        .set("neg_loglik", res.neg_ll)
+        .set("neg_ll", res.neg_ll)
+        .set("loglik", R_finite(res.neg_ll) ? -res.neg_ll : NA_REAL)
+        .set("converged", res.converged)
+        .set("iterations", res.iterations));
 }

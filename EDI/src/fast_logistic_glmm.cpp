@@ -470,8 +470,9 @@ List fast_logistic_glmm_cpp(
 
 	// Initialize
 	Eigen::VectorXd par(total);
-	if (warm_start_params.isNotNull()) {
-		NumericVector sp(warm_start_params);
+	std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
+	if (warm_start_params_opt.has_value()) {
+		const Eigen::VectorXd& sp = *warm_start_params_opt;
 		if (sp.size() == total) {
 			for (int i = 0; i < total; ++i) par[i] = sp[i];
 		}
@@ -485,12 +486,16 @@ List fast_logistic_glmm_cpp(
 	}
 
 	LogisticGLMMObjective obj(dat);
-	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(
+		total,
+		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+		nullable_to_optional<Eigen::VectorXd>(fixed_values));
 
 	Eigen::MatrixXd info_start;
 	Eigen::MatrixXd* info_start_ptr = nullptr;
-	if (warm_start_fisher_info.isNotNull()) {
-		info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+	std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
+	if (warm_start_fisher_info_opt.has_value()) {
+		info_start = *warm_start_fisher_info_opt;
 		info_start_ptr = &info_start;
 	}
 

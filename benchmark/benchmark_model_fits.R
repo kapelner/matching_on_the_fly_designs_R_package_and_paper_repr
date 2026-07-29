@@ -86,6 +86,101 @@ make_true_stratified_survival_data = function(d) {
     d
 }
 
+# --- Data Generators for KK/custom estimators with no canonical R equivalent ---
+# These build the exact input shapes the underlying fast_*_cpp kernel expects,
+# bypassing generate_data()/the Design object since there is no canonical R
+# fit to compare against and thus no need for the standard df/X_can machinery.
+
+generate_kk_incid_combined_data = function(n_disc = 150, n_conc = 150, n_res = 400, p = 4) {
+    beta_x = rnorm(p) * 0.3
+
+    # Discordant matched pairs -> conditional-logistic contribution
+    X_diff_disc = matrix(rnorm(n_disc * p), n_disc, p)
+    eta_disc = 0.2 + X_diff_disc %*% beta_x
+    y_disc = rbinom(n_disc, 1, plogis(eta_disc))
+    X_disc = cbind(treatment = 1, X_diff_disc)
+
+    # Concordant matched pairs (2 rows/pair, shared group id) -> GLMM contribution
+    X_cov_conc = matrix(rnorm(n_conc * p), n_conc, p)
+    beta0 = -0.2
+    y_conc_pair = rbinom(n_conc, 1, plogis(beta0 + X_cov_conc %*% beta_x))
+    X_conc_pairs = rbind(
+        cbind(`(Intercept)` = 1, treatment = 1, X_cov_conc),
+        cbind(`(Intercept)` = 1, treatment = 0, X_cov_conc)
+    )
+    y_conc_pairs = c(y_conc_pair, y_conc_pair)
+    group_conc_pairs = rep(seq_len(n_conc), 2)
+
+    # Reservoir (unmatched) subjects -> GLMM contribution, singleton groups
+    X_cov_res = matrix(rnorm(n_res * p), n_res, p)
+    w_res = rbinom(n_res, 1, 0.5)
+    y_res = rbinom(n_res, 1, plogis(beta0 + 0.4 * w_res + X_cov_res %*% beta_x))
+    X_res = cbind(`(Intercept)` = 1, treatment = w_res, X_cov_res)
+    group_res = n_conc + seq_len(n_res)
+
+    list(
+        X_disc = as.matrix(X_disc), y_disc = as.numeric(y_disc),
+        X_conc = as.matrix(rbind(X_conc_pairs, X_res)),
+        y_conc = as.numeric(c(y_conc_pairs, y_res)),
+        group_conc = as.integer(c(group_conc_pairs, group_res))
+    )
+}
+
+generate_kk_count_combined_data = function(n_pairs = 300, n_res = 400, p = 4) {
+    beta_x = rnorm(p) * 0.2
+    X_diff_v = matrix(rnorm(n_pairs * p), n_pairs, p)
+    yC = rpois(n_pairs, exp(0.5 + X_diff_v %*% (beta_x / 2)))
+    yT = rpois(n_pairs, exp(0.5 + 0.3 + X_diff_v %*% (beta_x / 2)))
+    n_k = yT + yC
+    zero_pairs = n_k == 0
+    if (any(zero_pairs)) { yT[zero_pairs] = 1L; n_k[zero_pairs] = 1L }
+
+    X_r = matrix(rnorm(n_res * p), n_res, p)
+    w_r = rbinom(n_res, 1, 0.5)
+    y_r = rpois(n_res, exp(0.5 + 0.3 * w_r + X_r %*% beta_x))
+
+    list(
+        yT_v = as.numeric(yT), n_k_v = as.numeric(n_k), X_diff_v = as.matrix(X_diff_v),
+        y_r = as.numeric(y_r), w_r = as.numeric(w_r), X_r = as.matrix(X_r)
+    )
+}
+
+generate_kk_weibull_frailty_data = function(n_pairs = 250, p = 4) {
+    beta_x = rnorm(p) * 0.3
+    frailty_sd = 0.5
+    X_cov = matrix(rnorm(n_pairs * p), n_pairs, p)
+    b_pair = rnorm(n_pairs, 0, frailty_sd)
+    yC = rweibull(n_pairs, shape = 1.5, scale = exp(b_pair + X_cov %*% beta_x))
+    yT = rweibull(n_pairs, shape = 1.5, scale = exp(b_pair + 0.4 + X_cov %*% beta_x))
+
+    list(
+        X = as.matrix(rbind(cbind(treatment = 1, X_cov), cbind(treatment = 0, X_cov))),
+        y = as.numeric(c(yT, yC)),
+        dead = as.integer(rbinom(2 * n_pairs, 1, 0.85)),
+        group_id = as.integer(rep(seq_len(n_pairs), 2))
+    )
+}
+
+generate_zoib_data = function(n = 1000, p = 4) {
+    X_cov = matrix(rnorm(n * p), n, p)
+    beta_x = rnorm(p) * 0.3
+    w = rbinom(n, 1, 0.5)
+    mu = plogis(-0.1 + 0.3 * w + X_cov %*% beta_x)
+    phi = 8
+    y = rbeta(n, mu * phi, (1 - mu) * phi)
+    p0 = plogis(-1.5 + 0.2 * w)
+    p1 = plogis(-2 + 0.1 * w)
+    u = runif(n)
+    y[u < p0] = 0
+    y[u >= p0 & u < p0 + p1] = 1
+
+    list(
+        X = as.matrix(cbind(`(Intercept)` = 1, treatment = w, X_cov)),
+        X_zero_one = as.matrix(cbind(`(Intercept)` = 1, treatment = w)),
+        y = as.numeric(y)
+    )
+}
+
 collect_timing_ms = function(expr, times = B_TIME, env = parent.frame(), target_batch_ms = TARGET_BATCH_MS, max_inner_reps = MAX_INNER_REPS, fast_path_microbenchmark_reps = FAST_PATH_MICROBENCH_REPS) {
     gctorture(FALSE)
     gc(verbose = FALSE)
@@ -276,6 +371,70 @@ make_edi_bm = function(cls_name, d) {
     list(env = e, expr = expr, setup = setup)
 }
 
+# Bare-metal EDI timing setup for estimators that have no canonical R
+# equivalent at all (custom KK combined matched+reservoir joint likelihoods,
+# Weibull frailty, zero-one-inflated beta). `d` here is produced by one of
+# the generate_kk_*/generate_zoib_data() generators above, not generate_data().
+make_edi_bm_no_canonical = function(cls_name, d) {
+    e = new.env(parent = globalenv())
+    for (nm in names(d)) assign(nm, d[[nm]], envir = e)
+
+    expr = switch(cls_name,
+        InferenceIncidKKCondLogitPlusGLMMOneLik = quote(fast_clogit_plus_glmm_cpp(
+            X_disc = X_disc, y_disc = y_disc, X_conc = X_conc, y_conc = y_conc, group_conc = group_conc,
+            has_discordant = TRUE, has_concordant = TRUE, estimate_only = TRUE
+        )),
+        InferenceCountKKCondPoissonOneLik = quote(fast_cpoisson_combined_with_var_cpp(
+            yT_v = yT_v, n_k_v = n_k_v, X_diff_v = X_diff_v, y_r = y_r, w_r = w_r, X_r = X_r, estimate_only = TRUE
+        )),
+        InferenceSurvivalKKWeibullFrailtyOneLik = quote(fast_weibull_frailty_cpp(
+            X = X, y = y, dead = dead, group_id = group_id, estimate_only = TRUE
+        )),
+        InferencePropZeroOneInflatedBetaRegr = quote(fast_zero_one_inflated_beta_cpp(
+            X = X, X_zero_one = X_zero_one, y = y, estimate_only = TRUE
+        )),
+        NULL
+    )
+    list(env = e, expr = expr)
+}
+
+# Full-inference (point + SE + Wald pval) bare-metal timing setup for the same
+# no-canonical-equivalent estimators, mirroring make_edi_wald_bm() below.
+make_edi_wald_bm_no_canonical = function(cls_name, d) {
+    e = new.env(parent = globalenv())
+    for (nm in names(d)) assign(nm, d[[nm]], envir = e)
+
+    expr = switch(cls_name,
+        InferenceIncidKKCondLogitPlusGLMMOneLik = quote({
+            fit = fast_clogit_plus_glmm_cpp(
+                X_disc = X_disc, y_disc = y_disc, X_conc = X_conc, y_conc = y_conc, group_conc = group_conc,
+                has_discordant = TRUE, has_concordant = TRUE, estimate_only = FALSE
+            )
+            se = sqrt(fit$ssq_b_j); t_stat = as.numeric(fit$params)[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceCountKKCondPoissonOneLik = quote({
+            fit = fast_cpoisson_combined_with_var_cpp(
+                yT_v = yT_v, n_k_v = n_k_v, X_diff_v = X_diff_v, y_r = y_r, w_r = w_r, X_r = X_r, estimate_only = FALSE
+            )
+            se = sqrt(fit$ssq_b_j); t_stat = as.numeric(fit$b)[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferenceSurvivalKKWeibullFrailtyOneLik = quote({
+            fit = fast_weibull_frailty_cpp(X = X, y = y, dead = dead, group_id = group_id, estimate_only = FALSE)
+            se = sqrt(fit$ssq_b_T); t_stat = as.numeric(fit$b)[1] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        InferencePropZeroOneInflatedBetaRegr = quote({
+            fit = fast_zero_one_inflated_beta_cpp(X = X, X_zero_one = X_zero_one, y = y, estimate_only = FALSE)
+            se = sqrt(fit$vcov[2, 2]); t_stat = as.numeric(fit$b)[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        NULL
+    )
+    list(env = e, expr = expr)
+}
+
 build_strat_cox_canonical_inputs = function(d) {
     X_cov = d$X[, -1, drop = FALSE]
     strata_info = EDI:::compute_survival_strata_ids_cpp(as.matrix(X_cov))
@@ -430,13 +589,32 @@ no_can_specs = list(
 )
 bench_specs = c(bench_specs, no_can_specs)
 
+# Paths with genuinely no canonical R equivalent, documented in
+# package_metadata/python_bindings_package_spec.md as "Baseline Gap"/"no
+# canonical analog exists in either language": the KK combined
+# (matched-pair + reservoir) joint-likelihood estimators, Weibull frailty,
+# and zero-one-inflated beta regression. pkg = "None" tells run_one() to
+# skip canonical timing entirely (Canonical_Time_ms/Speedup/Timing_Pval stay
+# NA) while still timing the EDI bare-metal kernel via a custom data_fn.
+no_r_support_specs = list(
+    list(cls = "InferenceIncidKKCondLogitPlusGLMMOneLik", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_kk_incid_combined_data()),
+    list(cls = "InferenceCountKKCondPoissonOneLik", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_kk_count_combined_data()),
+    list(cls = "InferenceSurvivalKKWeibullFrailtyOneLik", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_kk_weibull_frailty_data()),
+    list(cls = "InferencePropZeroOneInflatedBetaRegr", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_zoib_data())
+)
+bench_specs = c(bench_specs, no_r_support_specs)
+
 # --- Benchmark Runner ---
 results = list()
 
 run_one = function(spec) {
     cls_name = spec$cls
     cat(sprintf("Benchmarking %s...\n", cls_name))
-    
+
     # Improved heuristic mapping: Ordinal MUST come before Prop/PropOdds
     resp_type = "continuous"
     family = "continuous"
@@ -446,24 +624,29 @@ run_one = function(spec) {
     else if (grepl("Prop|Beta|ZOIB|Fractional", cls_name)) { resp_type = "proportion"; family = "beta" }
     else if (grepl("Survival|Cox|Weibull|KM|Rank|LogRank|Gehan|RMST|RMDiff|LWACox|Clayton", cls_name)) { resp_type = "survival"; family = "cox" }
     else if (grepl("Wilcox|MeanDiff|OLS|Lin|Robust|Quantile|Bai", cls_name)) { resp_type = "continuous"; family = "continuous" }
-    
+
     if (cls_name == "InferenceIncidLogBinomial") family = "log-binomial"
-    
+
     scale = if (!is.null(spec$scale)) spec$scale else 1.0
     fast_path_microbenchmark_reps = if (!is.null(spec$fast_path_microbenchmark_reps)) spec$fast_path_microbenchmark_reps else FAST_PATH_MICROBENCH_REPS
     b_time = if (!is.null(spec$b_time_override)) as.integer(spec$b_time_override) else B_TIME
     n = round(N_GLM * scale)
     if (grepl("Survival", cls_name)) n = round(N_SURV * scale)
-    
-    d = generate_data(n = n, family = family)
-    if (identical(cls_name, "InferenceSurvivalStratCoxPHRegr")) {
-        d = make_true_stratified_survival_data(d)
+
+    no_r_support = !is.null(spec$data_fn)
+    if (no_r_support) {
+        d = spec$data_fn()
+    } else {
+        d = generate_data(n = n, family = family)
+        if (identical(cls_name, "InferenceSurvivalStratCoxPHRegr")) {
+            d = make_true_stratified_survival_data(d)
+        }
     }
-    
+
     # Timing EDI (bare metal: call exported C++ functions directly with pre-built inputs)
     timing_edi = tryCatch({
-        bm = make_edi_bm(cls_name, d)
-        if (is.null(bm)) stop("no bare metal mapping for this class")
+        bm = if (no_r_support) make_edi_bm_no_canonical(cls_name, d) else make_edi_bm(cls_name, d)
+        if (is.null(bm) || is.null(bm$expr)) stop("no bare metal mapping for this class")
         eval(bm$expr, envir = bm$env)  # validation run
         collect_timing_ms(bm$expr, times = b_time, env = bm$env, fast_path_microbenchmark_reps = fast_path_microbenchmark_reps)
     }, error = function(e) {
@@ -471,9 +654,10 @@ run_one = function(spec) {
         list(median_ms = NA_real_, samples_ms = numeric(0))
     })
 
-    # Timing Canonical (Crashes if pkg missing)
+    # Timing Canonical (Crashes if pkg missing). Skipped entirely (stays NA)
+    # when pkg == "None", i.e. no canonical R equivalent exists.
     timing_can = list(median_ms = NA_real_, samples_ms = numeric(0))
-    if (!is.null(spec$expr) && spec$pkg != "None") {
+    if (!no_r_support && !is.null(spec$expr) && spec$pkg != "None") {
         library(spec$pkg, character.only = TRUE)
         X_cols = d$X[,-1,drop=F]
         colnames(X_cols) = paste0("x", 1:ncol(X_cols))
@@ -497,12 +681,13 @@ run_one = function(spec) {
             }
         )
     }
-    
+
     results[[length(results) + 1]] <<- data.table(
         Class = cls_name, Response = resp_type, EDI_Time_ms = timing_edi$median_ms,
         Canonical_Pkg = spec$pkg, Canonical_Func = spec$func, Canonical_Time_ms = timing_can$median_ms,
         Speedup = if (!is.na(timing_can$median_ms) && !is.na(timing_edi$median_ms) && timing_edi$median_ms > 0) timing_can$median_ms / timing_edi$median_ms else NA_real_,
-        Timing_Pval = timing_ttest_pval(timing_edi$samples_ms, timing_can$samples_ms)
+        Timing_Pval = timing_ttest_pval(timing_edi$samples_ms, timing_can$samples_ms),
+        No_Canonical = no_r_support
     )
 }
 
@@ -514,7 +699,8 @@ format_pval_stars = function(x) {
   ifelse(is.na(x), "",
     ifelse(x < 0.001, "***", ifelse(x < 0.01, "**", ifelse(x < 0.05, "*", ""))))
 }
-row_bg_color = function(speedup, pval) {
+row_bg_color = function(speedup, pval, no_canonical = FALSE) {
+  if (isTRUE(no_canonical)) return("#cfe2ff")
   if (!is.finite(speedup) || is.na(pval)) return("#eceff1")
   if (pval < 0.05 && speedup > 1) return("#d9fdd3")
   ""
@@ -1055,7 +1241,7 @@ dt[, Speedup_Num := Speedup]
 dt[, Speedup := ifelse(!is.na(Speedup), paste0(round(Speedup, 2), "x"), "NA")]
 dt[, EDI_Time_ms := format_ms(EDI_Time_ms)]
 dt[, Canonical_Time_ms := format_ms(Canonical_Time_ms)]
-dt[, Timing_Row_Color := mapply(row_bg_color, Speedup_Num, Timing_Pval, USE.NAMES = FALSE)]
+dt[, Timing_Row_Color := mapply(row_bg_color, Speedup_Num, Timing_Pval, No_Canonical, USE.NAMES = FALSE)]
 dt[, Timing_Pval_Stars := format_pval_stars(Timing_Pval)]
 dt[, Timing_Pval := format_pval(Timing_Pval)]
 dt[, Response := as.character(Response)]

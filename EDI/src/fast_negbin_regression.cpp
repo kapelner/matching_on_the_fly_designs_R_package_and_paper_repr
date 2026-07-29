@@ -1,4 +1,5 @@
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <Rmath.h>
 #include <unordered_map>
@@ -38,6 +39,7 @@ class NBLogLik {
 private:
     const Eigen::Ref<const Eigen::MatrixXd> m_X;
     const Eigen::Ref<const Eigen::VectorXi> m_y;
+    const Eigen::VectorXd m_weights;
     const int m_n;
     const int m_p;
 
@@ -52,7 +54,11 @@ private:
 
 public:
     NBLogLik(const Eigen::Ref<const Eigen::MatrixXd>& X, const Eigen::Ref<const Eigen::VectorXi>& y) :
-        m_X(X), m_y(y), m_n(X.rows()), m_p(X.cols()), m_y_slot(X.rows(), -1),
+        NBLogLik(X, y, Eigen::VectorXd::Ones(X.rows())) {}
+
+    NBLogLik(const Eigen::Ref<const Eigen::MatrixXd>& X, const Eigen::Ref<const Eigen::VectorXi>& y,
+             const Eigen::Ref<const Eigen::VectorXd>& weights) :
+        m_X(X), m_y(y), m_weights(weights), m_n(X.rows()), m_p(X.cols()), m_y_slot(X.rows(), -1),
         m_coef_vec(X.rows())
     {
         std::unordered_map<int, int> seen;
@@ -105,17 +111,18 @@ public:
             const double denom  = theta + mu_i;
             const double log_denom = std::log(denom);
             const int slot = m_y_slot[i];
+            const double w_i = m_weights[i];
 
             // log dnbinom_mu via explicit formula — avoids R::dnbinom_mu overhead.
-            neg_ll -= m_lgamma_yptheta[slot] - lgamma_theta - m_lgamma_y1[slot]
+            neg_ll -= w_i * (m_lgamma_yptheta[slot] - lgamma_theta - m_lgamma_y1[slot]
                     + theta * (log_theta_val - log_denom)
-                    + yi * (eta_i - log_denom);
+                    + yi * (eta_i - log_denom));
 
-            m_coef_vec[i] = yi - mu_i * (yi + theta) / denom;
+            m_coef_vec[i] = w_i * (yi - mu_i * (yi + theta) / denom);
 
             const double dlogf = m_digamma_yptheta[slot] - digamma_theta
                                + log_theta_val - log_denom + 1.0 - (yi + theta) / denom;
-            score_log_theta += theta * dlogf;
+            score_log_theta += w_i * theta * dlogf;
         }
         grad.head(m_p).noalias() = -(m_X.transpose() * m_coef_vec);
         grad[m_p] = -score_log_theta;
@@ -130,14 +137,16 @@ public:
         Eigen::VectorXd eta = m_X * beta;
 
         const double digamma_theta = fast_digamma(theta);
-        const double trigamma_theta = R::trigamma(theta);
+        const double trigamma_theta = fast_trigamma(theta);
         const double log_theta = std::log(theta);
         const int nd = static_cast<int>(m_distinct_y.size());
+        Eigen::ArrayXd ypt_arr(nd);
         for (int k = 0; k < nd; ++k) {
             const double ypt = m_distinct_y[k] + theta;
+            ypt_arr[k] = ypt;
             m_digamma_yptheta[k] = fast_digamma(ypt);
-            m_trigamma_yptheta[k] = R::trigamma(ypt);
         }
+        Eigen::Map<Eigen::ArrayXd>(m_trigamma_yptheta.data(), nd) = fast_trigamma_vec(ypt_arr);
 
         double* H_data = H.data();
         for (int i = 0; i < m_n; ++i) {
@@ -147,14 +156,15 @@ public:
             double denom = theta + mu_i;
             const double* xi = m_X.data() + i;  // xi[j * m_n] == X(i,j)
 
-            double w_beta = mu_i * theta * (yi + theta) / (denom * denom);
+            const double w_i = m_weights[i];
+            double w_beta = w_i * mu_i * theta * (yi + theta) / (denom * denom);
             for (int c = 0; c < m_p; ++c) {
                 const double wxi_c = w_beta * xi[c * m_n];
                 for (int r = 0; r <= c; ++r)
                     H_data[r + c * total_p] += wxi_c * xi[r * m_n];
             }
 
-            double d_score_beta_d_log_theta = theta * mu_i * (yi - mu_i) / (denom * denom);
+            double d_score_beta_d_log_theta = w_i * theta * mu_i * (yi - mu_i) / (denom * denom);
             for (int r = 0; r < m_p; ++r)
                 H_data[r + m_p * total_p] -= d_score_beta_d_log_theta * xi[r * m_n];
 
@@ -162,7 +172,7 @@ public:
                 log_theta - std::log(denom) + 1.0 - (yi + theta) / denom;
             double dA_dtheta = m_trigamma_yptheta[slot] - trigamma_theta +
                 1.0 / theta - 1.0 / denom + (yi - mu_i) / (denom * denom);
-            H(m_p, m_p) -= theta * A + theta * theta * dA_dtheta;
+            H(m_p, m_p) -= w_i * (theta * A + theta * theta * dA_dtheta);
         }
         for (int c = 0; c < total_p; ++c)
             for (int r = 0; r < c; ++r)
@@ -176,7 +186,7 @@ public:
         Eigen::VectorXd beta = params.head(m_p);
         double theta = std::exp(params[m_p]);
         Eigen::VectorXd eta = m_X * beta;
-        const double trigamma_theta = R::trigamma(theta);
+        const double trigamma_theta = fast_trigamma(theta);
 
         double* H_data = H.data();
         for (int i = 0; i < m_n; ++i) {
@@ -184,7 +194,8 @@ public:
             double denom = theta + mu_i;
             const double* xi = m_X.data() + i;
 
-            double w_beta = mu_i * theta / denom;
+            const double w_i = m_weights[i];
+            double w_beta = w_i * mu_i * theta / denom;
             for (int c = 0; c < m_p; ++c) {
                 const double wxi_c = w_beta * xi[c * m_n];
                 for (int r = 0; r <= c; ++r)
@@ -192,7 +203,7 @@ public:
             }
 
             const double e_trigamma = expected_trigamma_y_plus_theta(mu_i, theta, trigamma_theta);
-            H(m_p, m_p) += -theta * theta * (
+            H(m_p, m_p) += -w_i * theta * theta * (
                 e_trigamma - trigamma_theta + 1.0 / theta - 1.0 / denom
             );
         }
@@ -233,15 +244,16 @@ private:
 
 ModelResult fast_neg_bin_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
                                   const Eigen::Ref<const Eigen::VectorXi>& y,
-                                  Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
+                                  std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
                                   bool smart_cold_start = true,
                                   int maxit = 1000,
                                   double eps_g = 1e-6,
-                                  Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-                                  Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                  std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+                                  std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
                                   std::string optimization_alg = "lbfgs",
-                                  Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
-                                  bool estimate_only = false) {
+                                  std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt,
+                                  bool estimate_only = false,
+                                  const Eigen::VectorXd* weights = nullptr) {
     int p = X.cols();
     ModelResult res;
     Eigen::VectorXd params = Eigen::VectorXd::Zero(p + 1);
@@ -257,8 +269,8 @@ ModelResult fast_neg_bin_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
     }
     legacy_params[p] = std::log(theta_start);
     FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
-    if (warm_start_params.isNotNull()) {
-        params = as<Eigen::VectorXd>(NumericVector(warm_start_params));
+    if (warm_start_params.has_value()) {
+        params = *warm_start_params;
         if (params.size() != p + 1) stop("warm_start_params must have length equal to the number of model parameters");
     } else if (smart_cold_start) {
         Eigen::VectorXd beta_smart = ols_smart_cold_start_beta_on_log1p(X, y_double);
@@ -270,12 +282,13 @@ ModelResult fast_neg_bin_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
     }
     params = apply_fixed_values(params, fixed_spec);
 
-    NBLogLik fun(X, y);
+    Eigen::VectorXd weights_work = weights == nullptr ? Eigen::VectorXd::Ones(X.rows()) : *weights;
+    NBLogLik fun(X, y, weights_work);
 
     Eigen::MatrixXd H_start_val;
     const Eigen::MatrixXd* h_ptr = nullptr;
-    if (warm_start_fisher_info.isNotNull()) {
-        H_start_val = as<Eigen::MatrixXd>(warm_start_fisher_info);
+    if (warm_start_fisher_info.has_value()) {
+        H_start_val = *warm_start_fisher_info;
         h_ptr = &H_start_val;
     } else if (smart_cold_start) {
         H_start_val = edi_opt::negbin_smart_hessian(X, params, y);
@@ -397,20 +410,30 @@ List fast_neg_bin_with_var_cpp(SEXP X_sexp,
     Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
     Eigen::Map<const Eigen::VectorXi> y(y_r.begin(), y_r.size());
 
-    ModelResult res = fast_neg_bin_internal(X, y, warm_start_params, smart_cold_start, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only);
-    FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols() + 1, fixed_idx, fixed_values);
+    ModelResult res = fast_neg_bin_internal(
+        X, y,
+        nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+        smart_cold_start, maxit, eps_g,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+        estimate_only);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        X.cols() + 1,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
     Eigen::MatrixXd H_free = subset_matrix(res.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
     Eigen::MatrixXd cov_free = H_free.inverse();
     Eigen::MatrixXd vcov = expand_free_covariance(X.cols() + 1, fixed_spec, cov_free, true);
-    return List::create(
-        Named("b") = res.b,
-        Named("theta_hat") = res.dispersion,
-        Named("logLik") = res.sigma2_hat,
-        Named("converged") = res.converged,
-        Named("iterations") = res.iterations,
-        Named("hess_fisher_info_matrix") = res.XtWX,
-        Named("vcov") = vcov
-    );
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("b", res.b)
+        .set("theta_hat", res.dispersion)
+        .set("logLik", res.sigma2_hat)
+        .set("converged", res.converged)
+        .set("iterations", res.iterations)
+        .set("hess_fisher_info_matrix", res.XtWX)
+        .set("vcov", vcov));
 }
 
 //' @title Fast Negative Binomial Regression (C++)
@@ -451,13 +474,88 @@ List fast_neg_bin_cpp(SEXP X_sexp,
     Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
     Eigen::Map<const Eigen::VectorXi> y(y_r.begin(), y_r.size());
 
-    ModelResult res = fast_neg_bin_internal(X, y, warm_start_params, smart_cold_start, maxit, eps_g, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only);
-    return List::create(
-        Named("b") = res.b,
-        Named("theta_hat") = res.dispersion,
-        Named("logLik") = res.sigma2_hat,
-        Named("converged") = res.converged,
-        Named("iterations") = res.iterations,
-        Named("fisher_information") = res.XtWX
-    );
+    ModelResult res = fast_neg_bin_internal(
+        X, y,
+        nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+        smart_cold_start, maxit, eps_g,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+        estimate_only);
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("b", res.b)
+        .set("theta_hat", res.dispersion)
+        .set("logLik", res.sigma2_hat)
+        .set("converged", res.converged)
+        .set("iterations", res.iterations)
+        .set("fisher_information", res.XtWX));
+}
+
+//' @title Fast Weighted Negative Binomial Regression (C++)
+//' @description High-performance negative binomial regression fitting with nonnegative row weights.
+//' @param X A numeric matrix of predictors.
+//' @param y A numeric vector of responses.
+//' @param weights A nonnegative numeric vector of row weights.
+//' @param warm_start_params Optional starting values for coefficients and dispersion. If provided, \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
+//' @param maxit Maximum number of iterations.
+//' @param eps_f Convergence tolerance for function value.
+//' @param eps_g Convergence tolerance for gradient.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first IRLS iteration.
+//' @param estimate_only If TRUE, skip Fisher information calculation.
+//' @return A list containing coefficients, theta, and convergence status.
+//' @export
+//' @keywords internal
+//' @examples
+//' X = matrix(rnorm(100), 10, 10)
+//' y = rpois(10, 2)
+//' fast_neg_bin_weighted_cpp(X, y, weights = rep(1, 10))
+// [[Rcpp::export]]
+List fast_neg_bin_weighted_cpp(SEXP X_sexp,
+                        SEXP y_sexp,
+                        SEXP weights_sexp,
+                        Nullable<NumericVector> warm_start_params = R_NilValue,
+                        bool smart_cold_start = false,
+                        int maxit = 1000,
+                        double eps_f = 1e-8,
+                        double eps_g = 1e-6,
+                        Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+                        Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                        std::string optimization_alg = "lbfgs",
+                        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                        bool estimate_only = false) {
+    NumericMatrix X_r(X_sexp);
+    IntegerVector y_r(y_sexp);
+    NumericVector weights_r(weights_sexp);
+    if (weights_r.size() != X_r.nrow()) {
+        stop("weights length must equal nrow(X)");
+    }
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::VectorXi> y(y_r.begin(), y_r.size());
+    Eigen::Map<const Eigen::VectorXd> weights(weights_r.begin(), weights_r.size());
+    if ((weights.array() < 0.0).any() || !weights.allFinite() || weights.sum() <= 0.0) {
+        stop("weights must be finite, nonnegative, and have positive sum");
+    }
+    Eigen::VectorXd weights_vec = weights;
+
+    ModelResult res = fast_neg_bin_internal(
+        X, y,
+        nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+        smart_cold_start, maxit, eps_g,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+        estimate_only, &weights_vec);
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("b", res.b)
+        .set("theta_hat", res.dispersion)
+        .set("logLik", res.sigma2_hat)
+        .set("converged", res.converged)
+        .set("iterations", res.iterations)
+        .set("fisher_information", res.XtWX));
 }

@@ -112,6 +112,7 @@ InferenceAbstractKKCondLogitPlusGLMMOneLik = R6::R6Class("InferenceAbstractKKCon
 		}
 	),
 	private = list(
+		is_a_kk_cond_logit_plus_glmm_one_lik = function() TRUE,
 		supports_likelihood_tests = function() TRUE,
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)

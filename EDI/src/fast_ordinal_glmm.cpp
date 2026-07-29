@@ -244,7 +244,10 @@ List fast_ordinal_glmm_cpp(
 	const int p = map_X.cols();
 	const int n_alpha = K - 1;
 	const int total = n_alpha + p + 1; // cutpoint params + betas + log_sigma
-	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(
+		total,
+		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+		nullable_to_optional<Eigen::VectorXd>(fixed_values));
 
 	// Convert Eigen/R vectors to std::vector for OrdinalGLMMData
 	std::vector<int> y_v(n), gid_v(n);
@@ -254,8 +257,10 @@ List fast_ordinal_glmm_cpp(
 
 	// Initialize parameters
 	Eigen::VectorXd par(total);
-	if (warm_start_params.isNotNull()) {
-		Rcpp::NumericVector sv(warm_start_params);
+	std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
+	std::optional<Eigen::VectorXd> warm_start_beta_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_beta);
+	if (warm_start_params_opt.has_value()) {
+		const Eigen::VectorXd& sv = *warm_start_params_opt;
 		if (sv.size() == total) {
 			for (int i = 0; i < total; ++i) par[i] = sv[i];
 		} else {
@@ -264,8 +269,8 @@ List fast_ordinal_glmm_cpp(
 			par.segment(n_alpha, p).setZero();
 			par[total - 1] = -3.0;
 		}
-	} else if (warm_start_beta.isNotNull()) {
-		VectorXd sb = as<VectorXd>(warm_start_beta);
+	} else if (warm_start_beta_opt.has_value()) {
+		const VectorXd& sb = *warm_start_beta_opt;
 		if (sb.size() == total) {
 			par = sb;
 		} else if (sb.size() == p) {
@@ -294,8 +299,9 @@ List fast_ordinal_glmm_cpp(
 
 	Eigen::MatrixXd info_start;
 	const Eigen::MatrixXd* info_start_ptr = nullptr;
-	if (warm_start_fisher_info.isNotNull()) {
-		info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+	std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
+	if (warm_start_fisher_info_opt.has_value()) {
+		info_start = *warm_start_fisher_info_opt;
 		info_start_ptr = &info_start;
 	}
 

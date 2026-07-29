@@ -98,6 +98,7 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 		}
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+		is_a_kk_quantile_regr_ivwc = function() TRUE,
 		tau = NULL,
 		transform_y_fn_list = NULL,  # list(fn = ...) wrapping avoids R6 treating function as a locked method
 		m = NULL,

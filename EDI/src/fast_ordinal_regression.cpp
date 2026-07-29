@@ -123,9 +123,13 @@ List fast_ordinal_regression_cpp(const Rcpp::NumericMatrix& X, const Rcpp::Numer
     int n_params = n_alpha + p;
 
     VectorXd params(n_params);
-    FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
-    if (warm_start_params.isNotNull()) {
-        params = as<Eigen::VectorXd>(NumericVector(warm_start_params));
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        n_params,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
+    std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
+    if (warm_start_params_opt.has_value()) {
+        params = *warm_start_params_opt;
         if (params.size() != n_params) stop("warm_start_params must have length equal to the number of model parameters");
     } else {
         OrdinalStart legacy_start;
@@ -134,7 +138,7 @@ List fast_ordinal_regression_cpp(const Rcpp::NumericMatrix& X, const Rcpp::Numer
             legacy_start.alpha[k] = -1.0 + 2.0 * (k + 1) / K;
         }
         legacy_start.beta = VectorXd::Zero(p);
-        
+
         if (smart_cold_start) {
             // Use OLS on rank-transformed y
             Eigen::VectorXd y_rank = (map_y.array() - 1.0) / static_cast<double>(K - 1);
@@ -149,9 +153,10 @@ List fast_ordinal_regression_cpp(const Rcpp::NumericMatrix& X, const Rcpp::Numer
 
     Eigen::MatrixXd H_start;
     const Eigen::MatrixXd* h_ptr = nullptr;
-    bool has_warm_fisher = warm_start_fisher_info.isNotNull();
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
+    bool has_warm_fisher = warm_start_fisher_info_opt.has_value();
     if (has_warm_fisher) {
-        H_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        H_start = *warm_start_fisher_info_opt;
         h_ptr = &H_start;
     } else if (smart_cold_start) {
         H_start = model.hessian(params);
@@ -225,9 +230,13 @@ List fast_ordinal_regression_weighted_cpp(const Rcpp::NumericMatrix& X, const Rc
     int n_params = n_alpha + p;
 
     VectorXd params(n_params);
-    FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
-    if (warm_start_params.isNotNull()) {
-        params = as<Eigen::VectorXd>(NumericVector(warm_start_params));
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        n_params,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
+    std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
+    if (warm_start_params_opt.has_value()) {
+        params = *warm_start_params_opt;
         if (params.size() != n_params) stop("warm_start_params must have length equal to the number of model parameters");
     } else {
         OrdinalStart legacy_start;
@@ -236,7 +245,7 @@ List fast_ordinal_regression_weighted_cpp(const Rcpp::NumericMatrix& X, const Rc
             legacy_start.alpha[k] = -1.0 + 2.0 * (k + 1) / K;
         }
         legacy_start.beta = VectorXd::Zero(p);
-        
+
         if (smart_cold_start) {
             // Use OLS on rank-transformed y
             Eigen::VectorXd y_rank = (map_y.array() - 1.0) / static_cast<double>(K - 1);
@@ -251,8 +260,9 @@ List fast_ordinal_regression_weighted_cpp(const Rcpp::NumericMatrix& X, const Rc
 
     Eigen::MatrixXd H_start;
     const Eigen::MatrixXd* h_ptr = nullptr;
-    if (warm_start_fisher_info.isNotNull()) {
-        H_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
+    if (warm_start_fisher_info_opt.has_value()) {
+        H_start = *warm_start_fisher_info_opt;
         h_ptr = &H_start;
     } else if (smart_cold_start) {
         H_start = model.hessian(params);
@@ -310,7 +320,10 @@ List fast_ordinal_regression_with_var_cpp(const Rcpp::NumericMatrix& X, const Rc
     MatrixXd H = as<MatrixXd>(res["observed_information"]);
     
     int n_params = params.size();
-    FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        n_params,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
     MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
     FullPivLU<MatrixXd> lu(H_free);
 

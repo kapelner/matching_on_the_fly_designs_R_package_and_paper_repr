@@ -10,17 +10,18 @@
 #' arguments below, so the bias-correction (z0) / acceleration (a) / adjusted-quantile
 #' math itself lives in exactly one place.
 #'
-#' Splice into \code{InferenceNonParamBootstrap} via
-#' \code{private = c(InferenceMixinBcaBootstrapCI$private, list(...))}.
-#' \code{InferenceBayesianBootstrap} does not need to splice this in separately --
-#' it inherits \code{InferenceNonParamBootstrap} (via \code{InferenceRandBootstrap} /
-#' \code{InferenceRandBootstrapCI}), so \code{private$bca_ci_core()} /
-#' \code{private$bca_pval_core()} are already visible there through ordinary R6
-#' private-environment inheritance.
+#' Pattern-1 file-split extension, spliced into exactly one class
+#' (\code{InferenceNonParamBootstrap}) via
+#' \code{private = c(InferenceExtBcaBootstrapCI$private, list(...))} -- not a
+#' reusable mixin. \code{InferenceBayesianBootstrap} does not need to splice
+#' this in separately -- it inherits \code{InferenceNonParamBootstrap} (via
+#' \code{InferenceRandBootstrap} / \code{InferenceRandBootstrapCI}), so
+#' \code{private$bca_ci_core()} / \code{private$bca_pval_core()} are already
+#' visible there through ordinary R6 private-environment inheritance.
 #'
 #' @keywords internal
 #' @noRd
-InferenceMixinBcaBootstrapCI = list(
+InferenceExtBcaBootstrapCI = list(
 	public = list(),
 	private = list(
 		# Shared BCa confidence-interval math (Efron 1987; Efron & Tibshirani 1993).

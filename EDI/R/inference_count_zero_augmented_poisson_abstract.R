@@ -186,6 +186,7 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		}
 	),
 		private = list(
+		is_a_count_zero_augmented_poisson = function() TRUE,
 		supports_reusable_bootstrap_worker = function(){
 			TRUE
 		},

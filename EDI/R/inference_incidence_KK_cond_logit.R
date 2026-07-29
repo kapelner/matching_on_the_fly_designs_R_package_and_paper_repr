@@ -388,7 +388,7 @@ InferenceIncidKKCondLogitOneLik = R6::R6Class("InferenceIncidKKCondLogitOneLik",
 #' @export
 InferenceIncidKKCondLogitIVWC = R6::R6Class("InferenceIncidKKCondLogitIVWC",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLik,
+	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
 	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize
 		#' @param des_obj A completed \code{Design} object.
@@ -438,7 +438,6 @@ InferenceIncidKKCondLogitIVWC = R6::R6Class("InferenceIncidKKCondLogitIVWC",
 		))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
-		supports_likelihood_tests = function() FALSE,
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))

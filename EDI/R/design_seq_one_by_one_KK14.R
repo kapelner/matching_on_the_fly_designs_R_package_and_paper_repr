@@ -11,6 +11,8 @@
 DesignSeqOneByOneKK14 = R6::R6Class("DesignSeqOneByOneKK14",
 	inherit = DesignSeqOneByOne,
 	public = list(
+		#' @description Characterization: this is a KK matching-on-the-fly-capable design.
+		is_a_kk_matching_capable = function() TRUE,
 		#' @description Initialize a KK14 sequential experimental design
 		#'
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or

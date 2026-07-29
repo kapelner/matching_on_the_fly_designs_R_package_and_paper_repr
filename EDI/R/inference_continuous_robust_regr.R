@@ -67,13 +67,40 @@ InferenceContinRobustRegr = R6::R6Class("InferenceContinRobustRegr",
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
 			row_weights = as.numeric(private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights))
 			X_fit = private$build_design_matrix()
+			if (private$use_rcpp) {
+				# MASS::rlm's default wt.method = "inv.var" transforms (X, y) by sqrt(weight)
+				# and runs ordinary (unweighted) M-estimation on the transformed data; this
+				# reproduces that exactly using the existing unweighted C++ IRLS kernel.
+				sw = sqrt(row_weights)
+				Xs = X_fit * sw
+				ys = as.numeric(private$y) * sw
+				fit_cpp = tryCatch(
+					fast_robust_regression_cpp(
+						X = Xs,
+						y = ys,
+						method = private$rlm_method,
+						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
+						estimate_only = TRUE
+					),
+					error = function(e) NULL
+				)
+				coef_vec = if (!is.null(fit_cpp)) as.numeric(fit_cpp$coefficients) else NULL
+				if (!is.null(coef_vec) && length(coef_vec) >= 2L && is.finite(coef_vec[2L])) {
+					private$set_fit_warm_start(coef_vec, "beta")
+					private$cached_values$beta_hat_T = coef_vec[2L]
+					private$cached_values$s_beta_hat_T = NA_real_
+					private$cached_values$df = NA_real_
+					return(private$cached_values$beta_hat_T)
+				}
+			}
+			warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit))
 			fit = tryCatch(
 				suppressWarnings(MASS::rlm(
 					x = X_fit,
 					y = as.numeric(private$y),
 					weights = row_weights,
 					method = private$rlm_method,
-					init = private$get_fit_warm_start_for_length("beta", ncol(X_fit))
+					init = if (is.null(warm_start_beta)) "ls" else warm_start_beta
 				)),
 				error = function(e) NULL
 			)

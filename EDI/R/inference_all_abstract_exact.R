@@ -53,6 +53,7 @@ InferenceExact = R6::R6Class("InferenceExact",
 		}
 	),
 	private = list(
+		is_a_exact = function() TRUE,
 		default_exact_type = NULL,
 		resolve_exact_type = function(type){
 			if (is.null(type)) type = private$default_exact_type

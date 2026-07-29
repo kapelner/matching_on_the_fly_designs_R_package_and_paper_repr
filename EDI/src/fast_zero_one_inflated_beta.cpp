@@ -1,4 +1,5 @@
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <Rmath.h>
 
@@ -189,10 +190,15 @@ public:
 			clamp_probs(mu_beta);
 
 			double d_neg_ll_d_phi = -m_n_beta * fast_digamma(phi);
-			double d2_neg_ll_d_phi2 = -m_n_beta * R::trigamma(phi);
+			double d2_neg_ll_d_phi2 = -m_n_beta * fast_trigamma(phi);
 			// total_H is the full H matrix column stride
 			const int total_H = m_p + 1 + 2 * m_p_zero_one;
 			double* H_data = H.data();
+
+			const Eigen::ArrayXd a_arr = mu_beta.array() * phi;
+			const Eigen::ArrayXd b_arr = (1.0 - mu_beta.array()) * phi;
+			const Eigen::ArrayXd trigamma_a_vec = fast_trigamma_vec(a_arr);
+			const Eigen::ArrayXd trigamma_b_vec = fast_trigamma_vec(b_arr);
 
 			for (int i = 0; i < m_n_beta; ++i){
 				const double mu = mu_beta[i];
@@ -203,8 +209,8 @@ public:
 				const double b = one_minus_mu * phi;
 				const double digamma_a = fast_digamma(a);
 				const double digamma_b = fast_digamma(b);
-				const double trigamma_a = R::trigamma(a);
-				const double trigamma_b = R::trigamma(b);
+				const double trigamma_a = trigamma_a_vec[i];
+				const double trigamma_b = trigamma_b_vec[i];
 				const double c = digamma_a - digamma_b - m_log_y_beta[i] + m_log1_y_beta[i];
 				const double dc_dmu = phi * (trigamma_a + trigamma_b);
 				const double dc_dphi = mu * trigamma_a - one_minus_mu * trigamma_b;
@@ -312,6 +318,12 @@ public:
 		double* h11 = H11.data();
 		double* h01 = H01.data();
 
+		const Eigen::ArrayXd a_arr = mu_vec.array() * phi;
+		const Eigen::ArrayXd b_arr = (1.0 - mu_vec.array()) * phi;
+		const Eigen::ArrayXd trigamma_a_vec = fast_trigamma_vec(a_arr);
+		const Eigen::ArrayXd trigamma_b_vec = fast_trigamma_vec(b_arr);
+		const double trigamma_phi = fast_trigamma(phi);
+
 		for (int i = 0; i < m_n; ++i){
 			double max_logit = std::max(std::max(eta0[i], eta1[i]), 0.0);
 			double e0 = std::exp(eta0[i] - max_logit);
@@ -327,12 +339,12 @@ public:
 			const double dmu_deta = mu * one_minus_mu;
 			const double a = mu * phi;
 			const double b = one_minus_mu * phi;
-			const double trigamma_a = R::trigamma(a);
-			const double trigamma_b = R::trigamma(b);
+			const double trigamma_a = trigamma_a_vec[i];
+			const double trigamma_b = trigamma_b_vec[i];
 			const double h_beta = pib * phi * phi * (trigamma_a + trigamma_b) * dmu_deta * dmu_deta;
 			const double h_cross = pib * phi * (a * trigamma_a - b * trigamma_b) * dmu_deta;
 			const double h_logphi = pib * phi * phi * (
-				-R::trigamma(phi) + mu * mu * trigamma_a + one_minus_mu * one_minus_mu * trigamma_b
+				-trigamma_phi + mu * mu * trigamma_a + one_minus_mu * one_minus_mu * trigamma_b
 			);
 			const double* xi = m_X.data() + i;
 			for (int col = 0; col < m_p; ++col) {
@@ -447,32 +459,23 @@ SEXP get_zero_one_inflated_beta_hessian_cpp(SEXP X_sexp,
 //' @return A list containing coefficients, vcov, and convergence status.
 //' @export
 //' @keywords internal
-// [[Rcpp::export]]
-List fast_zero_one_inflated_beta_cpp(SEXP X_sexp,
-									 SEXP X_zero_one_sexp,
-									 SEXP y_sexp,
-									 Nullable<NumericVector> warm_start_params = R_NilValue,
-									 bool smart_cold_start = true,
-									 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-									 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-									 std::string optimization_alg = "lbfgs",
-									 Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
-									 bool estimate_only = false){
-
-    NumericMatrix X_r(X_sexp);
-    NumericMatrix X_zero_one_r(X_zero_one_sexp);
-    NumericVector y_r(y_sexp);
-    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
-    Eigen::Map<const Eigen::MatrixXd> X_zero_one(X_zero_one_r.begin(), X_zero_one_r.nrow(), X_zero_one_r.ncol());
-    Eigen::Map<const Eigen::VectorXd> y_eigen(y_r.begin(), y_r.size());
-
+LikelihoodFitResult fast_zero_one_inflated_beta_internal(
+		const Eigen::Ref<const Eigen::MatrixXd>& X,
+		const Eigen::Ref<const Eigen::MatrixXd>& X_zero_one,
+		const Eigen::Ref<const Eigen::VectorXd>& y_eigen,
+		std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+		bool smart_cold_start = true,
+		std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+		std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+		std::string optimization_alg = "lbfgs",
+		std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt) {
 	int p = X.cols();
 	int p_zero_one = X_zero_one.cols();
 	int total = p + 1 + 2 * p_zero_one;
 	Eigen::VectorXd params(total);
-	
-	if (warm_start_params.isNotNull()) {
-		params = Rcpp::as<Eigen::VectorXd>(warm_start_params);
+
+	if (warm_start_params.has_value()) {
+		params = *warm_start_params;
 	} else if (smart_cold_start) {
 		// Beta component: OLS on logit(y) for entries in (0, 1)
 		std::vector<int> idx_mid;
@@ -503,68 +506,90 @@ List fast_zero_one_inflated_beta_cpp(SEXP X_sexp,
 	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
 
 	ZeroOneInflatedBeta fun(y_eigen, X, X_zero_one);
-    
+
     Eigen::MatrixXd info_start;
     const Eigen::MatrixXd* info_start_ptr = nullptr;
-    if (warm_start_fisher_info.isNotNull()) {
-        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+    if (warm_start_fisher_info.has_value()) {
+        info_start = *warm_start_fisher_info;
         info_start_ptr = &info_start;
     }
-    
-	LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, 1500, 1e-6, optimization_alg, "lbfgs", 0, info_start_ptr);
-	params = fit.params;
+
+	return optimize_fixed_likelihood(fun, params, fixed_spec, 1500, 1e-6, optimization_alg, "lbfgs", 0, info_start_ptr);
+}
+
+// [[Rcpp::export]]
+List fast_zero_one_inflated_beta_cpp(SEXP X_sexp,
+									 SEXP X_zero_one_sexp,
+									 SEXP y_sexp,
+									 Nullable<NumericVector> warm_start_params = R_NilValue,
+									 bool smart_cold_start = true,
+									 Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+									 Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+									 std::string optimization_alg = "lbfgs",
+									 Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+									 bool estimate_only = false){
+
+    NumericMatrix X_r(X_sexp);
+    NumericMatrix X_zero_one_r(X_zero_one_sexp);
+    NumericVector y_r(y_sexp);
+    Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
+    Eigen::Map<const Eigen::MatrixXd> X_zero_one(X_zero_one_r.begin(), X_zero_one_r.nrow(), X_zero_one_r.ncol());
+    Eigen::Map<const Eigen::VectorXd> y_eigen(y_r.begin(), y_r.size());
+
+	int p = X.cols();
+	int p_zero_one = X_zero_one.cols();
+
+	LikelihoodFitResult fit = fast_zero_one_inflated_beta_internal(
+		X, X_zero_one, y_eigen,
+		nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+		smart_cold_start,
+		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+		nullable_to_optional<Eigen::VectorXd>(fixed_values),
+		optimization_alg,
+		nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
+	Eigen::VectorXd params = fit.params;
 
 	if (estimate_only) {
-		return List::create(
-			Named("b") = params.head(p),
-			Named("log_phi") = params[p],
-			Named("zero_one_b0") = params.segment(p + 1, p_zero_one),
-			Named("zero_one_b1") = params.tail(p_zero_one),
-			Named("params") = params,
-			Named("neg_loglik") = fit.value,
-			Named("converged") = fit.converged
-		);
+		return edi::to_rcpp_list(edi::ResultMap()
+			.set("b", params.head(p))
+			.set("log_phi", params[p])
+			.set("zero_one_b0", params.segment(p + 1, p_zero_one))
+			.set("zero_one_b1", params.tail(p_zero_one))
+			.set("params", params)
+			.set("neg_loglik", fit.value)
+			.set("converged", fit.converged));
 	}
 
+	FixedParamSpec fixed_spec = make_fixed_param_spec(
+		params.size(),
+		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+		nullable_to_optional<Eigen::VectorXd>(fixed_values));
+	ZeroOneInflatedBeta fun(y_eigen, X, X_zero_one);
 	Eigen::MatrixXd observed_information = fun.hessian(params);
 
 	int dim = params.size();
-	NumericMatrix vcov_mat(dim, dim);
-	bool has_vcov = false;
+	Eigen::MatrixXd vcov_mat = Eigen::MatrixXd::Constant(dim, dim, NA_REAL);
 	if (observed_information.rows() == dim && observed_information.cols() == dim && observed_information.allFinite()){
 		Eigen::MatrixXd H_free = subset_matrix(observed_information, fixed_spec.free_idx, fixed_spec.free_idx);
 		Eigen::FullPivLU<Eigen::MatrixXd> lu(H_free);
 		if (lu.isInvertible()){
 			Eigen::MatrixXd inv_free = lu.inverse();
-			Eigen::MatrixXd inv = expand_free_covariance(dim, fixed_spec, inv_free, true);
-			for (int i = 0; i < dim; ++i){
-				for (int j = 0; j < dim; ++j){
-					vcov_mat(i, j) = inv(i, j);
-				}
-			}
-			has_vcov = true;
-		}
-	}
-	if (!has_vcov){
-		for (int i = 0; i < dim; ++i){
-			for (int j = 0; j < dim; ++j){
-				vcov_mat(i, j) = NA_REAL;
-			}
+			vcov_mat = expand_free_covariance(dim, fixed_spec, inv_free, true);
 		}
 	}
 
-	return List::create(
-		Named("b") = params.head(p),
-		Named("log_phi") = params[p],
-		Named("zero_one_b0") = params.segment(p + 1, p_zero_one),
-		Named("zero_one_b1") = params.tail(p_zero_one),
-		Named("params") = params,
-		Named("vcov") = vcov_mat,
-		Named("neg_loglik") = fit.value,
-		Named("observed_information") = observed_information,
-		Named("fisher_information") = observed_information,
-		Named("information") = observed_information,
-		Named("information_type") = "observed",
-		Named("hessian") = -observed_information
-	);
+	Eigen::MatrixXd neg_observed_information = -observed_information;
+	return edi::to_rcpp_list(edi::ResultMap()
+		.set("b", params.head(p))
+		.set("log_phi", params[p])
+		.set("zero_one_b0", params.segment(p + 1, p_zero_one))
+		.set("zero_one_b1", params.tail(p_zero_one))
+		.set("params", params)
+		.set("vcov", vcov_mat)
+		.set("neg_loglik", fit.value)
+		.set("observed_information", observed_information)
+		.set("fisher_information", observed_information)
+		.set("information", observed_information)
+		.set("information_type", std::string("observed"))
+		.set("hessian", neg_observed_information));
 }

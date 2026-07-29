@@ -1,18 +1,20 @@
-#' Mixin for Information-Matrix Inference
+#' Extension for Information-Matrix Inference
 #'
-#' A Pattern-1 mixin (plain list with code{$public} and code{$private} slots)
-#' providing information-source selection and treatment-coefficient standard
-#' errors for likelihood-backed inference. Consumers must provide
-#' code{get_likelihood_test_spec()} and code{get_default_information_source()}
-#' private methods, as well as code{information_preference} and
-#' code{information_source_used} private fields.
+#' A Pattern-1 file-split extension (plain list with code{$public} and
+#' code{$private} slots), spliced into exactly one class
+#' (\code{InferenceAsympLik}) -- not a reusable mixin. Provides
+#' information-source selection and treatment-coefficient standard errors for
+#' likelihood-backed inference. Requires code{get_likelihood_test_spec()} and
+#' code{get_default_information_source()} private methods, as well as
+#' code{information_preference} and code{information_source_used} private
+#' fields, all provided by the host class.
 #'
-#' Splice into a class with
-#' code{private = c(InferenceMixinInformationMatrix$private, list(...))}.
+#' Splice into \code{InferenceAsympLik} with
+#' code{private = c(InferenceExtInformationMatrix$private, list(...))}.
 #'
 #' @keywords internal
 #' @noRd
-InferenceMixinInformationMatrix = list(
+InferenceExtInformationMatrix = list(
 	public = list(),
 	private = list(
 		get_information_matrix = function(spec = NULL, fit = NULL){

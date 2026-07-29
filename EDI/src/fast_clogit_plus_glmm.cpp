@@ -1,4 +1,5 @@
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <cmath>
 #include <limits>
@@ -502,12 +503,14 @@ SEXP fast_clogit_plus_glmm_cpp(
 	int n_par = (has_discordant && has_concordant) ? p_conc + 1 : (has_concordant ? p_conc + 1 : p_disc);
 
 	Eigen::VectorXd par = Eigen::VectorXd::Zero(n_par);
-	
-	if (warm_start_params.isNotNull()) {
-		par = as<Eigen::VectorXd>(warm_start_params);
+
+	auto warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
+	auto warm_start_beta_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_beta);
+	if (warm_start_params_opt.has_value()) {
+		par = *warm_start_params_opt;
 		if (par.size() != n_par) stop("warm_start_params size mismatch");
-	} else if (warm_start_beta.isNotNull()) {
-		VectorXd sb = as<VectorXd>(warm_start_beta);
+	} else if (warm_start_beta_opt.has_value()) {
+		VectorXd sb = *warm_start_beta_opt;
 		if (sb.size() == n_par) {
 			par = sb;
 		} else {
@@ -519,12 +522,16 @@ SEXP fast_clogit_plus_glmm_cpp(
 		}
 	}
 
-	FixedParamSpec fixed_spec = make_fixed_param_spec(par.size(), fixed_idx, fixed_values);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(
+		par.size(),
+		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+		nullable_to_optional<Eigen::VectorXd>(fixed_values));
 
+	auto warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
 	Eigen::MatrixXd info_start;
 	Eigen::MatrixXd* info_start_ptr = nullptr;
-	if (warm_start_fisher_info.isNotNull()) {
-		info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+	if (warm_start_fisher_info_opt.has_value()) {
+		info_start = *warm_start_fisher_info_opt;
 		info_start_ptr = &info_start;
 	}
 
@@ -538,37 +545,35 @@ SEXP fast_clogit_plus_glmm_cpp(
 		niter = fit.niter;
 		converged = std::isfinite(neg_ll) && fit.converged;
 	} catch (...) {
-		return List::create(
-			Named("params") = par,
-			Named("b") = par,
-			Named("beta_T") = NA_REAL,
-			Named("se_beta_T") = NA_REAL,
-			Named("ssq_b_j") = NA_REAL,
-			Named("converged") = false,
-			Named("neg_loglik") = NA_REAL
-		);
+		return edi::to_rcpp_list(edi::ResultMap()
+			.set("params", par)
+			.set("b", par)
+			.set("beta_T", NA_REAL)
+			.set("se_beta_T", NA_REAL)
+			.set("ssq_b_j", NA_REAL)
+			.set("converged", false)
+			.set("neg_loglik", NA_REAL));
 	}
 
 		const int j_beta_T = has_concordant ? 1 : 0; // 0-based
 		double ssq_b_j = NA_REAL;
 		if (estimate_only) {
-			return List::create(
-				Named("params") = par,
-				Named("b") = par,
-				Named("beta_T") = par[j_beta_T],
-				Named("se_beta_T") = NA_REAL,
-				Named("ssq_b_j") = NA_REAL,
-				Named("vcov") = R_NilValue,
-				Named("score") = R_NilValue,
-				Named("observed_information") = R_NilValue,
-				Named("information") = R_NilValue,
-				Named("information_type") = "observed",
-				Named("hessian") = R_NilValue,
-				Named("converged") = converged,
-				Named("neg_loglik") = neg_ll,
-				Named("neg_ll") = neg_ll,
-				Named("loglik") = R_finite(neg_ll) ? -neg_ll : NA_REAL
-			);
+			return edi::to_rcpp_list(edi::ResultMap()
+				.set("params", par)
+				.set("b", par)
+				.set("beta_T", par[j_beta_T])
+				.set("se_beta_T", NA_REAL)
+				.set("ssq_b_j", NA_REAL)
+				.set("vcov", std::monostate{})
+				.set("score", std::monostate{})
+				.set("observed_information", std::monostate{})
+				.set("information", std::monostate{})
+				.set("information_type", std::string("observed"))
+				.set("hessian", std::monostate{})
+				.set("converged", converged)
+				.set("neg_loglik", neg_ll)
+				.set("neg_ll", neg_ll)
+				.set("loglik", R_finite(neg_ll) ? -neg_ll : NA_REAL));
 		}
 
 		Eigen::MatrixXd info = obj.hessian(par);
@@ -587,22 +592,22 @@ SEXP fast_clogit_plus_glmm_cpp(
 	}
 	double se_beta_T = (std::isfinite(ssq_b_j) && ssq_b_j > 0.0) ? std::sqrt(ssq_b_j) : NA_REAL;
 
-	return List::create(
-		Named("params") = par,
-		Named("b") = par,
-		Named("beta_T") = par[j_beta_T],
-		Named("se_beta_T") = se_beta_T,
-		Named("ssq_b_j") = ssq_b_j,
-		Named("vcov") = vcov,
-		Named("score") = score,
-		Named("observed_information") = info,
-		Named("information") = info,
-		Named("information_type") = "observed",
-		Named("hessian") = -info,
-		Named("converged") = converged,
-		Named("neg_loglik") = neg_ll,
-		Named("neg_ll") = neg_ll,
-		Named("loglik") = R_finite(neg_ll) ? -neg_ll : NA_REAL,
-		Named("fisher_information") = info
-	);
+	Eigen::MatrixXd neg_info = -info;
+	return edi::to_rcpp_list(edi::ResultMap()
+		.set("params", par)
+		.set("b", par)
+		.set("beta_T", par[j_beta_T])
+		.set("se_beta_T", se_beta_T)
+		.set("ssq_b_j", ssq_b_j)
+		.set("vcov", vcov)
+		.set("score", score)
+		.set("observed_information", info)
+		.set("information", info)
+		.set("information_type", std::string("observed"))
+		.set("hessian", neg_info)
+		.set("converged", converged)
+		.set("neg_loglik", neg_ll)
+		.set("neg_ll", neg_ll)
+		.set("loglik", R_finite(neg_ll) ? -neg_ll : NA_REAL)
+		.set("fisher_information", info));
 }

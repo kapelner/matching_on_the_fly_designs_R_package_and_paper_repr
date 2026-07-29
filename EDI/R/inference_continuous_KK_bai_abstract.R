@@ -171,6 +171,7 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 		}
 	),
 	private = list(
+		is_a_bai_adjusted_t = function() TRUE,
 		convex_flag = NULL,
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)

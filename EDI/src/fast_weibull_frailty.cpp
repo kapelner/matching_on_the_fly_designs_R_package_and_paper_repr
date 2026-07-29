@@ -1,4 +1,5 @@
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <cmath>
 #include <limits>
@@ -340,10 +341,12 @@ List fast_weibull_frailty_cpp(
 	WeibullFrailtyLikelihood obj(y, dead, X, group_id, n_gh, max_abs_log_sigma);
 
 	Eigen::VectorXd par(n_par);
-	if (warm_start_params.isNotNull()) {
-		par = Rcpp::as<Eigen::VectorXd>(Rcpp::NumericVector(warm_start_params));
-	} else if (warm_start_beta.isNotNull()) {
-		VectorXd sb = as<VectorXd>(warm_start_beta);
+	std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
+	std::optional<Eigen::VectorXd> warm_start_beta_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_beta);
+	if (warm_start_params_opt.has_value()) {
+		par = *warm_start_params_opt;
+	} else if (warm_start_beta_opt.has_value()) {
+		const Eigen::VectorXd& sb = *warm_start_beta_opt;
 		if (sb.size() == n_par) {
 			par = sb;
 		} else if (sb.size() == p) {
@@ -362,12 +365,16 @@ List fast_weibull_frailty_cpp(
 		par[p + 1] = 0.0;
 	}
 
-	FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(
+		n_par,
+		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+		nullable_to_optional<Eigen::VectorXd>(fixed_values));
 
 	Eigen::MatrixXd info_start;
 	Eigen::MatrixXd* info_start_ptr = nullptr;
-	if (warm_start_fisher_info.isNotNull()) {
-		info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+	std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
+	if (warm_start_fisher_info_opt.has_value()) {
+		info_start = *warm_start_fisher_info_opt;
 		info_start_ptr = &info_start;
 	}
 
@@ -404,21 +411,21 @@ List fast_weibull_frailty_cpp(
 		}
 	}
 
-	return List::create(
-		Named("params")        = par,
-		Named("b")             = par.head(p),
-		Named("log_sigma_eps") = par[p],
-		Named("log_sigma_u")   = par[p + 1],
-		Named("ssq_b_T")       = ssq_b_T,
-		Named("vcov")          = vcov,
-		Named("score")         = score,
-		Named("observed_information") = information,
-		Named("information")   = information,
-		Named("information_type") = "observed",
-		Named("hessian")       = -information,
-		Named("converged")     = converged,
-		Named("neg_loglik")    = neg_ll,
-		Named("neg_ll")        = neg_ll,
-		Named("loglik")        = R_finite(neg_ll) ? -neg_ll : NA_REAL
-	);
+	Eigen::MatrixXd neg_information = -information;
+	return edi::to_rcpp_list(edi::ResultMap()
+		.set("params", par)
+		.set("b", par.head(p))
+		.set("log_sigma_eps", par[p])
+		.set("log_sigma_u", par[p + 1])
+		.set("ssq_b_T", ssq_b_T)
+		.set("vcov", vcov)
+		.set("score", score)
+		.set("observed_information", information)
+		.set("information", information)
+		.set("information_type", std::string("observed"))
+		.set("hessian", neg_information)
+		.set("converged", converged)
+		.set("neg_loglik", neg_ll)
+		.set("neg_ll", neg_ll)
+		.set("loglik", R_finite(neg_ll) ? -neg_ll : NA_REAL));
 }

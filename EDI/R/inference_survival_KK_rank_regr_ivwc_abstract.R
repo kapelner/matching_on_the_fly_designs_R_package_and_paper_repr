@@ -95,6 +95,7 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 		}
 	)),
 	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+		is_a_kk_survival_rank_regr_ivwc = function() TRUE,
 		best_X_colnames_matched = NULL,
 		best_X_colnames_reservoir = NULL,
 		max_abs_reasonable_coef = 1e4,

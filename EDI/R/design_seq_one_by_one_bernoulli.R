@@ -9,6 +9,8 @@
 DesignSeqOneByOneBernoulli = R6::R6Class("DesignSeqOneByOneBernoulli",
 	inherit = DesignSeqOneByOne,
 	public = list(
+		#' @description Characterization: this is a Bernoulli-randomized design.
+		is_a_bernoulli_capable = function() TRUE,
 		#' @description Initialize a Bernoulli sequential experimental design
 		#'
 		#' @param  response_type 	The data type of response values which must be one of the following:

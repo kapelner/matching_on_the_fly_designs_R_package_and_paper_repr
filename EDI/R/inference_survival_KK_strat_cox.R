@@ -16,7 +16,7 @@
 #' @export
 InferenceSurvivalKKStratCoxPHIVWC = R6::R6Class("InferenceSurvivalKKStratCoxPHIVWC",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLik,
+	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
 	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
@@ -84,7 +84,6 @@ InferenceSurvivalKKStratCoxPHIVWC = R6::R6Class("InferenceSurvivalKKStratCoxPHIV
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
-		supports_likelihood_tests = function() FALSE,
 		max_abs_reasonable_coef = 1e4,
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
 		cox_design_candidates = function(w, X){

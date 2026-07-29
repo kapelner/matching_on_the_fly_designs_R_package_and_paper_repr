@@ -1,13 +1,14 @@
-#' Mixin for Approximate (Monte-Carlo) Bartlett-Corrected Likelihood-Ratio Inference
+#' Extension for Approximate (Monte-Carlo) Bartlett-Corrected Likelihood-Ratio Inference
 #'
-#' A Pattern-1 mixin (plain list with \code{$public} and \code{$private} slots)
-#' providing the generic Monte-Carlo Bartlett correction factor for the LR test,
-#' shared by every \code{InferenceParamBootstrap} family that already implements
-#' \code{simulate_under_lik_null()} for parametric-bootstrap LR calibration.
-#' Splice into a daughter class (in practice, just \code{InferenceParamBootstrap}
-#' itself, once) via
-#' \code{public = c(InferenceMixinBartlettApprox$public, list(...))} and
-#' \code{private = c(InferenceMixinBartlettApprox$private, list(...))}.
+#' A Pattern-1 file-split extension (plain list with \code{$public} and
+#' \code{$private} slots), spliced into exactly one class
+#' (\code{InferenceParamBootstrap}) -- not a reusable mixin. Provides the
+#' generic Monte-Carlo Bartlett correction factor for the LR test, for any
+#' family that already implements \code{simulate_under_lik_null()} for
+#' parametric-bootstrap LR calibration. Splice into
+#' \code{InferenceParamBootstrap} (the only host) via
+#' \code{public = c(InferenceExtBartlettApprox$public, list(...))} and
+#' \code{private = c(InferenceExtBartlettApprox$private, list(...))}.
 #'
 #' Depends on \code{private$run_param_bootstrap_replicates(...)} and
 #' \code{private$param_bootstrap_lr_extreme(...)}, both defined on
@@ -19,7 +20,7 @@
 #'
 #' @keywords internal
 #' @noRd
-InferenceMixinBartlettApprox = list(
+InferenceExtBartlettApprox = list(
 	public = list(),
 	private = list(
 		bartlett_factor_mc_min_usable_fraction = 0.2,

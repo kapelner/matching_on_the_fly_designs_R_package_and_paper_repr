@@ -96,6 +96,7 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 		}
 	)),
 	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+		is_a_kk_ordinal_clmm = function() TRUE,
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		supports_likelihood_tests = function() FALSE,
 		use_rcpp = TRUE,

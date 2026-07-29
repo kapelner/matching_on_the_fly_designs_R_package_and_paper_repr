@@ -1,0 +1,78 @@
+#ifndef EDI_RESULT_MAP_H
+#define EDI_RESULT_MAP_H
+
+// Rcpp-free core boundary: no <Rcpp.h> here, only Eigen types. Model-fitting
+// core functions build a ResultMap; the thin exported wrapper converts it to
+// an Rcpp::List via result_map_rcpp.h's to_rcpp_list(). See
+// package_metadata/sexp_removal_rcppeigen_conversion_spec.md.
+
+#include <RcppEigen.h>  // for Eigen::VectorXd/MatrixXd only -- not for SEXP use
+#include <string>
+#include <utility>
+#include <variant>
+#include <vector>
+
+namespace edi {
+
+// std::monostate represents R_NilValue / Python None (typed "not available").
+using ResultValue = std::variant<
+	std::monostate,
+	bool,
+	int,
+	double,
+	std::string,
+	Eigen::VectorXd,
+	Eigen::MatrixXd
+>;
+
+// Eigen expressions (e.g. par.head(p), a block, X.transpose() * y) are not
+// ResultValue themselves -- they're lazy expression templates. Materialize
+// them into a concrete VectorXd/MatrixXd at the point of insertion, which is
+// exactly the right place to do it (this is the R/Python boundary).
+template <typename Derived>
+inline ResultValue to_result_value(const Eigen::MatrixBase<Derived>& v) {
+	if constexpr (Derived::ColsAtCompileTime == 1 || Derived::RowsAtCompileTime == 1) {
+		return ResultValue{Eigen::VectorXd(v)};
+	} else {
+		return ResultValue{Eigen::MatrixXd(v)};
+	}
+}
+
+inline ResultValue to_result_value(ResultValue v) {
+	return v;
+}
+
+class ResultMap {
+public:
+	// Reserves up front so a chain of .set() calls doesn't pay for vector
+	// reallocations as it grows (observed field counts across the 33
+	// model-fitting files range 6-39; 100 is deliberately generous headroom
+	// for future growth, since a single reserve()'d allocation this size is
+	// negligible either way -- 20 vs 100 entries made no measurable
+	// difference in practice). This was NOT the dominant cost, though: most
+	// of the ResultMap-vs-List::create construction gap (~8.7us for a
+	// 13-field result) comes from a structural double-copy of Eigen-typed
+	// fields (to_result_value() copies into the variant, then
+	// to_rcpp_list()'s wrap() copies again into the SEXP) inherent to
+	// ResultMap's deliberate Rcpp-free two-stage design -- reserve() only
+	// recovers the reallocation share of that gap (~16% of it, measured).
+	// See package_metadata/perf_experiments_final.md TODO-130 follow-up.
+	ResultMap() { entries_.reserve(100); }
+
+	template <typename T>
+	ResultMap& set(std::string name, const T& value) {
+		entries_.emplace_back(std::move(name), to_result_value(value));
+		return *this;
+	}
+
+	const std::vector<std::pair<std::string, ResultValue>>& entries() const {
+		return entries_;
+	}
+
+private:
+	std::vector<std::pair<std::string, ResultValue>> entries_;
+};
+
+} // namespace edi
+
+#endif

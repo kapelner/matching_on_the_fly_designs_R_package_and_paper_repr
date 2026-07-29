@@ -14,6 +14,8 @@
 DesignFixedCluster = R6::R6Class("DesignFixedCluster",
 	inherit = DesignFixed,
 	public = list(
+		#' @description Characterization: this is a cluster-structured design.
+		is_a_cluster_capable = function() TRUE,
 		#' @description Initialize a cluster randomized fixed experimental design
 		#'
 		#' @param cluster_col 	The column name in the data that identifies the cluster for each subject.

@@ -1,4 +1,5 @@
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 using namespace Rcpp;
 using namespace Eigen;
 
@@ -136,7 +137,7 @@ static double cpoisson_combined_neg_loglik_cpp_impl(
 	if (p > 0) eta_r.noalias() += X_r * beta_xs;
 	loglik += (y_r.array() * eta_r.array() - eta_r.array().exp()).sum();
 	for (int i = 0; i < nR; ++i) {
-		loglik -= R::lgammafn(y_r[i] + 1.0);
+		loglik -= fast_lgamma(y_r[i] + 1.0);
 	}
 	return -loglik;
 }
@@ -256,12 +257,14 @@ SEXP fast_cpoisson_combined_with_var_cpp(
 
 	// ---- Initialise params -----------------------------------------------
 	VectorXd params = VectorXd::Zero(np);
-	
-	if (warm_start_params.isNotNull()) {
-		params = as<VectorXd>(warm_start_params);
+
+	auto warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
+	auto warm_start_beta_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_beta);
+	if (warm_start_params_opt.has_value()) {
+		params = *warm_start_params_opt;
 		if (params.size() != np) stop("warm_start_params size mismatch");
-	} else if (warm_start_beta.isNotNull()) {
-		VectorXd sb = as<VectorXd>(warm_start_beta);
+	} else if (warm_start_beta_opt.has_value()) {
+		VectorXd sb = *warm_start_beta_opt;
 		if (sb.size() == np) {
 			params = sb;
 		} else if (sb.size() == p + 1) {
@@ -272,7 +275,10 @@ SEXP fast_cpoisson_combined_with_var_cpp(
 		if (nR > 0) params[0] = std::log(std::max(1.0, y_r.mean()));
 	}
 
-	FixedParamSpec fixed_spec = make_fixed_param_spec(np, fixed_idx, fixed_values);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(
+		np,
+		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+		nullable_to_optional<Eigen::VectorXd>(fixed_values));
 	for (int k = 0; k < (int)fixed_spec.fixed_idx.size(); ++k) {
 		params[fixed_spec.fixed_idx[k]] = fixed_spec.fixed_values[k];
 	}
@@ -280,6 +286,7 @@ SEXP fast_cpoisson_combined_with_var_cpp(
 	VectorXd grad(np);
 	MatrixXd H(np, np);
 	bool converged = false;
+	auto warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
 
 	for (int iter = 0; iter < maxit; ++iter) {
 		const double  beta_0  = params[0];
@@ -289,8 +296,8 @@ SEXP fast_cpoisson_combined_with_var_cpp(
 		grad.setZero();
 		H.setZero();
 
-        if (iter == 0 && warm_start_fisher_info.isNotNull()) {
-            H = as<MatrixXd>(warm_start_fisher_info);
+        if (iter == 0 && warm_start_fisher_info_opt.has_value()) {
+            H = *warm_start_fisher_info_opt;
             if (H.rows() != np || H.cols() != np) Rcpp::stop("warm_start_fisher_info must be a (p+2) x (p+2) matrix");
             
             // Still need to compute gradient
@@ -388,11 +395,10 @@ SEXP fast_cpoisson_combined_with_var_cpp(
 	}
 
 	if (estimate_only) {
-		return List::create(
-			Named("b")         = params,
-			Named("params")    = params,
-			Named("converged") = converged
-		);
+		return edi::to_rcpp_list(edi::ResultMap()
+			.set("b", params)
+			.set("params", params)
+			.set("converged", converged));
 	}
 
 	// ---- Extract Var(beta_T) from H^{-1}[1,1] (1-based index 2) ---------
@@ -406,19 +412,19 @@ SEXP fast_cpoisson_combined_with_var_cpp(
 	double ssq_b_j = (np >= 2 && free_2 > 0) ? compute_diagonal_inverse_entry(info_free, free_2) : NA_REAL;
 	double neg_loglik = cpoisson_combined_neg_loglik_cpp_impl(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params);
 
-	return List::create(
-		Named("b")         = params,
-		Named("params")    = params,
-		Named("ssq_b_j")   = ssq_b_j,
-		Named("score")     = score,
-		Named("observed_information") = info,
-		Named("fisher_information") = info,
-		Named("information") = info,
-		Named("information_type") = "fisher",
-		Named("hessian")   = -info,
-		Named("neg_loglik") = neg_loglik,
-		Named("neg_ll")    = neg_loglik,
-		Named("loglik")    = R_finite(neg_loglik) ? -neg_loglik : NA_REAL,
-		Named("converged") = converged
-	);
+	Eigen::MatrixXd neg_info = -info;
+	return edi::to_rcpp_list(edi::ResultMap()
+		.set("b", params)
+		.set("params", params)
+		.set("ssq_b_j", ssq_b_j)
+		.set("score", score)
+		.set("observed_information", info)
+		.set("fisher_information", info)
+		.set("information", info)
+		.set("information_type", std::string("fisher"))
+		.set("hessian", neg_info)
+		.set("neg_loglik", neg_loglik)
+		.set("neg_ll", neg_loglik)
+		.set("loglik", R_finite(neg_loglik) ? -neg_loglik : NA_REAL)
+		.set("converged", converged));
 }

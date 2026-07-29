@@ -1,4 +1,5 @@
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <vector>
 #include <numeric>
@@ -241,19 +242,19 @@ struct CoxFitResult {
 
 CoxFitResult cox_newton_raphson(
     const std::vector<CoxData>& strata_data,
-    Nullable<NumericVector> warm_start_beta,
+    std::optional<Eigen::VectorXd> warm_start_beta,
     bool smart_cold_start,
     const FixedParamSpec& fixed_spec,
     bool estimate_only,
     int maxit,
     double tol,
-    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt)
 {
     if (strata_data.empty()) return CoxFitResult();
     const int p = (int)strata_data[0].p;
     Eigen::VectorXd beta = Eigen::VectorXd::Zero(p);
-    if (warm_start_beta.isNotNull()) {
-        NumericVector sb(warm_start_beta);
+    if (warm_start_beta.has_value()) {
+        const Eigen::VectorXd& sb = *warm_start_beta;
         for (int q = 0; q < p; ++q) beta[q] = sb[q];
     } else if (smart_cold_start) {
         int total_n = 0;
@@ -300,8 +301,8 @@ CoxFitResult cox_newton_raphson(
         old_ll = ll;
 
         Eigen::MatrixXd H;
-        if (iter == 0 && warm_start_fisher_info.isNotNull()) {
-            H = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        if (iter == 0 && warm_start_fisher_info.has_value()) {
+            H = *warm_start_fisher_info;
             if (H.rows() != p || H.cols() != p) {
                 H = total_hess;
             }
@@ -405,19 +406,19 @@ public:
 
 CoxFitResult cox_lbfgs(
     const std::vector<CoxData>& strata_data,
-    Nullable<NumericVector> warm_start_beta,
+    std::optional<Eigen::VectorXd> warm_start_beta,
     bool smart_cold_start,
     const FixedParamSpec& fixed_spec,
     bool estimate_only,
     int maxit,
     double tol,
-    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt)
 {
     if (strata_data.empty()) return CoxFitResult();
     const int p = (int)strata_data[0].p;
     Eigen::VectorXd par = Eigen::VectorXd::Zero(p);
-    if (warm_start_beta.isNotNull()) {
-        NumericVector sb(warm_start_beta);
+    if (warm_start_beta.has_value()) {
+        const Eigen::VectorXd& sb = *warm_start_beta;
         for (int q = 0; q < p; ++q) par[q] = sb[q];
     } else if (smart_cold_start) {
         int total_n = 0;
@@ -437,8 +438,8 @@ CoxFitResult cox_lbfgs(
     StratifiedCoxObjective obj(strata_data, p);
     Eigen::MatrixXd info_start;
     Eigen::MatrixXd* info_start_ptr = nullptr;
-    if (warm_start_fisher_info.isNotNull()) {
-        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+    if (warm_start_fisher_info.has_value()) {
+        info_start = *warm_start_fisher_info;
         info_start_ptr = &info_start;
     }
 
@@ -467,14 +468,14 @@ CoxFitResult cox_lbfgs(
 
 CoxFitResult cox_fit(
     const std::vector<CoxData>& strata_data,
-    Nullable<NumericVector> warm_start_beta,
+    std::optional<Eigen::VectorXd> warm_start_beta,
     bool smart_cold_start,
     const FixedParamSpec& fixed_spec,
     bool estimate_only,
     int maxit,
     double tol,
     const std::string& optimization_alg,
-    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue)
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt)
 {
     if (optimization_alg == "lbfgs")
         return cox_lbfgs(strata_data, warm_start_beta, smart_cold_start, fixed_spec, estimate_only, maxit, tol);
@@ -635,14 +636,33 @@ List fast_coxph_regression_prebuilt_cpp(
     const std::vector<CoxData>& strata_data = *data_ptr;
     if (strata_data.empty()) return List::create();
     const int p = strata_data[0].p;
-    FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
-    CoxFitResult fit = cox_fit(strata_data, warm_start_beta, smart_cold_start, fixed_spec, estimate_only, maxit, tol, optimization_alg, warm_start_fisher_info);
-    NumericVector coef_r(p);
-    for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        p,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
+    CoxFitResult fit = cox_fit(
+        strata_data,
+        nullable_to_optional<Eigen::VectorXd>(warm_start_beta),
+        smart_cold_start, fixed_spec, estimate_only, maxit, tol, optimization_alg,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
+    Eigen::Map<const Eigen::VectorXd> coef_r(fit.beta.data(), p);
     if (estimate_only) {
-        return List::create(_["coefficients"] = coef_r, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat, _["gradient_norm"] = fit.gradient_norm);
+        return edi::to_rcpp_list(edi::ResultMap()
+            .set("coefficients", coef_r)
+            .set("converged", fit.converged)
+            .set("neg_ll", fit.neg_ll)
+            .set("iterations", fit.iterations)
+            .set("fisher_information", fit.hess_mat)
+            .set("gradient_norm", fit.gradient_norm));
     }
-    return List::create(_["coefficients"] = coef_r, _["vcov"] = fit.vcov, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat, _["gradient_norm"] = fit.gradient_norm);
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("coefficients", coef_r)
+        .set("vcov", fit.vcov)
+        .set("converged", fit.converged)
+        .set("neg_ll", fit.neg_ll)
+        .set("iterations", fit.iterations)
+        .set("fisher_information", fit.hess_mat)
+        .set("gradient_norm", fit.gradient_norm));
 }
 
 // [[Rcpp::export]]
@@ -658,17 +678,36 @@ List fast_coxph_regression_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& 
                                std::string optimization_alg = "newton_raphson",
                                Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     int p = (int)X.cols();
-    FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        p,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
     std::vector<CoxData> strata_data;
     strata_data.emplace_back(y, dead, X);
-    CoxFitResult fit = cox_fit(strata_data, warm_start_beta, smart_cold_start, fixed_spec, estimate_only, maxit, tol, optimization_alg, warm_start_fisher_info);
-    NumericVector coef_r(p);
-    for (int q = 0; q < p; ++q) coef_r[q] = fit.beta[q];
+    CoxFitResult fit = cox_fit(
+        strata_data,
+        nullable_to_optional<Eigen::VectorXd>(warm_start_beta),
+        smart_cold_start, fixed_spec, estimate_only, maxit, tol, optimization_alg,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
+    Eigen::Map<const Eigen::VectorXd> coef_r(fit.beta.data(), p);
     if (estimate_only) {
-        return List::create(_["coefficients"] = coef_r, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat, _["gradient_norm"] = fit.gradient_norm);
+        return edi::to_rcpp_list(edi::ResultMap()
+            .set("coefficients", coef_r)
+            .set("converged", fit.converged)
+            .set("neg_ll", fit.neg_ll)
+            .set("iterations", fit.iterations)
+            .set("fisher_information", fit.hess_mat)
+            .set("gradient_norm", fit.gradient_norm));
     }
     Eigen::MatrixXd vcov_mat = (cluster.isNotNull()) ? compute_robust_vcov(strata_data, fit.beta, fit.vcov, std::vector<int>(IntegerVector(cluster).begin(), IntegerVector(cluster).end())) : fit.vcov;
-    return List::create(_["coefficients"] = coef_r, _["vcov"] = vcov_mat, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat, _["gradient_norm"] = fit.gradient_norm);
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("coefficients", coef_r)
+        .set("vcov", vcov_mat)
+        .set("converged", fit.converged)
+        .set("neg_ll", fit.neg_ll)
+        .set("iterations", fit.iterations)
+        .set("fisher_information", fit.hess_mat)
+        .set("gradient_norm", fit.gradient_norm));
 }
 
 // [[Rcpp::export]]
@@ -689,7 +728,10 @@ List fast_stratified_coxph_regression_cpp(
 {
     const int n = (int)y.size();
     const int p = (int)X.cols();
-    FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        p,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
 
     // Efficiently group by strata
     std::map<int, std::vector<int>> strata_map;
@@ -709,13 +751,30 @@ List fast_stratified_coxph_regression_cpp(
         strata_data.emplace_back(y_s, dead_s, X_s);
     }
 
-    CoxFitResult fit = cox_fit(strata_data, warm_start_beta, smart_cold_start, fixed_spec, estimate_only, maxit, tol, optimization_alg, warm_start_fisher_info);
-    NumericVector coef_r(p);
+    CoxFitResult fit = cox_fit(
+        strata_data,
+        nullable_to_optional<Eigen::VectorXd>(warm_start_beta),
+        smart_cold_start, fixed_spec, estimate_only, maxit, tol, optimization_alg,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
+    Eigen::VectorXd coef_r(p);
     for (int q = 0; q < p; ++q) coef_r[q] = (p > 0 && !fit.beta.empty()) ? fit.beta[q] : NA_REAL;
     if (estimate_only) {
-        return List::create(_["coefficients"] = coef_r, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat, _["gradient_norm"] = fit.gradient_norm);
+        return edi::to_rcpp_list(edi::ResultMap()
+            .set("coefficients", coef_r)
+            .set("converged", fit.converged)
+            .set("neg_ll", fit.neg_ll)
+            .set("iterations", fit.iterations)
+            .set("fisher_information", fit.hess_mat)
+            .set("gradient_norm", fit.gradient_norm));
     }
-    return List::create(_["coefficients"] = coef_r, _["vcov"] = fit.vcov, _["converged"] = fit.converged, _["neg_ll"] = fit.neg_ll, _["iterations"] = fit.iterations, _["fisher_information"] = fit.hess_mat, _["gradient_norm"] = fit.gradient_norm);
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("coefficients", coef_r)
+        .set("vcov", fit.vcov)
+        .set("converged", fit.converged)
+        .set("neg_ll", fit.neg_ll)
+        .set("iterations", fit.iterations)
+        .set("fisher_information", fit.hess_mat)
+        .set("gradient_norm", fit.gradient_norm));
 }
 
 // [[Rcpp::export]]
@@ -815,7 +874,7 @@ NumericVector compute_coxph_rand_bootstrap_cpp(
         }
         std::vector<CoxData> strata;
         strata.emplace_back(y_b, dead_b, X_b);
-        CoxFitResult fit = cox_fit(strata, R_NilValue, false, FixedParamSpec(),
+        CoxFitResult fit = cox_fit(strata, std::nullopt, false, FixedParamSpec(),
                                    true, 20, 1e-9, "newton_raphson");
         if (fit.converged && !fit.beta.empty() && std::isfinite(fit.beta[0]))
             out[b] = fit.beta[0];
@@ -892,7 +951,7 @@ NumericVector compute_coxph_rand_bootstrap_parallel_cpp(
 
             std::vector<CoxData> strata;
             strata.emplace_back(y_b, dead_b, X_b);
-            CoxFitResult fit = cox_newton_raphson(strata, R_NilValue, true, fspec,
+            CoxFitResult fit = cox_newton_raphson(strata, std::nullopt, true, fspec,
                                                   true, 20, 1e-6);
             if (fit.converged && !fit.beta.empty() && std::isfinite(fit.beta[0]))
                 res_ptr[b] = fit.beta[0];

@@ -76,11 +76,12 @@ InferenceMixinKKGLMMShared = list(
 		skip_glmm_pkg_check = FALSE,
 		max_abs_reasonable_coef = 1e4,
 		kk_glmm_engine = TRUE,
+		is_a_glmm_family = function() TRUE,
 		init_kk_glmm_shared = function(des_obj){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), private$glmm_response_type())
 			}
-			if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
+			if (!des_obj$is_a_kk_matching_capable()){
 				stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or DesignFixedBinaryMatch.")
 			}
 			if (inherits(des_obj, "DesignFixedBinaryMatch")){

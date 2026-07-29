@@ -1,4 +1,5 @@
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <cmath>
 #include <algorithm>
@@ -44,9 +45,9 @@ struct RobustModelResult {
 };
 
 RobustModelResult fast_robust_regression_internal(
-    const Eigen::Ref<const Eigen::MatrixXd>& X, 
-    const Eigen::Ref<const Eigen::VectorXd>& y, 
-    Nullable<NumericVector> warm_start_beta = R_NilValue,
+    const Eigen::Ref<const Eigen::MatrixXd>& X,
+    const Eigen::Ref<const Eigen::VectorXd>& y,
+    std::optional<Eigen::VectorXd> warm_start_beta = std::nullopt,
     bool smart_cold_start = true,
     std::string method = "MM",
     double c = 1.345, // Huber constant
@@ -54,10 +55,10 @@ RobustModelResult fast_robust_regression_internal(
     int maxit = 50,
     double tol = 1e-7,
     double scale_est = -1.0, // If negative, compute MAD
-    Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-    Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+    std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+    std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+    std::optional<Eigen::VectorXd> warm_start_weights = std::nullopt,
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt,
     bool estimate_only = false,
     int variance_j = 0
 ) {
@@ -86,9 +87,8 @@ RobustModelResult fast_robust_regression_internal(
 
     // 1. Initial estimate
     Eigen::VectorXd b_free;
-    if (warm_start_beta.isNotNull()) {
-        Eigen::VectorXd b_start = as<Eigen::VectorXd>(NumericVector(warm_start_beta));
-        b_start = apply_fixed_values(b_start, fixed_spec);
+    if (warm_start_beta.has_value()) {
+        Eigen::VectorXd b_start = apply_fixed_values(*warm_start_beta, fixed_spec);
         b_free = subset_vector(b_start, fixed_spec.free_idx);
     } else if (smart_cold_start) {
         Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(X_free);
@@ -150,8 +150,8 @@ RobustModelResult fast_robust_regression_internal(
         res.iterations = iter;
         
         // Update weights
-        if (iter == 1 && warm_start_weights.isNotNull()) {
-            Eigen::VectorXd ww = as<Eigen::VectorXd>(warm_start_weights);
+        if (iter == 1 && warm_start_weights.has_value()) {
+            const Eigen::VectorXd& ww = *warm_start_weights;
             if (ww.size() != n) stop("warm_start_weights must have length equal to nrow(X)");
             res.w = ww;
         } else {
@@ -168,8 +168,8 @@ RobustModelResult fast_robust_regression_internal(
 
         // Solve Weighted Least Squares
         Eigen::MatrixXd XtWX;
-        if (iter == 1 && warm_start_fisher_info.isNotNull()) {
-            Eigen::MatrixXd info_full = as<Eigen::MatrixXd>(warm_start_fisher_info);
+        if (iter == 1 && warm_start_fisher_info.has_value()) {
+            const Eigen::MatrixXd& info_full = *warm_start_fisher_info;
             if (info_full.rows() != p || info_full.cols() != p) stop("warm_start_fisher_info must be a p x p matrix");
             XtWX = subset_matrix(info_full, fixed_spec.free_idx, fixed_spec.free_idx);
         } else {
@@ -235,16 +235,26 @@ List fast_robust_regression_cpp(
     Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
     Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
 
-    RobustModelResult res = fast_robust_regression_internal(X, y, warm_start_beta, smart_cold_start, method, c, 4.685, maxit, tol, -1.0, fixed_idx, fixed_values, warm_start_weights, warm_start_fisher_info, estimate_only, j);
-    FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols(), fixed_idx, fixed_values);
-    
+    RobustModelResult res = fast_robust_regression_internal(
+        X, y,
+        nullable_to_optional<Eigen::VectorXd>(warm_start_beta),
+        smart_cold_start, method, c, 4.685, maxit, tol, -1.0,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        nullable_to_optional<Eigen::VectorXd>(warm_start_weights),
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+        estimate_only, j);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        X.cols(),
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
+
     if (estimate_only) {
-        return List::create(
-            Named("coefficients") = res.b,
-            Named("scale") = res.scale,
-            Named("converged") = res.converged,
-            Named("iterations") = res.iterations
-        );
+        return edi::to_rcpp_list(edi::ResultMap()
+            .set("coefficients", res.b)
+            .set("scale", res.scale)
+            .set("converged", res.converged)
+            .set("iterations", res.iterations));
     }
 
     if (!res.converged && res.XtWX.rows() == 0) {
@@ -304,14 +314,13 @@ List fast_robust_regression_cpp(
         }
     }
 
-    return List::create(
-        Named("coefficients") = res.b,
-        Named("scale") = res.scale,
-        Named("converged") = res.converged,
-        Named("iterations") = res.iterations,
-        Named("ssq_b_j") = ssq_j,
-        Named("fisher_information") = res.XtWX
-    );
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("coefficients", res.b)
+        .set("scale", res.scale)
+        .set("converged", res.converged)
+        .set("iterations", res.iterations)
+        .set("ssq_b_j", ssq_j)
+        .set("fisher_information", res.XtWX));
 }
 
 // [[Rcpp::export]]
@@ -379,10 +388,10 @@ NumericVector compute_robust_rand_bootstrap_parallel_cpp(
 
             RobustModelResult res = fast_robust_regression_internal(
                 X_b, y_b,
-                R_NilValue, true, method,
+                std::nullopt, true, method,
                 1.345, 4.685, 50, 1e-7, -1.0,
-                R_NilValue, R_NilValue,
-                R_NilValue, R_NilValue,
+                std::nullopt, std::nullopt,
+                std::nullopt, std::nullopt,
                 true, 0);
             if (res.b.size() > 1 && std::isfinite(res.b[1]))
                 res_ptr[b] = res.b[1];

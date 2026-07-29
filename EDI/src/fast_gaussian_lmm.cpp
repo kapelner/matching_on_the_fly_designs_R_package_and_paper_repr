@@ -405,24 +405,30 @@ List fast_gaussian_lmm_cpp(
 
     // Starting point
     Eigen::VectorXd par = make_start(dat);
-    if (warm_start_params.isNotNull()) {
-        NumericVector sp(warm_start_params);
+    std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
+    std::optional<Eigen::VectorXd> warm_start_beta_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_beta);
+    if (warm_start_params_opt.has_value()) {
+        const Eigen::VectorXd& sp = *warm_start_params_opt;
         if (sp.size() == p + 2)
             for (int i = 0; i < p + 2; ++i) par[i] = sp[i];
-    } else if (warm_start_beta.isNotNull()) {
-        VectorXd sb = as<VectorXd>(warm_start_beta);
+    } else if (warm_start_beta_opt.has_value()) {
+        const Eigen::VectorXd& sb = *warm_start_beta_opt;
         if (sb.size() == p + 2) {
             par = sb;
         } else if (sb.size() == p) {
             par.head(p) = sb;
         }
     }
-    FixedParamSpec fixed_spec = make_fixed_param_spec(p + 2, fixed_idx, fixed_values);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        p + 2,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
 
     Eigen::MatrixXd info_start;
     const Eigen::MatrixXd* info_start_ptr = nullptr;
-    if (warm_start_fisher_info.isNotNull()) {
-        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
+    if (warm_start_fisher_info_opt.has_value()) {
+        info_start = *warm_start_fisher_info_opt;
         info_start_ptr = &info_start;
     }
 

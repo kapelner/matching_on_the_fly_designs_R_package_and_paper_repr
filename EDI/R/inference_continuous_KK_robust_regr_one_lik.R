@@ -23,18 +23,21 @@ InferenceContinKKRobustRegrOneLik = R6::R6Class("InferenceContinKKRobustRegrOneL
 		#'   the formula from the design object is used and its pre-computed design matrix is
 		#'   reused. If a formula is provided, a new design matrix is constructed from the
 		#'   design's imputed covariates.
+		#' @param use_rcpp Logical. If \code{TRUE} (default), use the internal Rcpp IRLS
+		#'   robust-regression kernel. Set \code{FALSE} to fall back to \pkg{MASS}.
 		#' @param verbose  		Whether to print progress messages.
-		initialize = function(des_obj, model_formula = NULL, method = "MM", maxit = NULL, acc = NULL, start_with_ols = TRUE, verbose = FALSE){
+		initialize = function(des_obj, model_formula = NULL, method = "MM", maxit = NULL, acc = NULL, start_with_ols = TRUE, use_rcpp = TRUE, verbose = FALSE){
 			if (should_run_asserts()) {
 				assertResponseType(des_obj$get_response_type(), "continuous")
 				assertChoice(method, c("M", "MM"))
 				if (!is.null(maxit)) assertCount(maxit, positive = TRUE)
 				if (!is.null(acc)) assertNumeric(acc, lower = .Machine$double.xmin, upper = 1)
 				assertFlag(start_with_ols)
+				assertFlag(use_rcpp)
 				assertFormula(model_formula, null.ok = TRUE)
 			}
 			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
+				if (!des_obj$is_a_kk_matching_capable()){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}
@@ -42,12 +45,13 @@ InferenceContinKKRobustRegrOneLik = R6::R6Class("InferenceContinKKRobustRegrOneL
 			if (should_run_asserts()) {
 				assertNoCensoring(private$any_censoring)
 			}
-			
-			
+
+
 			private$rlm_method = method
 			private$rlm_maxit = maxit
 			private$rlm_acc = acc
 			private$rlm_start_with_ols = start_with_ols
+			private$use_rcpp = use_rcpp
 		},
 		#' @description Returns the combined robust-regression estimate of the treatment effect.
 		#' @param estimate_only If TRUE, skip variance component calculations and use
@@ -146,6 +150,7 @@ InferenceContinKKRobustRegrOneLik = R6::R6Class("InferenceContinKKRobustRegrOneL
 		rlm_maxit = NULL,
 		rlm_acc = NULL,
 		rlm_start_with_ols = TRUE,
+		use_rcpp = TRUE,
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps){
 			preserve = if (is.null(permutations$m_mat)) c("kk_robust_combined_reduced_design") else character()
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, zero_one_logit_clamp = zero_one_logit_clamp, preserve_cache_keys = preserve)
@@ -205,6 +210,38 @@ InferenceContinKKRobustRegrOneLik = R6::R6Class("InferenceContinKKRobustRegrOneL
 		fit_rlm = function(X, y, j_treat, estimate_only = FALSE){
 			if (nrow(X) <= ncol(X)) return(NULL)
 			ctrl = private$resolve_rlm_control(X)
+			if (private$use_rcpp) {
+				method_to_try = if (estimate_only || isTRUE(private$rlm_force_M)) "M" else private$rlm_method
+				start_coef = NULL
+				if (isTRUE(private$rlm_start_with_ols)) {
+					start_coef = tryCatch(as.numeric(stats::coef(stats::lm.fit(x = X, y = y))), error = function(e) NULL)
+					if (!is.null(start_coef) && (length(start_coef) != ncol(X) || any(!is.finite(start_coef)))) {
+						start_coef = NULL
+					}
+				}
+				fit = tryCatch(
+					fast_robust_regression_cpp(
+						X = X,
+						y = y,
+						warm_start_beta = start_coef,
+						smart_cold_start = is.null(start_coef),
+						method = method_to_try,
+						j = j_treat,
+						maxit = ctrl$maxit,
+						tol = ctrl$acc,
+						estimate_only = estimate_only
+					),
+					error = function(e) NULL
+				)
+				if (is.null(fit)) return(NULL)
+				coef_vec = as.numeric(fit$coefficients)
+				if (length(coef_vec) < j_treat || !is.finite(coef_vec[j_treat])) return(NULL)
+				beta = coef_vec[j_treat]
+				if (estimate_only) return(list(beta = beta, se = NA_real_, mod = NULL))
+				se = if (is.finite(fit$ssq_b_j) && fit$ssq_b_j > 0) sqrt(fit$ssq_b_j) else NA_real_
+				if (!is.finite(se)) return(NULL)
+				return(list(beta = beta, se = se, mod = fit))
+			}
 			run_rlm = function(method, init = NULL){
 				nonconverged = FALSE
 				tryCatch({
@@ -354,7 +391,7 @@ InferenceContinKKRobustRegrOneLik = R6::R6Class("InferenceContinKKRobustRegrOneL
 			private$cached_values$beta_hat_T   = fit$beta
 			if (!estimate_only) {
 				private$cached_values$s_beta_hat_T = fit$se
-				if (!is.null(fit$mod)) {
+				if (!is.null(fit$mod) && inherits(fit$mod, "rlm")) {
 					private$cached_values$full_coefficients = stats::coef(fit$mod)
 					private$cached_values$full_vcov = tryCatch(stats::vcov(fit$mod), error = function(e) NULL)
 				}
@@ -411,6 +448,35 @@ InferenceContinKKRobustRegrOneLik = R6::R6Class("InferenceContinKKRobustRegrOneL
 			reduced = private$reduce_design_matrix_once(X_comb, j_treat, cache_key = "kk_robust_combined_reduced_design_weighted")
 			X_comb = reduced$X
 			j_treat = reduced$j_treat
+			if (private$use_rcpp) {
+				# MASS::rlm's default wt.method = "inv.var" transforms (X, y) by sqrt(weight)
+				# and runs ordinary (unweighted) M-estimation on the transformed data; this
+				# reproduces that exactly using the existing unweighted C++ IRLS kernel.
+				sw = sqrt(w_comb)
+				Xs = X_comb * sw
+				ys = as.numeric(y_comb * sw)
+				fit_cpp = tryCatch(
+					fast_robust_regression_cpp(X = Xs, y = ys, method = "M", j = j_treat, maxit = 20L, tol = 1e-4, estimate_only = estimate_only),
+					error = function(e) NULL
+				)
+				if (!is.null(fit_cpp)) {
+					coef_vec_cpp = as.numeric(fit_cpp$coefficients)
+					if (length(coef_vec_cpp) >= j_treat && is.finite(coef_vec_cpp[j_treat])) {
+						beta = coef_vec_cpp[j_treat]
+						if (estimate_only) return(beta)
+						se = NA_real_
+						df = nrow(X_comb) - ncol(X_comb)
+						if (df > 0) {
+							post_fit = tryCatch(ols_hc2_post_fit_cpp(Xs, ys, coef_vec_cpp, j_treat), error = function(e) NULL)
+							if (!is.null(post_fit)) {
+								se_val = as.numeric(post_fit$std_err[j_treat])
+								if (is.finite(se_val) && se_val > 0) se = se_val
+							}
+						}
+						return(list(beta = beta, se = se))
+					}
+				}
+			}
 			fit = tryCatch(
 				suppressWarnings(MASS::rlm(x = X_comb, y = y_comb, weights = w_comb, method = "M", maxit = 20L, acc = 1e-4)),
 				error = function(e) NULL

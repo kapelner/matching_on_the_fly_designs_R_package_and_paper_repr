@@ -153,3 +153,18 @@ test_that("ordinal KK GEE wrapper matches direct multgee backend fit", {
 	expect_equal(est, as.numeric(beta_ref[j_treat]), tolerance = 1e-8)
 	expect_equal(se, se_ref, tolerance = 1e-8)
 })
+
+test_that("ordinal KK GEE randomization p-value is estimable for >2-level responses", {
+	skip_if_not_installed("multgee")
+	skip_if_not_installed("geepack")
+	set.seed(20260423)
+
+	des <- make_kk_design_for_gee_test("ordinal", n_pairs = 20L, n_single = 10L)
+	des$add_all_subject_responses(simulate_kk_response_for_gee_test(des, "ordinal"))
+
+	inf <- InferenceOrdinalKKGEE$new(des, verbose = FALSE)
+	pval <- inf$compute_rand_two_sided_pval(r = 11, show_progress = FALSE)
+
+	expect_true(is.finite(pval))
+	expect_true(pval >= 0 && pval <= 1)
+})

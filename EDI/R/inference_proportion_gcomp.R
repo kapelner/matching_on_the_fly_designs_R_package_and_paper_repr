@@ -346,6 +346,7 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 		}
 	),
 	private = list(
+		is_a_prop_gcomp = function() TRUE,
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$md

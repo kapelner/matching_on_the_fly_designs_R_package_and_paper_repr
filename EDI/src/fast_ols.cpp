@@ -1,4 +1,5 @@
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 
 using namespace Rcpp;
@@ -6,8 +7,8 @@ using namespace Rcpp;
 // Internal pure C++ logic
 ModelResult fast_ols_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
                               const Eigen::Ref<const Eigen::VectorXd>& y,
-                              Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-                              Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                              std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+                              std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
                               bool estimate_only = false) {
     const int n = X.rows();
     const int p = X.cols();
@@ -72,8 +73,13 @@ List fast_ols_cpp(SEXP X_sexp, SEXP y_sexp,
     NumericVector y_r(y_sexp);
     Eigen::Map<const Eigen::MatrixXd> X(X_r.begin(), X_r.nrow(), X_r.ncol());
     Eigen::Map<const Eigen::VectorXd> y(y_r.begin(), y_r.size());
-    ModelResult res = fast_ols_internal(X, y, fixed_idx, fixed_values, true);
-    return List::create(Named("b") = res.b);
+    ModelResult res = fast_ols_internal(
+        X, y,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        true
+    );
+    return edi::to_rcpp_list(edi::ResultMap().set("b", res.b));
 }
 
 // [[Rcpp::export]]
@@ -87,7 +93,11 @@ List fast_ols_with_var_cpp(SEXP X_sexp, SEXP y_sexp,
     Eigen::Map<const Eigen::VectorXd> y_in(y_r.begin(), y_r.size());
     const int n = X.rows();
     const int p = X.cols();
-    FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        p,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values)
+    );
     const int p_free = fixed_spec.free_idx.size();
 
     Eigen::VectorXd y_to_use = y_in;
@@ -125,14 +135,13 @@ List fast_ols_with_var_cpp(SEXP X_sexp, SEXP y_sexp,
             double ssq_j = compute_ssq(j - 1);
             double ssq_2 = (j == 2) ? ssq_j : compute_ssq(1);
 
-            return List::create(
-                Named("b") = beta,
-                Named("XtX") = XtX_free,
-                Named("ssq_b_j") = ssq_j,
-                Named("ssq_b_2") = ssq_2,
-                Named("sigma2_hat") = sigma2_hat,
-                Named("converged") = true
-            );
+            return edi::to_rcpp_list(edi::ResultMap()
+                .set("b", beta)
+                .set("XtX", XtX_free)
+                .set("ssq_b_j", ssq_j)
+                .set("ssq_b_2", ssq_2)
+                .set("sigma2_hat", sigma2_hat)
+                .set("converged", true));
         } else {
             Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(X);
             beta_free = qr.solve(y_to_use);
@@ -167,14 +176,13 @@ List fast_ols_with_var_cpp(SEXP X_sexp, SEXP y_sexp,
             int f_2 = (p >= 2) ? free_idx_of(1) : -1;
             double ssq_2 = (f_2 >= 0) ? ((f_2 == f_j) ? ssq_j : compute_ssq(f_2)) : NA_REAL;
 
-            return List::create(
-                Named("b") = beta,
-                Named("XtX") = expand_free_covariance(p, fixed_spec, XtX_free, false),
-                Named("ssq_b_j") = ssq_j,
-                Named("ssq_b_2") = ssq_2,
-                Named("sigma2_hat") = sigma2_hat,
-                Named("converged") = true
-            );
+            return edi::to_rcpp_list(edi::ResultMap()
+                .set("b", beta)
+                .set("XtX", expand_free_covariance(p, fixed_spec, XtX_free, false))
+                .set("ssq_b_j", ssq_j)
+                .set("ssq_b_2", ssq_2)
+                .set("sigma2_hat", sigma2_hat)
+                .set("converged", true));
         } else {
             Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(X_free);
             beta_free = qr.solve(y_to_use);
@@ -183,9 +191,8 @@ List fast_ols_with_var_cpp(SEXP X_sexp, SEXP y_sexp,
     }
 
     double sse = std::max(0.0, yTy - beta_free.dot(Xty_free));
-    return List::create(
-        Named("b") = beta,
-        Named("converged") = converged,
-        Named("sigma2_hat") = sse / (n - p_free)
-    );
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("b", beta)
+        .set("converged", converged)
+        .set("sigma2_hat", sse / (n - p_free)));
 }

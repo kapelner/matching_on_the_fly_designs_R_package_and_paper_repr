@@ -9,6 +9,9 @@
 # path: percentile (pval+ci, default/untyped call), symmetric (pval only), basic (ci only), wald (pval+ci),
 # bca (pval+ci), studentized (pval+ci, aka "bootstrap-t"). skip_bbt/skip_bbt_ci still apply uniformly to all 6 --
 # no per-flavor skip data is tracked yet.
+# m-out-of-n bootstrap and PRW subsampling are new nonparametric empirical-resampling
+# paths. They are intentionally not gated as SLOW until comprehensive results show
+# that a specific class/method path is too slow.
 # Optional per-row method overrides: always_numeric_methods, maybe_nonestimable_methods, slow_methods,
 # unsupported_methods. Values should match the comprehensive_tests.R function_run labels used below.
 
@@ -96,7 +99,7 @@ audit_classes = list(
   list(name="InferenceSurvivalKKWeibullMarginal",      section="Survival",  resp="surv", kk=TRUE,  types="none", skip_asymp=FALSE, skip_ci=FALSE,   skip_boot=FALSE, skip_bbt=FALSE, jack=TRUE, skip_rand=FALSE, rand_resp="csp", skip_rpv=FALSE, skip_rci=FALSE, rci_resp="surv", pboot=NA,    notes="InferenceAsymp; exposes generic asymp pval/CI but no direct compute_wald_* wrappers, so direct Wald cells are NTS"),
 
   # ── ORDINAL ───────────────────────────────────────────────────────────────────
-  list(name="InferenceOrdinalKKGEE",                    section="Ordinal", resp="ord", kk=TRUE,  types="wald", skip_asymp=FALSE, skip_ci=FALSE, skip_boot=FALSE, skip_bbt=FALSE, jack=TRUE,  skip_rand=FALSE, rand_resp="ordinal", skip_rpv=FALSE, skip_rci=FALSE, rci_resp="", pboot=NA,    notes="InferenceAsymp; rand/rci N/A for ordinal"),
+  list(name="InferenceOrdinalKKGEE",                    section="Ordinal", resp="ord", kk=TRUE,  types="wald", skip_asymp=FALSE, skip_ci=FALSE, skip_boot=FALSE, skip_bbt=FALSE, jack=TRUE,  skip_rand=FALSE, rand_resp="ordinal", skip_rpv=FALSE, skip_rci=FALSE, rci_resp="", pboot=NA,    notes="InferenceAsymp; compute_treatment_estimate_during_randomization_inference overridden to reuse ordLORgee fit (2026-07-28 fix: inherited mixin default routed through geeglm+binomial, which errors on >2-level responses and always returned NA)"),
   list(name="InferenceOrdinalKKGLMM",                   section="Ordinal", resp="ord", kk=TRUE,  types="full", skip_asymp=FALSE, skip_ci=FALSE, skip_boot=FALSE, skip_bbt=FALSE, jack=TRUE,  skip_rand=FALSE, rand_resp="ordinal", skip_rpv=FALSE, skip_rci=FALSE, rci_resp="", pboot=TRUE,  notes="InferenceParamBootstrap; simulate_under_lik_null added; supports=isTRUE(use_rcpp); BRT pval smoothed avg 317s slow"),
   list(name="InferenceOrdinalKKCLMM",                   section="Ordinal", resp="ord", kk=TRUE,  types="wald", skip_asymp=FALSE, skip_ci=FALSE, skip_boot=FALSE, skip_bbt=FALSE, jack=TRUE,  skip_rand=FALSE, rand_resp="ordinal", skip_rpv=FALSE, skip_rci=FALSE, rci_resp="", pboot=NA,    notes="AbstractKKOrdinalCLMM → AsympLik; supports_likelihood_tests=FALSE"),
   list(name="InferenceOrdinalKKCLMMProbit",             section="Ordinal", resp="ord", kk=TRUE,  types="wald", skip_asymp=FALSE, skip_ci=FALSE, skip_boot=FALSE, skip_bbt=FALSE, jack=TRUE,  skip_rand=FALSE, rand_resp="ordinal", skip_rpv=FALSE, skip_rci=FALSE, rci_resp="", pboot=NA,    notes="AbstractKKOrdinalCLMM → AsympLik"),
@@ -527,6 +530,18 @@ html_from_audit = function(classes, outfile = "path_audits.html") {
     if (isTRUE(r$skip_ci)) return(method_cell(r, method_id, "slow"))
     method_cell(r, method_id, "maybe")
   }
+  cell_mnboot_p = function(r, method_id) {
+    method_cell(r, method_id, "maybe")
+  }
+  cell_mnboot_c = function(r, method_id) {
+    method_cell(r, method_id, "maybe")
+  }
+  cell_prw_p = function(r, method_id) {
+    method_cell(r, method_id, "maybe")
+  }
+  cell_prw_c = function(r, method_id) {
+    method_cell(r, method_id, "maybe")
+  }
 
   # ── Bayesian bootstrap ──────────────────────────────────────────────────────
   cell_bbt_p = function(r, method_id) {
@@ -679,22 +694,23 @@ html_from_audit = function(classes, outfile = "path_audits.html") {
   # ── Four frozen header rows ──────────────────────────────────────────────────
   # Data cols: 14 (model-based, incl. 1 model "est", 1 log-rank "other", and the
   #            2-col "LR-Bart-app" + 2-col "LR-Bart-ex" pairs next to "LR")
-  #            + 2 (exact-other) + 5 (exact-rand) + 18 (npboot, incl. 10 for the 6 bayes flavors)
+  #            + 2 (exact-other) + 5 (exact-rand) + 22 (npboot, incl. 10 for the 6 bayes flavors
+  #                and 4 for m-out-of-n/PRW subsampling)
   #            + 5 (pboot: 3-col parametric-bootstrap-estimate [blank subheader, est/pval/ci]
-  #                + 2-col "LR" pval/ci) + 3 (jack, incl. 1 jackknife "est") + 9 (brt) = 56
-  NCOL = 57  # 1 (class) + 56 (data)
+  #                + 2-col "LR" pval/ci) + 3 (jack, incl. 1 jackknife "est") + 9 (brt) = 60
+  NCOL = 61  # 1 (class) + 60 (data)
   hdr = paste0(
-    # Row 0: meta-categories — Asymptotic (49) | Exact (7)
+    # Row 0: meta-categories — Asymptotic (53) | Exact (7)
     '<tr class="hdr0">',
       '<th rowspan="4" style="text-align:left">Inference Type</th>',
-      '<th colspan="49">Asymptotic</th>',
+      '<th colspan="53">Asymptotic</th>',
       '<th colspan="7">Exact</th>',
     '</tr>',
     # Row 1: categories
     '<tr class="hdr1">',
-      # Under Asymptotic (44)
+      # Under Asymptotic (53)
       '<th colspan="14">Model-Based</th>',
-      '<th colspan="18">Nonparam Boot</th>',
+      '<th colspan="22">Nonparam Boot</th>',
       '<th colspan="5">Param Boot</th>',
       '<th colspan="3">Jackknife</th>',
       '<th colspan="9">Boot-Rand</th>',
@@ -715,12 +731,15 @@ html_from_audit = function(classes, outfile = "path_audits.html") {
       '<th colspan="2">grad</th>',
       '<th colspan="1">other</th>',
       # Nonparam Boot: pctile(2) symm(1) basic(1) bca(2) stud(2) [classical, 8]
+      #                m-out-n(2) prw-sub(2) [alternative empirical-resampling, 4]
       #                bayes-pctile(2) bayes-symm(1) bayes-basic(1) bayes-wald(2) bayes-bca(2) bayes-stud(2) [bayes, 10]
       '<th colspan="2">pctile</th>',
       '<th colspan="1">symm</th>',
       '<th colspan="1">basic</th>',
       '<th colspan="2">bca</th>',
       '<th colspan="2">stud</th>',
+      '<th colspan="2">m-out-n</th>',
+      '<th colspan="2">PRW-sub</th>',
       '<th colspan="2">bayes-pctile</th>',
       '<th colspan="1">bayes-symm</th>',
       '<th colspan="1">bayes-basic</th>',
@@ -754,12 +773,14 @@ html_from_audit = function(classes, outfile = "path_audits.html") {
       '<th>pval</th><th>ci</th>',   # LR-Bart-ex
       '<th>pval</th><th>ci</th>',   # grad
       '<th>pval</th>',              # other (log-rank, pval only)
-      # Nonparam Boot (18)
+      # Nonparam Boot (22)
       '<th>pval</th><th>ci</th>',   # pctile
       '<th>pval</th>',               # symm (pval only)
       '<th>ci</th>',                 # basic (ci only)
       '<th>pval</th><th>ci</th>',   # bca
       '<th>pval</th><th>ci</th>',   # stud
+      '<th>pval</th><th>ci</th>',   # m-out-n
+      '<th>pval</th><th>ci</th>',   # PRW-sub
       '<th>pval</th><th>ci</th>',   # bayes-pctile
       '<th>pval</th>',               # bayes-symm (pval only)
       '<th>ci</th>',                 # bayes-basic (ci only)
@@ -803,12 +824,14 @@ html_from_audit = function(classes, outfile = "path_audits.html") {
         cell_likrat_bart_ex_p(r), cell_likrat_bart_ex_c(r),
         cell_ap(r,"grad"),  cell_ac(r,"grad"),
         cell_am_other_p(r),
-        # Nonparam Boot (18)
+        # Nonparam Boot (22)
         cell_bp(r, "compute_bootstrap_two_sided_pval"), cell_bc(r, "compute_bootstrap_confidence_interval"),        # pctile p + ci
         cell_bp(r, "compute_bootstrap_two_sided_pval_symmetric"),                                                   # symm p (no ci type)
         cell_bc(r, "compute_bootstrap_confidence_interval_basic"),                                                   # basic ci (no p type)
         cell_bp(r, "compute_bootstrap_two_sided_pval_bca"), cell_bc(r, "compute_bootstrap_confidence_interval_bca"), # bca p + ci
         cell_bst_p(r, "compute_bootstrap_two_sided_pval_studentized"), cell_bst_c(r, "compute_bootstrap_confidence_interval_studentized"), # stud p + ci
+        cell_mnboot_p(r, "compute_m_out_of_n_bootstrap_two_sided_pval"), cell_mnboot_c(r, "compute_m_out_of_n_bootstrap_confidence_interval"), # m-out-n p + ci
+        cell_prw_p(r, "compute_subsampling_two_sided_pval"), cell_prw_c(r, "compute_subsampling_confidence_interval"), # PRW subsampling p + ci
         cell_bbt_p(r, "compute_bayesian_bootstrap_two_sided_pval"), cell_bbt_c(r, "compute_bayesian_bootstrap_confidence_interval"),        # bayes-pctile p + ci
         cell_bbt_p(r, "compute_bayesian_bootstrap_two_sided_pval_symmetric"),                                                                  # bayes-symm p (no ci type)
         cell_bbt_c(r, "compute_bayesian_bootstrap_confidence_interval_basic"),                                                                  # bayes-basic ci (no p type)

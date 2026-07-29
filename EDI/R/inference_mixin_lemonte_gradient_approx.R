@@ -11,5 +11,7 @@
 #' @noRd
 InferenceMixinLemonteGradientApprox = list(
 	public = list(),
-	private = list()
+	private = list(
+		is_a_lemonte_gradient_approx = function() TRUE
+	)
 )

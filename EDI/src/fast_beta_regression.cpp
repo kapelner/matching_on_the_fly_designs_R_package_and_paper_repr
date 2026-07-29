@@ -1,4 +1,5 @@
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <Rmath.h>
 
@@ -9,12 +10,6 @@ namespace {
 struct DigammaFunctor {
 	double operator()(double x) const {
 		return fast_digamma(x);
-	}
-};
-
-struct TrigammaFunctor {
-	double operator()(double x) const {
-		return R::trigamma(x);
 	}
 };
 
@@ -125,8 +120,8 @@ public:
 		Eigen::VectorXd b = (1.0 - mu.array()) * phi;
 		Eigen::VectorXd dig_a = a.unaryExpr(DigammaFunctor());
 		Eigen::VectorXd dig_b = b.unaryExpr(DigammaFunctor());
-		Eigen::VectorXd tri_a = a.unaryExpr(TrigammaFunctor());
-		Eigen::VectorXd tri_b = b.unaryExpr(TrigammaFunctor());
+		Eigen::VectorXd tri_a = fast_trigamma_vec(a.array()).matrix();
+		Eigen::VectorXd tri_b = fast_trigamma_vec(b.array()).matrix();
 
 		double* H_data = H.data();
 		for (int i = 0; i < m_n; ++i) {
@@ -153,7 +148,7 @@ public:
 		}
 
 		double D = -m_weight_sum * fast_digamma(phi);
-		double D_phi = -m_weight_sum * R::trigamma(phi);
+		double D_phi = -m_weight_sum * fast_trigamma(phi);
 		for (int i = 0; i < m_n; ++i) {
 			double mui = mu[i];
 			double obs_weight = m_weights[i];
@@ -185,10 +180,10 @@ public:
 
 		Eigen::VectorXd a = mu.array() * phi;
 		Eigen::VectorXd b = (1.0 - mu.array()) * phi;
-		Eigen::VectorXd tri_a = a.unaryExpr(TrigammaFunctor());
-		Eigen::VectorXd tri_b = b.unaryExpr(TrigammaFunctor());
+		Eigen::VectorXd tri_a = fast_trigamma_vec(a.array()).matrix();
+		Eigen::VectorXd tri_b = fast_trigamma_vec(b.array()).matrix();
 
-		const double trigamma_phi = R::trigamma(phi);
+		const double trigamma_phi = fast_trigamma(phi);
 		double* H_data = H.data();
 		for (int i = 0; i < m_n; ++i) {
 			const double mui = mu[i];
@@ -223,10 +218,10 @@ ModelResult fast_beta_regression_internal(const Eigen::Ref<const Eigen::MatrixXd
                                         const Eigen::VectorXd* warm_start_beta = nullptr,
                                         bool smart_cold_start = true,
                                         double start_phi = 10.0,
-                                        Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-                                        Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                        std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+                                        std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
                                         std::string optimization_alg = "lbfgs",
-                                        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                        std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt,
                                         bool estimate_only = false) {
     int p = X.cols();
     ModelResult res;
@@ -255,11 +250,11 @@ ModelResult fast_beta_regression_internal(const Eigen::Ref<const Eigen::MatrixXd
     
     Eigen::MatrixXd H_start;
     const Eigen::MatrixXd* h_ptr = nullptr;
-    if (warm_start_fisher_info.isNotNull()) {
-        H_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+    if (warm_start_fisher_info.has_value()) {
+        H_start = *warm_start_fisher_info;
         h_ptr = &H_start;
     }
-    
+
     LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, 1000, 1e-6, optimization_alg, "lbfgs", 0, h_ptr);
     params = fit.params;
 
@@ -359,12 +354,19 @@ List fast_beta_regression_cpp(SEXP X_sexp,
 
     Eigen::VectorXd sb;
     Eigen::VectorXd* sb_ptr = nullptr;
-    if (warm_start_beta.isNotNull()) {
-        sb = as<Eigen::VectorXd>(warm_start_beta);
+    std::optional<Eigen::VectorXd> warm_start_beta_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_beta);
+    if (warm_start_beta_opt.has_value()) {
+        sb = *warm_start_beta_opt;
         sb_ptr = &sb;
     }
 
-    ModelResult fit = fast_beta_regression_internal(X, y, nullptr, sb_ptr, smart_cold_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only);
+    ModelResult fit = fast_beta_regression_internal(
+        X, y, nullptr, sb_ptr, smart_cold_start, start_phi,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+        estimate_only);
 
     Eigen::VectorXd params_full(fit.b.size() + 1);
     params_full.head(fit.b.size()) = fit.b;
@@ -373,13 +375,12 @@ List fast_beta_regression_cpp(SEXP X_sexp,
     Eigen::VectorXd dummy_grad(params_full.size());
     double neg_loglik = fun_neg_ll(params_full, dummy_grad);
 
-	return List::create(
-		Named("coefficients") = fit.b,
-		Named("phi") = fit.dispersion,
-		Named("neg_loglik") = neg_loglik,
-		Named("converged") = fit.converged,
-		Named("fisher_information") = fit.XtWX
-	);
+	return edi::to_rcpp_list(edi::ResultMap()
+		.set("coefficients", fit.b)
+		.set("phi", fit.dispersion)
+		.set("neg_loglik", neg_loglik)
+		.set("converged", fit.converged)
+		.set("fisher_information", fit.XtWX));
 }
 
 //' @title Fast Weighted Beta Regression (C++)
@@ -429,12 +430,19 @@ List fast_beta_regression_weighted_cpp(SEXP X_sexp,
 
     Eigen::VectorXd sb;
     Eigen::VectorXd* sb_ptr = nullptr;
-    if (warm_start_beta.isNotNull()) {
-        sb = as<Eigen::VectorXd>(warm_start_beta);
+    std::optional<Eigen::VectorXd> warm_start_beta_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_beta);
+    if (warm_start_beta_opt.has_value()) {
+        sb = *warm_start_beta_opt;
         sb_ptr = &sb;
     }
 
-    ModelResult fit = fast_beta_regression_internal(X, y, &weights_vec, sb_ptr, smart_cold_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only);
+    ModelResult fit = fast_beta_regression_internal(
+        X, y, &weights_vec, sb_ptr, smart_cold_start, start_phi,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+        estimate_only);
 
     Eigen::VectorXd params_full(fit.b.size() + 1);
     params_full.head(fit.b.size()) = fit.b;
@@ -443,13 +451,12 @@ List fast_beta_regression_weighted_cpp(SEXP X_sexp,
     Eigen::VectorXd dummy_grad(params_full.size());
     double neg_loglik = fun_neg_ll(params_full, dummy_grad);
 
-	return List::create(
-		Named("coefficients") = fit.b,
-		Named("phi") = fit.dispersion,
-		Named("neg_loglik") = neg_loglik,
-		Named("converged") = fit.converged,
-		Named("fisher_information") = fit.XtWX
-	);
+	return edi::to_rcpp_list(edi::ResultMap()
+		.set("coefficients", fit.b)
+		.set("phi", fit.dispersion)
+		.set("neg_loglik", neg_loglik)
+		.set("converged", fit.converged)
+		.set("fisher_information", fit.XtWX));
 }
 
 //' @title Fast Beta Regression with Variance (C++)
@@ -490,13 +497,22 @@ List fast_beta_regression_with_var_cpp(SEXP X_sexp,
 
     Eigen::VectorXd sb;
     Eigen::VectorXd* sb_ptr = nullptr;
-    if (warm_start_beta.isNotNull()) {
-        sb = as<Eigen::VectorXd>(warm_start_beta);
+    std::optional<Eigen::VectorXd> warm_start_beta_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_beta);
+    if (warm_start_beta_opt.has_value()) {
+        sb = *warm_start_beta_opt;
         sb_ptr = &sb;
     }
 
-    ModelResult fit = fast_beta_regression_internal(X, y, nullptr, sb_ptr, smart_cold_start, start_phi, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
-    FixedParamSpec fixed_spec = make_fixed_param_spec(X.cols() + 1, fixed_idx, fixed_values);
+    ModelResult fit = fast_beta_regression_internal(
+        X, y, nullptr, sb_ptr, smart_cold_start, start_phi,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        X.cols() + 1,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
     Eigen::MatrixXd H_free = subset_matrix(fit.XtWX, fixed_spec.free_idx, fixed_spec.free_idx);
 	Eigen::MatrixXd cov_free = H_free.inverse();
     Eigen::MatrixXd cov_mat = expand_free_covariance(X.cols() + 1, fixed_spec, cov_free, true);
@@ -509,13 +525,12 @@ List fast_beta_regression_with_var_cpp(SEXP X_sexp,
     Eigen::VectorXd dummy_grad(params_full.size());
     double neg_loglik = fun_neg_ll(params_full, dummy_grad);
 
-	return List::create(
-		Named("coefficients") = fit.b,
-		Named("phi") = fit.dispersion,
-		Named("neg_loglik") = neg_loglik,
-		Named("vcov") = cov_mat,
-		Named("std_errs") = se,
-        Named("converged") = fit.converged,
-        Named("fisher_information") = fit.XtWX
-		);
+	return edi::to_rcpp_list(edi::ResultMap()
+		.set("coefficients", fit.b)
+		.set("phi", fit.dispersion)
+		.set("neg_loglik", neg_loglik)
+		.set("vcov", cov_mat)
+		.set("std_errs", se)
+		.set("converged", fit.converged)
+		.set("fisher_information", fit.XtWX));
 	}

@@ -15,7 +15,7 @@
 #' @keywords internal
 InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLik,
+	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
 	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
@@ -82,8 +82,8 @@ InferenceAbstractKKLWACoxIVWC = R6::R6Class("InferenceAbstractKKLWACoxIVWC",
 		}
 	)),
 	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+		is_a_kk_lwa_cox_ivwc = function() TRUE,
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
-		supports_likelihood_tests = function() FALSE,
 		max_abs_reasonable_coef = 1e4,
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))

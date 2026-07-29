@@ -124,7 +124,277 @@
 InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 	lock_objects = FALSE,
 	inherit = InferenceRandCI,
-	public = list(
+	public = c(
+		InferenceExtMOutOfNBootstrap$public,
+		InferenceExtPRWSubsampling$public,
+		list(
+		#' @description Creates the m-out-of-n bootstrap distribution of the
+		#'   treatment-effect estimate.
+		#'
+		#' @param B Number of resamples. Default 501.
+		#' @param m Number of exchangeable resampling units drawn with replacement.
+		#'   If \code{NULL} (default), use the deterministic intermediate-size rule
+		#'   \code{floor(n_units^0.7)}, where \code{n_units} is the number of
+		#'   exchangeable units used by the design (observations, clusters, pairs, or
+		#'   matched sets). The resolved value must satisfy
+		#'   \code{max(5, p_eff + 2) <= m <= floor(n_units / 2)}.
+		#' @param show_progress A flag indicating whether a progress bar should be
+		#'   displayed.
+		#' @param debug If \code{TRUE}, return distribution diagnostics in addition
+		#'   to the resampled estimates.
+		#' @param bootstrap_type Optional empirical-resampling scheme. See
+		#'   \code{approximate_bootstrap_distribution_beta_hat_T()}.
+		#' @param scaling Scaling sequence for centered m-out-of-n pivots. The
+		#'   default \code{"sqrt_n"} uses \code{sqrt(m)} for the m-sample
+		#'   distribution and converts back to the full-sample scale using
+		#'   \code{sqrt(n_units)}.
+		#' @param center Centering convention for diagnostics and cache keys.
+		#'
+		#' @details The default \code{m = NULL} rule is a cheap deterministic
+		#'   intermediate sequence: \eqn{m \to \infty} and \eqn{m / n \to 0}, as
+		#'   required by the standard m-out-of-n bootstrap asymptotic setup
+		#'   (Bickel, Gotze, and van Zwet; Bickel and Sakov). The exponent 0.7 is a
+		#'   pragmatic interior point in \eqn{(0, 1)}; it is not a silver-bullet
+		#'   optimal choice. Use \code{select_optimal_m_out_of_n_bootstrap()} for
+		#'   data-adaptive minimum-volatility selection.
+		#'
+		#' @return A numeric vector of bootstrap estimates, or when
+		#'   \code{debug = TRUE}, a diagnostic list.
+		#'
+		#' @references Bickel, P. J., Gotze, F., and van Zwet, W. R. (1997).
+		#'   Resampling fewer than n observations: gains, losses, and remedies for
+		#'   losses. \emph{Statistica Sinica}.
+		#'
+		#' @references Bickel, P. J. and Sakov, A. (2008). On the choice of m in
+		#'   the m out of n bootstrap. \emph{The Annals of Statistics}.
+		approximate_m_out_of_n_bootstrap_distribution_beta_hat_T = function(B = 501, m = NULL, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL, scaling = "sqrt_n", center = "full_estimate"){
+			private$approximate_m_out_of_n_bootstrap_distribution_beta_hat_T_impl(B = B, m = m, show_progress = show_progress, debug = debug, bootstrap_type = bootstrap_type, scaling = scaling, center = center)
+		},
+		#' @description Computes a centered m-out-of-n bootstrap two-sided p-value.
+		#'
+		#' @param delta Null treatment effect. Default 0.
+		#' @param B Number of resamples. Default 501.
+		#' @param m Number of exchangeable units drawn with replacement. If
+		#'   \code{NULL} (default), use \code{floor(n_units^0.7)} subject to the
+		#'   validation bounds documented for
+		#'   \code{approximate_m_out_of_n_bootstrap_distribution_beta_hat_T()}.
+		#' @param type P-value type. Currently only \code{"centered"} is supported.
+		#' @param show_progress A flag indicating whether a progress bar should be
+		#'   displayed.
+		#' @param min_number_usable_samples Minimum number of finite resampled
+		#'   estimates required after filtering. Default 5.
+		#' @param bootstrap_type Optional empirical-resampling scheme.
+		#' @param scaling Scaling sequence for centered m-out-of-n pivots.
+		#'
+		#' @details The default \code{m = NULL} follows the intermediate-sequence
+		#'   convention from the m-out-of-n bootstrap literature:
+		#'   \eqn{m \to \infty} and \eqn{m / n \to 0}. The deterministic exponent
+		#'   0.7 is a first-pass default; for unstable paths prefer the
+		#'   minimum-volatility selector.
+		#'
+		#' @return A numeric two-sided p-value, or \code{NA_real_} if the path is
+		#'   non-estimable.
+		compute_m_out_of_n_bootstrap_two_sided_pval = function(delta = 0, B = 501, m = NULL, type = "centered", show_progress = TRUE, min_number_usable_samples = 5L, bootstrap_type = NULL, scaling = "sqrt_n"){
+			private$compute_m_out_of_n_bootstrap_two_sided_pval_impl(delta = delta, B = B, m = m, type = type, show_progress = show_progress, min_number_usable_samples = min_number_usable_samples, bootstrap_type = bootstrap_type, scaling = scaling)
+		},
+		#' @description Computes a basic m-out-of-n bootstrap confidence interval.
+		#'
+		#' @param alpha Significance level. Default 0.05.
+		#' @param B Number of resamples. Default 501.
+		#' @param m Number of exchangeable units drawn with replacement. If
+		#'   \code{NULL} (default), use \code{floor(n_units^0.7)} subject to the
+		#'   validation bounds documented for
+		#'   \code{approximate_m_out_of_n_bootstrap_distribution_beta_hat_T()}.
+		#' @param type Confidence-interval type. Currently only \code{"basic"} is
+		#'   supported.
+		#' @param show_progress A flag indicating whether a progress bar should be
+		#'   displayed.
+		#' @param min_number_usable_samples Minimum number of finite resampled
+		#'   estimates required after filtering. Default 5.
+		#' @param bootstrap_type Optional empirical-resampling scheme.
+		#' @param scaling Scaling sequence for centered m-out-of-n pivots.
+		#'
+		#' @details The \code{NULL} default is grounded in the standard m-out-of-n
+		#'   asymptotic condition \eqn{m \to \infty} and \eqn{m / n \to 0}. The
+		#'   minimum-volatility selector is available when a fixed deterministic
+		#'   exponent is too brittle for a specific estimator/design path.
+		#'
+		#' @return A length-2 numeric confidence interval, or
+		#'   \code{c(NA_real_, NA_real_)} if the path is non-estimable.
+		compute_m_out_of_n_bootstrap_confidence_interval = function(alpha = 0.05, B = 501, m = NULL, type = "basic", show_progress = TRUE, min_number_usable_samples = 5L, bootstrap_type = NULL, scaling = "sqrt_n"){
+			private$compute_m_out_of_n_bootstrap_confidence_interval_impl(alpha = alpha, B = B, m = m, type = type, show_progress = show_progress, min_number_usable_samples = min_number_usable_samples, bootstrap_type = bootstrap_type, scaling = scaling)
+		},
+		#' @description Selects an m-out-of-n bootstrap size by minimum volatility.
+		#'
+		#' @param B Number of resamples per candidate size. Default 251.
+		#' @param alpha Significance level for interval-width objectives.
+		#' @param m_pow_of_n_grid Candidate exponent grid used when
+		#'   \code{m_grid = NULL}. Defaults to \code{seq(0.5, 0.9, by = 0.05)}.
+		#' @param m_grid Optional explicit integer candidate sizes.
+		#' @param objective Selection objective. Currently \code{"ci_width"}.
+		#' @param target Target summary. Currently \code{"ci"}.
+		#' @param volatility_window Rolling window size used to measure local
+		#'   volatility across candidate sizes.
+		#' @param bootstrap_type Optional empirical-resampling scheme.
+		#' @param scaling Scaling sequence for centered m-out-of-n pivots.
+		#' @param show_progress A flag indicating whether a progress bar should be
+		#'   displayed.
+		#' @param min_finite_fraction Minimum finite-resample fraction required for a
+		#'   candidate size to be eligible.
+		#'
+		#' @details This implements the same minimum-volatility idea used in PTE's
+		#'   m-selection workflow: scan admissible intermediate sizes and choose a
+		#'   stable region of the target statistic rather than assuming one exponent
+		#'   is uniformly optimal.
+		#'
+		#' @return An \code{EDIMOutOfNBootstrapMSelection} list with the selected
+		#'   \code{m}, mapped exponent, candidate table, status, and reason.
+		select_optimal_m_out_of_n_bootstrap = function(B = 251, alpha = 0.05, m_pow_of_n_grid = seq(0.5, 0.9, by = 0.05), m_grid = NULL, objective = "ci_width", target = "ci", volatility_window = 3L, bootstrap_type = NULL, scaling = "sqrt_n", show_progress = TRUE, min_finite_fraction = 0.8){
+			private$select_optimal_m_out_of_n_bootstrap_impl(B = B, alpha = alpha, m_pow_of_n_grid = m_pow_of_n_grid, m_grid = m_grid, objective = objective, target = target, volatility_window = volatility_window, bootstrap_type = bootstrap_type, scaling = scaling, show_progress = show_progress, min_finite_fraction = min_finite_fraction)
+		},
+		#' @description Creates the Politis/Romano/Wolf subsampling distribution of
+		#'   the treatment-effect estimate.
+		#'
+		#' @param B Number of subsamples. Default 501.
+		#' @param b Number of exchangeable units drawn without replacement. If
+		#'   \code{NULL} (default), use the deterministic intermediate-size rule
+		#'   \code{floor(n_units^0.7)}, where \code{n_units} is the number of
+		#'   exchangeable units used by the design (observations, clusters, pairs, or
+		#'   matched sets). The resolved value must satisfy
+		#'   \code{max(5, p_eff + 2) <= b <= floor(n_units / 2)}.
+		#' @param show_progress A flag indicating whether a progress bar should be
+		#'   displayed.
+		#' @param debug If \code{TRUE}, return distribution diagnostics in addition
+		#'   to the subsampled estimates.
+		#' @param subsampling_type Optional empirical-resampling scheme. See
+		#'   \code{approximate_bootstrap_distribution_beta_hat_T()}.
+		#' @param scaling Scaling sequence for centered subsampling pivots. The
+		#'   default \code{"sqrt_n"} uses \code{sqrt(b)} for the subsample
+		#'   distribution and converts back to the full-sample scale using
+		#'   \code{sqrt(n_units)}.
+		#' @param center Centering convention for diagnostics and cache keys.
+		#'
+		#' @details The default \code{b = NULL} rule is a cheap deterministic
+		#'   intermediate sequence: \eqn{b \to \infty} and \eqn{b / n \to 0}, as
+		#'   required by the Politis, Romano, and Wolf subsampling framework. The
+		#'   exponent 0.7 is a pragmatic interior point in \eqn{(0, 1)}; it is not a
+		#'   universal optimum. Use \code{select_optimal_b_subsampling()} for
+		#'   data-adaptive minimum-volatility selection.
+		#'
+		#' @return A numeric vector of subsampled estimates, or when
+		#'   \code{debug = TRUE}, a diagnostic list.
+		#'
+		#' @references Politis, D. N., Romano, J. P., and Wolf, M. (1999).
+		#'   \emph{Subsampling}. Springer.
+		approximate_subsampling_distribution_beta_hat_T = function(B = 501, b = NULL, show_progress = TRUE, debug = FALSE, subsampling_type = NULL, scaling = "sqrt_n", center = "full_estimate"){
+			private$approximate_subsampling_distribution_beta_hat_T_impl(B = B, b = b, show_progress = show_progress, debug = debug, subsampling_type = subsampling_type, scaling = scaling, center = center)
+		},
+		#' @description Computes a centered PRW subsampling two-sided p-value.
+		#'
+		#' @param delta Null treatment effect. Default 0.
+		#' @param B Number of subsamples. Default 501.
+		#' @param b Number of exchangeable units drawn without replacement. If
+		#'   \code{NULL} (default), use \code{floor(n_units^0.7)} subject to the
+		#'   validation bounds documented for
+		#'   \code{approximate_subsampling_distribution_beta_hat_T()}.
+		#' @param type P-value type. Currently only \code{"centered"} is supported.
+		#' @param show_progress A flag indicating whether a progress bar should be
+		#'   displayed.
+		#' @param min_number_usable_samples Minimum number of finite subsampled
+		#'   estimates required after filtering. Default 5.
+		#' @param subsampling_type Optional empirical-resampling scheme.
+		#' @param scaling Scaling sequence for centered subsampling pivots.
+		#'
+		#' @details The default \code{b = NULL} follows the intermediate-sequence
+		#'   convention from the Politis/Romano/Wolf subsampling literature:
+		#'   \eqn{b \to \infty} and \eqn{b / n \to 0}. The deterministic exponent
+		#'   0.7 is a first-pass default; for unstable paths prefer the
+		#'   minimum-volatility selector.
+		#'
+		#' @return A numeric two-sided p-value, or \code{NA_real_} if the path is
+		#'   non-estimable.
+		compute_subsampling_two_sided_pval = function(delta = 0, B = 501, b = NULL, type = "centered", show_progress = TRUE, min_number_usable_samples = 5L, subsampling_type = NULL, scaling = "sqrt_n"){
+			private$compute_subsampling_two_sided_pval_impl(delta = delta, B = B, b = b, type = type, show_progress = show_progress, min_number_usable_samples = min_number_usable_samples, subsampling_type = subsampling_type, scaling = scaling)
+		},
+		#' @description Computes a basic PRW subsampling confidence interval.
+		#'
+		#' @param alpha Significance level. Default 0.05.
+		#' @param B Number of subsamples. Default 501.
+		#' @param b Number of exchangeable units drawn without replacement. If
+		#'   \code{NULL} (default), use \code{floor(n_units^0.7)} subject to the
+		#'   validation bounds documented for
+		#'   \code{approximate_subsampling_distribution_beta_hat_T()}.
+		#' @param type Confidence-interval type. Currently only \code{"basic"} is
+		#'   supported.
+		#' @param show_progress A flag indicating whether a progress bar should be
+		#'   displayed.
+		#' @param min_number_usable_samples Minimum number of finite subsampled
+		#'   estimates required after filtering. Default 5.
+		#' @param subsampling_type Optional empirical-resampling scheme.
+		#' @param scaling Scaling sequence for centered subsampling pivots.
+		#'
+		#' @details The \code{NULL} default is grounded in the standard
+		#'   Politis/Romano/Wolf asymptotic condition \eqn{b \to \infty} and
+		#'   \eqn{b / n \to 0}. The minimum-volatility selector is available when a
+		#'   fixed deterministic exponent is too brittle for a specific
+		#'   estimator/design path.
+		#'
+		#' @return A length-2 numeric confidence interval, or
+		#'   \code{c(NA_real_, NA_real_)} if the path is non-estimable.
+		compute_subsampling_confidence_interval = function(alpha = 0.05, B = 501, b = NULL, type = "basic", show_progress = TRUE, min_number_usable_samples = 5L, subsampling_type = NULL, scaling = "sqrt_n"){
+			private$compute_subsampling_confidence_interval_impl(alpha = alpha, B = B, b = b, type = type, show_progress = show_progress, min_number_usable_samples = min_number_usable_samples, subsampling_type = subsampling_type, scaling = scaling)
+		},
+		#' @description Selects a PRW subsampling size by minimum volatility.
+		#'
+		#' @param B Number of subsamples per candidate size. Default 251.
+		#' @param alpha Significance level for interval-width objectives.
+		#' @param b_pow_of_n_grid Candidate exponent grid used when
+		#'   \code{b_grid = NULL}. Defaults to \code{seq(0.5, 0.9, by = 0.05)}.
+		#' @param b_grid Optional explicit integer candidate sizes.
+		#' @param objective Selection objective. Currently \code{"ci_width"}.
+		#' @param target Target summary. Currently \code{"ci"}.
+		#' @param volatility_window Rolling window size used to measure local
+		#'   volatility across candidate sizes.
+		#' @param subsampling_type Optional empirical-resampling scheme.
+		#' @param scaling Scaling sequence for centered subsampling pivots.
+		#' @param show_progress A flag indicating whether a progress bar should be
+		#'   displayed.
+		#' @param min_finite_fraction Minimum finite-subsample fraction required for
+		#'   a candidate size to be eligible.
+		#'
+		#' @details This implements the same minimum-volatility idea used in PTE's
+		#'   m-selection workflow, applied to the PRW block/subsample-size choice:
+		#'   scan admissible intermediate sizes and choose a stable region of the
+		#'   target statistic rather than assuming one exponent is uniformly optimal.
+		#'
+		#' @return An \code{EDISubsamplingBSelection} list with the selected
+		#'   \code{b}, mapped exponent, candidate table, status, and reason.
+		select_optimal_b_subsampling = function(B = 251, alpha = 0.05, b_pow_of_n_grid = seq(0.5, 0.9, by = 0.05), b_grid = NULL, objective = "ci_width", target = "ci", volatility_window = 3L, subsampling_type = NULL, scaling = "sqrt_n", show_progress = TRUE, min_finite_fraction = 0.8){
+			private$select_optimal_b_subsampling_impl(B = B, alpha = alpha, b_pow_of_n_grid = b_pow_of_n_grid, b_grid = b_grid, objective = objective, target = target, volatility_window = volatility_window, subsampling_type = subsampling_type, scaling = scaling, show_progress = show_progress, min_finite_fraction = min_finite_fraction)
+		},
+		#' @description Computes PRW subsampling sensitivity over candidate sizes.
+		#'
+		#' @param B Number of subsamples per candidate size. Default 251.
+		#' @param alpha Significance level for interval-width objectives.
+		#' @param b_pow_of_n_grid Candidate exponent grid used when
+		#'   \code{b_grid = NULL}. Defaults to \code{seq(0.5, 0.9, by = 0.05)}.
+		#' @param b_grid Optional explicit integer candidate sizes.
+		#' @param objective Selection objective. Currently \code{"ci_width"}.
+		#' @param target Target summary. Currently \code{"ci"}.
+		#' @param volatility_window Rolling window size used to measure local
+		#'   volatility across candidate sizes.
+		#' @param subsampling_type Optional empirical-resampling scheme.
+		#' @param scaling Scaling sequence for centered subsampling pivots.
+		#' @param show_progress A flag indicating whether a progress bar should be
+		#'   displayed.
+		#' @param min_finite_fraction Minimum finite-subsample fraction required for
+		#'   a candidate size to be eligible. Defaults to 0 for sensitivity scans.
+		#'
+		#' @return An \code{EDISubsamplingSensitivity} list containing the candidate
+		#'   grid table without selecting a final \code{b}.
+		compute_subsampling_sensitivity = function(B = 251, alpha = 0.05, b_pow_of_n_grid = seq(0.5, 0.9, by = 0.05), b_grid = NULL, objective = "ci_width", target = "ci", volatility_window = 3L, subsampling_type = NULL, scaling = "sqrt_n", show_progress = TRUE, min_finite_fraction = 0){
+			private$compute_subsampling_sensitivity_impl(B = B, alpha = alpha, b_pow_of_n_grid = b_pow_of_n_grid, b_grid = b_grid, objective = objective, target = target, volatility_window = volatility_window, subsampling_type = subsampling_type, scaling = scaling, show_progress = show_progress, min_finite_fraction = min_finite_fraction)
+		},
 		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
 		#'   The resampling unit is design-specific (rows, within-strata rows, matched pairs plus
 		#'   reservoir, or clusters); see the class-level section \emph{Design-specific validity
@@ -690,8 +960,15 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 				ci
 			}
-	),
-	private = c(InferenceMixinBcaBootstrapCI$private, list(
+	)),
+	private = c(
+		InferenceExtBcaBootstrapCI$private,
+		InferenceExtExchangeableResamplingUnits$private,
+		InferenceExtMinimumVolatilitySelector$private,
+		InferenceExtMOutOfNBootstrap$private,
+		InferenceExtPRWSubsampling$private,
+		list(
+		is_a_non_param_bootstrap = function() TRUE,
 		# Cache for bootstrap distributions
 		boot_distr_cache = list(),
 		jack_distr_cache = list(),
@@ -840,6 +1117,10 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				worker_priv$des_obj = worker_des
 				worker_priv$des_obj_priv_int = worker_des_priv
 			}
+			bootstrap_subset_source = function(x) {
+				if (inherits(x, "data.table")) return(as.data.frame(x))
+				x
+			}
 			worker_priv$X = private$get_X()
 			list(
 				worker = worker,
@@ -848,8 +1129,8 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				base_fit_warm_start = private$fit_warm_start,
 				base_fit_warm_start_type = private$fit_warm_start_type,
 				base_fit_warm_start_fisher = private$fit_warm_start_fisher,
-				base_Xraw = if (!is.null(source_des_priv$Xraw)) source_des_priv$Xraw else NULL,
-				base_Ximp = if (!is.null(source_des_priv$Ximp)) source_des_priv$Ximp else NULL,
+				base_Xraw = if (!is.null(source_des_priv$Xraw)) bootstrap_subset_source(source_des_priv$Xraw) else NULL,
+				base_Ximp = if (!is.null(source_des_priv$Ximp)) bootstrap_subset_source(source_des_priv$Ximp) else NULL,
 				base_X = if (!is.null(private$X)) private$X else private$get_X(),
 				base_w = if (!is.null(source_des_priv$w)) as.numeric(source_des_priv$w) else NULL,
 				base_y = if (!is.null(source_des_priv$y)) source_des_priv$y else NULL,

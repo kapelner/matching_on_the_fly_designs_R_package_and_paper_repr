@@ -13,6 +13,8 @@
 DesignFixedBlockedCluster = R6::R6Class("DesignFixedBlockedCluster",
 	inherit = DesignFixed,
 	public = list(
+		#' @description Characterization: this is a cluster-structured design.
+		is_a_cluster_capable = function() TRUE,
 		#' @description Initialize a blocked and cluster randomized fixed experimental design
 		#'
 		#' @param strata_cols 	A character vector of column names to use for stratification (blocks).

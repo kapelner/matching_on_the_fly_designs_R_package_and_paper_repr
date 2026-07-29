@@ -601,6 +601,14 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 	is_any_inference_class = function(classes){
 		any(vapply(classes, function(cls) is(seq_des_inf, cls), logical(1)))
 	}
+	is_current_slow_path = function(paths){
+		any(vapply(paths, function(path){
+			identical(response_type, path$response_type) &&
+				identical(design_type, path$design_type) &&
+				identical(dataset_name, path$dataset_name) &&
+				identical(inference_result_label, path$inference_result_label)
+		}, logical(1)))
+	}
 	skip_bootstrap = is_any_inference_class(c(
 		"InferenceCountPoissonKKGEE",
 		"InferenceCountKKGLMM",
@@ -649,6 +657,28 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 	skip_brt_ci_all_slow        = is_any_inference_class(c("InferenceSurvivalGehanWilcox", "InferenceSurvivalWeibullRegr", "InferencePropBetaRegr", "InferencePropKKGEE"))  # all CI types avg >30s for listed paths; PropKKGEE BRT CI avg 37-43s at n=18
 	skip_brt_ci_smoothed_slow   = is_any_inference_class(c("InferenceAllSimpleWilcox", "InferencePropKKQuantileRegrOneLik"))  # smoothed CI avg 94s / 32s
 	skip_brt_ci_typed_slow      = is_any_inference_class(c("InferencePropKKQuantileRegrOneLik"))  # studentized CI avg 34s
+	# m-out-of-n / PRW slow skips from 20260729 comprehensive results, avg >30s.
+	# CI and p-value share the same distribution cache; once CI is skipped, p-value
+	# would be cold on the same slow path, so gate both calls.
+	skip_m_out_of_n_slow = is_current_slow_path(list(
+		list(response_type = "survival",   design_type = "KK21stepwise",     dataset_name = "diamonds", inference_result_label = "InferenceSurvivalKKClaytonCopulaOneLik [design_formula=~.]"),                         # CI avg 408.7s
+		list(response_type = "survival",   design_type = "FixedBinaryMatch", dataset_name = "diamonds", inference_result_label = "InferenceSurvivalKKClaytonCopulaOneLik [design_formula=~.]"),                         # CI avg 390.7s
+		list(response_type = "proportion", design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferencePropZeroOneInflatedBetaRegr (model_formula=~1) [design_formula=~1]"),          # CI avg 72.0s
+		list(response_type = "survival",   design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferenceSurvivalWeibullRegr (model_formula=~1) [design_formula=~1]"),                 # CI avg 62.1s
+		list(response_type = "survival",   design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferenceSurvivalStratCoxPHRegr (model_formula=~1) [design_formula=~1]"),              # CI avg 59.9s
+		list(response_type = "survival",   design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferenceSurvivalCoxPHRegr (model_formula=~1) [design_formula=~1]"),                   # CI avg 58.6s
+		list(response_type = "proportion", design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferencePropQuantileRegr (model_formula=~1) [design_formula=~1]"),                    # CI avg 55.8s
+		list(response_type = "proportion", design_type = "Bernoulli",        dataset_name = "diamonds", inference_result_label = "InferencePropZeroOneInflatedBetaRegr (model_formula=~1) [design_formula=~1]"),          # CI avg 31.5s
+		list(response_type = "proportion", design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferencePropBetaRegr (model_formula=~1) [design_formula=~1]"),                        # CI avg 45.5s
+		list(response_type = "proportion", design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferencePropFractionalLogit (model_formula=~1) [design_formula=~1]"),                 # CI avg 43.9s
+		list(response_type = "count",      design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferenceCountHurdleNegBin (model_formula=~.) [design_formula=~1]")                    # CI avg 33.2s
+	))
+	skip_subsampling_slow = is_current_slow_path(list(
+		list(response_type = "survival", design_type = "KK21stepwise",     dataset_name = "diamonds", inference_result_label = "InferenceSurvivalKKClaytonCopulaOneLik [design_formula=~.]"),              # CI avg 414.0s
+		list(response_type = "survival", design_type = "FixedBinaryMatch", dataset_name = "diamonds", inference_result_label = "InferenceSurvivalKKClaytonCopulaOneLik [design_formula=~.]"),              # CI avg 335.1s
+		list(response_type = "count",    design_type = "Bernoulli",        dataset_name = "diamonds", inference_result_label = "InferenceCountHurdleNegBin (model_formula=~.) [design_formula=~.]"),       # CI avg 34.6s
+		list(response_type = "count",    design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferenceCountHurdleNegBin (model_formula=~.) [design_formula=~1]")       # CI avg 32.3s
+	))
 	# BRT pval: skip only if bootstrap structurally broken OR rand itself slow; ContinRobustRegr keeps BRT pval
 	skip_brt_pval = skip_bootstrap || skip_rand_slow
 	skip_brt_ci   = skip_bootstrap || skip_bootstrap_slow || skip_rand_slow || skip_rand_ci_slow || skip_brt_ci_all_slow
@@ -827,6 +857,7 @@ supports_direct_testing_type = function(testing_type){
 				identical(label, "compute_bayesian_bootstrap_confidence_interval") ||
 				identical(label, "compute_bayesian_bootstrap_two_sided_pval") ||
 				grepl("bootstrap", label, fixed = TRUE) ||
+				grepl("subsampling", label, fixed = TRUE) ||
 				grepl("jackknife", label, fixed = TRUE) ||
 				grepl("wald", label, ignore.case = TRUE) ||
 				grepl("score", label, ignore.case = TRUE) ||
@@ -1226,6 +1257,24 @@ call_direct_asymp = function(method_name, testing_type, ...){
 		safe_call_debug("approximate_bayesian_bootstrap_distribution_beta_hat_T_debug",
 						seq_des_inf$approximate_bayesian_bootstrap_distribution_beta_hat_T(B = B_debug, debug = TRUE, show_progress = FALSE))
 	}
+	default_small_resampling_size = function(){
+		unit_info = tryCatch(
+			seq_des_inf$.__enclos_env__$private$get_exchangeable_units(unit = "auto", resampling_type = NULL),
+			error = function(e) NULL
+		)
+		has_n_units = is.list(unit_info) && length(unit_info$n_units) == 1L && is.finite(unit_info$n_units)
+		n_units = if (has_n_units) as.integer(unit_info$n_units) else as.integer(dataset_n_rows)
+		p_eff = tryCatch(
+			as.integer(seq_des_inf$.__enclos_env__$private$resampling_effective_p()),
+			error = function(e) as.integer(dataset_n_cols)
+		)
+		if (length(p_eff) != 1L || !is.finite(p_eff)) p_eff = as.integer(dataset_n_cols)
+		min_size = max(5L, p_eff + 2L)
+		max_size = floor(n_units / 2L)
+		if (!is.finite(n_units) || n_units <= 0L || max_size < min_size) return(NA_integer_)
+		as.integer(max(min_size, min(floor(n_units ^ 0.7), max_size)))
+	}
+	small_resampling_size = default_small_resampling_size()
 	# Nonparametric bootstrap CI — default type first (warms the distribution cache), then extra types reuse it
 	if (should_run_test_family("bootstrap") && !skip_slow && !skip_bootstrap && !skip_bootstrap_slow && !skip_boot_ci_slow){
 		if (!skip_boot_ci_default_slow) {
@@ -1240,6 +1289,24 @@ call_direct_asymp = function(method_name, testing_type, ...){
 			}
 			safe_call(paste0("compute_bootstrap_confidence_interval_", boot_ci_type),
 					  seq_des_inf$compute_bootstrap_confidence_interval(B = r, type = boot_ci_type, na.rm = TRUE, show_progress = FALSE))
+		}
+	}
+	if (should_run_test_family("bootstrap") && !skip_slow){
+		if (is.na(small_resampling_size)) {
+			message("          Skipping compute_m_out_of_n_bootstrap_confidence_interval / compute_subsampling_confidence_interval (too few exchangeable units)")
+		} else {
+			if (!skip_m_out_of_n_slow) {
+				safe_call("compute_m_out_of_n_bootstrap_confidence_interval",
+						  seq_des_inf$compute_m_out_of_n_bootstrap_confidence_interval(B = r, m = small_resampling_size, show_progress = FALSE))
+			} else {
+				message("          Skipping compute_m_out_of_n_bootstrap_confidence_interval (too slow)")
+			}
+			if (!skip_subsampling_slow) {
+				safe_call("compute_subsampling_confidence_interval",
+						  seq_des_inf$compute_subsampling_confidence_interval(B = r, b = small_resampling_size, show_progress = FALSE))
+			} else {
+				message("          Skipping compute_subsampling_confidence_interval (too slow)")
+			}
 		}
 	}
 	# Bayesian bootstrap CI — default type first (warms the distribution cache), then extra types reuse it
@@ -1264,6 +1331,24 @@ call_direct_asymp = function(method_name, testing_type, ...){
 			}
 			safe_call(paste0("compute_bootstrap_two_sided_pval_", boot_pval_type),
 					  seq_des_inf$compute_bootstrap_two_sided_pval(B = r, type = boot_pval_type, na.rm = TRUE, show_progress = FALSE))
+		}
+	}
+	if (should_run_test_family("bootstrap") && !skip_slow){
+		if (is.na(small_resampling_size)) {
+			message("          Skipping compute_m_out_of_n_bootstrap_two_sided_pval / compute_subsampling_two_sided_pval (too few exchangeable units)")
+		} else {
+			if (!skip_m_out_of_n_slow) {
+				safe_call("compute_m_out_of_n_bootstrap_two_sided_pval",
+						  seq_des_inf$compute_m_out_of_n_bootstrap_two_sided_pval(B = r, m = small_resampling_size, show_progress = FALSE))
+			} else {
+				message("          Skipping compute_m_out_of_n_bootstrap_two_sided_pval (too slow)")
+			}
+			if (!skip_subsampling_slow) {
+				safe_call("compute_subsampling_two_sided_pval",
+						  seq_des_inf$compute_subsampling_two_sided_pval(B = r, b = small_resampling_size, show_progress = FALSE))
+			} else {
+				message("          Skipping compute_subsampling_two_sided_pval (too slow)")
+			}
 		}
 	}
 	# Bayesian bootstrap p-val — default first, extra types reuse distribution cache

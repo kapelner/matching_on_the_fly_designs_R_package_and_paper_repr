@@ -72,6 +72,7 @@ InferenceMixinKKGEEShared = list(
 		use_rcpp = TRUE,
 		max_abs_reasonable_coef = 1e4,
 		kk_gee_engine = TRUE,
+		is_a_gee_family = function() TRUE,
 		get_complexity_tier = function() "medium",
 		use_kk_gee_jackknife_wald_calibration = function(){
 			identical(private$gee_response_type(), "count")
@@ -131,7 +132,7 @@ InferenceMixinKKGEEShared = list(
 				assertFlag(use_rcpp)
 			}
 			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
+				if (!des_obj$is_a_kk_matching_capable()){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass) or DesignFixedBinaryMatch.")
 				}
 			}

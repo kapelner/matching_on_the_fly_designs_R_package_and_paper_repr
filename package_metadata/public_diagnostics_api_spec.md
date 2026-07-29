@@ -16,9 +16,9 @@ compute_ci()
 The new API adds diagnostic variants:
 
 ```r
-compute_estimate_debug()
-compute_pval_debug()
-compute_ci_debug()
+compute_estimate_details()
+compute_pval_details()
+compute_ci_details()
 ```
 
 The existing scalar API must remain the fast path. It continues to return the
@@ -51,14 +51,14 @@ users.
 Use the exact public method names requested for now:
 
 ```r
-compute_estimate_debug()
-compute_pval_debug()
-compute_ci_debug()
+compute_estimate_details()
+compute_pval_details()
+compute_ci_details()
 ```
 
-Long term, aliases such as `compute_estimate_details()` or
-`diagnose_estimate()` may be added, but the initial implementation should keep
-one official name set to avoid documenting multiple contracts.
+Long term, other aliases (e.g. `diagnose_estimate()`) may be added, but the
+initial implementation should keep one official name set to avoid documenting
+multiple contracts.
 
 ## Core Design Rule
 
@@ -76,7 +76,7 @@ compute_estimate = function(...) {
   private$compute_estimate_core(..., diagnostics = FALSE)$value
 }
 
-compute_estimate_debug = function(...) {
+compute_estimate_details = function(...) {
   private$compute_estimate_core(..., diagnostics = TRUE)
 }
 ```
@@ -154,7 +154,20 @@ be reused where possible.
 
 ## Method-Specific Required Fields
 
-### `compute_estimate_debug()`
+### `compute_estimate_details()`
+
+`estimate_only` is an explicit input parameter here, mirroring the existing
+public `compute_estimate(estimate_only = FALSE)` signature -- the sole
+argument on every one of the ~85 `compute_estimate()` overrides across the
+package, with no exceptions -- rather than something only discovered after
+the fact:
+
+```r
+compute_estimate_details = function(estimate_only = FALSE, diagnostic_level = c("standard", "extended", "trace"))
+```
+
+The `diagnostic_level` argument is the only addition beyond what
+`compute_estimate()` already takes; see Lazy Diagnostics Levels below.
 
 Required `diagnostics` subfields when available without extra work:
 
@@ -170,10 +183,26 @@ diagnostics = list(
 )
 ```
 
+`diagnostics$estimate_only` echoes the effective value actually used for the
+underlying fit this snapshot describes -- normally the caller's own
+`estimate_only` argument above, passed straight through the same
+`private$shared(estimate_only = ...)` path `compute_estimate()` already uses.
+It can still differ from the caller's input when, at diagnostic level
+`"standard"`, an already-cached fit is reused instead of a fresh one (see
+Lazy Diagnostics Levels) -- in that case it reports the mode the reused fit
+actually ran in, so the caller can tell why `standard_error` or `fit` came
+back `NA` even though they passed `estimate_only = FALSE`.
+
+Setting `estimate_only = TRUE` still computes and returns `value` -- it only
+concerns which of the diagnostics subfields above are cheaply available;
+`converged`, `iterations`, and `coefficient_abs_max` are populated by any fit
+mode, while `standard_error` and `fit$information`-style fields require
+`estimate_only = FALSE`.
+
 Do not compute rank, condition number, or eigenspectrum unless diagnostics mode
 explicitly asks for them and the lower layer advertises support.
 
-### `compute_pval_debug()`
+### `compute_pval_details()`
 
 Required arguments mirrored in the result:
 
@@ -217,7 +246,7 @@ list(
 )
 ```
 
-### `compute_ci_debug()`
+### `compute_ci_details()`
 
 Required arguments mirrored in the result:
 
@@ -263,9 +292,9 @@ list(
 Use a `diagnostic_level` argument on debug methods:
 
 ```r
-compute_estimate_debug(..., diagnostic_level = c("standard", "extended", "trace"))
-compute_pval_debug(..., diagnostic_level = c("standard", "extended", "trace"))
-compute_ci_debug(..., diagnostic_level = c("standard", "extended", "trace"))
+compute_estimate_details(..., diagnostic_level = c("standard", "extended", "trace"))
+compute_pval_details(..., diagnostic_level = c("standard", "extended", "trace"))
+compute_ci_details(..., diagnostic_level = c("standard", "extended", "trace"))
 ```
 
 Default: `"standard"`.
@@ -283,6 +312,43 @@ Levels:
 
 The scalar fast API must never call `diagnostic_level = "extended"` or
 `"trace"` internally.
+
+### Why A Tiered Level Instead Of A Per-Diagnostic Flags List
+
+An alternative design would let the caller pass a list enumerating exactly
+which diagnostics to compute, e.g.
+`diagnostics = list(condition_number = TRUE, quadrature_adequacy = FALSE, qr_rank = TRUE, ...)`.
+This was rejected for the public contract:
+
+- The set of *possible* diagnostics differs by family, and most flags would
+  not apply to most families. `condition_number` only means something for
+  likelihood-backed asymptotic families with an information matrix;
+  `quadrature_adequacy` only exists for GH-quadrature GLMM paths; bootstrap
+  finite-count diagnostics do not apply to closed-form Wald paths at all. A
+  flags list forces every family to either silently ignore flags it does not
+  support (confusing -- you asked for something and got nothing, with no
+  signal why) or error on them (brittle -- breaks exactly the kind of generic
+  sweep this package already relies on, e.g. `path_audits.html` and
+  comprehensive tests calling the same method uniformly across dozens of
+  heterogeneous classes).
+- A named-flags API is functionally "all internals, gated behind booleans,"
+  which contradicts the Non-Goals section above ("Do not promise 'all
+  internals.' The public debug object is a stable, curated diagnostic
+  schema"). A cost tier lets each family decide locally what `"standard"` vs
+  `"extended"` vs `"trace"` means for itself without the public contract ever
+  having to enumerate a global diagnostic vocabulary -- one that would only
+  grow as [optimizer_diagnostics_report.md](optimizer_diagnostics_report.md)'s
+  taxonomy (already 8 distinct failure categories) expands.
+
+This is a real, acknowledged tradeoff, not a free win: the tiered design gives
+up fine-grained cost control. A caller who wants only the condition number
+and nothing else cannot ask for that in isolation -- they get whatever else
+`"extended"` happens to bundle for that family, and pay for all of it. If a
+specific diagnostic later turns out to be expensive enough that bundling it
+into `"extended"` becomes a real cost problem for callers who don't want it,
+that is the point to revisit this decision (e.g. an optional, family-specific
+override layered on top of the tier), not to redesign the whole contract
+around per-flag toggles up front.
 
 ## Integration With Optimizer Diagnostics
 
@@ -375,7 +441,7 @@ After the optimizer diagnostics layer is implemented:
 2. Store last-fit diagnostics in a consistent private cache.
 3. Expose `get_last_fit_diagnostics()` as planned by
    [optimizer_diagnostics_report.md](optimizer_diagnostics_report.md).
-4. Have `compute_*_debug()` pull from those caches without recomputing.
+4. Have `compute_*_details()` pull from those caches without recomputing.
 
 ### Phase 4: Audit/report integration
 
@@ -444,7 +510,7 @@ Document that:
 ## Minimal Example
 
 ```r
-res = inf$compute_pval_debug(delta = 0)
+res = inf$compute_pval_details(delta = 0)
 
 res$value
 res$status
@@ -474,8 +540,8 @@ list(
 
 ## Acceptance Criteria
 
-- `compute_estimate_debug()`, `compute_pval_debug()`, and
-  `compute_ci_debug()` exist for all public inference objects.
+- `compute_estimate_details()`, `compute_pval_details()`, and
+  `compute_ci_details()` exist for all public inference objects.
 - Existing scalar methods return exactly the same values as before.
 - Debug `value` matches the scalar return for the same arguments.
 - Debug objects carry stable `status`, `stage`, and `reason` fields.

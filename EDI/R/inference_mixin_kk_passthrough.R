@@ -252,6 +252,7 @@ InferenceMixinKKPassThrough = list(
 	private = list(
 		m = NULL,
 		kk_passthrough = TRUE,
+		is_a_kk_passthrough_design = function() TRUE,
 		y_temp = NULL,
 		dead = NULL,
 		w = NULL,
@@ -284,7 +285,7 @@ InferenceMixinKKPassThrough = list(
 		},
 		init_kk_passthrough = function(des_obj){
 			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")) {
+				if (!des_obj$is_a_kk_matching_capable()) {
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14) or DesignFixedBinaryMatch.")
 				}
 			}

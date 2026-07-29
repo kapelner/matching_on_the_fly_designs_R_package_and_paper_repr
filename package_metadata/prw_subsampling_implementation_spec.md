@@ -53,7 +53,7 @@ resampling stack:
 ```r
 approximate_subsampling_distribution_beta_hat_T(
   B = 501,
-  b = "auto",
+  b = NULL,
   show_progress = TRUE,
   debug = FALSE,
   subsampling_type = NULL,
@@ -64,7 +64,7 @@ approximate_subsampling_distribution_beta_hat_T(
 compute_subsampling_two_sided_pval(
   delta = 0,
   B = 501,
-  b = "auto",
+  b = NULL,
   type = "centered",
   show_progress = TRUE,
   min_number_usable_samples = 5L,
@@ -75,7 +75,7 @@ compute_subsampling_two_sided_pval(
 compute_subsampling_confidence_interval(
   alpha = 0.05,
   B = 501,
-  b = "auto",
+  b = NULL,
   type = "basic",
   show_progress = TRUE,
   min_number_usable_samples = 5L,
@@ -176,7 +176,7 @@ The first implementation should accept either:
 
 ```r
 b = <integer>
-b = "auto"
+b = NULL
 b = list(method = "minimum_volatility", ...)
 ```
 
@@ -372,9 +372,9 @@ with class:
 "EDISubsamplingBSelection"
 ```
 
-### How `b = "auto"` Should Use Selection
+### How `b = NULL` Should Use Selection
 
-For the first implementation, `b = "auto"` should use the deterministic
+For the first implementation, `b = NULL` should use the deterministic
 `floor(n_units ^ 0.7)` rule so that ordinary calls remain predictable and not
 silently expensive.
 
@@ -770,6 +770,9 @@ to, but distinct from, the bootstrap.
 Required documentation caveats:
 
 - validity depends on `b -> infinity` and `b / n -> 0`
+- the default `b = NULL` uses `floor(n_units ^ 0.7)`, a deterministic
+  intermediate sequence grounded in the Politis/Romano/Wolf subsampling rate
+  conditions, not a universally optimal finite-sample choice
 - finite-sample results can be sensitive to `b`
 - users should run sensitivity checks over a grid of `b`
 - no method can certify validity from the data alone
@@ -783,7 +786,7 @@ Required documentation caveats:
 - Add ordinary observation-level without-replacement draw generator.
 - Add public distribution, p-value, and CI methods.
 - Support only `scaling = "sqrt_n"`.
-- Support explicit integer `b` and deterministic `b = "auto"`.
+- Support explicit integer `b` and deterministic `b = NULL`.
 - Add simple mean-difference tests.
 
 ### Phase 2: Minimum-Volatility `b` Selection
@@ -819,7 +822,7 @@ Required documentation caveats:
 The feature is complete when:
 
 - ordinary-design subsampling methods work for simple mean difference
-- explicit `b`, deterministic `b = "auto"`, and minimum-volatility `b`
+- explicit `b`, deterministic `b = NULL`, and minimum-volatility `b`
   selection are implemented and tested
 - design-aware draw tests pass for blocking, clustering, and matching
 - p-value and CI methods return typed non-estimable output on invalid/unstable

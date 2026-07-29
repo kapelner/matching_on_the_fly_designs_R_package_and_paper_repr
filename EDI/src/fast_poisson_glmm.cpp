@@ -9,6 +9,7 @@
 //   Total length: p + 1
 
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <cmath>
 #include <vector>
@@ -348,11 +349,11 @@ SEXP fast_poisson_glmm_cpp(
 
 	Eigen::VectorXd rw_vec;
 	const Eigen::VectorXd* rw_ptr = nullptr;
-	if (row_weights.isNotNull()) {
-		NumericVector rw_r(row_weights);
-		if (rw_r.size() != n)
-			Rcpp::stop("row_weights length (%d) must equal nrow(X) (%d)", rw_r.size(), n);
-		rw_vec = Eigen::Map<const Eigen::VectorXd>(rw_r.begin(), n);
+	std::optional<Eigen::VectorXd> row_weights_opt = nullable_to_optional<Eigen::VectorXd>(row_weights);
+	if (row_weights_opt.has_value()) {
+		if (row_weights_opt->size() != n)
+			Rcpp::stop("row_weights length (%d) must equal nrow(X) (%d)", row_weights_opt->size(), n);
+		rw_vec = *row_weights_opt;
 		rw_ptr = &rw_vec;
 	}
 
@@ -360,8 +361,9 @@ SEXP fast_poisson_glmm_cpp(
 
 	// Initialize
 	Eigen::VectorXd par(total);
-	if (warm_start_params.isNotNull()) {
-		NumericVector sp(warm_start_params);
+	std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
+	if (warm_start_params_opt.has_value()) {
+		const Eigen::VectorXd& sp = *warm_start_params_opt;
 		if (sp.size() == total) {
 			for (int i = 0; i < total; ++i) par[i] = sp[i];
 		}
@@ -378,12 +380,16 @@ SEXP fast_poisson_glmm_cpp(
 	}
 
 	PoissonGLMMObjective obj(dat);
-	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(
+		total,
+		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+		nullable_to_optional<Eigen::VectorXd>(fixed_values));
 
 	Eigen::MatrixXd info_start;
 	Eigen::MatrixXd* info_start_ptr = nullptr;
-	if (warm_start_fisher_info.isNotNull()) {
-		info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+	std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
+	if (warm_start_fisher_info_opt.has_value()) {
+		info_start = *warm_start_fisher_info_opt;
 		info_start_ptr = &info_start;
 	}
 
@@ -395,27 +401,25 @@ SEXP fast_poisson_glmm_cpp(
 		neg_ll    = fit.value;
 		converged = std::isfinite(neg_ll) && fit.converged;
 	} catch (...) {
-		return List::create(
-			Named("b")          = par.head(p),
-			Named("log_sigma")  = par[total - 1],
-			Named("ssq_b_T")    = NA_REAL,
-			Named("converged")  = false,
-			Named("neg_loglik") = NA_REAL
-		);
+		return edi::to_rcpp_list(edi::ResultMap()
+			.set("b", par.head(p))
+			.set("log_sigma", par[total - 1])
+			.set("ssq_b_T", NA_REAL)
+			.set("converged", false)
+			.set("neg_loglik", NA_REAL));
 	}
 
 		const double pen = soft_barrier(par[total - 1]);
 		const double true_neg_ll = neg_ll - pen;
 		if (estimate_only) {
-			return List::create(
-				Named("b")          = par.head(p),
-				Named("log_sigma")  = par[total - 1],
-				Named("ssq_b_T")    = NA_REAL,
-				Named("vcov")       = R_NilValue,
-				Named("converged")  = converged,
-				Named("neg_loglik") = true_neg_ll,
-				Named("fisher_information") = R_NilValue
-			);
+			return edi::to_rcpp_list(edi::ResultMap()
+				.set("b", par.head(p))
+				.set("log_sigma", par[total - 1])
+				.set("ssq_b_T", NA_REAL)
+				.set("vcov", std::monostate{})
+				.set("converged", converged)
+				.set("neg_loglik", true_neg_ll)
+				.set("fisher_information", std::monostate{}));
 		}
 
 		Eigen::MatrixXd information = obj.hessian(par);
@@ -433,15 +437,14 @@ SEXP fast_poisson_glmm_cpp(
 		}
 	}
 
-	return List::create(
-		Named("b")          = par.head(p),
-		Named("log_sigma")  = par[total - 1],
-		Named("ssq_b_T")    = ssq_b_T,
-		Named("vcov")       = vcov,
-		Named("converged")  = converged,
-		Named("neg_loglik") = true_neg_ll,
-		Named("fisher_information") = information
-	);
+	return edi::to_rcpp_list(edi::ResultMap()
+		.set("b", par.head(p))
+		.set("log_sigma", par[total - 1])
+		.set("ssq_b_T", ssq_b_T)
+		.set("vcov", vcov)
+		.set("converged", converged)
+		.set("neg_loglik", true_neg_ll)
+		.set("fisher_information", information));
 }
 
 // ── R-exported: score (gradient of log_lik) at arbitrary par ─────────────────

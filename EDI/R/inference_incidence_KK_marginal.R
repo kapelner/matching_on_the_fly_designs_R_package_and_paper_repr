@@ -76,6 +76,7 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 		}
 	),
 	private = list(
+		is_a_kk_modified_poisson = function() TRUE,
 		max_abs_reasonable_coef = 25,
 		best_X_colnames = NULL,
 		cached_mod = NULL,

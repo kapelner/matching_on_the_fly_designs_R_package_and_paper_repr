@@ -50,7 +50,7 @@ Add explicit public methods:
 ```r
 approximate_m_out_of_n_bootstrap_distribution_beta_hat_T(
   B = 501,
-  m = "auto",
+  m = NULL,
   show_progress = TRUE,
   debug = FALSE,
   bootstrap_type = NULL,
@@ -61,7 +61,7 @@ approximate_m_out_of_n_bootstrap_distribution_beta_hat_T(
 compute_m_out_of_n_bootstrap_two_sided_pval(
   delta = 0,
   B = 501,
-  m = "auto",
+  m = NULL,
   type = "centered",
   show_progress = TRUE,
   min_number_usable_samples = 5L,
@@ -72,7 +72,7 @@ compute_m_out_of_n_bootstrap_two_sided_pval(
 compute_m_out_of_n_bootstrap_confidence_interval(
   alpha = 0.05,
   B = 501,
-  m = "auto",
+  m = NULL,
   type = "basic",
   show_progress = TRUE,
   min_number_usable_samples = 5L,
@@ -188,11 +188,11 @@ The first implementation should accept:
 
 ```r
 m = <integer>
-m = "auto"
+m = NULL
 m = list(method = "minimum_volatility", ...)
 ```
 
-The deterministic fallback rule is:
+The deterministic fallback rule for `m = NULL` is:
 
 ```r
 m = floor(n_units ^ 0.7)
@@ -279,7 +279,7 @@ with class:
 "EDIMOutOfNBootstrapMSelection"
 ```
 
-For `m = "auto"`, use the deterministic rule so ordinary calls remain cheap.
+For `m = NULL`, use the deterministic rule so ordinary calls remain cheap.
 For:
 
 ```r
@@ -403,7 +403,7 @@ Add focused tests before path-audit integration:
 - duplicate units are possible and represented correctly
 - cluster/pair/matched-set draws preserve intact unit rows
 - explicit `m` is respected
-- deterministic `m = "auto"` is bounded correctly
+- deterministic `m = NULL` is bounded correctly
 - `m_pow_of_n_grid` maps to unique integer `m` values
 - boundary grid points are ineligible for minimum-volatility selection
 - selector chooses the least volatile eligible interior point
@@ -423,6 +423,11 @@ subsampling.
 Required caveats:
 
 - validity depends on `m -> infinity` and, in nonregular cases, `m / n -> 0`
+  following the m-out-of-n bootstrap framework of Bickel, Gotze, and van Zwet
+  (1997) and the size-selection discussion in Bickel and Sakov (2008)
+- the default `m = NULL` uses `floor(n_units ^ 0.7)`, a deterministic
+  intermediate sequence satisfying the asymptotic rate conditions, not a
+  universally optimal finite-sample choice
 - finite-sample results can be sensitive to `m`
 - minimum-volatility selection is a calibration heuristic, not a proof of
   validity
@@ -436,7 +441,7 @@ Required caveats:
 - Add operation contract and private cache.
 - Add ordinary unit-level with-replacement size-`m` draw generator.
 - Add public distribution, p-value, and CI methods.
-- Support explicit integer `m` and deterministic `m = "auto"`.
+- Support explicit integer `m` and deterministic `m = NULL`.
 - Support only `scaling = "sqrt_n"`.
 
 ### Phase 2: Shared Minimum-Volatility Selector
@@ -468,11 +473,10 @@ Required caveats:
 The feature is complete when:
 
 - ordinary-design m-out-of-n methods work for simple mean difference
-- explicit `m`, deterministic `m = "auto"`, and minimum-volatility `m`
+- explicit `m`, deterministic `m = NULL`, and minimum-volatility `m`
   selection are implemented and tested
 - design-aware draw tests pass for blocking, clustering, and matching
 - p-value and CI methods return typed non-estimable output on invalid/unstable
   paths
 - debug mode records the `m` selection grid and chosen `m` when applicable
 - no existing `compute_bootstrap_*()` output changes
-

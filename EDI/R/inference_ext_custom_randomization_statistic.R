@@ -1,13 +1,14 @@
-#' Mixin for User-Supplied Custom Randomization Statistics
+#' Extension for User-Supplied Custom Randomization Statistics
 #'
-#' A Pattern-1 mixin (plain list with \code{$public} and \code{$private}
-#' slots) bundling the machinery that lets a user override the default
-#' randomization-inference statistic with either a plain R function or a
-#' compiled/compilable C++ function. Splice into a daughter class (in
-#' practice, just \code{InferenceRand} itself, once) via
-#' \code{public = c(InferenceMixinCustomRandomizationStatistic$public, list(...))}
+#' A Pattern-1 file-split extension (plain list with \code{$public} and
+#' \code{$private} slots), spliced into exactly one class (\code{InferenceRand})
+#' -- not a reusable mixin. Bundles the machinery that lets a user override the
+#' default randomization-inference statistic with either a plain R function or
+#' a compiled/compilable C++ function. Splice into \code{InferenceRand} (the
+#' only host) via
+#' \code{public = c(InferenceExtCustomRandomizationStatistic$public, list(...))}
 #' and
-#' \code{private = c(InferenceMixinCustomRandomizationStatistic$private, list(...))}.
+#' \code{private = c(InferenceExtCustomRandomizationStatistic$private, list(...))}.
 #'
 #' Self-contained: the only host-class state it touches beyond its own three
 #' private fields is \code{private$cached_values}, the shared invalidation
@@ -15,7 +16,7 @@
 #'
 #' @keywords internal
 #' @noRd
-InferenceMixinCustomRandomizationStatistic = list(
+InferenceExtCustomRandomizationStatistic = list(
 	public = list(
 		#' @description Set Custom Randomization Statistic Computation
 		#' @param custom_randomization_statistic_function  A function that returns a scalar value.

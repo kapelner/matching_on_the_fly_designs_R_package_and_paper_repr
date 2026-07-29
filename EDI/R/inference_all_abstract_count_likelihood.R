@@ -248,7 +248,9 @@ InferenceCountLikelihood = R6::R6Class("InferenceCountLikelihood",
 	lock_objects = FALSE,
 	inherit = InferenceParamBootstrap,
 	public = inference_count_likelihood_public,
-	private = inference_count_likelihood_private
+	private = c(inference_count_likelihood_private, list(
+		is_a_count_likelihood = function() TRUE
+	))
 )
 
 #' Count-Specific Likelihood Inference Without Parametric LR Bootstrap
@@ -263,5 +265,7 @@ InferenceCountLikelihoodNoParamBootstrap = R6::R6Class("InferenceCountLikelihood
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
 	public = inference_count_likelihood_public,
-	private = inference_count_likelihood_private
+	private = c(inference_count_likelihood_private, list(
+		is_a_count_likelihood_no_param_bootstrap = function() TRUE
+	))
 )

@@ -110,6 +110,7 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 		}
 	),
 	private = list(
+		is_a_kk_quantile_regr_one_lik = function() TRUE,
 		tau = NULL,
 		transform_y_fn_list = NULL,  # list(fn = ...) wrapping avoids R6 treating function as a locked method
 		m = NULL,

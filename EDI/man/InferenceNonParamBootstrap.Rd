@@ -10,6 +10,61 @@ Bootstrap-based Inference
 }
 \details{
 Abstract class for bootstrap-based inference.
+
+The default \code{m = NULL} rule is a cheap deterministic
+  intermediate sequence: \eqn{m \to \infty} and \eqn{m / n \to 0}, as
+  required by the standard m-out-of-n bootstrap asymptotic setup
+  (Bickel, Gotze, and van Zwet; Bickel and Sakov). The exponent 0.7 is a
+  pragmatic interior point in \eqn{(0, 1)}; it is not a silver-bullet
+  optimal choice. Use \code{select_optimal_m_out_of_n_bootstrap()} for
+  data-adaptive minimum-volatility selection.
+
+
+The default \code{m = NULL} follows the intermediate-sequence
+  convention from the m-out-of-n bootstrap literature:
+  \eqn{m \to \infty} and \eqn{m / n \to 0}. The deterministic exponent
+  0.7 is a first-pass default; for unstable paths prefer the
+  minimum-volatility selector.
+
+
+The \code{NULL} default is grounded in the standard m-out-of-n
+  asymptotic condition \eqn{m \to \infty} and \eqn{m / n \to 0}. The
+  minimum-volatility selector is available when a fixed deterministic
+  exponent is too brittle for a specific estimator/design path.
+
+
+This implements the same minimum-volatility idea used in PTE's
+  m-selection workflow: scan admissible intermediate sizes and choose a
+  stable region of the target statistic rather than assuming one exponent
+  is uniformly optimal.
+
+
+The default \code{b = NULL} rule is a cheap deterministic
+  intermediate sequence: \eqn{b \to \infty} and \eqn{b / n \to 0}, as
+  required by the Politis, Romano, and Wolf subsampling framework. The
+  exponent 0.7 is a pragmatic interior point in \eqn{(0, 1)}; it is not a
+  universal optimum. Use \code{select_optimal_b_subsampling()} for
+  data-adaptive minimum-volatility selection.
+
+
+The default \code{b = NULL} follows the intermediate-sequence
+  convention from the Politis/Romano/Wolf subsampling literature:
+  \eqn{b \to \infty} and \eqn{b / n \to 0}. The deterministic exponent
+  0.7 is a first-pass default; for unstable paths prefer the
+  minimum-volatility selector.
+
+
+The \code{NULL} default is grounded in the standard
+  Politis/Romano/Wolf asymptotic condition \eqn{b \to \infty} and
+  \eqn{b / n \to 0}. The minimum-volatility selector is available when a
+  fixed deterministic exponent is too brittle for a specific
+  estimator/design path.
+
+
+This implements the same minimum-volatility idea used in PTE's
+  m-selection workflow, applied to the PRW block/subsample-size choice:
+  scan admissible intermediate sizes and choose a stable region of the
+  target statistic rather than assuming one exponent is uniformly optimal.
 }
 \section{Design-specific validity caveats for the nonparametric bootstrap}{
 
@@ -131,6 +186,17 @@ true sampling variance, so tests and intervals err \emph{conservative}
 }
 }
 
+\references{
+Bickel, P. J., Gotze, F., and van Zwet, W. R. (1997).
+  Resampling fewer than n observations: gains, losses, and remedies for
+  losses. \emph{Statistica Sinica}.
+
+Bickel, P. J. and Sakov, A. (2008). On the choice of m in
+  the m out of n bootstrap. \emph{The Annals of Statistics}.
+
+Politis, D. N., Romano, J. P., and Wolf, M. (1999).
+  \emph{Subsampling}. Springer.
+}
 \keyword{internal}
 \section{Super classes}{
 \code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{InferenceNonParamBootstrap}
@@ -138,6 +204,15 @@ true sampling variance, so tests and intervals err \emph{conservative}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
+\item \href{#method-InferenceNonParamBootstrap-approximate_m_out_of_n_bootstrap_distribution_beta_hat_T}{\code{InferenceNonParamBootstrap$approximate_m_out_of_n_bootstrap_distribution_beta_hat_T()}}
+\item \href{#method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_two_sided_pval}{\code{InferenceNonParamBootstrap$compute_m_out_of_n_bootstrap_two_sided_pval()}}
+\item \href{#method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_confidence_interval}{\code{InferenceNonParamBootstrap$compute_m_out_of_n_bootstrap_confidence_interval()}}
+\item \href{#method-InferenceNonParamBootstrap-select_optimal_m_out_of_n_bootstrap}{\code{InferenceNonParamBootstrap$select_optimal_m_out_of_n_bootstrap()}}
+\item \href{#method-InferenceNonParamBootstrap-approximate_subsampling_distribution_beta_hat_T}{\code{InferenceNonParamBootstrap$approximate_subsampling_distribution_beta_hat_T()}}
+\item \href{#method-InferenceNonParamBootstrap-compute_subsampling_two_sided_pval}{\code{InferenceNonParamBootstrap$compute_subsampling_two_sided_pval()}}
+\item \href{#method-InferenceNonParamBootstrap-compute_subsampling_confidence_interval}{\code{InferenceNonParamBootstrap$compute_subsampling_confidence_interval()}}
+\item \href{#method-InferenceNonParamBootstrap-select_optimal_b_subsampling}{\code{InferenceNonParamBootstrap$select_optimal_b_subsampling()}}
+\item \href{#method-InferenceNonParamBootstrap-compute_subsampling_sensitivity}{\code{InferenceNonParamBootstrap$compute_subsampling_sensitivity()}}
 \item \href{#method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()}}
 \item \href{#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval}{\code{InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()}}
 \item \href{#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval}{\code{InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()}}
@@ -175,6 +250,481 @@ true sampling variance, so tests and intervals err \emph{conservative}
 </ul>
 </details>
 }}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceNonParamBootstrap-approximate_m_out_of_n_bootstrap_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-approximate_m_out_of_n_bootstrap_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_m_out_of_n_bootstrap_distribution_beta_hat_T()}}{
+Creates the m-out-of-n bootstrap distribution of the
+  treatment-effect estimate.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceNonParamBootstrap$approximate_m_out_of_n_bootstrap_distribution_beta_hat_T(
+  B = 501,
+  m = NULL,
+  show_progress = TRUE,
+  debug = FALSE,
+  bootstrap_type = NULL,
+  scaling = "sqrt_n",
+  center = "full_estimate"
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of resamples. Default 501.}
+
+\item{\code{m}}{Number of exchangeable resampling units drawn with replacement.
+If \code{NULL} (default), use the deterministic intermediate-size rule
+\code{floor(n_units^0.7)}, where \code{n_units} is the number of
+exchangeable units used by the design (observations, clusters, pairs, or
+matched sets). The resolved value must satisfy
+\code{max(5, p_eff + 2) <= m <= floor(n_units / 2)}.}
+
+\item{\code{show_progress}}{A flag indicating whether a progress bar should be
+displayed.}
+
+\item{\code{debug}}{If \code{TRUE}, return distribution diagnostics in addition
+to the resampled estimates.}
+
+\item{\code{bootstrap_type}}{Optional empirical-resampling scheme. See
+\code{approximate_bootstrap_distribution_beta_hat_T()}.}
+
+\item{\code{scaling}}{Scaling sequence for centered m-out-of-n pivots. The
+default \code{"sqrt_n"} uses \code{sqrt(m)} for the m-sample
+distribution and converts back to the full-sample scale using
+\code{sqrt(n_units)}.}
+
+\item{\code{center}}{Centering convention for diagnostics and cache keys.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of bootstrap estimates, or when
+  \code{debug = TRUE}, a diagnostic list.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_two_sided_pval}{}}}
+\subsection{Method \code{compute_m_out_of_n_bootstrap_two_sided_pval()}}{
+Computes a centered m-out-of-n bootstrap two-sided p-value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceNonParamBootstrap$compute_m_out_of_n_bootstrap_two_sided_pval(
+  delta = 0,
+  B = 501,
+  m = NULL,
+  type = "centered",
+  show_progress = TRUE,
+  min_number_usable_samples = 5L,
+  bootstrap_type = NULL,
+  scaling = "sqrt_n"
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect. Default 0.}
+
+\item{\code{B}}{Number of resamples. Default 501.}
+
+\item{\code{m}}{Number of exchangeable units drawn with replacement. If
+\code{NULL} (default), use \code{floor(n_units^0.7)} subject to the
+validation bounds documented for
+\code{approximate_m_out_of_n_bootstrap_distribution_beta_hat_T()}.}
+
+\item{\code{type}}{P-value type. Currently only \code{"centered"} is supported.}
+
+\item{\code{show_progress}}{A flag indicating whether a progress bar should be
+displayed.}
+
+\item{\code{min_number_usable_samples}}{Minimum number of finite resampled
+estimates required after filtering. Default 5.}
+
+\item{\code{bootstrap_type}}{Optional empirical-resampling scheme.}
+
+\item{\code{scaling}}{Scaling sequence for centered m-out-of-n pivots.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric two-sided p-value, or \code{NA_real_} if the path is
+  non-estimable.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_confidence_interval}{}}}
+\subsection{Method \code{compute_m_out_of_n_bootstrap_confidence_interval()}}{
+Computes a basic m-out-of-n bootstrap confidence interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceNonParamBootstrap$compute_m_out_of_n_bootstrap_confidence_interval(
+  alpha = 0.05,
+  B = 501,
+  m = NULL,
+  type = "basic",
+  show_progress = TRUE,
+  min_number_usable_samples = 5L,
+  bootstrap_type = NULL,
+  scaling = "sqrt_n"
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level. Default 0.05.}
+
+\item{\code{B}}{Number of resamples. Default 501.}
+
+\item{\code{m}}{Number of exchangeable units drawn with replacement. If
+\code{NULL} (default), use \code{floor(n_units^0.7)} subject to the
+validation bounds documented for
+\code{approximate_m_out_of_n_bootstrap_distribution_beta_hat_T()}.}
+
+\item{\code{type}}{Confidence-interval type. Currently only \code{"basic"} is
+supported.}
+
+\item{\code{show_progress}}{A flag indicating whether a progress bar should be
+displayed.}
+
+\item{\code{min_number_usable_samples}}{Minimum number of finite resampled
+estimates required after filtering. Default 5.}
+
+\item{\code{bootstrap_type}}{Optional empirical-resampling scheme.}
+
+\item{\code{scaling}}{Scaling sequence for centered m-out-of-n pivots.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A length-2 numeric confidence interval, or
+  \code{c(NA_real_, NA_real_)} if the path is non-estimable.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceNonParamBootstrap-select_optimal_m_out_of_n_bootstrap"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-select_optimal_m_out_of_n_bootstrap}{}}}
+\subsection{Method \code{select_optimal_m_out_of_n_bootstrap()}}{
+Selects an m-out-of-n bootstrap size by minimum volatility.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceNonParamBootstrap$select_optimal_m_out_of_n_bootstrap(
+  B = 251,
+  alpha = 0.05,
+  m_pow_of_n_grid = seq(0.5, 0.9, by = 0.05),
+  m_grid = NULL,
+  objective = "ci_width",
+  target = "ci",
+  volatility_window = 3L,
+  bootstrap_type = NULL,
+  scaling = "sqrt_n",
+  show_progress = TRUE,
+  min_finite_fraction = 0.8
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of resamples per candidate size. Default 251.}
+
+\item{\code{alpha}}{Significance level for interval-width objectives.}
+
+\item{\code{m_pow_of_n_grid}}{Candidate exponent grid used when
+\code{m_grid = NULL}. Defaults to \code{seq(0.5, 0.9, by = 0.05)}.}
+
+\item{\code{m_grid}}{Optional explicit integer candidate sizes.}
+
+\item{\code{objective}}{Selection objective. Currently \code{"ci_width"}.}
+
+\item{\code{target}}{Target summary. Currently \code{"ci"}.}
+
+\item{\code{volatility_window}}{Rolling window size used to measure local
+volatility across candidate sizes.}
+
+\item{\code{bootstrap_type}}{Optional empirical-resampling scheme.}
+
+\item{\code{scaling}}{Scaling sequence for centered m-out-of-n pivots.}
+
+\item{\code{show_progress}}{A flag indicating whether a progress bar should be
+displayed.}
+
+\item{\code{min_finite_fraction}}{Minimum finite-resample fraction required for a
+candidate size to be eligible.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+An \code{EDIMOutOfNBootstrapMSelection} list with the selected
+  \code{m}, mapped exponent, candidate table, status, and reason.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceNonParamBootstrap-approximate_subsampling_distribution_beta_hat_T"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-approximate_subsampling_distribution_beta_hat_T}{}}}
+\subsection{Method \code{approximate_subsampling_distribution_beta_hat_T()}}{
+Creates the Politis/Romano/Wolf subsampling distribution of
+  the treatment-effect estimate.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceNonParamBootstrap$approximate_subsampling_distribution_beta_hat_T(
+  B = 501,
+  b = NULL,
+  show_progress = TRUE,
+  debug = FALSE,
+  subsampling_type = NULL,
+  scaling = "sqrt_n",
+  center = "full_estimate"
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of subsamples. Default 501.}
+
+\item{\code{b}}{Number of exchangeable units drawn without replacement. If
+\code{NULL} (default), use the deterministic intermediate-size rule
+\code{floor(n_units^0.7)}, where \code{n_units} is the number of
+exchangeable units used by the design (observations, clusters, pairs, or
+matched sets). The resolved value must satisfy
+\code{max(5, p_eff + 2) <= b <= floor(n_units / 2)}.}
+
+\item{\code{show_progress}}{A flag indicating whether a progress bar should be
+displayed.}
+
+\item{\code{debug}}{If \code{TRUE}, return distribution diagnostics in addition
+to the subsampled estimates.}
+
+\item{\code{subsampling_type}}{Optional empirical-resampling scheme. See
+\code{approximate_bootstrap_distribution_beta_hat_T()}.}
+
+\item{\code{scaling}}{Scaling sequence for centered subsampling pivots. The
+default \code{"sqrt_n"} uses \code{sqrt(b)} for the subsample
+distribution and converts back to the full-sample scale using
+\code{sqrt(n_units)}.}
+
+\item{\code{center}}{Centering convention for diagnostics and cache keys.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of subsampled estimates, or when
+  \code{debug = TRUE}, a diagnostic list.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceNonParamBootstrap-compute_subsampling_two_sided_pval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-compute_subsampling_two_sided_pval}{}}}
+\subsection{Method \code{compute_subsampling_two_sided_pval()}}{
+Computes a centered PRW subsampling two-sided p-value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceNonParamBootstrap$compute_subsampling_two_sided_pval(
+  delta = 0,
+  B = 501,
+  b = NULL,
+  type = "centered",
+  show_progress = TRUE,
+  min_number_usable_samples = 5L,
+  subsampling_type = NULL,
+  scaling = "sqrt_n"
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{delta}}{Null treatment effect. Default 0.}
+
+\item{\code{B}}{Number of subsamples. Default 501.}
+
+\item{\code{b}}{Number of exchangeable units drawn without replacement. If
+\code{NULL} (default), use \code{floor(n_units^0.7)} subject to the
+validation bounds documented for
+\code{approximate_subsampling_distribution_beta_hat_T()}.}
+
+\item{\code{type}}{P-value type. Currently only \code{"centered"} is supported.}
+
+\item{\code{show_progress}}{A flag indicating whether a progress bar should be
+displayed.}
+
+\item{\code{min_number_usable_samples}}{Minimum number of finite subsampled
+estimates required after filtering. Default 5.}
+
+\item{\code{subsampling_type}}{Optional empirical-resampling scheme.}
+
+\item{\code{scaling}}{Scaling sequence for centered subsampling pivots.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric two-sided p-value, or \code{NA_real_} if the path is
+  non-estimable.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceNonParamBootstrap-compute_subsampling_confidence_interval"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-compute_subsampling_confidence_interval}{}}}
+\subsection{Method \code{compute_subsampling_confidence_interval()}}{
+Computes a basic PRW subsampling confidence interval.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceNonParamBootstrap$compute_subsampling_confidence_interval(
+  alpha = 0.05,
+  B = 501,
+  b = NULL,
+  type = "basic",
+  show_progress = TRUE,
+  min_number_usable_samples = 5L,
+  subsampling_type = NULL,
+  scaling = "sqrt_n"
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{alpha}}{Significance level. Default 0.05.}
+
+\item{\code{B}}{Number of subsamples. Default 501.}
+
+\item{\code{b}}{Number of exchangeable units drawn without replacement. If
+\code{NULL} (default), use \code{floor(n_units^0.7)} subject to the
+validation bounds documented for
+\code{approximate_subsampling_distribution_beta_hat_T()}.}
+
+\item{\code{type}}{Confidence-interval type. Currently only \code{"basic"} is
+supported.}
+
+\item{\code{show_progress}}{A flag indicating whether a progress bar should be
+displayed.}
+
+\item{\code{min_number_usable_samples}}{Minimum number of finite subsampled
+estimates required after filtering. Default 5.}
+
+\item{\code{subsampling_type}}{Optional empirical-resampling scheme.}
+
+\item{\code{scaling}}{Scaling sequence for centered subsampling pivots.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A length-2 numeric confidence interval, or
+  \code{c(NA_real_, NA_real_)} if the path is non-estimable.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceNonParamBootstrap-select_optimal_b_subsampling"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-select_optimal_b_subsampling}{}}}
+\subsection{Method \code{select_optimal_b_subsampling()}}{
+Selects a PRW subsampling size by minimum volatility.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceNonParamBootstrap$select_optimal_b_subsampling(
+  B = 251,
+  alpha = 0.05,
+  b_pow_of_n_grid = seq(0.5, 0.9, by = 0.05),
+  b_grid = NULL,
+  objective = "ci_width",
+  target = "ci",
+  volatility_window = 3L,
+  subsampling_type = NULL,
+  scaling = "sqrt_n",
+  show_progress = TRUE,
+  min_finite_fraction = 0.8
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of subsamples per candidate size. Default 251.}
+
+\item{\code{alpha}}{Significance level for interval-width objectives.}
+
+\item{\code{b_pow_of_n_grid}}{Candidate exponent grid used when
+\code{b_grid = NULL}. Defaults to \code{seq(0.5, 0.9, by = 0.05)}.}
+
+\item{\code{b_grid}}{Optional explicit integer candidate sizes.}
+
+\item{\code{objective}}{Selection objective. Currently \code{"ci_width"}.}
+
+\item{\code{target}}{Target summary. Currently \code{"ci"}.}
+
+\item{\code{volatility_window}}{Rolling window size used to measure local
+volatility across candidate sizes.}
+
+\item{\code{subsampling_type}}{Optional empirical-resampling scheme.}
+
+\item{\code{scaling}}{Scaling sequence for centered subsampling pivots.}
+
+\item{\code{show_progress}}{A flag indicating whether a progress bar should be
+displayed.}
+
+\item{\code{min_finite_fraction}}{Minimum finite-subsample fraction required for
+a candidate size to be eligible.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+An \code{EDISubsamplingBSelection} list with the selected
+  \code{b}, mapped exponent, candidate table, status, and reason.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-InferenceNonParamBootstrap-compute_subsampling_sensitivity"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-compute_subsampling_sensitivity}{}}}
+\subsection{Method \code{compute_subsampling_sensitivity()}}{
+Computes PRW subsampling sensitivity over candidate sizes.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{InferenceNonParamBootstrap$compute_subsampling_sensitivity(
+  B = 251,
+  alpha = 0.05,
+  b_pow_of_n_grid = seq(0.5, 0.9, by = 0.05),
+  b_grid = NULL,
+  objective = "ci_width",
+  target = "ci",
+  volatility_window = 3L,
+  subsampling_type = NULL,
+  scaling = "sqrt_n",
+  show_progress = TRUE,
+  min_finite_fraction = 0
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{B}}{Number of subsamples per candidate size. Default 251.}
+
+\item{\code{alpha}}{Significance level for interval-width objectives.}
+
+\item{\code{b_pow_of_n_grid}}{Candidate exponent grid used when
+\code{b_grid = NULL}. Defaults to \code{seq(0.5, 0.9, by = 0.05)}.}
+
+\item{\code{b_grid}}{Optional explicit integer candidate sizes.}
+
+\item{\code{objective}}{Selection objective. Currently \code{"ci_width"}.}
+
+\item{\code{target}}{Target summary. Currently \code{"ci"}.}
+
+\item{\code{volatility_window}}{Rolling window size used to measure local
+volatility across candidate sizes.}
+
+\item{\code{subsampling_type}}{Optional empirical-resampling scheme.}
+
+\item{\code{scaling}}{Scaling sequence for centered subsampling pivots.}
+
+\item{\code{show_progress}}{A flag indicating whether a progress bar should be
+displayed.}
+
+\item{\code{min_finite_fraction}}{Minimum finite-subsample fraction required for
+a candidate size to be eligible. Defaults to 0 for sensitivity scans.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+An \code{EDISubsamplingSensitivity} list containing the candidate
+  grid table without selecting a final \code{b}.
+}
+}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T}{}}}

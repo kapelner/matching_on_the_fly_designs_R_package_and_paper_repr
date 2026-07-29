@@ -87,7 +87,9 @@ InferenceKKPassThroughCompound = R6::R6Class("InferenceKKPassThroughCompound",
 	lock_objects = FALSE,
 	inherit = InferenceParamBootstrap,
 	public = inference_kk_passthrough_compound_public,
-	private = inference_kk_passthrough_compound_private
+	private = c(inference_kk_passthrough_compound_private, list(
+		is_a_kk_passthrough_compound = function() TRUE
+	))
 )
 
 #' Internal Base Class for KK Designs Without Parametric LR Bootstrap
@@ -102,5 +104,7 @@ InferenceKKPassThroughCompoundNoParamBootstrap = R6::R6Class("InferenceKKPassThr
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
 	public = inference_kk_passthrough_compound_public,
-	private = inference_kk_passthrough_compound_private
+	private = c(inference_kk_passthrough_compound_private, list(
+		is_a_kk_passthrough_compound_no_param_bootstrap = function() TRUE
+	))
 )

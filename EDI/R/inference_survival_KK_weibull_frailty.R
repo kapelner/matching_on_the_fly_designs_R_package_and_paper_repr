@@ -21,7 +21,7 @@
 #' @keywords internal
 InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullFrailtyIVWC",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLik,
+	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
 	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize the inference object.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
@@ -87,6 +87,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 		}
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+		is_a_kk_weibull_frailty_ivwc = function() TRUE,
 		optimization_alg = NULL,
 		best_par = NULL,
 		best_X_colnames = NULL,
@@ -98,7 +99,6 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 		max_abs_reasonable_coef = 1e4,
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		supports_lik_ratio_param_bootstrap = function() isTRUE(private$use_rcpp),
-		supports_likelihood_tests = function() FALSE,
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			# Use private fields (survive duplicate()) instead of cached_values
 			if (is.null(private$best_X_colnames_matched) && is.null(private$best_X_colnames_reservoir)){
@@ -465,6 +465,7 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 		}
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+		is_a_kk_weibull_frailty_one_lik = function() TRUE,
 		cached_mod = NULL,
 		best_X_colnames = NULL,
 		optimization_alg = "lbfgs",

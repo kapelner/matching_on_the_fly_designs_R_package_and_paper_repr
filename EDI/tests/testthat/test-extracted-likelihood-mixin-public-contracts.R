@@ -51,7 +51,7 @@ make_no_likelihood_spec_logit_inference <- function(des){
 			private = list(
 				get_likelihood_test_spec = function() NULL,
 				compute_likelihood_test_two_sided_pval = function(delta, testing_type, bartlett_B = NULL){
-					eval(body(EDI:::InferenceMixinLikelihoodTestMemoization$private$compute_likelihood_test_two_sided_pval))
+					eval(body(EDI:::InferenceExtLikelihoodTestMemoization$private$compute_likelihood_test_two_sided_pval))
 				}
 			)
 		)

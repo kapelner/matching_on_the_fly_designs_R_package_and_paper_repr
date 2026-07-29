@@ -64,6 +64,7 @@ InferenceCustomAsymp = R6::R6Class("InferenceCustomAsymp",
 		}
 	),
 	private = list(
+		is_a_custom_asymp = function() TRUE,
 		run_custom_fit = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
@@ -142,6 +143,9 @@ InferenceCustomRand = R6::R6Class("InferenceCustomRand",
 			}
 			private$cached_values$beta_hat_T
 		}
+	),
+	private = list(
+		is_a_custom_rand = function() TRUE
 	)
 )
 #' Internal base for user-defined bootstrap inference extensions
@@ -177,5 +181,8 @@ InferenceCustomBoot = R6::R6Class("InferenceCustomBoot",
 			}
 			private$cached_values$beta_hat_T
 		}
+	),
+	private = list(
+		is_a_custom_boot = function() TRUE
 	)
 )

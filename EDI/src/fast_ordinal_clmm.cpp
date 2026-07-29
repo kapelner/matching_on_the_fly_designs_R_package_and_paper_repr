@@ -1,5 +1,6 @@
 #include <RcppEigen.h>
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include "_glmm_links.h"
 #include "_glmm_engine.h"
 
@@ -77,7 +78,7 @@ public:
 };
 
 template <typename Link>
-List run_fast_ordinal_clmm(const GLMMData& dat, int K, int j_T, bool estimate_only, int maxit, double eps_g, 
+edi::ResultMap run_fast_ordinal_clmm(const GLMMData& dat, int K, int j_T, bool estimate_only, int maxit, double eps_g,
                            const Eigen::Ref<const Eigen::VectorXd>& start_full, const std::string& optimization_alg,
                            const FixedParamSpec& fixed_spec,
                            const Eigen::MatrixXd* info_start_ptr = nullptr) {
@@ -116,14 +117,15 @@ List run_fast_ordinal_clmm(const GLMMData& dat, int K, int j_T, bool estimate_on
         }
     }
 
-    return List::create(
-        Named("b")          = par.segment(na, dat.p),
-        Named("alpha")      = par.head(na),
-        Named("log_sigma")  = par[total - 1],
-        Named("ssq_b_T")    = ssq_b_T,
-        Named("converged")  = converged,
-        Named("neg_loglik") = neg_ll
-    );
+    Eigen::VectorXd b_vec = par.segment(na, dat.p);
+    Eigen::VectorXd alpha_vec = par.head(na);
+    return edi::ResultMap()
+        .set("b", b_vec)
+        .set("alpha", alpha_vec)
+        .set("log_sigma", par[total - 1])
+        .set("ssq_b_T", ssq_b_T)
+        .set("converged", converged)
+        .set("neg_loglik", neg_ll);
 }
 
 } // namespace
@@ -164,34 +166,33 @@ List fast_ordinal_clmm_cpp(
     }
 
     GLMMData dat(map_X, y_v, gid_v, n_gh, max_abs_log_sigma);
-    FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        total,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
 
+    auto warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
     Eigen::VectorXd start_full(total);
-    if (warm_start_params.isNotNull()) {
-        Rcpp::NumericVector sv(warm_start_params);
-        if (sv.size() == total) {
-            for (int i = 0; i < total; ++i) start_full[i] = sv[i];
-        } else {
-            start_full.setZero();
-            start_full[total - 1] = -3.0;
-        }
+    if (warm_start_params_opt.has_value() && warm_start_params_opt->size() == total) {
+        start_full = *warm_start_params_opt;
     } else {
         start_full.setZero();
         start_full[total - 1] = -3.0;
     }
     start_full = apply_fixed_values(start_full, fixed_spec);
 
+    auto warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
     Eigen::MatrixXd info_start;
     const Eigen::MatrixXd* info_start_ptr = nullptr;
-    if (warm_start_fisher_info.isNotNull()) {
-        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+    if (warm_start_fisher_info_opt.has_value()) {
+        info_start = *warm_start_fisher_info_opt;
         info_start_ptr = &info_start;
     }
 
-    if (link == "logit")   return run_fast_ordinal_clmm<LogitLink>(dat, K, j_T, estimate_only, maxit, eps_g, start_full, optimization_alg, fixed_spec, info_start_ptr);
-    if (link == "probit")  return run_fast_ordinal_clmm<ProbitLink>(dat, K, j_T, estimate_only, maxit, eps_g, start_full, optimization_alg, fixed_spec, info_start_ptr);
-    if (link == "cauchit") return run_fast_ordinal_clmm<CauchitLink>(dat, K, j_T, estimate_only, maxit, eps_g, start_full, optimization_alg, fixed_spec, info_start_ptr);
-    if (link == "cloglog") return run_fast_ordinal_clmm<CloglogLink>(dat, K, j_T, estimate_only, maxit, eps_g, start_full, optimization_alg, fixed_spec, info_start_ptr);
+    if (link == "logit")   return edi::to_rcpp_list(run_fast_ordinal_clmm<LogitLink>(dat, K, j_T, estimate_only, maxit, eps_g, start_full, optimization_alg, fixed_spec, info_start_ptr));
+    if (link == "probit")  return edi::to_rcpp_list(run_fast_ordinal_clmm<ProbitLink>(dat, K, j_T, estimate_only, maxit, eps_g, start_full, optimization_alg, fixed_spec, info_start_ptr));
+    if (link == "cauchit") return edi::to_rcpp_list(run_fast_ordinal_clmm<CauchitLink>(dat, K, j_T, estimate_only, maxit, eps_g, start_full, optimization_alg, fixed_spec, info_start_ptr));
+    if (link == "cloglog") return edi::to_rcpp_list(run_fast_ordinal_clmm<CloglogLink>(dat, K, j_T, estimate_only, maxit, eps_g, start_full, optimization_alg, fixed_spec, info_start_ptr));
 
     Rcpp::stop("Unknown link: " + link);
     return List::create();

@@ -13,9 +13,9 @@ make_memoization_logit_inference <- function(seed = 1L, n = 80L){
 }
 
 test_that("likelihood-test memoization mixin is composed into likelihood inference classes", {
-	expect_true(is.list(EDI:::InferenceMixinLikelihoodTestMemoization))
+	expect_true(is.list(EDI:::InferenceExtLikelihoodTestMemoization))
 	expect_named(
-		EDI:::InferenceMixinLikelihoodTestMemoization$private,
+		EDI:::InferenceExtLikelihoodTestMemoization$private,
 		c(
 			"make_warm_fit_null_wrapper",
 			"get_memoized_likelihood_test_eval",
@@ -26,7 +26,7 @@ test_that("likelihood-test memoization mixin is composed into likelihood inferen
 
 	inf = make_memoization_logit_inference()
 	priv = inf$.__enclos_env__$private
-	expect_true(all(names(EDI:::InferenceMixinLikelihoodTestMemoization$private) %in% names(priv)))
+	expect_true(all(names(EDI:::InferenceExtLikelihoodTestMemoization$private) %in% names(priv)))
 
 	pval = inf$compute_score_two_sided_pval(0)
 	cache_key = priv$likelihood_test_delta_key("score", 0)

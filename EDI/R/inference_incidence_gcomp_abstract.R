@@ -192,6 +192,7 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 		}
 	),
 	private = list(
+		is_a_incid_gcomp = function() TRUE,
 		best_X_colnames = NULL,
 		gcomp_boot_beta = NULL,
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){

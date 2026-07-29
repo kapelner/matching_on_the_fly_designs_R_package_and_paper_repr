@@ -10,6 +10,7 @@
 #define NDEBUG
 #endif
 
+#include "fast_gamma_functions.h"
 #include "ordinal_fixed_link_helpers.h"
 #include "optimization_starts.h"
 #include <RcppEigen.h>
@@ -21,6 +22,7 @@
 #include <cmath>
 #include <string>
 #include <type_traits>
+#include <optional>
 #include <Rmath.h>
 
 using Eigen::VectorXd;
@@ -246,6 +248,18 @@ inline Eigen::MatrixXd symmetric_crossprod(const Eigen::MatrixBase<Derived>& X) 
     return res;
 }
 
+// Converts an Rcpp::Nullable<T> (the required R-facing type for an optional
+// exported-function argument) into a std::optional<NativeT> so all the
+// downstream logic in a function body can use std::optional idioms
+// (has_value()/*opt) instead of Rcpp's isNotNull()/as<T>(). Keep the call at
+// the top of a function, once per parameter — this is the only place
+// Rcpp::Nullable should appear once a function has been migrated.
+template <typename NativeT, typename RcppT>
+inline std::optional<NativeT> nullable_to_optional(const Rcpp::Nullable<RcppT>& x) {
+    if (x.isNull()) return std::nullopt;
+    return Rcpp::as<NativeT>(x);
+}
+
 struct FixedParamSpec {
     Eigen::VectorXi fixed_idx;
     Eigen::VectorXi free_idx;
@@ -257,27 +271,27 @@ struct FixedParamSpec {
 
 inline FixedParamSpec make_fixed_param_spec(
     int n_params,
-    Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-    Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue
+    std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+    std::optional<Eigen::VectorXd> fixed_values = std::nullopt
 ) {
     FixedParamSpec spec;
 
-    if (fixed_idx.isNull()) {
+    if (!fixed_idx.has_value()) {
         spec.free_idx.resize(n_params);
         for (int i = 0; i < n_params; ++i) spec.free_idx[i] = i;
         return spec;
     }
 
-    Rcpp::IntegerVector fixed_idx_r(fixed_idx);
+    const Eigen::VectorXi& fixed_idx_r = *fixed_idx;
     if (fixed_idx_r.size() == 0) {
         spec.free_idx.resize(n_params);
         for (int i = 0; i < n_params; ++i) spec.free_idx[i] = i;
         return spec;
     }
-    if (fixed_values.isNull()) {
+    if (!fixed_values.has_value()) {
         Rcpp::stop("fixed_values must be supplied when fixed_idx is non-empty");
     }
-    Rcpp::NumericVector fixed_values_r(fixed_values);
+    const Eigen::VectorXd& fixed_values_r = *fixed_values;
     if (fixed_values_r.size() != fixed_idx_r.size()) {
         Rcpp::stop("fixed_idx and fixed_values must have the same length");
     }
@@ -319,6 +333,33 @@ inline FixedParamSpec make_fixed_param_spec(
     }
 
     return spec;
+}
+
+inline FixedParamSpec make_fixed_param_spec(
+    int n_params,
+    const Rcpp::Nullable<Rcpp::IntegerVector>& fixed_idx,
+    const Rcpp::Nullable<Rcpp::NumericVector>& fixed_values
+) {
+    return make_fixed_param_spec(
+        n_params,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values)
+    );
+}
+
+inline FixedParamSpec make_fixed_param_spec(
+    int n_params,
+    SEXP fixed_idx,
+    SEXP fixed_values
+) {
+    if (Rf_isNull(fixed_idx)) {
+        return make_fixed_param_spec(n_params);
+    }
+    return make_fixed_param_spec(
+        n_params,
+        Rcpp::as<Eigen::VectorXi>(fixed_idx),
+        Rf_isNull(fixed_values) ? std::optional<Eigen::VectorXd>() : std::optional<Eigen::VectorXd>(Rcpp::as<Eigen::VectorXd>(fixed_values))
+    );
 }
 
 inline Eigen::VectorXd subset_vector(const Eigen::VectorXd& x, const Eigen::VectorXi& idx) {
@@ -867,7 +908,7 @@ inline Rcpp::List likelihood_ratio_test_from_negloglik(double unrestricted_neg_l
     double p_value = NA_REAL;
     if (R_finite(unrestricted_neg_loglik) && R_finite(null_neg_loglik) && df > 0) {
         statistic = std::max(0.0, 2.0 * (null_neg_loglik - unrestricted_neg_loglik));
-        p_value = R::pchisq(statistic, static_cast<double>(df), false, false);
+        p_value = fast_pchisq_upper(statistic, static_cast<double>(df));
     }
     return Rcpp::List::create(
         Rcpp::Named("statistic") = statistic,
@@ -914,7 +955,7 @@ inline Rcpp::List score_test_from_score_information(const Eigen::VectorXd& score
     const double score_t = score[idx];
     if (R_finite(score_t) && R_finite(info_eff) && info_eff > 0.0) {
         statistic = score_t * score_t / info_eff;
-        p_value = R::pchisq(statistic, 1.0, false, false);
+        p_value = fast_pchisq_upper(statistic, 1.0);
     }
 
     return Rcpp::List::create(
@@ -946,7 +987,7 @@ inline Rcpp::List gradient_test_from_restricted_score(const Eigen::VectorXd& sco
             statistic = 0.0;
         }
         if (R_finite(statistic)) {
-            p_value = R::pchisq(statistic, 1.0, false, false);
+            p_value = fast_pchisq_upper(statistic, 1.0);
         }
     }
 
@@ -1240,57 +1281,6 @@ inline LikelihoodFitResult optimize_likelihood(LikelihoodFunctor& fun,
         return optimize_likelihood_lbfgs(fun, params, maxit, tol, max_linesearch);
     }
     return optimize_likelihood_newton_then_lbfgs(fun, params, maxit, tol, max_linesearch, warm_start_hessian);
-}
-
-// Fast digamma via A&S 6.3.18 asymptotic expansion + recurrence shift.
-// Accurate to ≤ 4e-12 relative error for x > 0; falls back to R::digamma for x <= 0.
-inline double fast_digamma(double x) {
-    if (x <= 0.0) return R::digamma(x);
-    double r = 0.0;
-    while (x < 8.0) { r -= 1.0 / x; x += 1.0; }
-    const double ix = 1.0 / x, ix2 = ix * ix;
-    r += std::log(x) - 0.5 * ix
-       - ix2 * (1.0/12.0 - ix2 * (1.0/120.0 - ix2 * (1.0/252.0 - ix2 * (1.0/240.0 - ix2/132.0))));
-    return r;
-}
-
-inline double fast_lgamma_stirling(double x) {
-    const double inv = 1.0 / x;
-    const double inv2 = inv * inv;
-    const double series = inv * (
-        1.0 / 12.0 + inv2 * (
-        -1.0 / 360.0 + inv2 * (
-         1.0 / 1260.0 + inv2 * (
-        -1.0 / 1680.0 + inv2 * (
-         1.0 / 1188.0 + inv2 * (
-        -691.0 / 360360.0 + inv2 * (1.0 / 156.0)))))));
-
-    return (x - 0.5) * std::log(x) - x
-        + 0.91893853320467274178032973640562 + series;
-}
-
-inline double fast_lgamma_lanczos(double x) {
-    const double z = x - 1.0;
-    double a = 0.99999999999980993;
-    a += 676.5203681218851 / (z + 1.0);
-    a += -1259.1392167224028 / (z + 2.0);
-    a += 771.32342877765313 / (z + 3.0);
-    a += -176.61502916214059 / (z + 4.0);
-    a += 12.507343278686905 / (z + 5.0);
-    a += -0.13857109526572012 / (z + 6.0);
-    a += 9.9843695780195716e-6 / (z + 7.0);
-    a += 1.5056327351493116e-7 / (z + 8.0);
-    const double t = z + 7.5;
-    return 0.91893853320467274178032973640562 + (z + 0.5) * std::log(t) - t + std::log(a);
-}
-
-// Fast log-gamma for positive arguments. Uses a Lanczos rational approximation
-// for moderate x and Stirling for large x; falls back for nonpositive/nonfinite.
-inline double fast_lgamma(double x) {
-    if (x <= 0.0 || !std::isfinite(x)) return std::lgamma(x);
-    if (x < 0.5) return fast_lgamma_lanczos(x + 1.0) - std::log(x);
-    if (x < 8.0) return fast_lgamma_lanczos(x);
-    return fast_lgamma_stirling(x);
 }
 
 #endif

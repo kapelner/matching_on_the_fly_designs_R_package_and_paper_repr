@@ -178,7 +178,9 @@ InferenceAsympLikStdModCache = R6::R6Class("InferenceAsympLikStdModCache",
 	lock_objects = FALSE,
 	inherit = InferenceParamBootstrap,
 	public = inference_asymp_lik_std_mod_cache_public,
-	private = inference_asymp_lik_std_mod_cache_private
+	private = c(inference_asymp_lik_std_mod_cache_private, list(
+		is_a_asymp_lik_std_mod_cache = function() TRUE
+	))
 )
 
 #' GLM and Kaplan-Meier Inference Without Parametric LR Bootstrap
@@ -193,5 +195,7 @@ InferenceAsympLikStdModCacheNoParamBootstrap = R6::R6Class("InferenceAsympLikStd
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
 	public = inference_asymp_lik_std_mod_cache_public,
-	private = inference_asymp_lik_std_mod_cache_private
+	private = c(inference_asymp_lik_std_mod_cache_private, list(
+		is_a_asymp_lik_std_mod_cache_no_param_bootstrap = function() TRUE
+	))
 )

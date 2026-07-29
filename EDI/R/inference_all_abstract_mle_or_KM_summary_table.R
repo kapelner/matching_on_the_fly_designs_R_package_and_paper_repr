@@ -69,6 +69,7 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 		}
 	),
 	private = list(
+		is_a_mle_or_km_summary_table = function() TRUE,
 		generate_mod = function(estimate_only = FALSE) stop(class(self)[1], " must implement generate_mod()"),
 		# Extract a vcov matrix from a model object. For R model objects (coxph, survreg, glm, etc.)
 		# vcov() is called lazily. For plain lists (Rcpp-backed models), falls back to $vcov.

@@ -57,6 +57,7 @@ InferenceCountCompositeLikelihood = R6::R6Class("InferenceCountCompositeLikeliho
 		}
 	),
 	private = list(
+		is_a_count_composite_likelihood = function() TRUE,
 		generate_mod = function(estimate_only = FALSE) stop(class(self)[1], " must implement generate_mod()"),
 
 		shared = function(estimate_only = FALSE){

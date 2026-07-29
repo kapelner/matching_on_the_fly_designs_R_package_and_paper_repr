@@ -10,6 +10,8 @@ DesignFixedCustom = R6::R6Class("DesignFixedCustom",
 	lock_objects = FALSE,
 	inherit = DesignFixed,
 	public = list(
+		#' @description Characterization: this is a custom fixed-design extension.
+		is_a_fixed_custom = function() TRUE,
 		#' @description Draw assignments from the custom design.
 		#' @param r Number of assignment vectors to draw.
 		#' @return An \code{n x r} matrix of 0/1 assignments.
@@ -48,6 +50,8 @@ DesignCustomSequential = R6::R6Class("DesignCustomSequential",
 	lock_objects = FALSE,
 	inherit = DesignSeqOneByOne,
 	public = list(
+		#' @description Characterization: this is a custom sequential-design extension.
+		is_a_custom_sequential = function() TRUE,
 		#' @description User-defined assignment rule.
 		#' @return A binary treatment assignment.
 		assignment_rule = function(){

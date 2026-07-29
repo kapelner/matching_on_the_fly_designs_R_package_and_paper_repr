@@ -49,6 +49,7 @@
 InferenceMixinOffOptimumLikelihoodEval = list(
 	public = list(),
 	private = list(
+		is_a_off_optimum_likelihood_eval = function() TRUE,
 		supports_off_optimum_likelihood_eval = function(spec = NULL){
 			if (is.null(spec)) {
 				spec = private$get_likelihood_test_spec()

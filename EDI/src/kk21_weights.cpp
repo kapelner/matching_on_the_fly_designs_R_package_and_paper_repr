@@ -553,16 +553,17 @@ static double univariate_negbin_tstat(
 		double score = 0.0;
 		double info = 0.0;
 		const double digamma_theta = fast_digamma(theta);
-		const double trigamma_theta = R::trigamma(theta);
+		const double trigamma_theta = fast_trigamma(theta);
 		const double log_theta = std::log(theta);
 		const double inv_theta = 1.0 / theta;
+		const Eigen::ArrayXd trigamma_ypt = fast_trigamma_vec(y.array() + theta);
 		for (int i = 0; i < n; ++i) {
 			double yi = y[i];
 			double mui = mu[i];
 			score += fast_digamma(yi + theta) - digamma_theta
 					 + log_theta - std::log(theta + mui) + 1.0
 					 - (yi + theta) / (theta + mui);
-			info += -R::trigamma(yi + theta) + trigamma_theta
+			info += -trigamma_ypt[i] + trigamma_theta
 					- inv_theta + 2.0 / (theta + mui)
 					- (yi + theta) / ((theta + mui) * (theta + mui));
 		}
@@ -1062,16 +1063,17 @@ static double multivariate_negbin_tstat(
 		double score = 0.0;
 		double info = 0.0;
 		const double digamma_theta = fast_digamma(theta);
-		const double trigamma_theta = R::trigamma(theta);
+		const double trigamma_theta = fast_trigamma(theta);
 		const double log_theta = std::log(theta);
 		const double inv_theta = 1.0 / theta;
+		const Eigen::ArrayXd trigamma_ypt = fast_trigamma_vec(y.array() + theta);
 		for (int i = 0; i < n; ++i) {
 			double yi = y[i];
 			double mui = mu[i];
 			score += fast_digamma(yi + theta) - digamma_theta
 					 + log_theta - std::log(theta + mui) + 1.0
 					 - (yi + theta) / (theta + mui);
-			info += -R::trigamma(yi + theta) + trigamma_theta
+			info += -trigamma_ypt[i] + trigamma_theta
 					- inv_theta + 2.0 / (theta + mui)
 					- (yi + theta) / ((theta + mui) * (theta + mui));
 		}

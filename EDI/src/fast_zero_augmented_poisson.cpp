@@ -259,6 +259,42 @@ public:
 
 } // namespace
 
+LikelihoodFitResult fast_zap_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
+                                      const Eigen::Ref<const Eigen::VectorXd>& y,
+                                      const Eigen::Ref<const Eigen::MatrixXd>& Xzi,
+                                      bool is_hurdle,
+                                      std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+                                      bool smart_cold_start = true,
+                                      int maxit = 1000,
+                                      double tol = 1e-8,
+                                      std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+                                      std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+                                      std::string optimization_alg = "lbfgs",
+                                      std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt) {
+    int total_p = X.cols() + Xzi.cols();
+    Eigen::VectorXd params(total_p);
+    if (warm_start_params.has_value()) {
+        params = *warm_start_params;
+    } else if (smart_cold_start) {
+        params = edi_opt::zap_smart_cold_start(X, Xzi, y);
+    } else {
+        params.setZero();
+        double mean_y = y.mean();
+        if (mean_y > 0) params[0] = std::log(mean_y);
+    }
+    FixedParamSpec fixed_spec = make_fixed_param_spec(total_p, fixed_idx, fixed_values);
+
+    ZeroAugmentedPoisson fun(y, X, Xzi, is_hurdle);
+    Eigen::MatrixXd H_start;
+    const Eigen::MatrixXd* h_ptr = nullptr;
+    if (warm_start_fisher_info.has_value()) {
+        H_start = *warm_start_fisher_info;
+        h_ptr = &H_start;
+    }
+
+    return optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, h_ptr);
+}
+
 // [[Rcpp::export]]
 Eigen::VectorXd get_zero_augmented_poisson_score_cpp(SEXP X_sexp,
 													 SEXP y_sexp,
@@ -342,34 +378,26 @@ List fast_zero_augmented_poisson_cpp(SEXP X_sexp,
     int p_zi = Xzi.cols();
     int total_p = p_cond + p_zi;
 
-    Eigen::VectorXd params(total_p);
-    if (warm_start_params.isNotNull()) {
-        params = as<Eigen::VectorXd>(NumericVector(warm_start_params));
-    } else if (smart_cold_start) {
-        params = edi_opt::zap_smart_cold_start(X, Xzi, y);
-    } else {
-        params.setZero();
-        // Naive warm_start_params for intercept
-        double mean_y = y.mean();
-        if (mean_y > 0) params[0] = std::log(mean_y);
-    }
-    FixedParamSpec fixed_spec = make_fixed_param_spec(total_p, fixed_idx, fixed_values);
-
-    ZeroAugmentedPoisson fun(y, X, Xzi, is_hurdle);
-    Eigen::MatrixXd H_start;
-    const Eigen::MatrixXd* h_ptr = nullptr;
-    if (warm_start_fisher_info.isNotNull()) {
-        H_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
-        h_ptr = &H_start;
-    }
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        total_p,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
 
     LikelihoodFitResult fit;
     try {
-        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, h_ptr);
+        fit = fast_zap_internal(
+            X, y, Xzi, is_hurdle,
+            nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+            smart_cold_start, maxit, tol,
+            nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+            nullable_to_optional<Eigen::VectorXd>(fixed_values),
+            optimization_alg,
+            nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
     } catch (...) {
         return List::create(Named("converged") = false, Named("gradient_norm") = NA_REAL);
     }
-    params = fit.params;
+    Eigen::VectorXd params = fit.params;
+    ZeroAugmentedPoisson fun(y, X, Xzi, is_hurdle);
 
     if (estimate_only) {
         return List::create(

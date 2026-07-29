@@ -1,16 +1,17 @@
-#' Pattern-1 mixin: quantile randomization confidence interval (Zhang combined)
+#' Pattern-1 file-split extension: quantile randomization confidence interval (Zhang combined)
 #'
 #' Provides \code{compute_rand_confidence_interval()} via Zhang's combined
 #' test-inversion method for both Bernoulli (\eqn{m = 0}) and KK
-#' matching-on-the-fly designs (\eqn{m > 0}).
+#' matching-on-the-fly designs (\eqn{m > 0}). Spliced into exactly one class
+#' (\code{InferenceAbstractQuantileRandCI}) -- not a reusable mixin.
 #'
-#' Splice into a daughter class via
-#' \code{public = c(InferenceMixinQuantileRandCI$public, list(...))}.
+#' Splice into \code{InferenceAbstractQuantileRandCI} (the only host) via
+#' \code{public = c(InferenceExtQuantileRandCI$public, list(...))}.
 #' The capability flag \code{private$quantile_rand_ci} is set to \code{TRUE}.
 #'
 #' @keywords internal
 #' @noRd
-InferenceMixinQuantileRandCI = list(
+InferenceExtQuantileRandCI = list(
 	public = list(
 		#' @description Computes a randomization-based confidence interval via Zhang's combined test.
 		#'

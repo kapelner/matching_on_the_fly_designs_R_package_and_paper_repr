@@ -120,6 +120,7 @@ InferenceAbstractKKCondLogitPlusGLMM = R6::R6Class("InferenceAbstractKKCondLogit
 		}
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+		is_a_kk_cond_logit_plus_glmm = function() TRUE,
 		max_abs_reasonable_coef = 50,
 		max_abs_reasonable_se = 10,
 		max_abs_log_sigma = 8,

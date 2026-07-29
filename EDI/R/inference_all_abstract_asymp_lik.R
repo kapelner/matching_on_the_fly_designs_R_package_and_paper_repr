@@ -275,7 +275,8 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 			private$compute_gradient_confidence_interval_impl(alpha)
 		}
 	),
-	private = c(InferenceMixinCIInversion$private, InferenceMixinInformationMatrix$private, InferenceMixinLikelihoodTestMemoization$private, list(
+	private = c(InferenceExtCIInversion$private, InferenceExtInformationMatrix$private, InferenceExtLikelihoodTestMemoization$private, list(
+		is_a_asymp_lik = function() TRUE,
 		likelihood_ci_max_abs = 10,
 		testing_type = "wald",
 		information_preference = "auto",
@@ -349,8 +350,8 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 
 
 		#' Returns NULL, or a list describing the likelihood surface at the
-		#' fitted point, consumed by InferenceMixinInformationMatrix,
-		#' InferenceMixinLikelihoodTestMemoization, and (optionally)
+		#' fitted point, consumed by InferenceExtInformationMatrix,
+		#' InferenceExtLikelihoodTestMemoization, and (optionally)
 		#' InferenceMixinOffOptimumLikelihoodEval. Concrete classes typically
 		#' include X, y, j, full_fit, fit_null(delta, start), extract_start(fit),
 		#' score(fit), observed_information(fit), fisher_information(fit), and

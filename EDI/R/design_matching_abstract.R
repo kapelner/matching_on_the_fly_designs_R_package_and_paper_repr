@@ -14,6 +14,8 @@ DesignMatching = R6::R6Class("DesignMatching",
 	lock_objects = FALSE,
 	inherit = DesignBlocking,
 	public = list(
+		#' @description Characterization: this is a matching design.
+		is_a_matching = function() TRUE,
 		#' @description Check whether this design currently has matching structure.
 		#'
 		#' @return \code{TRUE} if the design advertises matching support.

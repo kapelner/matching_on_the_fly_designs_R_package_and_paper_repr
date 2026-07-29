@@ -68,7 +68,10 @@ SEXP get_ordinal_cloglog_regression_score_cpp(const Rcpp::NumericMatrix& X,
 	Eigen::Map<const Eigen::VectorXd> map_params(params.begin(), params.size());
 
 	OrdinalCLLRegression model(map_X, map_y);
-	FixedParamSpec fixed_spec = make_fixed_param_spec(map_params.size(), fixed_idx, fixed_values);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(
+		map_params.size(),
+		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+		nullable_to_optional<Eigen::VectorXd>(fixed_values));
 	Eigen::VectorXd par = apply_fixed_values(map_params, fixed_spec);
 	Eigen::VectorXd grad(par.size());
 	model(par, grad);
@@ -86,7 +89,10 @@ SEXP get_ordinal_cloglog_regression_hessian_cpp(const Rcpp::NumericMatrix& X,
 	Eigen::Map<const Eigen::VectorXd> map_params(params.begin(), params.size());
 
 	OrdinalCLLRegression model(map_X, map_y);
-	FixedParamSpec fixed_spec = make_fixed_param_spec(map_params.size(), fixed_idx, fixed_values);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(
+		map_params.size(),
+		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+		nullable_to_optional<Eigen::VectorXd>(fixed_values));
 	Eigen::VectorXd par = apply_fixed_values(map_params, fixed_spec);
 	return wrap(-model.hessian(par));
 }
@@ -129,9 +135,13 @@ List fast_ordinal_cloglog_regression_cpp(const Rcpp::NumericMatrix& X,
     int n_params = n_alpha + p;
 
     VectorXd params(n_params);
-    FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
-    if (warm_start_params.isNotNull()) {
-        params = as<Eigen::VectorXd>(NumericVector(warm_start_params));
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        n_params,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
+    std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
+    if (warm_start_params_opt.has_value()) {
+        params = *warm_start_params_opt;
         if (params.size() != n_params) stop("warm_start_params must have length equal to the number of model parameters");
     } else {
         OrdinalStart legacy_start;
@@ -150,8 +160,9 @@ List fast_ordinal_cloglog_regression_cpp(const Rcpp::NumericMatrix& X,
 
     Eigen::MatrixXd info_start;
     const Eigen::MatrixXd* info_start_ptr = nullptr;
-    if (warm_start_fisher_info.isNotNull()) {
-        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
+    if (warm_start_fisher_info_opt.has_value()) {
+        info_start = *warm_start_fisher_info_opt;
         info_start_ptr = &info_start;
     }
 
@@ -217,8 +228,11 @@ List fast_ordinal_cloglog_regression_with_var_cpp(const Rcpp::NumericMatrix& X,
 
     OrdinalCLLRegression model(map_X, map_y);
     int n_params = params.size();
-    FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
-    
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        n_params,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
+
     double ssq_b_2 = NA_REAL;
     MatrixXd H = model.hessian(params);
     SEXP vcov_sexp = R_NilValue;

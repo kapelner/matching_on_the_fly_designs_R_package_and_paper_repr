@@ -8,7 +8,7 @@
 #' @keywords internal
 InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIVWC",
 	lock_objects = FALSE,
-	inherit = InferenceAsympLik,
+	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
 	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
 		#' @description Initialize the abstract base.
 		#' @param des_obj A DesignSeqOneByOne object (must be a KK design).
@@ -38,8 +38,8 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 		}
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+		is_a_kk_wilcox_base_ivwc = function() TRUE,
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
-		supports_likelihood_tests = function() FALSE,
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps) {
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
 			# Optimization: w_mat and m_mat are already pre-computed matrices
@@ -182,7 +182,7 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 				assertResponseType(res_type, c("continuous", "count", "proportion", "survival", "ordinal"))
 			}
 			if (should_run_asserts()) {
-				if (!inherits(des_obj, "DesignSeqOneByOneKK14") && !inherits(des_obj, "DesignFixedBinaryMatch")){
+				if (!des_obj$is_a_kk_matching_capable()){
 					stop(class(self)[1], " requires a KK matching-on-the-fly design (DesignSeqOneByOneKK14 or subclass).")
 				}
 			}

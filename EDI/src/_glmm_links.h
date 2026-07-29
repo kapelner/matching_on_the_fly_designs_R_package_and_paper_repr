@@ -22,10 +22,10 @@ struct LogitLink {
 };
 
 struct ProbitLink {
-    static inline double cdf(double x) { return R::pnorm(x, 0.0, 1.0, 1, 0); }
-    static inline double pdf(double x) { return R::dnorm(x, 0.0, 1.0, 0); }
-    static inline double pdf_from_cdf(double x, double /*F*/) { return R::dnorm(x, 0.0, 1.0, 0); }
-    static inline double deriv_pdf(double x) { return -x * R::dnorm(x, 0.0, 1.0, 0); }
+    static inline double cdf(double x) { return pnorm_fast(x); }
+    static inline double pdf(double x) { return dnorm_fast(x); }
+    static inline double pdf_from_cdf(double x, double /*F*/) { return dnorm_fast(x); }
+    static inline double deriv_pdf(double x) { return -x * dnorm_fast(x); }
 };
 
 struct CauchitLink {

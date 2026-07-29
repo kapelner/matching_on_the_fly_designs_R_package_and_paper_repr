@@ -11,5 +11,7 @@
 #' @noRd
 InferenceMixinCordeiroFerrariApprox = list(
 	public = list(),
-	private = list()
+	private = list(
+		is_a_cordeiro_ferrari_approx = function() TRUE
+	)
 )

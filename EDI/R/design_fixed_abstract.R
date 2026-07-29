@@ -14,6 +14,8 @@ DesignFixed = R6::R6Class("DesignFixed",
 	lock_objects = FALSE,
 	inherit = DesignMatching,
 	public = list(
+		#' @description Characterization: this is a fixed-sample-size design.
+		is_a_fixed = function() TRUE,
 		#' @description Initialize a fixed experimental design
 		#'
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or

@@ -1,5 +1,6 @@
 #include <RcppEigen.h>
 #include <cmath>
+#include "fast_gamma_functions.h"
 
 // [[Rcpp::depends(RcppEigen)]]
 
@@ -30,9 +31,9 @@ double beta_loglik_cpp(SEXP y_sexp,
 	if (mui >= 1.0) one_minus_mui_phi = 1e-12;
 
 	double term =
-		R::lgammafn(phi) -
-		R::lgammafn(mui_phi) -
-		R::lgammafn(one_minus_mui_phi) +
+		fast_lgamma(phi) -
+		fast_lgamma(mui_phi) -
+		fast_lgamma(one_minus_mui_phi) +
 		(mui_phi - 1.0) * std::log(yi) +
 		(one_minus_mui_phi - 1.0) * std::log1p(-yi);
 
@@ -70,7 +71,7 @@ Eigen::VectorXd beta_dev_resids_cpp(SEXP y_sexp,
 	if (yi <= 0.0) out[i] = NA_REAL;  // avoid log(0)
 	else if (yi >= 1.0) out[i] = NA_REAL;
 	else {
-		double val = R::lbeta(mui_phi, one_minus_mui_phi) -
+		double val = fast_lbeta(mui_phi, one_minus_mui_phi) -
 		(mui_phi - 1.0) * std::log(yi) -
 		(one_minus_mui_phi - 1.0) * std::log1p(-yi);
 
@@ -110,9 +111,9 @@ double beta_aic_cpp(SEXP y_sexp,
 	if (yi <= 0.0 || yi >= 1.0) continue; // skip invalid
 
 	double term =
-		R::lgammafn(phi) -
-		R::lgammafn(mui_phi) -
-		R::lgammafn(one_minus_mui_phi) +
+		fast_lgamma(phi) -
+		fast_lgamma(mui_phi) -
+		fast_lgamma(one_minus_mui_phi) +
 		(mui_phi - 1.0) * std::log(yi) +
 		(one_minus_mui_phi - 1.0) * std::log1p(-yi);
 

@@ -158,6 +158,7 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 		}
 	),
 	private = list(
+		is_a_incid_kk_gcomp = function() TRUE,
 		max_abs_reasonable_coef = 25,
 		best_X_colnames = NULL,
 		gcomp_boot_beta = NULL,

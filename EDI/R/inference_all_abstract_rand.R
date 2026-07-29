@@ -6,7 +6,7 @@
 InferenceRand = R6::R6Class("InferenceRand",
 	inherit = Inference,
 	lock_objects = FALSE,
-	public = c(InferenceMixinCustomRandomizationStatistic$public, list(
+	public = c(InferenceExtCustomRandomizationStatistic$public, list(
 		#' @description Computes the randomization distribution of the treatment effect estimate under the sharp null.
 		#'
 		#' @param r  					Number of randomization vectors. Default 501.
@@ -350,7 +350,8 @@ InferenceRand = R6::R6Class("InferenceRand",
 			private$compute_two_sided_randomization_pval_from_t0s(t0s, t)
 		}
 	)),
-	private = c(InferenceMixinCustomRandomizationStatistic$private, InferenceMixinSequentialMCPval$private, list(
+	private = c(InferenceExtCustomRandomizationStatistic$private, InferenceExtSequentialMCPval$private, list(
+		is_a_rand = function() TRUE,
 		randomization_mc_control = NULL,
 		is_bernoulli_design = function(){
 			is(private$des_obj, "DesignSeqOneByOneBernoulli") ||
@@ -943,7 +944,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 		},
 		compute_treatment_estimate_during_randomization_inference = function(estimate_only = TRUE){
 			if (identical(private$des_obj_priv_int$response_type, "proportion") &&
-			    (inherits(self, "InferenceAbstractKKQuantileRegrIVWC") || inherits(self, "InferenceAbstractKKQuantileRegrOneLik"))){
+			    (private$has_private_method("is_a_kk_quantile_regr_ivwc") || private$has_private_method("is_a_kk_quantile_regr_one_lik"))){
 				private$y = .sanitize_proportion_response(private$y, interior = TRUE)
 				private$cached_values$KKstats = NULL
 				private$cached_values$beta_hat_T = NULL

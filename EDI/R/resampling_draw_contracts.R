@@ -23,6 +23,22 @@ EDI_RESAMPLING_DRAW_CONTRACTS = list(
 		cache_name = "boot_distr_cache",
 		cache_key_method = NULL
 	),
+	m_out_of_n_boot = list(
+		operation = "m_out_of_n_boot",
+		draw_type = "unit_sample_with_replacement_size_m",
+		loader = "load_m_out_of_n_bootstrap_draw_into_worker",
+		estimator = "compute_bootstrap_worker_estimate",
+		cache_name = "m_out_of_n_boot_distr_cache",
+		cache_key_method = "m_out_of_n_bootstrap_cache_key"
+	),
+	subsampling = list(
+		operation = "subsampling",
+		draw_type = "unit_subsample_without_replacement",
+		loader = "load_subsampling_draw_into_worker",
+		estimator = "compute_subsampling_worker_estimate",
+		cache_name = "subsampling_distr_cache",
+		cache_key_method = "subsampling_cache_key"
+	),
 	rand_bootstrap = list(
 		operation = "rand_bootstrap",
 		draw_type = "row_sample_plus_assignment",

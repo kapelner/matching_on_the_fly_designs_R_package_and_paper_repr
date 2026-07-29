@@ -21,6 +21,40 @@
 Design = R6::R6Class("Design",
 	lock_objects = FALSE,
 	public = list(
+		#' @description Characterization: is this a blocking design? Default
+		#'   \code{FALSE}; overridden to \code{TRUE} on \code{DesignBlocking}.
+		is_a_blocking = function() FALSE,
+		#' @description Characterization: is this a matching design? Default
+		#'   \code{FALSE}; overridden to \code{TRUE} on \code{DesignMatching}.
+		is_a_matching = function() FALSE,
+		#' @description Characterization: is this a fixed-sample-size design?
+		#'   Default \code{FALSE}; overridden to \code{TRUE} on \code{DesignFixed}.
+		is_a_fixed = function() FALSE,
+		#' @description Characterization: is this a sequential one-by-one design?
+		#'   Default \code{FALSE}; overridden to \code{TRUE} on
+		#'   \code{DesignSeqOneByOne}.
+		is_a_seq_one_by_one = function() FALSE,
+		#' @description Characterization: is this a custom fixed-design extension?
+		#'   Default \code{FALSE}; overridden to \code{TRUE} on
+		#'   \code{DesignFixedCustom}.
+		is_a_fixed_custom = function() FALSE,
+		#' @description Characterization: is this a custom sequential-design
+		#'   extension? Default \code{FALSE}; overridden to \code{TRUE} on
+		#'   \code{DesignCustomSequential}.
+		is_a_custom_sequential = function() FALSE,
+		#' @description Characterization: is this a KK matching-on-the-fly-capable
+		#'   design (sequential KK or its fixed binary-match equivalent)? Default
+		#'   \code{FALSE}; overridden to \code{TRUE} on
+		#'   \code{DesignSeqOneByOneKK14} and \code{DesignFixedBinaryMatch}.
+		is_a_kk_matching_capable = function() FALSE,
+		#' @description Characterization: is this a cluster-structured design?
+		#'   Default \code{FALSE}; overridden to \code{TRUE} on
+		#'   \code{DesignFixedCluster} and \code{DesignFixedBlockedCluster}.
+		is_a_cluster_capable = function() FALSE,
+		#' @description Characterization: is this a Bernoulli-randomized design?
+		#'   Default \code{FALSE}; overridden to \code{TRUE} on
+		#'   \code{DesignSeqOneByOneBernoulli} and \code{DesignFixedBernoulli}.
+		is_a_bernoulli_capable = function() FALSE,
 		#' @description Initialize an experimental design
 		#'
 		#' @param response_type   "continuous", "incidence", "proportion", "count", "survival", or

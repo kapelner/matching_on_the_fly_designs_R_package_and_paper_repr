@@ -1,4 +1,5 @@
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <Rcpp.h>
 #include <RcppEigen.h>
 #include <algorithm>
@@ -175,6 +176,53 @@ std::vector<int> map_y_to_1K(const Eigen::Ref<const VectorXd>& y, const std::vec
 
 } // namespace
 
+LikelihoodFitResult fast_adjacent_category_logit_internal(
+		const Eigen::Ref<const Eigen::MatrixXd>& X,
+		const std::vector<int>& y_mapped,
+		int K,
+		int maxit = 100,
+		double tol = 1e-8,
+		bool smart_cold_start = true,
+		std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+		std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+		std::string optimization_alg = "lbfgs",
+		std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt,
+		std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+		std::optional<Eigen::VectorXd> warm_start_beta = std::nullopt) {
+	AdjacentCategoryLogitNegLogLik fun(X, y_mapped, K);
+
+	int n_alpha = K - 1;
+	int p = X.cols();
+	int n_par = n_alpha + p;
+	VectorXd params = VectorXd::Zero(n_par);
+
+	if (warm_start_params.has_value()) {
+		params = *warm_start_params;
+		if (params.size() != n_par) stop("warm_start_params size mismatch");
+	} else if (warm_start_beta.has_value()) {
+		const Eigen::VectorXd& sb = *warm_start_beta;
+		if (sb.size() == p) {
+			params.tail(p) = sb;
+		}
+	} else if (smart_cold_start) {
+		// Smart warm_start_params: OLS on y_mapped
+		Eigen::VectorXd y_double(y_mapped.size());
+		for(size_t i=0; i<y_mapped.size(); ++i) y_double[i] = (double)y_mapped[i];
+		params.tail(p) = ols_smart_cold_start_beta(X, y_double);
+	}
+
+	FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
+
+	Eigen::MatrixXd info_start;
+	const Eigen::MatrixXd* info_start_ptr = nullptr;
+	if (warm_start_fisher_info.has_value()) {
+		info_start = *warm_start_fisher_info;
+		info_start_ptr = &info_start;
+	}
+
+	return optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_start_ptr);
+}
+
 // [[Rcpp::export]]
 Eigen::VectorXd get_adjacent_category_logit_score_cpp(SEXP X_sexp,
                                                       SEXP y_sexp,
@@ -247,46 +295,22 @@ List fast_adjacent_category_logit_cpp(SEXP X_sexp, SEXP y_sexp, int maxit = 100,
         stop("Adjacent-category logits require at least two observed outcome categories.");
     }
     std::vector<int> y_mapped = map_y_to_1K(y, levels);
-    AdjacentCategoryLogitNegLogLik fun(X, y_mapped, K);
-    
-    int n_alpha = K - 1;
-    int p = X.cols();
-    int n_par = n_alpha + p;
-    VectorXd params = VectorXd::Zero(n_par);
-    
-    if (warm_start_params.isNotNull()) {
-        params = as<VectorXd>(warm_start_params);
-        if (params.size() != n_par) stop("warm_start_params size mismatch");
-    } else if (warm_start_beta.isNotNull()) {
-        VectorXd sb = as<VectorXd>(warm_start_beta);
-        if (sb.size() == p) {
-            params.tail(p) = sb;
-        }
-    } else if (smart_cold_start) {
-        // Smart warm_start_params: OLS on y_mapped
-        Eigen::VectorXd y_double(y_mapped.size());
-        for(size_t i=0; i<y_mapped.size(); ++i) y_double[i] = (double)y_mapped[i];
-        params.tail(p) = ols_smart_cold_start_beta(X, y_double);
-    }
-    
-    FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
-    
-    Eigen::MatrixXd info_start;
-    const Eigen::MatrixXd* info_start_ptr = nullptr;
-    if (warm_start_fisher_info.isNotNull()) {
-        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
-        info_start_ptr = &info_start;
-    }
-    
-    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_start_ptr);
 
-    return List::create(
-        Named("b") = fit.params.tail(X.cols()),
-        Named("alpha") = fit.params.head(K - 1),
-        Named("params") = fit.params,
-        Named("neg_loglik") = fit.value,
-        Named("converged") = fit.converged
-    );
+    LikelihoodFitResult fit = fast_adjacent_category_logit_internal(
+        X, y_mapped, K, maxit, tol, smart_cold_start,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+        nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+        nullable_to_optional<Eigen::VectorXd>(warm_start_beta));
+
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("b", fit.params.tail(X.cols()))
+        .set("alpha", fit.params.head(K - 1))
+        .set("params", fit.params)
+        .set("neg_loglik", fit.value)
+        .set("converged", fit.converged));
 }
 
 //' @title Fast Adjacent-Category Logit with Variance (C++)
@@ -325,38 +349,24 @@ List fast_adjacent_category_logit_with_var_cpp(SEXP X_sexp, SEXP y_sexp, int max
         stop("Adjacent-category logits require at least two observed outcome categories.");
     }
     std::vector<int> y_mapped = map_y_to_1K(y, levels);
-    AdjacentCategoryLogitNegLogLik fun(X, y_mapped, K);
-    
     int n_alpha = K - 1;
     int p = X.cols();
     int n_par = n_alpha + p;
-    VectorXd params = VectorXd::Zero(n_par);
 
-    if (warm_start_params.isNotNull()) {
-        params = as<VectorXd>(warm_start_params);
-        if (params.size() != n_par) stop("warm_start_params size mismatch");
-    } else if (warm_start_beta.isNotNull()) {
-        VectorXd sb = as<VectorXd>(warm_start_beta);
-        if (sb.size() == p) {
-            params.tail(p) = sb;
-        }
-    } else if (smart_cold_start) {
-        // Smart warm_start_params: OLS on y_mapped
-        Eigen::VectorXd y_double(y_mapped.size());
-        for(size_t i=0; i<y_mapped.size(); ++i) y_double[i] = (double)y_mapped[i];
-        params.tail(p) = ols_smart_cold_start_beta(X, y_double);
-    }
+    LikelihoodFitResult fit = fast_adjacent_category_logit_internal(
+        X, y_mapped, K, maxit, tol, smart_cold_start,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+        nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+        nullable_to_optional<Eigen::VectorXd>(warm_start_beta));
 
-    FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
-    
-    Eigen::MatrixXd info_start;
-    const Eigen::MatrixXd* info_start_ptr = nullptr;
-    if (warm_start_fisher_info.isNotNull()) {
-        info_start = as<Eigen::MatrixXd>(warm_start_fisher_info);
-        info_start_ptr = &info_start;
-    }
-    
-    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_start_ptr);
+    AdjacentCategoryLogitNegLogLik fun(X, y_mapped, K);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        n_par,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
 
     MatrixXd info = fun.hessian(fit.params);
     MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);
@@ -377,22 +387,20 @@ List fast_adjacent_category_logit_with_var_cpp(SEXP X_sexp, SEXP y_sexp, int max
         }
     }
 
-    SEXP vcov_sexp = R_NilValue;
+    edi::ResultValue vcov_value = std::monostate{};
     if (fit.converged) {
-        MatrixXd vcov = expand_free_covariance(n_par, fixed_spec, cov_free, true);
-        vcov_sexp = Rcpp::wrap(vcov);
+        vcov_value = Eigen::MatrixXd(expand_free_covariance(n_par, fixed_spec, cov_free, true));
     }
-    return List::create(
-        Named("b") = fit.params.tail(X.cols()),
-        Named("alpha") = fit.params.head(K - 1),
-        Named("params") = fit.params,
-        Named("neg_loglik") = fit.value,
-        Named("ssq_b_1") = ssq_b_1,
-        Named("ssq_b_j") = ssq_b_1,
-        Named("vcov") = vcov_sexp,
-        Named("fisher_information") = info,
-        Named("converged") = fit.converged
-    );
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("b", fit.params.tail(X.cols()))
+        .set("alpha", fit.params.head(K - 1))
+        .set("params", fit.params)
+        .set("neg_loglik", fit.value)
+        .set("ssq_b_1", ssq_b_1)
+        .set("ssq_b_j", ssq_b_1)
+        .set("vcov", vcov_value)
+        .set("fisher_information", info)
+        .set("converged", fit.converged));
 }
 
 #ifdef _OPENMP

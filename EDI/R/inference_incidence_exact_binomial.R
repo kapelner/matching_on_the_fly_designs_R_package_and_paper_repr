@@ -121,7 +121,7 @@ InferenceIncidExactBinomial = R6::R6Class("InferenceIncidExactBinomial",
 			)
 		},
 		design_supports_exact_binomial = function(){
-			is(private$des_obj, "DesignFixedBinaryMatch") || is(private$des_obj, "DesignSeqOneByOneKK14")
+			private$des_obj$is_a_kk_matching_capable()
 		},
 		pval_exact_binomial = function(delta_0){
 			stats = private$get_exact_binomial_stats()

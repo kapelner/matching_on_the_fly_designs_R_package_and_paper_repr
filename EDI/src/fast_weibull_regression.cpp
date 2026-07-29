@@ -1,4 +1,5 @@
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <Rmath.h>
 #ifdef _OPENMP
@@ -251,12 +252,16 @@ List fast_weibull_regression_cpp(SEXP X_sexp,
     Eigen::Map<const Eigen::VectorXd> dead(dead_r.begin(), dead_r.size());
 
     int p = (int)X.cols();
-    FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(
+        p + 1,
+        nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+        nullable_to_optional<Eigen::VectorXd>(fixed_values));
     WeibullAFTLikelihood fun(y, dead, X);
 
     Eigen::VectorXd params = Eigen::VectorXd::Zero(p + 1);
-    if (warm_start_params.isNotNull()) {
-        params = as<Eigen::VectorXd>(NumericVector(warm_start_params));
+    std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
+    if (warm_start_params_opt.has_value()) {
+        params = *warm_start_params_opt;
         if (params.size() != p + 1) stop("warm_start_params must have length equal to ncol(X) + 1");
     } else {
         WeibullStart legacy_start;
@@ -271,20 +276,20 @@ List fast_weibull_regression_cpp(SEXP X_sexp,
 
     Eigen::MatrixXd info;
     const Eigen::MatrixXd* info_ptr = nullptr;
-    if (warm_start_fisher_info.isNotNull()) {
-        info = as<Eigen::MatrixXd>(warm_start_fisher_info);
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
+    if (warm_start_fisher_info_opt.has_value()) {
+        info = *warm_start_fisher_info_opt;
         info_ptr = &info;
     }
 
     LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_ptr);
-    
+
     if (estimate_only) {
-        return List::create(
-            Named("b") = fit.params.head(p),
-            Named("log_sigma") = fit.params[p],
-            Named("converged") = fit.converged,
-            Named("iterations") = fit.niter
-        );
+        return edi::to_rcpp_list(edi::ResultMap()
+            .set("b", fit.params.head(p))
+            .set("log_sigma", fit.params[p])
+            .set("converged", fit.converged)
+            .set("iterations", fit.niter));
     }
 
     Eigen::MatrixXd hess = fun.hessian(fit.params);

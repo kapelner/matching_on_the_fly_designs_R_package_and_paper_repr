@@ -13,9 +13,9 @@ make_information_matrix_logit_inference <- function(seed = 1L, n = 80L){
 }
 
 test_that("information-matrix mixin is composed into likelihood inference classes", {
-	expect_true(is.list(EDI:::InferenceMixinInformationMatrix))
+	expect_true(is.list(EDI:::InferenceExtInformationMatrix))
 	expect_named(
-		EDI:::InferenceMixinInformationMatrix$private,
+		EDI:::InferenceExtInformationMatrix$private,
 		c(
 			"get_information_matrix",
 			"compute_variance_from_information_matrix",
@@ -26,7 +26,7 @@ test_that("information-matrix mixin is composed into likelihood inference classe
 
 	inf = make_information_matrix_logit_inference()
 	priv = inf$.__enclos_env__$private
-	expect_true(all(names(EDI:::InferenceMixinInformationMatrix$private) %in% names(priv)))
+	expect_true(all(names(EDI:::InferenceExtInformationMatrix$private) %in% names(priv)))
 })
 
 test_that("information-matrix mixin selects the requested source and derives standard errors", {

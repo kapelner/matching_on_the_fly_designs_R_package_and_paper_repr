@@ -540,7 +540,8 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 			min(1, 2 * min(left_tail, right_tail))
 		}
 	),
-	private = c(InferenceMixinBartlettApprox$private, InferenceMixinParamBootstrapEstimate$private, list(
+	private = c(InferenceExtBartlettApprox$private, InferenceExtParamBootstrapEstimate$private, list(
+		is_a_param_bootstrap = function() TRUE,
 		param_bootstrap_extreme_lr_threshold = EDI_SEPARATION_THRESHOLD,
 		param_bootstrap_lr_extreme = function(lr, max_abs = private$param_bootstrap_extreme_lr_threshold){
 			lr = as.numeric(lr)
@@ -551,7 +552,7 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 		#' Shared replicate-running core for anything built on B simulated null
 		#' datasets via simulate_under_lik_null() (currently:
 		#' compute_lik_ratio_bootstrap_two_sided_pval() and, via
-		#' InferenceMixinBartlettApprox, get_bartlett_factor_approx()). Handles
+		#' InferenceExtBartlettApprox, get_bartlett_factor_approx()). Handles
 		#' seeding, multi-core parallelism, the reusable-worker-state optimization,
 		#' and deterministic-mode thread budgeting uniformly, so every caller gets
 		#' the same performance characteristics for free. Returns a list with

@@ -474,6 +474,7 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 		}
 	),
 	private = list(
+		is_a_bayesian_bootstrap = function() TRUE,
 		supports_bayesian_bootstrap = function() TRUE,
 		current_bayesian_bootstrap_context = NULL,
 		current_bayesian_bootstrap_subject_or_block_weights = NULL,
@@ -496,10 +497,8 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 					n_units = length(unit_group_id)
 				))
 			}
-			is_matching_design = is(design_obj, "DesignMatching") &&
-				isTRUE(tryCatch(design_obj$is_matching_design(), error = function(e) FALSE))
-			is_blocking_design = is(design_obj, "DesignBlocking") &&
-				isTRUE(tryCatch(design_obj$is_blocking_design(), error = function(e) FALSE))
+			is_matching_design = design_obj$is_a_matching() && isTRUE(design_obj$is_matching_design())
+			is_blocking_design = design_obj$is_a_blocking() && isTRUE(design_obj$is_blocking_design())
 			if (is_matching_design) {
 				private$des_obj_priv_int$ensure_matching_structure_computed()
 				cluster_ids = as.integer(design_obj$get_matching_cluster_ids(private$m))

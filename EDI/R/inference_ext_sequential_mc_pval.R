@@ -1,7 +1,9 @@
-#' Mixin for Sequential Monte Carlo Early-Stopping in Randomization P-values
+#' Extension for Sequential Monte Carlo Early-Stopping in Randomization P-values
 #'
-#' A Pattern-1 mixin (plain list with \code{$public} and \code{$private} slots)
-#' providing the two pieces of Sequential Monte Carlo (SMC) early-stopping logic
+#' A Pattern-1 file-split extension (plain list with \code{$public} and
+#' \code{$private} slots), spliced into exactly one class (\code{InferenceRand})
+#' -- not a reusable mixin. Provides the two pieces of Sequential Monte Carlo
+#' (SMC) early-stopping logic
 #' that are byte-identical between \code{InferenceRand}'s
 #' \code{compute_two_sided_pval_with_sequential_mc()} and
 #' \code{InferenceRandBootstrap}'s \code{compute_two_sided_brt_pval_with_sequential_mc()}:
@@ -17,8 +19,8 @@
 #' forcing them into one shape would risk changing behavior rather than just
 #' removing duplication.
 #'
-#' Splice into \code{InferenceRand} via
-#' \code{private = c(InferenceMixinSequentialMCPval$private, list(...))}.
+#' Splice into \code{InferenceRand} (the only host) via
+#' \code{private = c(InferenceExtSequentialMCPval$private, list(...))}.
 #' \code{InferenceRandBootstrap} does not need to splice this in separately --
 #' it inherits \code{InferenceRand} (via \code{InferenceRandCI} /
 #' \code{InferenceNonParamBootstrap}), so \code{private$sequential_mc_control_enabled()}
@@ -27,7 +29,7 @@
 #'
 #' @keywords internal
 #' @noRd
-InferenceMixinSequentialMCPval = list(
+InferenceExtSequentialMCPval = list(
 	public = list(),
 	private = list(
 		# TRUE iff `mc_ctrl` is a usable, enabled SMC control object (i.e. has

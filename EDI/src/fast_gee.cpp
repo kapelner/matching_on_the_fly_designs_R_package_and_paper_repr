@@ -1,4 +1,5 @@
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <cmath>
 #include <vector>
@@ -7,31 +8,31 @@
 using namespace Rcpp;
 using namespace Eigen;
 
-ModelResult fast_logistic_regression_internal(const Eigen::Ref<const Eigen::MatrixXd>& X, 
-                                              const Eigen::Ref<const Eigen::VectorXd>& y, 
+ModelResult fast_logistic_regression_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
+                                              const Eigen::Ref<const Eigen::VectorXd>& y,
                                               const Eigen::Ref<const Eigen::VectorXd>& weights = Eigen::VectorXd(),
-                                              Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
+                                              std::optional<Eigen::VectorXd> warm_start_beta = std::nullopt,
                                               bool smart_cold_start = true,
-                                              int maxit = 100, 
+                                              int maxit = 100,
                                               double tol = 1e-8,
-                                              Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-                                              Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                              std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+                                              std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
                                               std::string optimization_alg = "irls",
-                                              Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-                                              Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                              std::optional<Eigen::VectorXd> warm_start_weights = std::nullopt,
+                                              std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt,
                                               bool estimate_only = false);
 ModelResult fast_poisson_regression_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
                                              const Eigen::Ref<const Eigen::VectorXd>& y,
                                              const Eigen::Ref<const Eigen::VectorXd>& weights = Eigen::VectorXd(),
-                                             Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
+                                             std::optional<Eigen::VectorXd> warm_start_beta = std::nullopt,
                                              bool smart_cold_start = true,
                                              int maxit = 100,
                                              double tol = 1e-8,
-                                             Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-                                             Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+                                             std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+                                             std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
                                              std::string optimization_alg = "lbfgs",
-                                             Rcpp::Nullable<Rcpp::NumericVector> warm_start_weights = R_NilValue,
-                                             Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                             std::optional<Eigen::VectorXd> warm_start_weights = std::nullopt,
+                                             std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt,
                                              bool estimate_only = false);
 
 enum class GEEFamily { GAUSSIAN, BINOMIAL, POISSON };
@@ -120,8 +121,8 @@ inline VectorXd gee_fit_independence_glm(const Eigen::Ref<const MatrixXd>& X,
                                          const Eigen::Ref<const VectorXd>& y,
                                          GEEFamily family, int maxit = 100, double tol = 1e-8) {
     ModelResult fit = (family == GEEFamily::BINOMIAL) ?
-        fast_logistic_regression_internal(X, y, Eigen::VectorXd(), R_NilValue, true, maxit, tol, R_NilValue, R_NilValue, "irls", R_NilValue, R_NilValue) :
-        fast_poisson_regression_internal(X, y, Eigen::VectorXd(), R_NilValue, true, maxit, tol, R_NilValue, R_NilValue, "irls", R_NilValue, R_NilValue);
+        fast_logistic_regression_internal(X, y, Eigen::VectorXd(), std::nullopt, true, maxit, tol, std::nullopt, std::nullopt, "irls", std::nullopt, std::nullopt) :
+        fast_poisson_regression_internal(X, y, Eigen::VectorXd(), std::nullopt, true, maxit, tol, std::nullopt, std::nullopt, "irls", std::nullopt, std::nullopt);
     if (fit.b.size() == X.cols() && fit.b.allFinite()) {
         return fit.b;
     }
@@ -137,8 +138,8 @@ GEEResult gee_pairs_singletons_cpp_impl(const Eigen::Ref<const MatrixXd>& X,
                                         const std::vector<int>& grp_size,
                                         GEEFamily family,
                                         const Eigen::Ref<const VectorXd>& weights,
-                                        Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
-                                        Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+                                        std::optional<Eigen::VectorXd> warm_start_beta = std::nullopt,
+                                        std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt,
                                         int maxit = 100, double tol = 1e-8) {
     const int n = (int)X.rows(), p = (int)X.cols(), G = (int)grp_start.size();
     const bool has_weights = weights.size() > 0;
@@ -147,12 +148,9 @@ GEEResult gee_pairs_singletons_cpp_impl(const Eigen::Ref<const MatrixXd>& X,
     }
     VectorXd beta = VectorXd::Zero(p);
     bool use_warm_start = false;
-    if (warm_start_beta.isNotNull()) {
-        NumericVector sb(warm_start_beta);
-        if (sb.size() == p) {
-            beta = as<VectorXd>(sb);
-            use_warm_start = true;
-        }
+    if (warm_start_beta.has_value() && warm_start_beta->size() == p) {
+        beta = *warm_start_beta;
+        use_warm_start = true;
     }
     
     if (!use_warm_start) {
@@ -173,11 +171,9 @@ GEEResult gee_pairs_singletons_cpp_impl(const Eigen::Ref<const MatrixXd>& X,
 
         MatrixXd Bread = MatrixXd::Zero(p, p); VectorXd Score = VectorXd::Zero(p);
         
-        if (iter == 0 && warm_start_fisher_info.isNotNull()) {
-            NumericMatrix wf(warm_start_fisher_info);
-            if (wf.rows() == p && wf.cols() == p) {
-                Bread = as<MatrixXd>(wf);
-            }
+        if (iter == 0 && warm_start_fisher_info.has_value() &&
+            warm_start_fisher_info->rows() == p && warm_start_fisher_info->cols() == p) {
+            Bread = *warm_start_fisher_info;
         }
         
         bool bread_is_zero = Bread.isZero();
@@ -307,17 +303,20 @@ List gee_pairs_singletons_weighted_cpp(SEXP X_r, SEXP y_r, SEXP group_id_r, std:
         if (g != prev) { grp_start.push_back(i); grp_size.push_back(1); prev = g; }
         else grp_size.back()++;
     }
-    GEEResult res = gee_pairs_singletons_cpp_impl(X_s, y_s, grp_start, grp_size, family, w_s, warm_start_beta, warm_start_fisher_info, maxit, tol);
-    return List::create(
-        Named("beta")=res.beta,
-        Named("alpha")=res.alpha,
-        Named("vcov")=res.vcov,
-        Named("quasi_loglik")=res.quasi_loglik,
-        Named("score")=res.score,
-        Named("fisher_information")=res.bread,
-        Named("converged")=res.converged,
-        Named("niter")=res.niter
-    );
+    GEEResult res = gee_pairs_singletons_cpp_impl(
+        X_s, y_s, grp_start, grp_size, family, w_s,
+        nullable_to_optional<Eigen::VectorXd>(warm_start_beta),
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+        maxit, tol);
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("beta", res.beta)
+        .set("alpha", res.alpha)
+        .set("vcov", res.vcov)
+        .set("quasi_loglik", res.quasi_loglik)
+        .set("score", res.score)
+        .set("fisher_information", res.bread)
+        .set("converged", res.converged)
+        .set("niter", res.niter));
 }
 
 // [[Rcpp::export]]
@@ -345,15 +344,18 @@ List gee_pairs_singletons_cpp(SEXP X_r, SEXP y_r, SEXP group_id_r, std::string f
         if (g != prev) { grp_start.push_back(i); grp_size.push_back(1); prev = g; }
         else grp_size.back()++;
     }
-    GEEResult res = gee_pairs_singletons_cpp_impl(X_s, y_s, grp_start, grp_size, family, VectorXd(), warm_start_beta, warm_start_fisher_info, maxit, tol);
-    return List::create(
-        Named("beta")=res.beta, 
-        Named("alpha")=res.alpha, 
-        Named("vcov")=res.vcov, 
-        Named("quasi_loglik")=res.quasi_loglik, 
-        Named("score")=res.score,
-        Named("fisher_information")=res.bread,
-        Named("converged")=res.converged, 
-        Named("niter")=res.niter
-    );
+    GEEResult res = gee_pairs_singletons_cpp_impl(
+        X_s, y_s, grp_start, grp_size, family, VectorXd(),
+        nullable_to_optional<Eigen::VectorXd>(warm_start_beta),
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+        maxit, tol);
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("beta", res.beta)
+        .set("alpha", res.alpha)
+        .set("vcov", res.vcov)
+        .set("quasi_loglik", res.quasi_loglik)
+        .set("score", res.score)
+        .set("fisher_information", res.bread)
+        .set("converged", res.converged)
+        .set("niter", res.niter));
 }

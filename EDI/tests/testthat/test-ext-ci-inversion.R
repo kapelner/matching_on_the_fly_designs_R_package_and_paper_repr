@@ -13,9 +13,9 @@ make_ci_inversion_logit_inference <- function(seed = 1L, n = 80L){
 }
 
 test_that("CI inversion mixin is composed into likelihood inference classes", {
-	expect_true(is.list(EDI:::InferenceMixinCIInversion))
+	expect_true(is.list(EDI:::InferenceExtCIInversion))
 	expect_named(
-		EDI:::InferenceMixinCIInversion$private,
+		EDI:::InferenceExtCIInversion$private,
 		c(
 			"finalize_inverted_ci",
 			"invert_test_pval_confidence_interval",
@@ -26,7 +26,7 @@ test_that("CI inversion mixin is composed into likelihood inference classes", {
 
 	inf = make_ci_inversion_logit_inference()
 	priv = inf$.__enclos_env__$private
-	expect_true(all(names(EDI:::InferenceMixinCIInversion$private) %in% names(priv)))
+	expect_true(all(names(EDI:::InferenceExtCIInversion$private) %in% names(priv)))
 })
 
 test_that("CI inversion mixin accepts a valid Wald fallback and records an unusable one", {
