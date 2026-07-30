@@ -508,15 +508,14 @@ List ordinal_gcomp_post_fit_cpp(const Rcpp::NumericMatrix& X_fit,
         z_vals[j] = (R_finite(std_err[j]) && std_err[j] > 0.0) ? map_coef_hat[j] / std_err[j] : NA_REAL;
     }
 
-    return List::create(
-        Named("vcov") = vcov_beta,
-        Named("std_err") = std_err,
-        Named("z_vals") = z_vals,
-        Named("mean1") = mean1,
-        Named("mean0") = mean0,
-        Named("md") = md,
-        Named("se_md") = se_md
-    );
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("vcov", vcov_beta)
+        .set("std_err", std_err)
+        .set("z_vals", z_vals)
+        .set("mean1", mean1)
+        .set("mean0", mean0)
+        .set("md", md)
+        .set("se_md", se_md));
 }
 
 //' @title Expand Continuation Ratio Data (C++)
