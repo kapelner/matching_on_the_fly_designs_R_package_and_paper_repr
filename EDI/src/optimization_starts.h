@@ -1,7 +1,12 @@
 #ifndef EDI_OPTIMIZATION_STARTS_H
 #define EDI_OPTIMIZATION_STARTS_H
 
+// See fast_gamma_functions.h for the EDI_CORE_ONLY convention this follows.
+#ifdef EDI_CORE_ONLY
+#include <Eigen/Dense>
+#else
 #include <RcppEigen.h>
+#endif
 #include <vector>
 #include <cmath>
 #include <algorithm>

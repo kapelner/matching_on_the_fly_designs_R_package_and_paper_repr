@@ -4,11 +4,6 @@
 \alias{InferenceCustomAsymp}
 \title{Internal base for user-defined asymptotic inference extensions}
 \description{
-Internal base for user-defined asymptotic inference extensions
-
-Internal base for user-defined asymptotic inference extensions
-}
-\details{
 \code{InferenceCustomAsymp} is intentionally not exported. Extension packages
 may retrieve it with \code{getFromNamespace("InferenceCustomAsymp", "EDI")}
 while this API is experimental.
@@ -35,173 +30,124 @@ rather than EDI private fields.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceNonParamBootstrap} -> \code{::InferenceRandBootstrap} -> \code{::InferenceRandBootstrapCI} -> \code{::InferenceBayesianBootstrap} -> \code{::InferenceJackknife} -> \code{::InferenceAsymp} -> \code{InferenceCustomAsymp}
+\code{\link[EDI:Inference]{Inference}} -> \code{\link[EDI:InferenceRand]{InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceRandBootstrap]{InferenceRandBootstrap}} -> \code{\link[EDI:InferenceRandBootstrapCI]{InferenceRandBootstrapCI}} -> \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{InferenceAsymp}} -> \code{InferenceCustomAsymp}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-InferenceCustomAsymp-fit}{\code{InferenceCustomAsymp$fit()}}
-\item \href{#method-InferenceCustomAsymp-compute_estimate}{\code{InferenceCustomAsymp$compute_estimate()}}
-\item \href{#method-InferenceCustomAsymp-compute_asymp_confidence_interval}{\code{InferenceCustomAsymp$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceCustomAsymp-compute_asymp_two_sided_pval}{\code{InferenceCustomAsymp$compute_asymp_two_sided_pval()}}
-\item \href{#method-InferenceCustomAsymp-clone}{\code{InferenceCustomAsymp$clone()}}
+  \itemize{
+    \item \href{#method-InferenceCustomAsymp-fit}{\code{InferenceCustomAsymp$fit()}}
+    \item \href{#method-InferenceCustomAsymp-compute_estimate}{\code{InferenceCustomAsymp$compute_estimate()}}
+    \item \href{#method-InferenceCustomAsymp-compute_asymp_confidence_interval}{\code{InferenceCustomAsymp$compute_asymp_confidence_interval()}}
+    \item \href{#method-InferenceCustomAsymp-compute_asymp_two_sided_pval}{\code{InferenceCustomAsymp$compute_asymp_two_sided_pval()}}
+    \item \href{#method-InferenceCustomAsymp-clone}{\code{InferenceCustomAsymp$clone()}}
+  }
 }
-}
-\if{html}{\out{
-<details><summary>Inherited methods</summary>
-<ul>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_analysis_data"><a href='../..//html/Inference.html#method-Inference-get_analysis_data'><code>::Inference$get_analysis_data()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_covariates"><a href='../..//html/Inference.html#method-Inference-get_covariates'><code>::Inference$get_covariates()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_design_object"><a href='../..//html/Inference.html#method-Inference-get_design_object'><code>::Inference$get_design_object()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_model_formula"><a href='../..//html/Inference.html#method-Inference-get_model_formula'><code>::Inference$get_model_formula()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../..//html/Inference.html#method-Inference-get_nonestimable_reason'><code>::Inference$get_nonestimable_reason()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../..//html/Inference.html#method-Inference-get_nonestimable_stage'><code>::Inference$get_nonestimable_stage()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_optimization_alg"><a href='../..//html/Inference.html#method-Inference-get_optimization_alg'><code>::Inference$get_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_response"><a href='../..//html/Inference.html#method-Inference-get_response'><code>::Inference$get_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_response_type"><a href='../..//html/Inference.html#method-Inference-get_response_type'><code>::Inference$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_treatment"><a href='../..//html/Inference.html#method-Inference-get_treatment'><code>::Inference$get_treatment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="initialize"><a href='../..//html/Inference.html#method-Inference-initialize'><code>::Inference$initialize()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="is_nonestimable"><a href='../..//html/Inference.html#method-Inference-is_nonestimable'><code>::Inference$is_nonestimable()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="set_optimization_alg"><a href='../..//html/Inference.html#method-Inference-set_optimization_alg'><code>::Inference$set_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="set_seed"><a href='../..//html/Inference.html#method-Inference-set_seed'><code>::Inference$set_seed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../..//html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_cpp"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_cpp'><code>::InferenceRand$set_custom_randomization_statistic_cpp()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="approximate_m_out_of_n_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_m_out_of_n_bootstrap_distribution_beta_hat_T'><code>::InferenceNonParamBootstrap$approximate_m_out_of_n_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="approximate_subsampling_distribution_beta_hat_T"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_subsampling_distribution_beta_hat_T'><code>::InferenceNonParamBootstrap$approximate_subsampling_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>::InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>::InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_m_out_of_n_bootstrap_confidence_interval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_confidence_interval'><code>::InferenceNonParamBootstrap$compute_m_out_of_n_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_m_out_of_n_bootstrap_two_sided_pval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_two_sided_pval'><code>::InferenceNonParamBootstrap$compute_m_out_of_n_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_subsampling_confidence_interval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_confidence_interval'><code>::InferenceNonParamBootstrap$compute_subsampling_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_subsampling_sensitivity"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_sensitivity'><code>::InferenceNonParamBootstrap$compute_subsampling_sensitivity()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_subsampling_two_sided_pval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_two_sided_pval'><code>::InferenceNonParamBootstrap$compute_subsampling_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="select_optimal_b_subsampling"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-select_optimal_b_subsampling'><code>::InferenceNonParamBootstrap$select_optimal_b_subsampling()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="select_optimal_m_out_of_n_bootstrap"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-select_optimal_m_out_of_n_bootstrap'><code>::InferenceNonParamBootstrap$select_optimal_m_out_of_n_bootstrap()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandBootstrap" data-id="approximate_rand_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceRandBootstrap.html#method-InferenceRandBootstrap-approximate_rand_bootstrap_distribution_beta_hat_T'><code>::InferenceRandBootstrap$approximate_rand_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandBootstrap" data-id="compute_rand_bootstrap_two_sided_pval"><a href='../..//html/InferenceRandBootstrap.html#method-InferenceRandBootstrap-compute_rand_bootstrap_two_sided_pval'><code>::InferenceRandBootstrap$compute_rand_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandBootstrapCI" data-id="compute_rand_bootstrap_confidence_interval"><a href='../..//html/InferenceRandBootstrapCI.html#method-InferenceRandBootstrapCI-compute_rand_bootstrap_confidence_interval'><code>::InferenceRandBootstrapCI$compute_rand_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_confidence_interval"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>::InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_two_sided_pval"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>::InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="compute_estimate_with_bootstrap_weights"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_estimate_with_bootstrap_weights'><code>::InferenceBayesianBootstrap$compute_estimate_with_bootstrap_weights()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="approximate_jackknife_distribution_beta_hat_T"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>::InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_bias_estimate"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>::InferenceJackknife$compute_jackknife_bias_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_corrected_estimate"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_corrected_estimate'><code>::InferenceJackknife$compute_jackknife_corrected_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_estimate"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_estimate'><code>::InferenceJackknife$compute_jackknife_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_standard_error"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_standard_error'><code>::InferenceJackknife$compute_jackknife_standard_error()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_std_error"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_std_error'><code>::InferenceJackknife$compute_jackknife_std_error()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_wald_confidence_interval"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_confidence_interval'><code>::InferenceJackknife$compute_jackknife_wald_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_wald_two_sided_pval"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_two_sided_pval'><code>::InferenceJackknife$compute_jackknife_wald_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsymp" data-id="compute_wald_confidence_interval"><a href='../..//html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_confidence_interval'><code>::InferenceAsymp$compute_wald_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsymp" data-id="compute_wald_two_sided_pval"><a href='../..//html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_two_sided_pval'><code>::InferenceAsymp$compute_wald_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsymp" data-id="get_mod"><a href='../..//html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>::InferenceAsymp$get_mod()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsymp" data-id="get_summary"><a href='../..//html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>::InferenceAsymp$get_summary()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsymp" data-id="get_supported_testing_types"><a href='../..//html/InferenceAsymp.html#method-InferenceAsymp-get_supported_testing_types'><code>::InferenceAsymp$get_supported_testing_types()</code></a></span></li>
-</ul>
-</details>
-}}
+\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAsymp.html'><code>InferenceAsymp</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCustomAsymp-fit"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCustomAsymp-fit}{}}}
-\subsection{Method \code{fit()}}{
-User-defined fit method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceCustomAsymp$fit(estimate_only = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceCustomAsymp$fit()}}{
+  User-defined fit method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceCustomAsymp$fit(estimate_only = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A list with fit results.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A list with fit results.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCustomAsymp-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCustomAsymp-compute_estimate}{}}}
-\subsection{Method \code{compute_estimate()}}{
-Compute the treatment estimate.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceCustomAsymp$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceCustomAsymp$compute_estimate()}}{
+  Compute the treatment estimate.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceCustomAsymp$compute_estimate(estimate_only = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{estimate_only}}{If TRUE, skip variance calculations.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    The treatment estimate.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance calculations.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The treatment estimate.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCustomAsymp-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCustomAsymp-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-Compute asymptotic confidence interval.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceCustomAsymp$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceCustomAsymp$compute_asymp_confidence_interval()}}{
+  Compute asymptotic confidence interval.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceCustomAsymp$compute_asymp_confidence_interval(alpha = 0.05)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{alpha}}{Significance level.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    Confidence interval.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{Significance level.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-Confidence interval.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCustomAsymp-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCustomAsymp-compute_asymp_two_sided_pval}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval()}}{
-Compute asymptotic p-value.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceCustomAsymp$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceCustomAsymp$compute_asymp_two_sided_pval()}}{
+  Compute asymptotic p-value.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceCustomAsymp$compute_asymp_two_sided_pval(delta = 0)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{delta}}{Null treatment effect.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    P-value.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{Null treatment effect.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-P-value.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCustomAsymp-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCustomAsymp-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceCustomAsymp$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceCustomAsymp$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceCustomAsymp$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }

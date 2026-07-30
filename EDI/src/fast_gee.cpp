@@ -4,6 +4,7 @@
 #include <cmath>
 #include <vector>
 #include <string>
+#include <stdexcept>
 
 using namespace Rcpp;
 using namespace Eigen;
@@ -144,7 +145,9 @@ GEEResult gee_pairs_singletons_cpp_impl(const Eigen::Ref<const MatrixXd>& X,
     const int n = (int)X.rows(), p = (int)X.cols(), G = (int)grp_start.size();
     const bool has_weights = weights.size() > 0;
     for (int gi = 0; gi < G; ++gi) {
-        if (grp_size[gi] > 2) stop("gee_pairs_singletons_cpp: cluster %d has size %d (only singletons and pairs are supported)", gi, grp_size[gi]);
+        if (grp_size[gi] > 2) throw std::invalid_argument(
+            "gee_pairs_singletons_cpp: cluster " + std::to_string(gi) + " has size " + std::to_string(grp_size[gi]) +
+            " (only singletons and pairs are supported)");
     }
     VectorXd beta = VectorXd::Zero(p);
     bool use_warm_start = false;

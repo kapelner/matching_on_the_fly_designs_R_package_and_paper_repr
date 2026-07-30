@@ -159,7 +159,6 @@ InferenceJackknife = R6::R6Class("InferenceJackknife",
 		}
 	),
 	private = list(
-		is_a_jackknife = function() TRUE,
 		normalize_jackknife_unit = function(unit = "auto"){
 			unit = tolower(as.character(unit)[1L])
 			valid = c("auto", "observation", "cluster", "block", "pair", "matched_set")
@@ -172,9 +171,9 @@ InferenceJackknife = R6::R6Class("InferenceJackknife",
 			unit = private$normalize_jackknife_unit(unit)
 			if (unit != "auto") return(unit)
 			design_obj = private$des_obj
-			is_matching_design = design_obj$is_a_matching() && isTRUE(design_obj$is_matching_design())
+			is_matching_design = isTRUE(design_obj$is_matching_design())
 			is_cluster_design = design_obj$is_a_cluster_capable()
-			is_blocking_design = design_obj$is_a_blocking() && isTRUE(design_obj$is_blocking_design())
+			is_blocking_design = isTRUE(design_obj$is_blocking_design())
 			if (is_matching_design) {
 				if (isTRUE(private$is_KK)) "matched_set" else "pair"
 			} else if (is_cluster_design) {
@@ -188,7 +187,7 @@ InferenceJackknife = R6::R6Class("InferenceJackknife",
 		jackknife_block_size_gt_one_unsupported = function(unit = "auto"){
 			resolved_unit = private$resolve_jackknife_unit(unit)
 			design_obj = private$des_obj
-			is_blocking_design = design_obj$is_a_blocking() && isTRUE(design_obj$is_blocking_design())
+			is_blocking_design = isTRUE(design_obj$is_blocking_design())
 			if (resolved_unit == "block") return(FALSE)
 			if (resolved_unit %in% c("pair", "matched_set")) return(FALSE)
 			if (resolved_unit == "cluster" && !is_blocking_design) return(FALSE)
@@ -208,8 +207,8 @@ InferenceJackknife = R6::R6Class("InferenceJackknife",
 		assert_jackknife_supported = function(unit = "auto"){
 			unit = private$normalize_jackknife_unit(unit)
 			design_obj = private$des_obj
-			is_blocking_design = design_obj$is_a_blocking() && isTRUE(design_obj$is_blocking_design())
-			is_matching_design = design_obj$is_a_matching() && isTRUE(design_obj$is_matching_design())
+			is_blocking_design = isTRUE(design_obj$is_blocking_design())
+			is_matching_design = isTRUE(design_obj$is_matching_design())
 			is_cluster_design = design_obj$is_a_cluster_capable()
 			if (should_run_asserts()) {
 				if (unit == "block" && !is_blocking_design) {

@@ -153,13 +153,19 @@ export(fast_coxph_regression)
 export(fast_coxph_regression_cpp)
 export(fast_coxph_regression_prebuilt_cpp)
 export(fast_cpoisson_combined_with_var_cpp)
+export(fast_digamma_vec_cpp)
+export(fast_dnbinom_mu_vec_cpp)
 export(fast_hurdle_negbin_with_var_cpp)
 export(fast_identity_binomial_regression_cpp)
 export(fast_identity_binomial_regression_weighted_cpp)
 export(fast_identity_binomial_regression_with_var_cpp)
+export(fast_lbeta_vec_cpp)
+export(fast_lgamma_vec_cpp)
 export(fast_log_binomial_regression_cpp)
 export(fast_log_binomial_regression_weighted_cpp)
 export(fast_log_binomial_regression_with_var_cpp)
+export(fast_log_dnorm_vec_cpp)
+export(fast_log_pnorm_vec_cpp)
 export(fast_logistic_regression)
 export(fast_logistic_regression_cpp)
 export(fast_logistic_regression_weighted_cpp)
@@ -187,14 +193,17 @@ export(fast_poisson_regression_weighted_cpp)
 export(fast_poisson_regression_with_var_cpp)
 export(fast_probit_regression_cpp)
 export(fast_probit_regression_with_var_cpp)
+export(fast_qnorm_vec_cpp)
 export(fast_quasipoisson_regression_with_var_cpp)
 export(fast_robust_regression_cpp)
 export(fast_stereotype_logit_cpp)
 export(fast_stereotype_logit_with_var_cpp)
 export(fast_stereotype_profile_loglik_cpp)
+export(fast_trigamma_vec_cpp)
 export(fast_weibull_regression)
 export(fast_weibull_regression_cpp)
 export(fast_zero_augmented_poisson_cpp)
+export(fast_zero_one_inflated_beta_cpp)
 export(fast_zinb_cpp)
 export(gcomp_fractional_logit_point_estimate_cpp)
 export(gcomp_logistic_point_estimate_cpp)
@@ -257,38 +266,44 @@ import(missForest)
 import(missRanger)
 importFrom(MASS,negative.binomial)
 importFrom(graphics,hist)
-importFrom(randomizr,block_and_cluster_ra)
-importFrom(randomizr,block_ra)
-importFrom(randomizr,cluster_ra)
-importFrom(stats,IQR)
-importFrom(stats,as.formula)
-importFrom(stats,binom.test)
-importFrom(stats,coef)
-importFrom(stats,cor)
-importFrom(stats,fisher.test)
-importFrom(stats,formula)
-importFrom(stats,glm.control)
-importFrom(stats,glm.fit)
-importFrom(stats,lsfit)
-importFrom(stats,make.link)
-importFrom(stats,median)
-importFrom(stats,model.matrix)
-importFrom(stats,nlminb)
-importFrom(stats,pchisq)
-importFrom(stats,pnorm)
-importFrom(stats,pt)
-importFrom(stats,qf)
-importFrom(stats,qnorm)
-importFrom(stats,qt)
-importFrom(stats,quantile)
-importFrom(stats,rbinom)
-importFrom(stats,rnorm)
-importFrom(stats,sd)
-importFrom(stats,var)
-importFrom(stats,vcov)
-importFrom(survival,Surv)
-importFrom(survival,survdiff)
-importFrom(survival,survfit)
-importFrom(survival,survreg.control)
+importFrom(randomizr,
+  block_and_cluster_ra,
+  block_ra,
+  cluster_ra
+)
+importFrom(stats,
+  IQR,
+  as.formula,
+  binom.test,
+  coef,
+  cor,
+  fisher.test,
+  formula,
+  glm.control,
+  glm.fit,
+  lsfit,
+  make.link,
+  median,
+  model.matrix,
+  nlminb,
+  pchisq,
+  pnorm,
+  pt,
+  qf,
+  qnorm,
+  qt,
+  quantile,
+  rbinom,
+  rnorm,
+  sd,
+  var,
+  vcov
+)
+importFrom(survival,
+  Surv,
+  survdiff,
+  survfit,
+  survreg.control
+)
 importFrom(utils,packageVersion)
 useDynLib(EDI, .registration=TRUE)

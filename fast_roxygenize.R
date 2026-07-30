@@ -71,5 +71,47 @@ unlockBinding("extract_r6_methods", asNamespace("roxygen2"))
 assign("extract_r6_methods", patched_extract_r6_methods, envir = asNamespace("roxygen2"))
 lockBinding("extract_r6_methods", asNamespace("roxygen2"))
 
-roxygen2::roxygenize("EDI", load_code = load_source_with_filenames)
+# R6 stores source-loaded local superclasses with `package = ""` in this fast
+# path. roxygen2 passes that value to rdtools::topic_exists(), whose current
+# implementation eventually calls exists("") and aborts. Treat the empty package
+# marker as the package currently being documented, matching the normal
+# roxygenize/pkgload path for local R6 inheritance.
+original_r6_extract_superclasses = roxygen2:::r6_extract_superclasses
+patched_r6_extract_superclasses = function(r6data, env, class) {
+	super = r6data$super
+	cls = unique(super$classes$classname)
+	if (length(cls) == 0) {
+		return(roxygen2:::rd_r6_super(class))
+	}
+	pkgs = super$classes$package[match(cls, super$classes$classname)]
+	current_package = roxygen2:::roxy_meta_get("current_package")
+	if (is.null(current_package) || is.na(current_package)) {
+		current_package = ""
+	}
+	pkgs[is.na(pkgs) | !nzchar(pkgs)] = current_package
+	ht = purrr::map2_lgl(cls, pkgs, roxygen2:::has_topic)
+	roxygen2:::rd_r6_super(class, package = pkgs, classname = cls, has_topic = ht)
+}
+unlockBinding("r6_extract_superclasses", asNamespace("roxygen2"))
+assign("r6_extract_superclasses", patched_r6_extract_superclasses, envir = asNamespace("roxygen2"))
+lockBinding("r6_extract_superclasses", asNamespace("roxygen2"))
 
+original_r6_extract_inherited_methods = roxygen2:::r6_extract_inherited_methods
+patched_r6_extract_inherited_methods = function(r6data) {
+	inherited = original_r6_extract_inherited_methods(r6data)
+	if (length(inherited$package) == 0) {
+		return(inherited)
+	}
+	current_package = roxygen2:::roxy_meta_get("current_package")
+	if (is.null(current_package) || is.na(current_package)) {
+		current_package = ""
+	}
+	inherited$package[is.na(inherited$package) | !nzchar(inherited$package)] = current_package
+	inherited
+}
+unlockBinding("r6_extract_inherited_methods", asNamespace("roxygen2"))
+assign("r6_extract_inherited_methods", patched_r6_extract_inherited_methods, envir = asNamespace("roxygen2"))
+lockBinding("r6_extract_inherited_methods", asNamespace("roxygen2"))
+
+Rcpp::compileAttributes("EDI")
+roxygen2::roxygenize("EDI", load_code = load_source_with_filenames)

@@ -5,16 +5,34 @@
 // both can use these without a circular include: _helper_functions.h already
 // includes optimization_starts.h, so if optimization_starts.h needed these
 // functions via _helper_functions.h, that would cycle.
-
+//
+// EDI_CORE_ONLY: defined by a non-R (e.g. future Python/pybind11) build to
+// get a genuinely Rcpp/R-free compile of this header. Undefined (the default,
+// used by the R package build today) preserves the exact existing behavior
+// byte-for-byte -- this branch is not exercised by the current build at all.
+#ifdef EDI_CORE_ONLY
+#include <Eigen/Dense>
+#else
 #include <RcppEigen.h>
 #include <Rmath.h>
+#endif
 #include <cmath>
 #include <limits>
 
 // Fast digamma via A&S 6.3.18 asymptotic expansion + recurrence shift.
-// Accurate to ≤ 4e-12 relative error for x > 0; falls back to R::digamma for x <= 0.
+// Accurate to ≤ 4e-12 relative error for x > 0; falls back to R::digamma for
+// x <= 0 (unreachable for every real call site in this codebase -- all use
+// y+theta/mu*phi-style arguments, always > 0 -- see perf_experiments_final.md
+// TODO-129/130). Under EDI_CORE_ONLY, that same unreachable branch returns
+// NaN instead of calling R, since no R runtime is available to call into.
 inline double fast_digamma(double x) {
-    if (x <= 0.0) return R::digamma(x);
+    if (x <= 0.0) {
+#ifdef EDI_CORE_ONLY
+        return std::numeric_limits<double>::quiet_NaN();
+#else
+        return R::digamma(x);
+#endif
+    }
     double r = 0.0;
     while (x < 8.0) { r -= 1.0 / x; x += 1.0; }
     const double ix = 1.0 / x, ix2 = ix * ix;
@@ -24,9 +42,16 @@ inline double fast_digamma(double x) {
 }
 
 // Fast trigamma (psi') via A&S 6.4.12 asymptotic expansion + recurrence shift.
-// Accurate to ≤ 3e-12 relative error for x > 0; falls back to R::trigamma for x <= 0.
+// Accurate to ≤ 3e-12 relative error for x > 0; falls back to R::trigamma for
+// x <= 0 (unreachable in practice, see fast_digamma above).
 inline double fast_trigamma(double x) {
-    if (x <= 0.0) return R::trigamma(x);
+    if (x <= 0.0) {
+#ifdef EDI_CORE_ONLY
+        return std::numeric_limits<double>::quiet_NaN();
+#else
+        return R::trigamma(x);
+#endif
+    }
     double r = 0.0;
     while (x < 8.0) { r += 1.0 / (x * x); x += 1.0; }
     const double ix = 1.0 / x, ix2 = ix * ix;

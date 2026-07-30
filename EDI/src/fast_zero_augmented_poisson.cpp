@@ -1,4 +1,5 @@
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <Rmath.h>
 
@@ -394,19 +395,18 @@ List fast_zero_augmented_poisson_cpp(SEXP X_sexp,
             optimization_alg,
             nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
     } catch (...) {
-        return List::create(Named("converged") = false, Named("gradient_norm") = NA_REAL);
+        return edi::to_rcpp_list(edi::ResultMap().set("converged", false).set("gradient_norm", NA_REAL));
     }
     Eigen::VectorXd params = fit.params;
     ZeroAugmentedPoisson fun(y, X, Xzi, is_hurdle);
 
     if (estimate_only) {
-        return List::create(
-            Named("params") = params,
-            Named("converged") = fit.converged,
-            Named("neg_ll") = fit.value,
-            Named("neg_loglik") = fit.value,
-            Named("gradient_norm") = fit.gradient_norm
-        );
+        return edi::to_rcpp_list(edi::ResultMap()
+            .set("params", params)
+            .set("converged", fit.converged)
+            .set("neg_ll", fit.value)
+            .set("neg_loglik", fit.value)
+            .set("gradient_norm", fit.gradient_norm));
     }
 
     Eigen::MatrixXd observed_information = fun.hessian(params);
@@ -414,22 +414,23 @@ List fast_zero_augmented_poisson_cpp(SEXP X_sexp,
     Eigen::MatrixXd H_free = subset_matrix(observed_information, fixed_spec.free_idx, fixed_spec.free_idx);
     Eigen::MatrixXd cov_free = H_free.inverse();
     Eigen::MatrixXd vcov = expand_free_covariance(total_p, fixed_spec, cov_free, true);
+    Eigen::MatrixXd neg_observed_information = -observed_information;
 
-    return List::create(
-        Named("coefficients") = List::create(
-            Named("cond") = params.head(p_cond),
-            Named("zi") = params.tail(p_zi)
-        ),
-        Named("params") = params,
-        Named("vcov") = vcov,
-        Named("converged") = fit.converged,
-        Named("neg_ll") = fit.value,
-        Named("neg_loglik") = fit.value,
-        Named("observed_information") = observed_information,
-        Named("fisher_information") = observed_information,
-        Named("information") = observed_information,
-        Named("information_type") = "observed",
-        Named("hessian") = -observed_information,
-        Named("gradient_norm") = fit.gradient_norm
+    List out = edi::to_rcpp_list(edi::ResultMap()
+        .set("params", params)
+        .set("vcov", vcov)
+        .set("converged", fit.converged)
+        .set("neg_ll", fit.value)
+        .set("neg_loglik", fit.value)
+        .set("observed_information", observed_information)
+        .set("fisher_information", observed_information)
+        .set("information", observed_information)
+        .set("information_type", std::string("observed"))
+        .set("hessian", neg_observed_information)
+        .set("gradient_norm", fit.gradient_norm));
+    out["coefficients"] = List::create(
+        Named("cond") = params.head(p_cond),
+        Named("zi") = params.tail(p_zi)
     );
+    return out;
 }

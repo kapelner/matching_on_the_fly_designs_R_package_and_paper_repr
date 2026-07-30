@@ -4,11 +4,6 @@
 \alias{DesignFixedFactorial}
 \title{A Factorial Fixed Design}
 \description{
-A Factorial Fixed Design
-
-A Factorial Fixed Design
-}
-\details{
 An R6 Class encapsulating the data and functionality for a fixed factorial experimental design.
 This design handles multiple treatment factors and balances assignments across
 all factor combinations.
@@ -19,75 +14,28 @@ des$add_all_subjects_to_experiment(data.frame(x=1:12))
 des$assign_w_to_all_subjects()
 }
 \section{Super classes}{
-\code{::Design} -> \code{::DesignBlocking} -> \code{::DesignMatching} -> \code{::DesignFixed} -> \code{DesignFixedFactorial}
+\code{\link[EDI:Design]{Design}} -> \code{\link[EDI:DesignBlocking]{DesignBlocking}} -> \code{\link[EDI:DesignMatching]{DesignMatching}} -> \code{\link[EDI:DesignFixed]{DesignFixed}} -> \code{DesignFixedFactorial}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-DesignFixedFactorial-new}{\code{DesignFixedFactorial$new()}}
-\item \href{#method-DesignFixedFactorial-assign_w_to_all_subjects}{\code{DesignFixedFactorial$assign_w_to_all_subjects()}}
-\item \href{#method-DesignFixedFactorial-draw_ws_according_to_design}{\code{DesignFixedFactorial$draw_ws_according_to_design()}}
-\item \href{#method-DesignFixedFactorial-get_w}{\code{DesignFixedFactorial$get_w()}}
-\item \href{#method-DesignFixedFactorial-get_w_factorial}{\code{DesignFixedFactorial$get_w_factorial()}}
-\item \href{#method-DesignFixedFactorial-clone}{\code{DesignFixedFactorial$clone()}}
+  \itemize{
+    \item \href{#method-DesignFixedFactorial-initialize}{\code{DesignFixedFactorial$new()}}
+    \item \href{#method-DesignFixedFactorial-assign_w_to_all_subjects}{\code{DesignFixedFactorial$assign_w_to_all_subjects()}}
+    \item \href{#method-DesignFixedFactorial-draw_ws_according_to_design}{\code{DesignFixedFactorial$draw_ws_according_to_design()}}
+    \item \href{#method-DesignFixedFactorial-get_w}{\code{DesignFixedFactorial$get_w()}}
+    \item \href{#method-DesignFixedFactorial-get_w_factorial}{\code{DesignFixedFactorial$get_w_factorial()}}
+    \item \href{#method-DesignFixedFactorial-clone}{\code{DesignFixedFactorial$clone()}}
+  }
 }
-}
-\if{html}{\out{
-<details><summary>Inherited methods</summary>
-<ul>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="add_one_subject_response"><a href='../..//html/Design.html#method-Design-add_one_subject_response'><code>::Design$add_one_subject_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="any_censoring"><a href='../..//html/Design.html#method-Design-any_censoring'><code>::Design$any_censoring()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_all_responses_recorded"><a href='../..//html/Design.html#method-Design-assert_all_responses_recorded'><code>::Design$assert_all_responses_recorded()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../..//html/Design.html#method-Design-assert_all_subjects_arrived'><code>::Design$assert_all_subjects_arrived()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_even_allocation"><a href='../..//html/Design.html#method-Design-assert_even_allocation'><code>::Design$assert_even_allocation()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_fixed_sample"><a href='../..//html/Design.html#method-Design-assert_fixed_sample'><code>::Design$assert_fixed_sample()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="check_experiment_completed"><a href='../..//html/Design.html#method-Design-check_experiment_completed'><code>::Design$check_experiment_completed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="duplicate"><a href='../..//html/Design.html#method-Design-duplicate'><code>::Design$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X"><a href='../..//html/Design.html#method-Design-get_X'><code>::Design$get_X()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_imp"><a href='../..//html/Design.html#method-Design-get_X_imp'><code>::Design$get_X_imp()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_raw"><a href='../..//html/Design.html#method-Design-get_X_raw'><code>::Design$get_X_raw()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_dead"><a href='../..//html/Design.html#method-Design-get_dead'><code>::Design$get_dead()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_design_formula"><a href='../..//html/Design.html#method-Design-get_design_formula'><code>::Design$get_design_formula()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_missingness_method"><a href='../..//html/Design.html#method-Design-get_missingness_method'><code>::Design$get_missingness_method()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_n"><a href='../..//html/Design.html#method-Design-get_n'><code>::Design$get_n()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_ordinal_levels"><a href='../..//html/Design.html#method-Design-get_ordinal_levels'><code>::Design$get_ordinal_levels()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_original_ordinal_levels"><a href='../..//html/Design.html#method-Design-get_original_ordinal_levels'><code>::Design$get_original_ordinal_levels()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_prob_T"><a href='../..//html/Design.html#method-Design-get_prob_T'><code>::Design$get_prob_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_response_type"><a href='../..//html/Design.html#method-Design-get_response_type'><code>::Design$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_response_type_original"><a href='../..//html/Design.html#method-Design-get_response_type_original'><code>::Design$get_response_type_original()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_t"><a href='../..//html/Design.html#method-Design-get_t'><code>::Design$get_t()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_y"><a href='../..//html/Design.html#method-Design-get_y'><code>::Design$get_y()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_y_original"><a href='../..//html/Design.html#method-Design-get_y_original'><code>::Design$get_y_original()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="has_covariates"><a href='../..//html/Design.html#method-Design-has_covariates'><code>::Design$has_covariates()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="is_fixed_sample_size"><a href='../..//html/Design.html#method-Design-is_fixed_sample_size'><code>::Design$is_fixed_sample_size()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="transform_y"><a href='../..//html/Design.html#method-Design-transform_y'><code>::Design$transform_y()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="add_all_subject_matched_pair_ids"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-add_all_subject_matched_pair_ids'><code>::DesignBlocking$add_all_subject_matched_pair_ids()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="assert_blocking_design"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-assert_blocking_design'><code>::DesignBlocking$assert_blocking_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="assert_equal_block_sizes"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-assert_equal_block_sizes'><code>::DesignBlocking$assert_equal_block_sizes()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="get_block_ids"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-get_block_ids'><code>::DesignBlocking$get_block_ids()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="get_cmh_se_w_mat"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-get_cmh_se_w_mat'><code>::DesignBlocking$get_cmh_se_w_mat()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="inject_cmh_se_w_mat"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-inject_cmh_se_w_mat'><code>::DesignBlocking$inject_cmh_se_w_mat()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="is_blocking_design"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-is_blocking_design'><code>::DesignBlocking$is_blocking_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="is_complete_blocking_design"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-is_complete_blocking_design'><code>::DesignBlocking$is_complete_blocking_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="set_m"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-set_m'><code>::DesignBlocking$set_m()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="summarize_blocks"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-summarize_blocks'><code>::DesignBlocking$summarize_blocks()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignMatching" data-id="assert_matching_design"><a href='../..//html/DesignMatching.html#method-DesignMatching-assert_matching_design'><code>::DesignMatching$assert_matching_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignMatching" data-id="get_matching_cluster_ids"><a href='../..//html/DesignMatching.html#method-DesignMatching-get_matching_cluster_ids'><code>::DesignMatching$get_matching_cluster_ids()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignMatching" data-id="is_matching_design"><a href='../..//html/DesignMatching.html#method-DesignMatching-is_matching_design'><code>::DesignMatching$is_matching_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignFixed" data-id="add_all_subject_responses"><a href='../..//html/DesignFixed.html#method-DesignFixed-add_all_subject_responses'><code>::DesignFixed$add_all_subject_responses()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignFixed" data-id="add_all_subjects_to_experiment"><a href='../..//html/DesignFixed.html#method-DesignFixed-add_all_subjects_to_experiment'><code>::DesignFixed$add_all_subjects_to_experiment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignFixed" data-id="overwrite_all_subject_assignments"><a href='../..//html/DesignFixed.html#method-DesignFixed-overwrite_all_subject_assignments'><code>::DesignFixed$overwrite_all_subject_assignments()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignFixed" data-id="supports_resampling"><a href='../..//html/DesignFixed.html#method-DesignFixed-supports_resampling'><code>::DesignFixed$supports_resampling()</code></a></span></li>
-</ul>
-</details>
-}}
+\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/DesignFixed.html'><code>DesignFixed</code></a>.</p>}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignFixedFactorial-new"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignFixedFactorial-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a factorial fixed experimental design
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixedFactorial$new(
+\if{html}{\out{<a id="method-DesignFixedFactorial-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignFixedFactorial-initialize}{}}}
+\subsection{\code{DesignFixedFactorial$new()}}{
+  Initialize a factorial fixed experimental design
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignFixedFactorial$new(
   factors,
   response_type,
   include_is_missing_as_a_new_feature = TRUE,
@@ -96,116 +44,120 @@ Initialize a factorial fixed experimental design
   missingness_method = "impute",
   design_formula = ~.,
   seed = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{factors}}{A list where names are factor names and values are number of
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{factors}}{A list where names are factor names and values are number of
 levels (e.g. list(A=2, B=2)).}
-
-\item{\code{response_type}}{The data type of response values.}
-
-\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
-
-\item{\code{n}}{The sample size.}
-
-\item{\code{verbose}}{Flag for verbosity.}
-
-\item{\code{missingness_method}}{How to handle missing values in covariates.}
-
-\item{\code{design_formula}}{A formula object.}
-
-\item{\code{seed}}{Integer seed for reproducibility.}
+      \item{\code{response_type}}{The data type of response values.}
+      \item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+      \item{\code{n}}{The sample size.}
+      \item{\code{verbose}}{Flag for verbosity.}
+      \item{\code{missingness_method}}{How to handle missing values in covariates.}
+      \item{\code{design_formula}}{A formula object.}
+      \item{\code{seed}}{Integer seed for reproducibility.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A new `DesignFixedFactorial` object
+  }
 }
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A new `DesignFixedFactorial` object
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedFactorial-assign_w_to_all_subjects"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedFactorial-assign_w_to_all_subjects}{}}}
-\subsection{Method \code{assign_w_to_all_subjects()}}{
-Assign treatment (factor combination) to all subjects.
+\subsection{\code{DesignFixedFactorial$assign_w_to_all_subjects()}}{
+  Assign treatment (factor combination) to all subjects.
 For factorial designs the w vector stores factor combination indices.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixedFactorial$assign_w_to_all_subjects(w_precomputed = NULL)}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignFixedFactorial$assign_w_to_all_subjects(w_precomputed = NULL)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{w_precomputed}}{Optional pre-computed factor combination index vector.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{w_precomputed}}{Optional pre-computed factor combination index vector.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedFactorial-draw_ws_according_to_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedFactorial-draw_ws_according_to_design}{}}}
-\subsection{Method \code{draw_ws_according_to_design()}}{
-Draw multiple treatment assignment vectors according to balanced factorial randomization.
+\subsection{\code{DesignFixedFactorial$draw_ws_according_to_design()}}{
+  Draw multiple treatment assignment vectors according to balanced factorial randomization.
 NOTE: Factorial designs return factor combination indices (1..num_combinations), not {-1,+1}.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixedFactorial$draw_ws_according_to_design(r = 100)}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignFixedFactorial$draw_ws_according_to_design(r = 100)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{r}}{The number of designs to draw.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A matrix of size n x r with factor combination indices.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{The number of designs to draw.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A matrix of size n x r with factor combination indices.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedFactorial-get_w"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedFactorial-get_w}{}}}
-\subsection{Method \code{get_w()}}{
-Get the factor combination index assigned to each subject.
+\subsection{\code{DesignFixedFactorial$get_w()}}{
+  Get the factor combination index assigned to each subject.
 NOTE: For factorial designs this returns raw factor indices, not {-1,+1}.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixedFactorial$get_w()}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignFixedFactorial$get_w()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    An integer vector of factor combination indices.
+  }
 }
 
-\subsection{Returns}{
-An integer vector of factor combination indices.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedFactorial-get_w_factorial"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedFactorial-get_w_factorial}{}}}
-\subsection{Method \code{get_w_factorial()}}{
-Get the data frame of factor assignments for each subject.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixedFactorial$get_w_factorial()}\if{html}{\out{</div>}}
+\subsection{\code{DesignFixedFactorial$get_w_factorial()}}{
+  Get the data frame of factor assignments for each subject.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignFixedFactorial$get_w_factorial()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A data frame with n rows and columns corresponding to factors.
+  }
 }
 
-\subsection{Returns}{
-A data frame with n rows and columns corresponding to factors.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedFactorial-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedFactorial-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixedFactorial$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{DesignFixedFactorial$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignFixedFactorial$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }

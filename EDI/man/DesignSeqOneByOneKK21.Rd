@@ -4,11 +4,6 @@
 \alias{DesignSeqOneByOneKK21}
 \title{A Sequential Design}
 \description{
-A Sequential Design
-
-A Sequential Design
-}
-\details{
 An R6 Class encapsulating the data and functionality for a sequential experimental design.
 This class takes care of data initialization and sequential assignments. The class object
 should be saved securely after each assignment e.g. on an encrypted cloud server.
@@ -18,7 +13,7 @@ seq_des = DesignSeqOneByOneKK21$new(n = 6, response_type = 'continuous')
 seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
 
 ## ------------------------------------------------
-## Method `DesignSeqOneByOneKK21$new`
+## Method `DesignSeqOneByOneKK21$new()`
 ## ------------------------------------------------
 
 \donttest{
@@ -28,80 +23,29 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 
 }
 \section{Super classes}{
-\code{::Design} -> \code{::DesignBlocking} -> \code{::DesignMatching} -> \code{::DesignSeqOneByOne} -> \code{::DesignSeqOneByOneKK14} -> \code{DesignSeqOneByOneKK21}
+\code{\link[EDI:Design]{Design}} -> \code{\link[EDI:DesignBlocking]{DesignBlocking}} -> \code{\link[EDI:DesignMatching]{DesignMatching}} -> \code{\link[EDI:DesignSeqOneByOne]{DesignSeqOneByOne}} -> \code{\link[EDI:DesignSeqOneByOneKK14]{DesignSeqOneByOneKK14}} -> \code{DesignSeqOneByOneKK21}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-DesignSeqOneByOneKK21-new}{\code{DesignSeqOneByOneKK21$new()}}
-\item \href{#method-DesignSeqOneByOneKK21-get_iteration_weights}{\code{DesignSeqOneByOneKK21$get_iteration_weights()}}
-\item \href{#method-DesignSeqOneByOneKK21-get_covariate_weights}{\code{DesignSeqOneByOneKK21$get_covariate_weights()}}
-\item \href{#method-DesignSeqOneByOneKK21-assign_wt}{\code{DesignSeqOneByOneKK21$assign_wt()}}
-\item \href{#method-DesignSeqOneByOneKK21-clone}{\code{DesignSeqOneByOneKK21$clone()}}
+  \itemize{
+    \item \href{#method-DesignSeqOneByOneKK21-initialize}{\code{DesignSeqOneByOneKK21$new()}}
+    \item \href{#method-DesignSeqOneByOneKK21-get_iteration_weights}{\code{DesignSeqOneByOneKK21$get_iteration_weights()}}
+    \item \href{#method-DesignSeqOneByOneKK21-get_covariate_weights}{\code{DesignSeqOneByOneKK21$get_covariate_weights()}}
+    \item \href{#method-DesignSeqOneByOneKK21-assign_wt}{\code{DesignSeqOneByOneKK21$assign_wt()}}
+    \item \href{#method-DesignSeqOneByOneKK21-clone}{\code{DesignSeqOneByOneKK21$clone()}}
+  }
 }
-}
-\if{html}{\out{
-<details><summary>Inherited methods</summary>
-<ul>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="add_all_subject_responses"><a href='../..//html/Design.html#method-Design-add_all_subject_responses'><code>::Design$add_all_subject_responses()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="add_one_subject_response"><a href='../..//html/Design.html#method-Design-add_one_subject_response'><code>::Design$add_one_subject_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="any_censoring"><a href='../..//html/Design.html#method-Design-any_censoring'><code>::Design$any_censoring()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_all_responses_recorded"><a href='../..//html/Design.html#method-Design-assert_all_responses_recorded'><code>::Design$assert_all_responses_recorded()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../..//html/Design.html#method-Design-assert_all_subjects_arrived'><code>::Design$assert_all_subjects_arrived()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_even_allocation"><a href='../..//html/Design.html#method-Design-assert_even_allocation'><code>::Design$assert_even_allocation()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_fixed_sample"><a href='../..//html/Design.html#method-Design-assert_fixed_sample'><code>::Design$assert_fixed_sample()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="check_experiment_completed"><a href='../..//html/Design.html#method-Design-check_experiment_completed'><code>::Design$check_experiment_completed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="draw_ws_according_to_design"><a href='../..//html/Design.html#method-Design-draw_ws_according_to_design'><code>::Design$draw_ws_according_to_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="duplicate"><a href='../..//html/Design.html#method-Design-duplicate'><code>::Design$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X"><a href='../..//html/Design.html#method-Design-get_X'><code>::Design$get_X()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_imp"><a href='../..//html/Design.html#method-Design-get_X_imp'><code>::Design$get_X_imp()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_raw"><a href='../..//html/Design.html#method-Design-get_X_raw'><code>::Design$get_X_raw()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_dead"><a href='../..//html/Design.html#method-Design-get_dead'><code>::Design$get_dead()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_design_formula"><a href='../..//html/Design.html#method-Design-get_design_formula'><code>::Design$get_design_formula()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_missingness_method"><a href='../..//html/Design.html#method-Design-get_missingness_method'><code>::Design$get_missingness_method()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_n"><a href='../..//html/Design.html#method-Design-get_n'><code>::Design$get_n()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_ordinal_levels"><a href='../..//html/Design.html#method-Design-get_ordinal_levels'><code>::Design$get_ordinal_levels()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_original_ordinal_levels"><a href='../..//html/Design.html#method-Design-get_original_ordinal_levels'><code>::Design$get_original_ordinal_levels()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_prob_T"><a href='../..//html/Design.html#method-Design-get_prob_T'><code>::Design$get_prob_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_response_type"><a href='../..//html/Design.html#method-Design-get_response_type'><code>::Design$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_response_type_original"><a href='../..//html/Design.html#method-Design-get_response_type_original'><code>::Design$get_response_type_original()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_t"><a href='../..//html/Design.html#method-Design-get_t'><code>::Design$get_t()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_w"><a href='../..//html/Design.html#method-Design-get_w'><code>::Design$get_w()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_y"><a href='../..//html/Design.html#method-Design-get_y'><code>::Design$get_y()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_y_original"><a href='../..//html/Design.html#method-Design-get_y_original'><code>::Design$get_y_original()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="has_covariates"><a href='../..//html/Design.html#method-Design-has_covariates'><code>::Design$has_covariates()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="is_fixed_sample_size"><a href='../..//html/Design.html#method-Design-is_fixed_sample_size'><code>::Design$is_fixed_sample_size()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="overwrite_all_subject_assignments"><a href='../..//html/Design.html#method-Design-overwrite_all_subject_assignments'><code>::Design$overwrite_all_subject_assignments()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="transform_y"><a href='../..//html/Design.html#method-Design-transform_y'><code>::Design$transform_y()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="add_all_subject_matched_pair_ids"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-add_all_subject_matched_pair_ids'><code>::DesignBlocking$add_all_subject_matched_pair_ids()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="assert_blocking_design"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-assert_blocking_design'><code>::DesignBlocking$assert_blocking_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="assert_equal_block_sizes"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-assert_equal_block_sizes'><code>::DesignBlocking$assert_equal_block_sizes()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="get_block_ids"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-get_block_ids'><code>::DesignBlocking$get_block_ids()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="get_cmh_se_w_mat"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-get_cmh_se_w_mat'><code>::DesignBlocking$get_cmh_se_w_mat()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="inject_cmh_se_w_mat"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-inject_cmh_se_w_mat'><code>::DesignBlocking$inject_cmh_se_w_mat()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="is_blocking_design"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-is_blocking_design'><code>::DesignBlocking$is_blocking_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="is_complete_blocking_design"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-is_complete_blocking_design'><code>::DesignBlocking$is_complete_blocking_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="set_m"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-set_m'><code>::DesignBlocking$set_m()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="summarize_blocks"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-summarize_blocks'><code>::DesignBlocking$summarize_blocks()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignMatching" data-id="assert_matching_design"><a href='../..//html/DesignMatching.html#method-DesignMatching-assert_matching_design'><code>::DesignMatching$assert_matching_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignMatching" data-id="get_matching_cluster_ids"><a href='../..//html/DesignMatching.html#method-DesignMatching-get_matching_cluster_ids'><code>::DesignMatching$get_matching_cluster_ids()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignMatching" data-id="is_matching_design"><a href='../..//html/DesignMatching.html#method-DesignMatching-is_matching_design'><code>::DesignMatching$is_matching_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignSeqOneByOne" data-id="add_one_subject"><a href='../..//html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-add_one_subject'><code>::DesignSeqOneByOne$add_one_subject()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignSeqOneByOne" data-id="add_one_subject_to_experiment_and_assign"><a href='../..//html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-add_one_subject_to_experiment_and_assign'><code>::DesignSeqOneByOne$add_one_subject_to_experiment_and_assign()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignSeqOneByOne" data-id="print_current_subject_assignment"><a href='../..//html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-print_current_subject_assignment'><code>::DesignSeqOneByOne$print_current_subject_assignment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignSeqOneByOne" data-id="supports_resampling"><a href='../..//html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-supports_resampling'><code>::DesignSeqOneByOne$supports_resampling()</code></a></span></li>
-</ul>
-</details>
-}}
+\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/DesignSeqOneByOneKK14.html'><code>DesignSeqOneByOneKK14</code></a>.</p>}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignSeqOneByOneKK21-new"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignSeqOneByOneKK21-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a matching-on-the-fly sequential experimental design which matches based on
+\if{html}{\out{<a id="method-DesignSeqOneByOneKK21-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignSeqOneByOneKK21-initialize}{}}}
+\subsection{\code{DesignSeqOneByOneKK21$new()}}{
+  Initialize a matching-on-the-fly sequential experimental design which matches based on
 Kapelner and Krieger (2021) with
 option to use matching parameters of Morrison and Owen (2025)
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneKK21$new(
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignSeqOneByOneKK21$new(
   response_type,
   prob_T = 0.5,
   include_is_missing_as_a_new_feature = TRUE,
@@ -120,13 +64,13 @@ option to use matching parameters of Morrison and Owen (2025)
   design_formula = ~.,
   seed = NULL,
   ...
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{response_type}}{The data type of response values which must be one of the following:
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{response_type}}{The data type of response values which must be one of the following:
                                 "continuous",
                                 "incidence",
                                 "proportion",
@@ -135,144 +79,131 @@ option to use matching parameters of Morrison and Owen (2025)
                                                                 This package will enforce
 that all added responses via the \code{add_one_subject_response} method will be
                                 of the appropriate type.}
-
-\item{\code{prob_T}}{The probability of the treatment assignment. This defaults to \code{0.5}.}
-
-\item{\code{include_is_missing_as_a_new_feature}}{If missing data is present in a variable,
+      \item{\code{prob_T}}{The probability of the treatment assignment. This defaults to \code{0.5}.}
+      \item{\code{include_is_missing_as_a_new_feature}}{If missing data is present in a variable,
   should we include another dummy variable for its
                                                                 missingness in addition to
 imputing its value? If the feature is type factor, instead of creating
                                 a new column, we allow missingness to be its own level. The default is \code{TRUE}.}
-
-\item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
-
-\item{\code{verbose}}{A flag indicating whether messages should be
+      \item{\code{n}}{The sample size (if fixed). Default is \code{NULL} for not fixed.}
+      \item{\code{verbose}}{A flag indicating whether messages should be
 displayed to the user. Default is \code{FALSE}.}
-
-\item{\code{lambda}}{The quantile cutoff of the subject distance distribution for determining
+      \item{\code{lambda}}{The quantile cutoff of the subject distance distribution for determining
 matches. If unspecified and \code{morrison = FALSE}, default is 10\%.}
-
-\item{\code{t_0_pct}}{The percentage of total sample size n where matching begins. If unspecified
+      \item{\code{t_0_pct}}{The percentage of total sample size n where matching begins. If unspecified
 and \code{morrison = FALSE}, default is 35\%.}
-
-\item{\code{morrison}}{Default is \code{FALSE} which implies matching via the KK14
+      \item{\code{morrison}}{Default is \code{FALSE} which implies matching via the KK14
   algorithm using \code{lambda} and \code{t_0_pct} matching.
                                                 If \code{TRUE}, we use Morrison and Owen
 (2025)'s formula for \code{lambda} which differs in the fixed n versus variable n
                                                 settings and matching begins immediately
 with no wait for a certain reservoir size like in KK14.}
-
-\item{\code{p}}{The number of covariate features. Must be specified when
+      \item{\code{p}}{The number of covariate features. Must be specified when
 \code{morrison = TRUE} otherwise do not specify this argument.}
-
-\item{\code{num_boot}}{the number of bootstrap samples taken to approximate the subject-distance
+      \item{\code{num_boot}}{the number of bootstrap samples taken to approximate the subject-distance
 distribution. Default is 500.}
-
-\item{\code{count_use_speedup}}{Should we speed up the estimation of the weights in
+      \item{\code{count_use_speedup}}{Should we speed up the estimation of the weights in
   the response = count case via a continuous regression on log(y + 1).
                                                         instead of a negative binomial
 regression each time? This is at the expense of the weights being less accurate. Default is
 \code{TRUE}.}
-
-\item{\code{proportion_use_speedup}}{Should we speed up the estimation of the weights in the
+      \item{\code{proportion_use_speedup}}{Should we speed up the estimation of the weights in the
   response = proportion case via a continuous regression on log(y / (1 - y))
                                                         instead of a beta regression each
 time? This is at the expense of the weights being less accurate. Default is \code{TRUE}.}
-
-\item{\code{survival_use_speedup_for_no_censoring}}{Should we speed up the estimation of the
+      \item{\code{survival_use_speedup_for_no_censoring}}{Should we speed up the estimation of the
   weights in the response = survival case via a continuous regression on log(y)
                                                         instead of a Weibull AFT regression
 each time, but only when there is no censoring in the data collected so far?
                                                         This is at the expense of the
 weights being less accurate when censoring is present. Default is \code{TRUE}.}
-
-\item{\code{ordinal_use_speedup}}{Should we speed up the estimation of the weights in the
+      \item{\code{ordinal_use_speedup}}{Should we speed up the estimation of the weights in the
   response = ordinal case via a continuous regression on the ordinal levels coerced to
   numeric.
                                                         instead of a proportional odds
 model each time? This is at the expense of the weights being less accurate. Default is
 \code{TRUE}.}
-
-\item{\code{missingness_method}}{How to handle missing values in covariates.}
-
-\item{\code{design_formula}}{A formula object.}
-
-\item{\code{seed}}{Integer seed for reproducibility.}
-
-\item{\code{...}}{Extra arguments passed to the \code{DesignSeqOneByOneKK14} superclass.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A new `DesignSeqOneByOneKK21` object
-}
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{\donttest{
-seq_des = DesignSeqOneByOneKK21$new(n = 6, response_type = "continuous")
+      \item{\code{missingness_method}}{How to handle missing values in covariates.}
+      \item{\code{design_formula}}{A formula object.}
+      \item{\code{seed}}{Integer seed for reproducibility.}
+      \item{\code{...}}{Extra arguments passed to the \code{DesignSeqOneByOneKK14} superclass.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A new `DesignSeqOneByOneKK21` object
+  }
+  \subsection{Examples}{
+    \if{html}{\out{<div class="r example copy">}}
+    \preformatted{seq_des = DesignSeqOneByOneKK21$new(n = 6, response_type = "continuous")
 seq_des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
 }
-
-}
-\if{html}{\out{</div>}}
-
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneKK21-get_iteration_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneKK21-get_iteration_weights}{}}}
-\subsection{Method \code{get_iteration_weights()}}{
-Returns the weights calculated at each iteration.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneKK21$get_iteration_weights()}\if{html}{\out{</div>}}
+\subsection{\code{DesignSeqOneByOneKK21$get_iteration_weights()}}{
+  Returns the weights calculated at each iteration.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignSeqOneByOneKK21$get_iteration_weights()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A list of weights.
+  }
 }
 
-\subsection{Returns}{
-A list of weights.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneKK21-get_covariate_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneKK21-get_covariate_weights}{}}}
-\subsection{Method \code{get_covariate_weights()}}{
-Get the covariate weights calculated at the current iteration.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneKK21$get_covariate_weights()}\if{html}{\out{</div>}}
+\subsection{\code{DesignSeqOneByOneKK21$get_covariate_weights()}}{
+  Get the covariate weights calculated at the current iteration.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignSeqOneByOneKK21$get_covariate_weights()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A numeric vector of weights.
+  }
 }
 
-\subsection{Returns}{
-A numeric vector of weights.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneKK21-assign_wt"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneKK21-assign_wt}{}}}
-\subsection{Method \code{assign_wt()}}{
-Assign the next subject to a treatment group using the KK21 algorithm.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneKK21$assign_wt()}\if{html}{\out{</div>}}
+\subsection{\code{DesignSeqOneByOneKK21$assign_wt()}}{
+  Assign the next subject to a treatment group using the KK21 algorithm.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignSeqOneByOneKK21$assign_wt()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    The treatment assignment (0 or 1)
+  }
 }
 
-\subsection{Returns}{
-The treatment assignment (0 or 1)
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneKK21-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneKK21-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneKK21$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{DesignSeqOneByOneKK21$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignSeqOneByOneKK21$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }

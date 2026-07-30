@@ -192,6 +192,54 @@ smaller and cleaner picture than the full-repo audit:
   propagation, so this gap survived unnoticed until a direct dependency
   audit follow-up caught it.
 
+**Status update (2026-07-30): resolved — no custom bridging layer needed.**
+Verified directly against both frameworks' actual source (not from memory)
+before implementing: Rcpp's auto-generated `[[Rcpp::export]]` wrapper in
+`RcppExports.cpp` is wrapped in `BEGIN_RCPP`/`END_RCPP`
+(`Rcpp/include/Rcpp/macros/macros.h`), which has an explicit
+`catch(std::exception& __ex__)` clause — not just `catch(Rcpp::exception&)`
+— that converts the exception via `exception_to_r_condition(__ex__)` and
+raises it through R's own `stop()` mechanism, producing a normal,
+`tryCatch()`-able R error condition. A plain `throw std::runtime_error(...)`
+is handled identically to `Rcpp::stop(...)` at this boundary. Symmetrically,
+pybind11's default exception translator (`pybind11/detail/internals.h`,
+built into every bound function automatically, no glue code required)
+catches the standard exception hierarchy and maps it to Python exceptions
+using `e.what()` as the message: `std::domain_error`/`std::invalid_argument`
+/`std::length_error`/`std::range_error` -> `ValueError`,
+`std::out_of_range` -> `IndexError`, `std::overflow_error` ->
+`OverflowError`, generic `std::exception` -> `RuntimeError`. So **no custom
+`edi::fail()` or manual catch/re-raise bridging layer is needed at either
+boundary** — both frameworks already do this automatically for anything
+deriving from `std::exception`, and dispatching on the *specific* standard
+subtype (e.g. `std::invalid_argument` for a dimension/length-mismatch
+check) gets a more precise Python exception type (`ValueError` instead of a
+blanket `RuntimeError`) for free.
+
+**Implemented:** all 25 internal-function `Rcpp::stop()`/`stop()` call
+sites converted to `throw std::invalid_argument(...)` (dimension/length/
+finiteness precondition checks — the large majority) or `throw
+std::runtime_error(...)` (genuine algorithmic-failure cases, not bad
+input) across the 10 files listed above. The 29 exported-wrapper call
+sites are unchanged (`Rcpp::stop()` remains correct and unremarkable
+there — that boundary is necessarily R-specific and won't be reused
+verbatim by a Python wrapper regardless). `<stdexcept>` added to each
+touched file's includes; message text is preserved verbatim at every
+converted call site, so anything depending on `tryCatch(..., error=...)`'s
+message text at the R level is unaffected either way.
+
+**Verified:** full EDI test suite (837 blocks, 4293 expectations) confirmed
+passing after the swap, with the same 1 pre-existing, unrelated failure
+(`test-resampling-draw-contracts.R`) seen throughout this session's work.
+Direct `tryCatch()` testing at 4 converted call sites — `fast_robust_regression_cpp`
+(bad `warm_start_weights` length), `fast_truncated_negbin_count_cpp` via
+`validate_truncated_negbin_inputs` (bad `warm_start_params` length),
+`fast_stereotype_logit_cpp` (bad `warm_start_params` size), and
+`gee_pairs_singletons_cpp` (cluster size > 2) — confirmed R safely
+intercepts the thrown `std::invalid_argument`/`std::runtime_error` as a
+normal, catchable error condition with the expected message text; the R
+session stays alive in every case, no crash.
+
 **Net finding:** the model-fitting-only scope has no RNG dependency and no
 raw R-object-introspection dependency at all — the two hardest categories
 from the full-repo audit simply don't exist here. What remains is: a short,
@@ -304,6 +352,146 @@ specifically for this use case:
   described below (`Build System`), analogous to the existing `Eigen3`/
   `pybind11` discovery steps — this is a small, self-contained addition, not
   a structural change to the build.
+
+## Math-Utility Function Exports (`fast_math` submodule, proposed — 2026-07-29)
+
+**This is a scope addition, not part of the "only the model-fitting API"
+core scope above** — flagged separately rather than folded silently into
+the 33-kernel API, per this spec's own `Non-Goals` discipline of writing
+scope changes down explicitly rather than opportunistically. It exists
+because the `R::`-replacement work above (TODO-130 and its follow-ups,
+`package_metadata/perf_experiments_final.md`) produced a complete set of
+dependency-free `fast_*` scalar math functions as a side effect, and a
+direct question came up: are any of these fast enough on their own to be
+worth exposing as Python utilities, independent of the model-fitting
+kernels that use them internally?
+
+**Full inventory** of `fast_*` math-utility functions in the codebase
+(distinct from the 33 model-fitting kernels, which are full statistical
+fits, not math primitives):
+
+| Function | Source | Reference (R / scipy / numpy) |
+|---|---|---|
+| `fast_digamma` | `fast_gamma_functions.h` | `R::digamma` / `scipy.special.digamma` |
+| `fast_trigamma` (+`fast_trigamma_vec`) | `fast_gamma_functions.h` | `R::trigamma` / `scipy.special.polygamma(1,·)` |
+| `fast_lgamma` (+`_stirling`/`_lanczos`) | `fast_gamma_functions.h` | `R::lgamma` / `scipy.special.gammaln` |
+| `fast_lbeta` | `fast_gamma_functions.h` | `R::lbeta` / `scipy.special.betaln` |
+| `fast_dnbinom_mu` | `fast_gamma_functions.h` | `R::dnbinom_mu` / `scipy.stats.nbinom.logpmf` |
+| `fast_gammap_series`/`fast_gammaq_cf`/`fast_gammaq` | `fast_gamma_functions.h` | internal building blocks only, not a call-site target |
+| `fast_pchisq_upper` | `fast_gamma_functions.h` | `R::pchisq` / `scipy.stats.chi2.sf` |
+| `fast_erfc` (+`_polevl`/`_p1evl`) | `fast_erfc.h` | `std::erfc` / `scipy.special.erfc` |
+| `pnorm_fast` | `fast_erfc.h` | `R::pnorm` / `scipy.stats.norm.cdf` |
+| `dnorm_fast` | `fast_erfc.h` | `R::dnorm` / `scipy.stats.norm.pdf` |
+| `fast_log_pnorm` | `fast_erfc.h` | `R::pnorm(log=TRUE)` / `scipy.stats.norm.logcdf` |
+| `fast_log_dnorm` | `fast_erfc.h` | `R::dnorm(log=TRUE)` / `scipy.stats.norm.logpdf` |
+| `fast_qnorm` | `fast_erfc.h` | `R::qnorm5` / `scipy.stats.norm.ppf` |
+| `fast_atan` | `ordinal_fixed_link_helpers.h` | `std::atan` / `numpy.arctan` |
+| `fast_log1pexp` | `_helper_functions.h` | softplus / `numpy.logaddexp(0,·)` |
+| `fast_log1p_arr` (scalar port: `fast_log1p_scalar`) | `_helper_functions.h` | `numpy.log1p` |
+
+**Benchmark methodology:** a standalone pybind11 module was built directly
+from verbatim copies of these functions (no R/Rcpp headers needed — all are
+already dependency-free except `fast_digamma`/`fast_trigamma`'s `x <= 0`
+fallback, which calls `R::digamma`/`R::trigamma` and is unreachable for the
+`x > 0` domain these benchmarks use), with vectorized bindings (`py::array_t
+-> py::array_t`, one Python call per batch) so the comparison is apples-to-
+apples against scipy/numpy's own natively-vectorized ufunc calls — a
+scalar-only binding would unfairly penalize the C++ side with per-element
+Python call overhead unrelated to the underlying algorithm. Correctness
+checked at `N=5000` against the listed scipy/numpy reference; speed checked
+at `N` from 10 to 1,000,000 (paired timing, 15 reps per sample after 3
+warmup calls, median reported).
+
+**Correctness** (max error vs the scipy/numpy reference, `N=5000`):
+
+| Function | max abs err | max rel err |
+|---|---|---|
+| `fast_digamma` | 2.89e-13 | 2.15e-09 |
+| `fast_trigamma` | 4.30e-13 | 3.13e-12 |
+| `fast_lgamma` | 9.10e-13 | 5.59e-12 |
+| `fast_lbeta` | 4.55e-13 | 1.79e-13 |
+| `fast_dnbinom_mu` | 4.62e-14 | 1.03e-14 |
+| `fast_pchisq_upper` | 4.89e-15 | 3.39e-14 |
+| `fast_erfc` | 4.44e-16 | 1.40e-15 |
+| `pnorm_fast` | 1.11e-16 | 1.37e-15 |
+| `dnorm_fast` | 5.55e-17 | 2.22e-16 |
+| `fast_log_pnorm` | 3.55e-15 | 4.99e-08 |
+| `fast_log_dnorm` | 3.55e-15 | 2.34e-16 |
+| `fast_qnorm` | 2.92e-09 | 1.13e-09 |
+| `fast_atan` | 2.22e-16 | 2.21e-16 |
+| `fast_log1pexp` | 1.01e-11 | 1.45e-11 |
+| `fast_log1p` | 8.88e-16 | 2.79e-16 |
+
+`fast_log_pnorm`'s relative error (4.99e-08, an outlier against the rest of
+the table) is not a real correctness problem — its absolute error is 3.55e-15,
+identical in magnitude to every other row. `log(Phi(x)) -> 0` in the upper
+tail, so a relative-error denominator near zero inflates the ratio despite
+the actual discrepancy being machine-precision noise (the exact same
+artifact documented for this function in TODO-130).
+
+**Speed** (`scipy_or_numpy_time / fast_time`, paired, by array size `N`):
+
+| Function | N=10 | N=100 | N=1,000 | N=10,000 | N=100,000 | N=1,000,000 |
+|---|---|---|---|---|---|---|
+| `fast_digamma` vs `special.digamma` | 0.86x | 1.00x | 1.24x | 1.18x | 1.15x | 1.16x |
+| `fast_trigamma` vs `polygamma(1,·)` | 16.71x | 27.00x | 44.36x | 30.80x | 23.10x | 23.78x |
+| `fast_lgamma` vs `special.gammaln` | 0.75x | 0.83x | 0.92x | 1.03x | 1.02x | 1.03x |
+| `fast_lbeta` vs `special.betaln` | 0.92x | 1.82x | 2.24x | 2.26x | 2.28x | 2.26x |
+| `fast_dnbinom_mu` vs `nbinom.logpmf` | 22.50x | 5.58x | 2.02x | 1.48x | 1.44x | 1.88x |
+| `fast_pchisq_upper` vs `chi2.sf` | 22.05x | 6.28x | 3.82x | 2.87x | 2.89x | 3.20x |
+| `fast_erfc` vs `special.erfc` | 0.86x | 1.29x | 1.49x | 1.42x | 1.40x | 1.40x |
+| `pnorm_fast` vs `norm.cdf` | 58.71x | 20.05x | 6.70x | 2.59x | 2.36x | 3.98x |
+| `dnorm_fast` vs `norm.pdf` | 83.71x | 46.50x | 13.98x | 2.26x | 3.51x | 8.63x |
+| `fast_log_pnorm` vs `norm.logcdf` | 49.33x | 19.58x | 4.60x | 2.41x | 2.04x | 3.49x |
+| `fast_log_dnorm` vs `norm.logpdf` | 90.71x | 85.43x | 69.55x | 42.81x | 38.33x | 52.61x |
+| `fast_qnorm` vs `norm.ppf` | 116.83x | 72.70x | 21.80x | 9.88x | 7.15x | 17.10x |
+| `fast_atan` vs `np.arctan` | 0.86x | 1.10x | 1.83x | 2.74x | 2.98x | 2.36x |
+| `fast_log1pexp` vs `np.logaddexp(0,·)` | 1.43x | 1.22x | 1.51x | 1.94x | 2.10x | 1.71x |
+| `fast_log1p` vs `np.log1p` | 0.86x | 1.08x | 1.61x | 1.80x | 1.83x | 1.83x |
+
+**Export decision — per function, not blanket:**
+
+**Export** (`edi_kernels.fast_math` submodule) — a real, consistent speed
+advantage at every array size actually measured, or (for the three
+borderline cases) at every realistic batch size, with only a wash at the
+trivially-small `N=10` case that isn't representative of real statistical
+batch usage:
+
+- `fast_trigamma`, `fast_pchisq_upper`, `fast_dnbinom_mu` — the three that
+  were the actual point of TODO-130 (replacing real `R::` call sites), and
+  the strongest, most consistent wins (1.4x-44x across every `N`).
+- `pnorm_fast`, `dnorm_fast`, `fast_log_pnorm`, `fast_log_dnorm`,
+  `fast_qnorm` — the normal-distribution family, uniformly strong (2x-120x).
+- `fast_lbeta` (0.92x-2.28x — sub-1x only at `N=10`, a clean, growing win
+  from `N=100` on).
+- `fast_atan`, `fast_log1pexp`, `fast_log1p` — modest but real and
+  consistent for `N >= 100` (1.1x-3x); `fast_log1pexp` is the strongest of
+  the three, positive even at `N=10`.
+
+**Do not export** — no measurable benefit over scipy on this evidence,
+sometimes measurably slower:
+
+- `fast_digamma` (0.86x-1.24x — noise-level parity with `scipy.special.digamma`).
+- `fast_lgamma` (0.75x-1.03x — same; `scipy.special.gammaln`'s C
+  implementation is already as fast or faster).
+- `fast_erfc` (0.86x-1.49x — modest at best, not worth the API-surface
+  commitment discussed above; `scipy.special.erfc` is competitive).
+
+Internal building blocks (`fast_gammap_series`, `fast_gammaq_cf`,
+`fast_gammaq`, `fast_lgamma_stirling`, `fast_lgamma_lanczos`,
+`fast_erfc_polevl`, `fast_erfc_p1evl`, `fast_trigamma_vec`) are never
+exported regardless of the above — they exist only to implement the
+functions in the export list, have no standalone call site, and (per `API
+Naming` below) have no R-exported name to mirror in the first place.
+
+If the `fast_math` submodule is built, apply the same design already used
+throughout this spec: vectorized `py::array_t<double> -> py::array_t
+<double>` bindings (not scalar-only — see the benchmark methodology note
+above for why), one `tests/test_fast_math.py` per function following the
+same cross-language-parity discipline as `Testing` below, and keep it as a
+clearly separate submodule (`edi_kernels.fast_math.*`, not flat
+`edi_kernels.*`) so it reads as an intentional, documented addition rather
+than scope creep into the model-fitting kernel API.
 
 ## Optional Arguments
 

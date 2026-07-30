@@ -4,11 +4,6 @@
 \alias{DesignFixedBinaryMatch}
 \title{A Binary Match Fixed Design}
 \description{
-A Binary Match Fixed Design
-
-A Binary Match Fixed Design
-}
-\details{
 An R6 Class encapsulating the data and functionality for a fixed binary match
 experimental design.
 This design pairs subjects based on covariate distances and randomizes within pairs.
@@ -20,86 +15,52 @@ des$add_all_subjects_to_experiment(data.frame(x1 = rnorm(10)))
 des$assign_w_to_all_subjects()
 }
 \section{Super classes}{
-\code{::Design} -> \code{::DesignBlocking} -> \code{::DesignMatching} -> \code{::DesignFixed} -> \code{DesignFixedBinaryMatch}
+\code{\link[EDI:Design]{Design}} -> \code{\link[EDI:DesignBlocking]{DesignBlocking}} -> \code{\link[EDI:DesignMatching]{DesignMatching}} -> \code{\link[EDI:DesignFixed]{DesignFixed}} -> \code{DesignFixedBinaryMatch}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-DesignFixedBinaryMatch-supports_batch_w_pregeneration}{\code{DesignFixedBinaryMatch$supports_batch_w_pregeneration()}}
-\item \href{#method-DesignFixedBinaryMatch-new}{\code{DesignFixedBinaryMatch$new()}}
-\item \href{#method-DesignFixedBinaryMatch-assign_w_to_all_subjects}{\code{DesignFixedBinaryMatch$assign_w_to_all_subjects()}}
-\item \href{#method-DesignFixedBinaryMatch-clone}{\code{DesignFixedBinaryMatch$clone()}}
+  \itemize{
+    \item \href{#method-DesignFixedBinaryMatch-is_a_kk_matching_capable}{\code{DesignFixedBinaryMatch$is_a_kk_matching_capable()}}
+    \item \href{#method-DesignFixedBinaryMatch-supports_batch_w_pregeneration}{\code{DesignFixedBinaryMatch$supports_batch_w_pregeneration()}}
+    \item \href{#method-DesignFixedBinaryMatch-initialize}{\code{DesignFixedBinaryMatch$new()}}
+    \item \href{#method-DesignFixedBinaryMatch-assign_w_to_all_subjects}{\code{DesignFixedBinaryMatch$assign_w_to_all_subjects()}}
+    \item \href{#method-DesignFixedBinaryMatch-clone}{\code{DesignFixedBinaryMatch$clone()}}
+  }
 }
+\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/DesignFixed.html'><code>DesignFixed</code></a>.</p>}}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DesignFixedBinaryMatch-is_a_kk_matching_capable"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignFixedBinaryMatch-is_a_kk_matching_capable}{}}}
+\subsection{\code{DesignFixedBinaryMatch$is_a_kk_matching_capable()}}{
+  Characterization: this is a KK matching-on-the-fly-capable design.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignFixedBinaryMatch$is_a_kk_matching_capable()}
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{
-<details><summary>Inherited methods</summary>
-<ul>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="add_one_subject_response"><a href='../..//html/Design.html#method-Design-add_one_subject_response'><code>::Design$add_one_subject_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="any_censoring"><a href='../..//html/Design.html#method-Design-any_censoring'><code>::Design$any_censoring()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_all_responses_recorded"><a href='../..//html/Design.html#method-Design-assert_all_responses_recorded'><code>::Design$assert_all_responses_recorded()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../..//html/Design.html#method-Design-assert_all_subjects_arrived'><code>::Design$assert_all_subjects_arrived()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_even_allocation"><a href='../..//html/Design.html#method-Design-assert_even_allocation'><code>::Design$assert_even_allocation()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_fixed_sample"><a href='../..//html/Design.html#method-Design-assert_fixed_sample'><code>::Design$assert_fixed_sample()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="check_experiment_completed"><a href='../..//html/Design.html#method-Design-check_experiment_completed'><code>::Design$check_experiment_completed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="draw_ws_according_to_design"><a href='../..//html/Design.html#method-Design-draw_ws_according_to_design'><code>::Design$draw_ws_according_to_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="duplicate"><a href='../..//html/Design.html#method-Design-duplicate'><code>::Design$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X"><a href='../..//html/Design.html#method-Design-get_X'><code>::Design$get_X()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_imp"><a href='../..//html/Design.html#method-Design-get_X_imp'><code>::Design$get_X_imp()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_raw"><a href='../..//html/Design.html#method-Design-get_X_raw'><code>::Design$get_X_raw()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_dead"><a href='../..//html/Design.html#method-Design-get_dead'><code>::Design$get_dead()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_design_formula"><a href='../..//html/Design.html#method-Design-get_design_formula'><code>::Design$get_design_formula()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_missingness_method"><a href='../..//html/Design.html#method-Design-get_missingness_method'><code>::Design$get_missingness_method()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_n"><a href='../..//html/Design.html#method-Design-get_n'><code>::Design$get_n()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_ordinal_levels"><a href='../..//html/Design.html#method-Design-get_ordinal_levels'><code>::Design$get_ordinal_levels()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_original_ordinal_levels"><a href='../..//html/Design.html#method-Design-get_original_ordinal_levels'><code>::Design$get_original_ordinal_levels()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_prob_T"><a href='../..//html/Design.html#method-Design-get_prob_T'><code>::Design$get_prob_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_response_type"><a href='../..//html/Design.html#method-Design-get_response_type'><code>::Design$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_response_type_original"><a href='../..//html/Design.html#method-Design-get_response_type_original'><code>::Design$get_response_type_original()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_t"><a href='../..//html/Design.html#method-Design-get_t'><code>::Design$get_t()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_w"><a href='../..//html/Design.html#method-Design-get_w'><code>::Design$get_w()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_y"><a href='../..//html/Design.html#method-Design-get_y'><code>::Design$get_y()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_y_original"><a href='../..//html/Design.html#method-Design-get_y_original'><code>::Design$get_y_original()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="has_covariates"><a href='../..//html/Design.html#method-Design-has_covariates'><code>::Design$has_covariates()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="is_fixed_sample_size"><a href='../..//html/Design.html#method-Design-is_fixed_sample_size'><code>::Design$is_fixed_sample_size()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="transform_y"><a href='../..//html/Design.html#method-Design-transform_y'><code>::Design$transform_y()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="add_all_subject_matched_pair_ids"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-add_all_subject_matched_pair_ids'><code>::DesignBlocking$add_all_subject_matched_pair_ids()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="assert_blocking_design"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-assert_blocking_design'><code>::DesignBlocking$assert_blocking_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="assert_equal_block_sizes"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-assert_equal_block_sizes'><code>::DesignBlocking$assert_equal_block_sizes()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="get_block_ids"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-get_block_ids'><code>::DesignBlocking$get_block_ids()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="get_cmh_se_w_mat"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-get_cmh_se_w_mat'><code>::DesignBlocking$get_cmh_se_w_mat()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="inject_cmh_se_w_mat"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-inject_cmh_se_w_mat'><code>::DesignBlocking$inject_cmh_se_w_mat()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="is_blocking_design"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-is_blocking_design'><code>::DesignBlocking$is_blocking_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="is_complete_blocking_design"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-is_complete_blocking_design'><code>::DesignBlocking$is_complete_blocking_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="set_m"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-set_m'><code>::DesignBlocking$set_m()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="summarize_blocks"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-summarize_blocks'><code>::DesignBlocking$summarize_blocks()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignMatching" data-id="assert_matching_design"><a href='../..//html/DesignMatching.html#method-DesignMatching-assert_matching_design'><code>::DesignMatching$assert_matching_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignMatching" data-id="get_matching_cluster_ids"><a href='../..//html/DesignMatching.html#method-DesignMatching-get_matching_cluster_ids'><code>::DesignMatching$get_matching_cluster_ids()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignMatching" data-id="is_matching_design"><a href='../..//html/DesignMatching.html#method-DesignMatching-is_matching_design'><code>::DesignMatching$is_matching_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignFixed" data-id="add_all_subject_responses"><a href='../..//html/DesignFixed.html#method-DesignFixed-add_all_subject_responses'><code>::DesignFixed$add_all_subject_responses()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignFixed" data-id="add_all_subjects_to_experiment"><a href='../..//html/DesignFixed.html#method-DesignFixed-add_all_subjects_to_experiment'><code>::DesignFixed$add_all_subjects_to_experiment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignFixed" data-id="overwrite_all_subject_assignments"><a href='../..//html/DesignFixed.html#method-DesignFixed-overwrite_all_subject_assignments'><code>::DesignFixed$overwrite_all_subject_assignments()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignFixed" data-id="supports_resampling"><a href='../..//html/DesignFixed.html#method-DesignFixed-supports_resampling'><code>::DesignFixed$supports_resampling()</code></a></span></li>
-</ul>
-</details>
-}}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedBinaryMatch-supports_batch_w_pregeneration"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedBinaryMatch-supports_batch_w_pregeneration}{}}}
-\subsection{Method \code{supports_batch_w_pregeneration()}}{
-Returns TRUE so the framework pre-generates all w vectors
+\subsection{\code{DesignFixedBinaryMatch$supports_batch_w_pregeneration()}}{
+  Returns TRUE so the framework pre-generates all w vectors
   once per cell (paying the nbpMatching cost once, reusing across reps).
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixedBinaryMatch$supports_batch_w_pregeneration()}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignFixedBinaryMatch$supports_batch_w_pregeneration()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignFixedBinaryMatch-new"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignFixedBinaryMatch-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a binary match fixed experimental design
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixedBinaryMatch$new(
+\if{html}{\out{<a id="method-DesignFixedBinaryMatch-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignFixedBinaryMatch-initialize}{}}}
+\subsection{\code{DesignFixedBinaryMatch$new()}}{
+  Initialize a binary match fixed experimental design
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignFixedBinaryMatch$new(
   response_type,
   prob_T = 0.5,
   mahal_match = TRUE,
@@ -110,74 +71,70 @@ Initialize a binary match fixed experimental design
   missingness_method = "impute",
   design_formula = ~.,
   seed = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{response_type}}{The data type of response values.}
-
-\item{\code{prob_T}}{The probability of the treatment assignment. Must be 0.5.}
-
-\item{\code{mahal_match}}{Match using Mahalanobis distance (else use Euclidean). Default is \code{TRUE}.}
-
-\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
-
-\item{\code{n}}{The sample size.}
-
-\item{\code{m}}{Optional integer vector of explicit matched-pair identifiers, one per
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{response_type}}{The data type of response values.}
+      \item{\code{prob_T}}{The probability of the treatment assignment. Must be 0.5.}
+      \item{\code{mahal_match}}{Match using Mahalanobis distance (else use Euclidean). Default is \code{TRUE}.}
+      \item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+      \item{\code{n}}{The sample size.}
+      \item{\code{m}}{Optional integer vector of explicit matched-pair identifiers, one per
 subject. If supplied, `n` must also be supplied, `length(m)` must equal `n`,
 all values must be positive, and each pair ID must occur exactly twice.
 This bypasses the package-computed matching step.}
-
-\item{\code{verbose}}{Flag for verbosity.}
-
-\item{\code{missingness_method}}{How to handle missing values in covariates.}
-
-\item{\code{design_formula}}{A formula object.}
-
-\item{\code{seed}}{Integer seed for reproducibility.}
+      \item{\code{verbose}}{Flag for verbosity.}
+      \item{\code{missingness_method}}{How to handle missing values in covariates.}
+      \item{\code{design_formula}}{A formula object.}
+      \item{\code{seed}}{Integer seed for reproducibility.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A new `DesignFixedBinaryMatch` object
+  }
 }
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A new `DesignFixedBinaryMatch` object
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedBinaryMatch-assign_w_to_all_subjects"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedBinaryMatch-assign_w_to_all_subjects}{}}}
-\subsection{Method \code{assign_w_to_all_subjects()}}{
-Assign treatment to all subjects. Ensures matching structure is computed
+\subsection{\code{DesignFixedBinaryMatch$assign_w_to_all_subjects()}}{
+  Assign treatment to all subjects. Ensures matching structure is computed
   even when a pre-computed w vector is injected (bypassing draw_ws_according_to_design).
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixedBinaryMatch$assign_w_to_all_subjects(w_precomputed = NULL)}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignFixedBinaryMatch$assign_w_to_all_subjects(w_precomputed = NULL)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{w_precomputed}}{Optional numeric vector of length n.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{w_precomputed}}{Optional numeric vector of length n.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedBinaryMatch-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedBinaryMatch-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignFixedBinaryMatch$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{DesignFixedBinaryMatch$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignFixedBinaryMatch$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }

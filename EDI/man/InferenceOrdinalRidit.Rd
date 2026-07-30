@@ -4,11 +4,6 @@
 \alias{InferenceOrdinalRidit}
 \title{Ridit Analysis for Ordinal Responses}
 \description{
-Ridit Analysis for Ordinal Responses
-
-Ridit Analysis for Ordinal Responses
-}
-\details{
 Performs Ridit analysis (Relative to an Identified Distribution unit) for
 comparing two groups on an ordinal scale. Ridit analysis provides a
 distribution-free way to estimate the probability that a randomly selected
@@ -33,244 +28,198 @@ infer
 
 }
 \section{Super classes}{
-\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceNonParamBootstrap} -> \code{::InferenceRandBootstrap} -> \code{::InferenceRandBootstrapCI} -> \code{::InferenceBayesianBootstrap} -> \code{::InferenceJackknife} -> \code{::InferenceAsymp} -> \code{InferenceOrdinalRidit}
+\code{\link[EDI:Inference]{Inference}} -> \code{\link[EDI:InferenceRand]{InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceRandBootstrap]{InferenceRandBootstrap}} -> \code{\link[EDI:InferenceRandBootstrapCI]{InferenceRandBootstrapCI}} -> \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{InferenceAsymp}} -> \code{InferenceOrdinalRidit}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-InferenceOrdinalRidit-new}{\code{InferenceOrdinalRidit$new()}}
-\item \href{#method-InferenceOrdinalRidit-compute_estimate}{\code{InferenceOrdinalRidit$compute_estimate()}}
-\item \href{#method-InferenceOrdinalRidit-compute_estimate_with_bootstrap_weights}{\code{InferenceOrdinalRidit$compute_estimate_with_bootstrap_weights()}}
-\item \href{#method-InferenceOrdinalRidit-get_mean_ridit_treatment}{\code{InferenceOrdinalRidit$get_mean_ridit_treatment()}}
-\item \href{#method-InferenceOrdinalRidit-get_ridit_scores}{\code{InferenceOrdinalRidit$get_ridit_scores()}}
-\item \href{#method-InferenceOrdinalRidit-compute_asymp_confidence_interval}{\code{InferenceOrdinalRidit$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceOrdinalRidit-compute_asymp_two_sided_pval}{\code{InferenceOrdinalRidit$compute_asymp_two_sided_pval()}}
-\item \href{#method-InferenceOrdinalRidit-clone}{\code{InferenceOrdinalRidit$clone()}}
+  \itemize{
+    \item \href{#method-InferenceOrdinalRidit-initialize}{\code{InferenceOrdinalRidit$new()}}
+    \item \href{#method-InferenceOrdinalRidit-compute_estimate}{\code{InferenceOrdinalRidit$compute_estimate()}}
+    \item \href{#method-InferenceOrdinalRidit-compute_estimate_with_bootstrap_weights}{\code{InferenceOrdinalRidit$compute_estimate_with_bootstrap_weights()}}
+    \item \href{#method-InferenceOrdinalRidit-get_mean_ridit_treatment}{\code{InferenceOrdinalRidit$get_mean_ridit_treatment()}}
+    \item \href{#method-InferenceOrdinalRidit-get_ridit_scores}{\code{InferenceOrdinalRidit$get_ridit_scores()}}
+    \item \href{#method-InferenceOrdinalRidit-compute_asymp_confidence_interval}{\code{InferenceOrdinalRidit$compute_asymp_confidence_interval()}}
+    \item \href{#method-InferenceOrdinalRidit-compute_asymp_two_sided_pval}{\code{InferenceOrdinalRidit$compute_asymp_two_sided_pval()}}
+    \item \href{#method-InferenceOrdinalRidit-clone}{\code{InferenceOrdinalRidit$clone()}}
+  }
 }
-}
-\if{html}{\out{
-<details><summary>Inherited methods</summary>
-<ul>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_analysis_data"><a href='../..//html/Inference.html#method-Inference-get_analysis_data'><code>::Inference$get_analysis_data()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_covariates"><a href='../..//html/Inference.html#method-Inference-get_covariates'><code>::Inference$get_covariates()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_design_object"><a href='../..//html/Inference.html#method-Inference-get_design_object'><code>::Inference$get_design_object()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_model_formula"><a href='../..//html/Inference.html#method-Inference-get_model_formula'><code>::Inference$get_model_formula()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../..//html/Inference.html#method-Inference-get_nonestimable_reason'><code>::Inference$get_nonestimable_reason()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../..//html/Inference.html#method-Inference-get_nonestimable_stage'><code>::Inference$get_nonestimable_stage()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_optimization_alg"><a href='../..//html/Inference.html#method-Inference-get_optimization_alg'><code>::Inference$get_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_response"><a href='../..//html/Inference.html#method-Inference-get_response'><code>::Inference$get_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_response_type"><a href='../..//html/Inference.html#method-Inference-get_response_type'><code>::Inference$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_treatment"><a href='../..//html/Inference.html#method-Inference-get_treatment'><code>::Inference$get_treatment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="is_nonestimable"><a href='../..//html/Inference.html#method-Inference-is_nonestimable'><code>::Inference$is_nonestimable()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="set_optimization_alg"><a href='../..//html/Inference.html#method-Inference-set_optimization_alg'><code>::Inference$set_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="set_seed"><a href='../..//html/Inference.html#method-Inference-set_seed'><code>::Inference$set_seed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../..//html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_cpp"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_cpp'><code>::InferenceRand$set_custom_randomization_statistic_cpp()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="approximate_m_out_of_n_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_m_out_of_n_bootstrap_distribution_beta_hat_T'><code>::InferenceNonParamBootstrap$approximate_m_out_of_n_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="approximate_subsampling_distribution_beta_hat_T"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_subsampling_distribution_beta_hat_T'><code>::InferenceNonParamBootstrap$approximate_subsampling_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>::InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>::InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_m_out_of_n_bootstrap_confidence_interval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_confidence_interval'><code>::InferenceNonParamBootstrap$compute_m_out_of_n_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_m_out_of_n_bootstrap_two_sided_pval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_two_sided_pval'><code>::InferenceNonParamBootstrap$compute_m_out_of_n_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_subsampling_confidence_interval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_confidence_interval'><code>::InferenceNonParamBootstrap$compute_subsampling_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_subsampling_sensitivity"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_sensitivity'><code>::InferenceNonParamBootstrap$compute_subsampling_sensitivity()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_subsampling_two_sided_pval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_two_sided_pval'><code>::InferenceNonParamBootstrap$compute_subsampling_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="select_optimal_b_subsampling"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-select_optimal_b_subsampling'><code>::InferenceNonParamBootstrap$select_optimal_b_subsampling()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="select_optimal_m_out_of_n_bootstrap"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-select_optimal_m_out_of_n_bootstrap'><code>::InferenceNonParamBootstrap$select_optimal_m_out_of_n_bootstrap()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandBootstrap" data-id="approximate_rand_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceRandBootstrap.html#method-InferenceRandBootstrap-approximate_rand_bootstrap_distribution_beta_hat_T'><code>::InferenceRandBootstrap$approximate_rand_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandBootstrap" data-id="compute_rand_bootstrap_two_sided_pval"><a href='../..//html/InferenceRandBootstrap.html#method-InferenceRandBootstrap-compute_rand_bootstrap_two_sided_pval'><code>::InferenceRandBootstrap$compute_rand_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandBootstrapCI" data-id="compute_rand_bootstrap_confidence_interval"><a href='../..//html/InferenceRandBootstrapCI.html#method-InferenceRandBootstrapCI-compute_rand_bootstrap_confidence_interval'><code>::InferenceRandBootstrapCI$compute_rand_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_confidence_interval"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>::InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_two_sided_pval"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>::InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="approximate_jackknife_distribution_beta_hat_T"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>::InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_bias_estimate"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>::InferenceJackknife$compute_jackknife_bias_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_corrected_estimate"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_corrected_estimate'><code>::InferenceJackknife$compute_jackknife_corrected_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_estimate"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_estimate'><code>::InferenceJackknife$compute_jackknife_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_standard_error"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_standard_error'><code>::InferenceJackknife$compute_jackknife_standard_error()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_std_error"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_std_error'><code>::InferenceJackknife$compute_jackknife_std_error()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_wald_confidence_interval"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_confidence_interval'><code>::InferenceJackknife$compute_jackknife_wald_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_wald_two_sided_pval"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_two_sided_pval'><code>::InferenceJackknife$compute_jackknife_wald_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsymp" data-id="compute_wald_confidence_interval"><a href='../..//html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_confidence_interval'><code>::InferenceAsymp$compute_wald_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsymp" data-id="compute_wald_two_sided_pval"><a href='../..//html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_two_sided_pval'><code>::InferenceAsymp$compute_wald_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsymp" data-id="get_mod"><a href='../..//html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>::InferenceAsymp$get_mod()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsymp" data-id="get_summary"><a href='../..//html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>::InferenceAsymp$get_summary()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsymp" data-id="get_supported_testing_types"><a href='../..//html/InferenceAsymp.html#method-InferenceAsymp-get_supported_testing_types'><code>::InferenceAsymp$get_supported_testing_types()</code></a></span></li>
-</ul>
-</details>
-}}
+\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAsymp.html'><code>InferenceAsymp</code></a>.</p>}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceOrdinalRidit-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceOrdinalRidit-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a Ridit analysis inference object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$new(
+\if{html}{\out{<a id="method-InferenceOrdinalRidit-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceOrdinalRidit-initialize}{}}}
+\subsection{\code{InferenceOrdinalRidit$new()}}{
+  Initialize a Ridit analysis inference object.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceOrdinalRidit$new(
   des_obj,
   model_formula = NULL,
   reference = "control",
   verbose = FALSE,
   max_resample_attempts = 50L
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects are assigned and
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{des_obj}}{A DesignSeqOneByOne object whose entire n subjects are assigned and
 response y is recorded within.}
-
-\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+      \item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
 the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
-
-\item{\code{reference}}{The group to use as the "Identified Distribution" (reference).
+      \item{\code{reference}}{The group to use as the "Identified Distribution" (reference).
 Must be one of "control", "treatment", or "pooled". Default is "control".}
-
-\item{\code{verbose}}{A flag indicating whether messages should be displayed.}
-
-\item{\code{max_resample_attempts}}{Maximum number of times a single bootstrap replicate
+      \item{\code{verbose}}{A flag indicating whether messages should be displayed.}
+      \item{\code{max_resample_attempts}}{Maximum number of times a single bootstrap replicate
 may be redrawn when the drawn sample fails validity screening. If all attempts
 fail the replicate is recorded as \code{NA}, silently reducing the effective \code{B}.
 Must be a positive integer. Default \code{50L}.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalRidit-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalRidit-compute_estimate}{}}}
-\subsection{Method \code{compute_estimate()}}{
-Returns the estimated treatment effect (Mean Ridit - 0.5).
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceOrdinalRidit$compute_estimate()}}{
+  Returns the estimated treatment effect (Mean Ridit - 0.5).
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceOrdinalRidit$compute_estimate(estimate_only = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    The numeric estimate.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{If TRUE, skip variance component calculations.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The numeric estimate.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalRidit-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalRidit-compute_estimate_with_bootstrap_weights}{}}}
-\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
-Recomputes the ridit treatment estimate under
+\subsection{\code{InferenceOrdinalRidit$compute_estimate_with_bootstrap_weights()}}{
+  Recomputes the ridit treatment estimate under
   Bayesian-bootstrap weights.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$compute_estimate_with_bootstrap_weights(
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceOrdinalRidit$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
   estimate_only = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{subject_or_block_weights}}{Subject-, block-, cluster-, or matched-set
 bootstrap weights.}
-
-\item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
+      \item{\code{estimate_only}}{If \code{TRUE}, compute only the weighted point
 estimate.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalRidit-get_mean_ridit_treatment"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalRidit-get_mean_ridit_treatment}{}}}
-\subsection{Method \code{get_mean_ridit_treatment()}}{
-Returns the Mean Ridit for the treatment group.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$get_mean_ridit_treatment()}\if{html}{\out{</div>}}
+\subsection{\code{InferenceOrdinalRidit$get_mean_ridit_treatment()}}{
+  Returns the Mean Ridit for the treatment group.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceOrdinalRidit$get_mean_ridit_treatment()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    The numeric Mean Ridit.
+  }
 }
 
-\subsection{Returns}{
-The numeric Mean Ridit.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalRidit-get_ridit_scores"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalRidit-get_ridit_scores}{}}}
-\subsection{Method \code{get_ridit_scores()}}{
-Returns the ridit scores for all subjects.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$get_ridit_scores()}\if{html}{\out{</div>}}
+\subsection{\code{InferenceOrdinalRidit$get_ridit_scores()}}{
+  Returns the ridit scores for all subjects.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceOrdinalRidit$get_ridit_scores()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A numeric vector of scores.
+  }
 }
 
-\subsection{Returns}{
-A numeric vector of scores.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalRidit-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalRidit-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-Computes the asymptotic confidence interval for the treatment effect.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$compute_asymp_confidence_interval(alpha = 0.05)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceOrdinalRidit$compute_asymp_confidence_interval()}}{
+  Computes the asymptotic confidence interval for the treatment effect.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceOrdinalRidit$compute_asymp_confidence_interval(alpha = 0.05)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{alpha}}{Significance level.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A numeric vector of length 2.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{Significance level.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A numeric vector of length 2.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalRidit-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalRidit-compute_asymp_two_sided_pval}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval()}}{
-Computes the p-value for the null hypothesis that Mean Ridit = 0.5.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceOrdinalRidit$compute_asymp_two_sided_pval()}}{
+  Computes the p-value for the null hypothesis that Mean Ridit = 0.5.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceOrdinalRidit$compute_asymp_two_sided_pval(delta = 0)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{delta}}{The null value (centered at 0, so delta=0 means Ridit=0.5).}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    The p-value.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{The null value (centered at 0, so delta=0 means Ridit=0.5).}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The p-value.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalRidit-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalRidit-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceOrdinalRidit$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceOrdinalRidit$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceOrdinalRidit$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }

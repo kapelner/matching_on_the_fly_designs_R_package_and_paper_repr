@@ -45,7 +45,6 @@
 #' \code{private = c(InferenceMixinOffOptimumLikelihoodEval$private, list(...))}.
 #'
 #' @noRd
-#' @keywords internal
 InferenceMixinOffOptimumLikelihoodEval = list(
 	public = list(),
 	private = list(
@@ -83,13 +82,13 @@ InferenceMixinOffOptimumLikelihoodEval = list(
 			spec$information_at(theta, source = source)
 		},
 
-		#' Convenience combining the two evaluators into a single scalar
-		#' Firth/Jeffreys-penalized negative log-likelihood,
-		#' neg_loglik(theta) + 0.5 * log|I(theta)|. Returns Inf (rather than
-		#' erroring) when the information matrix is singular or otherwise
-		#' produces a non-finite log-determinant, so this can be handed
-		#' directly to an optimizer -- including a derivative-free one --
-		#' without a separate feasibility check at every candidate theta.
+			# Convenience combining the two evaluators into a single scalar
+			# Firth/Jeffreys-penalized negative log-likelihood,
+			# neg_loglik(theta) + 0.5 * log|I(theta)|. Returns Inf (rather than
+			# erroring) when the information matrix is singular or otherwise
+			# produces a non-finite log-determinant, so this can be handed
+			# directly to an optimizer -- including a derivative-free one --
+			# without a separate feasibility check at every candidate theta.
 		evaluate_penalized_neg_loglik_at = function(theta, spec = NULL, source = "auto"){
 			if (is.null(spec)) {
 				spec = private$get_likelihood_test_spec()

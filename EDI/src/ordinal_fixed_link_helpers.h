@@ -2,10 +2,16 @@
 #define EDI_ORDINAL_FIXED_LINK_HELPERS_H
 
 #include "fast_erfc.h"
+// See fast_gamma_functions.h for the EDI_CORE_ONLY convention this follows.
+#ifdef EDI_CORE_ONLY
+#include <Eigen/Dense>
+#else
 #include <Rcpp.h>
 #include <RcppEigen.h>
+#endif
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <vector>
 
 namespace edi_ordinal {
@@ -77,7 +83,7 @@ inline double cdf(Link link, double z) {
     case Link::Cauchit:
         return 0.5 + fast_atan(z) / M_PI;
     }
-    return NA_REAL;
+    return std::numeric_limits<double>::quiet_NaN();
 }
 
 inline double pdf(Link link, double z) {
@@ -94,7 +100,7 @@ inline double pdf(Link link, double z) {
     case Link::Cauchit:
         return 1.0 / (M_PI * (1.0 + z * z));
     }
-    return NA_REAL;
+    return std::numeric_limits<double>::quiet_NaN();
 }
 
 inline double pdf_derivative(Link link, double z) {
@@ -119,7 +125,7 @@ inline double pdf_derivative(Link link, double z) {
         return -2.0 * z / (M_PI * denom * denom);
     }
     }
-    return NA_REAL;
+    return std::numeric_limits<double>::quiet_NaN();
 }
 
 // Fused cloglog CDF+PDF: computes exp(z) and exp(-exp(z)) once — 2 exp total vs 4.

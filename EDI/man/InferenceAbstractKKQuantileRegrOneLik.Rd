@@ -5,11 +5,6 @@
 \alias{InferenceAbstractKKQuantileRegrOneLik}
 \title{Abstract Quantile Regression Combined-Likelihood Compound Estimator for KK Designs}
 \description{
-Abstract Quantile Regression Combined-Likelihood Compound Estimator for KK Designs
-
-Abstract Quantile Regression Combined-Likelihood Compound Estimator for KK Designs
-}
-\details{
 Fits a single joint quantile regression over all KK design data by stacking
 matched-pair differences and reservoir observations into one design matrix.
 
@@ -26,239 +21,171 @@ Standard errors use Powell's "nid" sandwich estimator, falling back to "iid".
 }
 \keyword{internal}
 \section{Super classes}{
-\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceNonParamBootstrap} -> \code{::InferenceRandBootstrap} -> \code{::InferenceRandBootstrapCI} -> \code{::InferenceBayesianBootstrap} -> \code{::InferenceJackknife} -> \code{::InferenceAsymp} -> \code{::InferenceMLEorKMSummaryTable} -> \code{::InferenceAsympLik} -> \code{::InferenceKKPassThroughCompoundNoParamBootstrap} -> \code{::InferenceAbstractQuantileRandCI} -> \code{InferenceAbstractKKQuantileRegrOneLik}
+\code{\link[EDI:Inference]{Inference}} -> \code{\link[EDI:InferenceRand]{InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceRandBootstrap]{InferenceRandBootstrap}} -> \code{\link[EDI:InferenceRandBootstrapCI]{InferenceRandBootstrapCI}} -> \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}} -> \code{InferenceKKPassThroughCompoundNoParamBootstrap} -> \code{\link[EDI:InferenceAbstractQuantileRandCI]{InferenceAbstractQuantileRandCI}} -> \code{InferenceAbstractKKQuantileRegrOneLik}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-InferenceAbstractKKQuantileRegrOneLik-new}{\code{InferenceAbstractKKQuantileRegrOneLik$new()}}
-\item \href{#method-InferenceAbstractKKQuantileRegrOneLik-compute_estimate}{\code{InferenceAbstractKKQuantileRegrOneLik$compute_estimate()}}
-\item \href{#method-InferenceAbstractKKQuantileRegrOneLik-compute_estimate_with_bootstrap_weights}{\code{InferenceAbstractKKQuantileRegrOneLik$compute_estimate_with_bootstrap_weights()}}
-\item \href{#method-InferenceAbstractKKQuantileRegrOneLik-compute_asymp_confidence_interval}{\code{InferenceAbstractKKQuantileRegrOneLik$compute_asymp_confidence_interval()}}
-\item \href{#method-InferenceAbstractKKQuantileRegrOneLik-compute_asymp_two_sided_pval}{\code{InferenceAbstractKKQuantileRegrOneLik$compute_asymp_two_sided_pval()}}
-\item \href{#method-InferenceAbstractKKQuantileRegrOneLik-clone}{\code{InferenceAbstractKKQuantileRegrOneLik$clone()}}
+  \itemize{
+    \item \href{#method-InferenceAbstractKKQuantileRegrOneLik-initialize}{\code{InferenceAbstractKKQuantileRegrOneLik$new()}}
+    \item \href{#method-InferenceAbstractKKQuantileRegrOneLik-compute_estimate}{\code{InferenceAbstractKKQuantileRegrOneLik$compute_estimate()}}
+    \item \href{#method-InferenceAbstractKKQuantileRegrOneLik-compute_estimate_with_bootstrap_weights}{\code{InferenceAbstractKKQuantileRegrOneLik$compute_estimate_with_bootstrap_weights()}}
+    \item \href{#method-InferenceAbstractKKQuantileRegrOneLik-compute_asymp_confidence_interval}{\code{InferenceAbstractKKQuantileRegrOneLik$compute_asymp_confidence_interval()}}
+    \item \href{#method-InferenceAbstractKKQuantileRegrOneLik-compute_asymp_two_sided_pval}{\code{InferenceAbstractKKQuantileRegrOneLik$compute_asymp_two_sided_pval()}}
+    \item \href{#method-InferenceAbstractKKQuantileRegrOneLik-clone}{\code{InferenceAbstractKKQuantileRegrOneLik$clone()}}
+  }
 }
-}
-\if{html}{\out{
-<details><summary>Inherited methods</summary>
-<ul>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_analysis_data"><a href='../..//html/Inference.html#method-Inference-get_analysis_data'><code>::Inference$get_analysis_data()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_covariates"><a href='../..//html/Inference.html#method-Inference-get_covariates'><code>::Inference$get_covariates()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_design_object"><a href='../..//html/Inference.html#method-Inference-get_design_object'><code>::Inference$get_design_object()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_model_formula"><a href='../..//html/Inference.html#method-Inference-get_model_formula'><code>::Inference$get_model_formula()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../..//html/Inference.html#method-Inference-get_nonestimable_reason'><code>::Inference$get_nonestimable_reason()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../..//html/Inference.html#method-Inference-get_nonestimable_stage'><code>::Inference$get_nonestimable_stage()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_optimization_alg"><a href='../..//html/Inference.html#method-Inference-get_optimization_alg'><code>::Inference$get_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_response"><a href='../..//html/Inference.html#method-Inference-get_response'><code>::Inference$get_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_response_type"><a href='../..//html/Inference.html#method-Inference-get_response_type'><code>::Inference$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_treatment"><a href='../..//html/Inference.html#method-Inference-get_treatment'><code>::Inference$get_treatment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="is_nonestimable"><a href='../..//html/Inference.html#method-Inference-is_nonestimable'><code>::Inference$is_nonestimable()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="set_optimization_alg"><a href='../..//html/Inference.html#method-Inference-set_optimization_alg'><code>::Inference$set_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="set_seed"><a href='../..//html/Inference.html#method-Inference-set_seed'><code>::Inference$set_seed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../..//html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_cpp"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_cpp'><code>::InferenceRand$set_custom_randomization_statistic_cpp()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="approximate_m_out_of_n_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_m_out_of_n_bootstrap_distribution_beta_hat_T'><code>::InferenceNonParamBootstrap$approximate_m_out_of_n_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="approximate_subsampling_distribution_beta_hat_T"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_subsampling_distribution_beta_hat_T'><code>::InferenceNonParamBootstrap$approximate_subsampling_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>::InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>::InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_m_out_of_n_bootstrap_confidence_interval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_confidence_interval'><code>::InferenceNonParamBootstrap$compute_m_out_of_n_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_m_out_of_n_bootstrap_two_sided_pval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_two_sided_pval'><code>::InferenceNonParamBootstrap$compute_m_out_of_n_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_subsampling_confidence_interval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_confidence_interval'><code>::InferenceNonParamBootstrap$compute_subsampling_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_subsampling_sensitivity"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_sensitivity'><code>::InferenceNonParamBootstrap$compute_subsampling_sensitivity()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_subsampling_two_sided_pval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_two_sided_pval'><code>::InferenceNonParamBootstrap$compute_subsampling_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="select_optimal_b_subsampling"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-select_optimal_b_subsampling'><code>::InferenceNonParamBootstrap$select_optimal_b_subsampling()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="select_optimal_m_out_of_n_bootstrap"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-select_optimal_m_out_of_n_bootstrap'><code>::InferenceNonParamBootstrap$select_optimal_m_out_of_n_bootstrap()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandBootstrap" data-id="approximate_rand_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceRandBootstrap.html#method-InferenceRandBootstrap-approximate_rand_bootstrap_distribution_beta_hat_T'><code>::InferenceRandBootstrap$approximate_rand_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandBootstrap" data-id="compute_rand_bootstrap_two_sided_pval"><a href='../..//html/InferenceRandBootstrap.html#method-InferenceRandBootstrap-compute_rand_bootstrap_two_sided_pval'><code>::InferenceRandBootstrap$compute_rand_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandBootstrapCI" data-id="compute_rand_bootstrap_confidence_interval"><a href='../..//html/InferenceRandBootstrapCI.html#method-InferenceRandBootstrapCI-compute_rand_bootstrap_confidence_interval'><code>::InferenceRandBootstrapCI$compute_rand_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="approximate_bayesian_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>::InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_confidence_interval"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>::InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceBayesianBootstrap" data-id="compute_bayesian_bootstrap_two_sided_pval"><a href='../..//html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>::InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="approximate_jackknife_distribution_beta_hat_T"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>::InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_bias_estimate"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>::InferenceJackknife$compute_jackknife_bias_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_corrected_estimate"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_corrected_estimate'><code>::InferenceJackknife$compute_jackknife_corrected_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_estimate"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_estimate'><code>::InferenceJackknife$compute_jackknife_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_standard_error"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_standard_error'><code>::InferenceJackknife$compute_jackknife_standard_error()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_std_error"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_std_error'><code>::InferenceJackknife$compute_jackknife_std_error()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_wald_confidence_interval"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_confidence_interval'><code>::InferenceJackknife$compute_jackknife_wald_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceJackknife" data-id="compute_jackknife_wald_two_sided_pval"><a href='../..//html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_two_sided_pval'><code>::InferenceJackknife$compute_jackknife_wald_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsymp" data-id="compute_wald_confidence_interval"><a href='../..//html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_confidence_interval'><code>::InferenceAsymp$compute_wald_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsymp" data-id="compute_wald_two_sided_pval"><a href='../..//html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_two_sided_pval'><code>::InferenceAsymp$compute_wald_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsymp" data-id="get_mod"><a href='../..//html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>::InferenceAsymp$get_mod()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsymp" data-id="get_summary"><a href='../..//html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>::InferenceAsymp$get_summary()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="compute_gradient_confidence_interval"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-compute_gradient_confidence_interval'><code>::InferenceAsympLik$compute_gradient_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="compute_gradient_two_sided_pval"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-compute_gradient_two_sided_pval'><code>::InferenceAsympLik$compute_gradient_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="compute_lik_ratio_bartlett_approx_confidence_interval"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_bartlett_approx_confidence_interval'><code>::InferenceAsympLik$compute_lik_ratio_bartlett_approx_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="compute_lik_ratio_bartlett_approx_two_sided_pval"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_bartlett_approx_two_sided_pval'><code>::InferenceAsympLik$compute_lik_ratio_bartlett_approx_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="compute_lik_ratio_bartlett_confidence_interval"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_bartlett_confidence_interval'><code>::InferenceAsympLik$compute_lik_ratio_bartlett_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="compute_lik_ratio_bartlett_exact_confidence_interval"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_bartlett_exact_confidence_interval'><code>::InferenceAsympLik$compute_lik_ratio_bartlett_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="compute_lik_ratio_bartlett_exact_two_sided_pval"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_bartlett_exact_two_sided_pval'><code>::InferenceAsympLik$compute_lik_ratio_bartlett_exact_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="compute_lik_ratio_bartlett_two_sided_pval"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_bartlett_two_sided_pval'><code>::InferenceAsympLik$compute_lik_ratio_bartlett_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="compute_lik_ratio_confidence_interval"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_confidence_interval'><code>::InferenceAsympLik$compute_lik_ratio_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="compute_lik_ratio_two_sided_pval"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_two_sided_pval'><code>::InferenceAsympLik$compute_lik_ratio_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="compute_score_confidence_interval"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-compute_score_confidence_interval'><code>::InferenceAsympLik$compute_score_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="compute_score_two_sided_pval"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-compute_score_two_sided_pval'><code>::InferenceAsympLik$compute_score_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="get_information_preference"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-get_information_preference'><code>::InferenceAsympLik$get_information_preference()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="get_information_source_used"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-get_information_source_used'><code>::InferenceAsympLik$get_information_source_used()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="get_supported_information_preferences"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-get_supported_information_preferences'><code>::InferenceAsympLik$get_supported_information_preferences()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="get_supported_testing_types"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-get_supported_testing_types'><code>::InferenceAsympLik$get_supported_testing_types()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="get_testing_type"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>::InferenceAsympLik$get_testing_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="set_information_preference"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>::InferenceAsympLik$set_information_preference()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAsympLik" data-id="set_testing_type"><a href='../..//html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>::InferenceAsympLik$set_testing_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceKKPassThroughCompoundNoParamBootstrap" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceKKPassThroughCompoundNoParamBootstrap.html#method-InferenceKKPassThroughCompoundNoParamBootstrap-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceKKPassThroughCompoundNoParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceAbstractQuantileRandCI" data-id="compute_rand_confidence_interval"><a href='../..//html/InferenceAbstractQuantileRandCI.html#method-InferenceAbstractQuantileRandCI-compute_rand_confidence_interval'><code>::InferenceAbstractQuantileRandCI$compute_rand_confidence_interval()</code></a></span></li>
-</ul>
-</details>
-}}
+\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAbstractQuantileRandCI.html'><code>InferenceAbstractQuantileRandCI</code></a>.</p>}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrOneLik-new"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrOneLik-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize KK quantile-regression combined-likelihood inference.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrOneLik$new(
+\if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrOneLik-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrOneLik-initialize}{}}}
+\subsection{\code{InferenceAbstractKKQuantileRegrOneLik$new()}}{
+  Initialize KK quantile-regression combined-likelihood inference.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceAbstractKKQuantileRegrOneLik$new(
   des_obj,
   model_formula = NULL,
   tau = 0.5,
   transform_y_fn = identity,
   verbose = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{des_obj}}{A completed KK design object.}
-
-\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{des_obj}}{A completed KK design object.}
+      \item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
 the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
-
-\item{\code{tau}}{The quantile level for regression, strictly between 0 and 1. The default
+      \item{\code{tau}}{The quantile level for regression, strictly between 0 and 1. The default
 \code{tau = 0.5} estimates the median treatment effect. Values of exactly 0 or 1
 are excluded because quantile regression is undefined at the boundary (the check
 function \eqn{\rho_\tau(u) = u(\tau - \mathbf{1}_{u < 0})} degenerates there);
 the bound is enforced as \code{(.Machine$double.eps, 1 - .Machine$double.eps)},
 i.e. the smallest representable positive number away from 0 and 1.}
+      \item{\code{transform_y_fn}}{Optional response transformation.}
+      \item{\code{verbose}}{Whether to print progress messages.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A new inference object.
+  }
+}
 
-\item{\code{transform_y_fn}}{Optional response transformation.}
-
-\item{\code{verbose}}{Whether to print progress messages.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A new inference object.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrOneLik-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrOneLik-compute_estimate}{}}}
-\subsection{Method \code{compute_estimate()}}{
-Compute the quantile-regression treatment estimate.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrOneLik$compute_estimate(estimate_only = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceAbstractKKQuantileRegrOneLik$compute_estimate()}}{
+  Compute the quantile-regression treatment estimate.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceAbstractKKQuantileRegrOneLik$compute_estimate(estimate_only = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{estimate_only}}{Whether to skip standard-error calculations.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    The treatment estimate.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{estimate_only}}{Whether to skip standard-error calculations.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The treatment estimate.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrOneLik-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrOneLik-compute_estimate_with_bootstrap_weights}{}}}
-\subsection{Method \code{compute_estimate_with_bootstrap_weights()}}{
-Compute the treatment estimate with bootstrap weights.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrOneLik$compute_estimate_with_bootstrap_weights(
+\subsection{\code{InferenceAbstractKKQuantileRegrOneLik$compute_estimate_with_bootstrap_weights()}}{
+  Compute the treatment estimate with bootstrap weights.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceAbstractKKQuantileRegrOneLik$compute_estimate_with_bootstrap_weights(
   subject_or_block_weights,
   estimate_only = FALSE
-)}\if{html}{\out{</div>}}
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{subject_or_block_weights}}{Numeric vector. Row weights for bootstrap.}
+      \item{\code{estimate_only}}{Logical. If TRUE, skip variance component calculations.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    The treatment estimate.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{subject_or_block_weights}}{Numeric vector. Row weights for bootstrap.}
-
-\item{\code{estimate_only}}{Logical. If TRUE, skip variance component calculations.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The treatment estimate.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrOneLik-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrOneLik-compute_asymp_confidence_interval}{}}}
-\subsection{Method \code{compute_asymp_confidence_interval()}}{
-Compute an asymptotic confidence interval.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrOneLik$compute_asymp_confidence_interval(
+\subsection{\code{InferenceAbstractKKQuantileRegrOneLik$compute_asymp_confidence_interval()}}{
+  Compute an asymptotic confidence interval.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceAbstractKKQuantileRegrOneLik$compute_asymp_confidence_interval(
   alpha = 0.05
-)}\if{html}{\out{</div>}}
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{alpha}}{Significance level.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A confidence interval.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{Significance level.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A confidence interval.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrOneLik-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrOneLik-compute_asymp_two_sided_pval}{}}}
-\subsection{Method \code{compute_asymp_two_sided_pval()}}{
-Compute an asymptotic two-sided p-value for the treatment effect.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrOneLik$compute_asymp_two_sided_pval(delta = 0)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceAbstractKKQuantileRegrOneLik$compute_asymp_two_sided_pval()}}{
+  Compute an asymptotic two-sided p-value for the treatment effect.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceAbstractKKQuantileRegrOneLik$compute_asymp_two_sided_pval(delta = 0)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{delta}}{Null treatment effect value.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A two-sided p-value.
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{delta}}{Null treatment effect value.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A two-sided p-value.
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrOneLik-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrOneLik-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceAbstractKKQuantileRegrOneLik$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceAbstractKKQuantileRegrOneLik$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceAbstractKKQuantileRegrOneLik$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }

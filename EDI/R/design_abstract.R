@@ -21,12 +21,6 @@
 Design = R6::R6Class("Design",
 	lock_objects = FALSE,
 	public = list(
-		#' @description Characterization: is this a blocking design? Default
-		#'   \code{FALSE}; overridden to \code{TRUE} on \code{DesignBlocking}.
-		is_a_blocking = function() FALSE,
-		#' @description Characterization: is this a matching design? Default
-		#'   \code{FALSE}; overridden to \code{TRUE} on \code{DesignMatching}.
-		is_a_matching = function() FALSE,
 		#' @description Characterization: is this a fixed-sample-size design?
 		#'   Default \code{FALSE}; overridden to \code{TRUE} on \code{DesignFixed}.
 		is_a_fixed = function() FALSE,

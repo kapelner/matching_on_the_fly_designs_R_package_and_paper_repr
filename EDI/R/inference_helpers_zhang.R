@@ -101,7 +101,7 @@ zhang_assert_exact_inference_params = function(inf_obj, type, args_for_type){
 	if (should_run_asserts()) {
 		assertList(args)
 	}
-	is_bernoulli = is(private$des_obj, "DesignSeqOneByOneBernoulli") || is(private$des_obj, "DesignFixedBernoulli")
+	is_bernoulli = private$des_obj$is_a_bernoulli_capable()
 	if (should_run_asserts()) {
 		if (!is_bernoulli && !private$has_match_structure) stop("Zhang incidence inference requires Bernoulli or matching designs.")
 		assertResponseType(private$des_obj$get_response_type(), "incidence")

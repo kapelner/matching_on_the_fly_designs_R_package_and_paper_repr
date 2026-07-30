@@ -1,8 +1,10 @@
 // [[Rcpp::depends(RcppEigen)]]
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <cmath>
 #include <limits>
+#include <stdexcept>
 
 using namespace Rcpp;
 
@@ -135,7 +137,7 @@ inline double weighted_loglik_from_eta(const Eigen::VectorXd& eta,
   return ll;
 }
 
-List fit_constrained_binomial_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& X,
+edi::ResultMap fit_constrained_binomial_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& X,
                                        const Eigen::Ref<const Eigen::VectorXd>& y,
                                        BinomialConstrainedLink link_type,
                                        int maxit,
@@ -149,7 +151,7 @@ List fit_constrained_binomial_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& 
                                        bool estimate_only = false) {
   const int n = (int)X.rows();
   const int p = (int)X.cols();
-  if (y.size() != n) stop("dimension mismatch in constrained binomial regression");
+  if (y.size() != n) throw std::invalid_argument("dimension mismatch in constrained binomial regression");
   FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
   const int p_free = (int)fixed_spec.free_idx.size();
   Eigen::MatrixXd X_free(n, p_free);
@@ -162,7 +164,7 @@ List fit_constrained_binomial_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& 
   Eigen::VectorXd beta = Eigen::VectorXd::Zero(p);
   if (warm_start_beta.has_value()) {
     beta = *warm_start_beta;
-    if (beta.size() != p) stop("warm_start_beta must have length equal to ncol(X)");
+    if (beta.size() != p) throw std::invalid_argument("warm_start_beta must have length equal to ncol(X)");
   } else if (smart_cold_start) {
     if (link_type == BinomialConstrainedLink::kLog) {
       beta = ols_smart_cold_start_beta_on_log1p_or_legacy(X, y, Eigen::VectorXd::Zero(p), fixed_spec);
@@ -230,16 +232,16 @@ List fit_constrained_binomial_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& 
         XtWX = weighted_crossprod(X_free, w);
         ldlt.compute(XtWX);
         if (ldlt.info() != Eigen::Success) {
-          return List::create(_["b"] = beta, _["mu_hat"] = mu, _["working_weights"] = w, _["converged"] = false);
+          return edi::ResultMap().set("b", beta).set("mu_hat", mu).set("working_weights", w).set("converged", false);
         }
       } else {
-        return List::create(_["b"] = beta, _["mu_hat"] = mu, _["working_weights"] = w, _["converged"] = false);
+        return edi::ResultMap().set("b", beta).set("mu_hat", mu).set("working_weights", w).set("converged", false);
       }
     }
 
     Eigen::VectorXd beta_free_target = ldlt.solve(XtWz);
     if (ldlt.info() != Eigen::Success || !all_finite_vec(beta_free_target)) {
-      return List::create(_["b"] = beta, _["mu_hat"] = mu, _["working_weights"] = w, _["converged"] = false);
+      return edi::ResultMap().set("b", beta).set("mu_hat", mu).set("working_weights", w).set("converged", false);
     }
 
     // Precompute the step direction in eta-space once per IRLS iteration so
@@ -277,11 +279,10 @@ List fit_constrained_binomial_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& 
   }
 
   if (estimate_only) {
-    return List::create(
-      _["b"] = beta,
-      _["converged"] = converged && all_finite_vec(beta),
-      _["iterations"] = iterations
-    );
+    return edi::ResultMap()
+      .set("b", beta)
+      .set("converged", converged && all_finite_vec(beta))
+      .set("iterations", iterations);
   }
 
   Eigen::VectorXd eta = X * beta;
@@ -295,17 +296,16 @@ List fit_constrained_binomial_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& 
     w = (1.0 / (mu.array() * (1.0 - mu.array())).max(kEps)).max(kEps).matrix();
   }
 
-  return List::create(
-    _["b"] = beta,
-    _["mu_hat"] = mu,
-    _["working_weights"] = w,
-    _["iterations"] = iterations,
-    _["converged"] = converged && all_finite_vec(beta) && all_finite_vec(mu) && all_finite_vec(w),
-    _["fisher_information"] = weighted_crossprod(X, w)
-  );
+  return edi::ResultMap()
+    .set("b", beta)
+    .set("mu_hat", mu)
+    .set("working_weights", w)
+    .set("iterations", iterations)
+    .set("converged", converged && all_finite_vec(beta) && all_finite_vec(mu) && all_finite_vec(w))
+    .set("fisher_information", weighted_crossprod(X, w));
 }
 
-List fit_constrained_binomial_weighted_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& X,
+edi::ResultMap fit_constrained_binomial_weighted_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& X,
                                                 const Eigen::Ref<const Eigen::VectorXd>& y,
                                                 const Eigen::VectorXd& obs_weights,
                                                 BinomialConstrainedLink link_type,
@@ -320,8 +320,8 @@ List fit_constrained_binomial_weighted_cpp_impl(const Eigen::Ref<const Eigen::Ma
                                                 bool estimate_only = false) {
   const int n = (int)X.rows();
   const int p = (int)X.cols();
-  if (y.size() != n) stop("dimension mismatch in constrained binomial regression");
-  if (obs_weights.size() != n) stop("weights length mismatch in constrained binomial regression");
+  if (y.size() != n) throw std::invalid_argument("dimension mismatch in constrained binomial regression");
+  if (obs_weights.size() != n) throw std::invalid_argument("weights length mismatch in constrained binomial regression");
   FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
   const int p_free = (int)fixed_spec.free_idx.size();
   Eigen::MatrixXd X_free(n, p_free);
@@ -334,7 +334,7 @@ List fit_constrained_binomial_weighted_cpp_impl(const Eigen::Ref<const Eigen::Ma
   Eigen::VectorXd beta = Eigen::VectorXd::Zero(p);
   if (warm_start_beta.has_value()) {
     beta = *warm_start_beta;
-    if (beta.size() != p) stop("warm_start_beta must have length equal to ncol(X)");
+    if (beta.size() != p) throw std::invalid_argument("warm_start_beta must have length equal to ncol(X)");
   } else if (smart_cold_start) {
     if (link_type == BinomialConstrainedLink::kLog) {
       beta = ols_smart_cold_start_beta_on_log1p_or_legacy(X, y, Eigen::VectorXd::Zero(p), fixed_spec);
@@ -358,7 +358,7 @@ List fit_constrained_binomial_weighted_cpp_impl(const Eigen::Ref<const Eigen::Ma
   const bool has_warm_start_weights = warm_start_weights.has_value();
   if (has_warm_start_weights) {
     warm_weights_vec = *warm_start_weights;
-    if (warm_weights_vec.size() != n) stop("warm_start_weights must have length equal to nrow(X)");
+    if (warm_weights_vec.size() != n) throw std::invalid_argument("warm_start_weights must have length equal to nrow(X)");
   }
 
   double ll_curr = weighted_loglik_constrained_binomial(X, y, obs_weights, beta, link_type);
@@ -408,16 +408,16 @@ List fit_constrained_binomial_weighted_cpp_impl(const Eigen::Ref<const Eigen::Ma
         XtWX = weighted_crossprod(X_free, w_eff);
         ldlt.compute(XtWX);
         if (ldlt.info() != Eigen::Success) {
-          return List::create(_["b"] = beta, _["mu_hat"] = mu, _["working_weights"] = w, _["converged"] = false);
+          return edi::ResultMap().set("b", beta).set("mu_hat", mu).set("working_weights", w).set("converged", false);
         }
       } else {
-        return List::create(_["b"] = beta, _["mu_hat"] = mu, _["working_weights"] = w, _["converged"] = false);
+        return edi::ResultMap().set("b", beta).set("mu_hat", mu).set("working_weights", w).set("converged", false);
       }
     }
 
     Eigen::VectorXd beta_free_target = ldlt.solve(XtWz);
     if (ldlt.info() != Eigen::Success || !all_finite_vec(beta_free_target)) {
-      return List::create(_["b"] = beta, _["mu_hat"] = mu, _["working_weights"] = w, _["converged"] = false);
+      return edi::ResultMap().set("b", beta).set("mu_hat", mu).set("working_weights", w).set("converged", false);
     }
 
     const Eigen::VectorXd delta_beta = beta_free_target - beta_free;
@@ -450,11 +450,10 @@ List fit_constrained_binomial_weighted_cpp_impl(const Eigen::Ref<const Eigen::Ma
   }
 
   if (estimate_only) {
-    return List::create(
-      _["b"] = beta,
-      _["converged"] = converged && all_finite_vec(beta),
-      _["iterations"] = iterations
-    );
+    return edi::ResultMap()
+      .set("b", beta)
+      .set("converged", converged && all_finite_vec(beta))
+      .set("iterations", iterations);
   }
 
   Eigen::VectorXd eta = X * beta;
@@ -469,17 +468,16 @@ List fit_constrained_binomial_weighted_cpp_impl(const Eigen::Ref<const Eigen::Ma
   }
   w_eff = obs_weights.cwiseProduct(w);
 
-  return List::create(
-    _["b"] = beta,
-    _["mu_hat"] = mu,
-    _["working_weights"] = w,
-    _["iterations"] = iterations,
-    _["converged"] = converged && all_finite_vec(beta) && all_finite_vec(mu) && all_finite_vec(w),
-    _["fisher_information"] = weighted_crossprod(X, w_eff)
-  );
+  return edi::ResultMap()
+    .set("b", beta)
+    .set("mu_hat", mu)
+    .set("working_weights", w)
+    .set("iterations", iterations)
+    .set("converged", converged && all_finite_vec(beta) && all_finite_vec(mu) && all_finite_vec(w))
+    .set("fisher_information", weighted_crossprod(X, w_eff));
 }
 
-List fit_constrained_binomial_with_var_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& X,
+edi::ResultMap fit_constrained_binomial_with_var_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& X,
                                                  const Eigen::Ref<const Eigen::VectorXd>& y,
                                                  BinomialConstrainedLink link_type,
                                                  int j,
@@ -491,26 +489,25 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::Ref<const Eigen::Ma
                                                  bool smart_cold_start = true,
                                                  std::optional<Eigen::VectorXd> warm_start_weights = std::nullopt,
                                                  std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt) {
-  List fit = fit_constrained_binomial_cpp_impl(X, y, link_type, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info);
-  const bool converged = as<bool>(fit["converged"]);
-  Eigen::VectorXd beta = fit["b"];
-  Eigen::VectorXd w = fit["working_weights"];
+  edi::ResultMap fit = fit_constrained_binomial_cpp_impl(X, y, link_type, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info);
+  const bool converged = *fit.get_if<bool>("converged");
+  Eigen::VectorXd beta = *fit.get_if<Eigen::VectorXd>("b");
+  Eigen::VectorXd w = *fit.get_if<Eigen::VectorXd>("working_weights");
 
   if (!converged || !all_finite_vec(beta) || !all_finite_vec(w)) {
-    return List::create(
-      _["b"] = beta,
-      _["vcov"] = NumericMatrix(0, 0),
-      _["std_err"] = NumericVector(0),
-      _["z_vals"] = NumericVector(0),
-      _["ssq_b_j"] = NA_REAL,
-      _["converged"] = false
-    );
+    return edi::ResultMap()
+      .set("b", beta)
+      .set("vcov", Eigen::MatrixXd(0, 0))
+      .set("std_err", Eigen::VectorXd(0))
+      .set("z_vals", Eigen::VectorXd(0))
+      .set("ssq_b_j", NA_REAL)
+      .set("converged", false);
   }
 
   FixedParamSpec fixed_spec = make_fixed_param_spec((int)X.cols(), fixed_idx, fixed_values);
   Eigen::MatrixXd fisher_information;
-  if (fit.containsElementNamed("fisher_information")) {
-    fisher_information = as<Eigen::MatrixXd>(fit["fisher_information"]);
+  if (const auto* fi = fit.get_if<Eigen::MatrixXd>("fisher_information")) {
+    fisher_information = *fi;
   }
   if (fisher_information.rows() != X.cols() || fisher_information.cols() != X.cols() || !all_finite_mat(fisher_information)) {
     fisher_information = weighted_crossprod(X, w);
@@ -518,14 +515,13 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::Ref<const Eigen::Ma
   Eigen::MatrixXd XtWX_free = subset_matrix(fisher_information, fixed_spec.free_idx, fixed_spec.free_idx);
   Eigen::LDLT<Eigen::MatrixXd> ldlt(XtWX_free);
   if (ldlt.info() != Eigen::Success) {
-    return List::create(
-      _["b"] = beta,
-      _["vcov"] = NumericMatrix(0, 0),
-      _["std_err"] = NumericVector(0),
-      _["z_vals"] = NumericVector(0),
-      _["ssq_b_j"] = NA_REAL,
-      _["converged"] = false
-    );
+    return edi::ResultMap()
+      .set("b", beta)
+      .set("vcov", Eigen::MatrixXd(0, 0))
+      .set("std_err", Eigen::VectorXd(0))
+      .set("z_vals", Eigen::VectorXd(0))
+      .set("ssq_b_j", NA_REAL)
+      .set("converged", false);
   }
 
   int free_j = -1;
@@ -533,14 +529,13 @@ List fit_constrained_binomial_with_var_cpp_impl(const Eigen::Ref<const Eigen::Ma
     if (fixed_spec.free_idx[jj] == j - 1) { free_j = jj + 1; break; }
   const double ssq_b_j = (free_j > 0) ? compute_diagonal_inverse_entry(XtWX_free, free_j) : NA_REAL;
 
-  return List::create(
-    _["b"] = beta,
-    _["ssq_b_j"] = ssq_b_j,
-    _["converged"] = true,
-    _["fisher_information"] = fisher_information,
-    _["neg_ll"] = -loglik_constrained_binomial(X, y, beta, link_type),
-    _["logLik"] = loglik_constrained_binomial(X, y, beta, link_type)
-  );
+  return edi::ResultMap()
+    .set("b", beta)
+    .set("ssq_b_j", ssq_b_j)
+    .set("converged", true)
+    .set("fisher_information", fisher_information)
+    .set("neg_ll", -loglik_constrained_binomial(X, y, beta, link_type))
+    .set("logLik", loglik_constrained_binomial(X, y, beta, link_type));
 }
 
 Eigen::VectorXd constrained_binomial_score_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& X,
@@ -843,7 +838,7 @@ List fast_log_binomial_regression_cpp(SEXP X_r,
     NumericVector y_vec(y_r);
     Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
     Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
-  return fit_constrained_binomial_cpp_impl(X, y, BinomialConstrainedLink::kLog, maxit, tol, nullable_to_optional<Eigen::VectorXi>(fixed_idx), nullable_to_optional<Eigen::VectorXd>(fixed_values), nullable_to_optional<Eigen::VectorXd>(warm_start_beta), smart_cold_start, nullable_to_optional<Eigen::VectorXd>(warm_start_weights), nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info), estimate_only);
+  return edi::to_rcpp_list(fit_constrained_binomial_cpp_impl(X, y, BinomialConstrainedLink::kLog, maxit, tol, nullable_to_optional<Eigen::VectorXi>(fixed_idx), nullable_to_optional<Eigen::VectorXd>(fixed_values), nullable_to_optional<Eigen::VectorXd>(warm_start_beta), smart_cold_start, nullable_to_optional<Eigen::VectorXd>(warm_start_weights), nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info), estimate_only));
 }
 
 //' @title Fast Log-Binomial Regression with Variance (C++)
@@ -877,7 +872,7 @@ List fast_log_binomial_regression_with_var_cpp(SEXP X_r,
     NumericVector y_vec(y_r);
     Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
     Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
-  return fit_constrained_binomial_with_var_cpp_impl(X, y, BinomialConstrainedLink::kLog, j, maxit, tol, nullable_to_optional<Eigen::VectorXi>(fixed_idx), nullable_to_optional<Eigen::VectorXd>(fixed_values), nullable_to_optional<Eigen::VectorXd>(warm_start_beta), smart_cold_start, nullable_to_optional<Eigen::VectorXd>(warm_start_weights), nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
+  return edi::to_rcpp_list(fit_constrained_binomial_with_var_cpp_impl(X, y, BinomialConstrainedLink::kLog, j, maxit, tol, nullable_to_optional<Eigen::VectorXi>(fixed_idx), nullable_to_optional<Eigen::VectorXd>(fixed_values), nullable_to_optional<Eigen::VectorXd>(warm_start_beta), smart_cold_start, nullable_to_optional<Eigen::VectorXd>(warm_start_weights), nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info)));
 }
 
 //' @title Fast Weighted Log-Binomial Regression (C++)
@@ -914,7 +909,7 @@ List fast_log_binomial_regression_weighted_cpp(SEXP X_r,
     Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
     NumericVector weights_vec(weights_r);
     Eigen::Map<const Eigen::VectorXd> weights(weights_vec.begin(), weights_vec.size());
-  return fit_constrained_binomial_weighted_cpp_impl(X, y, weights, BinomialConstrainedLink::kLog, maxit, tol, nullable_to_optional<Eigen::VectorXi>(fixed_idx), nullable_to_optional<Eigen::VectorXd>(fixed_values), nullable_to_optional<Eigen::VectorXd>(warm_start_beta), smart_cold_start, nullable_to_optional<Eigen::VectorXd>(warm_start_weights), nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info), estimate_only);
+  return edi::to_rcpp_list(fit_constrained_binomial_weighted_cpp_impl(X, y, weights, BinomialConstrainedLink::kLog, maxit, tol, nullable_to_optional<Eigen::VectorXi>(fixed_idx), nullable_to_optional<Eigen::VectorXd>(fixed_values), nullable_to_optional<Eigen::VectorXd>(warm_start_beta), smart_cold_start, nullable_to_optional<Eigen::VectorXd>(warm_start_weights), nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info), estimate_only));
 }
 
 //' @title Fast Identity-Binomial Regression (C++)
@@ -946,7 +941,7 @@ List fast_identity_binomial_regression_cpp(SEXP X_r,
     NumericVector y_vec(y_r);
     Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
     Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
-  return fit_constrained_binomial_cpp_impl(X, y, BinomialConstrainedLink::kIdentity, maxit, tol, nullable_to_optional<Eigen::VectorXi>(fixed_idx), nullable_to_optional<Eigen::VectorXd>(fixed_values), nullable_to_optional<Eigen::VectorXd>(warm_start_beta), smart_cold_start, nullable_to_optional<Eigen::VectorXd>(warm_start_weights), nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
+  return edi::to_rcpp_list(fit_constrained_binomial_cpp_impl(X, y, BinomialConstrainedLink::kIdentity, maxit, tol, nullable_to_optional<Eigen::VectorXi>(fixed_idx), nullable_to_optional<Eigen::VectorXd>(fixed_values), nullable_to_optional<Eigen::VectorXd>(warm_start_beta), smart_cold_start, nullable_to_optional<Eigen::VectorXd>(warm_start_weights), nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info)));
 }
 
 //' @title Fast Identity-Binomial Regression with Variance (C++)
@@ -980,7 +975,7 @@ List fast_identity_binomial_regression_with_var_cpp(SEXP X_r,
     NumericVector y_vec(y_r);
     Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
     Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
-  return fit_constrained_binomial_with_var_cpp_impl(X, y, BinomialConstrainedLink::kIdentity, j, maxit, tol, nullable_to_optional<Eigen::VectorXi>(fixed_idx), nullable_to_optional<Eigen::VectorXd>(fixed_values), nullable_to_optional<Eigen::VectorXd>(warm_start_beta), smart_cold_start, nullable_to_optional<Eigen::VectorXd>(warm_start_weights), nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
+  return edi::to_rcpp_list(fit_constrained_binomial_with_var_cpp_impl(X, y, BinomialConstrainedLink::kIdentity, j, maxit, tol, nullable_to_optional<Eigen::VectorXi>(fixed_idx), nullable_to_optional<Eigen::VectorXd>(fixed_values), nullable_to_optional<Eigen::VectorXd>(warm_start_beta), smart_cold_start, nullable_to_optional<Eigen::VectorXd>(warm_start_weights), nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info)));
 }
 
 //' @title Fast Weighted Identity-Binomial Regression (C++)
@@ -1017,5 +1012,5 @@ List fast_identity_binomial_regression_weighted_cpp(SEXP X_r,
     Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
     NumericVector weights_vec(weights_r);
     Eigen::Map<const Eigen::VectorXd> weights(weights_vec.begin(), weights_vec.size());
-  return fit_constrained_binomial_weighted_cpp_impl(X, y, weights, BinomialConstrainedLink::kIdentity, maxit, tol, nullable_to_optional<Eigen::VectorXi>(fixed_idx), nullable_to_optional<Eigen::VectorXd>(fixed_values), nullable_to_optional<Eigen::VectorXd>(warm_start_beta), smart_cold_start, nullable_to_optional<Eigen::VectorXd>(warm_start_weights), nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info), estimate_only);
+  return edi::to_rcpp_list(fit_constrained_binomial_weighted_cpp_impl(X, y, weights, BinomialConstrainedLink::kIdentity, maxit, tol, nullable_to_optional<Eigen::VectorXi>(fixed_idx), nullable_to_optional<Eigen::VectorXd>(fixed_values), nullable_to_optional<Eigen::VectorXd>(warm_start_beta), smart_cold_start, nullable_to_optional<Eigen::VectorXd>(warm_start_weights), nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info), estimate_only));
 }

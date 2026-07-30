@@ -14,6 +14,7 @@
 #include <Rmath.h>
 #include <cmath>
 #include <unordered_map>
+#include <stdexcept>
 
 using namespace Rcpp;
 
@@ -169,7 +170,7 @@ LikelihoodFitResult fast_zinb_internal(const Eigen::Ref<const Eigen::MatrixXd>& 
 
     if (warm_start_params.has_value()) {
         par = *warm_start_params;
-        if (par.size() != n_par) stop("warm_start_params must have length equal to the number of model parameters");
+        if (par.size() != n_par) throw std::invalid_argument("warm_start_params must have length equal to the number of model parameters");
     } else if (smart_cold_start) {
         // Simple initialization
         double mean_y = y_vec.mean();

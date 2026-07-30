@@ -1898,6 +1898,98 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_digamma_vec_cpp
+NumericVector fast_digamma_vec_cpp(NumericVector x);
+RcppExport SEXP _EDI_fast_digamma_vec_cpp(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_digamma_vec_cpp(x));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_trigamma_vec_cpp
+NumericVector fast_trigamma_vec_cpp(NumericVector x);
+RcppExport SEXP _EDI_fast_trigamma_vec_cpp(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_trigamma_vec_cpp(x));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_lgamma_vec_cpp
+NumericVector fast_lgamma_vec_cpp(NumericVector x);
+RcppExport SEXP _EDI_fast_lgamma_vec_cpp(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_lgamma_vec_cpp(x));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_lbeta_vec_cpp
+NumericVector fast_lbeta_vec_cpp(NumericVector a, NumericVector b);
+RcppExport SEXP _EDI_fast_lbeta_vec_cpp(SEXP aSEXP, SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type a(aSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_lbeta_vec_cpp(a, b));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_dnbinom_mu_vec_cpp
+NumericVector fast_dnbinom_mu_vec_cpp(NumericVector x, double size, double mu, bool return_log);
+RcppExport SEXP _EDI_fast_dnbinom_mu_vec_cpp(SEXP xSEXP, SEXP sizeSEXP, SEXP muSEXP, SEXP return_logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type size(sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< bool >::type return_log(return_logSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_dnbinom_mu_vec_cpp(x, size, mu, return_log));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_qnorm_vec_cpp
+NumericVector fast_qnorm_vec_cpp(NumericVector p);
+RcppExport SEXP _EDI_fast_qnorm_vec_cpp(SEXP pSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type p(pSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_qnorm_vec_cpp(p));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_log_pnorm_vec_cpp
+NumericVector fast_log_pnorm_vec_cpp(NumericVector x);
+RcppExport SEXP _EDI_fast_log_pnorm_vec_cpp(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_log_pnorm_vec_cpp(x));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fast_log_dnorm_vec_cpp
+NumericVector fast_log_dnorm_vec_cpp(NumericVector x);
+RcppExport SEXP _EDI_fast_log_dnorm_vec_cpp(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_log_dnorm_vec_cpp(x));
+    return rcpp_result_gen;
+END_RCPP
+}
 // matrix_rank_cpp
 int matrix_rank_cpp(const NumericMatrix& A_r, double tol);
 RcppExport SEXP _EDI_matrix_rank_cpp(SEXP A_rSEXP, SEXP tolSEXP) {
@@ -5157,6 +5249,14 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_fast_logistic_regression_with_var_cpp", (DL_FUNC) &_EDI_fast_logistic_regression_with_var_cpp, 10},
     {"_EDI_fast_logrank_stats_cpp", (DL_FUNC) &_EDI_fast_logrank_stats_cpp, 3},
     {"_EDI_compute_logrank_rand_bootstrap_parallel_cpp", (DL_FUNC) &_EDI_compute_logrank_rand_bootstrap_parallel_cpp, 7},
+    {"_EDI_fast_digamma_vec_cpp", (DL_FUNC) &_EDI_fast_digamma_vec_cpp, 1},
+    {"_EDI_fast_trigamma_vec_cpp", (DL_FUNC) &_EDI_fast_trigamma_vec_cpp, 1},
+    {"_EDI_fast_lgamma_vec_cpp", (DL_FUNC) &_EDI_fast_lgamma_vec_cpp, 1},
+    {"_EDI_fast_lbeta_vec_cpp", (DL_FUNC) &_EDI_fast_lbeta_vec_cpp, 2},
+    {"_EDI_fast_dnbinom_mu_vec_cpp", (DL_FUNC) &_EDI_fast_dnbinom_mu_vec_cpp, 4},
+    {"_EDI_fast_qnorm_vec_cpp", (DL_FUNC) &_EDI_fast_qnorm_vec_cpp, 1},
+    {"_EDI_fast_log_pnorm_vec_cpp", (DL_FUNC) &_EDI_fast_log_pnorm_vec_cpp, 1},
+    {"_EDI_fast_log_dnorm_vec_cpp", (DL_FUNC) &_EDI_fast_log_dnorm_vec_cpp, 1},
     {"_EDI_matrix_rank_cpp", (DL_FUNC) &_EDI_matrix_rank_cpp, 2},
     {"_EDI_get_negbin_regression_score_cpp", (DL_FUNC) &_EDI_get_negbin_regression_score_cpp, 3},
     {"_EDI_get_negbin_regression_hessian_cpp", (DL_FUNC) &_EDI_get_negbin_regression_hessian_cpp, 3},

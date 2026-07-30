@@ -75,68 +75,27 @@ seq_des_inf$compute_rand_bootstrap_two_sided_pval(B = 501)
 }
 \keyword{internal}
 \section{Super classes}{
-\code{::Inference} -> \code{::InferenceRand} -> \code{::InferenceRandCI} -> \code{::InferenceNonParamBootstrap} -> \code{InferenceRandBootstrap}
+\code{\link[EDI:Inference]{Inference}} -> \code{\link[EDI:InferenceRand]{InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}} -> \code{InferenceRandBootstrap}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-InferenceRandBootstrap-approximate_rand_bootstrap_distribution_beta_hat_T}{\code{InferenceRandBootstrap$approximate_rand_bootstrap_distribution_beta_hat_T()}}
-\item \href{#method-InferenceRandBootstrap-compute_rand_bootstrap_two_sided_pval}{\code{InferenceRandBootstrap$compute_rand_bootstrap_two_sided_pval()}}
-\item \href{#method-InferenceRandBootstrap-clone}{\code{InferenceRandBootstrap$clone()}}
+  \itemize{
+    \item \href{#method-InferenceRandBootstrap-approximate_rand_bootstrap_distribution_beta_hat_T}{\code{InferenceRandBootstrap$approximate_rand_bootstrap_distribution_beta_hat_T()}}
+    \item \href{#method-InferenceRandBootstrap-compute_rand_bootstrap_two_sided_pval}{\code{InferenceRandBootstrap$compute_rand_bootstrap_two_sided_pval()}}
+    \item \href{#method-InferenceRandBootstrap-clone}{\code{InferenceRandBootstrap$clone()}}
+  }
 }
-}
-\if{html}{\out{
-<details><summary>Inherited methods</summary>
-<ul>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_asymp_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_asymp_confidence_interval'><code>::Inference$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_asymp_two_sided_pval"><a href='../..//html/Inference.html#method-Inference-compute_asymp_two_sided_pval'><code>::Inference$compute_asymp_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_estimate"><a href='../..//html/Inference.html#method-Inference-compute_estimate'><code>::Inference$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_analysis_data"><a href='../..//html/Inference.html#method-Inference-get_analysis_data'><code>::Inference$get_analysis_data()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_covariates"><a href='../..//html/Inference.html#method-Inference-get_covariates'><code>::Inference$get_covariates()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_design_object"><a href='../..//html/Inference.html#method-Inference-get_design_object'><code>::Inference$get_design_object()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_model_formula"><a href='../..//html/Inference.html#method-Inference-get_model_formula'><code>::Inference$get_model_formula()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../..//html/Inference.html#method-Inference-get_nonestimable_reason'><code>::Inference$get_nonestimable_reason()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../..//html/Inference.html#method-Inference-get_nonestimable_stage'><code>::Inference$get_nonestimable_stage()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_optimization_alg"><a href='../..//html/Inference.html#method-Inference-get_optimization_alg'><code>::Inference$get_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_response"><a href='../..//html/Inference.html#method-Inference-get_response'><code>::Inference$get_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_response_type"><a href='../..//html/Inference.html#method-Inference-get_response_type'><code>::Inference$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_treatment"><a href='../..//html/Inference.html#method-Inference-get_treatment'><code>::Inference$get_treatment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="initialize"><a href='../..//html/Inference.html#method-Inference-initialize'><code>::Inference$initialize()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="is_nonestimable"><a href='../..//html/Inference.html#method-Inference-is_nonestimable'><code>::Inference$is_nonestimable()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="set_optimization_alg"><a href='../..//html/Inference.html#method-Inference-set_optimization_alg'><code>::Inference$set_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="set_seed"><a href='../..//html/Inference.html#method-Inference-set_seed'><code>::Inference$set_seed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../..//html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_cpp"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_cpp'><code>::InferenceRand$set_custom_randomization_statistic_cpp()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_rand_confidence_interval"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>::InferenceRandCI$compute_rand_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRandCI" data-id="compute_rand_two_sided_pval"><a href='../..//html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>::InferenceRandCI$compute_rand_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="approximate_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T'><code>::InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="approximate_m_out_of_n_bootstrap_distribution_beta_hat_T"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_m_out_of_n_bootstrap_distribution_beta_hat_T'><code>::InferenceNonParamBootstrap$approximate_m_out_of_n_bootstrap_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="approximate_subsampling_distribution_beta_hat_T"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_subsampling_distribution_beta_hat_T'><code>::InferenceNonParamBootstrap$approximate_subsampling_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_confidence_interval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>::InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_bootstrap_two_sided_pval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>::InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_m_out_of_n_bootstrap_confidence_interval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_confidence_interval'><code>::InferenceNonParamBootstrap$compute_m_out_of_n_bootstrap_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_m_out_of_n_bootstrap_two_sided_pval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_two_sided_pval'><code>::InferenceNonParamBootstrap$compute_m_out_of_n_bootstrap_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_subsampling_confidence_interval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_confidence_interval'><code>::InferenceNonParamBootstrap$compute_subsampling_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_subsampling_sensitivity"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_sensitivity'><code>::InferenceNonParamBootstrap$compute_subsampling_sensitivity()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="compute_subsampling_two_sided_pval"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_two_sided_pval'><code>::InferenceNonParamBootstrap$compute_subsampling_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="select_optimal_b_subsampling"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-select_optimal_b_subsampling'><code>::InferenceNonParamBootstrap$select_optimal_b_subsampling()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceNonParamBootstrap" data-id="select_optimal_m_out_of_n_bootstrap"><a href='../..//html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-select_optimal_m_out_of_n_bootstrap'><code>::InferenceNonParamBootstrap$select_optimal_m_out_of_n_bootstrap()</code></a></span></li>
-</ul>
-</details>
-}}
+\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceNonParamBootstrap.html'><code>InferenceNonParamBootstrap</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRandBootstrap-approximate_rand_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceRandBootstrap-approximate_rand_bootstrap_distribution_beta_hat_T}{}}}
-\subsection{Method \code{approximate_rand_bootstrap_distribution_beta_hat_T()}}{
-Computes the bootstrap randomization null distribution of the test
+\subsection{\code{InferenceRandBootstrap$approximate_rand_bootstrap_distribution_beta_hat_T()}}{
+  Computes the bootstrap randomization null distribution of the test
   statistic under Fisher's sharp null (shifted by \code{delta}): each draw resamples
   subject rows with replacement and draws one fresh assignment vector from the design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceRandBootstrap$approximate_rand_bootstrap_distribution_beta_hat_T(
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceRandBootstrap$approximate_rand_bootstrap_distribution_beta_hat_T(
   B = 501,
   delta = 0,
   transform_responses = "none",
@@ -145,56 +104,51 @@ Computes the bootstrap randomization null distribution of the test
   bootstrap_type = NULL,
   rand_bootstrap_draws = NULL,
   zero_one_logit_clamp = .Machine$double.eps
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{B}}{Number of bootstrap randomization draws. Default 501.}
-
-\item{\code{delta}}{The null treatment effect (on the \code{transform_responses}
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{B}}{Number of bootstrap randomization draws. Default 501.}
+      \item{\code{delta}}{The null treatment effect (on the \code{transform_responses}
 scale). Default 0.}
-
-\item{\code{transform_responses}}{Type of response transformation used to impose the
+      \item{\code{transform_responses}}{Type of response transformation used to impose the
 sharp null shift for nonzero \code{delta}. Default "none".}
-
-\item{\code{show_progress}}{A flag indicating whether a progress bar should be displayed.}
-
-\item{\code{debug}}{If \code{TRUE}, return a list with the distribution values and
+      \item{\code{show_progress}}{A flag indicating whether a progress bar should be displayed.}
+      \item{\code{debug}}{If \code{TRUE}, return a list with the distribution values and
 per-iteration diagnostics including error messages, warning messages, counts of each,
 and summary proportions for iterations with errors, warnings, and illegal (non-finite)
 values. Runs serially. Default \code{FALSE}.}
-
-\item{\code{bootstrap_type}}{Optional bootstrap-resampling scheme; see
+      \item{\code{bootstrap_type}}{Optional bootstrap-resampling scheme; see
 \code{approximate_bootstrap_distribution_beta_hat_T} for legal values. Default \code{NULL}.}
-
-\item{\code{rand_bootstrap_draws}}{Optional pre-generated draws (as returned by the private
+      \item{\code{rand_bootstrap_draws}}{Optional pre-generated draws (as returned by the private
 method \code{generate_rand_bootstrap_draws}) enabling common random numbers across
 calls with different \code{delta} values (used by the CI inversion). Default \code{NULL}.}
-
-\item{\code{zero_one_logit_clamp}}{The clamping amount for exact 0 and 1 values when logging.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-When \code{debug = FALSE} (default), a numeric vector of length \code{B}
+      \item{\code{zero_one_logit_clamp}}{The clamping amount for exact 0 and 1 values when logging.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    When \code{debug = FALSE} (default), a numeric vector of length \code{B}
   containing the null-distribution draws. When \code{debug = TRUE}, a list with:
   \code{values}, \code{errors}, \code{warnings}, \code{num_errors}, \code{num_warnings},
   \code{prop_iterations_with_errors}, \code{prop_iterations_with_warnings}, and
   \code{prop_illegal_values}.
+  }
 }
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRandBootstrap-compute_rand_bootstrap_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceRandBootstrap-compute_rand_bootstrap_two_sided_pval}{}}}
-\subsection{Method \code{compute_rand_bootstrap_two_sided_pval()}}{
-Computes a bootstrap randomization two-sided p-value for Fisher's sharp
+\subsection{\code{InferenceRandBootstrap$compute_rand_bootstrap_two_sided_pval()}}{
+  Computes a bootstrap randomization two-sided p-value for Fisher's sharp
   null (shifted by \code{delta}): the observed statistic (actual data, actual \code{w})
   is compared against the null distribution generated by resampling rows and drawing
   fresh assignments from the design.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceRandBootstrap$compute_rand_bootstrap_two_sided_pval(
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceRandBootstrap$compute_rand_bootstrap_two_sided_pval(
   B = 501,
   delta = 0,
   transform_responses = "none",
@@ -204,33 +158,25 @@ Computes a bootstrap randomization two-sided p-value for Fisher's sharp
   rand_bootstrap_draws = NULL,
   zero_one_logit_clamp = .Machine$double.eps,
   type = "percentile"
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{B}}{Number of bootstrap randomization draws. Default 501.}
-
-\item{\code{delta}}{The null treatment effect. Default 0.}
-
-\item{\code{transform_responses}}{Type of response transformation for the sharp null shift.
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{B}}{Number of bootstrap randomization draws. Default 501.}
+      \item{\code{delta}}{The null treatment effect. Default 0.}
+      \item{\code{transform_responses}}{Type of response transformation for the sharp null shift.
 The default "none" resolves by response type (logit for proportion, log for count
 and survival, identity otherwise), matching \code{compute_rand_two_sided_pval}.}
-
-\item{\code{na.rm}}{Remove non-finite null draws. Default \code{TRUE}.}
-
-\item{\code{show_progress}}{A flag indicating whether a progress bar should be displayed.}
-
-\item{\code{bootstrap_type}}{Optional bootstrap-resampling scheme; see
+      \item{\code{na.rm}}{Remove non-finite null draws. Default \code{TRUE}.}
+      \item{\code{show_progress}}{A flag indicating whether a progress bar should be displayed.}
+      \item{\code{bootstrap_type}}{Optional bootstrap-resampling scheme; see
 \code{approximate_bootstrap_distribution_beta_hat_T} for legal values. Default \code{NULL}.}
-
-\item{\code{rand_bootstrap_draws}}{Optional pre-generated draws for common random numbers
+      \item{\code{rand_bootstrap_draws}}{Optional pre-generated draws for common random numbers
 across \code{delta} values. Default \code{NULL}.}
-
-\item{\code{zero_one_logit_clamp}}{The clamping amount for exact 0 and 1 values when logging.}
-
-\item{\code{type}}{Test statistic type. \code{"percentile"} (default) uses the raw
+      \item{\code{zero_one_logit_clamp}}{The clamping amount for exact 0 and 1 values when logging.}
+      \item{\code{type}}{Test statistic type. \code{"percentile"} (default) uses the raw
   estimator as the BRT test statistic, giving an asymptotic p-value that inherits
   the unconditional superpopulation validity of the BRT.
   \code{"studentized"} divides each null draw's signed deviation from the null by its
@@ -290,28 +236,31 @@ across \code{delta} values. Default \code{NULL}.}
   (\code{InferenceOrdinalRidit}, \code{InferenceOrdinalJonckheereTerpstraTest}) still use the
   slower R-level fallback in every case, because adding continuous Gaussian noise to integer
   category codes is not statistically meaningful — see the response-type caveat above.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A two-sided p-value.
+  }
 }
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A two-sided p-value.
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRandBootstrap-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceRandBootstrap-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceRandBootstrap$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceRandBootstrap$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceRandBootstrap$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }

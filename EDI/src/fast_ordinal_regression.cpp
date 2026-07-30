@@ -1,5 +1,6 @@
 #include "_helper_functions.h"
 #include "ordinal_fixed_link_helpers.h"
+#include "result_map_rcpp.h"
 #include <Rcpp.h>
 #include <RcppEigen.h>
 #include <algorithm>
@@ -167,30 +168,28 @@ List fast_ordinal_regression_cpp(const Rcpp::NumericMatrix& X, const Rcpp::Numer
     params = fit.params;
 
     if (estimate_only) {
-        return List::create(
-            Named("b") = params.tail(p),
-            Named("alpha") = params.head(n_alpha),
-            Named("n_params") = n_params,
-            Named("params") = params,
-            Named("converged") = fit.converged,
-            Named("iterations") = fit.niter
-        );
+        return edi::to_rcpp_list(edi::ResultMap()
+            .set("b", params.tail(p))
+            .set("alpha", params.head(n_alpha))
+            .set("n_params", n_params)
+            .set("params", params)
+            .set("converged", fit.converged)
+            .set("iterations", fit.niter));
     }
 
     MatrixXd H = model.hessian(params);
-    return List::create(
-        Named("b") = params.tail(p),
-        Named("alpha") = params.head(n_alpha),
-        Named("n_params") = n_params,
-        Named("params") = params,
-        Named("neg_loglik") = fit.value,
-        Named("converged") = fit.converged,
-        Named("iterations") = fit.niter,
-        Named("observed_information") = H,
-        Named("fisher_information") = H,
-        Named("information") = H,
-        Named("information_type") = "observed"
-    );
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("b", params.tail(p))
+        .set("alpha", params.head(n_alpha))
+        .set("n_params", n_params)
+        .set("params", params)
+        .set("neg_loglik", fit.value)
+        .set("converged", fit.converged)
+        .set("iterations", fit.niter)
+        .set("observed_information", H)
+        .set("fisher_information", H)
+        .set("information", H)
+        .set("information_type", std::string("observed")));
 }
 
 //' @title Fast Weighted Ordinal Regression (C++)
@@ -273,19 +272,18 @@ List fast_ordinal_regression_weighted_cpp(const Rcpp::NumericMatrix& X, const Rc
     params = fit.params;
 
     MatrixXd H = model.hessian(params);
-    return List::create(
-        Named("b") = params.tail(p),
-        Named("alpha") = params.head(n_alpha),
-        Named("n_params") = n_params,
-        Named("params") = params,
-        Named("neg_loglik") = fit.value,
-        Named("converged") = fit.converged,
-        Named("iterations") = fit.niter,
-        Named("observed_information") = H,
-        Named("fisher_information") = H,
-        Named("information") = H,
-        Named("information_type") = "observed"
-    );
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("b", params.tail(p))
+        .set("alpha", params.head(n_alpha))
+        .set("n_params", n_params)
+        .set("params", params)
+        .set("neg_loglik", fit.value)
+        .set("converged", fit.converged)
+        .set("iterations", fit.niter)
+        .set("observed_information", H)
+        .set("fisher_information", H)
+        .set("information", H)
+        .set("information_type", std::string("observed")));
 }
 
 //' @title Fast Ordinal Regression with Variance (C++)
@@ -327,15 +325,14 @@ List fast_ordinal_regression_with_var_cpp(const Rcpp::NumericMatrix& X, const Rc
     MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
     FullPivLU<MatrixXd> lu(H_free);
 
-    List output = List::create(
-        Named("b") = res["b"],
-        Named("alpha") = res["alpha"],
-        Named("params") = params,
-        Named("neg_loglik") = res["neg_loglik"],
-        Named("converged") = converged,
-        Named("iterations") = res["iterations"],
-        Named("fisher_information") = H
-    );
+    List output = edi::to_rcpp_list(edi::ResultMap()
+        .set("b", Rcpp::as<Eigen::VectorXd>(res["b"]))
+        .set("alpha", Rcpp::as<Eigen::VectorXd>(res["alpha"]))
+        .set("params", params)
+        .set("neg_loglik", Rcpp::as<double>(res["neg_loglik"]))
+        .set("converged", converged)
+        .set("iterations", Rcpp::as<int>(res["iterations"]))
+        .set("fisher_information", H));
     if (!lu.isInvertible()) {
         output["ssq_b_j"] = NA_REAL;
         output["vcov"] = R_NilValue;

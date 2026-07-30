@@ -4,11 +4,6 @@
 \alias{DesignSeqOneByOneSPBR}
 \title{A stratified permuted block Sequential Design (SPBR)}
 \description{
-A stratified permuted block Sequential Design (SPBR)
-
-A stratified permuted block Sequential Design (SPBR)
-}
-\details{
 An R6 Class encapsulating the data and functionality for a stratified permuted
 block sequential experimental design.
 This design ensures balance within specified strata using blocks of a fixed size.
@@ -18,76 +13,25 @@ seq_des = DesignSeqOneByOneSPBR$new(strata_cols = 'x1', n = 6, response_type = '
 seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = factor(1, levels=1:2)))
 }
 \section{Super classes}{
-\code{::Design} -> \code{::DesignBlocking} -> \code{::DesignMatching} -> \code{::DesignSeqOneByOne} -> \code{DesignSeqOneByOneSPBR}
+\code{\link[EDI:Design]{Design}} -> \code{\link[EDI:DesignBlocking]{DesignBlocking}} -> \code{\link[EDI:DesignMatching]{DesignMatching}} -> \code{\link[EDI:DesignSeqOneByOne]{DesignSeqOneByOne}} -> \code{DesignSeqOneByOneSPBR}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-DesignSeqOneByOneSPBR-new}{\code{DesignSeqOneByOneSPBR$new()}}
-\item \href{#method-DesignSeqOneByOneSPBR-assign_wt}{\code{DesignSeqOneByOneSPBR$assign_wt()}}
-\item \href{#method-DesignSeqOneByOneSPBR-clone}{\code{DesignSeqOneByOneSPBR$clone()}}
+  \itemize{
+    \item \href{#method-DesignSeqOneByOneSPBR-initialize}{\code{DesignSeqOneByOneSPBR$new()}}
+    \item \href{#method-DesignSeqOneByOneSPBR-assign_wt}{\code{DesignSeqOneByOneSPBR$assign_wt()}}
+    \item \href{#method-DesignSeqOneByOneSPBR-clone}{\code{DesignSeqOneByOneSPBR$clone()}}
+  }
 }
-}
-\if{html}{\out{
-<details><summary>Inherited methods</summary>
-<ul>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="add_all_subject_responses"><a href='../..//html/Design.html#method-Design-add_all_subject_responses'><code>::Design$add_all_subject_responses()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="add_one_subject_response"><a href='../..//html/Design.html#method-Design-add_one_subject_response'><code>::Design$add_one_subject_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="any_censoring"><a href='../..//html/Design.html#method-Design-any_censoring'><code>::Design$any_censoring()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_all_responses_recorded"><a href='../..//html/Design.html#method-Design-assert_all_responses_recorded'><code>::Design$assert_all_responses_recorded()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_all_subjects_arrived"><a href='../..//html/Design.html#method-Design-assert_all_subjects_arrived'><code>::Design$assert_all_subjects_arrived()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_even_allocation"><a href='../..//html/Design.html#method-Design-assert_even_allocation'><code>::Design$assert_even_allocation()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="assert_fixed_sample"><a href='../..//html/Design.html#method-Design-assert_fixed_sample'><code>::Design$assert_fixed_sample()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="check_experiment_completed"><a href='../..//html/Design.html#method-Design-check_experiment_completed'><code>::Design$check_experiment_completed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="draw_ws_according_to_design"><a href='../..//html/Design.html#method-Design-draw_ws_according_to_design'><code>::Design$draw_ws_according_to_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="duplicate"><a href='../..//html/Design.html#method-Design-duplicate'><code>::Design$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X"><a href='../..//html/Design.html#method-Design-get_X'><code>::Design$get_X()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_imp"><a href='../..//html/Design.html#method-Design-get_X_imp'><code>::Design$get_X_imp()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_X_raw"><a href='../..//html/Design.html#method-Design-get_X_raw'><code>::Design$get_X_raw()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_dead"><a href='../..//html/Design.html#method-Design-get_dead'><code>::Design$get_dead()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_design_formula"><a href='../..//html/Design.html#method-Design-get_design_formula'><code>::Design$get_design_formula()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_missingness_method"><a href='../..//html/Design.html#method-Design-get_missingness_method'><code>::Design$get_missingness_method()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_n"><a href='../..//html/Design.html#method-Design-get_n'><code>::Design$get_n()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_ordinal_levels"><a href='../..//html/Design.html#method-Design-get_ordinal_levels'><code>::Design$get_ordinal_levels()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_original_ordinal_levels"><a href='../..//html/Design.html#method-Design-get_original_ordinal_levels'><code>::Design$get_original_ordinal_levels()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_prob_T"><a href='../..//html/Design.html#method-Design-get_prob_T'><code>::Design$get_prob_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_response_type"><a href='../..//html/Design.html#method-Design-get_response_type'><code>::Design$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_response_type_original"><a href='../..//html/Design.html#method-Design-get_response_type_original'><code>::Design$get_response_type_original()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_t"><a href='../..//html/Design.html#method-Design-get_t'><code>::Design$get_t()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_w"><a href='../..//html/Design.html#method-Design-get_w'><code>::Design$get_w()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_y"><a href='../..//html/Design.html#method-Design-get_y'><code>::Design$get_y()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="get_y_original"><a href='../..//html/Design.html#method-Design-get_y_original'><code>::Design$get_y_original()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="has_covariates"><a href='../..//html/Design.html#method-Design-has_covariates'><code>::Design$has_covariates()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="is_fixed_sample_size"><a href='../..//html/Design.html#method-Design-is_fixed_sample_size'><code>::Design$is_fixed_sample_size()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="overwrite_all_subject_assignments"><a href='../..//html/Design.html#method-Design-overwrite_all_subject_assignments'><code>::Design$overwrite_all_subject_assignments()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Design" data-id="transform_y"><a href='../..//html/Design.html#method-Design-transform_y'><code>::Design$transform_y()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="add_all_subject_matched_pair_ids"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-add_all_subject_matched_pair_ids'><code>::DesignBlocking$add_all_subject_matched_pair_ids()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="assert_blocking_design"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-assert_blocking_design'><code>::DesignBlocking$assert_blocking_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="assert_equal_block_sizes"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-assert_equal_block_sizes'><code>::DesignBlocking$assert_equal_block_sizes()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="get_block_ids"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-get_block_ids'><code>::DesignBlocking$get_block_ids()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="get_cmh_se_w_mat"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-get_cmh_se_w_mat'><code>::DesignBlocking$get_cmh_se_w_mat()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="inject_cmh_se_w_mat"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-inject_cmh_se_w_mat'><code>::DesignBlocking$inject_cmh_se_w_mat()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="is_blocking_design"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-is_blocking_design'><code>::DesignBlocking$is_blocking_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="is_complete_blocking_design"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-is_complete_blocking_design'><code>::DesignBlocking$is_complete_blocking_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="set_m"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-set_m'><code>::DesignBlocking$set_m()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignBlocking" data-id="summarize_blocks"><a href='../..//html/DesignBlocking.html#method-DesignBlocking-summarize_blocks'><code>::DesignBlocking$summarize_blocks()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignMatching" data-id="assert_matching_design"><a href='../..//html/DesignMatching.html#method-DesignMatching-assert_matching_design'><code>::DesignMatching$assert_matching_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignMatching" data-id="get_matching_cluster_ids"><a href='../..//html/DesignMatching.html#method-DesignMatching-get_matching_cluster_ids'><code>::DesignMatching$get_matching_cluster_ids()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignMatching" data-id="is_matching_design"><a href='../..//html/DesignMatching.html#method-DesignMatching-is_matching_design'><code>::DesignMatching$is_matching_design()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignSeqOneByOne" data-id="add_one_subject"><a href='../..//html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-add_one_subject'><code>::DesignSeqOneByOne$add_one_subject()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignSeqOneByOne" data-id="add_one_subject_to_experiment_and_assign"><a href='../..//html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-add_one_subject_to_experiment_and_assign'><code>::DesignSeqOneByOne$add_one_subject_to_experiment_and_assign()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignSeqOneByOne" data-id="print_current_subject_assignment"><a href='../..//html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-print_current_subject_assignment'><code>::DesignSeqOneByOne$print_current_subject_assignment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="DesignSeqOneByOne" data-id="supports_resampling"><a href='../..//html/DesignSeqOneByOne.html#method-DesignSeqOneByOne-supports_resampling'><code>::DesignSeqOneByOne$supports_resampling()</code></a></span></li>
-</ul>
-</details>
-}}
+\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/DesignSeqOneByOne.html'><code>DesignSeqOneByOne</code></a>.</p>}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignSeqOneByOneSPBR-new"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignSeqOneByOneSPBR-new}{}}}
-\subsection{Method \code{new()}}{
-Initialize a stratified permuted block sequential experimental design
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneSPBR$new(
+\if{html}{\out{<a id="method-DesignSeqOneByOneSPBR-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-DesignSeqOneByOneSPBR-initialize}{}}}
+\subsection{\code{DesignSeqOneByOneSPBR$new()}}{
+  Initialize a stratified permuted block sequential experimental design
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignSeqOneByOneSPBR$new(
   strata_cols,
   block_size = 4,
   response_type,
@@ -98,67 +42,63 @@ Initialize a stratified permuted block sequential experimental design
   missingness_method = "impute",
   design_formula = ~.,
   seed = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{strata_cols}}{A character vector of column names to use for stratification.}
-
-\item{\code{block_size}}{The size of the permuted blocks.}
-
-\item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{strata_cols}}{A character vector of column names to use for stratification.}
+      \item{\code{block_size}}{The size of the permuted blocks.}
+      \item{\code{response_type}}{"continuous", "incidence", "proportion", "count", "survival", or
 "ordinal".}
-
-\item{\code{prob_T}}{Probability of treatment assignment.}
-
-\item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
-
-\item{\code{n}}{The sample size.}
-
-\item{\code{verbose}}{A flag for verbosity.}
-
-\item{\code{missingness_method}}{How to handle missing values in covariates.}
-
-\item{\code{design_formula}}{A formula object.}
-
-\item{\code{seed}}{Integer seed for reproducibility.}
+      \item{\code{prob_T}}{Probability of treatment assignment.}
+      \item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
+      \item{\code{n}}{The sample size.}
+      \item{\code{verbose}}{A flag for verbosity.}
+      \item{\code{missingness_method}}{How to handle missing values in covariates.}
+      \item{\code{design_formula}}{A formula object.}
+      \item{\code{seed}}{Integer seed for reproducibility.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A new `DesignSeqOneByOneSPBR` object
+  }
 }
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A new `DesignSeqOneByOneSPBR` object
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneSPBR-assign_wt"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneSPBR-assign_wt}{}}}
-\subsection{Method \code{assign_wt()}}{
-Assign the next subject to a treatment group
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneSPBR$assign_wt()}\if{html}{\out{</div>}}
+\subsection{\code{DesignSeqOneByOneSPBR$assign_wt()}}{
+  Assign the next subject to a treatment group
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignSeqOneByOneSPBR$assign_wt()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    The treatment assignment (0 or 1)
+  }
 }
 
-\subsection{Returns}{
-The treatment assignment (0 or 1)
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneSPBR-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneSPBR-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DesignSeqOneByOneSPBR$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{DesignSeqOneByOneSPBR$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DesignSeqOneByOneSPBR$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }

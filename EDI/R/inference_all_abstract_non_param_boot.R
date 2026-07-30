@@ -968,7 +968,6 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 		InferenceExtMOutOfNBootstrap$private,
 		InferenceExtPRWSubsampling$private,
 		list(
-		is_a_non_param_bootstrap = function() TRUE,
 		# Cache for bootstrap distributions
 		boot_distr_cache = list(),
 		jack_distr_cache = list(),
@@ -995,11 +994,9 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			unit = private$normalize_jackknife_unit(unit)
 			if (unit != "auto") return(unit)
 			design_obj = private$des_obj
-			is_matching_design = is(design_obj, "DesignMatching") &&
-				isTRUE(tryCatch(design_obj$is_matching_design(), error = function(e) FALSE))
-			is_cluster_design = is(design_obj, "DesignFixedCluster") || is(design_obj, "DesignFixedBlockedCluster")
-			is_blocking_design = is(design_obj, "DesignBlocking") &&
-				isTRUE(tryCatch(design_obj$is_blocking_design(), error = function(e) FALSE))
+			is_matching_design = isTRUE(design_obj$is_matching_design())
+			is_cluster_design = design_obj$is_a_cluster_capable()
+			is_blocking_design = isTRUE(design_obj$is_blocking_design())
 			if (is_matching_design) {
 				if (isTRUE(private$is_KK)) "matched_set" else "pair"
 			} else if (is_cluster_design) {
@@ -1013,8 +1010,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 		jackknife_block_size_gt_one_unsupported = function(unit = "auto"){
 			resolved_unit = private$resolve_jackknife_unit(unit)
 			design_obj = private$des_obj
-			is_blocking_design = is(design_obj, "DesignBlocking") &&
-				isTRUE(tryCatch(design_obj$is_blocking_design(), error = function(e) FALSE))
+			is_blocking_design = isTRUE(design_obj$is_blocking_design())
 			if (resolved_unit == "block") return(FALSE)
 			if (resolved_unit %in% c("pair", "matched_set")) return(FALSE)
 			if (resolved_unit == "cluster" && !is_blocking_design) return(FALSE)
@@ -1312,7 +1308,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 		},
 		get_cluster_jackknife_ids = function(design_obj){
 			des_priv = private$des_obj_priv_int
-			if (is(design_obj, "DesignFixedBlockedCluster") || is(design_obj, "DesignFixedCluster")) {
+			if (design_obj$is_a_cluster_capable()) {
 				cluster_col = des_priv$cluster_col
 				Xraw = des_priv$Xraw
 				n = private$des_obj$get_n()
@@ -1327,11 +1323,9 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			n = private$des_obj$get_n()
 			all_idx = seq_len(n)
 			design_obj = private$des_obj
-			is_blocking_design = is(design_obj, "DesignBlocking") &&
-				isTRUE(tryCatch(design_obj$is_blocking_design(), error = function(e) FALSE))
-			is_matching_design = is(design_obj, "DesignMatching") &&
-				isTRUE(tryCatch(design_obj$is_matching_design(), error = function(e) FALSE))
-			is_cluster_design = is(design_obj, "DesignFixedCluster") || is(design_obj, "DesignFixedBlockedCluster")
+			is_blocking_design = isTRUE(design_obj$is_blocking_design())
+			is_matching_design = isTRUE(design_obj$is_matching_design())
+			is_cluster_design = design_obj$is_a_cluster_capable()
 			if (unit == "auto") {
 				unit = if (is_matching_design) {
 					if (isTRUE(private$is_KK)) "matched_set" else "pair"

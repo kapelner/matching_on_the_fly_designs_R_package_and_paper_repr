@@ -3,6 +3,7 @@
 #include <RcppEigen.h>
 #include <Rmath.h>
 #include <unordered_map>
+#include <stdexcept>
 
 using namespace Rcpp;
 
@@ -271,7 +272,7 @@ ModelResult fast_neg_bin_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
     FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
     if (warm_start_params.has_value()) {
         params = *warm_start_params;
-        if (params.size() != p + 1) stop("warm_start_params must have length equal to the number of model parameters");
+        if (params.size() != p + 1) throw std::invalid_argument("warm_start_params must have length equal to the number of model parameters");
     } else if (smart_cold_start) {
         Eigen::VectorXd beta_smart = ols_smart_cold_start_beta_on_log1p(X, y_double);
         Eigen::VectorXd beta_start = vector_is_usable_start(beta_smart, p) ? beta_smart : legacy_params.head(p);

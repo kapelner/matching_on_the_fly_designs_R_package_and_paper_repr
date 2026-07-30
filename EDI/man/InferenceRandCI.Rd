@@ -4,61 +4,29 @@
 \alias{InferenceRandCI}
 \title{Randomization-based Confidence Intervals}
 \description{
-Randomization-based Confidence Intervals
-
-Randomization-based Confidence Intervals
-}
-\details{
 Abstract class for randomization-based confidence interval inference.
 }
 \keyword{internal}
 \section{Super classes}{
-\code{::Inference} -> \code{::InferenceRand} -> \code{InferenceRandCI}
+\code{\link[EDI:Inference]{Inference}} -> \code{\link[EDI:InferenceRand]{InferenceRand}} -> \code{InferenceRandCI}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-InferenceRandCI-compute_rand_two_sided_pval}{\code{InferenceRandCI$compute_rand_two_sided_pval()}}
-\item \href{#method-InferenceRandCI-compute_rand_confidence_interval}{\code{InferenceRandCI$compute_rand_confidence_interval()}}
-\item \href{#method-InferenceRandCI-clone}{\code{InferenceRandCI$clone()}}
+  \itemize{
+    \item \href{#method-InferenceRandCI-compute_rand_two_sided_pval}{\code{InferenceRandCI$compute_rand_two_sided_pval()}}
+    \item \href{#method-InferenceRandCI-compute_rand_confidence_interval}{\code{InferenceRandCI$compute_rand_confidence_interval()}}
+    \item \href{#method-InferenceRandCI-clone}{\code{InferenceRandCI$clone()}}
+  }
 }
-}
-\if{html}{\out{
-<details><summary>Inherited methods</summary>
-<ul>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_asymp_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_asymp_confidence_interval'><code>::Inference$compute_asymp_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_asymp_two_sided_pval"><a href='../..//html/Inference.html#method-Inference-compute_asymp_two_sided_pval'><code>::Inference$compute_asymp_two_sided_pval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_estimate"><a href='../..//html/Inference.html#method-Inference-compute_estimate'><code>::Inference$compute_estimate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_confidence_interval"><a href='../..//html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>::Inference$compute_exact_confidence_interval()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="compute_exact_two_sided_pval_for_treatment_effect"><a href='../..//html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>::Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="duplicate"><a href='../..//html/Inference.html#method-Inference-duplicate'><code>::Inference$duplicate()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_analysis_data"><a href='../..//html/Inference.html#method-Inference-get_analysis_data'><code>::Inference$get_analysis_data()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_covariates"><a href='../..//html/Inference.html#method-Inference-get_covariates'><code>::Inference$get_covariates()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_design_object"><a href='../..//html/Inference.html#method-Inference-get_design_object'><code>::Inference$get_design_object()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_model_formula"><a href='../..//html/Inference.html#method-Inference-get_model_formula'><code>::Inference$get_model_formula()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_nonestimable_reason"><a href='../..//html/Inference.html#method-Inference-get_nonestimable_reason'><code>::Inference$get_nonestimable_reason()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_nonestimable_stage"><a href='../..//html/Inference.html#method-Inference-get_nonestimable_stage'><code>::Inference$get_nonestimable_stage()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_optimization_alg"><a href='../..//html/Inference.html#method-Inference-get_optimization_alg'><code>::Inference$get_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_response"><a href='../..//html/Inference.html#method-Inference-get_response'><code>::Inference$get_response()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_response_type"><a href='../..//html/Inference.html#method-Inference-get_response_type'><code>::Inference$get_response_type()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="get_treatment"><a href='../..//html/Inference.html#method-Inference-get_treatment'><code>::Inference$get_treatment()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="initialize"><a href='../..//html/Inference.html#method-Inference-initialize'><code>::Inference$initialize()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="is_nonestimable"><a href='../..//html/Inference.html#method-Inference-is_nonestimable'><code>::Inference$is_nonestimable()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="set_optimization_alg"><a href='../..//html/Inference.html#method-Inference-set_optimization_alg'><code>::Inference$set_optimization_alg()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="Inference" data-id="set_seed"><a href='../..//html/Inference.html#method-Inference-set_seed'><code>::Inference$set_seed()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="approximate_randomization_distribution_beta_hat_T"><a href='../..//html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>::InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_cpp"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_cpp'><code>::InferenceRand$set_custom_randomization_statistic_cpp()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="" data-topic="InferenceRand" data-id="set_custom_randomization_statistic_function"><a href='../..//html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>::InferenceRand$set_custom_randomization_statistic_function()</code></a></span></li>
-</ul>
-</details>
-}}
+\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceRand.html'><code>InferenceRand</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRandCI-compute_rand_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceRandCI-compute_rand_two_sided_pval}{}}}
-\subsection{Method \code{compute_rand_two_sided_pval()}}{
-Compute a randomization-based two-sided p-value for the treatment effect.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceRandCI$compute_rand_two_sided_pval(
+\subsection{\code{InferenceRandCI$compute_rand_two_sided_pval()}}{
+  Compute a randomization-based two-sided p-value for the treatment effect.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceRandCI$compute_rand_two_sided_pval(
   r = 501,
   delta = 0,
   transform_responses = "none",
@@ -68,48 +36,41 @@ Compute a randomization-based two-sided p-value for the treatment effect.
   type = NULL,
   args_for_type = NULL,
   zero_one_logit_clamp = .Machine$double.eps
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{r}}{Number of randomization vectors.}
-
-\item{\code{delta}}{Null treatment effect value.}
-
-\item{\code{transform_responses}}{Response transformation to apply during the test.}
-
-\item{\code{na.rm}}{Whether to remove non-finite simulated statistics.}
-
-\item{\code{show_progress}}{Whether to show progress.}
-
-\item{\code{permutations}}{Optional pre-generated assignment draws.}
-
-\item{\code{type}}{Optional incidence-specific exact randomization type.}
-
-\item{\code{args_for_type}}{Optional arguments keyed by \code{type}.}
-
-\item{\code{zero_one_logit_clamp}}{The clamping amount for exact 0 and 1 values when logging}
-
-\item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{r}}{Number of randomization vectors.}
+      \item{\code{delta}}{Null treatment effect value.}
+      \item{\code{transform_responses}}{Response transformation to apply during the test.}
+      \item{\code{na.rm}}{Whether to remove non-finite simulated statistics.}
+      \item{\code{show_progress}}{Whether to show progress.}
+      \item{\code{permutations}}{Optional pre-generated assignment draws.}
+      \item{\code{type}}{Optional incidence-specific exact randomization type.}
+      \item{\code{args_for_type}}{Optional arguments keyed by \code{type}.}
+      \item{\code{zero_one_logit_clamp}}{The clamping amount for exact 0 and 1 values when logging}
+      \item{\code{model_formula}}{Optional formula for covariate adjustment. If \code{NULL} (default),
 the formula from the design object is used and its pre-computed design matrix is
 reused. If a formula is provided, a new design matrix is constructed from the
 design's imputed covariates.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A two-sided p-value.
+  }
 }
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A two-sided p-value.
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRandCI-compute_rand_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceRandCI-compute_rand_confidence_interval}{}}}
-\subsection{Method \code{compute_rand_confidence_interval()}}{
-Computes a randomization-based confidence interval.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceRandCI$compute_rand_confidence_interval(
+\subsection{\code{InferenceRandCI$compute_rand_confidence_interval()}}{
+  Computes a randomization-based confidence interval.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceRandCI$compute_rand_confidence_interval(
   alpha = 0.05,
   r = 501,
   pval_epsilon = 0.005,
@@ -117,25 +78,19 @@ Computes a randomization-based confidence interval.
   type = NULL,
   args_for_type = NULL,
   ci_search_control = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{alpha}}{Significance level.}
-
-\item{\code{r}}{Number of randomization vectors.}
-
-\item{\code{pval_epsilon}}{Bisection tolerance.}
-
-\item{\code{show_progress}}{Show progress.}
-
-\item{\code{type}}{Optional incidence-specific exact randomization type.}
-
-\item{\code{args_for_type}}{Optional arguments keyed by \code{type}.}
-
-\item{\code{ci_search_control}}{Optional control list for randomization-CI search. Supported
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{alpha}}{Significance level.}
+      \item{\code{r}}{Number of randomization vectors.}
+      \item{\code{pval_epsilon}}{Bisection tolerance.}
+      \item{\code{show_progress}}{Show progress.}
+      \item{\code{type}}{Optional incidence-specific exact randomization type.}
+      \item{\code{args_for_type}}{Optional arguments keyed by \code{type}.}
+      \item{\code{ci_search_control}}{Optional control list for randomization-CI search. Supported
 entries are \code{fallback}, \code{seed}, \code{max_radius_se_mult} (default 25),
 \code{max_radius_scale_mult} (default 6), \code{max_expansions} (default 7),
 \code{seed_boot_B}, Monte Carlo settings \code{mc_enable}, \code{mc_batch_size},
@@ -151,30 +106,33 @@ permutations), a \emph{conservative} CI bound is returned at the search boundary
 rather than \code{NA}. This guarantees a valid (though possibly wide) interval.
 Each such event emits a \code{message()} and increments the private field
 \code{rand_ci_conservative_count} for monitoring.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-Randomization CI. Bounds may be conservative (wider than necessary) when the
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    Randomization CI. Bounds may be conservative (wider than necessary) when the
   p-value inversion cannot be completed within the search radius; see
   \code{ci_search_control} for details.
+  }
 }
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRandCI-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceRandCI-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{InferenceRandCI$clone(deep = FALSE)}\if{html}{\out{</div>}}
+\subsection{\code{InferenceRandCI$clone()}}{
+  The objects of this class are cloneable with this method.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{InferenceRandCI$clone(deep = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{deep}}{Whether to make a deep clone.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }

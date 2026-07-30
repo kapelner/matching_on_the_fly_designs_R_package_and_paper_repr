@@ -69,6 +69,27 @@ public:
 		return entries_;
 	}
 
+	// Lookup for the rare case where one core function's ResultMap is a
+	// producer another core function needs to read back from internally
+	// (e.g. a *_with_var variant reusing a plain fit's result) -- not needed
+	// by the common case (build once, convert once at the R/Python
+	// boundary), so this stays a linear scan over the (small) entry list
+	// rather than adding an index the common case would pay to maintain.
+	template <typename T>
+	const T* get_if(const std::string& name) const {
+		for (const auto& [n, v] : entries_) {
+			if (n == name) return std::get_if<T>(&v);
+		}
+		return nullptr;
+	}
+
+	bool has(const std::string& name) const {
+		for (const auto& [n, v] : entries_) {
+			if (n == name) return true;
+		}
+		return false;
+	}
+
 private:
 	std::vector<std::pair<std::string, ResultValue>> entries_;
 };

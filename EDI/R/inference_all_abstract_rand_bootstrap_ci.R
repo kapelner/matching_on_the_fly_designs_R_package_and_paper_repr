@@ -300,7 +300,6 @@ InferenceRandBootstrapCI = R6::R6Class("InferenceRandBootstrapCI",
 		}
 	),
 	private = list(
-		is_a_rand_bootstrap_ci = function() TRUE,
 		rand_bootstrap_ci_conservative_count = 0L,
 		# Exact inversion of the bootstrap randomization test when every null draw is affine in
 		# delta: t0_b(delta) = A[b] + delta * c_slopes[b]. The two-sided Monte Carlo p-value

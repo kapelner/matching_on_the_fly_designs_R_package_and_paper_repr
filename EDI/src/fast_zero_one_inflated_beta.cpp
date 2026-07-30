@@ -445,20 +445,6 @@ SEXP get_zero_one_inflated_beta_hessian_cpp(SEXP X_sexp,
 	return wrap(-fun.hessian(params));
 }
 
-//' @title Fast Zero/One-Inflated Beta Regression (C++)
-//' @description High-performance zero/one-inflated beta regression fitting using Newton-Raphson or L-BFGS.
-//' @param X Matrix of predictors for the beta component.
-//' @param X_zero_one Matrix of predictors for the zero and one inflation components.
-//' @param y Vector of responses in [0, 1].
-//' @param warm_start_params Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.
-//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
-//' @param fixed_idx Optional indices of fixed parameters.
-//' @param fixed_values Optional values for fixed parameters.
-//' @param optimization_alg Optimization algorithm.
-//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first iteration.
-//' @return A list containing coefficients, vcov, and convergence status.
-//' @export
-//' @keywords internal
 LikelihoodFitResult fast_zero_one_inflated_beta_internal(
 		const Eigen::Ref<const Eigen::MatrixXd>& X,
 		const Eigen::Ref<const Eigen::MatrixXd>& X_zero_one,
@@ -517,6 +503,21 @@ LikelihoodFitResult fast_zero_one_inflated_beta_internal(
 	return optimize_fixed_likelihood(fun, params, fixed_spec, 1500, 1e-6, optimization_alg, "lbfgs", 0, info_start_ptr);
 }
 
+//' @title Fast Zero/One-Inflated Beta Regression (C++)
+//' @description High-performance zero/one-inflated beta regression fitting using Newton-Raphson or L-BFGS.
+//' @param X_sexp Matrix of predictors for the beta component.
+//' @param X_zero_one_sexp Matrix of predictors for the zero and one inflation components.
+//' @param y_sexp Vector of responses in [0, 1].
+//' @param warm_start_params Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.
+//' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
+//' @param fixed_idx Optional indices of fixed parameters.
+//' @param fixed_values Optional values for fixed parameters.
+//' @param optimization_alg Optimization algorithm.
+//' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first iteration.
+//' @param estimate_only Logical. If TRUE, skip variance-related output where supported.
+//' @return A list containing coefficients, vcov, and convergence status.
+//' @export
+//' @keywords internal
 // [[Rcpp::export]]
 List fast_zero_one_inflated_beta_cpp(SEXP X_sexp,
 									 SEXP X_zero_one_sexp,

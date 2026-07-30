@@ -1,6 +1,6 @@
 # EDI Exhaustive C++ Model Fit Benchmarks
 
-_Generated: 2026-07-29 01:37:06 JST_
+_Generated: 2026-07-30 09:03:31 JST_
 
 This report compares the performance of EDI's Rcpp-optimized model fitting paths against **low-level** canonical R implementations (e.g., `glm.fit`, `lm.fit`, `coxph.fit`) where possible.
 
@@ -11,9 +11,9 @@ These rows are read from build metadata compiled into the loaded `EDI` shared ob
 **Compilation warning:** EDI model-fit timings are sensitive to the compiler flags used to build the loaded `EDI.so`. If EDI is compiled without the proper optimized flags, or with flags that are known to degrade these kernels such as problematic LTO builds, the benchmark can show substantial performance regressions that reflect the binary build rather than the modeling algorithms.
 
 *   **EDI shared object:** `/home/kapelner/R/x86_64-pc-linux-gnu-library/4.7/EDI/libs/EDI.so`
-*   **EDI shared object mtime:** `2026-07-29 00:45:45`
+*   **EDI shared object mtime:** `2026-07-30 00:36:41`
 *   **Capture method:** `configure-generated header compiled into EDI.so`
-*   **Build timestamp:** `2026-07-29 00:02:56 JST`
+*   **Build timestamp:** `2026-07-29 12:12:22 JST`
 *   **Build host:** `LAPTOP-J2T9TGGB`
 *   **R version at build:** `R Under development (unstable) (2026-04-23 r89955) -- "Unsuffered Consequences"`
 *   **R `CXX20` at build:** `g++`
@@ -54,8 +54,8 @@ All benchmarks were performed on a synthetic clinical-trial-scale dataset genera
 *   **Limitation:** Some canonical comparators only expose formula-based APIs. Those rows remain included but their canonical timings carry formula/model-frame overhead not present in the EDI bare-metal timing.
 *   **Averaging:** All timings are medians over 30 cold estimate-only timing samples measured with adaptive batched `system.time`; paths below 0.01 ms use `microbenchmark(times = 5000)` instead.
 *   **Timing P-Value:** `Timing Pval` reports a Welch two-sample t-test comparing the EDI and canonical timing replicate distributions for each row. The unlabeled final column marks thresholds with `***` for p < 0.001, `**` for p < 0.01, and `*` for p < 0.05.
-*   **Row Highlighting:** Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light grey rows indicate `NA` timing comparisons.
-*   **Constraints**: Matched-pair/KK and highly custom paths are excluded as per user request.
+*   **Row Highlighting:** Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light grey rows indicate `NA` timing comparisons from a failed fit; light blue rows are estimators with no canonical R implementation at all (only EDI is timed, `Canonical Time`/`Speedup`/`Timing Pval` are `NA` by design).
+*   **Constraints**: Most matched-pair/KK and highly custom paths are excluded as per user request; the exceptions are the four light-blue rows below, whose custom joint likelihood or estimator family (KK combined matched+reservoir, Weibull frailty, zero-one-inflated beta) has no canonical R implementation to compare against — see `package_metadata/python_bindings_package_spec.md` for the underlying baseline-gap analysis.
 
 ## Results
 
@@ -64,42 +64,46 @@ All benchmarks were performed on a synthetic clinical-trial-scale dataset genera
     <tr><th>Class</th><th>Response</th><th>EDI Time (ms)</th><th>Canonical Pkg</th><th>Canonical Func</th><th>Canonical Time (ms)</th><th>Speedup</th><th>Timing Pval</th><th></th></tr>
   </thead>
   <tbody>
-    <tr style="background-color: #d9fdd3;"><td>InferenceAllSimpleWilcox</td><td>continuous</td><td>0.14</td><td>stats</td><td>HL median pairwise diff</td><td>2.75</td><td>19x</td><td>1.22e-30</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceContinOLS</td><td>continuous</td><td>0.02</td><td>stats</td><td>lm.fit</td><td>0.10</td><td>5.42x</td><td>6.82e-24</td><td>***</td></tr>
-    <tr><td>InferenceContinQuantileRegr</td><td>continuous</td><td>1.49</td><td>quantreg</td><td>rq.fit</td><td>1.49</td><td>1x</td><td>0.684</td><td></td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceContinRobustRegr</td><td>continuous</td><td>0.09</td><td>MASS</td><td>rlm(MM)</td><td>42.70</td><td>495.79x</td><td>1.63e-36</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceIncidBinomialIdentityRiskDiff</td><td>incidence</td><td>0.07</td><td>stats</td><td>glm.fit(ident)</td><td>11.47</td><td>165.75x</td><td>4.67e-29</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceIncidGCompRiskDiff</td><td>incidence</td><td>0.28</td><td>stats</td><td>glm.fit+gcomp(RD)</td><td>2.78</td><td>9.89x</td><td>9.52e-21</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceIncidGCompRiskRatio</td><td>incidence</td><td>0.24</td><td>stats</td><td>glm.fit+gcomp(RR)</td><td>2.48</td><td>10.44x</td><td>1.73e-16</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceIncidLogBinomial</td><td>incidence</td><td>0.94</td><td>stats</td><td>glm.fit(log)</td><td>3.78</td><td>4.02x</td><td>3.39e-26</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceIncidLogRegr</td><td>incidence</td><td>0.14</td><td>stats</td><td>glm.fit</td><td>1.92</td><td>13.29x</td><td>1.66e-19</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceIncidModifiedPoisson</td><td>incidence</td><td>0.11</td><td>stats</td><td>glm.fit(modified)</td><td>1.72</td><td>15.38x</td><td>2.78e-22</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceIncidProbitRegr</td><td>incidence</td><td>0.27</td><td>stats</td><td>glm.fit(probit)</td><td>1.71</td><td>6.37x</td><td>7.09e-23</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceIncidRiskDiff</td><td>incidence</td><td>0.02</td><td>stats</td><td>lm.fit(LPM)</td><td>0.10</td><td>6.22x</td><td>3.71e-31</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceCountHurdleNegBin</td><td>count</td><td>1.75</td><td>pscl</td><td>hurdle(nb)</td><td>40.83</td><td>23.36x</td><td>3.27e-35</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceCountHurdlePoisson</td><td>count</td><td>1.48</td><td>pscl</td><td>hurdle</td><td>17.25</td><td>11.66x</td><td>1.6e-26</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceCountNegBin</td><td>count</td><td>0.51</td><td>MASS</td><td>glm.nb</td><td>54.30</td><td>106.05x</td><td>5.17e-32</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceCountPoisson</td><td>count</td><td>0.12</td><td>stats</td><td>glm.fit</td><td>1.76</td><td>14.98x</td><td>3.12e-27</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceCountQuasiPoisson</td><td>count</td><td>0.10</td><td>stats</td><td>glm.fit(quasi)</td><td>1.69</td><td>16.45x</td><td>6.1e-24</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceCountRobustPoisson</td><td>count</td><td>0.14</td><td>stats</td><td>glm.fit</td><td>1.49</td><td>10.61x</td><td>1.38e-25</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceCountZeroInflatedNegBin</td><td>count</td><td>1.04</td><td>pscl</td><td>zeroinfl(nb)</td><td>147.00</td><td>141.06x</td><td>2.9e-31</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceCountZeroInflatedPoisson</td><td>count</td><td>3.37</td><td>pscl</td><td>zeroinfl</td><td>62.37</td><td>18.49x</td><td>2.78e-27</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferencePropBetaRegr</td><td>proportion</td><td>0.99</td><td>betareg</td><td>betareg.fit</td><td>29.79</td><td>30x</td><td>8.77e-32</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferencePropFractionalLogit</td><td>proportion</td><td>0.14</td><td>stats</td><td>glm.fit(quasi)</td><td>1.24</td><td>9.07x</td><td>7.04e-21</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferencePropGCompMeanDiff</td><td>proportion</td><td>0.16</td><td>stats</td><td>glm.fit(quasi)+gcomp</td><td>1.72</td><td>10.61x</td><td>6.44e-23</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalCoxPHRegr</td><td>survival</td><td>0.34</td><td>survival</td><td>coxph.fit(breslow)</td><td>0.61</td><td>1.81x</td><td>7.29e-19</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalKMDiff</td><td>survival</td><td>0.01</td><td>survival</td><td>survfit(median)</td><td>3.74</td><td>259.58x</td><td>1.33e-26</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalLogRank</td><td>survival</td><td>0.01</td><td>survival</td><td>survdiff</td><td>1.92</td><td>133.45x</td><td>1.88e-30</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalRestrictedMeanDiff</td><td>survival</td><td>0.01</td><td>survival</td><td>survfit(rmean)</td><td>2.53</td><td>169.89x</td><td>6.98e-27</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalStratCoxPHRegr</td><td>survival</td><td>0.61</td><td>survival</td><td>coxph.fit(strat)</td><td>0.72</td><td>1.18x</td><td>6.25e-06</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalWeibullRegr</td><td>survival</td><td>0.05</td><td>survival</td><td>survreg</td><td>3.40</td><td>63.11x</td><td>4.93e-31</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalAdjCatLogitRegr</td><td>ordinal</td><td>0.45</td><td>VGAM</td><td>vglm(acat)</td><td>12.59</td><td>27.99x</td><td>5.93e-27</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalCauchitRegr</td><td>ordinal</td><td>0.53</td><td>ordinal</td><td>clm(cauchit)</td><td>8.52</td><td>16.12x</td><td>1.31e-29</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalCloglogRegr</td><td>ordinal</td><td>0.40</td><td>ordinal</td><td>clm(cloglog)</td><td>7.07</td><td>17.61x</td><td>9.08e-25</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalContRatioRegr</td><td>ordinal</td><td>0.20</td><td>VGAM</td><td>vglm(cratio)</td><td>12.93</td><td>64.16x</td><td>1.29e-23</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalGCompMeanDiff</td><td>ordinal</td><td>1.06</td><td>ordinal</td><td>clm+gcomp</td><td>24.07</td><td>22.66x</td><td>5.82e-16</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalOrderedProbitRegr</td><td>ordinal</td><td>0.42</td><td>ordinal</td><td>clm(probit)</td><td>6.50</td><td>15.44x</td><td>1.04e-28</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalPropOddsRegr</td><td>ordinal</td><td>0.47</td><td>ordinal</td><td>clm</td><td>6.97</td><td>14.85x</td><td>2.04e-27</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceAllSimpleWilcox</td><td>continuous</td><td>0.12</td><td>stats</td><td>HL median pairwise diff</td><td>1.38</td><td>11.34x</td><td>2.55e-23</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceContinOLS</td><td>continuous</td><td>0.02</td><td>stats</td><td>lm.fit</td><td>0.13</td><td>7.73x</td><td>2.22e-34</td><td>***</td></tr>
+    <tr><td>InferenceContinQuantileRegr</td><td>continuous</td><td>1.22</td><td>quantreg</td><td>rq.fit</td><td>1.21</td><td>0.99x</td><td>0.465</td><td></td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceContinRobustRegr</td><td>continuous</td><td>0.09</td><td>MASS</td><td>rlm(MM)</td><td>43.13</td><td>473.16x</td><td>6.22e-42</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceIncidBinomialIdentityRiskDiff</td><td>incidence</td><td>0.13</td><td>stats</td><td>glm.fit(ident)</td><td>11.26</td><td>88.59x</td><td>5.12e-27</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceIncidGCompRiskDiff</td><td>incidence</td><td>0.15</td><td>stats</td><td>glm.fit+gcomp(RD)</td><td>1.37</td><td>8.91x</td><td>1.02e-21</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceIncidGCompRiskRatio</td><td>incidence</td><td>0.15</td><td>stats</td><td>glm.fit+gcomp(RR)</td><td>1.37</td><td>9x</td><td>4.63e-24</td><td>***</td></tr>
+    <tr style="background-color: #cfe2ff;"><td>InferenceIncidKKCondLogitPlusGLMMOneLik</td><td>incidence</td><td>10.84</td><td>None</td><td>no canonical R implementation</td><td>NA</td><td>NA</td><td>NA</td><td></td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceIncidLogBinomial</td><td>incidence</td><td>2.52</td><td>stats</td><td>glm.fit(log)</td><td>11.60</td><td>4.6x</td><td>4.41e-27</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceIncidLogRegr</td><td>incidence</td><td>0.14</td><td>stats</td><td>glm.fit</td><td>1.58</td><td>11.05x</td><td>2.65e-22</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceIncidModifiedPoisson</td><td>incidence</td><td>0.09</td><td>stats</td><td>glm.fit(modified)</td><td>1.62</td><td>17.19x</td><td>4.34e-25</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceIncidProbitRegr</td><td>incidence</td><td>0.30</td><td>stats</td><td>glm.fit(probit)</td><td>1.77</td><td>5.82x</td><td>4.25e-25</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceIncidRiskDiff</td><td>incidence</td><td>0.02</td><td>stats</td><td>lm.fit(LPM)</td><td>0.09</td><td>5.79x</td><td>6.75e-25</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceCountHurdleNegBin</td><td>count</td><td>1.60</td><td>pscl</td><td>hurdle(nb)</td><td>41.20</td><td>25.68x</td><td>1.51e-32</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceCountHurdlePoisson</td><td>count</td><td>1.38</td><td>pscl</td><td>hurdle</td><td>16.57</td><td>12.01x</td><td>1.13e-26</td><td>***</td></tr>
+    <tr style="background-color: #cfe2ff;"><td>InferenceCountKKCondPoissonOneLik</td><td>count</td><td>0.05</td><td>None</td><td>no canonical R implementation</td><td>NA</td><td>NA</td><td>NA</td><td></td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceCountNegBin</td><td>count</td><td>0.41</td><td>MASS</td><td>glm.nb</td><td>49.20</td><td>118.88x</td><td>2.47e-29</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceCountPoisson</td><td>count</td><td>0.11</td><td>stats</td><td>glm.fit</td><td>1.91</td><td>17.79x</td><td>3.11e-17</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceCountQuasiPoisson</td><td>count</td><td>0.11</td><td>stats</td><td>glm.fit(quasi)</td><td>1.56</td><td>14.85x</td><td>6.31e-24</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceCountRobustPoisson</td><td>count</td><td>0.10</td><td>stats</td><td>glm.fit</td><td>1.65</td><td>16.41x</td><td>2.5e-25</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceCountZeroInflatedNegBin</td><td>count</td><td>0.98</td><td>pscl</td><td>zeroinfl(nb)</td><td>133.00</td><td>136.05x</td><td>8.41e-26</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceCountZeroInflatedPoisson</td><td>count</td><td>3.31</td><td>pscl</td><td>zeroinfl</td><td>62.25</td><td>18.78x</td><td>1.19e-28</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferencePropBetaRegr</td><td>proportion</td><td>0.92</td><td>betareg</td><td>betareg.fit</td><td>27.50</td><td>29.95x</td><td>2.35e-30</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferencePropFractionalLogit</td><td>proportion</td><td>0.13</td><td>stats</td><td>glm.fit(quasi)</td><td>1.14</td><td>8.53x</td><td>3.65e-26</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferencePropGCompMeanDiff</td><td>proportion</td><td>0.18</td><td>stats</td><td>glm.fit(quasi)+gcomp</td><td>1.51</td><td>8.57x</td><td>2.57e-21</td><td>***</td></tr>
+    <tr style="background-color: #cfe2ff;"><td>InferencePropZeroOneInflatedBetaRegr</td><td>proportion</td><td>3.09</td><td>None</td><td>no canonical R implementation</td><td>NA</td><td>NA</td><td>NA</td><td></td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalCoxPHRegr</td><td>survival</td><td>0.31</td><td>survival</td><td>coxph.fit(breslow)</td><td>0.56</td><td>1.77x</td><td>7.43e-15</td><td>***</td></tr>
+    <tr style="background-color: #cfe2ff;"><td>InferenceSurvivalKKWeibullFrailtyOneLik</td><td>survival</td><td>1.33</td><td>None</td><td>no canonical R implementation</td><td>NA</td><td>NA</td><td>NA</td><td></td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalKMDiff</td><td>survival</td><td>0.01</td><td>survival</td><td>survfit(median)</td><td>3.01</td><td>219.35x</td><td>8.95e-39</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalLogRank</td><td>survival</td><td>0.01</td><td>survival</td><td>survdiff</td><td>1.67</td><td>124.9x</td><td>2.47e-36</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalRestrictedMeanDiff</td><td>survival</td><td>0.01</td><td>survival</td><td>survfit(rmean)</td><td>2.29</td><td>162.32x</td><td>4.12e-29</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalStratCoxPHRegr</td><td>survival</td><td>0.52</td><td>survival</td><td>coxph.fit(strat)</td><td>0.67</td><td>1.28x</td><td>2.05e-25</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalWeibullRegr</td><td>survival</td><td>0.05</td><td>survival</td><td>survreg</td><td>3.34</td><td>64.15x</td><td>2.65e-26</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalAdjCatLogitRegr</td><td>ordinal</td><td>0.42</td><td>VGAM</td><td>vglm(acat)</td><td>12.92</td><td>30.66x</td><td>1.21e-31</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalCauchitRegr</td><td>ordinal</td><td>0.44</td><td>ordinal</td><td>clm(cauchit)</td><td>9.00</td><td>20.44x</td><td>3.38e-25</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalCloglogRegr</td><td>ordinal</td><td>0.40</td><td>ordinal</td><td>clm(cloglog)</td><td>6.66</td><td>16.57x</td><td>6.45e-37</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalContRatioRegr</td><td>ordinal</td><td>0.19</td><td>VGAM</td><td>vglm(cratio)</td><td>10.89</td><td>56x</td><td>5.15e-38</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalGCompMeanDiff</td><td>ordinal</td><td>0.46</td><td>ordinal</td><td>clm+gcomp</td><td>11.73</td><td>25.39x</td><td>4.84e-25</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalOrderedProbitRegr</td><td>ordinal</td><td>0.37</td><td>ordinal</td><td>clm(probit)</td><td>5.78</td><td>15.84x</td><td>4.59e-28</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalPropOddsRegr</td><td>ordinal</td><td>0.43</td><td>ordinal</td><td>clm</td><td>6.08</td><td>13.99x</td><td>1.16e-36</td><td>***</td></tr>
   </tbody>
 </table>
 
@@ -114,50 +118,81 @@ EDI regression models (Logistic, Poisson) are benchmarked using the **IRLS** opt
 **Limitation**: Some canonical comparators only expose formula-based APIs rather than comparable low-level fit kernels. Those rows remain included, but their canonical timings may still contain formula/model-frame overhead beyond the numerical solver, variance, and p-value work itself.
 **Timing Note**: All timings are medians over 30 warmed runs measured with adaptive batched `system.time`; paths below 0.01 ms use `microbenchmark(times = 5000)` instead.
 **Timing P-Value**: `Timing Pval` reports a Welch two-sample t-test comparing the EDI and canonical timing replicate distributions for each row. The unlabeled final column marks thresholds with `***` for p < 0.001, `**` for p < 0.01, and `*` for p < 0.05.
-**Row Highlighting**: Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light grey rows indicate `NA` timing comparisons.
+**Row Highlighting**: Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light grey rows indicate `NA` timing comparisons from a failed fit; light blue rows are estimators with no canonical R implementation at all (only EDI is timed, `Canonical Time`/`Speedup`/`Timing Pval` are `NA` by design).
 
 <table>
   <thead>
     <tr><th>Class</th><th>Response</th><th>EDI Time (ms)</th><th>Canonical Pkg</th><th>Canonical Func</th><th>Canonical Time (ms)</th><th>Speedup</th><th>Timing Pval</th><th></th></tr>
   </thead>
   <tbody>
-    <tr style="background-color: #d9fdd3;"><td>InferenceAllSimpleMeanDiffPooledVar</td><td>continuous</td><td>0.05</td><td>stats</td><td>t.test(pool)</td><td>0.22</td><td>4.14x</td><td>2.68e-20</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceAllSimpleWilcox</td><td>continuous</td><td>0.07</td><td>stats</td><td>wilcox.test</td><td>1.13</td><td>16.97x</td><td>1e-20</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceContinLin</td><td>continuous</td><td>0.59</td><td>stats</td><td>lm.fit(interact)+Wald</td><td>1.23</td><td>2.1x</td><td>8.44e-09</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceContinOLS</td><td>continuous</td><td>0.04</td><td>stats</td><td>lm.fit+Wald</td><td>0.15</td><td>4.18x</td><td>4.44e-20</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceContinQuantileRegr</td><td>continuous</td><td>4.42</td><td>quantreg</td><td>rq+summary</td><td>4.96</td><td>1.12x</td><td>0.017</td><td>*</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceContinRobustRegr</td><td>continuous</td><td>0.08</td><td>MASS</td><td>rlm+summary</td><td>2.90</td><td>36.35x</td><td>3.03e-17</td><td>***</td></tr>
-    <tr><td>InferenceIncidExactFisher</td><td>incidence</td><td>1.75</td><td>stats</td><td>fisher.test</td><td>1.91</td><td>1.09x</td><td>0.0805</td><td></td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceIncidGCompRiskDiff</td><td>incidence</td><td>0.12</td><td>stats</td><td>glm+gcomp(RD)+Wald</td><td>4.78</td><td>38.79x</td><td>1.89e-15</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceIncidGCompRiskRatio</td><td>incidence</td><td>0.12</td><td>stats</td><td>glm+gcomp(RR)+Wald</td><td>4.90</td><td>39.28x</td><td>1.18e-15</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceIncidLogBinomial</td><td>incidence</td><td>1.52</td><td>stats</td><td>glm.fit+Wald(log)</td><td>7.28</td><td>4.81x</td><td>8.81e-19</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceIncidLogRegr</td><td>incidence</td><td>0.10</td><td>stats</td><td>glm.fit+Wald</td><td>1.53</td><td>15.96x</td><td>4.27e-17</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceIncidMiettinenNurminenRiskDiff</td><td>incidence</td><td>0.02</td><td>DescTools</td><td>BinomDiffCI(mn)</td><td>1.54</td><td>73.52x</td><td>2.6e-20</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceIncidNewcombeRiskDiff</td><td>incidence</td><td>0.20</td><td>DescTools</td><td>BinomDiffCI(score)</td><td>1.62</td><td>8.18x</td><td>1.42e-19</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceIncidProbitRegr</td><td>incidence</td><td>0.18</td><td>stats</td><td>glm.fit(probit)+Wald</td><td>1.72</td><td>9.46x</td><td>2.85e-20</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceIncidRiskDiff</td><td>incidence</td><td>0.04</td><td>stats</td><td>prop.test</td><td>0.91</td><td>25.34x</td><td>5.89e-19</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceCountHurdleNegBin</td><td>count</td><td>0.57</td><td>pscl</td><td>hurdle(nb)+summary</td><td>24.38</td><td>42.69x</td><td>4.31e-23</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceCountHurdlePoisson</td><td>count</td><td>0.47</td><td>pscl</td><td>hurdle+summary</td><td>19.15</td><td>40.52x</td><td>5.5e-21</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceCountNegBin</td><td>count</td><td>0.30</td><td>MASS</td><td>glm.nb+summary</td><td>25.31</td><td>85.73x</td><td>6.05e-22</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceCountPoisson</td><td>count</td><td>0.11</td><td>stats</td><td>glm.fit+Wald</td><td>1.76</td><td>15.8x</td><td>3.68e-17</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceCountQuasiPoisson</td><td>count</td><td>0.09</td><td>stats</td><td>glm.fit+Wald(quasi)</td><td>1.89</td><td>20.2x</td><td>1.69e-16</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceCountRobustPoisson</td><td>count</td><td>0.18</td><td>sandwich</td><td>glm+vcovHC</td><td>8.62</td><td>47.21x</td><td>2.37e-21</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceCountZeroInflatedNegBin</td><td>count</td><td>2.38</td><td>pscl</td><td>zeroinfl(nb)+summary</td><td>584.50</td><td>245.69x</td><td>6.52e-23</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceCountZeroInflatedPoisson</td><td>count</td><td>2.93</td><td>pscl</td><td>zeroinfl+summary</td><td>68.25</td><td>23.33x</td><td>8.76e-19</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferencePropBetaRegr</td><td>proportion</td><td>0.49</td><td>betareg</td><td>betareg+summary</td><td>30.14</td><td>62.05x</td><td>1.05e-22</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferencePropGCompMeanDiff</td><td>proportion</td><td>0.13</td><td>stats</td><td>glm(quasi)+gcomp+Wald</td><td>4.71</td><td>36.42x</td><td>1.38e-18</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalCoxPHRegr</td><td>survival</td><td>0.26</td><td>survival</td><td>coxph.fit(breslow)+Wald</td><td>0.87</td><td>3.32x</td><td>7.06e-15</td><td>***</td></tr>
-    <tr><td>InferenceSurvivalGehanWilcox</td><td>survival</td><td>3.51</td><td>survival</td><td>survdiff(rho=1)</td><td>3.48</td><td>0.99x</td><td>0.501</td><td></td></tr>
-    <tr><td>InferenceSurvivalKMDiff</td><td>survival</td><td>5.42</td><td>survival</td><td>survfit(median)+CI</td><td>5.97</td><td>1.1x</td><td>0.0669</td><td></td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalLogRank</td><td>survival</td><td>0.02</td><td>survival</td><td>survdiff</td><td>3.33</td><td>155.36x</td><td>6.11e-21</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalStratCoxPHRegr</td><td>survival</td><td>0.91</td><td>survival</td><td>coxph.fit(strat)+Wald</td><td>1.19</td><td>1.32x</td><td>0.00026</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalWeibullRegr</td><td>survival</td><td>0.13</td><td>survival</td><td>survreg+summary</td><td>5.78</td><td>45.73x</td><td>1.16e-22</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalAdjCatLogitRegr</td><td>ordinal</td><td>0.27</td><td>VGAM</td><td>vglm+summary</td><td>28.13</td><td>104.16x</td><td>2.71e-23</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalContRatioRegr</td><td>ordinal</td><td>0.11</td><td>VGAM</td><td>vglm+summary</td><td>23.80</td><td>213.1x</td><td>1.77e-22</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalGCompMeanDiff</td><td>ordinal</td><td>0.67</td><td>ordinal</td><td>clm+gcomp+Wald</td><td>12.63</td><td>18.95x</td><td>2.25e-19</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalJonckheereTerpstraTest</td><td>ordinal</td><td>0.02</td><td>clinfun</td><td>jonckheere</td><td>0.73</td><td>41.67x</td><td>7.6e-20</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalPropOddsRegr</td><td>ordinal</td><td>0.32</td><td>ordinal</td><td>clm+summary</td><td>9.96</td><td>30.82x</td><td>1.22e-17</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalRidit</td><td>ordinal</td><td>0.02</td><td>stats</td><td>mean(ridit)</td><td>0.26</td><td>13.87x</td><td>1.29e-18</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceAllSimpleMeanDiffPooledVar</td><td>continuous</td><td>0.03</td><td>stats</td><td>t.test(pool)</td><td>0.12</td><td>4.05x</td><td>6.35e-37</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceAllSimpleWilcox</td><td>continuous</td><td>0.04</td><td>stats</td><td>wilcox.test</td><td>0.54</td><td>15.24x</td><td>4.09e-37</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceContinLin</td><td>continuous</td><td>0.20</td><td>stats</td><td>lm.fit(interact)+Wald</td><td>0.43</td><td>2.1x</td><td>5.27e-31</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceContinOLS</td><td>continuous</td><td>0.02</td><td>stats</td><td>lm.fit+Wald</td><td>0.06</td><td>3.92x</td><td>2.37e-37</td><td>***</td></tr>
+    <tr><td>InferenceContinQuantileRegr</td><td>continuous</td><td>1.73</td><td>quantreg</td><td>rq+summary</td><td>1.73</td><td>1x</td><td>0.25</td><td></td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceContinRobustRegr</td><td>continuous</td><td>0.04</td><td>MASS</td><td>rlm+summary</td><td>1.12</td><td>25.05x</td><td>4.75e-41</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceIncidExactFisher</td><td>incidence</td><td>0.67</td><td>stats</td><td>fisher.test</td><td>0.76</td><td>1.13x</td><td>2e-08</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceIncidGCompRiskDiff</td><td>incidence</td><td>0.06</td><td>stats</td><td>glm+gcomp(RD)+Wald</td><td>1.68</td><td>27.56x</td><td>4.91e-41</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceIncidGCompRiskRatio</td><td>incidence</td><td>0.06</td><td>stats</td><td>glm+gcomp(RR)+Wald</td><td>1.68</td><td>27.46x</td><td>4.36e-33</td><td>***</td></tr>
+    <tr style="background-color: #cfe2ff;"><td>InferenceIncidKKCondLogitPlusGLMMOneLik</td><td>incidence</td><td>3.84</td><td>None</td><td>no canonical R implementation</td><td>NA</td><td>NA</td><td>NA</td><td></td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceIncidLogBinomial</td><td>incidence</td><td>0.03</td><td>stats</td><td>glm.fit+Wald(log)</td><td>3.94</td><td>149.54x</td><td>3.32e-29</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceIncidLogRegr</td><td>incidence</td><td>0.05</td><td>stats</td><td>glm.fit+Wald</td><td>0.57</td><td>10.98x</td><td>8.81e-34</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceIncidMiettinenNurminenRiskDiff</td><td>incidence</td><td>0.01</td><td>DescTools</td><td>BinomDiffCI(mn)</td><td>0.57</td><td>55.34x</td><td>8.28e-41</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceIncidNewcombeRiskDiff</td><td>incidence</td><td>0.08</td><td>DescTools</td><td>BinomDiffCI(score)</td><td>0.67</td><td>7.9x</td><td>1.1e-37</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceIncidProbitRegr</td><td>incidence</td><td>0.10</td><td>stats</td><td>glm.fit(probit)+Wald</td><td>0.87</td><td>9.15x</td><td>2.54e-37</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceIncidRiskDiff</td><td>incidence</td><td>0.02</td><td>stats</td><td>prop.test</td><td>0.37</td><td>22.96x</td><td>1.02e-69</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceCountHurdleNegBin</td><td>count</td><td>0.25</td><td>pscl</td><td>hurdle(nb)+summary</td><td>11.38</td><td>45.64x</td><td>4.83e-42</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceCountHurdlePoisson</td><td>count</td><td>0.36</td><td>pscl</td><td>hurdle+summary</td><td>8.17</td><td>22.83x</td><td>2.47e-27</td><td>***</td></tr>
+    <tr style="background-color: #cfe2ff;"><td>InferenceCountKKCondPoissonOneLik</td><td>count</td><td>0.04</td><td>None</td><td>no canonical R implementation</td><td>NA</td><td>NA</td><td>NA</td><td></td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceCountNegBin</td><td>count</td><td>0.12</td><td>MASS</td><td>glm.nb+summary</td><td>8.65</td><td>72.13x</td><td>4.08e-38</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceCountPoisson</td><td>count</td><td>0.05</td><td>stats</td><td>glm.fit+Wald</td><td>0.74</td><td>16.53x</td><td>6.78e-28</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceCountQuasiPoisson</td><td>count</td><td>0.04</td><td>stats</td><td>glm.fit+Wald(quasi)</td><td>0.74</td><td>19.42x</td><td>8.27e-28</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceCountRobustPoisson</td><td>count</td><td>0.08</td><td>sandwich</td><td>glm+vcovHC</td><td>3.29</td><td>39.69x</td><td>1.08e-41</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceCountZeroInflatedNegBin</td><td>count</td><td>0.88</td><td>pscl</td><td>zeroinfl(nb)+summary</td><td>81.67</td><td>93.28x</td><td>3.36e-40</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceCountZeroInflatedPoisson</td><td>count</td><td>1.50</td><td>pscl</td><td>zeroinfl+summary</td><td>26.00</td><td>17.33x</td><td>9.87e-29</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferencePropBetaRegr</td><td>proportion</td><td>0.21</td><td>betareg</td><td>betareg+summary</td><td>12.79</td><td>61.29x</td><td>1.39e-32</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferencePropGCompMeanDiff</td><td>proportion</td><td>0.06</td><td>stats</td><td>glm(quasi)+gcomp+Wald</td><td>1.65</td><td>27.57x</td><td>2.32e-38</td><td>***</td></tr>
+    <tr style="background-color: #cfe2ff;"><td>InferencePropZeroOneInflatedBetaRegr</td><td>proportion</td><td>0.50</td><td>None</td><td>no canonical R implementation</td><td>NA</td><td>NA</td><td>NA</td><td></td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalCoxPHRegr</td><td>survival</td><td>0.11</td><td>survival</td><td>coxph.fit(breslow)+Wald</td><td>0.36</td><td>3.41x</td><td>2.91e-24</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalGehanWilcox</td><td>survival</td><td>1.23</td><td>survival</td><td>survdiff(rho=1)</td><td>1.30</td><td>1.06x</td><td>0.00117</td><td>**</td></tr>
+    <tr style="background-color: #cfe2ff;"><td>InferenceSurvivalKKWeibullFrailtyOneLik</td><td>survival</td><td>0.72</td><td>None</td><td>no canonical R implementation</td><td>NA</td><td>NA</td><td>NA</td><td></td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalKMDiff</td><td>survival</td><td>2.44</td><td>survival</td><td>survfit(median)+CI</td><td>2.63</td><td>1.08x</td><td>1.56e-06</td><td>***</td></tr>
+    <tr style="background-color: #eceff1;"><td>InferenceSurvivalLogRank</td><td>survival</td><td>9.80e-03</td><td>survival</td><td>survdiff</td><td>1.29</td><td>131.39x</td><td>NA</td><td></td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalStratCoxPHRegr</td><td>survival</td><td>0.38</td><td>survival</td><td>coxph.fit(strat)+Wald</td><td>0.51</td><td>1.37x</td><td>4.59e-31</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceSurvivalWeibullRegr</td><td>survival</td><td>0.06</td><td>survival</td><td>survreg+summary</td><td>2.54</td><td>45.12x</td><td>7.47e-37</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalAdjCatLogitRegr</td><td>ordinal</td><td>0.13</td><td>VGAM</td><td>vglm+summary</td><td>11.53</td><td>86.05x</td><td>9.98e-35</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalContRatioRegr</td><td>ordinal</td><td>0.06</td><td>VGAM</td><td>vglm+summary</td><td>13.17</td><td>208.73x</td><td>4.5e-16</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalGCompMeanDiff</td><td>ordinal</td><td>0.32</td><td>ordinal</td><td>clm+gcomp+Wald</td><td>6.78</td><td>21.47x</td><td>5.87e-28</td><td>***</td></tr>
+    <tr style="background-color: #eceff1;"><td>InferenceOrdinalJonckheereTerpstraTest</td><td>ordinal</td><td>8.90e-03</td><td>clinfun</td><td>jonckheere</td><td>0.35</td><td>39.77x</td><td>NA</td><td></td></tr>
+    <tr style="background-color: #d9fdd3;"><td>InferenceOrdinalPropOddsRegr</td><td>ordinal</td><td>0.14</td><td>ordinal</td><td>clm+summary</td><td>4.55</td><td>31.65x</td><td>5.89e-38</td><td>***</td></tr>
+    <tr style="background-color: #eceff1;"><td>InferenceOrdinalRidit</td><td>ordinal</td><td>8.90e-03</td><td>stats</td><td>mean(ridit)</td><td>0.14</td><td>15.38x</td><td>NA</td><td></td></tr>
+  </tbody>
+</table>
+
+## Utility / Math Kernel Performance
+
+This table compares EDI's internal scalar fast_* math kernels — used inside the NegBin/Beta/ZINB/Hurdle likelihoods, KK21 negative-binomial fitting, and probit cold-start heuristics — against base R's vectorized equivalents.
+Unlike the model-fit tables above, these are not full estimators: each row is a single vectorized special-function evaluation (digamma, trigamma, log-gamma, log-beta, quantile/CDF/PDF of the normal, and the mu-parameterized negative-binomial density) over a fixed-length vector, with no design matrix, optimizer, or R6 object involved on either side.
+**Vector length**: All rows evaluate the function over a vector of length $N=5000$; inputs are drawn from a domain realistic for each kernel's actual call sites in EDI (e.g. shape/rate-like values in $(0.5, 50)$ for digamma/trigamma/lgamma, probabilities in $(0, 1)$ for qnorm).
+**Bare Metal EDI Timing**: EDI rows call a thin `// [[Rcpp::export]]` wrapper (compiled standalone via `Rcpp::sourceCpp()` against EDI's leaf headers in `benchmark/fast_math_utils_bench.cpp`, not the installed EDI package) that loops the internal `fast_*` scalar kernel over the input vector — no R6, no caching, no warm starts.
+**Canonical R Timing**: The base R column calls the corresponding vectorized base/stats function directly on the same input vector (e.g. `digamma()`, `lgamma()`, `stats::qnorm()`, `stats::dnbinom(..., mu = , log = TRUE)`).
+**Timing Note**: All timings use the same adaptive batched `system.time`/`microbenchmark` harness as the tables above (medians over 30 cold samples; paths below 0.01 ms fall back to `microbenchmark(times = 5000)`).
+**Timing P-Value**: `Timing Pval` reports a Welch two-sample t-test comparing the EDI and base R timing replicate distributions for each row. The unlabeled final column marks thresholds with `***` for p < 0.001, `**` for p < 0.01, and `*` for p < 0.05.
+**Row Highlighting**: Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light grey rows indicate `NA` timing comparisons from a failed evaluation.
+
+<table>
+  <thead>
+    <tr><th>Function</th><th>Response</th><th>EDI Time (ms)</th><th>Canonical Pkg</th><th>Canonical Func</th><th>Canonical Time (ms)</th><th>Speedup</th><th>Timing Pval</th><th></th></tr>
+  </thead>
+  <tbody>
+    <tr style="background-color: #d9fdd3;"><td>fast_digamma</td><td>utility</td><td>0.05</td><td>base/stats</td><td>digamma</td><td>0.37</td><td>6.93x</td><td>1.61e-53</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_dnbinom_mu</td><td>utility</td><td>0.35</td><td>base/stats</td><td>dnbinom(mu=, log=TRUE)</td><td>0.48</td><td>1.4x</td><td>3.83e-34</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_lbeta</td><td>utility</td><td>0.19</td><td>base/stats</td><td>lbeta</td><td>0.47</td><td>2.41x</td><td>6.48e-42</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_lgamma</td><td>utility</td><td>0.06</td><td>base/stats</td><td>lgamma</td><td>0.14</td><td>2.27x</td><td>6.69e-42</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_log_dnorm</td><td>utility</td><td>0.01</td><td>base/stats</td><td>dnorm(log=TRUE)</td><td>0.07</td><td>5.09x</td><td>1.81e-53</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_log_pnorm</td><td>utility</td><td>0.10</td><td>base/stats</td><td>pnorm(log.p=TRUE)</td><td>0.24</td><td>2.33x</td><td>3.29e-42</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_qnorm</td><td>utility</td><td>0.03</td><td>base/stats</td><td>qnorm</td><td>0.08</td><td>2.67x</td><td>1.54e-37</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_trigamma</td><td>utility</td><td>0.02</td><td>base/stats</td><td>trigamma</td><td>0.49</td><td>19.7x</td><td>6.9e-41</td><td>***</td></tr>
   </tbody>
 </table>
 

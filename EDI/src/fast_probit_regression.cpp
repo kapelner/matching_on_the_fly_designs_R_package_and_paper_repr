@@ -3,6 +3,7 @@
 #include <RcppEigen.h>
 // [[Rcpp::depends(RcppNumerical)]]
 #include <RcppNumerical.h>
+#include <stdexcept>
 
 using namespace Rcpp;
 
@@ -129,7 +130,7 @@ ModelResult fast_probit_regression_internal(
     if (warm_start_beta.has_value()) {
         beta_start = *warm_start_beta;
         if (static_cast<int>(beta_start.size()) != p)
-            Rcpp::stop("warm_start_beta must have length equal to ncol(X)");
+            throw std::invalid_argument("warm_start_beta must have length equal to ncol(X)");
     } else if (smart_cold_start) {
         beta_start = ols_smart_cold_start_beta(X_eigen, y_eigen.array().unaryExpr([](double v){
             return fast_qnorm((v + 0.5) / 2.0);

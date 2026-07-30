@@ -14,6 +14,10 @@ suppressPackageStartupMessages(library(sandwich))
 suppressPackageStartupMessages(library(clinfun))
 library(EDI)
 
+# The Utility / Math Kernel Performance section below benchmarks EDI's
+# exported fast_*_vec_cpp wrappers (fast_digamma_vec_cpp, fast_trigamma_vec_cpp,
+# ...) directly from the installed package -- no separate compile step needed.
+
 set.seed(42)
 
 STYLE_BLOCK = c(
@@ -380,18 +384,18 @@ make_edi_bm_no_canonical = function(cls_name, d) {
     for (nm in names(d)) assign(nm, d[[nm]], envir = e)
 
     expr = switch(cls_name,
-        InferenceIncidKKCondLogitPlusGLMMOneLik = quote(fast_clogit_plus_glmm_cpp(
+        InferenceIncidKKCondLogitPlusGLMMOneLik = quote(EDI:::fast_clogit_plus_glmm_cpp(
             X_disc = X_disc, y_disc = y_disc, X_conc = X_conc, y_conc = y_conc, group_conc = group_conc,
             has_discordant = TRUE, has_concordant = TRUE, estimate_only = TRUE
         )),
         InferenceCountKKCondPoissonOneLik = quote(fast_cpoisson_combined_with_var_cpp(
             yT_v = yT_v, n_k_v = n_k_v, X_diff_v = X_diff_v, y_r = y_r, w_r = w_r, X_r = X_r, estimate_only = TRUE
         )),
-        InferenceSurvivalKKWeibullFrailtyOneLik = quote(fast_weibull_frailty_cpp(
+        InferenceSurvivalKKWeibullFrailtyOneLik = quote(EDI:::fast_weibull_frailty_cpp(
             X = X, y = y, dead = dead, group_id = group_id, estimate_only = TRUE
         )),
-        InferencePropZeroOneInflatedBetaRegr = quote(fast_zero_one_inflated_beta_cpp(
-            X = X, X_zero_one = X_zero_one, y = y, estimate_only = TRUE
+        InferencePropZeroOneInflatedBetaRegr = quote(EDI:::fast_zero_one_inflated_beta_cpp(
+            X, X_zero_one, y, estimate_only = TRUE
         )),
         NULL
     )
@@ -406,7 +410,7 @@ make_edi_wald_bm_no_canonical = function(cls_name, d) {
 
     expr = switch(cls_name,
         InferenceIncidKKCondLogitPlusGLMMOneLik = quote({
-            fit = fast_clogit_plus_glmm_cpp(
+            fit = EDI:::fast_clogit_plus_glmm_cpp(
                 X_disc = X_disc, y_disc = y_disc, X_conc = X_conc, y_conc = y_conc, group_conc = group_conc,
                 has_discordant = TRUE, has_concordant = TRUE, estimate_only = FALSE
             )
@@ -421,12 +425,12 @@ make_edi_wald_bm_no_canonical = function(cls_name, d) {
             2 * stats::pnorm(-abs(t_stat))
         }),
         InferenceSurvivalKKWeibullFrailtyOneLik = quote({
-            fit = fast_weibull_frailty_cpp(X = X, y = y, dead = dead, group_id = group_id, estimate_only = FALSE)
+            fit = EDI:::fast_weibull_frailty_cpp(X = X, y = y, dead = dead, group_id = group_id, estimate_only = FALSE)
             se = sqrt(fit$ssq_b_T); t_stat = as.numeric(fit$b)[1] / se
             2 * stats::pnorm(-abs(t_stat))
         }),
         InferencePropZeroOneInflatedBetaRegr = quote({
-            fit = fast_zero_one_inflated_beta_cpp(X = X, X_zero_one = X_zero_one, y = y, estimate_only = FALSE)
+            fit = EDI:::fast_zero_one_inflated_beta_cpp(X, X_zero_one, y, estimate_only = FALSE)
             se = sqrt(fit$vcov[2, 2]); t_stat = as.numeric(fit$b)[2] / se
             2 * stats::pnorm(-abs(t_stat))
         }),
@@ -1110,7 +1114,12 @@ wald_specs = list(
         fit = survival::survfit(survival::Surv(df$y, df$dead) ~ df$treatment, conf.int = 0.95)
         stats::quantile(fit, 0.5)
     })),
-    list(cls = "InferenceSurvivalLogRank", pkg = "survival", func = "survdiff", expr = quote(survival::survdiff(survival::Surv(y,dead)~treatment, data=df)$pvalue)),
+    # n_override: at N_WALD=200 the EDI kernel finishes in ~9 microseconds, right at
+    # FAST_PATH_THRESHOLD_MS's boundary; replicate samples land on tied/quantized
+    # values at that resolution and stats::t.test() errors ("data are essentially
+    # constant"), which timing_ttest_pval() silently turns into NA. A larger N pushes
+    # the EDI median comfortably above the threshold so a real p-value can be computed.
+    list(cls = "InferenceSurvivalLogRank", pkg = "survival", func = "survdiff", n_override = 1600L, expr = quote(survival::survdiff(survival::Surv(y,dead)~treatment, data=df)$pvalue)),
     list(cls = "InferenceSurvivalStratCoxPHRegr", pkg = "survival", func = "coxph.fit(strat)+Wald", expr = quote({
         si = build_strat_cox_canonical_inputs(d)
         res = survival::coxph.fit(x=si$X, y=survival::Surv(si$y,si$dead), strata=si$strata, offset=NULL, init=NULL, control=survival::coxph.control(), weights=NULL, method="breslow", rownames=as.character(seq_along(si$y)))
@@ -1127,14 +1136,35 @@ wald_specs = list(
         se = sqrt(drop(t(grad) %*% vcov(mod) %*% grad))
         2 * pnorm(-abs(fn(theta) / se))
     })),
-    list(cls = "InferenceOrdinalJonckheereTerpstraTest", pkg = "clinfun", func = "jonckheere", expr = quote(clinfun::jonckheere.test(df$y, df$treatment)$p.value)),
+    # n_override: see InferenceSurvivalLogRank's comment above. Note the EDI kernel
+    # here is an EXACT permutation test whose cost is combinatorial in the number of
+    # tied groups (not just N) — at synthetic worst-case (near-uniform, many-category)
+    # inputs this blows up past n=1000, but the actual "ordinal" data generator below
+    # produces realistically skewed/tied 3-level responses, which keeps this fast even
+    # at n=1600 (empirically verified before picking this value).
+    list(cls = "InferenceOrdinalJonckheereTerpstraTest", pkg = "clinfun", func = "jonckheere", n_override = 1600L, expr = quote(clinfun::jonckheere.test(df$y, df$treatment)$p.value)),
     list(cls = "InferenceOrdinalPropOddsRegr", pkg = "ordinal", func = "clm+summary", expr = quote(summary(ordinal::clm(factor(y,ordered=TRUE)~treatment+x1+x2+x3+x4, data=df))$coefficients["treatment",4])),
-    list(cls = "InferenceOrdinalRidit", pkg = "stats", func = "mean(ridit)", expr = quote({
+    list(cls = "InferenceOrdinalRidit", pkg = "stats", func = "mean(ridit)", n_override = 1600L, expr = quote({
         y = df$y; tab = table(y); cum = cumsum(tab); prev = c(0, cum[-length(cum)])
         ridit_map = (prev + 0.5*tab) / length(y); r = as.numeric(ridit_map[as.character(y)])
         mean(r[df$treatment==1]) - mean(r[df$treatment==0])
     }))
 )
+
+# Same no-canonical-equivalent families as the point-estimate table, but
+# sized down to the N_WALD scale for the full-inference (point + SE + pval)
+# benchmark below.
+no_r_support_wald_specs = list(
+    list(cls = "InferenceIncidKKCondLogitPlusGLMMOneLik", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_kk_incid_combined_data(n_disc = 30, n_conc = 30, n_res = 80)),
+    list(cls = "InferenceCountKKCondPoissonOneLik", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_kk_count_combined_data(n_pairs = 60, n_res = 80)),
+    list(cls = "InferenceSurvivalKKWeibullFrailtyOneLik", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_kk_weibull_frailty_data(n_pairs = 50)),
+    list(cls = "InferencePropZeroOneInflatedBetaRegr", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_zoib_data(n = N_WALD))
+)
+wald_specs = c(wald_specs, no_r_support_wald_specs)
 
 wald_results = list()
 
@@ -1152,26 +1182,34 @@ run_one_wald = function(spec) {
     if (cls_name == "InferenceIncidProbitRegr")  family = "probit"
     if (cls_name %in% c("InferenceCountNegBin","InferenceCountZeroInflatedNegBin","InferenceCountHurdleNegBin")) family = "negbin"
 
-    n = N_WALD
-    d = generate_data(n = n, family = family)
-    if (identical(cls_name, "InferenceSurvivalStratCoxPHRegr")) d = make_true_stratified_survival_data(d)
+    no_r_support = !is.null(spec$data_fn)
+    n = if (!is.null(spec$n_override)) spec$n_override else N_WALD
+    if (no_r_support) {
+        d = spec$data_fn()
+    } else {
+        d = generate_data(n = n, family = family)
+        if (identical(cls_name, "InferenceSurvivalStratCoxPHRegr")) d = make_true_stratified_survival_data(d)
+    }
 
     timing_edi = tryCatch({
-        bm = make_edi_wald_bm(cls_name, d)
+        bm = if (no_r_support) make_edi_wald_bm_no_canonical(cls_name, d) else make_edi_wald_bm(cls_name, d)
         if (is.null(bm$expr)) stop("no Wald mapping for this class")
         eval(bm$expr, envir = bm$env)  # validation
         collect_timing_ms(bm$expr, env = bm$env)
     }, error = function(e) { cat("  EDI Error:", e$message, "\n"); list(median_ms = NA_real_, samples_ms = numeric(0)) })
 
-    timing_can = tryCatch({
-        library(spec$pkg, character.only = TRUE)
-        X_cols = d$X[,-1,drop=FALSE]; colnames(X_cols) = paste0("x", seq_len(ncol(X_cols)))
-        df = data.frame(y = d$y, treatment = d$w, dead = if (!is.null(d$dead)) d$dead else 1L)
-        df = cbind(df, X_cols)
-        X_can = cbind(`(Intercept)` = 1, treatment = d$w, as.matrix(X_cols))
-        eval(spec$expr)  # validation
-        collect_timing_ms(spec$expr)
-    }, error = function(e) { cat("  Canonical Error:", e$message, "\n"); list(median_ms = NA_real_, samples_ms = numeric(0)) })
+    timing_can = list(median_ms = NA_real_, samples_ms = numeric(0))
+    if (!no_r_support) {
+        timing_can = tryCatch({
+            library(spec$pkg, character.only = TRUE)
+            X_cols = d$X[,-1,drop=FALSE]; colnames(X_cols) = paste0("x", seq_len(ncol(X_cols)))
+            df = data.frame(y = d$y, treatment = d$w, dead = if (!is.null(d$dead)) d$dead else 1L)
+            df = cbind(df, X_cols)
+            X_can = cbind(`(Intercept)` = 1, treatment = d$w, as.matrix(X_cols))
+            eval(spec$expr)  # validation
+            collect_timing_ms(spec$expr)
+        }, error = function(e) { cat("  Canonical Error:", e$message, "\n"); list(median_ms = NA_real_, samples_ms = numeric(0)) })
+    }
 
     wald_results[[length(wald_results) + 1]] <<- data.table(
         Class = cls_name, Response = resp_type,
@@ -1179,7 +1217,8 @@ run_one_wald = function(spec) {
         Canonical_Pkg = spec$pkg, Canonical_Func = spec$func,
         Canonical_Time_ms = timing_can$median_ms,
         Speedup = if (!is.na(timing_can$median_ms) && !is.na(timing_edi$median_ms) && timing_edi$median_ms > 0) timing_can$median_ms / timing_edi$median_ms else NA_real_,
-        Timing_Pval = timing_ttest_pval(timing_edi$samples_ms, timing_can$samples_ms)
+        Timing_Pval = timing_ttest_pval(timing_edi$samples_ms, timing_can$samples_ms),
+        No_Canonical = no_r_support
     )
 }
 
@@ -1195,7 +1234,7 @@ dt_wald[, Speedup_Num := Speedup]
 dt_wald[, Speedup := ifelse(!is.na(Speedup), paste0(round(Speedup, 2), "x"), "NA")]
 dt_wald[, EDI_Time_ms := format_ms(EDI_Time_ms)]
 dt_wald[, Canonical_Time_ms := format_ms(Canonical_Time_ms)]
-dt_wald[, Timing_Row_Color := mapply(row_bg_color, Speedup_Num, Timing_Pval, USE.NAMES = FALSE)]
+dt_wald[, Timing_Row_Color := mapply(row_bg_color, Speedup_Num, Timing_Pval, No_Canonical, USE.NAMES = FALSE)]
 dt_wald[, Timing_Pval_Stars := format_pval_stars(Timing_Pval)]
 dt_wald[, Timing_Pval := format_pval(Timing_Pval)]
 dt_wald[, Response := as.character(Response)]
@@ -1227,9 +1266,116 @@ WALD_HEADER = c(
   "**Limitation**: Some canonical comparators only expose formula-based APIs rather than comparable low-level fit kernels. Those rows remain included, but their canonical timings may still contain formula/model-frame overhead beyond the numerical solver, variance, and p-value work itself.",
   paste0("**Timing Note**: All timings are medians over ", B_TIME, " warmed runs measured with adaptive batched `system.time`; paths below ", FAST_PATH_THRESHOLD_MS, " ms use `microbenchmark(times = ", FAST_PATH_MICROBENCH_REPS, ")` instead."),
   "**Timing P-Value**: `Timing Pval` reports a Welch two-sample t-test comparing the EDI and canonical timing replicate distributions for each row. The unlabeled final column marks thresholds with `***` for p < 0.001, `**` for p < 0.01, and `*` for p < 0.05.",
-  "**Row Highlighting**: Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light grey rows indicate `NA` timing comparisons.",
+  "**Row Highlighting**: Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light grey rows indicate `NA` timing comparisons from a failed fit; light blue rows are estimators with no canonical R implementation at all (only EDI is timed, `Canonical Time`/`Speedup`/`Timing Pval` are `NA` by design).",
   "",
   wald_table_lines
+)
+
+# ── Utility / Math Kernel Benchmarks ────────────────────────────────────────
+# Benchmarks EDI's internal scalar fast_* math kernels (fast_digamma,
+# fast_trigamma, fast_lgamma, ...) used inside the NegBin/Beta/ZINB/Hurdle
+# likelihoods and probit cold-start heuristics, against base R's vectorized
+# equivalents, via the package's exported fast_*_vec_cpp wrappers
+# (EDI/src/fast_math_utils.cpp) -- these consistently beat base R
+# (see the table below), so they are exported/documented utilities in their
+# own right, not just internal benchmarking scaffolding.
+N_UTIL = 5000L
+
+utility_specs = list(
+    list(name = "fast_digamma", r_func = "digamma", data_fn = function() list(x = runif(N_UTIL, 0.5, 50)),
+         edi_expr = quote(fast_digamma_vec_cpp(x)), r_expr = quote(digamma(x))),
+    list(name = "fast_trigamma", r_func = "trigamma", data_fn = function() list(x = runif(N_UTIL, 0.5, 50)),
+         edi_expr = quote(fast_trigamma_vec_cpp(x)), r_expr = quote(trigamma(x))),
+    list(name = "fast_lgamma", r_func = "lgamma", data_fn = function() list(x = runif(N_UTIL, 0.5, 50)),
+         edi_expr = quote(fast_lgamma_vec_cpp(x)), r_expr = quote(lgamma(x))),
+    list(name = "fast_lbeta", r_func = "lbeta", data_fn = function() list(a = runif(N_UTIL, 1, 20), b = runif(N_UTIL, 1, 20)),
+         edi_expr = quote(fast_lbeta_vec_cpp(a, b)), r_expr = quote(lbeta(a, b))),
+    list(name = "fast_qnorm", r_func = "qnorm", data_fn = function() list(p = runif(N_UTIL, 0.001, 0.999)),
+         edi_expr = quote(fast_qnorm_vec_cpp(p)), r_expr = quote(stats::qnorm(p))),
+    list(name = "fast_log_pnorm", r_func = "pnorm(log.p=TRUE)", data_fn = function() list(x = rnorm(N_UTIL, 0, 3)),
+         edi_expr = quote(fast_log_pnorm_vec_cpp(x)), r_expr = quote(stats::pnorm(x, log.p = TRUE))),
+    list(name = "fast_log_dnorm", r_func = "dnorm(log=TRUE)", data_fn = function() list(x = rnorm(N_UTIL, 0, 3)),
+         edi_expr = quote(fast_log_dnorm_vec_cpp(x)), r_expr = quote(stats::dnorm(x, log = TRUE))),
+    list(name = "fast_dnbinom_mu", r_func = "dnbinom(mu=, log=TRUE)", data_fn = function() list(x = rpois(N_UTIL, 5), size = 2, mu = 5, return_log = TRUE),
+         edi_expr = quote(fast_dnbinom_mu_vec_cpp(x, size, mu, return_log)), r_expr = quote(stats::dnbinom(x, size = size, mu = mu, log = return_log)))
+)
+
+utility_results = list()
+
+run_one_utility = function(spec) {
+    cat(sprintf("Utility [%d/%d] %s...\n", match(spec$name, sapply(utility_specs, `[[`, "name")), length(utility_specs), spec$name))
+
+    d = spec$data_fn()
+    e = new.env(parent = globalenv())
+    for (nm in names(d)) assign(nm, d[[nm]], envir = e)
+
+    timing_edi = tryCatch({
+        eval(spec$edi_expr, envir = e)  # validation run
+        collect_timing_ms(spec$edi_expr, env = e)
+    }, error = function(err) {
+        cat("  EDI Error:", err$message, "\n")
+        list(median_ms = NA_real_, samples_ms = numeric(0))
+    })
+
+    timing_r = tryCatch({
+        eval(spec$r_expr, envir = e)  # validation run
+        collect_timing_ms(spec$r_expr, env = e)
+    }, error = function(err) {
+        cat("  R Error:", err$message, "\n")
+        list(median_ms = NA_real_, samples_ms = numeric(0))
+    })
+
+    utility_results[[length(utility_results) + 1]] <<- data.table(
+        Class = spec$name, Response = "utility",
+        EDI_Time_ms = timing_edi$median_ms,
+        Canonical_Pkg = "base/stats", Canonical_Func = spec$r_func,
+        Canonical_Time_ms = timing_r$median_ms,
+        Speedup = if (!is.na(timing_r$median_ms) && !is.na(timing_edi$median_ms) && timing_edi$median_ms > 0) timing_r$median_ms / timing_edi$median_ms else NA_real_,
+        Timing_Pval = timing_ttest_pval(timing_edi$samples_ms, timing_r$samples_ms),
+        No_Canonical = FALSE
+    )
+}
+
+for (i in seq_along(utility_specs)) run_one_utility(utility_specs[[i]])
+
+dt_util = rbindlist(utility_results)
+setorder(dt_util, Class)
+dt_util[, Speedup_Num := Speedup]
+dt_util[, Speedup := ifelse(!is.na(Speedup), paste0(round(Speedup, 2), "x"), "NA")]
+dt_util[, EDI_Time_ms := format_ms(EDI_Time_ms)]
+dt_util[, Canonical_Time_ms := format_ms(Canonical_Time_ms)]
+dt_util[, Timing_Row_Color := mapply(row_bg_color, Speedup_Num, Timing_Pval, No_Canonical, USE.NAMES = FALSE)]
+dt_util[, Timing_Pval_Stars := format_pval_stars(Timing_Pval)]
+dt_util[, Timing_Pval := format_pval(Timing_Pval)]
+
+utility_table_lines = c(
+  "<table>",
+  "  <thead>",
+  "    <tr><th>Function</th><th>Response</th><th>EDI Time (ms)</th><th>Canonical Pkg</th><th>Canonical Func</th><th>Canonical Time (ms)</th><th>Speedup</th><th>Timing Pval</th><th></th></tr>",
+  "  </thead>",
+  "  <tbody>"
+)
+utility_table_rows = mapply(function(cls, resp, edi, pkg, func, can, speed, pval, stars, bg) {
+  style = if (nzchar(bg)) paste0(" style=\"background-color: ", bg, ";\"") else ""
+  paste0("    <tr", style, "><td>", cls, "</td><td>", resp, "</td><td>", edi, "</td><td>", pkg, "</td><td>", func, "</td><td>", can, "</td><td>", speed, "</td><td>", pval, "</td><td>", stars, "</td></tr>")
+}, dt_util$Class, dt_util$Response, dt_util$EDI_Time_ms, dt_util$Canonical_Pkg, dt_util$Canonical_Func,
+dt_util$Canonical_Time_ms, dt_util$Speedup, dt_util$Timing_Pval, dt_util$Timing_Pval_Stars, dt_util$Timing_Row_Color,
+SIMPLIFY = TRUE, USE.NAMES = FALSE)
+utility_table_lines = c(utility_table_lines, utility_table_rows, "  </tbody>", "</table>")
+
+UTILITY_HEADER = c(
+  "## Utility / Math Kernel Performance",
+  "",
+  "This table compares EDI's internal scalar fast_* math kernels — used inside the NegBin/Beta/ZINB/Hurdle likelihoods, KK21 negative-binomial fitting, and probit cold-start heuristics — against base R's vectorized equivalents.",
+  "Unlike the model-fit tables above, these are not full estimators: each row is a single vectorized special-function evaluation (digamma, trigamma, log-gamma, log-beta, quantile/CDF/PDF of the normal, and the mu-parameterized negative-binomial density) over a fixed-length vector, with no design matrix, optimizer, or R6 object involved on either side.",
+  paste0("**Vector length**: All rows evaluate the function over a vector of length $N=", N_UTIL, "$; inputs are drawn from a domain realistic for each kernel's actual call sites in EDI (e.g. shape/rate-like values in $(0.5, 50)$ for digamma/trigamma/lgamma, probabilities in $(0, 1)$ for qnorm)."),
+  "**Bare Metal EDI Timing**: EDI rows call the package's exported `fast_*_vec_cpp` wrapper (`EDI/src/fast_math_utils.cpp`, documented and exported via roxygen/NAMESPACE like any other EDI function) that loops the internal `fast_*` scalar kernel over the input vector — no R6, no caching, no warm starts.",
+  "**Canonical R Timing**: The base R column calls the corresponding vectorized base/stats function directly on the same input vector (e.g. `digamma()`, `lgamma()`, `stats::qnorm()`, `stats::dnbinom(..., mu = , log = TRUE)`).",
+  paste0("**Timing Note**: All timings use the same adaptive batched `system.time`/`microbenchmark` harness as the tables above (medians over ", B_TIME, " cold samples; paths below ", FAST_PATH_THRESHOLD_MS, " ms fall back to `microbenchmark(times = ", FAST_PATH_MICROBENCH_REPS, ")`)."),
+  "**Timing P-Value**: `Timing Pval` reports a Welch two-sample t-test comparing the EDI and base R timing replicate distributions for each row. The unlabeled final column marks thresholds with `***` for p < 0.001, `**` for p < 0.01, and `*` for p < 0.05.",
+  "**Row Highlighting**: Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light grey rows indicate `NA` timing comparisons from a failed evaluation.",
+  "",
+  utility_table_lines
 )
 
 # ── Finalize
@@ -1400,8 +1546,8 @@ report = c(
   "*   **Limitation:** Some canonical comparators only expose formula-based APIs. Those rows remain included but their canonical timings carry formula/model-frame overhead not present in the EDI bare-metal timing.",
   paste0("*   **Averaging:** All timings are medians over ", B_TIME, " cold estimate-only timing samples measured with adaptive batched `system.time`; paths below ", FAST_PATH_THRESHOLD_MS, " ms use `microbenchmark(times = ", FAST_PATH_MICROBENCH_REPS, ")` instead."),
   "*   **Timing P-Value:** `Timing Pval` reports a Welch two-sample t-test comparing the EDI and canonical timing replicate distributions for each row. The unlabeled final column marks thresholds with `***` for p < 0.001, `**` for p < 0.01, and `*` for p < 0.05.",
-  "*   **Row Highlighting:** Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light grey rows indicate `NA` timing comparisons.",
-  "*   **Constraints**: Matched-pair/KK and highly custom paths are excluded as per user request.",
+  "*   **Row Highlighting:** Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light grey rows indicate `NA` timing comparisons from a failed fit; light blue rows are estimators with no canonical R implementation at all (only EDI is timed, `Canonical Time`/`Speedup`/`Timing Pval` are `NA` by design).",
+  "*   **Constraints**: Most matched-pair/KK and highly custom paths are excluded as per user request; the exceptions are the four light-blue rows below, whose custom joint likelihood or estimator family (KK combined matched+reservoir, Weibull frailty, zero-one-inflated beta) has no canonical R implementation to compare against — see `package_metadata/python_bindings_package_spec.md` for the underlying baseline-gap analysis.",
   "",
   "## Results",
   "",
@@ -1424,5 +1570,5 @@ METHODOLOGY_BLOCK = c(
   "EDI timings call exported C++ functions directly — no R6 objects are instantiated during benchmarking. As a result, **no R6 result caches exist to manage**. Each call to the C++ solver (e.g. `fast_logistic_regression_cpp`, `fast_ordinal_regression_cpp`) starts from a freshly zero-initialized parameter vector (or a model-specific data-driven initialization when `smart_cold_start = TRUE`). No prior-fit results are carried across timing repetitions, so every replication is a genuine cold start for the numerical optimizer."
 )
 
-writeLines(c(report, "", WALD_HEADER, "", METHODOLOGY_BLOCK, "", STYLE_BLOCK), "package_metadata/benchmark_model_fits.md")
+writeLines(c(report, "", WALD_HEADER, "", METHODOLOGY_BLOCK, "", UTILITY_HEADER, "", STYLE_BLOCK), "package_metadata/benchmark_model_fits.md")
 cat("Benchmark complete.\n")

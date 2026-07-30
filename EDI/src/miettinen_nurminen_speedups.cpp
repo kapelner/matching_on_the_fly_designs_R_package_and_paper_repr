@@ -94,7 +94,13 @@ double mn_z_statistic_cpp(double x_t, double n_t, double x_c, double n_c, double
 //' Evaluates the two-sided asymptotic p-value for the Miettinen-Nurminen score
 //' test of \code{p_T - p_C = delta} in two independent binomial samples.
 //'
-//' @inheritParams mn_z_statistic_cpp
+//' @param x_t Number of events in treatment.
+//' @param n_t Number of subjects in treatment.
+//' @param x_c Number of events in control.
+//' @param n_c Number of subjects in control.
+//' @param delta Null risk difference.
+//' @param p_t_obs Observed treatment-arm risk.
+//' @param p_c_obs Observed control-arm risk.
 //' @return The two-sided p-value.
 // [[Rcpp::export]]
 double mn_pvalue_cpp(double x_t, double n_t, double x_c, double n_c, double delta, double p_t_obs, double p_c_obs) {
@@ -108,7 +114,12 @@ double mn_pvalue_cpp(double x_t, double n_t, double x_c, double n_c, double delt
 //' Computes an approximate Miettinen-Nurminen confidence interval for the risk
 //' difference by inverting the score test with a bisection search.
 //'
-//' @inheritParams mn_z_statistic_cpp
+//' @param x_t Number of events in treatment.
+//' @param n_t Number of subjects in treatment.
+//' @param x_c Number of events in control.
+//' @param n_c Number of subjects in control.
+//' @param p_t_obs Observed treatment-arm risk.
+//' @param p_c_obs Observed control-arm risk.
 //' @param alpha The confidence level is \code{1 - alpha}.
 //' @param pval_epsilon Bisection tolerance in p-value space.
 //' @return A length-2 numeric vector containing the lower and upper CI bounds.

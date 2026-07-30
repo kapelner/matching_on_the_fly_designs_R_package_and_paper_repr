@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
+#include <stdexcept>
 
 // [[Rcpp::depends(RcppEigen)]]
 
@@ -779,7 +780,7 @@ LikelihoodFitResult fast_stereotype_logit_internal(
 
 	if (warm_start_params.has_value()) {
 		params = *warm_start_params;
-		if (params.size() != n_par) stop("warm_start_params size mismatch");
+		if (params.size() != n_par) throw std::invalid_argument("warm_start_params size mismatch");
 	} else if (warm_start_beta.has_value()) {
 		const Eigen::VectorXd& sb = *warm_start_beta;
 		if (sb.size() == p) {

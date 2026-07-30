@@ -276,7 +276,6 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 		}
 	),
 	private = c(InferenceExtCIInversion$private, InferenceExtInformationMatrix$private, InferenceExtLikelihoodTestMemoization$private, list(
-		is_a_asymp_lik = function() TRUE,
 		likelihood_ci_max_abs = 10,
 		testing_type = "wald",
 		information_preference = "auto",

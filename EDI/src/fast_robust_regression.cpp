@@ -3,6 +3,7 @@
 #include <RcppEigen.h>
 #include <cmath>
 #include <algorithm>
+#include <stdexcept>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -152,7 +153,7 @@ RobustModelResult fast_robust_regression_internal(
         // Update weights
         if (iter == 1 && warm_start_weights.has_value()) {
             const Eigen::VectorXd& ww = *warm_start_weights;
-            if (ww.size() != n) stop("warm_start_weights must have length equal to nrow(X)");
+            if (ww.size() != n) throw std::invalid_argument("warm_start_weights must have length equal to nrow(X)");
             res.w = ww;
         } else {
             const Eigen::ArrayXd u = r.array() / res.scale;
@@ -170,7 +171,7 @@ RobustModelResult fast_robust_regression_internal(
         Eigen::MatrixXd XtWX;
         if (iter == 1 && warm_start_fisher_info.has_value()) {
             const Eigen::MatrixXd& info_full = *warm_start_fisher_info;
-            if (info_full.rows() != p || info_full.cols() != p) stop("warm_start_fisher_info must be a p x p matrix");
+            if (info_full.rows() != p || info_full.cols() != p) throw std::invalid_argument("warm_start_fisher_info must be a p x p matrix");
             XtWX = subset_matrix(info_full, fixed_spec.free_idx, fixed_spec.free_idx);
         } else {
             XtWX = weighted_crossprod(X_free, res.w);

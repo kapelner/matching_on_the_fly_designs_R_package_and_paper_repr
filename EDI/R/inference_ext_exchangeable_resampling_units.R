@@ -18,11 +18,9 @@ InferenceExtExchangeableResamplingUnits = list(
 			if (should_run_asserts()) assertChoice(unit, valid)
 			if (unit != "auto") return(unit)
 			design_obj = private$des_obj
-			is_matching_design = is(design_obj, "DesignMatching") &&
-				isTRUE(tryCatch(design_obj$is_matching_design(), error = function(e) FALSE))
-			is_cluster_design = is(design_obj, "DesignFixedCluster") || is(design_obj, "DesignFixedBlockedCluster")
-			is_blocking_design = is(design_obj, "DesignBlocking") &&
-				isTRUE(tryCatch(design_obj$is_blocking_design(), error = function(e) FALSE))
+			is_matching_design = isTRUE(design_obj$is_matching_design())
+			is_cluster_design = design_obj$is_a_cluster_capable()
+			is_blocking_design = isTRUE(design_obj$is_blocking_design())
 			if (is_matching_design) {
 				if (isTRUE(private$is_KK)) "matched_set" else "pair"
 			} else if (is_cluster_design) {

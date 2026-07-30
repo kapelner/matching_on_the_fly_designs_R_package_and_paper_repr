@@ -296,11 +296,23 @@ InferenceExtPRWSubsampling = list(
 				selection_class = "EDISubsamplingBSelection"
 			)
 		},
-		#' @description Computes PRW subsampling sensitivity over candidate sizes.
-		#'
-		#' @inheritParams select_optimal_b_subsampling
-		#' @param min_finite_fraction Minimum finite-subsample fraction required for
-		#'   a candidate size to be eligible. Defaults to 0 for sensitivity scans.
+			#' @description Computes PRW subsampling sensitivity over candidate sizes.
+			#'
+			#' @param B Number of subsamples per candidate size. Default 251.
+			#' @param alpha Significance level for interval-width objectives.
+			#' @param b_pow_of_n_grid Candidate exponent grid used when
+			#'   \code{b_grid = NULL}. Defaults to \code{seq(0.5, 0.9, by = 0.05)}.
+			#' @param b_grid Optional explicit integer candidate sizes.
+			#' @param objective Selection objective. Currently \code{"ci_width"}.
+			#' @param target Target summary. Currently \code{"ci"}.
+			#' @param volatility_window Rolling window size used to measure local
+			#'   volatility across candidate sizes.
+			#' @param subsampling_type Optional empirical-resampling scheme.
+			#' @param scaling Scaling sequence for centered subsampling pivots.
+			#' @param show_progress A flag indicating whether a progress bar should be
+			#'   displayed.
+			#' @param min_finite_fraction Minimum finite-subsample fraction required for
+			#'   a candidate size to be eligible. Defaults to 0 for sensitivity scans.
 		#'
 		#' @return An \code{EDISubsamplingSensitivity} list containing the candidate
 		#'   grid table without selecting a final \code{b}.

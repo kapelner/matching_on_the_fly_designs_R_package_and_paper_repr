@@ -14,8 +14,6 @@ DesignBlocking = R6::R6Class("DesignBlocking",
 	lock_objects = FALSE,
 	inherit = Design,
 	public = list(
-		#' @description Characterization: this is a blocking design.
-		is_a_blocking = function() TRUE,
 		#' @description Checks whether this design currently has blocking structure.
 		#'
 		#' @return \code{TRUE} if the design supports blocking or manual block IDs

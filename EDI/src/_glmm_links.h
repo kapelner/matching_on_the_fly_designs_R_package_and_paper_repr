@@ -2,8 +2,19 @@
 #define EDI_GLMM_LINKS_H
 
 #include <cmath>
+// See fast_gamma_functions.h for the EDI_CORE_ONLY convention this follows.
+// Unlike that file, nothing here actually calls into Rmath (cdf/pdf all go
+// through the already-portable plogis_safe/pnorm_fast/dnorm_fast), so this
+// include is dropped entirely rather than swapped for a portable equivalent.
+#ifndef EDI_CORE_ONLY
 #include <Rmath.h>
+#endif
+// See _glmm_engine.h for why this dispatches between the two headers.
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#else
 #include "_helper_functions.h"
+#endif
 
 namespace glmm {
 

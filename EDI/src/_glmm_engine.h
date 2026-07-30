@@ -1,13 +1,26 @@
 #ifndef EDI_GLMM_ENGINE_H
 #define EDI_GLMM_ENGINE_H
 
+// See fast_gamma_functions.h for the EDI_CORE_ONLY convention this follows.
+#ifdef EDI_CORE_ONLY
+#include <Eigen/Dense>
+#else
 #include <RcppEigen.h>
+#endif
 #include <vector>
 #include <numeric>
 #include <algorithm>
 #include <cmath>
 #include <limits>
+// _helper_functions.h is the Rcpp-glue wrapper (always pulls in RcppEigen.h);
+// under EDI_CORE_ONLY, go straight to the portable core it wraps instead, so
+// this file never transitively re-introduces the Rcpp dependency it just
+// guarded out above.
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#else
 #include "_helper_functions.h"
+#endif
 
 namespace glmm {
 

@@ -883,6 +883,90 @@ compute_logrank_rand_bootstrap_parallel_cpp <- function(y0, dead, i_mat, w_mat, 
     .Call(`_EDI_compute_logrank_rand_bootstrap_parallel_cpp`, y0, dead, i_mat, w_mat, delta, noise_mat, num_cores)
 }
 
+#' @title Fast Digamma Function (C++)
+#' @description Vectorized digamma (psi) function via an asymptotic expansion with recurrence shift, faster than base R's \code{digamma()}.
+#' @param x Numeric vector of arguments.
+#' @return A numeric vector of digamma values.
+#' @export
+#' @keywords internal
+fast_digamma_vec_cpp <- function(x) {
+    .Call(`_EDI_fast_digamma_vec_cpp`, x)
+}
+
+#' @title Fast Trigamma Function (C++)
+#' @description Vectorized trigamma (psi') function via an asymptotic expansion with recurrence shift, faster than base R's \code{trigamma()}.
+#' @param x Numeric vector of arguments.
+#' @return A numeric vector of trigamma values.
+#' @export
+#' @keywords internal
+fast_trigamma_vec_cpp <- function(x) {
+    .Call(`_EDI_fast_trigamma_vec_cpp`, x)
+}
+
+#' @title Fast Log-Gamma Function (C++)
+#' @description Vectorized log-gamma function via a Lanczos/Stirling approximation, faster than base R's \code{lgamma()}.
+#' @param x Numeric vector of arguments.
+#' @return A numeric vector of log-gamma values.
+#' @export
+#' @keywords internal
+fast_lgamma_vec_cpp <- function(x) {
+    .Call(`_EDI_fast_lgamma_vec_cpp`, x)
+}
+
+#' @title Fast Log-Beta Function (C++)
+#' @description Vectorized log-beta function, \code{lgamma(a) + lgamma(b) - lgamma(a + b)}, computed via \code{fast_lgamma}. Faster than base R's \code{lbeta()}.
+#' @param a Numeric vector of first shape arguments.
+#' @param b Numeric vector of second shape arguments (recycled against \code{a} elementwise; must be the same length).
+#' @return A numeric vector of log-beta values.
+#' @export
+#' @keywords internal
+fast_lbeta_vec_cpp <- function(a, b) {
+    .Call(`_EDI_fast_lbeta_vec_cpp`, a, b)
+}
+
+#' @title Fast Mu-Parameterized Negative-Binomial Density (C++)
+#' @description Vectorized negative-binomial density parameterized by mean \code{mu}, matching \code{R::dnbinom_mu(x, size, mu, give_log)} semantics via \code{fast_lgamma} in place of R's three \code{lgamma} dispatches. Faster than base R's \code{stats::dnbinom(x, size, mu = mu, log = ...)}.
+#' @param x Numeric vector of non-negative integer counts.
+#' @param size Dispersion parameter (single value).
+#' @param mu Mean parameter (single value).
+#' @param return_log Logical. If \code{TRUE}, return the log-density.
+#' @return A numeric vector of (log-)density values.
+#' @export
+#' @keywords internal
+fast_dnbinom_mu_vec_cpp <- function(x, size, mu, return_log) {
+    .Call(`_EDI_fast_dnbinom_mu_vec_cpp`, x, size, mu, return_log)
+}
+
+#' @title Fast Standard Normal Quantile Function (C++)
+#' @description Vectorized standard normal inverse CDF via Peter Acklam's rational approximation (accurate to ~1.2e-9 relative error). Faster than base R's \code{stats::qnorm()}.
+#' @param p Numeric vector of probabilities in \verb{(0, 1)}.
+#' @return A numeric vector of quantiles.
+#' @export
+#' @keywords internal
+fast_qnorm_vec_cpp <- function(p) {
+    .Call(`_EDI_fast_qnorm_vec_cpp`, p)
+}
+
+#' @title Fast Log Standard Normal CDF (C++)
+#' @description Vectorized \code{log(Phi(x))} via \code{fast_erfc}, avoiding R's \code{pnorm} dispatch overhead. Faster than base R's \code{stats::pnorm(x, log.p = TRUE)}.
+#' @param x Numeric vector of arguments.
+#' @return A numeric vector of log CDF values.
+#' @export
+#' @keywords internal
+fast_log_pnorm_vec_cpp <- function(x) {
+    .Call(`_EDI_fast_log_pnorm_vec_cpp`, x)
+}
+
+#' @title Fast Log Standard Normal PDF (C++)
+#' @description Vectorized \code{log(phi(x))} in closed form. Faster than base R's \code{stats::dnorm(x, log = TRUE)}.
+#' @param x Numeric vector of arguments.
+#' @return A numeric vector of log density values.
+#' @export
+#' @keywords internal
+fast_log_dnorm_vec_cpp <- function(x) {
+    .Call(`_EDI_fast_log_dnorm_vec_cpp`, x)
+}
+
 matrix_rank_cpp <- function(A_r, tol = 1e-7) {
     .Call(`_EDI_matrix_rank_cpp`, A_r, tol)
 }
@@ -1733,22 +1817,6 @@ fast_zero_augmented_poisson_cpp <- function(X_sexp, y_sexp, Xzi_sexp, is_hurdle,
     .Call(`_EDI_fast_zero_augmented_poisson_cpp`, X_sexp, y_sexp, Xzi_sexp, is_hurdle, warm_start_params, smart_cold_start, estimate_only, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info)
 }
 
-#' @title Fast Zero/One-Inflated Beta Regression (C++)
-#' @description High-performance zero/one-inflated beta regression fitting using Newton-Raphson or L-BFGS.
-#' @param X Matrix of predictors for the beta component.
-#' @param X_zero_one Matrix of predictors for the zero and one inflation components.
-#' @param y Vector of responses in [0, 1].
-#' @param warm_start_params Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.
-#' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
-#' @param fixed_idx Optional indices of fixed parameters.
-#' @param fixed_values Optional values for fixed parameters.
-#' @param optimization_alg Optimization algorithm.
-#' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first iteration.
-#' @return A list containing coefficients, vcov, and convergence status.
-#' @export
-#' @keywords internal
-NULL
-
 get_zero_one_inflated_beta_score_cpp <- function(X_sexp, X_zero_one_sexp, y_sexp, params_sexp) {
     .Call(`_EDI_get_zero_one_inflated_beta_score_cpp`, X_sexp, X_zero_one_sexp, y_sexp, params_sexp)
 }
@@ -1757,6 +1825,21 @@ get_zero_one_inflated_beta_hessian_cpp <- function(X_sexp, X_zero_one_sexp, y_se
     .Call(`_EDI_get_zero_one_inflated_beta_hessian_cpp`, X_sexp, X_zero_one_sexp, y_sexp, params_sexp)
 }
 
+#' @title Fast Zero/One-Inflated Beta Regression (C++)
+#' @description High-performance zero/one-inflated beta regression fitting using Newton-Raphson or L-BFGS.
+#' @param X_sexp Matrix of predictors for the beta component.
+#' @param X_zero_one_sexp Matrix of predictors for the zero and one inflation components.
+#' @param y_sexp Vector of responses in [0, 1].
+#' @param warm_start_params Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.
+#' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @param optimization_alg Optimization algorithm.
+#' @param warm_start_fisher_info Optional initial Fisher Information matrix for the first iteration.
+#' @param estimate_only Logical. If TRUE, skip variance-related output where supported.
+#' @return A list containing coefficients, vcov, and convergence status.
+#' @export
+#' @keywords internal
 fast_zero_one_inflated_beta_cpp <- function(X_sexp, X_zero_one_sexp, y_sexp, warm_start_params = NULL, smart_cold_start = TRUE, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", warm_start_fisher_info = NULL, estimate_only = FALSE) {
     .Call(`_EDI_fast_zero_one_inflated_beta_cpp`, X_sexp, X_zero_one_sexp, y_sexp, warm_start_params, smart_cold_start, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info, estimate_only)
 }
@@ -2052,7 +2135,13 @@ mn_z_statistic_cpp <- function(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs) {
 #' Evaluates the two-sided asymptotic p-value for the Miettinen-Nurminen score
 #' test of \code{p_T - p_C = delta} in two independent binomial samples.
 #'
-#' @inheritParams mn_z_statistic_cpp
+#' @param x_t Number of events in treatment.
+#' @param n_t Number of subjects in treatment.
+#' @param x_c Number of events in control.
+#' @param n_c Number of subjects in control.
+#' @param delta Null risk difference.
+#' @param p_t_obs Observed treatment-arm risk.
+#' @param p_c_obs Observed control-arm risk.
 #' @return The two-sided p-value.
 mn_pvalue_cpp <- function(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs) {
     .Call(`_EDI_mn_pvalue_cpp`, x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs)
@@ -2063,7 +2152,12 @@ mn_pvalue_cpp <- function(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs) {
 #' Computes an approximate Miettinen-Nurminen confidence interval for the risk
 #' difference by inverting the score test with a bisection search.
 #'
-#' @inheritParams mn_z_statistic_cpp
+#' @param x_t Number of events in treatment.
+#' @param n_t Number of subjects in treatment.
+#' @param x_c Number of events in control.
+#' @param n_c Number of subjects in control.
+#' @param p_t_obs Observed treatment-arm risk.
+#' @param p_c_obs Observed control-arm risk.
 #' @param alpha The confidence level is \code{1 - alpha}.
 #' @param pval_epsilon Bisection tolerance in p-value space.
 #' @return A length-2 numeric vector containing the lower and upper CI bounds.

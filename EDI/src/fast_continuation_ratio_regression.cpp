@@ -4,6 +4,7 @@
 #include <RcppEigen.h>
 #include <algorithm>
 #include <vector>
+#include <stdexcept>
 
 // [[Rcpp::depends(RcppEigen)]]
 
@@ -129,7 +130,7 @@ ContinuationRatioFit fast_continuation_ratio_internal(
 	VectorXd beta = VectorXd::Zero(p_aug);
 	if (warm_start_beta.has_value()) {
 		beta = *warm_start_beta;
-		if (beta.size() != p_aug) stop("warm_start_beta size mismatch");
+		if (beta.size() != p_aug) throw std::invalid_argument("warm_start_beta size mismatch");
 	} else if (smart_cold_start) {
 		// Smart warm_start_params: OLS on z (the augmented binary response)
 		beta = ols_smart_cold_start_beta(result.X_aug, result.z);

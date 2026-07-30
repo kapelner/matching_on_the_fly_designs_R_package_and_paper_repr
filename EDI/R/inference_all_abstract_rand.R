@@ -351,11 +351,9 @@ InferenceRand = R6::R6Class("InferenceRand",
 		}
 	)),
 	private = c(InferenceExtCustomRandomizationStatistic$private, InferenceExtSequentialMCPval$private, list(
-		is_a_rand = function() TRUE,
 		randomization_mc_control = NULL,
 		is_bernoulli_design = function(){
-			is(private$des_obj, "DesignSeqOneByOneBernoulli") ||
-				is(private$des_obj, "DesignFixedBernoulli")
+			private$des_obj$is_a_bernoulli_capable()
 		},
 		should_use_zhang_incidence_randomization = function(){
 			private$des_obj_priv_int$response_type == "incidence" &&
