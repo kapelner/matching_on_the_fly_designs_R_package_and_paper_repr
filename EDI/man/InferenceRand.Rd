@@ -18,7 +18,7 @@ Abstract class for randomization-based inference.
     \item \href{#method-InferenceRand-clone}{\code{InferenceRand$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/Inference.html'><code>Inference</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/Inference.html'><code>Inference</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRand-approximate_randomization_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceRand-approximate_randomization_distribution_beta_hat_T}{}}}

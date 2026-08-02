@@ -25,7 +25,7 @@ matched-pair and reservoir components separately.
     \item \href{#method-InferenceContinKKRobustRegrIVWC-clone}{\code{InferenceContinKKRobustRegrIVWC$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKRobustRegrIVWC-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrIVWC-initialize}{}}}

@@ -37,7 +37,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceIncidKKNewcombeRiskDiff-clone}{\code{InferenceIncidKKNewcombeRiskDiff$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidKKNewcombeRiskDiff-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidKKNewcombeRiskDiff-initialize}{}}}

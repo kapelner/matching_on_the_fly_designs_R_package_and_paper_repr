@@ -42,7 +42,7 @@ InferenceExtParamBootstrapEstimate = list(
 			coef = fit$b %||% fit$params %||% fit$coefficients
 			coef = suppressWarnings(as.numeric(coef))
 			j = as.integer(j)
-			if (!length(coef) || !is.finite(j) || j < 1L || length(coef) < j) return(NA_real_)
+			if (!length(coef) || length(j) != 1L || !is.finite(j) || j < 1L || length(coef) < j) return(NA_real_)
 			coef[j]
 		},
 		# Shared batch runner used by both compute_param_bootstrap_estimate()
@@ -56,7 +56,7 @@ InferenceExtParamBootstrapEstimate = list(
 		# for the point estimate, quantile-reflection for the interval).
 		run_param_bootstrap_estimate_batch = function(B, max_attempts_per_replicate, show_progress = FALSE){
 			spec = private$get_likelihood_test_spec()
-			if (is.null(spec) || is.null(spec$full_fit) || is.null(spec$j)) {
+			if (is.null(spec) || is.null(spec$full_fit) || is.null(spec$j) || length(spec$j) != 1L) {
 				if (!isTRUE(self$is_nonestimable("estimate")))
 					private$cache_nonestimable_se("param_bootstrap_estimate_spec_unavailable")
 				return(NULL)

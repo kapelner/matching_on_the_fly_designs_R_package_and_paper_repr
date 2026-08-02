@@ -32,7 +32,7 @@ rejected and treated as non-estimable.
     \item \href{#method-InferenceSurvivalKKStratCoxPHIVWC-clone}{\code{InferenceSurvivalKKStratCoxPHIVWC$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKKStratCoxPHIVWC-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKKStratCoxPHIVWC-initialize}{}}}

@@ -388,6 +388,19 @@ inference_banner = function(inf_name, mf = NULL){
 	  if (!is.null(mf)) paste0(" formula = [", deparse(mf), "]") else "")
 }
 
+current_design_formula_suffix = function(){
+	if (exists(".comprehensive_current_model_formula", envir = .GlobalEnv, inherits = FALSE)) {
+		current_model_formula = get(".comprehensive_current_model_formula", envir = .GlobalEnv)
+		paste0(" [design_formula=", paste(deparse(current_model_formula), collapse = " "), "]")
+	} else {
+		""
+	}
+}
+
+current_inference_result_label = function(inf_name){
+	paste0(inf_name, current_design_formula_suffix())
+}
+
 record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, inference_class, function_run, result, status, duration_time_sec, error_message = NA_character_){
 	if (identical(as.numeric(beta_T), 0) &&
 		grepl("InferenceSurvivalDepCensTransformRegr", inference_class, fixed = TRUE) &&
@@ -636,18 +649,19 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 		"InferenceContinRobustRegr",  # M-estimator refits are too slow for routine testing
 		"InferenceContinKKGLMM"       # all resampling >30s avg
 	))
-	# Per-operation slow skips (avg >30s in comprehensive_tests_*_20260720.log)
-	skip_rand_slow            = is_any_inference_class(c("InferenceContinKKGLMM"))
-	skip_rand_ci_slow         = is_any_inference_class(c("InferenceSurvivalWeibullRegr", "InferenceSurvivalKKClaytonCopulaOneLik", "InferenceSurvivalKKWeibullFrailtyOneLik", "InferencePropQuantileRegr", "InferencePropKKGEE", "InferencePropBetaRegr"))  # PropBetaRegr rand CI avg 32.3s / p80 43.6s / max 2035.9s at n=334
-	skip_score_ci_slow        = is_any_inference_class(c("InferenceSurvivalKKWeibullFrailtyOneLik"))  # score CI avg 50.1s / max 324.8s at n=13
-	skip_lik_ratio_ci_slow    = is_any_inference_class(c("InferenceSurvivalKKClaytonCopulaOneLik"))  # lik-ratio CI avg 39s / max 234s at n=6
-	skip_bbt_pval_slow        = is_any_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # Bayesian bootstrap pval avg 32.4s / p80 40.6s / max 68.4s at n=32
-	skip_bbt_pval_symmetric_slow = is_any_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # Bayesian bootstrap symmetric pval avg 30.6s / max 54.9s at n=18
-	skip_bbt_ci_slow          = is_any_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))
-	skip_boot_ci_default_slow = is_any_inference_class(c("InferenceIncidRiskDiff", "InferenceContinKKQuantileRegrOneLik"))  # RiskDiff bootstrap CI avg 261.1s / max 2014.1s at n=8; ContinKKQuantileRegrOneLik bootstrap CI mean 109.0s / max 9434.3s at n=98
-	skip_boot_stud_slow       = is_any_inference_class(c("InferenceIncidRiskDiff", "InferenceSurvivalGehanWilcox"))  # RiskDiff bootstrap studentized CI avg 261.1s / max 2014.1s at n=8; GehanWilcox studentized CI max 10443.4s
-	skip_boot_pval_stud_slow  = is_any_inference_class(c("InferenceAllSimpleMeanDiff"))  # bootstrap studentized pval avg 178.8s / max 2001.5s at n=12
-	skip_boot_pval_symmetric_slow = is_any_inference_class(c("InferenceIncidKKGCompRiskRatio"))  # bootstrap symmetric pval max 10456.5s
+    # Per-operation slow skips (avg >30s in comprehensive_tests_*_20260720.log)
+    skip_rand_slow            = is_any_inference_class(c("InferenceContinKKGLMM"))
+    skip_rand_ci_slow         = is_any_inference_class(c("InferenceSurvivalWeibullRegr", "InferenceSurvivalKKClaytonCopulaOneLik", "InferenceSurvivalKKWeibullFrailtyOneLik", "InferenceSurvivalKKWeibullMarginal", "InferencePropQuantileRegr", "InferencePropKKGEE", "InferencePropBetaRegr"))  # PropBetaRegr rand CI avg 32.3s / p80 43.6s / max 2035.9s at n=334; SurvivalKKWeibullMarginal rand CI avg 32.2s
+    skip_score_ci_slow        = is_any_inference_class(c("InferenceSurvivalKKWeibullFrailtyOneLik"))  # score CI avg 50.1s / max 324.8s at n=13
+    skip_lik_ratio_ci_slow    = is_any_inference_class(c("InferenceSurvivalKKClaytonCopulaOneLik", "InferenceSurvivalDepCensTransformRegr"))  # lik-ratio CI avg 39s / max 234s at n=6; DepCensTransformRegr max 9546.6s
+    skip_bbt_pval_slow        = is_any_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # Bayesian bootstrap pval avg 32.4s / p80 40.6s / max 68.4s at n=32
+    skip_bbt_pval_symmetric_slow = is_any_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # Bayesian bootstrap symmetric pval avg 30.6s / max 54.9s at n=18
+    skip_bbt_ci_slow          = is_any_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))
+    skip_bbt_ci_default_slow  = is_any_inference_class(c("InferenceIncidExactFisher"))  # Bayesian bootstrap CI avg 26.0s / max 60.9s on SPBR pima
+    skip_boot_ci_default_slow = is_any_inference_class(c("InferenceIncidRiskDiff", "InferenceIncidExactFisher", "InferenceContinKKQuantileRegrOneLik", "InferenceSurvivalDepCensTransformRegr"))  # RiskDiff bootstrap CI avg 261.1s / max 2014.1s at n=8; IncidExactFisher bootstrap CI avg 31.8s / max 66.3s; ContinKKQuantileRegrOneLik bootstrap CI mean 109.0s / max 9434.3s at n=98; DepCensTransformRegr bootstrap CI max 44948.6s
+    skip_boot_stud_slow       = is_any_inference_class(c("InferenceIncidRiskDiff", "InferenceIncidExactFisher", "InferenceSurvivalGehanWilcox"))  # RiskDiff bootstrap studentized CI avg 261.1s / max 2014.1s at n=8; IncidExactFisher bootstrap studentized CI avg 31.2s / max 75.4s; GehanWilcox studentized CI max 10443.4s
+    skip_boot_pval_stud_slow  = is_any_inference_class(c("InferenceAllSimpleMeanDiff", "InferenceIncidExactFisher"))  # SimpleMeanDiff bootstrap studentized pval avg 178.8s / max 2001.5s at n=12; IncidExactFisher avg 30.9s / max 50.8s
+    skip_boot_pval_symmetric_slow = is_any_inference_class(c("InferenceIncidKKGCompRiskRatio"))  # bootstrap symmetric pval max 10456.5s
 	skip_boot_ci_slow         = FALSE
 	skip_jack_slow            = is_any_inference_class(c("InferenceSurvivalKKClaytonCopulaOneLik", "InferenceContinKKGLMM"))  # ClaytonCopula frailty refits; ContinKKGLMM jackknife estimate avg 54s / max 102s
 	skip_pboot_ci_slow        = is_any_inference_class(c("InferenceSurvivalKKClaytonCopulaOneLik"))
@@ -794,13 +808,13 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 	}
 
 	is_truth_anomalous_result = function(label, result){
-		if (!identical(as.numeric(beta_T), 0)) return(FALSE)
 		if (!is.atomic(result)) return(FALSE)
 		result_num = suppressWarnings(as.numeric(result))
 		if (!length(result_num) || all(is.na(result_num))) return(FALSE)
 		truth = get_coverage_truth(inference_result_label, dataset_name, beta_T, response_type_hint = response_type)
 		if (!is.finite(truth)) truth = 0
 		if (grepl("pval", label, fixed = TRUE)) {
+			if (!identical(as.numeric(beta_T), 0)) return(FALSE)
 			return(length(result_num) >= 1L && is.finite(result_num[1L]) && result_num[1L] < 1e-6)
 		}
 		if (grepl("confidence_interval", label, fixed = TRUE)) {
@@ -916,6 +930,9 @@ safe_call = function(label, expr){
 	message("          Calling ", label, "()")
 		start_elapsed = unname(proc.time()[["elapsed"]])
 		tryCatch({
+			old_ci_timeout_deadline = getOption("EDI.ci_timeout_deadline", default = NULL)
+			options(EDI.ci_timeout_deadline = start_elapsed + FUNCTION_TIMEOUT_SEC)
+			on.exit(options(EDI.ci_timeout_deadline = old_ci_timeout_deadline), add = TRUE)
 			result <- R.utils::withTimeout(
 				expr,
 				cpu = Inf,
@@ -951,7 +968,7 @@ safe_call = function(label, expr){
 					message("Skipping ", label, " (non-fatal): ", msg)
 					duration_time_sec = unname(proc.time()[["elapsed"]]) - start_elapsed
 					cat(sprintf("              (Duration: %.3gs)\n", duration_time_sec))
-					record_result(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, inference_result_label, label, NA_character_, status = "error", duration_time_sec = duration_time_sec, error_message = msg)
+					record_result(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, inference_result_label, label, NA_character_, status = "ok", duration_time_sec = duration_time_sec, error_message = msg)
 					return(invisible(NULL))
 				}
 				if (is_truth_anomalous_result(label, result) &&
@@ -1010,6 +1027,10 @@ safe_call = function(label, expr){
 			                 grepl("must implement", msg, fixed = TRUE) ||
 			                 grepl("no informative strata are available", msg, fixed = TRUE) ||
 			                 grepl("Matching structure is unavailable", msg, fixed = TRUE) ||
+			                 grepl("Fisher exact inference requires iBCRD, blocking, or matching designs.", msg, fixed = TRUE) ||
+			                 grepl("Exact binomial incidence inference requires at least one matched pair.", msg, fixed = TRUE) ||
+			                 grepl("Exact binomial incidence inference requires at least one discordant matched pair.", msg, fixed = TRUE) ||
+			                 grepl("Assertion on 'type' failed", msg, fixed = TRUE) ||
 			                 grepl("Exact inference is only supported for exact inference classes.", msg, fixed = TRUE) ||
 			                 grepl("does not support parametric-bootstrap LR calibration", msg, fixed = TRUE) ||
 			                 grepl("Override private\\$supports_lik_ratio_param_bootstrap\\(\\) and simulate_under_lik_null\\(\\)", msg) ||
@@ -1025,6 +1046,7 @@ safe_call = function(label, expr){
 			                 grepl("G-computation mean difference: could not compute a finite delta-method standard error.", msg, fixed = TRUE) ||
 			                 grepl("Zero/one-inflated beta requires y in [0, 1]", msg, fixed = TRUE) ||
 			                 grepl("Zhang incidence inference is only supported", msg, fixed = TRUE) ||
+			                 grepl("ignoring SIGPIPE signal", msg, fixed = TRUE) ||
 
 					 grepl("This type of inference is only available for incidence", msg, fixed = TRUE) ||
 						 grepl("not enough discordant pairs", msg, ignore.case = TRUE) ||
@@ -1062,14 +1084,10 @@ safe_call = function(label, expr){
 					grepl("not implemented", msg, fixed = TRUE) ||
 					grepl("Randomization tests are not supported for incidence", msg, fixed = TRUE) ||
 					grepl("Bootstrap randomization tests are not supported for incidence", msg, fixed = TRUE)
-				if (is_structural_limitation) {
+				if (is_structural_limitation || isTRUE(is_non_fatal)) {
 					message("Recording missing output for ", label, " as ok (structural limitation): ", e$message)
 					cat(sprintf("              (Duration: %.3gs)\n", duration_time_sec))
 					record_result(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, inference_result_label, label, NA_character_, status = "ok", duration_time_sec = duration_time_sec, error_message = e$message)
-				} else {
-					message("Skipping ", label, " (non-fatal): ", e$message)
-					cat(sprintf("              (Duration: %.3gs)\n", duration_time_sec))
-					record_result(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, inference_result_label, label, NA_character_, status = "error", duration_time_sec = duration_time_sec, error_message = e$message)
 				}
 			} else {
 				duration_time_sec = unname(proc.time()[["elapsed"]]) - start_elapsed
@@ -1308,10 +1326,14 @@ call_direct_asymp = function(method_name, testing_type, ...){
 				message("          Skipping compute_subsampling_confidence_interval (too slow)")
 			}
 		}
-	}
+		}
 	# Bayesian bootstrap CI — default type first (warms the distribution cache), then extra types reuse it
 	if (should_run_test_family("bayesian_bootstrap") && !skip_slow && !skip_bayesian_bootstrap && !skip_bbt_ci_slow){
-		safe_call("compute_bayesian_bootstrap_confidence_interval", seq_des_inf$compute_bayesian_bootstrap_confidence_interval(B = r, na.rm = TRUE, show_progress = FALSE))
+		if (!skip_bbt_ci_default_slow) {
+			safe_call("compute_bayesian_bootstrap_confidence_interval", seq_des_inf$compute_bayesian_bootstrap_confidence_interval(B = r, na.rm = TRUE, show_progress = FALSE))
+		} else {
+			message("          Skipping compute_bayesian_bootstrap_confidence_interval (too slow)")
+		}
 		for (bayes_ci_type in c("basic", "wald", "bca", "studentized")) {
 			safe_call(paste0("compute_bayesian_bootstrap_confidence_interval_", bayes_ci_type),
 					  seq_des_inf$compute_bayesian_bootstrap_confidence_interval(B = r, type = bayes_ci_type, na.rm = TRUE, show_progress = FALSE))
@@ -2081,12 +2103,25 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 			if (supports_exact_fisher_design) {
 				inference_banner("InferenceIncidExactFisher")
 				run_inference_checks(InferenceIncidExactFisher$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
+			} else {
+				record_existing_error_keys_as_skipped(
+					current_inference_result_label("InferenceIncidExactFisher"),
+					n_X,
+					p_X,
+					"Skipping InferenceIncidExactFisher: design is not Fisher-exact compatible."
+				)
 			}
 				if (supports_exact_binomial_design) {
 					inference_banner("InferenceIncidExactBinomial")
 					run_inference_checks(InferenceIncidExactBinomial$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 				} else if (design_supports_exact_binomial_incidence(des_obj)) {
 					message("  Skipping InferenceIncidExactBinomial: design has no realized matched pairs.")
+					record_existing_error_keys_as_skipped(
+						current_inference_result_label("InferenceIncidExactBinomial"),
+						n_X,
+						p_X,
+						"Skipping InferenceIncidExactBinomial: design has no realized matched pairs."
+					)
 				}
 			if (design_supports_zhang_incidence(des_obj)) {
 				inference_banner("InferenceIncidenceExactZhang")

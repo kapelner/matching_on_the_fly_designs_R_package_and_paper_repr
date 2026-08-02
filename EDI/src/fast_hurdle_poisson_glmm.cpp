@@ -13,6 +13,7 @@
 
 #include "_helper_functions.h"
 #include "_glmm_engine.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <cmath>
 #include <vector>
@@ -776,19 +777,19 @@ List fast_hurdle_poisson_glmm_cpp(
 
 	// Early return: skip score/Hessian computation when only point estimates are needed.
 	if (estimate_only) {
-		return List::create(
-			Named("params")     = par,
-			Named("b")          = par.head(p),
-			Named("log_sigma")  = par[total - 1],
-			Named("ssq_b_T")    = NA_REAL,
-			Named("vcov")       = Eigen::MatrixXd::Constant(total, total, NA_REAL),
-			Named("converged")  = converged,
-			Named("neg_loglik") = true_neg_ll,
-			Named("neg_ll")     = true_neg_ll,
-			Named("loglik")     = R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL,
-			Named("gradient_norm") = gradient_norm,
-			Named("variance_boundary_hit") = variance_boundary_hit
-		);
+		Eigen::MatrixXd vcov_na = Eigen::MatrixXd::Constant(total, total, NA_REAL);
+		return edi::to_rcpp_list(edi::ResultMap()
+			.set("params", par)
+			.set("b", par.head(p))
+			.set("log_sigma", par[total - 1])
+			.set("ssq_b_T", NA_REAL)
+			.set("vcov", vcov_na)
+			.set("converged", converged)
+			.set("neg_loglik", true_neg_ll)
+			.set("neg_ll", true_neg_ll)
+			.set("loglik", R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL)
+			.set("gradient_norm", gradient_norm)
+			.set("variance_boundary_hit", variance_boundary_hit));
 	}
 
 	Eigen::VectorXd score(total);
@@ -807,23 +808,23 @@ List fast_hurdle_poisson_glmm_cpp(
 		if (j_T < p) ssq_b_T = vcov(j_T, j_T);
 	}
 
-	return List::create(
-		Named("params")     = par,
-		Named("b")          = par.head(p),
-		Named("log_sigma")  = par[total - 1],
-		Named("ssq_b_T")    = ssq_b_T,
-		Named("vcov")       = vcov,
-		Named("score")      = score,
-		Named("observed_information") = information,
-		Named("information") = information,
-		Named("information_type") = "observed",
-		Named("hessian")    = -information,
-		Named("converged")  = converged,
-		Named("neg_loglik") = true_neg_ll,
-		Named("neg_ll")     = true_neg_ll,
-		Named("loglik")     = R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL,
-		Named("fisher_information") = information,
-		Named("gradient_norm") = gradient_norm,
-		Named("variance_boundary_hit") = variance_boundary_hit
-	);
+	Eigen::MatrixXd neg_information = -information;
+	return edi::to_rcpp_list(edi::ResultMap()
+		.set("params", par)
+		.set("b", par.head(p))
+		.set("log_sigma", par[total - 1])
+		.set("ssq_b_T", ssq_b_T)
+		.set("vcov", vcov)
+		.set("score", score)
+		.set("observed_information", information)
+		.set("information", information)
+		.set("information_type", std::string("observed"))
+		.set("hessian", neg_information)
+		.set("converged", converged)
+		.set("neg_loglik", true_neg_ll)
+		.set("neg_ll", true_neg_ll)
+		.set("loglik", R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL)
+		.set("fisher_information", information)
+		.set("gradient_norm", gradient_norm)
+		.set("variance_boundary_hit", variance_boundary_hit));
 }

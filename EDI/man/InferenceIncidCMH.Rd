@@ -52,7 +52,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceIncidCMH-clone}{\code{InferenceIncidCMH$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAllSimpleMeanDiff.html'><code>InferenceAllSimpleMeanDiff</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAllSimpleMeanDiff.html'><code>InferenceAllSimpleMeanDiff</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidCMH-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidCMH-compute_asymp_confidence_interval}{}}}

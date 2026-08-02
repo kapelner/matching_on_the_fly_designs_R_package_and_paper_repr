@@ -85,7 +85,7 @@ seq_des_inf$compute_rand_bootstrap_two_sided_pval(B = 501)
     \item \href{#method-InferenceRandBootstrap-clone}{\code{InferenceRandBootstrap$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceNonParamBootstrap.html'><code>InferenceNonParamBootstrap</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceNonParamBootstrap.html'><code>InferenceNonParamBootstrap</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRandBootstrap-approximate_rand_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceRandBootstrap-approximate_rand_bootstrap_distribution_beta_hat_T}{}}}

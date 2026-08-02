@@ -31,7 +31,7 @@ rejected and treated as non-estimable.
     \item \href{#method-InferenceAbstractKKLWACoxIVWC-clone}{\code{InferenceAbstractKKLWACoxIVWC$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKLWACoxIVWC-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKLWACoxIVWC-initialize}{}}}

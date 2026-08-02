@@ -1,9 +1,15 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <Rmath.h>
+#endif
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 namespace {
 
@@ -275,6 +281,7 @@ ModelResult fast_beta_regression_internal(const Eigen::Ref<const Eigen::MatrixXd
 //' @return A numeric vector representing the score.
 //' @export
 //' @keywords internal
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 Eigen::VectorXd get_beta_regression_score_cpp(SEXP X_sexp,
                                               SEXP y_sexp,
@@ -534,3 +541,4 @@ List fast_beta_regression_with_var_cpp(SEXP X_sexp,
 		.set("converged", fit.converged)
 		.set("fisher_information", fit.XtWX));
 	}
+#endif // EDI_CORE_ONLY

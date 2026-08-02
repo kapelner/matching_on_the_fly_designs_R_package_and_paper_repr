@@ -303,21 +303,7 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 			}
 			p_value
 		},
-		reduce_design_matrix_once = function(X, j_treat, cache_key){
-			cached = private$cached_values[[cache_key]]
-			if (!is.null(cached)) return(cached)
-			qr_X = qr(X)
-			if (qr_X$rank < ncol(X)){
-				keep = qr_X$pivot[seq_len(qr_X$rank)]
-				if (!(j_treat %in% keep)) keep[qr_X$rank] = j_treat
-				keep = sort(unique(keep))
-				X = X[, keep, drop = FALSE]
-				j_treat = which(keep == j_treat)
-			}
-			cached = list(X = X, j_treat = j_treat)
-			private$cached_values[[cache_key]] = cached
-			cached
-		},
+		# reduce_design_matrix_once() is inherited from InferenceMixinKKPassThroughCompound.
 		assert_finite_se = function(){
 			if (!is.finite(private$cached_values$s_beta_hat_T)){
 				return(invisible(NULL))

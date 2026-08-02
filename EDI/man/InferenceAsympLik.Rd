@@ -44,7 +44,7 @@ supporting parametric-bootstrap LR calibration — inherit instead from
     \item \href{#method-InferenceAsympLik-clone}{\code{InferenceAsympLik$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceMLEorKMSummaryTable.html'><code>InferenceMLEorKMSummaryTable</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceMLEorKMSummaryTable.html'><code>InferenceMLEorKMSummaryTable</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsympLik-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsympLik-compute_asymp_confidence_interval}{}}}

@@ -1,13 +1,17 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
-// [[Rcpp::depends(RcppNumerical)]]
-#include <RcppNumerical.h>
+#endif
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 namespace {
 
@@ -52,7 +56,7 @@ inline void score_weighted_crossprod_colwise_assign(const Eigen::MatrixXd& X,
     }
 }
 
-class LogisticLbfgsObjective : public Numer::MFuncGrad {
+class LogisticLbfgsObjective {
 private:
     const Eigen::Ref<const Eigen::MatrixXd> m_X;
     const Eigen::Ref<const Eigen::VectorXd> m_y;
@@ -62,17 +66,17 @@ private:
     int m_n;
 
 public:
-    LogisticLbfgsObjective(const Eigen::Ref<const Eigen::MatrixXd>& X, const Eigen::Ref<const Eigen::VectorXd>& y, 
-                           const Eigen::Ref<const Eigen::VectorXd>& weights, const Eigen::Ref<const Eigen::VectorXd>& eta_fixed, 
+    LogisticLbfgsObjective(const Eigen::Ref<const Eigen::MatrixXd>& X, const Eigen::Ref<const Eigen::VectorXd>& y,
+                           const Eigen::Ref<const Eigen::VectorXd>& weights, const Eigen::Ref<const Eigen::VectorXd>& eta_fixed,
                            bool use_weights)
-        : m_X(X), m_y(y), m_weights(weights), m_eta_fixed(eta_fixed), 
+        : m_X(X), m_y(y), m_weights(weights), m_eta_fixed(eta_fixed),
           m_use_weights(use_weights), m_n(X.rows()) {}
 
-    virtual double f_grad(Numer::Constvec& beta, Numer::Refvec grad) override {
+    double operator()(const Eigen::VectorXd& beta, Eigen::VectorXd& grad) {
         Eigen::VectorXd eta = m_eta_fixed + m_X * beta;
         double neg_ll = 0.0;
         Eigen::VectorXd diff(m_n);
-        
+
         for (int i = 0; i < m_n; ++i) {
             double ei = eta[i];
             double prob = plogis_manual(ei);
@@ -126,21 +130,21 @@ ModelResult fast_logistic_regression_internal(const Eigen::Ref<const Eigen::Matr
         for (int j = 0; j < p_free; ++j) X_free.col(j) = X.col(fixed_spec.free_idx[j]);
 
         bool converged = true;
-        double fopt = NA_REAL;
-        double grad_norm = NA_REAL;
+        double fopt = std::numeric_limits<double>::quiet_NaN();
+        double grad_norm = std::numeric_limits<double>::quiet_NaN();
         if (p_free > 0) {
             LogisticLbfgsObjective nll(X_free, y, weights, eta_fixed, use_weights);
-            int status = Numer::optim_lbfgs(nll, beta_free, fopt, maxit, tol, tol);
-            converged = (status >= 0) && beta_free.allFinite();
-            // Numer::optim_lbfgs owns its LBFGSSolver locally and does not expose
-            // its internal gradient norm, so this is one extra gradient
-            // evaluation at the returned point (not free, but cheap relative to
-            // the whole optimization).
-            if (beta_free.allFinite()) {
-                Eigen::VectorXd grad(p_free);
-                nll.f_grad(beta_free, grad);
-                grad_norm = grad.norm();
-            }
+            // Same solver/parameter setup as RcppNumerical's optim_lbfgs
+            // (epsilon=epsilon_rel=tol, past=1, delta=tol, max_linesearch=100,
+            // backtracking strong-Wolfe line search) -- swapped in because
+            // optim_lbfgs's own failure path calls Rcpp::warning(), a real R
+            // dependency baked into RcppNumerical's vendored wrapper.h that
+            // can't be satisfied under EDI_CORE_ONLY.
+            LikelihoodFitResult fit = optimize_likelihood_lbfgs(nll, beta_free, maxit, tol);
+            beta_free = fit.params;
+            fopt = fit.value;
+            grad_norm = fit.gradient_norm;
+            converged = fit.converged && beta_free.allFinite();
         }
 
         ModelResult res;
@@ -155,7 +159,7 @@ ModelResult fast_logistic_regression_internal(const Eigen::Ref<const Eigen::Matr
             w_diag.array() = w_diag.array().max(1e-10);
             res.XtWX = expand_free_covariance(p, fixed_spec, weighted_crossprod(X_free, w_diag), false);
         }
-        res.iterations = NA_INTEGER;
+        res.iterations = std::numeric_limits<int>::min();
         res.converged = converged;
         return res;
     }
@@ -172,7 +176,7 @@ ModelResult fast_logistic_regression_internal(const Eigen::Ref<const Eigen::Matr
     Eigen::VectorXd diff(n);
     bool converged = false;
     int iterations = 0;
-    double last_grad_norm = NA_REAL;
+    double last_grad_norm = std::numeric_limits<double>::quiet_NaN();
 
     for (int iter = 0; iter < maxit; iter++) {
         iterations++;
@@ -241,6 +245,7 @@ ModelResult fast_logistic_regression_internal(const Eigen::Ref<const Eigen::Matr
     return res;
 }
 
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 Eigen::VectorXd get_logistic_regression_score_cpp(SEXP X_sexp, SEXP y_sexp, SEXP beta_sexp) {
     NumericMatrix X_r(X_sexp);
@@ -452,3 +457,4 @@ List fast_logistic_regression_with_var_cpp(SEXP X_sexp, SEXP y_sexp, int j = 2,
         .set("iterations", res.iterations)
         .set("gradient_norm", res.gradient_norm));
 }
+#endif // EDI_CORE_ONLY

@@ -24,7 +24,7 @@ Abstract class for asymptotic inference.
     \item \href{#method-InferenceAsymp-clone}{\code{InferenceAsymp$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceJackknife.html'><code>InferenceJackknife</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceJackknife.html'><code>InferenceJackknife</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsymp-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsymp-compute_asymp_confidence_interval}{}}}

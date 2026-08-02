@@ -35,7 +35,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceContinKKOLSIVWC-clone}{\code{InferenceContinKKOLSIVWC$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKOLSIVWC-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKOLSIVWC-approximate_bootstrap_distribution_beta_hat_T}{}}}

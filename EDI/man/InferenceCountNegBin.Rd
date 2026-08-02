@@ -27,16 +27,14 @@ inf$compute_estimate()
     \item \href{#method-InferenceCountNegBin-initialize}{\code{InferenceCountNegBin$new()}}
     \item \href{#method-InferenceCountNegBin-compute_estimate_with_bootstrap_weights}{\code{InferenceCountNegBin$compute_estimate_with_bootstrap_weights()}}
     \item \href{#method-InferenceCountNegBin-compute_jackknife_estimate}{\code{InferenceCountNegBin$compute_jackknife_estimate()}}
-    \item \href{#method-InferenceCountNegBin-compute_jackknife_corrected_estimate}{\code{InferenceCountNegBin$compute_jackknife_corrected_estimate()}}
     \item \href{#method-InferenceCountNegBin-compute_jackknife_bias_estimate}{\code{InferenceCountNegBin$compute_jackknife_bias_estimate()}}
     \item \href{#method-InferenceCountNegBin-compute_jackknife_std_error}{\code{InferenceCountNegBin$compute_jackknife_std_error()}}
-    \item \href{#method-InferenceCountNegBin-compute_jackknife_standard_error}{\code{InferenceCountNegBin$compute_jackknife_standard_error()}}
     \item \href{#method-InferenceCountNegBin-compute_jackknife_wald_two_sided_pval}{\code{InferenceCountNegBin$compute_jackknife_wald_two_sided_pval()}}
     \item \href{#method-InferenceCountNegBin-compute_jackknife_wald_confidence_interval}{\code{InferenceCountNegBin$compute_jackknife_wald_confidence_interval()}}
     \item \href{#method-InferenceCountNegBin-clone}{\code{InferenceCountNegBin$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceCountLikelihood.html'><code>InferenceCountLikelihood</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceCountLikelihood.html'><code>InferenceCountLikelihood</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountNegBin-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountNegBin-initialize}{}}}
@@ -113,25 +111,6 @@ design's imputed covariates.}
 }
 
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceCountNegBin-compute_jackknife_corrected_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceCountNegBin-compute_jackknife_corrected_estimate}{}}}
-\subsection{\code{InferenceCountNegBin$compute_jackknife_corrected_estimate()}}{
-  Non-estimable jackknife bias-corrected estimate.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceCountNegBin$compute_jackknife_corrected_estimate(unit = "auto")}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{unit}}{Deletion unit. Default \code{"auto"}.}
-    }
-    \if{html}{\out{</div>}}
-  }
-}
-
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountNegBin-compute_jackknife_bias_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountNegBin-compute_jackknife_bias_estimate}{}}}
 \subsection{\code{InferenceCountNegBin$compute_jackknife_bias_estimate()}}{
@@ -158,25 +137,6 @@ design's imputed covariates.}
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{InferenceCountNegBin$compute_jackknife_std_error(unit = "auto")}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{unit}}{Deletion unit. Default \code{"auto"}.}
-    }
-    \if{html}{\out{</div>}}
-  }
-}
-
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceCountNegBin-compute_jackknife_standard_error"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceCountNegBin-compute_jackknife_standard_error}{}}}
-\subsection{\code{InferenceCountNegBin$compute_jackknife_standard_error()}}{
-  Alias for \code{compute_jackknife_std_error()}.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceCountNegBin$compute_jackknife_standard_error(unit = "auto")}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{

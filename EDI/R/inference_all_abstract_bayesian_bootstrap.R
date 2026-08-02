@@ -107,6 +107,7 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 			}
 			if (isTRUE(debug)) {
 				run_debug_iter = function(draw, worker_inf = NULL, worker_state = NULL) {
+					private$check_bootstrap_replicate_deadline("Bayesian bootstrap debug replicate")
 					iter_warns = character(0)
 					iter_errs = character(0)
 					iter_val = withCallingHandlers(
@@ -124,6 +125,7 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 						}, error = function(e) { iter_errs <<- c(iter_errs, conditionMessage(e)); NA_real_ }),
 						warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
 					)
+					private$check_bootstrap_replicate_deadline("Bayesian bootstrap debug replicate")
 					list(val = as.numeric(iter_val)[1L], errors = iter_errs, warnings = iter_warns)
 				}
 				actual_debug_cores = private$effective_parallel_cores("bootstrap", self$num_cores)
@@ -195,7 +197,9 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 					}
 				}
 				system.time(do_warmup_iter())
+				private$check_bootstrap_replicate_deadline("Bayesian bootstrap warmup")
 				t_boot_warmup = system.time(do_warmup_iter())[[3]]
+				private$check_bootstrap_replicate_deadline("Bayesian bootstrap warmup")
 				fork_overhead_estimate = if (!is.null(get_global_fork_cluster())) 0.01 else 0.5
 				if (!(t_boot_warmup * B > fork_overhead_estimate * actual_cores)) actual_cores = 1L
 			}
@@ -209,15 +213,18 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 				unlist(private$par_lapply(
 					seq_along(draws),
 					function(idx) {
+						private$check_bootstrap_replicate_deadline("Bayesian bootstrap replicate")
 						worker_inf = inf_template$duplicate(make_fork_cluster = FALSE)
 						draw = draws[[idx]]
-						tryCatch({
+						out = tryCatch({
 							worker_inf$.__enclos_env__$private$current_bayesian_bootstrap_context = draw$context
 							as.numeric(worker_inf$compute_estimate_with_bootstrap_weights(
 								subject_or_block_weights = draw$subject_or_block_weights,
 								estimate_only = TRUE
 							))[1L]
 						}, error = function(e) NA_real_)
+						private$check_bootstrap_replicate_deadline("Bayesian bootstrap replicate")
+						out
 					},
 					n_cores = actual_cores,
 					show_progress = show_progress,
@@ -626,6 +633,7 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 				pb_obj
 			} else NULL
 			for (b in seq_len(B)) {
+				private$check_bootstrap_replicate_deadline("Bayesian bootstrap statistic replicate")
 				draw = private$bayesian_bootstrap_sample_weights(weighting_unit_type = weighting_unit_type)
 				tryCatch({
 					inf_work$.__enclos_env__$private$current_bayesian_bootstrap_context = draw$context
@@ -637,6 +645,7 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 					if (is.finite(theta_b)) stats_mat[b, 1L] = theta_b
 					if (is.finite(se_b) && se_b > 0) stats_mat[b, 2L] = se_b
 				}, error = function(e) NULL)
+				private$check_bootstrap_replicate_deadline("Bayesian bootstrap statistic replicate")
 				if (!is.null(pb)) utils::setTxtProgressBar(pb, b)
 			}
 			result = list(theta = stats_mat[, 1L], se = stats_mat[, 2L])

@@ -1,5 +1,12 @@
 test_that("resampling draw contracts define comparable hooks", {
-	ops = c("rand", "non_param_boot", "rand_bootstrap", "bayesian_boot")
+	ops = c(
+		"rand",
+		"non_param_boot",
+		"m_out_of_n_boot",
+		"subsampling",
+		"rand_bootstrap",
+		"bayesian_boot"
+	)
 	expect_setequal(names(EDI_RESAMPLING_DRAW_CONTRACTS), ops)
 
 	required_fields = c(
@@ -21,7 +28,14 @@ test_that("resampling draw contracts define comparable hooks", {
 	}
 	expect_equal(
 		unname(vapply(contracts, `[[`, character(1), "cache_name")),
-		c("rand_distr_cache", "boot_distr_cache", "rand_boot_distr_cache", "bayes_boot_distr_cache")
+		c(
+			"rand_distr_cache",
+			"boot_distr_cache",
+			"m_out_of_n_boot_distr_cache",
+			"subsampling_distr_cache",
+			"rand_boot_distr_cache",
+			"bayes_boot_distr_cache"
+		)
 	)
 })
 

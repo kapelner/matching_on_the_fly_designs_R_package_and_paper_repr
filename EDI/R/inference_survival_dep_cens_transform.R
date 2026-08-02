@@ -71,11 +71,6 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 			private$cache_nonestimable_se("dep_cens_transform_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Reports jackknife bias-corrected estimate as unavailable for this model.
-		#' @param unit Deletion unit. Default \code{"auto"}.
-		compute_jackknife_corrected_estimate = function(unit = "auto"){
-			self$compute_jackknife_estimate(unit = unit)
-		},
 		#' @description Reports jackknife bias estimate as unavailable for this model.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_bias_estimate = function(unit = "auto"){
@@ -89,11 +84,6 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 			tryCatch(self$compute_estimate(estimate_only = TRUE), error = function(e) NA_real_)
 			private$cache_nonestimable_se("dep_cens_transform_jackknife_not_supported")
 			NA_real_
-		},
-		#' @description Alias for \code{compute_jackknife_std_error()}.
-		#' @param unit Deletion unit. Default \code{"auto"}.
-		compute_jackknife_standard_error = function(unit = "auto"){
-			self$compute_jackknife_std_error(unit = unit)
 		},
 		#' @description Reports jackknife Wald two-sided p-value as unavailable for this model.
 		#' @param delta Null treatment-effect value. Default 0.

@@ -34,7 +34,7 @@ non-estimable.
     \item \href{#method-InferenceAbstractKKSurvivalRankRegrIVWC-clone}{\code{InferenceAbstractKKSurvivalRankRegrIVWC$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKSurvivalRankRegrIVWC-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKSurvivalRankRegrIVWC-initialize}{}}}

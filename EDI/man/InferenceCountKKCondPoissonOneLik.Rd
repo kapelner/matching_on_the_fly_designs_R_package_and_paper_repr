@@ -30,7 +30,7 @@ Conditional-Poisson Inference for KK Designs with Combined Likelihood
     \item \href{#method-InferenceCountKKCondPoissonOneLik-clone}{\code{InferenceCountKKCondPoissonOneLik$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountKKCondPoissonOneLik-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountKKCondPoissonOneLik-initialize}{}}}

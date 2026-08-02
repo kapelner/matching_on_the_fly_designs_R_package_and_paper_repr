@@ -33,7 +33,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceSurvivalKKRankRegrIVWC-clone}{\code{InferenceSurvivalKKRankRegrIVWC$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAbstractKKSurvivalRankRegrIVWC.html'><code>InferenceAbstractKKSurvivalRankRegrIVWC</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAbstractKKSurvivalRankRegrIVWC.html'><code>InferenceAbstractKKSurvivalRankRegrIVWC</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKKRankRegrIVWC-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKKRankRegrIVWC-initialize}{}}}

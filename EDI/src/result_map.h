@@ -3,10 +3,19 @@
 
 // Rcpp-free core boundary: no <Rcpp.h> here, only Eigen types. Model-fitting
 // core functions build a ResultMap; the thin exported wrapper converts it to
-// an Rcpp::List via result_map_rcpp.h's to_rcpp_list(). See
-// package_metadata/sexp_removal_rcppeigen_conversion_spec.md.
-
-#include <RcppEigen.h>  // for Eigen::VectorXd/MatrixXd only -- not for SEXP use
+// an Rcpp::List via result_map_rcpp.h's to_rcpp_list() (Python's pybind11
+// wrapper does the analogous thing via result_map_pybind.h's to_py_dict()).
+// See package_metadata/sexp_removal_rcppeigen_conversion_spec.md and
+// package_metadata/python_bindings_package_spec.md.
+//
+// EDI_CORE_ONLY: see fast_gamma_functions.h for the convention. This header
+// only ever needed Eigen::VectorXd/MatrixXd (never SEXP), so the two
+// branches differ only in which header supplies those types.
+#ifdef EDI_CORE_ONLY
+#include <Eigen/Dense>
+#else
+#include <RcppEigen.h>
+#endif
 #include <string>
 #include <utility>
 #include <variant>

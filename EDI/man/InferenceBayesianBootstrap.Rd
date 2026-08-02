@@ -21,7 +21,7 @@ top of the existing nonparametric bootstrap infrastructure.
     \item \href{#method-InferenceBayesianBootstrap-clone}{\code{InferenceBayesianBootstrap$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceRandBootstrapCI.html'><code>InferenceRandBootstrapCI</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceRandBootstrapCI.html'><code>InferenceRandBootstrapCI</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceBayesianBootstrap-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceBayesianBootstrap-compute_estimate_with_bootstrap_weights}{}}}

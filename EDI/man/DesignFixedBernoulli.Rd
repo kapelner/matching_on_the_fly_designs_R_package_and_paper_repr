@@ -22,7 +22,7 @@ des$assign_w_to_all_subjects()
     \item \href{#method-DesignFixedBernoulli-clone}{\code{DesignFixedBernoulli$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/DesignFixed.html'><code>DesignFixed</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/DesignFixed.html'><code>DesignFixed</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedBernoulli-is_a_bernoulli_capable"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedBernoulli-is_a_bernoulli_capable}{}}}

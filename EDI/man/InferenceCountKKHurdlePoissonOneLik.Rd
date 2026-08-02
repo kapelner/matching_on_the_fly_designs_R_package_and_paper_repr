@@ -30,7 +30,7 @@ KK Hurdle Poisson Combined-Likelihood Inference for Count Responses
     \item \href{#method-InferenceCountKKHurdlePoissonOneLik-clone}{\code{InferenceCountKKHurdlePoissonOneLik$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountKKHurdlePoissonOneLik-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountKKHurdlePoissonOneLik-initialize}{}}}

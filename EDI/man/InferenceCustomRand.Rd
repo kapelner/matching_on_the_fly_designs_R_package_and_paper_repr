@@ -20,7 +20,7 @@ behavior.
     \item \href{#method-InferenceCustomRand-clone}{\code{InferenceCustomRand$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceRand.html'><code>InferenceRand</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceRand.html'><code>InferenceRand</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCustomRand-fit"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCustomRand-fit}{}}}

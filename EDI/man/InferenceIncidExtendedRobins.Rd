@@ -35,7 +35,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceIncidExtendedRobins-clone}{\code{InferenceIncidExtendedRobins$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAllSimpleMeanDiff.html'><code>InferenceAllSimpleMeanDiff</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAllSimpleMeanDiff.html'><code>InferenceAllSimpleMeanDiff</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidExtendedRobins-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidExtendedRobins-compute_asymp_confidence_interval}{}}}

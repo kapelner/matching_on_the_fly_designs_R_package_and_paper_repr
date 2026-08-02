@@ -21,7 +21,7 @@ Clayton Copula Combined-Likelihood Inference for KK Designs
     \item \href{#method-InferenceSurvivalKKClaytonCopulaOneLik-clone}{\code{InferenceSurvivalKKClaytonCopulaOneLik$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKKClaytonCopulaOneLik-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKKClaytonCopulaOneLik-initialize}{}}}

@@ -34,7 +34,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceOrdinalKKCondAdjCatLogitRegr-clone}{\code{InferenceOrdinalKKCondAdjCatLogitRegr$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAsympLik.html'><code>InferenceAsympLik</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAsympLik.html'><code>InferenceAsympLik</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalKKCondAdjCatLogitRegr-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalKKCondAdjCatLogitRegr-initialize}{}}}

@@ -1,12 +1,18 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
+#endif
 #include <cmath>
 #include <vector>
 #include <string>
 #include <stdexcept>
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 using namespace Eigen;
 
 ModelResult fast_logistic_regression_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
@@ -275,6 +281,7 @@ GEEResult gee_pairs_singletons_cpp_impl(const Eigen::Ref<const MatrixXd>& X,
     return {beta, alpha, BI * Meat * BI, quasi_loglik, ScoreFinal, Bread, converged, std::min(maxit, iter + 1)};
 }
 
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 List gee_pairs_singletons_weighted_cpp(SEXP X_r, SEXP y_r, SEXP group_id_r, std::string family_str,
                                        SEXP weights_r,
@@ -362,3 +369,4 @@ List gee_pairs_singletons_cpp(SEXP X_r, SEXP y_r, SEXP group_id_r, std::string f
         .set("converged", res.converged)
         .set("niter", res.niter));
 }
+#endif // EDI_CORE_ONLY

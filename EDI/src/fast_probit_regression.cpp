@@ -1,11 +1,15 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
-// [[Rcpp::depends(RcppNumerical)]]
-#include <RcppNumerical.h>
+#endif
 #include <stdexcept>
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 namespace {
 
@@ -60,7 +64,7 @@ inline void score_weighted_crossprod_colwise_assign(const Eigen::MatrixXd& X,
     }
 }
 
-class ProbitLbfgsObjective : public Numer::MFuncGrad {
+class ProbitLbfgsObjective {
 private:
     const Eigen::Ref<const RowMajorMatrixXd> m_X;
     const Eigen::Ref<const Eigen::VectorXd> m_y;
@@ -75,10 +79,10 @@ public:
                          const Eigen::Ref<const Eigen::VectorXd>& weights,
                          const Eigen::Ref<const Eigen::VectorXd>& eta_fixed,
                          bool use_weights) :
-        m_X(X), m_y(y), m_weights(weights), m_eta_fixed(eta_fixed), 
+        m_X(X), m_y(y), m_weights(weights), m_eta_fixed(eta_fixed),
         m_use_weights(use_weights), m_n(X.rows()) {}
 
-    virtual double f_grad(Numer::Constvec& beta, Numer::Refvec grad) override {
+    double operator()(const Eigen::VectorXd& beta, Eigen::VectorXd& grad) {
         const Eigen::VectorXd eta = m_X * beta + m_eta_fixed;
         Eigen::VectorXd gen_res(m_n);
         double f = 0.0;
@@ -153,12 +157,18 @@ ModelResult fast_probit_regression_internal(
     res.converged = false;
 
     if (optimization_alg == "lbfgs") {
-        double fopt = 0.0;
+        // Same solver/parameter setup as RcppNumerical's optim_lbfgs
+        // (epsilon=epsilon_rel=tol, past=1, delta=tol, max_linesearch=100,
+        // backtracking strong-Wolfe line search) -- swapped in because
+        // optim_lbfgs's own failure path calls Rcpp::warning(), a real R
+        // dependency baked into RcppNumerical's vendored wrapper.h that
+        // can't be satisfied under EDI_CORE_ONLY.
         ProbitLbfgsObjective obj(X_free, y_eigen, weights_eigen, eta_fixed, use_weights);
-        int status = Numer::optim_lbfgs(obj, beta_free, fopt, maxit, tol, tol);
-        res.converged = (status >= 0);
-        res.iterations = NA_INTEGER;
-        res.neg_ll = fopt;
+        LikelihoodFitResult fit = optimize_likelihood_lbfgs(obj, beta_free, maxit, tol);
+        beta_free = fit.params;
+        res.converged = fit.converged;
+        res.iterations = std::numeric_limits<int>::min();
+        res.neg_ll = fit.value;
     } else {
         Eigen::VectorXd mu(n);
         Eigen::VectorXd w(n);
@@ -249,6 +259,7 @@ ModelResult fast_probit_regression_internal(
     return res;
 }
 
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 Eigen::VectorXd get_probit_regression_score_cpp(SEXP X_sexp, SEXP y_sexp, SEXP beta_sexp) {
     NumericMatrix X_r(X_sexp);
@@ -456,3 +467,4 @@ List fast_probit_regression_with_var_cpp(SEXP X_sexp, SEXP y_sexp, int j = 2,
         .set("converged", res.converged)
         .set("iterations", res.iterations));
 }
+#endif // EDI_CORE_ONLY

@@ -52,7 +52,7 @@ infer
     \item \href{#method-InferenceContinKKQuantileRegrOneLik-clone}{\code{InferenceContinKKQuantileRegrOneLik$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAbstractKKQuantileRegrOneLik.html'><code>InferenceAbstractKKQuantileRegrOneLik</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAbstractKKQuantileRegrOneLik.html'><code>InferenceAbstractKKQuantileRegrOneLik</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKQuantileRegrOneLik-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKQuantileRegrOneLik-initialize}{}}}

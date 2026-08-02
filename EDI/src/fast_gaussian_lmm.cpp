@@ -9,6 +9,7 @@
 // Groups: matched pairs have size 2; reservoir subjects have size 1.
 
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <cmath>
 #include <vector>
@@ -455,13 +456,13 @@ List fast_gaussian_lmm_cpp(
     b_r.names() = b_names;
 
     if (estimate_only) {
-        return List::create(
-            Named("b")         = b_r,
-            Named("ssq_b_T")   = NA_REAL,
-            Named("neg_loglik")= neg_ll,
-            Named("converged") = converged,
-            Named("niter")     = niter
-        );
+        List out = edi::to_rcpp_list(edi::ResultMap()
+            .set("ssq_b_T", NA_REAL)
+            .set("neg_loglik", neg_ll)
+            .set("converged", converged)
+            .set("niter", niter));
+        out["b"] = b_r;
+        return out;
     }
 
     // Variance-covariance via Hessian of neg_ll (reuses obj's scratch buffers)
@@ -470,8 +471,7 @@ List fast_gaussian_lmm_cpp(
     Eigen::LDLT<Eigen::MatrixXd> ldlt(H_free);
 
     double ssq_b_T = NA_REAL;
-    NumericMatrix vcov_r(p + 2, p + 2);
-    std::fill(vcov_r.begin(), vcov_r.end(), NA_REAL);
+    Eigen::MatrixXd vcov_r = Eigen::MatrixXd::Constant(p + 2, p + 2, NA_REAL);
 
     if (ldlt.info() == Eigen::Success) {
         Eigen::MatrixXd V_free = ldlt.solve(Eigen::MatrixXd::Identity(H_free.rows(), H_free.cols()));
@@ -484,16 +484,16 @@ List fast_gaussian_lmm_cpp(
         }
     }
 
-    return List::create(
-        Named("b")         = b_r,
-        Named("params")    = b_r,
-        Named("ssq_b_T")   = ssq_b_T,
-        Named("vcov")      = vcov_r,
-        Named("neg_loglik")= neg_ll,
-        Named("converged") = converged,
-        Named("niter")     = niter,
-        Named("fisher_information") = H
-    );
+    List out = edi::to_rcpp_list(edi::ResultMap()
+        .set("ssq_b_T", ssq_b_T)
+        .set("vcov", vcov_r)
+        .set("neg_loglik", neg_ll)
+        .set("converged", converged)
+        .set("niter", niter)
+        .set("fisher_information", H));
+    out["b"] = b_r;
+    out["params"] = b_r;
+    return out;
 }
 
 // ── R-exported: GLS estimator with fixed variance components ─────────────────

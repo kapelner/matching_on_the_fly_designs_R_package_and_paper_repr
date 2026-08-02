@@ -31,7 +31,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceIncidKKGCompRiskDiff-clone}{\code{InferenceIncidKKGCompRiskDiff$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceIncidKKGCompAbstract</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceIncidKKGCompAbstract</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidKKGCompRiskDiff-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidKKGCompRiskDiff-clone}{}}}

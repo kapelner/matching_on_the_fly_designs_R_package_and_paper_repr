@@ -30,7 +30,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceBaiAdjustedTKK21-clone}{\code{InferenceBaiAdjustedTKK21$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceBaiAdjustedT.html'><code>InferenceBaiAdjustedT</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceBaiAdjustedT.html'><code>InferenceBaiAdjustedT</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceBaiAdjustedTKK21-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceBaiAdjustedTKK21-clone}{}}}

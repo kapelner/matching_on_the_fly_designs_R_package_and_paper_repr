@@ -1,9 +1,15 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <Rmath.h>
+#endif
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 struct DigammaFunctor {
 	double operator()(double x) const {
@@ -409,6 +415,7 @@ private:
 	Eigen::VectorXd m_grad_gamma1;
 };
 
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 SEXP get_zero_one_inflated_beta_score_cpp(SEXP X_sexp,
                                          SEXP X_zero_one_sexp,
@@ -594,3 +601,4 @@ List fast_zero_one_inflated_beta_cpp(SEXP X_sexp,
 		.set("information_type", std::string("observed"))
 		.set("hessian", neg_observed_information));
 }
+#endif // EDI_CORE_ONLY

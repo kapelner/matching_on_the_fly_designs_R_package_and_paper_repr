@@ -16,7 +16,7 @@ Weibull Frailty Combined-Likelihood Inference for KK Designs
     \item \href{#method-InferenceSurvivalKKWeibullFrailtyOneLik-clone}{\code{InferenceSurvivalKKWeibullFrailtyOneLik$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyOneLik.html'><code>InferenceAbstractKKWeibullFrailtyOneLik</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyOneLik.html'><code>InferenceAbstractKKWeibullFrailtyOneLik</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKKWeibullFrailtyOneLik-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKKWeibullFrailtyOneLik-initialize}{}}}

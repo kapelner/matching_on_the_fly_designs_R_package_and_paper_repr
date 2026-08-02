@@ -31,7 +31,7 @@ inf$compute_estimate()
     \item \href{#method-InferencePropFractionalLogit-clone}{\code{InferencePropFractionalLogit$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceAsympLikStdModCacheNoParamBootstrap</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceAsympLikStdModCacheNoParamBootstrap</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropFractionalLogit-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropFractionalLogit-initialize}{}}}

@@ -23,7 +23,7 @@ reservoir component uses the standard Bernoulli log-likelihood.
     \item \href{#method-InferenceIncidKKCondLogitOneLik-clone}{\code{InferenceIncidKKCondLogitOneLik$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidKKCondLogitOneLik-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidKKCondLogitOneLik-initialize}{}}}

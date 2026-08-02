@@ -39,7 +39,7 @@ seq_des_inf$compute_rand_bootstrap_confidence_interval(alpha = 0.05, B = 501)
     \item \href{#method-InferenceRandBootstrapCI-clone}{\code{InferenceRandBootstrapCI$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceRandBootstrap.html'><code>InferenceRandBootstrap</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceRandBootstrap.html'><code>InferenceRandBootstrap</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRandBootstrapCI-compute_rand_bootstrap_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceRandBootstrapCI-compute_rand_bootstrap_confidence_interval}{}}}

@@ -26,7 +26,7 @@ des$assign_w_to_all_subjects()
     \item \href{#method-DesignFixedCluster-clone}{\code{DesignFixedCluster$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/DesignFixed.html'><code>DesignFixed</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/DesignFixed.html'><code>DesignFixed</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedCluster-is_a_cluster_capable"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedCluster-is_a_cluster_capable}{}}}

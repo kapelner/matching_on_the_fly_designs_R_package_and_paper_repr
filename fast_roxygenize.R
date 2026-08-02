@@ -25,6 +25,7 @@ load_source_with_filenames = function(path) {
 # it from `object_defaults.r6class` (which has the block in scope) and prefer
 # it in `extract_r6_methods` (which only receives the class generator).
 .fast_roxygenize_current_block_file = new.env(parent = emptyenv())
+.fast_roxygenize_package_name = desc::desc_get("Package", file = file.path("EDI", "DESCRIPTION"))[[1]]
 
 original_object_defaults_r6class = roxygen2:::object_defaults.r6class
 patched_object_defaults_r6class = function(x, block) {
@@ -85,8 +86,8 @@ patched_r6_extract_superclasses = function(r6data, env, class) {
 	}
 	pkgs = super$classes$package[match(cls, super$classes$classname)]
 	current_package = roxygen2:::roxy_meta_get("current_package")
-	if (is.null(current_package) || is.na(current_package)) {
-		current_package = ""
+	if (is.null(current_package) || is.na(current_package) || !nzchar(current_package)) {
+		current_package = .fast_roxygenize_package_name
 	}
 	pkgs[is.na(pkgs) | !nzchar(pkgs)] = current_package
 	ht = purrr::map2_lgl(cls, pkgs, roxygen2:::has_topic)
@@ -103,8 +104,8 @@ patched_r6_extract_inherited_methods = function(r6data) {
 		return(inherited)
 	}
 	current_package = roxygen2:::roxy_meta_get("current_package")
-	if (is.null(current_package) || is.na(current_package)) {
-		current_package = ""
+	if (is.null(current_package) || is.na(current_package) || !nzchar(current_package)) {
+		current_package = .fast_roxygenize_package_name
 	}
 	inherited$package[is.na(inherited$package) | !nzchar(inherited$package)] = current_package
 	inherited
@@ -112,6 +113,13 @@ patched_r6_extract_inherited_methods = function(r6data) {
 unlockBinding("r6_extract_inherited_methods", asNamespace("roxygen2"))
 assign("r6_extract_inherited_methods", patched_r6_extract_inherited_methods, envir = asNamespace("roxygen2"))
 lockBinding("r6_extract_inherited_methods", asNamespace("roxygen2"))
+
+# format.rd_r6_inherited() is no longer monkey-patched here: the empty/NA
+# package fallback this used to provide (for superclasses loaded via
+# load_source_with_filenames() below, which don't go through pkgload) is now
+# handled directly in roxygen2's own format.rd_r6_inherited(), which also
+# respects the deep_public_method_links option -- patching it here would
+# silently freeze out that flag with a stale, hardcoded rendering.
 
 Rcpp::compileAttributes("EDI")
 roxygen2::roxygenize("EDI", load_code = load_source_with_filenames)

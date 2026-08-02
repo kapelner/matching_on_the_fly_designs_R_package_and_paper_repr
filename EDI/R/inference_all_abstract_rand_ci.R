@@ -90,6 +90,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			}
 			ci_search_control = private$normalize_randomization_ci_search_control(ci_search_control, r, pval_epsilon)
 			ci_search_control$mc_stop_threshold = alpha / 2
+			private$check_randomization_ci_deadline(ci_search_control, "Randomization CI setup")
 			dispatch_cores = private$effective_parallel_cores("rand_ci", self$num_cores)
 			if (dispatch_cores != self$num_cores) {
 				serial_inf = self$duplicate(verbose = private$verbose)
@@ -195,6 +196,16 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 	),
 	private = list(
 		is_a_rand_ci = function() TRUE,
+		check_randomization_ci_deadline = function(ci_search_control = NULL, label = "Randomization CI bisection"){
+			deadline = if (is.list(ci_search_control)) ci_search_control$timeout_deadline else NULL
+			if (is.null(deadline)) deadline = getOption("EDI.ci_timeout_deadline", default = NA_real_)
+			deadline = suppressWarnings(as.numeric(deadline)[1L])
+			if (is.na(deadline) || !is.finite(deadline)) return(invisible(FALSE))
+			if (unname(proc.time()[["elapsed"]]) >= deadline) {
+				stop(paste0(label, " reached elapsed time limit"), call. = FALSE)
+			}
+			invisible(FALSE)
+		},
 		assert_no_incidence_only_randomization_args = function(resp_type, type, args_for_type){
 			if (should_run_asserts()) {
 				if (!is.null(type)) {
@@ -243,7 +254,8 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 				mc_min_draws = min(as.integer(r), max(100L, 2L * default_mc_batch)),
 				mc_conf_level = 0.99,
 				fit_warm_start_enable = TRUE,
-				fit_reuse_factorizations = TRUE
+				fit_reuse_factorizations = TRUE,
+				timeout_deadline = getOption("EDI.ci_timeout_deadline", default = NA_real_)
 			)
 			if (should_run_asserts()) {
 				assertList(ci_search_control, null.ok = TRUE)
@@ -280,6 +292,7 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			ctrl$max_expansions = as.integer(ctrl$max_expansions)
 			ctrl$seed_boot_B = as.integer(ctrl$seed_boot_B)
 			ctrl$pval_cache_resolution = as.numeric(ctrl$pval_cache_resolution)
+			ctrl$timeout_deadline = suppressWarnings(as.numeric(ctrl$timeout_deadline)[1L])
 			ctrl$mc_batch_size = min(as.integer(r), as.integer(ctrl$mc_batch_size))
 			ctrl$mc_min_draws = min(as.integer(r), max(as.integer(ctrl$mc_batch_size), as.integer(ctrl$mc_min_draws)))
 			ctrl
@@ -395,14 +408,18 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			}
 			if (!is.finite(bound) || !is.finite(est) || !is.finite(max_radius) || max_radius <= 0) return(NA_real_)
 			bound = if (lower) max(bound, est - max_radius) else min(bound, est + max_radius)
+			private$check_randomization_ci_deadline(ci_search_control, "Randomization CI bound expansion")
 			pval_bound = evaluate_pval(bound)
+			private$check_randomization_ci_deadline(ci_search_control, "Randomization CI bound expansion")
 			if (is.finite(pval_bound) && pval_bound < target_pval) return(bound)
 			step = abs(est - bound)
 			if (!is.finite(step) || step <= 0) step = min(max_radius / 4, 1)
 			for (iter in seq_len(max_expansions)) {
+				private$check_randomization_ci_deadline(ci_search_control, "Randomization CI bound expansion")
 				step = min(step * 2, max_radius)
 				candidate = if (lower) est - step else est + step
 				pval_candidate = evaluate_pval(candidate)
+				private$check_randomization_ci_deadline(ci_search_control, "Randomization CI bound expansion")
 				if (is.finite(pval_candidate) && pval_candidate < target_pval) return(candidate)
 				if (step >= max_radius) break
 			}
@@ -414,13 +431,19 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			evaluate_pval = function(delta) {
 				private$compute_randomization_ci_pval_cached(self, r, delta, transform_responses, permutations, ci_search_control, ci_pval_cache)
 			}
+			private$check_randomization_ci_deadline(ci_search_control, "Randomization CI bisection")
 			pval_l = evaluate_pval(l)
+			private$check_randomization_ci_deadline(ci_search_control, "Randomization CI bisection")
 			pval_u = evaluate_pval(u)
+			private$check_randomization_ci_deadline(ci_search_control, "Randomization CI bisection")
 			if (length(pval_l) == 0) pval_l = NA_real_; if (length(pval_u) == 0) pval_u = NA_real_
 			for (k in seq_len(30L)) {
+				private$check_randomization_ci_deadline(ci_search_control, "Randomization CI bisection")
 				if (!is.na(pval_l) && !is.na(pval_u)) break
 				if (is.na(pval_l)) { l = (l + u) / 2; pval_l = evaluate_pval(l) }
+				private$check_randomization_ci_deadline(ci_search_control, "Randomization CI bisection")
 				if (is.na(pval_u)) { u = (l + u) / 2; pval_u = evaluate_pval(u) }
+				private$check_randomization_ci_deadline(ci_search_control, "Randomization CI bisection")
 			}
 			if (is.na(pval_l) || is.na(pval_u) || !all(is.finite(c(l, u)))) return(NA_real_)
 			# Conservative bound: p-value at the search boundary still >= alpha/2,
@@ -442,12 +465,14 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			}
 			iter = 0; progress_label = if (lower) "CI lower" else "CI upper"
 			repeat {
+				private$check_randomization_ci_deadline(ci_search_control, "Randomization CI bisection")
 				pval_span = abs(pval_u - pval_l)
 				if ((abs(u - l)) <= tol || pval_span <= tol) {
 					if (isTRUE(show_progress)) cat(sprintf("\r%s iter=%d pval_span=%.6g (target<=%.6g) done\n", progress_label, iter, pval_span, tol))
 					return(if(lower) l else u)
 				}
 				m = (l + u) / 2.0; pval_m = evaluate_pval(m)
+				private$check_randomization_ci_deadline(ci_search_control, "Randomization CI bisection")
 				if (is.na(pval_m)) { if (lower) { l = m; pval_l = 0 } else { u = m; pval_u = 0 }; iter = iter + 1; next }
 				if (pval_m >= pval_th && lower) { u = m; pval_u = pval_m }
 				else if (pval_m >= pval_th && !lower) { l = m; pval_l = pval_m }

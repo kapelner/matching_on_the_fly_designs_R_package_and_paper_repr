@@ -1,4 +1,4 @@
-test_that("jackknife aliases and public distribution API are coherent", {
+test_that("jackknife public distribution API is coherent", {
 	des <- DesignSeqOneByOneBernoulli$new(n = 8, response_type = "continuous")
 	for (i in seq_len(8)) {
 		des$add_one_subject_to_experiment_and_assign(data.frame(x1 = i / 10))
@@ -18,9 +18,7 @@ test_that("jackknife aliases and public distribution API are coherent", {
 
 	expect_equal(inf$compute_jackknife_bias_estimate(), manual_bias, tolerance = 1e-12)
 	expect_equal(inf$compute_jackknife_estimate(), manual_est, tolerance = 1e-12)
-	expect_equal(inf$compute_jackknife_corrected_estimate(), manual_est, tolerance = 1e-12)
 	expect_equal(inf$compute_jackknife_std_error(), manual_se, tolerance = 1e-12)
-	expect_equal(inf$compute_jackknife_standard_error(), manual_se, tolerance = 1e-12)
 })
 
 test_that("clustered designs support cluster jackknife deletion", {
@@ -59,5 +57,5 @@ test_that("clustered designs support cluster jackknife deletion", {
 	expect_equal(unname(cluster_jack), unname(manual_jack), tolerance = 1e-12)
 	expect_equal(inf$compute_jackknife_bias_estimate(unit = "cluster"), manual_bias, tolerance = 1e-12)
 	expect_equal(inf$compute_jackknife_estimate(unit = "cluster"), manual_est, tolerance = 1e-12)
-	expect_equal(inf$compute_jackknife_standard_error(unit = "cluster"), manual_se, tolerance = 1e-12)
+	expect_equal(inf$compute_jackknife_std_error(unit = "cluster"), manual_se, tolerance = 1e-12)
 })

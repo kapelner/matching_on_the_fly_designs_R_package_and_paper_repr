@@ -24,7 +24,7 @@ transformation before quantile regression (e.g., \code{identity} for continuous,
     \item \href{#method-InferenceAbstractKKQuantileRegrIVWC-clone}{\code{InferenceAbstractKKQuantileRegrIVWC$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAbstractQuantileRandCI.html'><code>InferenceAbstractQuantileRandCI</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAbstractQuantileRandCI.html'><code>InferenceAbstractQuantileRandCI</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrIVWC-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrIVWC-initialize}{}}}

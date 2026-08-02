@@ -1,14 +1,20 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <Rcpp.h>
 #include <RcppEigen.h>
+#endif
 #include <algorithm>
 #include <vector>
 #include <stdexcept>
 
 // [[Rcpp::depends(RcppEigen)]]
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 using namespace Eigen;
 
 namespace {
@@ -50,7 +56,16 @@ struct ContinuationRatioObjective {
     }
 };
 
-static List build_continuation_ratio_augmented_data(const Eigen::Ref<const MatrixXd>& X,
+// Rcpp-free internal-only carrier (never returned to R) -- was an Rcpp::List
+// prior to the EDI_CORE_ONLY split; a plain struct is all this needs (only
+// consumed by the 3 call sites in this same file).
+struct ContinuationRatioAugmentedData {
+	MatrixXd X_aug;
+	VectorXd z;
+	int n_alpha;
+};
+
+static ContinuationRatioAugmentedData build_continuation_ratio_augmented_data(const Eigen::Ref<const MatrixXd>& X,
 													const Eigen::Ref<const VectorXd>& y) {
 	int n = X.rows();
 	int p = X.cols();
@@ -64,7 +79,7 @@ static List build_continuation_ratio_augmented_data(const Eigen::Ref<const Matri
 	std::sort(levels.begin(), levels.end());
 	int K = levels.size();
 	if (K < 2) {
-		return List::create(Named("X_aug") = MatrixXd(0, p), Named("z") = VectorXd(0), Named("n_alpha") = 0);
+		return ContinuationRatioAugmentedData{MatrixXd(0, p), VectorXd(0), 0};
 	}
 	int n_alpha = K - 1;
 
@@ -88,7 +103,7 @@ static List build_continuation_ratio_augmented_data(const Eigen::Ref<const Matri
 			z[row] = (yi_level == j) ? 1.0 : 0.0;
 		}
 	}
-	return List::create(Named("X_aug") = X_aug, Named("z") = z, Named("n_alpha") = n_alpha);
+	return ContinuationRatioAugmentedData{X_aug, z, n_alpha};
 }
 
 } // namespace
@@ -117,10 +132,10 @@ ContinuationRatioFit fast_continuation_ratio_internal(
 		std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt) {
 	ContinuationRatioFit result;
 	result.p = X.cols();
-	List aug = build_continuation_ratio_augmented_data(X, y);
-	result.X_aug = Rcpp::as<MatrixXd>(aug["X_aug"]);
-	result.z = Rcpp::as<VectorXd>(aug["z"]);
-	result.n_alpha = aug["n_alpha"];
+	ContinuationRatioAugmentedData aug = build_continuation_ratio_augmented_data(X, y);
+	result.X_aug = aug.X_aug;
+	result.z = aug.z;
+	result.n_alpha = aug.n_alpha;
 	if (result.n_alpha == 0) {
 		return result;
 	}
@@ -148,6 +163,7 @@ ContinuationRatioFit fast_continuation_ratio_internal(
 	return result;
 }
 
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 Eigen::VectorXd get_continuation_ratio_regression_score_cpp(SEXP X_sexp,
 															SEXP y_sexp,
@@ -159,9 +175,9 @@ Eigen::VectorXd get_continuation_ratio_regression_score_cpp(SEXP X_sexp,
 	NumericVector params_r(params_sexp);
 	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
 
-	List aug = build_continuation_ratio_augmented_data(X, y);
-	MatrixXd X_aug = aug["X_aug"];
-	VectorXd z = aug["z"];
+	ContinuationRatioAugmentedData aug = build_continuation_ratio_augmented_data(X, y);
+	MatrixXd X_aug = aug.X_aug;
+	VectorXd z = aug.z;
 	if (X_aug.rows() == 0) return VectorXd::Zero(params.size());
 	VectorXd eta = X_aug * params;
 	VectorXd mu = plogis_array_clamped(eta.array()).matrix();
@@ -179,8 +195,8 @@ Eigen::MatrixXd get_continuation_ratio_regression_hessian_cpp(SEXP X_sexp,
 	NumericVector params_r(params_sexp);
 	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
 
-	List aug = build_continuation_ratio_augmented_data(X, y);
-	MatrixXd X_aug = aug["X_aug"];
+	ContinuationRatioAugmentedData aug = build_continuation_ratio_augmented_data(X, y);
+	MatrixXd X_aug = aug.X_aug;
 	if (X_aug.rows() == 0) return MatrixXd::Zero(params.size(), params.size());
 	VectorXd eta = X_aug * params;
 	VectorXd mu = plogis_array_clamped(eta.array()).matrix();
@@ -304,3 +320,4 @@ List fast_continuation_ratio_regression_with_var_cpp(SEXP X_sexp, SEXP y_sexp, i
         .set("params", fit.params)
         .set("fisher_information", info));
 }
+#endif // EDI_CORE_ONLY

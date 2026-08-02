@@ -22,7 +22,7 @@ current subject. EDI handles subject storage, responses, and redraws through
     \item \href{#method-DesignCustomSequential-clone}{\code{DesignCustomSequential$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/DesignSeqOneByOne.html'><code>DesignSeqOneByOne</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/DesignSeqOneByOne.html'><code>DesignSeqOneByOne</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignCustomSequential-is_a_custom_sequential"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignCustomSequential-is_a_custom_sequential}{}}}

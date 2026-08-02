@@ -66,108 +66,80 @@ InferenceOrdinalPartialProportionalOddsRegr = R6::R6Class(
 			private$cached_values$beta_hat_T
 		},
 
-		#' @description Compute a Wald-style confidence interval for the treatment effect. If the
-		#' model-based standard error is unavailable, falls back to the bootstrap
-		#' interval.
-		#' @param alpha Significance level for the interval.
-		#'
-		#' @return A confidence interval for the treatment effect.
-		compute_asymp_confidence_interval = function(alpha = 0.05){
-			if (should_run_asserts()) {
-				assertNumeric(
-					alpha,
-					lower = .Machine$double.xmin,
-					upper = 1 - .Machine$double.xmin
-				)
-			}
-			private$shared()
-			if (!private$has_finite_se()){
-				warning(
-					"Partial proportional-odds regression: falling back to ",
-					"bootstrap because standard error is unavailable."
-				)
-				return(self$compute_bootstrap_confidence_interval(
-					alpha = alpha,
-					na.rm = TRUE
-				))
-			}
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
-		},
+			#' @description Compute a Wald-style confidence interval for the treatment effect.
+			#' If the model-based standard error is unavailable, the interval is explicitly
+			#' marked non-estimable.
+			#' @param alpha Significance level for the interval.
+			#'
+			#' @return A confidence interval for the treatment effect.
+			compute_asymp_confidence_interval = function(alpha = 0.05){
+				if (should_run_asserts()) {
+					assertNumeric(
+						alpha,
+						lower = .Machine$double.xmin,
+						upper = 1 - .Machine$double.xmin
+					)
+				}
+				private$shared()
+				if (!private$has_finite_se()){
+					return(private$missing_asymp_ci(alpha))
+				}
+				private$compute_z_or_t_ci_from_s_and_df(alpha)
+			},
 
-		#' @description Compute a Wald-style two-sided p-value for the treatment effect. If the
-		#' model-based standard error is unavailable, falls back to the bootstrap
-		#' p-value.
-		#' @param delta Null treatment effect to test.
-		#'
-		#' @return A two-sided p-value.
-		compute_asymp_two_sided_pval = function(delta = 0){
-			if (should_run_asserts()) {
-				assertNumeric(delta)
-			}
-			private$shared()
-			if (!private$has_finite_se()){
-				warning(
-					"Partial proportional-odds regression: falling back to ",
-					"bootstrap because standard error is unavailable."
-				)
-				return(self$compute_bootstrap_two_sided_pval(
-					delta = delta,
-					na.rm = TRUE
-				))
-			}
-			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-		},
-		#' @description Compute a Wald-style confidence interval for the treatment effect.
-		#' If the model-based standard error is unavailable, falls back to the
-		#' bootstrap interval.
-		#' @param alpha Significance level for the interval.
-		#'
-		#' @return A confidence interval for the treatment effect.
-		compute_wald_confidence_interval = function(alpha = 0.05){
-			if (should_run_asserts()) {
-				assertNumeric(
-					alpha,
-					lower = .Machine$double.xmin,
-					upper = 1 - .Machine$double.xmin
-				)
-			}
-			private$shared()
-			if (!private$has_finite_se()){
-				warning(
-					"Partial proportional-odds regression: falling back to ",
-					"bootstrap because standard error is unavailable."
-				)
-				return(self$compute_bootstrap_confidence_interval(
-					alpha = alpha,
-					na.rm = TRUE
-				))
-			}
-			private$compute_z_or_t_ci_from_s_and_df(alpha)
-		},
+			#' @description Compute a Wald-style two-sided p-value for the treatment effect.
+			#' If the model-based standard error is unavailable, the p-value is explicitly
+			#' marked non-estimable.
+			#' @param delta Null treatment effect to test.
+			#'
+			#' @return A two-sided p-value.
+			compute_asymp_two_sided_pval = function(delta = 0){
+				if (should_run_asserts()) {
+					assertNumeric(delta)
+				}
+				private$shared()
+				if (!private$has_finite_se()){
+					return(private$missing_asymp_pval())
+				}
+				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+			},
+			#' @description Compute a Wald-style confidence interval for the treatment effect.
+			#' If the model-based standard error is unavailable, the interval is explicitly
+			#' marked non-estimable.
+			#' @param alpha Significance level for the interval.
+			#'
+			#' @return A confidence interval for the treatment effect.
+			compute_wald_confidence_interval = function(alpha = 0.05){
+				if (should_run_asserts()) {
+					assertNumeric(
+						alpha,
+						lower = .Machine$double.xmin,
+						upper = 1 - .Machine$double.xmin
+					)
+				}
+				private$shared()
+				if (!private$has_finite_se()){
+					return(private$missing_asymp_ci(alpha))
+				}
+				private$compute_z_or_t_ci_from_s_and_df(alpha)
+			},
 
-		#' @description Compute a Wald-style two-sided p-value for the treatment effect.
-		#' If the model-based standard error is unavailable, falls back to the
-		#' bootstrap p-value.
-		#' @param delta Null treatment effect to test.
-		#'
-		#' @return A two-sided p-value.
-		compute_wald_two_sided_pval = function(delta = 0){
-			if (should_run_asserts()) {
-				assertNumeric(delta)
-			}
-			private$shared()
-			if (!private$has_finite_se()){
-				warning(
-					"Partial proportional-odds regression: falling back to ",
-					"bootstrap because standard error is unavailable."
-				)
-				return(self$compute_bootstrap_two_sided_pval(
-					delta = delta,
-					na.rm = TRUE
-				))
-			}
-			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
-		},
+			#' @description Compute a Wald-style two-sided p-value for the treatment effect.
+			#' If the model-based standard error is unavailable, the p-value is explicitly
+			#' marked non-estimable.
+			#' @param delta Null treatment effect to test.
+			#'
+			#' @return A two-sided p-value.
+			compute_wald_two_sided_pval = function(delta = 0){
+				if (should_run_asserts()) {
+					assertNumeric(delta)
+				}
+				private$shared()
+				if (!private$has_finite_se()){
+					return(private$missing_asymp_pval())
+				}
+				private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
+			},
 
 		#' @description Benchmark the asymptotic p-value path with a timing breakdown.
 		#'
@@ -180,23 +152,23 @@ InferenceOrdinalPartialProportionalOddsRegr = R6::R6Class(
 		benchmark_asymp_two_sided_pval_breakdown = function(delta = 0){
 			if (should_run_asserts()) {
 				assertNumeric(delta)
-			}
+				}
 
-			t0 = proc.time()[["elapsed"]]
-			fit = private$fit_partial_proportional_odds()
-			fit_time = round(proc.time()[["elapsed"]] - t0, 6)
+				t0 = proc.time()[["elapsed"]]
+				fit = private$fit_partial_proportional_odds(require_se = TRUE)
+				fit_time = round(proc.time()[["elapsed"]] - t0, 6)
 
-			if (is.null(fit) || !is.finite(fit$beta)){
-				return(list(
-					fit_time = fit_time,
-					cache_time = NA_real_,
-					pval_math_time = NA_real_,
-					total_time = fit_time,
-					pval = NA_real_,
-					beta_hat_T = NA_real_,
-					s_beta_hat_T = NA_real_
-				))
-			}
+				if (is.null(fit) || !private$ppo_fit_is_usable(fit, require_se = TRUE)){
+					return(list(
+						fit_time = fit_time,
+						cache_time = NA_real_,
+						pval_math_time = NA_real_,
+						total_time = fit_time,
+						pval = NA_real_,
+						beta_hat_T = NA_real_,
+						s_beta_hat_T = NA_real_
+					))
+				}
 
 			t1 = proc.time()[["elapsed"]]
 			private$cached_values$beta_hat_T = fit$beta
@@ -255,23 +227,37 @@ InferenceOrdinalPartialProportionalOddsRegr = R6::R6Class(
 			as.matrix(X_cov)
 		},
 
-		shared = function(estimate_only = FALSE){
-			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
+			shared = function(estimate_only = FALSE){
+				if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+				if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 
-			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
+				fit = private$fit_partial_proportional_odds(require_se = !estimate_only)
+				if (is.null(fit) || !is.finite(fit$beta)){
+					if (!estimate_only) {
+						estimate_fit = private$fit_partial_proportional_odds(require_se = FALSE)
+						if (!is.null(estimate_fit) && is.finite(estimate_fit$beta)) {
+							private$cached_values$beta_hat_T = estimate_fit$beta
+							private$cached_values$df = private$n - 1
+							private$cache_nonestimable_se("ppor_standard_error_unavailable")
+						} else {
+							private$cache_nonestimable_estimate("ppor_fit_unavailable")
+							private$cached_values$df = private$n - 1
+						}
+					} else {
+						private$cache_nonestimable_estimate("ppor_fit_unavailable")
+					}
+					return(invisible(NULL))
+				}
 
-			fit = private$fit_partial_proportional_odds()
-			if (is.null(fit) || !is.finite(fit$beta)){
-				private$cache_nonestimable_estimate("ppor_fit_unavailable")
-				if (!estimate_only) private$cached_values$df = private$n - 1
-				return(invisible(NULL))
-			}
-
-			private$cached_values$beta_hat_T = fit$beta
-			private$cached_values$s_beta_hat_T = fit$se
-			private$cached_values$df = private$n - 1
-		},
+				private$cached_values$beta_hat_T = fit$beta
+				private$cached_values$s_beta_hat_T = fit$se
+				private$cached_values$df = private$n - 1
+				if (!estimate_only && !private$has_finite_se()) {
+					private$cache_nonestimable_se("ppor_standard_error_unavailable")
+				} else {
+					private$clear_nonestimable_state()
+				}
+			},
 
 		has_finite_se = function(){
 			is.finite(private$cached_values$s_beta_hat_T) &&
@@ -286,40 +272,61 @@ InferenceOrdinalPartialProportionalOddsRegr = R6::R6Class(
 			private$cached_values$df %||% NA_real_
 		},
 
-		fit_partial_proportional_odds = function(){
-			X_cov = private$ppo_covariate_matrix()
-			X_full = cbind(treatment = private$w, X_cov)
-			attempt = private$fit_with_hardened_qr_column_dropping(
-				X_full = X_full,
-				required_cols = 1L,
-				fit_fun = function(X_fit){
-					X_cov_fit = X_fit[, -1, drop = FALSE]
-					private$fit_partial_proportional_odds_from_covariates(X_cov_fit)
-				},
-				fit_ok = function(fit, X_fit, keep){
-					private$ppo_fit_is_usable(fit)
+			missing_asymp_pval = function(reason = "ppor_standard_error_unavailable"){
+				if (isTRUE(private$harden)) {
+					private$cache_nonestimable_se(reason)
+					return(NA_real_)
 				}
-			)
-			if (!is.null(attempt$fit)){
-				private$best_X_colnames = setdiff(colnames(attempt$X_fit), "treatment")
-			}
-			attempt$fit
-		},
+				stop("Partial proportional-odds regression could not compute a finite model-based standard error.", call. = FALSE)
+			},
 
-		ppo_fit_is_usable = function(fit){
-			!is.null(fit) && is.finite(fit$beta)
-		},
+			missing_asymp_ci = function(alpha = 0.05, reason = "ppor_standard_error_unavailable"){
+				if (isTRUE(private$harden)) {
+					private$cache_nonestimable_se(reason)
+					ci = c(NA_real_, NA_real_)
+					names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
+					return(ci)
+				}
+				stop("Partial proportional-odds regression could not compute a finite model-based standard error.", call. = FALSE)
+			},
 
-		fit_partial_proportional_odds_from_covariates = function(X_cov){
-			covar_names = colnames(X_cov)
-			if (is.null(covar_names)) covar_names = character(0)
-			nonparallel_covars = intersect(private$nonparallel, covar_names)
-			parallel_covars = setdiff(covar_names, nonparallel_covars)
+			fit_partial_proportional_odds = function(require_se = FALSE){
+				X_cov = private$ppo_covariate_matrix()
+				X_full = cbind(treatment = private$w, X_cov)
+				attempt = private$fit_with_hardened_qr_column_dropping(
+					X_full = X_full,
+					required_cols = 1L,
+					fit_fun = function(X_fit){
+						X_cov_fit = X_fit[, -1, drop = FALSE]
+						private$fit_partial_proportional_odds_from_covariates(X_cov_fit, require_se = require_se)
+					},
+					fit_ok = function(fit, X_fit, keep){
+						private$ppo_fit_is_usable(fit, require_se = require_se)
+					}
+				)
+				if (!private$ppo_fit_is_usable(attempt$fit, require_se = require_se)) return(NULL)
+				if (!is.null(attempt$fit)){
+					private$best_X_colnames = setdiff(colnames(attempt$X_fit), "treatment")
+				}
+				attempt$fit
+			},
 
-			if (length(nonparallel_covars) == 0){
-				fit = private$fit_fast_proportional_odds(X_cov)
-				if (!is.null(fit)) return(fit)
-			}
+			ppo_fit_is_usable = function(fit, require_se = FALSE){
+				!is.null(fit) &&
+					is.finite(fit$beta) &&
+					(!isTRUE(require_se) || (is.finite(fit$se) && fit$se > 0))
+			},
+
+			fit_partial_proportional_odds_from_covariates = function(X_cov, require_se = FALSE){
+				covar_names = colnames(X_cov)
+				if (is.null(covar_names)) covar_names = character(0)
+				nonparallel_covars = intersect(private$nonparallel, covar_names)
+				parallel_covars = setdiff(covar_names, nonparallel_covars)
+
+				if (length(nonparallel_covars) == 0){
+					fit = private$fit_fast_proportional_odds(X_cov)
+					if (private$ppo_fit_is_usable(fit, require_se = require_se)) return(fit)
+				}
 
 			dat = data.frame(
 				y = ordered(private$y, levels = sort(unique(private$y))),
@@ -329,17 +336,17 @@ InferenceOrdinalPartialProportionalOddsRegr = R6::R6Class(
 			)
 			if (nlevels(dat$y) < 2) return(NULL)
 
-			fit = private$fit_vgam(dat, parallel_covars, nonparallel_covars)
-			if (!is.null(fit)) return(fit)
+				fit = private$fit_vgam(dat, parallel_covars, nonparallel_covars)
+				if (private$ppo_fit_is_usable(fit, require_se = require_se)) return(fit)
 
-			fit = private$fit_clm(dat, parallel_covars, nonparallel_covars)
-			if (!is.null(fit)) return(fit)
+				fit = private$fit_clm(dat, parallel_covars, nonparallel_covars)
+				if (private$ppo_fit_is_usable(fit, require_se = require_se)) return(fit)
 
-			fit = private$fit_polr(dat, parallel_covars, nonparallel_covars)
-			if (!is.null(fit)) return(fit)
+				fit = private$fit_polr(dat, parallel_covars, nonparallel_covars)
+				if (private$ppo_fit_is_usable(fit, require_se = require_se)) return(fit)
 
-			NULL
-		},
+				NULL
+			},
 		fit_partial_proportional_odds_from_covariates_weighted = function(X_cov, row_weights){
 			covar_names = colnames(X_cov)
 			if (is.null(covar_names)) covar_names = character(0)

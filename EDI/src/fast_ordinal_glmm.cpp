@@ -6,6 +6,7 @@
 
 #include "_helper_functions.h"
 #include "_glmm_engine.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <cmath>
 #include <vector>
@@ -348,16 +349,15 @@ List fast_ordinal_glmm_cpp(
 		}
 	}
 
-	return List::create(
-		Named("b")          = par.segment(n_alpha, p),
-		Named("alpha")      = par.head(n_alpha),
-		Named("params")     = par,
-		Named("log_sigma")  = par[total - 1],
-		Named("ssq_b_T")    = ssq_b_T,
-		Named("converged")  = converged,
-		Named("neg_loglik") = neg_ll,
-		Named("fisher_information") = information,
-		Named("gradient_norm") = gradient_norm,
-		Named("variance_boundary_hit") = variance_boundary_hit
-	);
+	return edi::to_rcpp_list(edi::ResultMap()
+		.set("b", par.segment(n_alpha, p))
+		.set("alpha", par.head(n_alpha))
+		.set("params", par)
+		.set("log_sigma", par[total - 1])
+		.set("ssq_b_T", ssq_b_T)
+		.set("converged", converged)
+		.set("neg_loglik", neg_ll)
+		.set("fisher_information", information)
+		.set("gradient_norm", gradient_norm)
+		.set("variance_boundary_hit", variance_boundary_hit));
 }

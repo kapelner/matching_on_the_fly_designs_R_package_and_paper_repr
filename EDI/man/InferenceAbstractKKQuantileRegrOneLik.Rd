@@ -34,7 +34,7 @@ Standard errors use Powell's "nid" sandwich estimator, falling back to "iid".
     \item \href{#method-InferenceAbstractKKQuantileRegrOneLik-clone}{\code{InferenceAbstractKKQuantileRegrOneLik$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAbstractQuantileRandCI.html'><code>InferenceAbstractQuantileRandCI</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAbstractQuantileRandCI.html'><code>InferenceAbstractQuantileRandCI</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKQuantileRegrOneLik-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKQuantileRegrOneLik-initialize}{}}}

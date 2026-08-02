@@ -40,7 +40,7 @@ seq_des_inf$compute_asymp_two_sided_pval()
     \item \href{#method-InferenceAllSimpleMeanDiff-clone}{\code{InferenceAllSimpleMeanDiff$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllSimpleMeanDiff-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllSimpleMeanDiff-initialize}{}}}

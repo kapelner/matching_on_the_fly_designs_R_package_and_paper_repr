@@ -33,7 +33,7 @@ des = DesignBlocking$new(n = 6, response_type = "continuous")
     \item \href{#method-DesignBlocking-clone}{\code{DesignBlocking$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/Design.html'><code>Design</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/Design.html'><code>Design</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignBlocking-is_blocking_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignBlocking-is_blocking_design}{}}}

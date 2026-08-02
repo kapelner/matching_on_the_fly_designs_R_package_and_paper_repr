@@ -55,7 +55,7 @@ infer
     \item \href{#method-InferenceSurvivalLogRank-clone}{\code{InferenceSurvivalLogRank$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAsymp.html'><code>InferenceAsymp</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAsymp.html'><code>InferenceAsymp</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalLogRank-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalLogRank-initialize}{}}}

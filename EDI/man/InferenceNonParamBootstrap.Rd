@@ -214,7 +214,7 @@ Politis, D. N., Romano, J. P., and Wolf, M. (1999).
     \item \href{#method-InferenceNonParamBootstrap-clone}{\code{InferenceNonParamBootstrap$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceRandCI.html'><code>InferenceRandCI</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceRandCI.html'><code>InferenceRandCI</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceNonParamBootstrap-approximate_m_out_of_n_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceNonParamBootstrap-approximate_m_out_of_n_bootstrap_distribution_beta_hat_T}{}}}

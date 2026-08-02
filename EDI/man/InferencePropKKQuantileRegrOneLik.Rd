@@ -34,7 +34,7 @@ inf$compute_estimate()
     \item \href{#method-InferencePropKKQuantileRegrOneLik-clone}{\code{InferencePropKKQuantileRegrOneLik$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAbstractKKQuantileRegrOneLik.html'><code>InferenceAbstractKKQuantileRegrOneLik</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAbstractKKQuantileRegrOneLik.html'><code>InferenceAbstractKKQuantileRegrOneLik</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropKKQuantileRegrOneLik-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropKKQuantileRegrOneLik-initialize}{}}}

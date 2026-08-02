@@ -358,6 +358,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 		should_use_zhang_incidence_randomization = function(){
 			private$des_obj_priv_int$response_type == "incidence" &&
 				is.null(private$custom_randomization_statistic_function) &&
+				is.null(private[["compiled_cpp_stat_fn"]]) &&
 				(private$is_bernoulli_design() || isTRUE(private$has_match_structure))
 		},
 		should_use_design_randomization_for_incidence = function(){

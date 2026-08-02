@@ -100,6 +100,47 @@ Simple closed-form model-based Wald paths can remain dark green when they have a
   - separation-aware fallback for binary/ordinal models
   - event/category preserving bootstrap where statistically appropriate
 
+- [ ] Add explicit separation / boundary-divergence hardening for the large-estimate paths observed in the comprehensive CSVs:
+  - `InferenceOrdinalStereotypeLogitRegr`
+  - `InferenceOrdinalKKCondAdjCatLogitRegr`
+  - `InferenceIncidKKCondLogitOneLik`
+  - The 2026-08-01/2026-08-02 comprehensive results showed finite `status=ok`
+    estimates with `abs(estimate) > 100` on these paths. The associated
+    intervals were often thousands to tens of thousands of units wide, and
+    downstream bootstrap / jackknife methods frequently became explicitly
+    non-estimable because the original estimate was unusable. Treat these as
+    separation or boundary-divergence symptoms, not acceptable numeric output.
+  - The 81 very-wide-CI rows show a second failure shape: many contexts had
+    moderate finite estimates but enormous finite standard errors. This should
+    be diagnosed as near-singular information / standard-error unavailability,
+    not forced into a coefficient-threshold-only separation check.
+  - Centralize a model-fit diagnostic helper for likelihood fits that checks:
+    - finite treatment coefficient
+    - absolute treatment coefficient below a shared "reasonable coefficient"
+      threshold
+    - optional full-coefficient threshold, when the native fitter returns the
+      full parameter vector
+    - standard error / information-matrix sanity when available
+    - native convergence diagnostics once exposed by the C++ fitters
+  - For flagged original fits, call `cache_nonestimable_estimate()` with typed
+    reasons such as:
+    - `ordinal_stereotype_logit_separation`
+    - `ordinal_kk_cond_adj_cat_logit_separation`
+    - `kk_clogit_combined_separation`
+  - Ensure `compute_estimate(estimate_only = TRUE)` and the full
+    estimate-plus-SE path use the same separation/boundary diagnostic. The
+    current issue is visible on `compute_estimate`, before bootstrap or
+    jackknife starts.
+  - For bootstrap, Bayesian bootstrap, m-out-of-n, subsampling, jackknife, and
+    parametric-bootstrap wrappers, pre-check `self$is_nonestimable("estimate")`
+    after computing the original estimate and return typed missing output
+    rather than attempting resampling from an already-unusable fit.
+  - Do not rely on Firth as the first fix for these three paths. Firth is
+    realistic early for simple GLMs, but these observed failures include
+    ordinal stereotype / adjacent-category paths and a KK combined
+    conditional-logit path. The immediate hardening should be detect-and-type;
+    penalized or Firth fallback can be evaluated later class by class.
+
 - [ ] Harden likelihood score/LR/gradient paths:
   - improve cold starts
   - add ridge/penalized fallback where appropriate

@@ -1,7 +1,11 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <Rcpp.h>
 #include <RcppEigen.h>
+#endif
 #include <algorithm>
 #include <cmath>
 #include <vector>
@@ -9,7 +13,9 @@
 
 // [[Rcpp::depends(RcppEigen)]]
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 using namespace Eigen;
 
 class StereotypeLogitRegression {
@@ -632,7 +638,7 @@ static VectorXd optimize_nuisance_given_beta(
             double next_ll = nuisance_loglik_grad(
                 model, next_nuisance, beta_fixed, n_alpha, p, n_gamma, NULL, beta_index
             );
-            if (R_finite(next_ll) && next_ll > current_ll) {
+            if (std::isfinite(next_ll) && next_ll > current_ll) {
                 nuisance = next_nuisance;
                 accepted = true;
                 break;
@@ -686,7 +692,7 @@ static VectorXd stereotype_newton_fit(
 
     for (int iter = 0; iter < maxit; ++iter) {
         double current_ll = model.loglik_grad(params, &grad);
-        if (!R_finite(current_ll) || !grad.allFinite()) {
+        if (!std::isfinite(current_ll) || !grad.allFinite()) {
             break;
         }
         if (score_is_small(grad)) {
@@ -707,7 +713,7 @@ static VectorXd stereotype_newton_fit(
         while (scale > 1e-8) {
             VectorXd next_params = params - scale * step;
             double next_ll = model.loglik_grad(next_params, NULL);
-            if (R_finite(next_ll) && next_ll > current_ll) {
+            if (std::isfinite(next_ll) && next_ll > current_ll) {
                 params = next_params;
                 accepted = true;
                 break;
@@ -810,6 +816,7 @@ LikelihoodFitResult fast_stereotype_logit_internal(
 //' @return A numeric vector representing the score.
 //' @export
 //' @keywords internal
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 SEXP get_stereotype_logit_score_cpp(const Rcpp::NumericMatrix& X,
 											   const Rcpp::NumericVector& y,
@@ -1111,3 +1118,4 @@ NumericVector compute_stereotype_logit_distr_parallel_cpp(
 
 	return wrap(results);
 }
+#endif // EDI_CORE_ONLY

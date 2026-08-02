@@ -134,9 +134,6 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			private$cache_nonestimable_se("zero_augmented_poisson_jackknife_not_supported")
 			NA_real_
 		},
-		compute_jackknife_corrected_estimate = function(unit = "auto"){
-			self$compute_jackknife_estimate(unit = unit)
-		},
 		compute_jackknife_bias_estimate = function(unit = "auto"){
 			private$cache_nonestimable_se("zero_augmented_poisson_jackknife_not_supported")
 			NA_real_
@@ -144,9 +141,6 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 		compute_jackknife_std_error = function(unit = "auto"){
 			private$cache_nonestimable_se("zero_augmented_poisson_jackknife_not_supported")
 			NA_real_
-		},
-		compute_jackknife_standard_error = function(unit = "auto"){
-			self$compute_jackknife_std_error(unit = unit)
 		},
 		compute_jackknife_wald_two_sided_pval = function(delta = 0, unit = "auto"){
 			private$cache_nonestimable_se("zero_augmented_poisson_jackknife_not_supported")

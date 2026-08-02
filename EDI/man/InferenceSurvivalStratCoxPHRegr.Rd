@@ -34,7 +34,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceSurvivalStratCoxPHRegr-clone}{\code{InferenceSurvivalStratCoxPHRegr$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceAsympLikStdModCache</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceAsympLikStdModCache</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalStratCoxPHRegr-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalStratCoxPHRegr-initialize}{}}}

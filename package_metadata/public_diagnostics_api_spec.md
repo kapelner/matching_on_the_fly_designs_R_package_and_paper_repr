@@ -359,10 +359,20 @@ native and R-level diagnostics for:
 - terminal gradient norm
 - near-singular information
 - separation or boundary divergence
+- huge finite standard errors from an ill-conditioned information matrix
 - GLMM variance-component boundary
 - quadrature adequacy
 - derivative-free optimizer convergence codes
 - extreme bootstrap or LR statistics
+
+The public details API should preserve the distinction between these cases.
+Recent comprehensive-test failures in `InferenceOrdinalStereotypeLogitRegr`,
+`InferenceOrdinalKKCondAdjCatLogitRegr`, and
+`InferenceIncidKKCondLogitOneLik` showed two different shapes: extreme finite
+point estimates, and moderate finite point estimates paired with enormous
+finite SEs. Both should produce typed diagnostics; they should not be collapsed
+into a generic "separation" label unless the coefficient path itself is the
+evidence.
 
 When that layer lands, debug methods should embed its output under:
 
@@ -549,4 +559,3 @@ list(
   optimizer diagnostics layer lands.
 - At least one bootstrap path includes finite-count diagnostics.
 - Fast-path benchmark shows no meaningful regression.
-

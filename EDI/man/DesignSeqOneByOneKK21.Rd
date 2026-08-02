@@ -35,7 +35,7 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
     \item \href{#method-DesignSeqOneByOneKK21-clone}{\code{DesignSeqOneByOneKK21$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/DesignSeqOneByOneKK14.html'><code>DesignSeqOneByOneKK14</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/DesignSeqOneByOneKK14.html'><code>DesignSeqOneByOneKK14</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneKK21-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneKK21-initialize}{}}}

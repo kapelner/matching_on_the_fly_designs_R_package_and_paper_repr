@@ -27,7 +27,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceOrdinalKKCLMMProbit-clone}{\code{InferenceOrdinalKKCLMMProbit$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAbstractKKOrdinalCLMM.html'><code>InferenceAbstractKKOrdinalCLMM</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAbstractKKOrdinalCLMM.html'><code>InferenceAbstractKKOrdinalCLMM</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalKKCLMMProbit-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalKKCLMMProbit-initialize}{}}}

@@ -17,7 +17,7 @@ Abstract class for Conditional Logistic Combined-Likelihood Combined Inference
     \item \href{#method-InferenceAbstractKKCondLogitPlusGLMMOneLik-clone}{\code{InferenceAbstractKKCondLogitPlusGLMMOneLik$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAbstractKKCondLogitPlusGLMM.html'><code>InferenceAbstractKKCondLogitPlusGLMM</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAbstractKKCondLogitPlusGLMM.html'><code>InferenceAbstractKKCondLogitPlusGLMM</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKCondLogitPlusGLMMOneLik-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKCondLogitPlusGLMMOneLik-initialize}{}}}

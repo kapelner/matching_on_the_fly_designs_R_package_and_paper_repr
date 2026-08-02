@@ -22,7 +22,7 @@ required by the full Hodges-Lehmann estimate.
     \item \href{#method-InferenceAbstractKKWilcoxBaseIVWC-clone}{\code{InferenceAbstractKKWilcoxBaseIVWC$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKWilcoxBaseIVWC-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKWilcoxBaseIVWC-initialize}{}}}

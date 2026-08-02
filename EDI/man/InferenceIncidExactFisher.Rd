@@ -23,7 +23,7 @@ Exact Fisher Incidence Inference
     \item \href{#method-InferenceIncidExactFisher-clone}{\code{InferenceIncidExactFisher$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceExact.html'><code>InferenceExact</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceExact.html'><code>InferenceExact</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidExactFisher-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidExactFisher-initialize}{}}}

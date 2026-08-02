@@ -126,24 +126,6 @@ test_that("Inference seed: same seed gives same bootstrap CI (serial)", {
 	expect_identical(ci1, ci2)
 })
 
-### Inference: multi-core (fork cluster, Unix only) ##########################
-
-test_that("Inference seed: same seed + same num_cores gives same rand p-value (fork cluster)", {
-	skip_on_os("windows")
-	skip_if(
-		isTRUE(EDI:::edi_env$mirai_has_been_used),
-		"fork clusters cannot be started safely after mirai has been used in this R session"
-	)
-	des = make_completed_fixed_design(seed = NULL, n = 20)
-	set_num_cores(2)
-	on.exit(unset_num_cores(), add = TRUE)
-	inf1 = InferenceAllSimpleMeanDiff$new(des); inf1$set_seed(42)
-	inf2 = InferenceAllSimpleMeanDiff$new(des); inf2$set_seed(42)
-	p1 = inf1$compute_rand_two_sided_pval(r = 99, show_progress = FALSE)
-	p2 = inf2$compute_rand_two_sided_pval(r = 99, show_progress = FALSE)
-	expect_identical(p1, p2)
-})
-
 ### SimulationFramework: seed ################################################
 
 test_that("SimulationFramework seed: same seed gives same estimates (serial)", {

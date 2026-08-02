@@ -33,7 +33,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceCountRobustPoisson-clone}{\code{InferenceCountRobustPoisson$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceCountCompositeLikelihood.html'><code>InferenceCountCompositeLikelihood</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceCountCompositeLikelihood.html'><code>InferenceCountCompositeLikelihood</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountRobustPoisson-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountRobustPoisson-initialize}{}}}

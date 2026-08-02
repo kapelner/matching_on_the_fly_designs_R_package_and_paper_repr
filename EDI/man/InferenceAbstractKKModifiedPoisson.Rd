@@ -20,7 +20,7 @@ Abstract class for all-subject modified-Poisson inference in KK designs
     \item \href{#method-InferenceAbstractKKModifiedPoisson-clone}{\code{InferenceAbstractKKModifiedPoisson$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAbstractKKMarginalIncid.html'><code>InferenceAbstractKKMarginalIncid</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAbstractKKMarginalIncid.html'><code>InferenceAbstractKKMarginalIncid</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKModifiedPoisson-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKModifiedPoisson-compute_estimate}{}}}

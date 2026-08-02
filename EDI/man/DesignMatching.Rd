@@ -26,7 +26,7 @@ des = DesignMatching$new(n = 6, response_type = "continuous")
     \item \href{#method-DesignMatching-clone}{\code{DesignMatching$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/DesignBlocking.html'><code>DesignBlocking</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/DesignBlocking.html'><code>DesignBlocking</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignMatching-is_matching_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignMatching-is_matching_design}{}}}

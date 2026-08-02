@@ -651,13 +651,13 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 			results = if (isTRUE(deterministic_mode) && actual_cores <= 1L) {
 				lapply(seq_len(B), run_one_lr)
 			} else if (isTRUE(deterministic_mode) && actual_cores > 1L) {
-				unlist(private$par_lapply(
+				private$par_lapply(
 					as.list(seq_len(B)),
-					function(idx) list(run_one_lr(as.integer(idx)[1L])),
+					function(idx) run_one_lr(as.integer(idx)[1L]),
 					n_cores = actual_cores,
 					budget = 1L,
 					show_progress = show_progress
-				), recursive = FALSE, use.names = FALSE)
+				)
 			} else if (use_worker_path && actual_cores <= 1L) {
 				run_worker_chunk(seq_len(B))
 			} else if (!use_worker_path && actual_cores <= 1L) {

@@ -24,7 +24,7 @@ observations for KK matching-on-the-fly designs with continuous responses.
     \item \href{#method-InferenceContinKKRobustRegrOneLik-clone}{\code{InferenceContinKKRobustRegrOneLik$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKRobustRegrOneLik-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKRobustRegrOneLik-initialize}{}}}

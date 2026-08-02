@@ -9,14 +9,21 @@
 //
 // Analytic gradient; analytic Hessian.
 
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#else
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <Rmath.h>
+#endif
 #include <cmath>
 #include <unordered_map>
 #include <stdexcept>
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 namespace {
 
@@ -214,6 +221,7 @@ LikelihoodFitResult fast_zinb_internal(const Eigen::Ref<const Eigen::MatrixXd>& 
 //' @return A list containing coefficients and convergence status.
 //' @export
 //' @keywords internal
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 List fast_zinb_cpp(SEXP X, SEXP Xzi, SEXP y,
                    Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
@@ -265,3 +273,4 @@ List fast_zinb_cpp(SEXP X, SEXP Xzi, SEXP y,
     );
     return out;
 }
+#endif // EDI_CORE_ONLY

@@ -22,7 +22,7 @@ Abstract class for ordinal CLMM-based Inference in KK designs
     \item \href{#method-InferenceAbstractKKOrdinalCLMM-clone}{\code{InferenceAbstractKKOrdinalCLMM$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAsympLik.html'><code>InferenceAsympLik</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAsympLik.html'><code>InferenceAsympLik</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKOrdinalCLMM-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKOrdinalCLMM-initialize}{}}}

@@ -26,7 +26,7 @@ obtained via the Huber-White cluster-robust sandwich estimator (LWA style).
     \item \href{#method-InferenceAbstractKKLWACoxOneLik-clone}{\code{InferenceAbstractKKLWACoxOneLik$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKLWACoxOneLik-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKLWACoxOneLik-initialize}{}}}

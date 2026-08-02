@@ -61,7 +61,7 @@ inf$compute_estimate()
     \item \href{#method-InferencePropKKQuantileRegrIVWC-clone}{\code{InferencePropKKQuantileRegrIVWC$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAbstractKKQuantileRegrIVWC.html'><code>InferenceAbstractKKQuantileRegrIVWC</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAbstractKKQuantileRegrIVWC.html'><code>InferenceAbstractKKQuantileRegrIVWC</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropKKQuantileRegrIVWC-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropKKQuantileRegrIVWC-initialize}{}}}

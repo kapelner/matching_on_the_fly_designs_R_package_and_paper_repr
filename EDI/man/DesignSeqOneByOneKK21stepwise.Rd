@@ -31,7 +31,7 @@ seq_des = DesignSeqOneByOneKK21stepwise$new(n = 6, response_type = "continuous")
     \item \href{#method-DesignSeqOneByOneKK21stepwise-clone}{\code{DesignSeqOneByOneKK21stepwise$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/DesignSeqOneByOneKK21.html'><code>DesignSeqOneByOneKK21</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/DesignSeqOneByOneKK21.html'><code>DesignSeqOneByOneKK21</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneKK21stepwise-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneKK21stepwise-initialize}{}}}

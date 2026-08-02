@@ -1,11 +1,18 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#include "result_map.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <Rmath.h>
+#endif
 #include <unordered_map>
 #include <stdexcept>
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 using namespace Eigen;
 
 // Forward declaration from fast_logistic_regression.cpp
@@ -64,7 +71,7 @@ void validate_truncated_negbin_inputs(const Eigen::Ref<const MatrixXd>& X,
 			throw std::invalid_argument("warm_start_params must have length ncol(X) + 1");
 		}
 		for (int i = 0; i < warm.size(); ++i) {
-			if (!R_finite(warm[i])) {
+			if (!std::isfinite(warm[i])) {
 				throw std::invalid_argument("warm_start_params must contain only finite values");
 			}
 		}
@@ -76,7 +83,7 @@ void validate_truncated_negbin_inputs(const Eigen::Ref<const MatrixXd>& X,
 		}
 		for (int j = 0; j < warm_info.cols(); ++j) {
 			for (int i = 0; i < warm_info.rows(); ++i) {
-				if (!R_finite(warm_info(i, j))) {
+				if (!std::isfinite(warm_info(i, j))) {
 					throw std::invalid_argument("warm_start_fisher_info must contain only finite values");
 				}
 			}
@@ -535,6 +542,7 @@ static edi::ResultMap build_positive_hurdle_negbin_data(const Eigen::Ref<const M
 	return edi::ResultMap().set("X_pos", X_pos).set("y_pos", y_pos);
 }
 
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 Eigen::VectorXd get_hurdle_negbin_count_score_cpp(SEXP X_r,
 												  SEXP y_r,
@@ -943,3 +951,4 @@ List fast_truncated_negbin_count_cpp(SEXP X_r,
     out["score"] = score;
     return out;
 }
+#endif // EDI_CORE_ONLY

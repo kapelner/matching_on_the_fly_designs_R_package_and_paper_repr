@@ -42,7 +42,7 @@ infer
     \item \href{#method-InferenceOrdinalPairedSignTest-clone}{\code{InferenceOrdinalPairedSignTest$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAsympLik.html'><code>InferenceAsympLik</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAsympLik.html'><code>InferenceAsympLik</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalPairedSignTest-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalPairedSignTest-initialize}{}}}

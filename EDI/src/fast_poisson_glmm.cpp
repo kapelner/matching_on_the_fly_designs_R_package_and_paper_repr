@@ -8,16 +8,32 @@
 // Parameter vector: par = [beta_0, beta_1(treatment), ..., beta_{p-1}, log_sigma]
 //   Total length: p + 1
 
+// EDI_CORE_ONLY (defined by the Python/pybind11 build, see
+// package_metadata/python_bindings_package_spec.md): this file has no
+// separate *_internal function historically -- the fit logic lived directly
+// inside the [[Rcpp::export]] wrapper below. It has been split so
+// fast_poisson_glmm_internal is portable (Eigen/std::optional in, a plain
+// edi::ResultMap out) and callable from a Python binding with zero R/Rcpp
+// dependency; the exported wrapper is now a thin SEXP-conversion shim over
+// it, guarded out entirely under EDI_CORE_ONLY since pybind11 calls the
+// internal function directly instead.
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#include "result_map.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
+#endif
 #include <cmath>
 #include <vector>
 #include <algorithm>
 #include <numeric>
 #include <limits>
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 namespace {
 
@@ -313,6 +329,131 @@ public:
 
 } // namespace
 
+// Portable core: no Rcpp/R dependency, callable directly from a Python
+// pybind11 binding as well as from the [[Rcpp::export]] wrapper below.
+edi::ResultMap fast_poisson_glmm_internal(
+	const Eigen::Ref<const Eigen::MatrixXd>& X,
+	const Eigen::Ref<const Eigen::VectorXd>& y,
+	const Eigen::Ref<const Eigen::VectorXi>& group_id,
+	int j_T,
+	std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+	bool smart_cold_start = true,
+	bool estimate_only = false,
+	int n_gh = 20,
+	int maxit = 300,
+	double eps_g = 1e-6,
+	std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+	std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+	std::string optimization_alg = "lbfgs",
+	std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt,
+	std::optional<Eigen::VectorXd> row_weights = std::nullopt
+) {
+	if (X.rows() != y.size() || X.rows() != group_id.size()) {
+		throw std::invalid_argument("Dimension mismatch between X, y, and group_id in fast_poisson_glmm_internal");
+	}
+
+	const int n = X.rows();
+	const int p = X.cols();
+	const int total = p + 1;
+
+	std::vector<int> gid_v(n);
+	for (int i = 0; i < n; ++i) gid_v[i] = group_id[i];
+
+	Eigen::VectorXd rw_vec;
+	const Eigen::VectorXd* rw_ptr = nullptr;
+	if (row_weights.has_value()) {
+		if (row_weights->size() != n)
+			throw std::invalid_argument("row_weights length must equal nrow(X) in fast_poisson_glmm_internal");
+		rw_vec = *row_weights;
+		rw_ptr = &rw_vec;
+	}
+
+	PoissonGLMMData dat(X, y, gid_v, n_gh, rw_ptr);
+
+	// Initialize
+	Eigen::VectorXd par(total);
+	if (warm_start_params.has_value()) {
+		const Eigen::VectorXd& sp = *warm_start_params;
+		if (sp.size() == total) {
+			for (int i = 0; i < total; ++i) par[i] = sp[i];
+		}
+	} else if (smart_cold_start) {
+		// Init: beta via OLS on log(y+0.5), log_sigma = -3
+		Eigen::VectorXd log_y_safe = (y.array() + 0.5).log().matrix();
+		Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(X);
+		Eigen::VectorXd beta_init = qr.solve(log_y_safe);
+		par.head(p) = beta_init;
+		par[total - 1] = -3.0;
+	} else {
+		par.head(p).setZero();
+		par[total - 1] = -3.0;
+	}
+
+	PoissonGLMMObjective obj(dat);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
+
+	Eigen::MatrixXd info_start;
+	Eigen::MatrixXd* info_start_ptr = nullptr;
+	if (warm_start_fisher_info.has_value()) {
+		info_start = *warm_start_fisher_info;
+		info_start_ptr = &info_start;
+	}
+
+	double neg_ll = std::numeric_limits<double>::quiet_NaN();
+	bool converged = false;
+	try {
+		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
+		par       = fit.params;
+		neg_ll    = fit.value;
+		converged = std::isfinite(neg_ll) && fit.converged;
+	} catch (...) {
+		return edi::ResultMap()
+			.set("b", par.head(p))
+			.set("log_sigma", par[total - 1])
+			.set("ssq_b_T", std::numeric_limits<double>::quiet_NaN())
+			.set("converged", false)
+			.set("neg_loglik", std::numeric_limits<double>::quiet_NaN());
+	}
+
+	const double pen = soft_barrier(par[total - 1]);
+	const double true_neg_ll = neg_ll - pen;
+	if (estimate_only) {
+		return edi::ResultMap()
+			.set("b", par.head(p))
+			.set("log_sigma", par[total - 1])
+			.set("ssq_b_T", std::numeric_limits<double>::quiet_NaN())
+			.set("vcov", std::monostate{})
+			.set("converged", converged)
+			.set("neg_loglik", true_neg_ll)
+			.set("fisher_information", std::monostate{});
+	}
+
+	Eigen::MatrixXd information = obj.hessian(par);
+	information(total - 1, total - 1) -= soft_barrier_hessian(par[total - 1]);
+
+	double ssq_b_T = std::numeric_limits<double>::quiet_NaN();
+	Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(total, total, std::numeric_limits<double>::quiet_NaN());
+	if (converged) {
+		Eigen::MatrixXd H_free = subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx);
+		Eigen::LDLT<Eigen::MatrixXd> ldlt(H_free);
+		if (ldlt.info() == Eigen::Success) {
+			Eigen::MatrixXd inv_free = ldlt.solve(Eigen::MatrixXd::Identity(H_free.rows(), H_free.cols()));
+			vcov = expand_free_covariance(total, fixed_spec, inv_free, true);
+			if (vcov.allFinite() && j_T < p) ssq_b_T = vcov(j_T, j_T);
+		}
+	}
+
+	return edi::ResultMap()
+		.set("b", par.head(p))
+		.set("log_sigma", par[total - 1])
+		.set("ssq_b_T", ssq_b_T)
+		.set("vcov", vcov)
+		.set("converged", converged)
+		.set("neg_loglik", true_neg_ll)
+		.set("fisher_information", information);
+}
+
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 SEXP fast_poisson_glmm_cpp(
 	const NumericMatrix& X_r,
@@ -340,111 +481,20 @@ SEXP fast_poisson_glmm_cpp(
 		           X_r.rows(), y_r.size(), group_id_r.size());
 	}
 
-	const int n = X.rows();
-	const int p = X.cols();
-	const int total = p + 1;
-
-	std::vector<int> gid_v(n);
-	for (int i = 0; i < n; ++i) gid_v[i] = group_id[i];
-
-	Eigen::VectorXd rw_vec;
-	const Eigen::VectorXd* rw_ptr = nullptr;
 	std::optional<Eigen::VectorXd> row_weights_opt = nullable_to_optional<Eigen::VectorXd>(row_weights);
-	if (row_weights_opt.has_value()) {
-		if (row_weights_opt->size() != n)
-			Rcpp::stop("row_weights length (%d) must equal nrow(X) (%d)", row_weights_opt->size(), n);
-		rw_vec = *row_weights_opt;
-		rw_ptr = &rw_vec;
+	if (row_weights_opt.has_value() && row_weights_opt->size() != X_r.rows()) {
+		Rcpp::stop("row_weights length (%d) must equal nrow(X) (%d)", row_weights_opt->size(), X_r.rows());
 	}
 
-	PoissonGLMMData dat(X, y, gid_v, n_gh, rw_ptr);
-
-	// Initialize
-	Eigen::VectorXd par(total);
-	std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
-	if (warm_start_params_opt.has_value()) {
-		const Eigen::VectorXd& sp = *warm_start_params_opt;
-		if (sp.size() == total) {
-			for (int i = 0; i < total; ++i) par[i] = sp[i];
-		}
-	} else if (smart_cold_start) {
-		// Init: beta via OLS on log(y+0.5), log_sigma = -3
-		Eigen::VectorXd log_y_safe = (y.array() + 0.5).log().matrix();
-		Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(X);
-		Eigen::VectorXd beta_init = qr.solve(log_y_safe);
-		par.head(p) = beta_init;
-		par[total - 1] = -3.0;
-	} else {
-		par.head(p).setZero();
-		par[total - 1] = -3.0;
-	}
-
-	PoissonGLMMObjective obj(dat);
-	FixedParamSpec fixed_spec = make_fixed_param_spec(
-		total,
+	return edi::to_rcpp_list(fast_poisson_glmm_internal(
+		X, y, group_id, j_T,
+		nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+		smart_cold_start, estimate_only, n_gh, maxit, eps_g,
 		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
-		nullable_to_optional<Eigen::VectorXd>(fixed_values));
-
-	Eigen::MatrixXd info_start;
-	Eigen::MatrixXd* info_start_ptr = nullptr;
-	std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
-	if (warm_start_fisher_info_opt.has_value()) {
-		info_start = *warm_start_fisher_info_opt;
-		info_start_ptr = &info_start;
-	}
-
-	double neg_ll = NA_REAL;
-	bool converged = false;
-	try {
-		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
-		par       = fit.params;
-		neg_ll    = fit.value;
-		converged = std::isfinite(neg_ll) && fit.converged;
-	} catch (...) {
-		return edi::to_rcpp_list(edi::ResultMap()
-			.set("b", par.head(p))
-			.set("log_sigma", par[total - 1])
-			.set("ssq_b_T", NA_REAL)
-			.set("converged", false)
-			.set("neg_loglik", NA_REAL));
-	}
-
-		const double pen = soft_barrier(par[total - 1]);
-		const double true_neg_ll = neg_ll - pen;
-		if (estimate_only) {
-			return edi::to_rcpp_list(edi::ResultMap()
-				.set("b", par.head(p))
-				.set("log_sigma", par[total - 1])
-				.set("ssq_b_T", NA_REAL)
-				.set("vcov", std::monostate{})
-				.set("converged", converged)
-				.set("neg_loglik", true_neg_ll)
-				.set("fisher_information", std::monostate{}));
-		}
-
-		Eigen::MatrixXd information = obj.hessian(par);
-		information(total - 1, total - 1) -= soft_barrier_hessian(par[total - 1]);
-
-	double ssq_b_T = NA_REAL;
-	Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(total, total, NA_REAL);
-		if (converged) {
-		Eigen::MatrixXd H_free = subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx);
-		Eigen::LDLT<Eigen::MatrixXd> ldlt(H_free);
-		if (ldlt.info() == Eigen::Success) {
-			Eigen::MatrixXd inv_free = ldlt.solve(Eigen::MatrixXd::Identity(H_free.rows(), H_free.cols()));
-			vcov = expand_free_covariance(total, fixed_spec, inv_free, true);
-			if (vcov.allFinite() && j_T < p) ssq_b_T = vcov(j_T, j_T);
-		}
-	}
-
-	return edi::to_rcpp_list(edi::ResultMap()
-		.set("b", par.head(p))
-		.set("log_sigma", par[total - 1])
-		.set("ssq_b_T", ssq_b_T)
-		.set("vcov", vcov)
-		.set("converged", converged)
-		.set("neg_loglik", true_neg_ll)
-		.set("fisher_information", information));
+		nullable_to_optional<Eigen::VectorXd>(fixed_values),
+		optimization_alg,
+		nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+		row_weights_opt));
 }
 
 // ── R-exported: score (gradient of log_lik) at arbitrary par ─────────────────
@@ -490,3 +540,4 @@ SEXP get_poisson_glmm_hessian_cpp(
 	PoissonGLMMObjective obj(dat);
 	return wrap(-obj.hessian(par));
 }
+#endif // EDI_CORE_ONLY

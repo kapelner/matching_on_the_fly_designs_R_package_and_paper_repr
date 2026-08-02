@@ -28,7 +28,7 @@ estimates (on the log-time ratio scale) are combined by inverse-variance weighti
     \item \href{#method-InferenceSurvivalKKClaytonCopulaIVWC-clone}{\code{InferenceSurvivalKKClaytonCopulaIVWC$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKKClaytonCopulaIVWC-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKKClaytonCopulaIVWC-initialize}{}}}

@@ -43,7 +43,7 @@ that are intentionally unsupported are kept off this branch entirely.
     \item \href{#method-InferenceParamBootstrap-clone}{\code{InferenceParamBootstrap$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAsympLik.html'><code>InferenceAsympLik</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAsympLik.html'><code>InferenceAsympLik</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceParamBootstrap-get_last_param_bootstrap_diagnostics"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceParamBootstrap-get_last_param_bootstrap_diagnostics}{}}}

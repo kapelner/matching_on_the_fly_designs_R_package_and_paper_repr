@@ -18,7 +18,7 @@ Abstract class for all-subject marginal incidence inference in KK designs
     \item \href{#method-InferenceAbstractKKMarginalIncid-clone}{\code{InferenceAbstractKKMarginalIncid$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKMarginalIncid-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKMarginalIncid-initialize}{}}}

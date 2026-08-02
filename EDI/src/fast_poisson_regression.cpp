@@ -1,6 +1,10 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
+#endif
 #include <cmath>
 #include <vector>
 
@@ -11,7 +15,9 @@
 // [[Rcpp::depends(RcppEigen)]]
 // [[Rcpp::plugins(openmp)]]
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 using namespace Eigen;
 
 namespace {
@@ -310,6 +316,7 @@ ModelResult fast_poisson_regression_internal(const Eigen::Ref<const Eigen::Matri
     return fast_poisson_internal(X, y, weights, warm_start_beta, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_weights, warm_start_fisher_info, estimate_only);
 }
 
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 Eigen::VectorXd get_poisson_regression_score_cpp(SEXP X_sexp, SEXP y_sexp, SEXP beta_sexp) {
     NumericMatrix X_r(X_sexp); NumericVector y_r(y_sexp); NumericVector beta_r(beta_sexp);
@@ -578,3 +585,4 @@ List fast_quasipoisson_regression_with_var_cpp(SEXP X_sexp,
 		.set("iterations", res.iterations)
 		.set("gradient_norm", res.gradient_norm));
 }
+#endif // EDI_CORE_ONLY

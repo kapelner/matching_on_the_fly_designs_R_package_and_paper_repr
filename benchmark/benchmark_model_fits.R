@@ -16,7 +16,19 @@ library(EDI)
 
 # The Utility / Math Kernel Performance section below benchmarks EDI's
 # exported fast_*_vec_cpp wrappers (fast_digamma_vec_cpp, fast_trigamma_vec_cpp,
-# ...) directly from the installed package -- no separate compile step needed.
+# fast_lgamma_vec_cpp, fast_lbeta_vec_cpp, fast_dnbinom_mu_vec_cpp,
+# fast_qnorm_vec_cpp, fast_log_pnorm_vec_cpp, fast_log_dnorm_vec_cpp) directly
+# from the installed package -- no separate compile step needed for those 8.
+# Six more fast_* kernels (fast_pchisq_upper, fast_erfc, pnorm_fast,
+# dnorm_fast, fast_atan, fast_log1pexp) exist in EDI/src's leaf headers but
+# aren't promoted to package exports yet; compile bare-metal wrappers for
+# those from benchmark/fast_math_utils_bench.cpp (same sourceCpp convention
+# as benchmark/fast_trigamma_speed_compare.cpp) so this table stays an
+# exhaustive inventory of every fast_* math kernel in the codebase, not just
+# the ones already promoted.
+suppressPackageStartupMessages(library(Rcpp))
+Sys.setenv(PKG_CPPFLAGS = "-w")
+Rcpp::sourceCpp("benchmark/fast_math_utils_bench.cpp", cacheDir = "/tmp/fast_math_utils_bench_cache")
 
 set.seed(42)
 
@@ -1297,7 +1309,19 @@ utility_specs = list(
     list(name = "fast_log_dnorm", r_func = "dnorm(log=TRUE)", data_fn = function() list(x = rnorm(N_UTIL, 0, 3)),
          edi_expr = quote(fast_log_dnorm_vec_cpp(x)), r_expr = quote(stats::dnorm(x, log = TRUE))),
     list(name = "fast_dnbinom_mu", r_func = "dnbinom(mu=, log=TRUE)", data_fn = function() list(x = rpois(N_UTIL, 5), size = 2, mu = 5, return_log = TRUE),
-         edi_expr = quote(fast_dnbinom_mu_vec_cpp(x, size, mu, return_log)), r_expr = quote(stats::dnbinom(x, size = size, mu = mu, log = return_log)))
+         edi_expr = quote(fast_dnbinom_mu_vec_cpp(x, size, mu, return_log)), r_expr = quote(stats::dnbinom(x, size = size, mu = mu, log = return_log))),
+    list(name = "fast_pchisq_upper", r_func = "pchisq(lower.tail=FALSE)", data_fn = function() list(statistic = runif(N_UTIL, 0, 30), df = sample(1:10, N_UTIL, replace = TRUE)),
+         edi_expr = quote(fast_pchisq_upper_vec_cpp(statistic, df)), r_expr = quote(stats::pchisq(statistic, df, lower.tail = FALSE))),
+    list(name = "fast_erfc", r_func = "2*pnorm(-x*sqrt(2))", data_fn = function() list(x = rnorm(N_UTIL, 0, 3)),
+         edi_expr = quote(fast_erfc_vec_cpp(x)), r_expr = quote(2 * stats::pnorm(-x * sqrt(2)))),
+    list(name = "pnorm_fast", r_func = "pnorm", data_fn = function() list(x = rnorm(N_UTIL, 0, 3)),
+         edi_expr = quote(pnorm_fast_vec_cpp(x)), r_expr = quote(stats::pnorm(x))),
+    list(name = "dnorm_fast", r_func = "dnorm", data_fn = function() list(x = rnorm(N_UTIL, 0, 3)),
+         edi_expr = quote(dnorm_fast_vec_cpp(x)), r_expr = quote(stats::dnorm(x))),
+    list(name = "fast_atan", r_func = "atan", data_fn = function() list(x = rnorm(N_UTIL, 0, 5)),
+         edi_expr = quote(fast_atan_vec_cpp(x)), r_expr = quote(base::atan(x))),
+    list(name = "fast_log1pexp", r_func = "log1p(exp(x))", data_fn = function() list(x = rnorm(N_UTIL, 0, 5)),
+         edi_expr = quote(fast_log1pexp_vec_cpp(x)), r_expr = quote(log1p(exp(x))))
 )
 
 utility_results = list()
@@ -1366,10 +1390,10 @@ utility_table_lines = c(utility_table_lines, utility_table_rows, "  </tbody>", "
 UTILITY_HEADER = c(
   "## Utility / Math Kernel Performance",
   "",
-  "This table compares EDI's internal scalar fast_* math kernels — used inside the NegBin/Beta/ZINB/Hurdle likelihoods, KK21 negative-binomial fitting, and probit cold-start heuristics — against base R's vectorized equivalents.",
-  "Unlike the model-fit tables above, these are not full estimators: each row is a single vectorized special-function evaluation (digamma, trigamma, log-gamma, log-beta, quantile/CDF/PDF of the normal, and the mu-parameterized negative-binomial density) over a fixed-length vector, with no design matrix, optimizer, or R6 object involved on either side.",
+  "This table is an exhaustive inventory of every fast_* scalar math kernel in EDI/src — used inside the NegBin/Beta/ZINB/Hurdle likelihoods, KK21 negative-binomial fitting, probit cold-start heuristics, ordinal cloglog/cauchit link derivatives, and LRT/score-test p-values — against base R's vectorized equivalents.",
+  "Unlike the model-fit tables above, these are not full estimators: each row is a single vectorized special-function evaluation (digamma, trigamma, log-gamma, log-beta, error function, normal CDF/PDF/quantile (both closed-form and log-scale), chi-squared upper-tail p-value, arctangent, softplus, and the mu-parameterized negative-binomial density) over a fixed-length vector, with no design matrix, optimizer, or R6 object involved on either side.",
   paste0("**Vector length**: All rows evaluate the function over a vector of length $N=", N_UTIL, "$; inputs are drawn from a domain realistic for each kernel's actual call sites in EDI (e.g. shape/rate-like values in $(0.5, 50)$ for digamma/trigamma/lgamma, probabilities in $(0, 1)$ for qnorm)."),
-  "**Bare Metal EDI Timing**: EDI rows call the package's exported `fast_*_vec_cpp` wrapper (`EDI/src/fast_math_utils.cpp`, documented and exported via roxygen/NAMESPACE like any other EDI function) that loops the internal `fast_*` scalar kernel over the input vector — no R6, no caching, no warm starts.",
+  "**Bare Metal EDI Timing**: Eight kernels (digamma, trigamma, lgamma, lbeta, dnbinom_mu, qnorm, log_pnorm, log_dnorm) call the package's own exported `fast_*_vec_cpp` wrapper (`EDI/src/fast_math_utils.cpp`, documented and exported via roxygen/NAMESPACE like any other EDI function) directly from the installed package — no separate compile step. The remaining six (pchisq_upper, erfc, pnorm_fast, dnorm_fast, atan, log1pexp) aren't promoted to package exports yet, so those rows call a thin bare-metal wrapper compiled standalone via `Rcpp::sourceCpp()` against the same `EDI/src` leaf headers (`benchmark/fast_math_utils_bench.cpp`) — same convention as `benchmark/fast_trigamma_speed_compare.cpp`. Either way, the wrapper just loops the internal `fast_*` scalar kernel over the input vector — no R6, no caching, no warm starts.",
   "**Canonical R Timing**: The base R column calls the corresponding vectorized base/stats function directly on the same input vector (e.g. `digamma()`, `lgamma()`, `stats::qnorm()`, `stats::dnbinom(..., mu = , log = TRUE)`).",
   paste0("**Timing Note**: All timings use the same adaptive batched `system.time`/`microbenchmark` harness as the tables above (medians over ", B_TIME, " cold samples; paths below ", FAST_PATH_THRESHOLD_MS, " ms fall back to `microbenchmark(times = ", FAST_PATH_MICROBENCH_REPS, ")`)."),
   "**Timing P-Value**: `Timing Pval` reports a Welch two-sample t-test comparing the EDI and base R timing replicate distributions for each row. The unlabeled final column marks thresholds with `***` for p < 0.001, `**` for p < 0.01, and `*` for p < 0.05.",
@@ -1571,4 +1595,74 @@ METHODOLOGY_BLOCK = c(
 )
 
 writeLines(c(report, "", WALD_HEADER, "", METHODOLOGY_BLOCK, "", UTILITY_HEADER, "", STYLE_BLOCK), "package_metadata/benchmark_model_fits.md")
+
+# ── HTML export ──────────────────────────────────────────────────────────
+# Styled to match package_metadata/benchmark_model_fits_python.html exactly
+# (same CSS, same font stack, same light/dark handling, same nav bar) so the
+# two reports read as one consistent family rather than one being a generic
+# markdown-preview export and the other a hand-built page. Reuses the exact
+# same markdown content already assembled for the .md above (not STYLE_BLOCK,
+# which is a markdown-preview-tool width constraint irrelevant to a real
+# HTML page) — commonmark passes the report's raw HTML <table> blocks
+# through untouched while converting the surrounding markdown (headers,
+# bold, lists) to HTML, so this is not a second, independently-maintained
+# copy of the report content.
+if (requireNamespace("commonmark", quietly = TRUE)) {
+  md_body = paste(c(report, "", WALD_HEADER, "", METHODOLOGY_BLOCK, "", UTILITY_HEADER), collapse = "\n")
+  body_html = commonmark::markdown_html(md_body)
+  body_html = gsub("<h2>Results</h2>", '<h2 id="results">Results</h2>', body_html, fixed = TRUE)
+  body_html = gsub("<h2>Wald Test Performance (Full Inference)</h2>", '<h2 id="wald">Wald Test Performance (Full Inference)</h2>', body_html, fixed = TRUE)
+  body_html = gsub("<h2>Utility / Math Kernel Performance</h2>", '<h2 id="utility">Utility / Math Kernel Performance</h2>', body_html, fixed = TRUE)
+  legend_html = paste(
+    '<p class="legend">',
+    '<span style="background:#d9fdd3"></span>EDI faster, significant &nbsp;',
+    '<span style="background:#eceff1"></span>NA timing comparison &nbsp;',
+    '<span style="background:#cfe2ff"></span>no canonical R implementation',
+    "</p>",
+    sep = "\n"
+  )
+  body_html = gsub("<table>", paste0(legend_html, "\n<table>"), body_html, fixed = TRUE)
+  # Nav bar goes below the title + generated-timestamp line (matching
+  # benchmark_model_fits_python.html's layout exactly), not above it.
+  nav_block = paste(
+    '<nav><a href="#results">Results</a><a href="#wald">Wald (full inference)</a><a href="#utility">Utility / math kernels</a></nav>',
+    '<p>R analog of <a href="benchmark_model_fits_python.html">benchmark_model_fits_python.html</a> — same three tables, same table shape, same three-color row coding.</p>',
+    sep = "\n"
+  )
+  body_html = sub("(<h1>[^<]*</h1>\n<p><em>Generated:[^<]*</em></p>\n)", paste0("\\1", nav_block, "\n"), body_html)
+
+  html_doc = c(
+    "<!doctype html>",
+    '<html><head><meta charset="utf-8">',
+    "<title>EDI R Canonical Benchmarks</title>",
+    "<style>",
+    ":root { color-scheme: light dark; }",
+    "body { font-family: -apple-system, Segoe UI, Helvetica, Arial, sans-serif; max-width: 1200px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }",
+    "@media (prefers-color-scheme: dark) {",
+    "  body { background: #0d1117; color: #e6edf3; }",
+    "  a { color: #2f81f7; }",
+    "  table, th, td { border-color: #30363d !important; }",
+    "  code { background: #161b22; }",
+    "}",
+    "@media (prefers-color-scheme: light) {",
+    "  body { background: #ffffff; color: #24292f; }",
+    "  code { background: #f6f8fa; }",
+    "}",
+    "table { border-collapse: collapse; width: 100%; margin: 1rem 0; }",
+    "th, td { border: 1px solid #d0d7de; padding: 4px 8px; text-align: left; font-size: 0.9rem; }",
+    "th { background: rgba(127,127,127,0.15); }",
+    "tr[style] td { color: #111; }",
+    "code { padding: 1px 4px; border-radius: 4px; }",
+    ".legend span { display: inline-block; width: 1em; height: 1em; margin-right: 0.4em; vertical-align: middle; border: 1px solid #8888; }",
+    "nav a { margin-right: 1rem; }",
+    "</style>",
+    "</head><body>",
+    body_html,
+    "</body></html>"
+  )
+  writeLines(html_doc, "package_metadata/benchmark_model_fits_R.html")
+} else {
+  cat("NOTE: commonmark package not installed; skipped regenerating package_metadata/benchmark_model_fits_R.html (benchmark_model_fits.md was still written normally).\n")
+}
+
 cat("Benchmark complete.\n")

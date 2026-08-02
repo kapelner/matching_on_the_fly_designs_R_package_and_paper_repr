@@ -49,7 +49,7 @@ seq_des_inf$compute_asymp_two_sided_pval()
     \item \href{#method-InferenceAllKKMeanDiffIVWC-clone}{\code{InferenceAllKKMeanDiffIVWC$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllKKMeanDiffIVWC-approximate_bootstrap_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllKKMeanDiffIVWC-approximate_bootstrap_distribution_beta_hat_T}{}}}

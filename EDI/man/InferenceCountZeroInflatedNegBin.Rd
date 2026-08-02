@@ -28,7 +28,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceCountZeroInflatedNegBin-clone}{\code{InferenceCountZeroInflatedNegBin$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceCountZeroAugmentedPoissonAbstract</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceCountZeroAugmentedPoissonAbstract</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountZeroInflatedNegBin-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountZeroInflatedNegBin-initialize}{}}}

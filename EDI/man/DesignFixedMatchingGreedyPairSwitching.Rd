@@ -24,7 +24,7 @@ des = DesignFixedMatchingGreedyPairSwitching$new(n = 10, response_type = 'contin
     \item \href{#method-DesignFixedMatchingGreedyPairSwitching-clone}{\code{DesignFixedMatchingGreedyPairSwitching$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/DesignFixed.html'><code>DesignFixed</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/DesignFixed.html'><code>DesignFixed</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedMatchingGreedyPairSwitching-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedMatchingGreedyPairSwitching-initialize}{}}}

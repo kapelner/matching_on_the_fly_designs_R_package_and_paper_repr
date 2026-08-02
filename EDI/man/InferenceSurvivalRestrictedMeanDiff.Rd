@@ -36,7 +36,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceSurvivalRestrictedMeanDiff-clone}{\code{InferenceSurvivalRestrictedMeanDiff$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAsymp.html'><code>InferenceAsymp</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAsymp.html'><code>InferenceAsymp</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalRestrictedMeanDiff-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalRestrictedMeanDiff-initialize}{}}}

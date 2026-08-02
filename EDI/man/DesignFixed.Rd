@@ -31,7 +31,7 @@ des$assign_w_to_all_subjects()
     \item \href{#method-DesignFixed-clone}{\code{DesignFixed$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/DesignMatching.html'><code>DesignMatching</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/DesignMatching.html'><code>DesignMatching</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixed-is_a_fixed"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixed-is_a_fixed}{}}}

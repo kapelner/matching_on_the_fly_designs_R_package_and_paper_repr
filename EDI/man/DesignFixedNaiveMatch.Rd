@@ -28,7 +28,7 @@ des$assign_w_to_all_subjects()
     \item \href{#method-DesignFixedNaiveMatch-clone}{\code{DesignFixedNaiveMatch$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/DesignFixedBinaryMatch.html'><code>DesignFixedBinaryMatch</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/DesignFixedBinaryMatch.html'><code>DesignFixedBinaryMatch</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedNaiveMatch-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedNaiveMatch-clone}{}}}

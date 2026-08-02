@@ -1,14 +1,20 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <Rcpp.h>
 #include <RcppEigen.h>
+#endif
 #include <algorithm>
 #include <vector>
 #include <stdexcept>
 
 // [[Rcpp::depends(RcppEigen)]]
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 using namespace Eigen;
 
 namespace {
@@ -224,6 +230,7 @@ LikelihoodFitResult fast_adjacent_category_logit_internal(
 	return optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_start_ptr);
 }
 
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 Eigen::VectorXd get_adjacent_category_logit_score_cpp(SEXP X_sexp,
                                                       SEXP y_sexp,
@@ -468,3 +475,4 @@ NumericVector compute_adj_cat_logit_distr_parallel_cpp(
 
     return wrap(results);
 }
+#endif // EDI_CORE_ONLY

@@ -21,7 +21,7 @@ Stratified Cox Combined-Likelihood Compound Inference for KK Designs
     \item \href{#method-InferenceSurvivalKKStratCoxPHOneLik-clone}{\code{InferenceSurvivalKKStratCoxPHOneLik$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKKStratCoxPHOneLik-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKKStratCoxPHOneLik-initialize}{}}}

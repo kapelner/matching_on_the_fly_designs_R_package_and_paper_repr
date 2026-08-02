@@ -45,12 +45,17 @@ NumericVector bisection_ci_parallel_cpp(
 	double l = l_lower;
 	double u = u_lower;
 
+	Rcpp::checkUserInterrupt();
 	double pval_l = as<double>(pval_fn(r, l, transform_responses, num_cores));
+	Rcpp::checkUserInterrupt();
 	double pval_u = as<double>(pval_fn(r, u, transform_responses, num_cores));
+	Rcpp::checkUserInterrupt();
 
 	while (R_finite(pval_l) && R_finite(pval_u) && (pval_u - pval_l) > tol) {
+		Rcpp::checkUserInterrupt();
 		double m = (l + u) / 2.0;
 		double pval_m = as<double>(pval_fn(r, m, transform_responses, num_cores));
+		Rcpp::checkUserInterrupt();
 
 		if (!R_finite(pval_m)) { l = m; pval_l = 0.0; }
 		else if (pval_m >= pval_th) { u = m; pval_u = pval_m; }
@@ -64,12 +69,17 @@ NumericVector bisection_ci_parallel_cpp(
 	double l = l_upper;
 	double u = u_upper;
 
+	Rcpp::checkUserInterrupt();
 	double pval_l = as<double>(pval_fn(r, l, transform_responses, num_cores));
+	Rcpp::checkUserInterrupt();
 	double pval_u = as<double>(pval_fn(r, u, transform_responses, num_cores));
+	Rcpp::checkUserInterrupt();
 
 	while (R_finite(pval_l) && R_finite(pval_u) && (pval_u - pval_l) > tol) {
+		Rcpp::checkUserInterrupt();
 		double m = (l + u) / 2.0;
 		double pval_m = as<double>(pval_fn(r, m, transform_responses, num_cores));
+		Rcpp::checkUserInterrupt();
 
 		if (!R_finite(pval_m)) { u = m; pval_u = 0.0; }
 		else if (pval_m >= pval_th) { l = m; pval_l = pval_m; }
@@ -97,12 +107,17 @@ double bisection_ci_single_bound_cpp(
 	bool lower,
 	int num_cores = 1
 ) {
+	Rcpp::checkUserInterrupt();
 	double pval_l = as<double>(pval_fn(r, l, transform_responses, num_cores));
+	Rcpp::checkUserInterrupt();
 	double pval_u = as<double>(pval_fn(r, u, transform_responses, num_cores));
+	Rcpp::checkUserInterrupt();
 
 	while (R_finite(pval_l) && R_finite(pval_u) && (pval_u - pval_l) > tol) {
+	Rcpp::checkUserInterrupt();
 	double m = (l + u) / 2.0;
 	double pval_m = as<double>(pval_fn(r, m, transform_responses, num_cores));
+	Rcpp::checkUserInterrupt();
 
 	if (!R_finite(pval_m)) {
 		if (lower) { l = m; pval_l = 0.0; }

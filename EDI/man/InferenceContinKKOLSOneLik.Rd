@@ -37,7 +37,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceContinKKOLSOneLik-clone}{\code{InferenceContinKKOLSOneLik$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceKKPassThroughCompound.html'><code>InferenceKKPassThroughCompound</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceKKPassThroughCompound.html'><code>InferenceKKPassThroughCompound</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKOLSOneLik-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKOLSOneLik-initialize}{}}}

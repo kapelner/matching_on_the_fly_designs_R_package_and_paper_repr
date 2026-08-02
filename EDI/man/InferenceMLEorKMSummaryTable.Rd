@@ -43,7 +43,7 @@ seq_des_inf$compute_estimate()
     \item \href{#method-InferenceMLEorKMSummaryTable-clone}{\code{InferenceMLEorKMSummaryTable$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAsymp.html'><code>InferenceAsymp</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAsymp.html'><code>InferenceAsymp</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceMLEorKMSummaryTable-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceMLEorKMSummaryTable-compute_estimate}{}}}

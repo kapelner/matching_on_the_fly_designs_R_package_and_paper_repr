@@ -18,7 +18,7 @@ Abstract class for randomization-based confidence interval inference.
     \item \href{#method-InferenceRandCI-clone}{\code{InferenceRandCI$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceRand.html'><code>InferenceRand</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceRand.html'><code>InferenceRand</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceRandCI-compute_rand_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceRandCI-compute_rand_two_sided_pval}{}}}

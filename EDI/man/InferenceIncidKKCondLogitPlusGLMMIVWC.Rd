@@ -33,7 +33,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceIncidKKCondLogitPlusGLMMIVWC-clone}{\code{InferenceIncidKKCondLogitPlusGLMMIVWC$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAbstractKKCondLogitPlusGLMM.html'><code>InferenceAbstractKKCondLogitPlusGLMM</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAbstractKKCondLogitPlusGLMM.html'><code>InferenceAbstractKKCondLogitPlusGLMM</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidKKCondLogitPlusGLMMIVWC-clone"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidKKCondLogitPlusGLMMIVWC-clone}{}}}

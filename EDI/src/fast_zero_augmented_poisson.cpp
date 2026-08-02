@@ -1,9 +1,15 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <Rmath.h>
+#endif
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 namespace {
 
@@ -296,6 +302,7 @@ LikelihoodFitResult fast_zap_internal(const Eigen::Ref<const Eigen::MatrixXd>& X
     return optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, h_ptr);
 }
 
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 Eigen::VectorXd get_zero_augmented_poisson_score_cpp(SEXP X_sexp,
 													 SEXP y_sexp,
@@ -434,3 +441,4 @@ List fast_zero_augmented_poisson_cpp(SEXP X_sexp,
     );
     return out;
 }
+#endif // EDI_CORE_ONLY

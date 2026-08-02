@@ -131,11 +131,6 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 			private$cache_nonestimable_se("negbin_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Non-estimable jackknife bias-corrected estimate.
-		#' @param unit Deletion unit. Default \code{"auto"}.
-		compute_jackknife_corrected_estimate = function(unit = "auto"){
-			self$compute_jackknife_estimate(unit = unit)
-		},
 		#' @description Non-estimable jackknife bias estimate.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_bias_estimate = function(unit = "auto"){
@@ -147,11 +142,6 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 		compute_jackknife_std_error = function(unit = "auto"){
 			private$cache_nonestimable_se("negbin_jackknife_not_supported")
 			NA_real_
-		},
-		#' @description Alias for \code{compute_jackknife_std_error()}.
-		#' @param unit Deletion unit. Default \code{"auto"}.
-		compute_jackknife_standard_error = function(unit = "auto"){
-			self$compute_jackknife_std_error(unit = unit)
 		},
 		#' @description Non-estimable jackknife Wald two-sided p-value.
 		#' @param delta Null treatment-effect value. Default 0.

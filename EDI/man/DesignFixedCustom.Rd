@@ -21,7 +21,7 @@ matrix. EDI handles subject storage, responses, and validation through
     \item \href{#method-DesignFixedCustom-clone}{\code{DesignFixedCustom$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/DesignFixed.html'><code>DesignFixed</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/DesignFixed.html'><code>DesignFixed</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignFixedCustom-is_a_fixed_custom"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignFixedCustom-is_a_fixed_custom}{}}}

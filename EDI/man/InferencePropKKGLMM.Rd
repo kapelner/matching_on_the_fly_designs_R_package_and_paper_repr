@@ -18,7 +18,7 @@ one model.
     \item \href{#method-InferencePropKKGLMM-clone}{\code{InferencePropKKGLMM$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAbstractKKCondLogitPlusGLMM.html'><code>InferenceAbstractKKCondLogitPlusGLMM</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAbstractKKCondLogitPlusGLMM.html'><code>InferenceAbstractKKCondLogitPlusGLMM</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropKKGLMM-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropKKGLMM-initialize}{}}}

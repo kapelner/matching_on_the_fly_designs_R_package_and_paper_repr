@@ -28,7 +28,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceSurvivalKKLWACoxPHOneLik-clone}{\code{InferenceSurvivalKKLWACoxPHOneLik$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAbstractKKLWACoxOneLik.html'><code>InferenceAbstractKKLWACoxOneLik</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAbstractKKLWACoxOneLik.html'><code>InferenceAbstractKKLWACoxOneLik</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalKKLWACoxPHOneLik-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalKKLWACoxPHOneLik-initialize}{}}}

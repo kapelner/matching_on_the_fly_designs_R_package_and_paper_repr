@@ -1,11 +1,17 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <Rmath.h>
+#endif
 #include <unordered_map>
 #include <stdexcept>
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 namespace {
 
@@ -318,6 +324,7 @@ ModelResult fast_neg_bin_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
 //' @return A numeric vector representing the score.
 //' @export
 //' @keywords internal
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 Eigen::VectorXd get_negbin_regression_score_cpp(SEXP X_sexp,
                                                 SEXP y_sexp,
@@ -560,3 +567,4 @@ List fast_neg_bin_weighted_cpp(SEXP X_sexp,
         .set("iterations", res.iterations)
         .set("fisher_information", res.XtWX));
 }
+#endif // EDI_CORE_ONLY

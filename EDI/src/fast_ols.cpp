@@ -1,8 +1,14 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
+#endif
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 // Internal pure C++ logic
 ModelResult fast_ols_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
@@ -60,11 +66,12 @@ ModelResult fast_ols_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
     }
 
     if (!res.b.allFinite()) {
-        res.b = Eigen::VectorXd::Constant(p, NA_REAL);
+        res.b = Eigen::VectorXd::Constant(p, std::numeric_limits<double>::quiet_NaN());
     }
     return res;
 }
 
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 List fast_ols_cpp(SEXP X_sexp, SEXP y_sexp,
                   Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
@@ -196,3 +203,4 @@ List fast_ols_with_var_cpp(SEXP X_sexp, SEXP y_sexp,
         .set("converged", converged)
         .set("sigma2_hat", sse / (n - p_free)));
 }
+#endif // EDI_CORE_ONLY

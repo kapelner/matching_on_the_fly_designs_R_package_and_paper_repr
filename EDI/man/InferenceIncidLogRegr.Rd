@@ -33,7 +33,7 @@ inf$compute_lik_ratio_bootstrap_two_sided_pval(delta = 0, B = 9, show_progress =
     \item \href{#method-InferenceIncidLogRegr-clone}{\code{InferenceIncidLogRegr$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceAsympLikStdModCache</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceAsympLikStdModCache</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceIncidLogRegr-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceIncidLogRegr-initialize}{}}}

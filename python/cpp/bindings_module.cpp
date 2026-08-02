@@ -1,0 +1,18 @@
+// Single pybind11 module entry point. Each family gets its own
+// bindings_<family>.cpp with a bind_<family>(py::module_&) function (mirrors
+// EDI/src's own per-model-family .cpp layout); this file just wires them
+// together into one compiled extension.
+
+#include <pybind11/pybind11.h>
+
+namespace py = pybind11;
+
+void bind_fast_math(py::module_& m);
+void bind_glmm(py::module_& m);
+
+PYBIND11_MODULE(_core, m) {
+    m.doc() = "EDI kernels (pybind11) -- compiled directly from EDI/src, no copies";
+
+    bind_fast_math(m);
+    bind_glmm(m);
+}

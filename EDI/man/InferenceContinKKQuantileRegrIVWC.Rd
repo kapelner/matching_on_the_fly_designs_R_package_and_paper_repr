@@ -79,7 +79,7 @@ infer
     \item \href{#method-InferenceContinKKQuantileRegrIVWC-clone}{\code{InferenceContinKKQuantileRegrIVWC$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAbstractKKQuantileRegrIVWC.html'><code>InferenceAbstractKKQuantileRegrIVWC</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAbstractKKQuantileRegrIVWC.html'><code>InferenceAbstractKKQuantileRegrIVWC</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceContinKKQuantileRegrIVWC-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceContinKKQuantileRegrIVWC-initialize}{}}}

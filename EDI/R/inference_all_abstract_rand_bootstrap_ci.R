@@ -282,14 +282,16 @@ InferenceRandBootstrapCI = R6::R6Class("InferenceRandBootstrapCI",
 			if (!is.finite(se_guess) || se_guess <= 0) se_guess = response_scale / sqrt(max(1, private$n))
 			max_radius = max(25 * se_guess, 6 * response_scale, 1)
 			z_target = stats::qnorm(1 - alpha / 2)
-			l = private$expand_rand_bootstrap_bound(est - z_target * se_guess, est, alpha / 2, TRUE, max_radius, as.integer(max_expansions), evaluate_pval)
-			u = private$expand_rand_bootstrap_bound(est + z_target * se_guess, est, alpha / 2, FALSE, max_radius, as.integer(max_expansions), evaluate_pval)
+			ci_timeout_deadline = private$rand_bootstrap_ci_timeout_deadline()
+			private$check_rand_bootstrap_ci_deadline(ci_timeout_deadline, "Bootstrap randomization CI setup")
+			l = private$expand_rand_bootstrap_bound(est - z_target * se_guess, est, alpha / 2, TRUE, max_radius, as.integer(max_expansions), evaluate_pval, ci_timeout_deadline)
+			u = private$expand_rand_bootstrap_bound(est + z_target * se_guess, est, alpha / 2, FALSE, max_radius, as.integer(max_expansions), evaluate_pval, ci_timeout_deadline)
 			if (!all(is.finite(c(l, u)))) {
 				return(missing_ci("rand_bootstrap_ci_search_bounds_failed"))
 			}
 			ci = c(
-				private$invert_rand_bootstrap_test_bisection(l, est, alpha / 2, pval_epsilon, TRUE, show_progress, evaluate_pval),
-				private$invert_rand_bootstrap_test_bisection(est, u, alpha / 2, pval_epsilon, FALSE, show_progress, evaluate_pval)
+				private$invert_rand_bootstrap_test_bisection(l, est, alpha / 2, pval_epsilon, TRUE, show_progress, evaluate_pval, ci_timeout_deadline),
+				private$invert_rand_bootstrap_test_bisection(est, u, alpha / 2, pval_epsilon, FALSE, show_progress, evaluate_pval, ci_timeout_deadline)
 			)
 			if (length(ci) != 2L || !all(is.finite(ci[1:2]))) {
 				private$cache_nonestimable_se("rand_bootstrap_ci_bisection_failed")
@@ -301,6 +303,19 @@ InferenceRandBootstrapCI = R6::R6Class("InferenceRandBootstrapCI",
 	),
 	private = list(
 		rand_bootstrap_ci_conservative_count = 0L,
+		rand_bootstrap_ci_timeout_deadline = function(){
+			deadline = getOption("EDI.ci_timeout_deadline", default = NA_real_)
+			suppressWarnings(as.numeric(deadline)[1L])
+		},
+		check_rand_bootstrap_ci_deadline = function(deadline = NULL, label = "Bootstrap randomization CI bisection"){
+			if (is.null(deadline)) deadline = private$rand_bootstrap_ci_timeout_deadline()
+			deadline = suppressWarnings(as.numeric(deadline)[1L])
+			if (is.na(deadline) || !is.finite(deadline)) return(invisible(FALSE))
+			if (unname(proc.time()[["elapsed"]]) >= deadline) {
+				stop(paste0(label, " reached elapsed time limit"), call. = FALSE)
+			}
+			invisible(FALSE)
+		},
 		# Exact inversion of the bootstrap randomization test when every null draw is affine in
 		# delta: t0_b(delta) = A[b] + delta * c_slopes[b]. The two-sided Monte Carlo p-value
 		# (with its 2/B floor) is piecewise constant with breakpoints at (t_obs - A_b) / c_b;
@@ -369,17 +384,21 @@ InferenceRandBootstrapCI = R6::R6Class("InferenceRandBootstrapCI",
 			ci_pval_cache[[cache_key]] = pval
 			pval
 		},
-		expand_rand_bootstrap_bound = function(bound, est, target_pval, lower, max_radius, max_expansions, evaluate_pval){
+		expand_rand_bootstrap_bound = function(bound, est, target_pval, lower, max_radius, max_expansions, evaluate_pval, timeout_deadline = NULL){
 			if (!is.finite(bound) || !is.finite(est) || !is.finite(max_radius) || max_radius <= 0) return(NA_real_)
 			bound = if (lower) max(bound, est - max_radius) else min(bound, est + max_radius)
+			private$check_rand_bootstrap_ci_deadline(timeout_deadline, "Bootstrap randomization CI bound expansion")
 			pval_bound = evaluate_pval(bound)
+			private$check_rand_bootstrap_ci_deadline(timeout_deadline, "Bootstrap randomization CI bound expansion")
 			if (is.finite(pval_bound) && pval_bound < target_pval) return(bound)
 			step = abs(est - bound)
 			if (!is.finite(step) || step <= 0) step = min(max_radius / 4, 1)
 			for (iter in seq_len(max_expansions)) {
+				private$check_rand_bootstrap_ci_deadline(timeout_deadline, "Bootstrap randomization CI bound expansion")
 				step = min(step * 2, max_radius)
 				candidate = if (lower) est - step else est + step
 				pval_candidate = evaluate_pval(candidate)
+				private$check_rand_bootstrap_ci_deadline(timeout_deadline, "Bootstrap randomization CI bound expansion")
 				if (is.finite(pval_candidate) && pval_candidate < target_pval) return(candidate)
 				if (step >= max_radius) break
 			}
@@ -387,14 +406,20 @@ InferenceRandBootstrapCI = R6::R6Class("InferenceRandBootstrapCI",
 			# the bisection can detect and report a conservative bound.
 			if (lower) est - max_radius else est + max_radius
 		},
-		invert_rand_bootstrap_test_bisection = function(l, u, pval_th, tol, lower, show_progress, evaluate_pval){
+		invert_rand_bootstrap_test_bisection = function(l, u, pval_th, tol, lower, show_progress, evaluate_pval, timeout_deadline = NULL){
+			private$check_rand_bootstrap_ci_deadline(timeout_deadline, "Bootstrap randomization CI bisection")
 			pval_l = evaluate_pval(l)
+			private$check_rand_bootstrap_ci_deadline(timeout_deadline, "Bootstrap randomization CI bisection")
 			pval_u = evaluate_pval(u)
+			private$check_rand_bootstrap_ci_deadline(timeout_deadline, "Bootstrap randomization CI bisection")
 			if (length(pval_l) == 0) pval_l = NA_real_; if (length(pval_u) == 0) pval_u = NA_real_
 			for (k in seq_len(30L)) {
+				private$check_rand_bootstrap_ci_deadline(timeout_deadline, "Bootstrap randomization CI bisection")
 				if (!is.na(pval_l) && !is.na(pval_u)) break
 				if (is.na(pval_l)) { l = (l + u) / 2; pval_l = evaluate_pval(l) }
+				private$check_rand_bootstrap_ci_deadline(timeout_deadline, "Bootstrap randomization CI bisection")
 				if (is.na(pval_u)) { u = (l + u) / 2; pval_u = evaluate_pval(u) }
+				private$check_rand_bootstrap_ci_deadline(timeout_deadline, "Bootstrap randomization CI bisection")
 			}
 			if (is.na(pval_l) || is.na(pval_u) || !all(is.finite(c(l, u)))) return(NA_real_)
 			# Conservative bound: the p-value at the search boundary is still >= alpha/2, so the
@@ -416,12 +441,14 @@ InferenceRandBootstrapCI = R6::R6Class("InferenceRandBootstrapCI",
 			}
 			iter = 0; progress_label = if (lower) "BRT CI lower" else "BRT CI upper"
 			repeat {
+				private$check_rand_bootstrap_ci_deadline(timeout_deadline, "Bootstrap randomization CI bisection")
 				pval_span = abs(pval_u - pval_l)
 				if ((abs(u - l)) <= tol || pval_span <= tol) {
 					if (isTRUE(show_progress)) cat(sprintf("\r%s iter=%d pval_span=%.6g (target<=%.6g) done\n", progress_label, iter, pval_span, tol))
 					return(if (lower) l else u)
 				}
 				m = (l + u) / 2.0; pval_m = evaluate_pval(m)
+				private$check_rand_bootstrap_ci_deadline(timeout_deadline, "Bootstrap randomization CI bisection")
 				if (is.na(pval_m)) { if (lower) { l = m; pval_l = 0 } else { u = m; pval_u = 0 }; iter = iter + 1; next }
 				if (pval_m >= pval_th && lower) { u = m; pval_u = pval_m }
 				else if (pval_m >= pval_th && !lower) { l = m; pval_l = pval_m }

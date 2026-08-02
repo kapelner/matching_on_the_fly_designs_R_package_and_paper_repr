@@ -1,5 +1,6 @@
 #include "_helper_functions.h"
 #include "ordinal_fixed_link_helpers.h"
+#include "result_map_rcpp.h"
 #include <Rcpp.h>
 #include <RcppEigen.h>
 #include <algorithm>
@@ -121,7 +122,7 @@ List fast_ordinal_cauchit_regression_cpp(const Rcpp::NumericMatrix& X,
     OrdinalCauchitRegression model(map_X, map_y);
     int p = map_X.cols();
     int K = model.n_levels();
-    if (K < 2) return List::create();
+    if (K < 2) return edi::to_rcpp_list(edi::ResultMap());
     int n_alpha = K - 1;
     int n_params = n_alpha + p;
 
@@ -162,29 +163,28 @@ List fast_ordinal_cauchit_regression_cpp(const Rcpp::NumericMatrix& X,
     params = fit.params;
 
     if (estimate_only) {
-        return List::create(
-            Named("b") = params.tail(p),
-            Named("alpha") = params.head(n_alpha),
-            Named("n_params") = n_params,
-            Named("params") = params,
-            Named("converged") = fit.converged,
-            Named("iterations") = fit.niter
-        );
+        return edi::to_rcpp_list(edi::ResultMap()
+            .set("b", params.tail(p))
+            .set("alpha", params.head(n_alpha))
+            .set("n_params", n_params)
+            .set("params", params)
+            .set("converged", fit.converged)
+            .set("iterations", fit.niter));
     }
 
-    return List::create(
-        Named("b") = params.tail(p),
-        Named("alpha") = params.head(n_alpha),
-        Named("n_params") = n_params,
-        Named("params") = params,
-        Named("neg_loglik") = fit.value,
-        Named("converged") = fit.converged,
-        Named("iterations") = fit.niter,
-        Named("observed_information") = model.hessian(params),
-        Named("fisher_information") = model.hessian(params),
-        Named("information") = model.hessian(params),
-        Named("information_type") = "observed"
-    );
+    MatrixXd H_full = model.hessian(params);
+    return edi::to_rcpp_list(edi::ResultMap()
+        .set("b", params.tail(p))
+        .set("alpha", params.head(n_alpha))
+        .set("n_params", n_params)
+        .set("params", params)
+        .set("neg_loglik", fit.value)
+        .set("converged", fit.converged)
+        .set("iterations", fit.niter)
+        .set("observed_information", H_full)
+        .set("fisher_information", H_full)
+        .set("information", H_full)
+        .set("information_type", std::string("observed")));
 }
 
 //' @title Fast Ordinal Cauchit Regression with Variance (C++)
@@ -210,7 +210,7 @@ List fast_ordinal_cauchit_regression_with_var_cpp(const Rcpp::NumericMatrix& X,
                                                    Nullable<NumericVector> fixed_values = R_NilValue,
                                                    Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
     List res = fast_ordinal_cauchit_regression_cpp(X, y, warm_start_params, smart_cold_start, 100, 1e-6, optimization_alg, fixed_idx, fixed_values, warm_start_fisher_info);
-    if (res.size() == 0) return List::create(Named("b") = NumericVector::create(NA_REAL), Named("ssq_b_2") = NA_REAL);
+    if (res.size() == 0) return edi::to_rcpp_list(edi::ResultMap().set("b", NA_REAL).set("ssq_b_2", NA_REAL));
     
     VectorXd params = res["params"];
     bool converged = res["converged"];
@@ -227,7 +227,7 @@ List fast_ordinal_cauchit_regression_with_var_cpp(const Rcpp::NumericMatrix& X,
 
     double ssq_b_2 = NA_REAL;
     MatrixXd H = model.hessian(params);
-    SEXP vcov_sexp = R_NilValue;
+    MatrixXd vcov;
     if (converged) {
         FixedParameterFunctor<OrdinalCauchitRegression> fixed_obj(model, fixed_spec, params);
         VectorXd params_free = subset_vector(params, fixed_spec.free_idx);
@@ -239,19 +239,22 @@ List fast_ordinal_cauchit_regression_with_var_cpp(const Rcpp::NumericMatrix& X,
             if (fixed_spec.free_idx[jj] == n_alpha) { free_j = jj + 1; break; }
         if (p >= 1 && free_j > 0) ssq_b_2 = compute_diagonal_inverse_entry(H_free, free_j);
         MatrixXd cov_free = covariance_from_information(H_free);
-        MatrixXd vcov = expand_free_covariance(n_params, fixed_spec, cov_free, true);
-        vcov_sexp = Rcpp::wrap(vcov);
+        vcov = expand_free_covariance(n_params, fixed_spec, cov_free, true);
     }
 
-    return List::create(
-        Named("b") = res["b"],
-        Named("alpha") = res["alpha"],
-        Named("params") = params,
-        Named("neg_loglik") = res["neg_loglik"],
-        Named("vcov") = vcov_sexp,
-        Named("ssq_b_j") = ssq_b_2,
-        Named("converged") = converged,
-        Named("iterations") = res["iterations"],
-        Named("fisher_information") = H
-    );
+    edi::ResultMap rm = edi::ResultMap()
+        .set("b", Rcpp::as<Eigen::VectorXd>(res["b"]))
+        .set("alpha", Rcpp::as<Eigen::VectorXd>(res["alpha"]))
+        .set("params", params)
+        .set("neg_loglik", Rcpp::as<double>(res["neg_loglik"]))
+        .set("ssq_b_j", ssq_b_2)
+        .set("converged", converged)
+        .set("iterations", Rcpp::as<int>(res["iterations"]))
+        .set("fisher_information", H);
+    if (converged) {
+        rm.set("vcov", vcov);
+    } else {
+        rm.set("vcov", std::monostate{});
+    }
+    return edi::to_rcpp_list(rm);
 }

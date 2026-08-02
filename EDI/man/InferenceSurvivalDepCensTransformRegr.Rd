@@ -29,10 +29,8 @@ inf$compute_estimate()
     \item \href{#method-InferenceSurvivalDepCensTransformRegr-compute_estimate}{\code{InferenceSurvivalDepCensTransformRegr$compute_estimate()}}
     \item \href{#method-InferenceSurvivalDepCensTransformRegr-compute_estimate_with_bootstrap_weights}{\code{InferenceSurvivalDepCensTransformRegr$compute_estimate_with_bootstrap_weights()}}
     \item \href{#method-InferenceSurvivalDepCensTransformRegr-compute_jackknife_estimate}{\code{InferenceSurvivalDepCensTransformRegr$compute_jackknife_estimate()}}
-    \item \href{#method-InferenceSurvivalDepCensTransformRegr-compute_jackknife_corrected_estimate}{\code{InferenceSurvivalDepCensTransformRegr$compute_jackknife_corrected_estimate()}}
     \item \href{#method-InferenceSurvivalDepCensTransformRegr-compute_jackknife_bias_estimate}{\code{InferenceSurvivalDepCensTransformRegr$compute_jackknife_bias_estimate()}}
     \item \href{#method-InferenceSurvivalDepCensTransformRegr-compute_jackknife_std_error}{\code{InferenceSurvivalDepCensTransformRegr$compute_jackknife_std_error()}}
-    \item \href{#method-InferenceSurvivalDepCensTransformRegr-compute_jackknife_standard_error}{\code{InferenceSurvivalDepCensTransformRegr$compute_jackknife_standard_error()}}
     \item \href{#method-InferenceSurvivalDepCensTransformRegr-compute_jackknife_wald_two_sided_pval}{\code{InferenceSurvivalDepCensTransformRegr$compute_jackknife_wald_two_sided_pval()}}
     \item \href{#method-InferenceSurvivalDepCensTransformRegr-compute_jackknife_wald_confidence_interval}{\code{InferenceSurvivalDepCensTransformRegr$compute_jackknife_wald_confidence_interval()}}
     \item \href{#method-InferenceSurvivalDepCensTransformRegr-compute_rand_two_sided_pval}{\code{InferenceSurvivalDepCensTransformRegr$compute_rand_two_sided_pval()}}
@@ -49,7 +47,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceSurvivalDepCensTransformRegr-clone}{\code{InferenceSurvivalDepCensTransformRegr$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceAsympLikStdModCache</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceAsympLikStdModCache</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalDepCensTransformRegr-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalDepCensTransformRegr-initialize}{}}}
@@ -147,27 +145,6 @@ estimate.}
 }
 
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalDepCensTransformRegr-compute_jackknife_corrected_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalDepCensTransformRegr-compute_jackknife_corrected_estimate}{}}}
-\subsection{\code{InferenceSurvivalDepCensTransformRegr$compute_jackknife_corrected_estimate()}}{
-  Reports jackknife bias-corrected estimate as unavailable for this model.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceSurvivalDepCensTransformRegr$compute_jackknife_corrected_estimate(
-  unit = "auto"
-)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{unit}}{Deletion unit. Default \code{"auto"}.}
-    }
-    \if{html}{\out{</div>}}
-  }
-}
-
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceSurvivalDepCensTransformRegr-compute_jackknife_bias_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSurvivalDepCensTransformRegr-compute_jackknife_bias_estimate}{}}}
 \subsection{\code{InferenceSurvivalDepCensTransformRegr$compute_jackknife_bias_estimate()}}{
@@ -196,27 +173,6 @@ estimate.}
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{InferenceSurvivalDepCensTransformRegr$compute_jackknife_std_error(
-  unit = "auto"
-)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{unit}}{Deletion unit. Default \code{"auto"}.}
-    }
-    \if{html}{\out{</div>}}
-  }
-}
-
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceSurvivalDepCensTransformRegr-compute_jackknife_standard_error"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceSurvivalDepCensTransformRegr-compute_jackknife_standard_error}{}}}
-\subsection{\code{InferenceSurvivalDepCensTransformRegr$compute_jackknife_standard_error()}}{
-  Alias for \code{compute_jackknife_std_error()}.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceSurvivalDepCensTransformRegr$compute_jackknife_standard_error(
   unit = "auto"
 )}
     \if{html}{\out{</div>}}

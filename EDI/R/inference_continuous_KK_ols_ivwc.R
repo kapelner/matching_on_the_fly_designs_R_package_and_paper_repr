@@ -63,21 +63,7 @@ InferenceContinKKOLSIVWC = R6::R6Class("InferenceContinKKOLSIVWC",
 			preserve = if (is.null(permutations$m_mat)) c("kk_ols_ivwc_matched_reduced_design", "kk_ols_ivwc_reservoir_reduced_design") else character()
 			private$compute_fast_randomization_distr_via_reused_worker(y, permutations, delta, transform_responses, preserve_cache_keys = preserve, zero_one_logit_clamp = zero_one_logit_clamp)
 		},
-		reduce_design_matrix_once = function(X, j_treat, cache_key){
-			cached = private$cached_values[[cache_key]]
-			if (!is.null(cached)) return(cached)
-			qr_X = qr(X)
-			if (qr_X$rank < ncol(X)){
-				keep = qr_X$pivot[seq_len(qr_X$rank)]
-				if (!(j_treat %in% keep)) keep[qr_X$rank] = j_treat
-				keep = sort(unique(keep))
-				X = X[, keep, drop = FALSE]
-				j_treat = which(keep == j_treat)
-			}
-			cached = list(X = X, j_treat = j_treat)
-			private$cached_values[[cache_key]] = cached
-			cached
-		},
+		# reduce_design_matrix_once() is inherited from InferenceMixinKKPassThroughCompound.
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))

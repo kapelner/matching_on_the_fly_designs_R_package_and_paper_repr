@@ -19,7 +19,7 @@ This class uses the same \code{fit()} result contract as
     \item \href{#method-InferenceCustomBoot-clone}{\code{InferenceCustomBoot$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceJackknife.html'><code>InferenceJackknife</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceJackknife.html'><code>InferenceJackknife</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCustomBoot-fit"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCustomBoot-fit}{}}}

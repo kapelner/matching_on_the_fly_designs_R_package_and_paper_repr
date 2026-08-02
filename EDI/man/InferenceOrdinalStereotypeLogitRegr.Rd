@@ -18,7 +18,7 @@ indicator and, optionally, all recorded covariates as predictors.
     \item \href{#method-InferenceOrdinalStereotypeLogitRegr-clone}{\code{InferenceOrdinalStereotypeLogitRegr$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceAsympLikStdModCache</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceAsympLikStdModCache</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalStereotypeLogitRegr-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalStereotypeLogitRegr-initialize}{}}}

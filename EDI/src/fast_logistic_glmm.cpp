@@ -12,6 +12,7 @@
 // This avoids the infinite-gradient issue at the boundary.
 
 #include "_helper_functions.h"
+#include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <cmath>
 #include <vector>
@@ -534,25 +535,24 @@ List fast_logistic_glmm_cpp(
 	if (estimate_only) {
 		const double pen = log_sigma_penalty(par[total - 1]);
 		true_neg_ll = neg_ll - pen;
-		return List::create(
-			Named("params")     = par,
-			Named("b")          = par.head(p),
-			Named("log_sigma")  = par[total - 1],
-			Named("ssq_b_T")    = NA_REAL,
-			Named("vcov")       = R_NilValue,
-			Named("score")      = R_NilValue,
-			Named("observed_information") = R_NilValue,
-			Named("information") = R_NilValue,
-			Named("information_type") = "observed",
-			Named("hessian")    = R_NilValue,
-			Named("converged")  = converged,
-			Named("neg_loglik") = true_neg_ll,
-			Named("neg_ll")     = true_neg_ll,
-			Named("loglik")     = R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL,
-			Named("fisher_information") = R_NilValue,
-			Named("gradient_norm") = gradient_norm,
-			Named("variance_boundary_hit") = variance_boundary_hit
-		);
+		return edi::to_rcpp_list(edi::ResultMap()
+			.set("params", par)
+			.set("b", par.head(p))
+			.set("log_sigma", par[total - 1])
+			.set("ssq_b_T", NA_REAL)
+			.set("vcov", std::monostate{})
+			.set("score", std::monostate{})
+			.set("observed_information", std::monostate{})
+			.set("information", std::monostate{})
+			.set("information_type", std::string("observed"))
+			.set("hessian", std::monostate{})
+			.set("converged", converged)
+			.set("neg_loglik", true_neg_ll)
+			.set("neg_ll", true_neg_ll)
+			.set("loglik", R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL)
+			.set("fisher_information", std::monostate{})
+			.set("gradient_norm", gradient_norm)
+			.set("variance_boundary_hit", variance_boundary_hit));
 	}
 
 	Eigen::VectorXd score = Eigen::VectorXd::Constant(total, NA_REAL);
@@ -580,23 +580,23 @@ List fast_logistic_glmm_cpp(
 		}
 	}
 
-	return List::create(
-		Named("params")     = par,
-		Named("b")          = par.head(p),
-		Named("log_sigma")  = par[total - 1],
-		Named("ssq_b_T")    = ssq_b_T,
-		Named("vcov")       = vcov,
-		Named("score")      = score,
-		Named("observed_information") = information,
-		Named("information") = information,
-		Named("information_type") = "observed",
-		Named("hessian")    = -information,
-		Named("converged")  = converged,
-		Named("neg_loglik") = true_neg_ll,
-		Named("neg_ll")     = true_neg_ll,
-		Named("loglik")     = R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL,
-		Named("fisher_information") = information,
-		Named("gradient_norm") = gradient_norm,
-		Named("variance_boundary_hit") = variance_boundary_hit
-	);
+	Eigen::MatrixXd neg_information = -information;
+	return edi::to_rcpp_list(edi::ResultMap()
+		.set("params", par)
+		.set("b", par.head(p))
+		.set("log_sigma", par[total - 1])
+		.set("ssq_b_T", ssq_b_T)
+		.set("vcov", vcov)
+		.set("score", score)
+		.set("observed_information", information)
+		.set("information", information)
+		.set("information_type", std::string("observed"))
+		.set("hessian", neg_information)
+		.set("converged", converged)
+		.set("neg_loglik", true_neg_ll)
+		.set("neg_ll", true_neg_ll)
+		.set("loglik", R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL)
+		.set("fisher_information", information)
+		.set("gradient_norm", gradient_norm)
+		.set("variance_boundary_hit", variance_boundary_hit));
 }

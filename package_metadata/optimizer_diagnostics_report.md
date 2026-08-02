@@ -66,6 +66,24 @@ pseudo-inverse matrix is kept — the eigenvalues themselves, which are exactly
 a condition-number / near-singularity diagnostic, are computed and discarded
 on every single call.
 
+### Recent comprehensive results show coefficient thresholds are not enough
+
+The 2026-08-01/2026-08-02 comprehensive CSVs exposed a concrete version of
+this blind spot in three paths:
+
+- `InferenceOrdinalStereotypeLogitRegr`
+- `InferenceOrdinalKKCondAdjCatLogitRegr`
+- `InferenceIncidKKCondLogitOneLik`
+
+The large-estimate rows are consistent with separation or boundary divergence,
+but the very-wide-CI rows are broader than that. Most wide-interval contexts
+did **not** have an extreme point estimate; they had a finite, sometimes
+moderate treatment estimate paired with a huge finite standard error from an
+ill-conditioned information matrix. A diagnostic layer that only checks
+`max(abs(coef))` will miss these failures. These paths need explicit
+standard-error and information-matrix sanity checks in addition to coefficient
+magnitude and convergence checks.
+
 ### There is one real precedent for detect-then-structurally-recover
 
 `fit_with_hardened_qr_column_dropping` ([inference_all_abstract.R:889+](/home/kapelner/workspace/matching_on_the_fly_designs_R_package_and_paper_repr/EDI/R/inference_all_abstract.R), used at 45+ call sites via `InferenceMixinKKGEEShared`/`InferenceMixinKKGLMMShared`) runs a rank-revealing pivoted QR on the design matrix, keeps `qr_X$pivot[seq_len(qr_X$rank)]` plus any required columns, and refits on the reduced matrix. This is a genuine example of the pattern this report proposes generalizing: detect a specific failure mode via a cheap decomposition, then recover structurally rather than just erroring. But it is gated behind a `private$harden` opt-in flag, not automatic, and it only covers rank deficiency.
@@ -103,7 +121,7 @@ reads or classifies them.
 | 1 | Separation / boundary divergence | Partially, in 3-4 call sites | Copy-pasted `max(abs(b)) <= 1e6` magnitude threshold |
 | 2 | Iteration-cap non-convergence mislabeled as success | No | `converged = (niter < maxit)` conflates "converged well" with "just under the cap" |
 | 3 | Rank deficiency / collinearity | Yes, but opt-in only | `fit_with_hardened_qr_column_dropping`, gated by `private$harden` |
-| 4 | Near-singular information matrix | No | Eigenvalues computed in `symmetric_pseudo_inverse` and discarded |
+| 4 | Near-singular information matrix / huge finite SE | No | Eigenvalues computed in `symmetric_pseudo_inverse` and discarded; R callers accept any finite positive `ssq_b_j` |
 | 5 | GLMM variance-component boundary collapse | No | Silent soft penalty / hard clamp, value not compared to boundary afterward |
 | 6 | Quadrature (Gauss-Hermite node count) inadequacy | No | Fixed `n_gh`, no adaptive check |
 | 7 | Derivative-free optimizer degeneracy (simplex collapse) | No | R's own `$convergence`/`$counts` unused by any caller |
@@ -149,6 +167,10 @@ Pattern-1 shape:
 
 - Centralizes the magnitude-threshold constant (today `1e6`, copy-pasted five
   times with no guarantee the copies stay in sync) into one shared function.
+- Adds class-configurable standard-error and information-matrix sanity
+  thresholds. These are separate from coefficient-magnitude thresholds because
+  the recent ordinal/KK conditional-logit failures include moderate estimates
+  with enormous finite SEs.
 - Classifies the raw native `diagnostics` fields into a standard taxonomy:
   `severity` (`ok` / `warning` / `failure`) × `category` (`separation`,
   `rank_deficiency`, `near_singular_information`, `variance_boundary`,
@@ -251,6 +273,15 @@ minimum-eigenvalue question separately (see
 [Performance Implications](#performance-implications)) rather than bundling
 it in as if it were free — either scope it to the already-failing fallback
 path only, or explicitly accept the new `O(p^3)` cost for universal coverage.
+
+As an immediate targeted hardening pass, wire the same diagnostic classifier
+into `InferenceOrdinalStereotypeLogitRegr`,
+`InferenceOrdinalKKCondAdjCatLogitRegr`, and
+`InferenceIncidKKCondLogitOneLik`. For these classes, rejecting huge finite
+standard errors is as important as rejecting huge finite coefficients:
+large-estimate rows should be classified as separation or boundary divergence,
+while moderate-estimate / huge-SE rows should be classified as
+near-singular-information or standard-error-unavailable.
 
 ### Phase 2
 

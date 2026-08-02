@@ -37,14 +37,6 @@ InferenceJackknife = R6::R6Class("InferenceJackknife",
 			private$assert_jackknife_supported(unit = unit)
 			private$compute_jackknife_summary(unit = unit)$estimate
 		},
-		#' @description Alias for `compute_jackknife_estimate()`.
-		#'
-		#' @param unit Deletion unit. Default `\"auto\"`.
-		#'
-		#' @return A numeric jackknife bias-corrected treatment estimate.
-		compute_jackknife_corrected_estimate = function(unit = "auto"){
-			self$compute_jackknife_estimate(unit = unit)
-		},
 		#' @description Computes the jackknife bias estimate.
 		#'
 		#' @param unit Deletion unit. Default `\"auto\"`.
@@ -72,14 +64,6 @@ InferenceJackknife = R6::R6Class("InferenceJackknife",
 			if (private$mark_jackknife_nonestimable_if_block_unsupported(unit = unit)) return(NA_real_)
 			private$assert_jackknife_supported(unit = unit)
 			private$compute_jackknife_summary(unit = unit)$std_error
-		},
-		#' @description Alias for `compute_jackknife_std_error()`.
-		#'
-		#' @param unit Deletion unit. Default `\"auto\"`.
-		#'
-		#' @return A numeric jackknife standard error.
-		compute_jackknife_standard_error = function(unit = "auto"){
-			self$compute_jackknife_std_error(unit = unit)
 		},
 		#' @description Computes a two-sided Wald p-value using the jackknife estimate
 		#'   and jackknife standard error.

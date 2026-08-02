@@ -20,7 +20,7 @@ all subjects in the reservoir) and KK matching-on-the-fly designs
     \item \href{#method-InferenceAbstractQuantileRandCI-clone}{\code{InferenceAbstractQuantileRandCI$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractQuantileRandCI-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractQuantileRandCI-initialize}{}}}

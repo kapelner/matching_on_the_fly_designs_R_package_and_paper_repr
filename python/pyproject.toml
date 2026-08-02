@@ -1,0 +1,22 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11>=2.13"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "edi_kernels"
+version = "0.1.0"
+description = "Python bindings for EDI's C++ model-fitting kernels (pybind11, no R/Rcpp dependency)"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+test = ["pytest>=7.0", "scipy>=1.10"]
+
+[tool.scikit-build]
+minimum-version = "0.10"
+build-dir = "build/{wheel_tag}"
+wheel.packages = ["src/edi_kernels"]
+
+[tool.scikit-build.cmake.define]
+EDI_PY_PORTABLE = "OFF"

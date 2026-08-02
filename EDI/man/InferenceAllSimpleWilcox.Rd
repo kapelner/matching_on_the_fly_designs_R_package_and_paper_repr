@@ -34,16 +34,14 @@ seq_des_inf$compute_estimate()
     \item \href{#method-InferenceAllSimpleWilcox-compute_asymp_two_sided_pval}{\code{InferenceAllSimpleWilcox$compute_asymp_two_sided_pval()}}
     \item \href{#method-InferenceAllSimpleWilcox-compute_asymp_confidence_interval}{\code{InferenceAllSimpleWilcox$compute_asymp_confidence_interval()}}
     \item \href{#method-InferenceAllSimpleWilcox-compute_jackknife_estimate}{\code{InferenceAllSimpleWilcox$compute_jackknife_estimate()}}
-    \item \href{#method-InferenceAllSimpleWilcox-compute_jackknife_corrected_estimate}{\code{InferenceAllSimpleWilcox$compute_jackknife_corrected_estimate()}}
     \item \href{#method-InferenceAllSimpleWilcox-compute_jackknife_bias_estimate}{\code{InferenceAllSimpleWilcox$compute_jackknife_bias_estimate()}}
     \item \href{#method-InferenceAllSimpleWilcox-compute_jackknife_std_error}{\code{InferenceAllSimpleWilcox$compute_jackknife_std_error()}}
-    \item \href{#method-InferenceAllSimpleWilcox-compute_jackknife_standard_error}{\code{InferenceAllSimpleWilcox$compute_jackknife_standard_error()}}
     \item \href{#method-InferenceAllSimpleWilcox-compute_jackknife_wald_two_sided_pval}{\code{InferenceAllSimpleWilcox$compute_jackknife_wald_two_sided_pval()}}
     \item \href{#method-InferenceAllSimpleWilcox-compute_jackknife_wald_confidence_interval}{\code{InferenceAllSimpleWilcox$compute_jackknife_wald_confidence_interval()}}
     \item \href{#method-InferenceAllSimpleWilcox-clone}{\code{InferenceAllSimpleWilcox$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceParamBootstrap.html'><code>InferenceParamBootstrap</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllSimpleWilcox-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllSimpleWilcox-initialize}{}}}
@@ -182,25 +180,6 @@ differences.
 }
 
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAllSimpleWilcox-compute_jackknife_corrected_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllSimpleWilcox-compute_jackknife_corrected_estimate}{}}}
-\subsection{\code{InferenceAllSimpleWilcox$compute_jackknife_corrected_estimate()}}{
-  Non-estimable jackknife bias-corrected estimate.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceAllSimpleWilcox$compute_jackknife_corrected_estimate(unit = "auto")}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{unit}}{Deletion unit. Default \code{"auto"}.}
-    }
-    \if{html}{\out{</div>}}
-  }
-}
-
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAllSimpleWilcox-compute_jackknife_bias_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAllSimpleWilcox-compute_jackknife_bias_estimate}{}}}
 \subsection{\code{InferenceAllSimpleWilcox$compute_jackknife_bias_estimate()}}{
@@ -227,25 +206,6 @@ differences.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{InferenceAllSimpleWilcox$compute_jackknife_std_error(unit = "auto")}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{unit}}{Deletion unit. Default \code{"auto"}.}
-    }
-    \if{html}{\out{</div>}}
-  }
-}
-
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAllSimpleWilcox-compute_jackknife_standard_error"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllSimpleWilcox-compute_jackknife_standard_error}{}}}
-\subsection{\code{InferenceAllSimpleWilcox$compute_jackknife_standard_error()}}{
-  Alias for \code{compute_jackknife_std_error()}.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceAllSimpleWilcox$compute_jackknife_standard_error(unit = "auto")}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{

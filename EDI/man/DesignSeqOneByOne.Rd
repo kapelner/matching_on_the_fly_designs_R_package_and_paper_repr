@@ -30,7 +30,7 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
     \item \href{#method-DesignSeqOneByOne-clone}{\code{DesignSeqOneByOne$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/DesignMatching.html'><code>DesignMatching</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/DesignMatching.html'><code>DesignMatching</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOne-is_a_seq_one_by_one"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOne-is_a_seq_one_by_one}{}}}

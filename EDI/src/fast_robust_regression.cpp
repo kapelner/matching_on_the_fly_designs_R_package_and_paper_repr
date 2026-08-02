@@ -1,14 +1,21 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
+#endif
 #include <cmath>
 #include <algorithm>
 #include <stdexcept>
+#include <limits>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 // --- Weight Functions ---
 
@@ -42,7 +49,7 @@ struct RobustModelResult {
     bool converged;
     double ssq_b_j;
 
-    RobustModelResult() : XtX_inv_diag_j(NA_REAL), scale(NA_REAL), iterations(0), converged(false), ssq_b_j(NA_REAL) {}
+    RobustModelResult() : XtX_inv_diag_j(std::numeric_limits<double>::quiet_NaN()), scale(std::numeric_limits<double>::quiet_NaN()), iterations(0), converged(false), ssq_b_j(std::numeric_limits<double>::quiet_NaN()) {}
 };
 
 RobustModelResult fast_robust_regression_internal(
@@ -197,6 +204,7 @@ RobustModelResult fast_robust_regression_internal(
     return res;
 }
 
+#ifndef EDI_CORE_ONLY
 //' @title Fast Robust Regression (C++)
 //' @description High-performance robust regression fitting using IRLS.
 //' @param X A numeric matrix of predictors.
@@ -400,3 +408,4 @@ NumericVector compute_robust_rand_bootstrap_parallel_cpp(
     }
     return wrap(results);
 }
+#endif // EDI_CORE_ONLY

@@ -471,6 +471,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			}
 			if (isTRUE(debug)) {
 				run_debug_boot_iter = function(boot_draw, worker_des = NULL, worker_inf = NULL, worker_state = NULL) {
+					private$check_bootstrap_replicate_deadline("Bootstrap debug replicate")
 					iter_warns = character(0)
 					iter_errs = character(0)
 					iter_val = withCallingHandlers(
@@ -485,6 +486,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 						}, error = function(e) { iter_errs <<- c(iter_errs, conditionMessage(e)); NA_real_ }),
 						warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
 					)
+					private$check_bootstrap_replicate_deadline("Bootstrap debug replicate")
 					list(
 						val = as.numeric(iter_val)[1L],
 						errors = iter_errs,
@@ -588,7 +590,9 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 					}
 				}
 				system.time(do_warmup_iter())  # First call: discarded (cold-start overhead)
+				private$check_bootstrap_replicate_deadline("Bootstrap warmup")
 				t_boot_warmup = system.time(do_warmup_iter())[[3]]  # Second call: representative cost
+				private$check_bootstrap_replicate_deadline("Bootstrap warmup")
 				# Existing cluster: ~10ms round-trip overhead. No cluster yet: ~300ms lazy creation.
 				fork_overhead_estimate = if (!is.null(get_global_fork_cluster())) 0.01 else 0.3
 				if (!(t_boot_warmup * B > fork_overhead_estimate * actual_cores))
@@ -603,11 +607,14 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				)
 			} else {
 				unlist(private$par_lapply(seq_along(boot_draws), function(idx) {
+					private$check_bootstrap_replicate_deadline("Bootstrap replicate")
 					boot_draw = boot_draws[[idx]]
-					tryCatch({
+					out = tryCatch({
 						sub_inf = private$bootstrap_subset_inference(boot_draw, smooth = FALSE)
 						if (is.null(sub_inf)) NA_real_ else as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
 					}, error = function(e) NA_real_)
+					private$check_bootstrap_replicate_deadline("Bootstrap replicate")
+					out
 				}, n_cores = actual_cores, show_progress = show_progress,
 				export_list = list(
 					des_template = des_template,
@@ -1035,6 +1042,15 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 			ci
 		},
+		check_bootstrap_replicate_deadline = function(label = "Bootstrap replicate"){
+			deadline = getOption("EDI.ci_timeout_deadline", default = NA_real_)
+			deadline = suppressWarnings(as.numeric(deadline)[1L])
+			if (is.na(deadline) || !is.finite(deadline)) return(invisible(FALSE))
+			if (unname(proc.time()[["elapsed"]]) >= deadline) {
+				stop(paste0(label, " reached elapsed time limit"), call. = FALSE)
+			}
+			invisible(FALSE)
+		},
 		bootstrap_estimates_extreme = function(theta, est = NA_real_, max_abs = private$bootstrap_extreme_estimate_threshold){
 			theta = as.numeric(theta)
 			theta = theta[is.finite(theta)]
@@ -1248,6 +1264,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				estimate_draw = private[[contract$estimator]]
 				out = numeric(length(idxs))
 				for (k in seq_along(idxs)) {
+					private$check_bootstrap_replicate_deadline(paste0(operation, " replicate"))
 					boot_draw = draws[[idxs[[k]]]]
 					out[k] = tryCatch({
 						if (length(loader_args)) {
@@ -1257,6 +1274,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 						}
 						estimate_draw(worker_state)
 					}, error = function(e) NA_real_)
+					private$check_bootstrap_replicate_deadline(paste0(operation, " replicate"))
 				}
 				out
 			}
@@ -1528,8 +1546,10 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				on.exit(try(close(pb), silent = TRUE), add = TRUE)
 			}
 			for (b in seq_len(B)) {
+				private$check_bootstrap_replicate_deadline("Bootstrap statistic replicate")
 				idx = private$bootstrap_sample_indices(n)
 				stats_mat[b, ] = private$bootstrap_replication_stats(idx, smooth = smooth, require_se = require_se)  # idx is a boot_draw list
+				private$check_bootstrap_replicate_deadline("Bootstrap statistic replicate")
 				if (!is.null(pb)) utils::setTxtProgressBar(pb, b)
 			}
 			if (isTRUE(na.rm)) {

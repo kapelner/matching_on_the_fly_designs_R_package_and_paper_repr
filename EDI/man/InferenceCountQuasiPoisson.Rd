@@ -32,7 +32,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceCountQuasiPoisson-clone}{\code{InferenceCountQuasiPoisson$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceCountCompositeLikelihood.html'><code>InferenceCountCompositeLikelihood</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceCountCompositeLikelihood.html'><code>InferenceCountCompositeLikelihood</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountQuasiPoisson-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountQuasiPoisson-initialize}{}}}

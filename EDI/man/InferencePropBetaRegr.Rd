@@ -30,7 +30,7 @@ inf$compute_estimate()
     \item \href{#method-InferencePropBetaRegr-clone}{\code{InferencePropBetaRegr$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceAsympLikStdModCache</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceAsympLikStdModCache</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferencePropBetaRegr-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferencePropBetaRegr-initialize}{}}}

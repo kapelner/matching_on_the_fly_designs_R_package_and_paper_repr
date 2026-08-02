@@ -28,7 +28,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceCountZeroInflatedPoisson-clone}{\code{InferenceCountZeroInflatedPoisson$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceCountZeroAugmentedPoissonAbstract</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceCountZeroAugmentedPoissonAbstract</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountZeroInflatedPoisson-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountZeroInflatedPoisson-initialize}{}}}

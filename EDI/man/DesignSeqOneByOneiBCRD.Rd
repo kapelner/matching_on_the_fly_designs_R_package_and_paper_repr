@@ -23,7 +23,7 @@ seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1)))
     \item \href{#method-DesignSeqOneByOneiBCRD-clone}{\code{DesignSeqOneByOneiBCRD$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/DesignSeqOneByOne.html'><code>DesignSeqOneByOne</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/DesignSeqOneByOne.html'><code>DesignSeqOneByOne</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignSeqOneByOneiBCRD-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignSeqOneByOneiBCRD-initialize}{}}}

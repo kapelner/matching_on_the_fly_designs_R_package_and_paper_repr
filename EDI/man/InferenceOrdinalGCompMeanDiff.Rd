@@ -37,7 +37,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceOrdinalGCompMeanDiff-clone}{\code{InferenceOrdinalGCompMeanDiff$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceAsymp.html'><code>InferenceAsymp</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceAsymp.html'><code>InferenceAsymp</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceOrdinalGCompMeanDiff-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceOrdinalGCompMeanDiff-initialize}{}}}

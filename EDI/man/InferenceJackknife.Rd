@@ -16,16 +16,14 @@ inference layered on top of bootstrap-capable inference classes.
   \itemize{
     \item \href{#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T}{\code{InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()}}
     \item \href{#method-InferenceJackknife-compute_jackknife_estimate}{\code{InferenceJackknife$compute_jackknife_estimate()}}
-    \item \href{#method-InferenceJackknife-compute_jackknife_corrected_estimate}{\code{InferenceJackknife$compute_jackknife_corrected_estimate()}}
     \item \href{#method-InferenceJackknife-compute_jackknife_bias_estimate}{\code{InferenceJackknife$compute_jackknife_bias_estimate()}}
     \item \href{#method-InferenceJackknife-compute_jackknife_std_error}{\code{InferenceJackknife$compute_jackknife_std_error()}}
-    \item \href{#method-InferenceJackknife-compute_jackknife_standard_error}{\code{InferenceJackknife$compute_jackknife_standard_error()}}
     \item \href{#method-InferenceJackknife-compute_jackknife_wald_two_sided_pval}{\code{InferenceJackknife$compute_jackknife_wald_two_sided_pval()}}
     \item \href{#method-InferenceJackknife-compute_jackknife_wald_confidence_interval}{\code{InferenceJackknife$compute_jackknife_wald_confidence_interval()}}
     \item \href{#method-InferenceJackknife-clone}{\code{InferenceJackknife$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <a href='../../EDI/html/InferenceBayesianBootstrap.html'><code>InferenceBayesianBootstrap</code></a>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceBayesianBootstrap.html'><code>InferenceBayesianBootstrap</code></a>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T}{}}}
@@ -78,28 +76,6 @@ unit automatically.}
 }
 
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceJackknife-compute_jackknife_corrected_estimate"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceJackknife-compute_jackknife_corrected_estimate}{}}}
-\subsection{\code{InferenceJackknife$compute_jackknife_corrected_estimate()}}{
-  Alias for `compute_jackknife_estimate()`.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceJackknife$compute_jackknife_corrected_estimate(unit = "auto")}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{unit}}{Deletion unit. Default `\"auto\"`.}
-    }
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    A numeric jackknife bias-corrected treatment estimate.
-  }
-}
-
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceJackknife-compute_jackknife_bias_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceJackknife-compute_jackknife_bias_estimate}{}}}
 \subsection{\code{InferenceJackknife$compute_jackknife_bias_estimate()}}{
@@ -141,28 +117,6 @@ subjects.
     \describe{
       \item{\code{unit}}{Deletion unit. Default `\"auto\"`, which chooses a design-aware
 unit automatically.}
-    }
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    A numeric jackknife standard error.
-  }
-}
-
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceJackknife-compute_jackknife_standard_error"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceJackknife-compute_jackknife_standard_error}{}}}
-\subsection{\code{InferenceJackknife$compute_jackknife_standard_error()}}{
-  Alias for `compute_jackknife_std_error()`.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceJackknife$compute_jackknife_standard_error(unit = "auto")}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{unit}}{Deletion unit. Default `\"auto\"`.}
     }
     \if{html}{\out{</div>}}
   }

@@ -28,7 +28,7 @@ inf$compute_estimate()
     \item \href{#method-InferenceCountHurdlePoisson-clone}{\code{InferenceCountHurdlePoisson$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceCountZeroAugmentedPoissonAbstract</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceCountZeroAugmentedPoissonAbstract</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountHurdlePoisson-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountHurdlePoisson-initialize}{}}}

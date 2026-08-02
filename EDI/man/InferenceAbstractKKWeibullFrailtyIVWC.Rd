@@ -38,7 +38,7 @@ columns when needed.
     \item \href{#method-InferenceAbstractKKWeibullFrailtyIVWC-clone}{\code{InferenceAbstractKKWeibullFrailtyIVWC$clone()}}
   }
 }
-\if{html}{\out{<p>Inherited methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
+\if{html}{\out{<p>+ inherited public methods from <code>InferenceKKPassThroughCompoundNoParamBootstrap</code>.</p>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAbstractKKWeibullFrailtyIVWC-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAbstractKKWeibullFrailtyIVWC-initialize}{}}}
