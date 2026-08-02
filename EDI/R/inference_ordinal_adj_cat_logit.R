@@ -37,8 +37,8 @@ InferenceOrdinalAdjCatLogitRegr = R6::R6Class("InferenceOrdinalAdjCatLogitRegr",
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-		#' @description Recomputes the ordinal treatment estimate under
-		#'   Bayesian-bootstrap weights.
+		#' @description Recomputes the ordinal weighted treatment estimate; see
+		#'   \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}}.
 		#' @param subject_or_block_weights Numeric vector. Row weights for bootstrap.
 		#' @param estimate_only Logical. If TRUE, skip variance component calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){

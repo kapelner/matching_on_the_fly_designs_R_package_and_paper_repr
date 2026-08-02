@@ -9,7 +9,7 @@
 InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
-	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
+	public = list(
 		#' @description Initialize the abstract base.
 		#' @param des_obj A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula Optional formula for covariate adjustment.
@@ -19,7 +19,8 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$init_kk_passthrough(des_obj)
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B  					Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         Whether to return diagnostics.
@@ -36,8 +37,8 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 		compute_bootstrap_confidence_interval = function(alpha = 0.05, ...){
 			self$compute_asymp_confidence_interval(alpha)
 		}
-	))),
-	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+	),
+	private = list(
 		is_a_kk_wilcox_base_ivwc = function() TRUE,
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		compute_fast_randomization_distr = function(y, permutations, delta, transform_responses, zero_one_logit_clamp = .Machine$double.eps) {
@@ -135,7 +136,7 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 			}
 			if (n_components == 0L) NA_real_ else stat
 		}
-	)))
+	)
 )
 #' Non-parametric Wilcoxon-based Compound Inference for KK Designs
 #'
@@ -163,7 +164,9 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKWilcoxBaseIVWC,
 	public = list(
-		#' @description Initialize the inference object.
+		#' @description Initialize KK inverse-variance combined Wilcoxon inference
+		#'   and prepare matched/reservoir rank-based components used by
+		#'   \code{\link[EDI:InferenceAllKKWilcoxIVWC]{InferenceAllKKWilcoxIVWC}}.
 		#' @param des_obj A DesignSeqOneByOne object (must be a KK design).
 		#' @param verbose Whether to print progress messages.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -213,7 +216,9 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 			# Even though estimates are non-parametric, the combined estimator is asymptotically normal
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Computes the non-parametric p-value.
+		#' @description Compute the KK Wilcoxon non-parametric two-sided p-value
+		#'   from the rank-based treatment statistic. See related simple Wilcoxon
+		#'   behavior in \code{\link[EDI:InferenceAllSimpleWilcox]{InferenceAllSimpleWilcox}}.
 		#' @param delta The null difference to test against. For any
 		#'   treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval = function(delta = 0){
@@ -240,26 +245,34 @@ InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 			private$cache_nonestimable_estimate("kk_wilcox_hl_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Non-estimable jackknife bias estimate.
+		#' @description Report that the jackknife bias estimate is unavailable for
+		#'   this Wilcoxon combined estimator; see
+		#'   \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} for the shared
+		#'   jackknife contract.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_bias_estimate = function(unit = "auto"){
 			private$cache_nonestimable_estimate("kk_wilcox_hl_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Non-estimable jackknife standard error.
+		#' @description Report that the jackknife standard error is unavailable for
+		#'   this Wilcoxon combined estimator; see
+		#'   \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} for the shared
+		#'   jackknife contract.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_std_error = function(unit = "auto"){
 			private$cache_nonestimable_se("kk_wilcox_hl_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Non-estimable jackknife Wald two-sided p-value.
+		#' @description Reports that jackknife-Wald p-values are unavailable here; see
+		#'   \code{\link[EDI:InferenceJackknife]{InferenceJackknife}}.
 		#' @param delta Null treatment-effect value. Default 0.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_wald_two_sided_pval = function(delta = 0, unit = "auto"){
 			private$cache_nonestimable_se("kk_wilcox_hl_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Non-estimable jackknife Wald confidence interval.
+		#' @description Reports that jackknife-Wald intervals are unavailable here; see
+		#'   \code{\link[EDI:InferenceJackknife]{InferenceJackknife}}.
 		#' @param alpha Significance level. Default 0.05.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_wald_confidence_interval = function(alpha = 0.05, unit = "auto"){

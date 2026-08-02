@@ -92,6 +92,20 @@ make_param_boot_count_kk_glmm_design <- function(seed = 20260524L, n = 72L){
 	des
 }
 
+make_param_boot_count_kk_onelik_design <- function(seed = 20260802L, n = 48L){
+	set.seed(seed)
+	x1 <- rnorm(n)
+	x2 <- rnorm(n)
+	des <- DesignSeqOneByOneKK14$new(n = n, response_type = "count", verbose = FALSE)
+	for (i in seq_len(n)) {
+		w_i <- des$add_one_subject_to_experiment_and_assign(data.frame(x1 = x1[i], x2 = x2[i]))
+		mu_i <- exp(0.35 + 0.30 * w_i + 0.20 * x1[i] - 0.10 * x2[i])
+		y_i <- rpois(1L, lambda = mu_i)
+		des$add_one_subject_response(i, y_i, 1L)
+	}
+	des
+}
+
 make_param_boot_ordinal_kk_glmm_design <- function(seed = 20260724L, n = 48L){
 	set.seed(seed)
 	x1 <- rnorm(n)
@@ -133,6 +147,17 @@ assert_param_bootstrap_lr_smoke <- function(inf, B = 9L, min_success = 3L, seed 
 	expect_gte(diag$n_success, min_success)
 	expect_gt(diag$success_fraction, 0)
 }
+
+test_that("KK count one-likelihood classes route parametric LR bootstrap through the private support contract", {
+	des <- make_param_boot_count_kk_onelik_design()
+
+	for (class_gen in list(InferenceCountKKCondPoissonOneLik, InferenceCountKKHurdlePoissonOneLik)) {
+		inf <- class_gen$new(des, model_formula = ~ x1 + x2, verbose = FALSE)
+
+		expect_false("supports_lik_ratio_param_bootstrap" %in% names(inf))
+		assert_param_bootstrap_lr_smoke(inf, B = 5L, min_success = 2L, seed = 123L)
+	}
+})
 
 test_that("raw LR parametric bootstrap works for zero-augmented Poisson models (ZIP, Hurdle Poisson)", {
 	des <- make_param_boot_zero_augmented_poisson_design()

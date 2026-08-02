@@ -22,7 +22,10 @@ InferencePropKKQuantileRegrOneLik = R6::R6Class("InferencePropKKQuantileRegrOneL
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKQuantileRegrOneLik,
 	public = list(
-		#' @description	Initialize the inference object.
+		#' @description Initialize proportion-response KK combined-likelihood quantile-regression inference.
+		#'   Responses are fitted on the logit scale; the shared stacked quantile-regression
+		#'   fit is documented in
+		#'   \code{\link[EDI:InferenceAbstractKKQuantileRegrOneLik]{InferenceAbstractKKQuantileRegrOneLik}}.
 		#' @param des_obj A DesignSeqOneByOne object whose entire n subjects
 		#'   are assigned and response y is recorded within.
 		#' @param tau                             The quantile level on the logit scale, strictly
@@ -50,7 +53,8 @@ InferencePropKKQuantileRegrOneLik = R6::R6Class("InferencePropKKQuantileRegrOneL
 			private$cached_values$KKstats = NULL
 			private$compute_basic_match_data()
 		},
-		#' @description Returns the estimated treatment effect.
+		#' @description Returns the class-specific treatment-effect estimate; see
+		#'   \code{\link[EDI:Inference]{Inference}}.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE) super$compute_estimate()
 	)

@@ -50,7 +50,8 @@ InferenceIncidExactBinomial = R6::R6Class("InferenceIncidExactBinomial",
 		compute_estimate = function(estimate_only = FALSE){
 			private$get_exact_binomial_log_or_estimate()
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B  					Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         Whether to return diagnostics.

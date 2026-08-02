@@ -17,8 +17,10 @@
 InferenceSurvivalKKStratCoxPHIVWC = R6::R6Class("InferenceSurvivalKKStratCoxPHIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
-	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
-		#' @description Initialize the inference object.
+	public = list(
+		#' @description Initialize KK stratified Cox IVWC inference and prepare the
+		#'   matched/reservoir partial-likelihood components used by
+		#'   \code{\link[EDI:InferenceSurvivalKKStratCoxPHIVWC]{InferenceSurvivalKKStratCoxPHIVWC}}.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -39,7 +41,8 @@ InferenceSurvivalKKStratCoxPHIVWC = R6::R6Class("InferenceSurvivalKKStratCoxPHIV
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes the asymptotic confidence interval.
+		#' @description Uses the shared asymptotic confidence-interval contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha                                   The confidence level in the computed
 		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -52,7 +55,9 @@ InferenceSurvivalKKStratCoxPHIVWC = R6::R6Class("InferenceSurvivalKKStratCoxPHIV
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Computes the asymptotic p-value.
+		#' @description Compute the stratified-Cox asymptotic p-value for the
+		#'   treatment log-hazard ratio using the fitted partial-likelihood standard
+		#'   error. See \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval = function(delta = 0){
@@ -72,7 +77,8 @@ InferenceSurvivalKKStratCoxPHIVWC = R6::R6Class("InferenceSurvivalKKStratCoxPHIV
 				NA_real_
 			}
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B  					Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         Whether to return diagnostics.
@@ -81,8 +87,8 @@ InferenceSurvivalKKStratCoxPHIVWC = R6::R6Class("InferenceSurvivalKKStratCoxPHIV
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
 		}
-	))),
-	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+	),
+	private = list(
 		compute_basic_match_data = function() private$compute_basic_kk_match_data_impl(),
 		max_abs_reasonable_coef = 1e4,
 		# Abstract: subclasses return TRUE (multivariate) or FALSE (univariate).
@@ -225,8 +231,8 @@ InferenceSurvivalKKStratCoxPHIVWC = R6::R6Class("InferenceSurvivalKKStratCoxPHIV
 				private$cache_nonestimable_estimate("kk_strat_cox_ivwc_both_failed")
 			}
 		}
-	)))
-)
+		)
+	)
 
 #' Stratified Cox Combined-Likelihood Compound Inference for KK Designs
 #'
@@ -235,7 +241,9 @@ InferenceSurvivalKKStratCoxPHOneLik = R6::R6Class("InferenceSurvivalKKStratCoxPH
 	lock_objects = FALSE,
 	inherit = InferenceParamBootstrap,
 	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
-		#' @description Initialize the inference object.
+		#' @description Initialize KK stratified Cox one-likelihood inference and
+		#'   prepare the combined partial-likelihood fit used by
+		#'   \code{\link[EDI:InferenceSurvivalKKStratCoxPHOneLik]{InferenceSurvivalKKStratCoxPHOneLik}}.
 		#' @param des_obj A completed KK survival design object.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param verbose Whether to print progress messages.
@@ -247,7 +255,8 @@ InferenceSurvivalKKStratCoxPHOneLik = R6::R6Class("InferenceSurvivalKKStratCoxPH
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$init_kk_passthrough(des_obj)
 		},
-		#' @description Returns the combined-likelihood estimate of the treatment effect.
+		#' @description Returns the model-specific combined-likelihood treatment estimate; see
+		#'   \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}}.
 		#' @param estimate_only If \code{TRUE}, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
@@ -313,7 +322,8 @@ InferenceSurvivalKKStratCoxPHOneLik = R6::R6Class("InferenceSurvivalKKStratCoxPH
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug Whether to return diagnostics.

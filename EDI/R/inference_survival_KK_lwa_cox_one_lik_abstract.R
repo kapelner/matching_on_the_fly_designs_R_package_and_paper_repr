@@ -10,7 +10,9 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceParamBootstrap,
 	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
-		#' @description Initialize the inference object.
+		#' @description Initialize KK LWA Cox one-likelihood inference and prepare
+		#'   the combined marginal Cox partial-likelihood fit used by
+		#'   \code{\link[EDI:InferenceAbstractKKLWACoxOneLik]{InferenceAbstractKKLWACoxOneLik}}.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -25,7 +27,8 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$init_kk_passthrough(des_obj)
 		},
-		#' @description Returns the combined-likelihood estimate of the treatment effect.
+		#' @description Returns the model-specific combined-likelihood treatment estimate; see
+		#'   \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}}.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
@@ -90,7 +93,8 @@ InferenceAbstractKKLWACoxOneLik = R6::R6Class("InferenceAbstractKKLWACoxOneLik",
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B  					Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         Whether to return diagnostics.

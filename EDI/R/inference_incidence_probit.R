@@ -41,7 +41,8 @@ InferenceIncidProbitRegr = R6::R6Class("InferenceIncidProbitRegr",
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-		#' @description Computes the treatment effect estimate for a bootstrap sample.
+		#' @description Recomputes the class-specific treatment estimate for a bootstrap sample; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param subject_or_block_weights Row weights for the bootstrap sample.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){

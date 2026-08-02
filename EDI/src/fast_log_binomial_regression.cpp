@@ -1,14 +1,20 @@
 // [[Rcpp::depends(RcppEigen)]]
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#include "result_map.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
+#endif
 #include <cmath>
 #include <limits>
 #include <stdexcept>
+#include <optional>
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
-
-namespace {
+#endif
 
 constexpr double kEps = 1e-8;
 constexpr double kMinMu = kEps;
@@ -19,6 +25,8 @@ enum class BinomialConstrainedLink {
   kLog = 0,
   kIdentity = 1
 };
+
+namespace {
 
 inline double clamp_prob(double mu) {
   if (mu <= kMinMu) return kMinMu;
@@ -44,11 +52,11 @@ double loglik_constrained_binomial(const Eigen::Ref<const Eigen::MatrixXd>& X,
   for (int i = 0; i < n; ++i) {
     double ei = eta[i];
     if (link_type == BinomialConstrainedLink::kLog) {
-      if (ei >= kMaxEtaLog) return R_NegInf;
+      if (ei >= kMaxEtaLog) return (-std::numeric_limits<double>::infinity());
       const double mu = std::exp(ei);
       ll += y[i] * ei + (1.0 - y[i]) * std::log1p(-mu);
     } else {
-      if (ei <= kMinMu || ei >= kMaxMu) return R_NegInf;
+      if (ei <= kMinMu || ei >= kMaxMu) return (-std::numeric_limits<double>::infinity());
       ll += y[i] * std::log(ei) + (1.0 - y[i]) * std::log1p(-ei);
     }
   }
@@ -65,14 +73,14 @@ double weighted_loglik_constrained_binomial(const Eigen::Ref<const Eigen::Matrix
   double ll = 0.0;
   for (int i = 0; i < n; ++i) {
     const double wi = obs_weights[i];
-    if (!R_finite(wi) || wi < 0.0) return R_NegInf;
+    if (!std::isfinite(wi) || wi < 0.0) return (-std::numeric_limits<double>::infinity());
     double ei = eta[i];
     if (link_type == BinomialConstrainedLink::kLog) {
-      if (ei >= kMaxEtaLog) return R_NegInf;
+      if (ei >= kMaxEtaLog) return (-std::numeric_limits<double>::infinity());
       const double mu = std::exp(ei);
       ll += wi * (y[i] * ei + (1.0 - y[i]) * std::log1p(-mu));
     } else {
-      if (ei <= kMinMu || ei >= kMaxMu) return R_NegInf;
+      if (ei <= kMinMu || ei >= kMaxMu) return (-std::numeric_limits<double>::infinity());
       ll += wi * (y[i] * std::log(ei) + (1.0 - y[i]) * std::log1p(-ei));
     }
   }
@@ -81,7 +89,7 @@ double weighted_loglik_constrained_binomial(const Eigen::Ref<const Eigen::Matrix
 
 bool all_finite_vec(const Eigen::Ref<const Eigen::VectorXd>& x) {
   for (int i = 0; i < x.size(); ++i) {
-    if (!R_finite(x[i])) return false;
+    if (!std::isfinite(x[i])) return false;
   }
   return true;
 }
@@ -89,7 +97,7 @@ bool all_finite_vec(const Eigen::Ref<const Eigen::VectorXd>& x) {
 bool all_finite_mat(const Eigen::Ref<const Eigen::MatrixXd>& X) {
   for (int j = 0; j < X.cols(); ++j) {
     for (int i = 0; i < X.rows(); ++i) {
-      if (!R_finite(X(i, j))) return false;
+      if (!std::isfinite(X(i, j))) return false;
     }
   }
   return true;
@@ -104,10 +112,10 @@ inline double loglik_from_eta(const Eigen::VectorXd& eta,
   for (int i = 0; i < n; ++i) {
     const double ei = eta[i];
     if (link_type == BinomialConstrainedLink::kLog) {
-      if (ei >= kMaxEtaLog) return R_NegInf;
+      if (ei >= kMaxEtaLog) return (-std::numeric_limits<double>::infinity());
       ll += y[i] * ei + (1.0 - y[i]) * std::log1p(-std::exp(ei));
     } else {
-      if (ei <= kMinMu || ei >= kMaxMu) return R_NegInf;
+      if (ei <= kMinMu || ei >= kMaxMu) return (-std::numeric_limits<double>::infinity());
       ll += y[i] * std::log(ei) + (1.0 - y[i]) * std::log1p(-ei);
     }
   }
@@ -123,20 +131,29 @@ inline double weighted_loglik_from_eta(const Eigen::VectorXd& eta,
   double ll = 0.0;
   for (int i = 0; i < n; ++i) {
     const double wi = obs_weights[i];
-    if (!R_finite(wi) || wi < 0.0) return R_NegInf;
+    if (!std::isfinite(wi) || wi < 0.0) return (-std::numeric_limits<double>::infinity());
 
     const double ei = eta[i];
     if (link_type == BinomialConstrainedLink::kLog) {
-      if (ei >= kMaxEtaLog) return R_NegInf;
+      if (ei >= kMaxEtaLog) return (-std::numeric_limits<double>::infinity());
       ll += wi * (y[i] * ei + (1.0 - y[i]) * std::log1p(-std::exp(ei)));
     } else {
-      if (ei <= kMinMu || ei >= kMaxMu) return R_NegInf;
+      if (ei <= kMinMu || ei >= kMaxMu) return (-std::numeric_limits<double>::infinity());
       ll += wi * (y[i] * std::log(ei) + (1.0 - y[i]) * std::log1p(-ei));
     }
   }
   return ll;
 }
 
+} // namespace
+
+// fit_constrained_binomial_cpp_impl / _weighted_cpp_impl / _with_var_cpp_impl
+// moved to global (non-anonymous-namespace) scope: they need external
+// linkage to be callable from a separate Python binding translation unit
+// (an anonymous-namespace function has internal linkage and silently fails
+// to link/dlopen from another TU -- see this session's history for the
+// recurring bug this fixes). The low-level helpers above stay anonymous
+// since they're only ever called from within this same file.
 edi::ResultMap fit_constrained_binomial_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& X,
                                        const Eigen::Ref<const Eigen::VectorXd>& y,
                                        BinomialConstrainedLink link_type,
@@ -258,7 +275,7 @@ edi::ResultMap fit_constrained_binomial_cpp_impl(const Eigen::Ref<const Eigen::M
     while (step >= 1e-8) {
       eta_try.noalias() = eta + step * delta_eta;
       const double ll_new = loglik_from_eta(eta_try, y, link_type);
-      if (R_finite(ll_new) && ll_new >= ll_curr - 1e-10) {
+      if (std::isfinite(ll_new) && ll_new >= ll_curr - 1e-10) {
         beta_free_new = beta_free + step * (beta_free_target - beta_free);
         beta_new = expand_free_params(beta_free_new, beta, fixed_spec);
         ll_curr = ll_new;  // carry forward — avoids recomputing at next iter start
@@ -429,7 +446,7 @@ edi::ResultMap fit_constrained_binomial_weighted_cpp_impl(const Eigen::Ref<const
     while (step >= 1e-8) {
       eta_try.noalias() = eta + step * delta_eta;
       const double ll_new = weighted_loglik_from_eta(eta_try, y, obs_weights, link_type);
-      if (R_finite(ll_new) && ll_new >= ll_curr - 1e-10) {
+      if (std::isfinite(ll_new) && ll_new >= ll_curr - 1e-10) {
         beta_free_new = beta_free + step * delta_beta;
         beta_new = expand_free_params(beta_free_new, beta, fixed_spec);
         ll_curr = ll_new;
@@ -500,7 +517,7 @@ edi::ResultMap fit_constrained_binomial_with_var_cpp_impl(const Eigen::Ref<const
       .set("vcov", Eigen::MatrixXd(0, 0))
       .set("std_err", Eigen::VectorXd(0))
       .set("z_vals", Eigen::VectorXd(0))
-      .set("ssq_b_j", NA_REAL)
+      .set("ssq_b_j", std::numeric_limits<double>::quiet_NaN())
       .set("converged", false);
   }
 
@@ -520,14 +537,14 @@ edi::ResultMap fit_constrained_binomial_with_var_cpp_impl(const Eigen::Ref<const
       .set("vcov", Eigen::MatrixXd(0, 0))
       .set("std_err", Eigen::VectorXd(0))
       .set("z_vals", Eigen::VectorXd(0))
-      .set("ssq_b_j", NA_REAL)
+      .set("ssq_b_j", std::numeric_limits<double>::quiet_NaN())
       .set("converged", false);
   }
 
   int free_j = -1;
   for (int jj = 0; jj < (int)fixed_spec.free_idx.size(); ++jj)
     if (fixed_spec.free_idx[jj] == j - 1) { free_j = jj + 1; break; }
-  const double ssq_b_j = (free_j > 0) ? compute_diagonal_inverse_entry(XtWX_free, free_j) : NA_REAL;
+  const double ssq_b_j = (free_j > 0) ? compute_diagonal_inverse_entry(XtWX_free, free_j) : std::numeric_limits<double>::quiet_NaN();
 
   return edi::ResultMap()
     .set("b", beta)
@@ -537,6 +554,8 @@ edi::ResultMap fit_constrained_binomial_with_var_cpp_impl(const Eigen::Ref<const
     .set("neg_ll", -loglik_constrained_binomial(X, y, beta, link_type))
     .set("logLik", loglik_constrained_binomial(X, y, beta, link_type));
 }
+
+namespace {
 
 Eigen::VectorXd constrained_binomial_score_cpp_impl(const Eigen::Ref<const Eigen::MatrixXd>& X,
 													const Eigen::Ref<const Eigen::VectorXd>& y,
@@ -624,6 +643,7 @@ Eigen::MatrixXd constrained_binomial_weighted_hessian_cpp_impl(const Eigen::Ref<
 
 }  // namespace
 
+#ifndef EDI_CORE_ONLY
 //' @title Compute Log-Binomial Regression Score
 //' @description Calculates the score vector (gradient of the log-likelihood) for a log-binomial regression model.
 //' @param X A numeric matrix of predictors.
@@ -1014,3 +1034,4 @@ List fast_identity_binomial_regression_weighted_cpp(SEXP X_r,
     Eigen::Map<const Eigen::VectorXd> weights(weights_vec.begin(), weights_vec.size());
   return edi::to_rcpp_list(fit_constrained_binomial_weighted_cpp_impl(X, y, weights, BinomialConstrainedLink::kIdentity, maxit, tol, nullable_to_optional<Eigen::VectorXi>(fixed_idx), nullable_to_optional<Eigen::VectorXd>(fixed_values), nullable_to_optional<Eigen::VectorXd>(warm_start_beta), smart_cold_start, nullable_to_optional<Eigen::VectorXd>(warm_start_weights), nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info), estimate_only));
 }
+#endif // EDI_CORE_ONLY

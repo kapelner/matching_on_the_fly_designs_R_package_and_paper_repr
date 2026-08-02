@@ -57,16 +57,19 @@ void bind_continuous(py::module_& m) {
     m.def("fast_ols", [](const Eigen::Ref<const Eigen::MatrixXd>& X,
                           const Eigen::Ref<const Eigen::VectorXd>& y,
                           std::optional<Eigen::VectorXi> fixed_idx,
-                          std::optional<Eigen::VectorXd> fixed_values) {
-        ModelResult res = fast_ols_internal(X, y, fixed_idx, fixed_values, true);
+                          std::optional<Eigen::VectorXd> fixed_values,
+                          bool estimate_only) {
+        ModelResult res = fast_ols_internal(X, y, fixed_idx, fixed_values, estimate_only);
         py::dict out;
         out["b"] = res.b;
+        out["XtWX"] = res.XtWX;
         return out;
     },
     py::arg("X"), py::arg("y"),
     py::arg("fixed_idx") = py::none(),
     py::arg("fixed_values") = py::none(),
-    "Fast OLS regression (coefficients only).");
+    py::arg("estimate_only") = true,
+    "Fast OLS regression (coefficients only unless estimate_only=False, which also returns XtWX).");
 
     m.def("fast_robust_regression", [](const Eigen::Ref<const Eigen::MatrixXd>& X,
                                         const Eigen::Ref<const Eigen::VectorXd>& y,

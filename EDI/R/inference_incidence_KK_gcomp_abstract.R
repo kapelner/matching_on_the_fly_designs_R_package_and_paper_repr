@@ -20,7 +20,9 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKMarginalIncid,
 	public = list(
-		#' @description Compute treatment estimate
+		#' @description Compute the KK g-computation treatment estimate by fitting the
+		#'   logistic working model and standardizing predicted all-treated and
+		#'   all-control risks over the empirical covariate distribution.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
@@ -55,7 +57,11 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 			private$cached_values$gcomp_standardized_effects_inference_ready = FALSE
 			private$cached_values$beta_hat_T
 		},
-		#' @description Compute asymp confidence interval
+		#' @description Compute the KK g-computation asymptotic confidence interval
+		#'   for the standardized risk difference or risk ratio using the
+		#'   cluster-robust delta-method standard error. See
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}} for shared interval
+		#'   semantics.
 		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -64,7 +70,10 @@ InferenceIncidKKGCompAbstract = R6::R6Class("InferenceIncidKKGCompAbstract",
 			private$shared(estimate_only = FALSE)
 			private$compute_effect_confidence_interval(alpha)
 		},
-		#' @description Compute asymp two sided pval for treatment effect
+		#' @description Compute the KK g-computation asymptotic two-sided p-value for
+		#'   the standardized risk difference or risk ratio using the cluster-robust
+		#'   delta-method standard error. See
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta The null treatment effect (default 0).
 		compute_asymp_two_sided_pval = function(delta = NULL){
 			private$shared(estimate_only = FALSE)

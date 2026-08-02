@@ -6,7 +6,72 @@
 InferenceRand = R6::R6Class("InferenceRand",
 	inherit = Inference,
 	lock_objects = FALSE,
-	public = c(InferenceExtCustomRandomizationStatistic$public, list(
+	public = list(
+		#' @description Set a custom R randomization statistic.
+		#'
+		#' Replaces the default treatment-effect estimate used in
+		#' \code{approximate_randomization_distribution_beta_hat_T()} and
+		#' \code{compute_randomization_two_sided_pval()} with a user-supplied R
+		#' function. The function must return one scalar statistic for the current
+		#' randomized outcome/assignment state. Pass \code{NULL} to clear the custom
+		#' statistic. This cannot be used at the same time as
+		#' \code{set_custom_randomization_statistic_cpp()}.
+		#'
+		#' @param custom_randomization_statistic_function A function that returns one
+		#'   scalar value, or \code{NULL} to restore the class default statistic.
+		set_custom_randomization_statistic_function = function(custom_randomization_statistic_function){
+			if (!is.null(custom_randomization_statistic_function) && !is.null(private[["compiled_cpp_stat_fn"]])) {
+				stop("Cannot specify both custom_randomization_statistic_function and custom_randomization_statistic_cpp.")
+			}
+			if (should_run_asserts()) {
+				assertFunction(custom_randomization_statistic_function, null.ok = TRUE)
+			}
+			private[["custom_randomization_statistic_function"]] = custom_randomization_statistic_function
+			private$cached_values$t0s_rand = NULL
+			private$cached_values$rand_distr_cache = list()
+			private$cached_values$custom_stat_analysis = NULL
+		},
+		#' @description Set a custom compiled C++ randomization statistic.
+		#'
+		#' Replaces the default treatment-effect estimate used in
+		#' \code{approximate_randomization_distribution_beta_hat_T()} and
+		#' \code{compute_randomization_two_sided_pval()} with a scalar C++ statistic.
+		#' A source string is recommended because each parallel worker can compile
+		#' its own copy safely. A pre-compiled Rcpp function can be used in the main
+		#' process, but external pointers may not survive serialization to workers.
+		#' Pass \code{NULL} to clear the custom statistic. This cannot be used at
+		#' the same time as \code{set_custom_randomization_statistic_function()}.
+		#'
+		#' @param fn Either a C++ source code string, a pre-compiled Rcpp function, or
+		#'   \code{NULL}. The compiled function must return a scalar \code{double}
+		#'   and accept either \code{(NumericVector y, IntegerVector w)} or
+		#'   \code{(NumericVector y, IntegerVector w, IntegerVector dead)}.
+		set_custom_randomization_statistic_cpp = function(fn){
+			if (!is.null(fn) && !is.null(private[["custom_randomization_statistic_function"]])) {
+				stop("Cannot specify both custom_randomization_statistic_function and custom_randomization_statistic_cpp.")
+			}
+			if (!is.null(fn)) {
+				if (is.character(fn) && length(fn) == 1L) {
+					compiled = Rcpp::cppFunction(fn)
+					arity = length(formals(compiled))
+					if (!arity %in% c(2L, 3L)) stop("custom_randomization_statistic_cpp source must define a function with 2 arguments (y, w) or 3 arguments (y, w, dead); got ", arity, ".")
+					private[["compiled_cpp_stat_src"]] = fn
+					private[["compiled_cpp_stat_fn"]] = compiled
+				} else {
+					if (!is.function(fn)) stop("custom_randomization_statistic_cpp must be a C++ source string or compiled Rcpp function, not a ", class(fn)[1], ".")
+					arity = length(formals(fn))
+					if (!arity %in% c(2L, 3L)) stop("custom_randomization_statistic_cpp must accept 2 arguments (y, w) or 3 arguments (y, w, dead); got ", arity, ".")
+					private[["compiled_cpp_stat_src"]] = NULL
+					private[["compiled_cpp_stat_fn"]] = fn
+				}
+			} else {
+				private[["compiled_cpp_stat_src"]] = NULL
+				private[["compiled_cpp_stat_fn"]] = NULL
+			}
+			private$cached_values$t0s_rand = NULL
+			private$cached_values$rand_distr_cache = list()
+			private$cached_values$custom_stat_analysis = NULL
+		},
 		#' @description Computes the randomization distribution of the treatment effect estimate under the sharp null.
 		#'
 		#' @param r  					Number of randomization vectors. Default 501.
@@ -349,7 +414,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 			)
 			private$compute_two_sided_randomization_pval_from_t0s(t0s, t)
 		}
-	)),
+		),
 	private = c(InferenceExtCustomRandomizationStatistic$private, InferenceExtSequentialMCPval$private, list(
 		randomization_mc_control = NULL,
 		is_bernoulli_design = function(){

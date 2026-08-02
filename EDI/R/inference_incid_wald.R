@@ -19,7 +19,11 @@ InferenceIncidWald = R6::R6Class("InferenceIncidWald",
 	lock_objects = FALSE,
 	inherit = InferenceAllSimpleMeanDiff,
 	public = list(
-		#' @description Initialize Wald incidence inference.
+		#' @description Initialize Wald risk-difference incidence inference and
+		#'   prepare the treatment/control binomial summaries used by
+		#'   \code{\link[EDI:InferenceIncidWald]{InferenceIncidWald}} and related
+		#'   \code{\link[EDI:InferenceIncidRiskDiff]{InferenceIncidRiskDiff}}
+		#'   methods.
 		#' @param des_obj A completed design object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is

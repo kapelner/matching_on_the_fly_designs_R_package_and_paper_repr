@@ -162,6 +162,11 @@ public:
     }
 };
 
+} // namespace
+
+// External linkage (unlike the rest of this file's helpers) so a Python
+// binding can call these directly to replicate the same y -> (levels, 1..K
+// mapping) prep the exported wrapper below does.
 std::vector<double> get_levels(const Eigen::Ref<const VectorXd>& y) {
     std::vector<double> levels(y.data(), y.data() + y.size());
     std::sort(levels.begin(), levels.end());
@@ -171,7 +176,6 @@ std::vector<double> get_levels(const Eigen::Ref<const VectorXd>& y) {
 
 std::vector<int> map_y_to_1K(const Eigen::Ref<const VectorXd>& y, const std::vector<double>& levels) {
     int n = y.size();
-    int K = levels.size();
     std::vector<int> y_mapped(n);
     for (int i = 0; i < n; ++i) {
         double yi = y[i];
@@ -180,8 +184,6 @@ std::vector<int> map_y_to_1K(const Eigen::Ref<const VectorXd>& y, const std::vec
     }
     return y_mapped;
 }
-
-} // namespace
 
 LikelihoodFitResult fast_adjacent_category_logit_internal(
 		const Eigen::Ref<const Eigen::MatrixXd>& X,

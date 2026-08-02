@@ -1,14 +1,25 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#include "result_map.h"
+#else
 #include "_helper_functions.h"
-#include "ordinal_fixed_link_helpers.h"
 #include "result_map_rcpp.h"
 #include <Rcpp.h>
 #include <RcppEigen.h>
+#endif
+#include "ordinal_fixed_link_helpers.h"
 #include <algorithm>
 #include <vector>
+#include <optional>
+#include <string>
+#include <limits>
+#include <stdexcept>
 
 // [[Rcpp::depends(RcppEigen)]]
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 using namespace Eigen;
 
 namespace {
@@ -53,6 +64,7 @@ public:
 
 } // namespace
 
+#ifndef EDI_CORE_ONLY
 //' @title Compute Ordinal Regression Score
 //' @description Calculates the score vector (gradient of the log-likelihood) for an ordinal regression model.
 //' @param X A numeric matrix of predictors.
@@ -90,7 +102,119 @@ SEXP get_ordinal_regression_hessian_cpp(const Rcpp::NumericMatrix& X, const Rcpp
     OrdinalRegression model(map_X, map_y);
     return wrap(-model.hessian(map_params));
 }
+#endif // EDI_CORE_ONLY
 
+// Portable core. Unifies fast_ordinal_regression_cpp (unweighted fit) and
+// fast_ordinal_regression_weighted_cpp (weighted fit) below via an optional
+// weights vector, and folds in fast_ordinal_regression_with_var_cpp's
+// full-inverse vcov (via FullPivLU) so a Python caller gets everything from
+// one call, matching the pattern used across the other ordinal link files.
+edi::ResultMap fast_ordinal_regression_internal(
+    const Eigen::Ref<const Eigen::MatrixXd>& X,
+    const Eigen::Ref<const Eigen::VectorXd>& y,
+    std::optional<Eigen::VectorXd> weights = std::nullopt,
+    std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+    bool smart_cold_start = true,
+    int maxit = 100,
+    double tol = 1e-6,
+    std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+    std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+    std::string optimization_alg = "lbfgs",
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt,
+    bool estimate_only = false
+) {
+    if (weights.has_value() && weights->size() != X.rows())
+        throw std::invalid_argument("weights must have length equal to nrow(X)");
+
+    OrdinalRegression model = weights.has_value()
+        ? OrdinalRegression(X, y, *weights)
+        : OrdinalRegression(X, y);
+    int p = (int)X.cols();
+    int K = (int)OrdinalRegression::init_levels(y).size();
+    int n_alpha = K - 1;
+    int n_params = n_alpha + p;
+
+    VectorXd params(n_params);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(n_params, fixed_idx, fixed_values);
+    if (warm_start_params.has_value()) {
+        params = *warm_start_params;
+        if (params.size() != n_params) throw std::invalid_argument("warm_start_params must have length equal to the number of model parameters");
+    } else {
+        OrdinalStart legacy_start;
+        legacy_start.alpha = VectorXd(n_alpha);
+        for (int k = 0; k < n_alpha; ++k) {
+            legacy_start.alpha[k] = -1.0 + 2.0 * (k + 1) / K;
+        }
+        legacy_start.beta = VectorXd::Zero(p);
+
+        if (smart_cold_start) {
+            // Use OLS on rank-transformed y
+            Eigen::VectorXd y_rank = (y.array() - 1.0) / static_cast<double>(K - 1);
+            Eigen::VectorXd beta;
+            if (edi_opt::robust_ols_solve(X, y_rank, beta)) {
+                legacy_start.beta = beta;
+            }
+        }
+        params = ordinal_start_to_params(legacy_start);
+    }
+    params = apply_fixed_values(params, fixed_spec);
+
+    Eigen::MatrixXd H_start;
+    const Eigen::MatrixXd* h_ptr = nullptr;
+    if (warm_start_fisher_info.has_value()) {
+        H_start = *warm_start_fisher_info;
+        h_ptr = &H_start;
+    } else if (smart_cold_start) {
+        H_start = model.hessian(params);
+        h_ptr = &H_start;
+    }
+
+    LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, h_ptr);
+    params = fit.params;
+
+    if (estimate_only) {
+        return edi::ResultMap()
+            .set("b", params.tail(p))
+            .set("alpha", params.head(n_alpha))
+            .set("n_params", n_params)
+            .set("params", params)
+            .set("converged", fit.converged)
+            .set("iterations", fit.niter);
+    }
+
+    MatrixXd H = model.hessian(params);
+
+    edi::ResultMap rm = edi::ResultMap()
+        .set("b", params.tail(p))
+        .set("alpha", params.head(n_alpha))
+        .set("n_params", n_params)
+        .set("params", params)
+        .set("neg_loglik", fit.value)
+        .set("converged", fit.converged)
+        .set("iterations", fit.niter)
+        .set("observed_information", H)
+        .set("fisher_information", H)
+        .set("information", H)
+        .set("information_type", std::string("observed"));
+
+    MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
+    FullPivLU<MatrixXd> lu(H_free);
+    if (!lu.isInvertible()) {
+        rm.set("ssq_b_j", std::numeric_limits<double>::quiet_NaN());
+        rm.set("vcov", std::monostate{});
+        return rm;
+    }
+
+    MatrixXd vcov_free = lu.inverse();
+    MatrixXd vcov_full = expand_free_covariance(n_params, fixed_spec, vcov_free, true);
+    double ssq_b_j = (p >= 1) ? vcov_full(n_alpha, n_alpha) : std::numeric_limits<double>::quiet_NaN();
+
+    rm.set("vcov", vcov_full);
+    rm.set("ssq_b_j", ssq_b_j);
+    return rm;
+}
+
+#ifndef EDI_CORE_ONLY
 // Simple solver using Newton-Raphson as we have a small number of parameters (usually)
 //' @title Fast Ordinal Regression (C++)
 //' @description High-performance ordinal regression fitting using Newton-Raphson.
@@ -117,79 +241,16 @@ List fast_ordinal_regression_cpp(const Rcpp::NumericMatrix& X, const Rcpp::Numer
     Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
     Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
 
-    OrdinalRegression model(map_X, map_y);
-    int p = map_X.cols();
-    int K = OrdinalRegression::init_levels(map_y).size();
-    int n_alpha = K - 1;
-    int n_params = n_alpha + p;
-
-    VectorXd params(n_params);
-    FixedParamSpec fixed_spec = make_fixed_param_spec(
-        n_params,
+    edi::ResultMap res = fast_ordinal_regression_internal(
+        map_X, map_y, std::nullopt,
+        nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+        smart_cold_start, maxit, tol,
         nullable_to_optional<Eigen::VectorXi>(fixed_idx),
-        nullable_to_optional<Eigen::VectorXd>(fixed_values));
-    std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
-    if (warm_start_params_opt.has_value()) {
-        params = *warm_start_params_opt;
-        if (params.size() != n_params) stop("warm_start_params must have length equal to the number of model parameters");
-    } else {
-        OrdinalStart legacy_start;
-        legacy_start.alpha = VectorXd(n_alpha);
-        for (int k = 0; k < n_alpha; ++k) {
-            legacy_start.alpha[k] = -1.0 + 2.0 * (k + 1) / K;
-        }
-        legacy_start.beta = VectorXd::Zero(p);
-
-        if (smart_cold_start) {
-            // Use OLS on rank-transformed y
-            Eigen::VectorXd y_rank = (map_y.array() - 1.0) / static_cast<double>(K - 1);
-            Eigen::VectorXd beta;
-            if (edi_opt::robust_ols_solve(map_X, y_rank, beta)) {
-                legacy_start.beta = beta;
-            }
-        }
-        params = ordinal_start_to_params(legacy_start);
-    }
-    params = apply_fixed_values(params, fixed_spec);
-
-    Eigen::MatrixXd H_start;
-    const Eigen::MatrixXd* h_ptr = nullptr;
-    std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
-    bool has_warm_fisher = warm_start_fisher_info_opt.has_value();
-    if (has_warm_fisher) {
-        H_start = *warm_start_fisher_info_opt;
-        h_ptr = &H_start;
-    } else if (smart_cold_start) {
-        H_start = model.hessian(params);
-        h_ptr = &H_start;
-    }
-
-    LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, h_ptr);
-    params = fit.params;
-
-    if (estimate_only) {
-        return edi::to_rcpp_list(edi::ResultMap()
-            .set("b", params.tail(p))
-            .set("alpha", params.head(n_alpha))
-            .set("n_params", n_params)
-            .set("params", params)
-            .set("converged", fit.converged)
-            .set("iterations", fit.niter));
-    }
-
-    MatrixXd H = model.hessian(params);
-    return edi::to_rcpp_list(edi::ResultMap()
-        .set("b", params.tail(p))
-        .set("alpha", params.head(n_alpha))
-        .set("n_params", n_params)
-        .set("params", params)
-        .set("neg_loglik", fit.value)
-        .set("converged", fit.converged)
-        .set("iterations", fit.niter)
-        .set("observed_information", H)
-        .set("fisher_information", H)
-        .set("information", H)
-        .set("information_type", std::string("observed")));
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+        estimate_only);
+    return edi::to_rcpp_list(res);
 }
 
 //' @title Fast Weighted Ordinal Regression (C++)
@@ -222,68 +283,17 @@ List fast_ordinal_regression_weighted_cpp(const Rcpp::NumericMatrix& X, const Rc
     if (map_weights.size() != map_X.rows()) {
         stop("weights must have length equal to nrow(X)");
     }
-    OrdinalRegression model(map_X, map_y, map_weights);
-    int p = map_X.cols();
-    int K = OrdinalRegression::init_levels(map_y).size();
-    int n_alpha = K - 1;
-    int n_params = n_alpha + p;
 
-    VectorXd params(n_params);
-    FixedParamSpec fixed_spec = make_fixed_param_spec(
-        n_params,
+    edi::ResultMap res = fast_ordinal_regression_internal(
+        map_X, map_y, Eigen::VectorXd(map_weights),
+        nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+        smart_cold_start, maxit, tol,
         nullable_to_optional<Eigen::VectorXi>(fixed_idx),
-        nullable_to_optional<Eigen::VectorXd>(fixed_values));
-    std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
-    if (warm_start_params_opt.has_value()) {
-        params = *warm_start_params_opt;
-        if (params.size() != n_params) stop("warm_start_params must have length equal to the number of model parameters");
-    } else {
-        OrdinalStart legacy_start;
-        legacy_start.alpha = VectorXd(n_alpha);
-        for (int k = 0; k < n_alpha; ++k) {
-            legacy_start.alpha[k] = -1.0 + 2.0 * (k + 1) / K;
-        }
-        legacy_start.beta = VectorXd::Zero(p);
-
-        if (smart_cold_start) {
-            // Use OLS on rank-transformed y
-            Eigen::VectorXd y_rank = (map_y.array() - 1.0) / static_cast<double>(K - 1);
-            Eigen::VectorXd beta;
-            if (edi_opt::robust_ols_solve(map_X, y_rank, beta)) {
-                legacy_start.beta = beta;
-            }
-        }
-        params = ordinal_start_to_params(legacy_start);
-    }
-    params = apply_fixed_values(params, fixed_spec);
-
-    Eigen::MatrixXd H_start;
-    const Eigen::MatrixXd* h_ptr = nullptr;
-    std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
-    if (warm_start_fisher_info_opt.has_value()) {
-        H_start = *warm_start_fisher_info_opt;
-        h_ptr = &H_start;
-    } else if (smart_cold_start) {
-        H_start = model.hessian(params);
-        h_ptr = &H_start;
-    }
-
-    LikelihoodFitResult fit = optimize_fixed_likelihood(model, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, h_ptr);
-    params = fit.params;
-
-    MatrixXd H = model.hessian(params);
-    return edi::to_rcpp_list(edi::ResultMap()
-        .set("b", params.tail(p))
-        .set("alpha", params.head(n_alpha))
-        .set("n_params", n_params)
-        .set("params", params)
-        .set("neg_loglik", fit.value)
-        .set("converged", fit.converged)
-        .set("iterations", fit.niter)
-        .set("observed_information", H)
-        .set("fisher_information", H)
-        .set("information", H)
-        .set("information_type", std::string("observed")));
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+        false);
+    return edi::to_rcpp_list(res);
 }
 
 //' @title Fast Ordinal Regression with Variance (C++)
@@ -310,48 +320,19 @@ List fast_ordinal_regression_with_var_cpp(const Rcpp::NumericMatrix& X, const Rc
                                            Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                            std::string optimization_alg = "lbfgs",
                                            Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue) {
-    List res = fast_ordinal_regression_cpp(X, y, warm_start_params, smart_cold_start, maxit, tol, fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
-    VectorXd params = res["params"];
-    bool converged = res["converged"];
-    
     Eigen::Map<const Eigen::MatrixXd> map_X(X.begin(), X.rows(), X.cols());
-    MatrixXd H = as<MatrixXd>(res["observed_information"]);
-    
-    int n_params = params.size();
-    FixedParamSpec fixed_spec = make_fixed_param_spec(
-        n_params,
+    Eigen::Map<const Eigen::VectorXd> map_y(y.begin(), y.size());
+
+    edi::ResultMap res = fast_ordinal_regression_internal(
+        map_X, map_y, std::nullopt,
+        nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+        smart_cold_start, maxit, tol,
         nullable_to_optional<Eigen::VectorXi>(fixed_idx),
-        nullable_to_optional<Eigen::VectorXd>(fixed_values));
-    MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
-    FullPivLU<MatrixXd> lu(H_free);
-
-    List output = edi::to_rcpp_list(edi::ResultMap()
-        .set("b", Rcpp::as<Eigen::VectorXd>(res["b"]))
-        .set("alpha", Rcpp::as<Eigen::VectorXd>(res["alpha"]))
-        .set("params", params)
-        .set("neg_loglik", Rcpp::as<double>(res["neg_loglik"]))
-        .set("converged", converged)
-        .set("iterations", Rcpp::as<int>(res["iterations"]))
-        .set("fisher_information", H));
-    if (!lu.isInvertible()) {
-        output["ssq_b_j"] = NA_REAL;
-        output["vcov"] = R_NilValue;
-        return output;
-    }
-    
-    MatrixXd vcov_free = lu.inverse();
-    MatrixXd vcov_full = expand_free_covariance(n_params, fixed_spec, vcov_free, true);
-
-    int p = map_X.cols();
-    int n_alpha = n_params - p;
-    
-    // We want the variance of the first covariate after alphas (which is often the treatment)
-    // In our params, it's at index n_alpha
-    double ssq_b_j = (p >= 1) ? vcov_full(n_alpha, n_alpha) : NA_REAL;
-
-    output["vcov"] = vcov_full;
-    output["ssq_b_j"] = ssq_b_j;
-    return output;
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+        false);
+    return edi::to_rcpp_list(res);
 }
 
 //' @title Ordinal G-Computation Post-Fit (C++)
@@ -596,10 +577,11 @@ List expand_adjacent_category_data_cpp(const Rcpp::IntegerVector& y, const Rcpp:
             }
         }
     }
-    
+
     return List::create(
         Named("y") = wrap(y_stack),
         Named("w") = wrap(w_stack),
         Named("strata") = wrap(strata_stack)
     );
 }
+#endif // EDI_CORE_ONLY

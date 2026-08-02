@@ -171,11 +171,11 @@ EDI regression models (Logistic, Poisson) are benchmarked using the **IRLS** opt
 
 ## Utility / Math Kernel Performance
 
-This table compares EDI's internal scalar fast_* math kernels — used inside the NegBin/Beta/ZINB/Hurdle likelihoods, KK21 negative-binomial fitting, and probit cold-start heuristics — against base R's vectorized equivalents.
-Unlike the model-fit tables above, these are not full estimators: each row is a single vectorized special-function evaluation (digamma, trigamma, log-gamma, log-beta, quantile/CDF/PDF of the normal, and the mu-parameterized negative-binomial density) over a fixed-length vector, with no design matrix, optimizer, or R6 object involved on either side.
+This table is an exhaustive inventory of every fast_* scalar math kernel in EDI/src — used inside the NegBin/Beta/ZINB/Hurdle likelihoods, KK21 negative-binomial fitting, probit cold-start heuristics, ordinal cloglog/cauchit link derivatives, and LRT/score-test p-values — against base R's vectorized equivalents.
+Unlike the model-fit tables above, these are not full estimators: each row is a single vectorized special-function evaluation (digamma, trigamma, log-gamma, log-beta, error function, normal CDF/PDF/quantile (both closed-form and log-scale), chi-squared upper-tail p-value, arctangent, softplus, and the mu-parameterized negative-binomial density) over a fixed-length vector, with no design matrix, optimizer, or R6 object involved on either side.
 **Vector length**: All rows evaluate the function over a vector of length $N=5000$; inputs are drawn from a domain realistic for each kernel's actual call sites in EDI (e.g. shape/rate-like values in $(0.5, 50)$ for digamma/trigamma/lgamma, probabilities in $(0, 1)$ for qnorm).
-**Bare Metal EDI Timing**: EDI rows call a thin `// [[Rcpp::export]]` wrapper (compiled standalone via `Rcpp::sourceCpp()` against EDI's leaf headers in `benchmark/fast_math_utils_bench.cpp`, not the installed EDI package) that loops the internal `fast_*` scalar kernel over the input vector — no R6, no caching, no warm starts.
-**Canonical R Timing**: The base R column calls the corresponding vectorized base/stats function directly on the same input vector (e.g. `digamma()`, `lgamma()`, `stats::qnorm()`, `stats::dnbinom(..., mu = , log = TRUE)`).
+**Bare Metal EDI Timing**: Eight kernels (digamma, trigamma, lgamma, lbeta, dnbinom_mu, qnorm, log_pnorm, log_dnorm) call the package's own exported `fast_*_vec_cpp` wrapper (`EDI/src/fast_math_utils.cpp`, documented and exported via roxygen/NAMESPACE like any other EDI function) directly from the installed package — no separate compile step. The remaining six (pchisq_upper, erfc, pnorm_fast, dnorm_fast, atan, log1pexp) aren't promoted to package exports yet, so those rows call a thin bare-metal wrapper compiled standalone via `Rcpp::sourceCpp()` against the same `EDI/src` leaf headers (`benchmark/fast_math_utils_bench.cpp`) — same convention as `benchmark/fast_trigamma_speed_compare.cpp`. Either way, the wrapper just loops the internal `fast_*` scalar kernel over the input vector — no R6, no caching, no warm starts.
+**Canonical R Timing**: The base R column calls the corresponding vectorized base/stats function directly on the same input vector (e.g. `digamma()`, `lgamma()`, `stats::qnorm()`, `stats::dnbinom(..., mu = , log = TRUE)`); `erfc` and `log1pexp` have no dedicated base R function, so those two rows use the standard base-R composition (`2*pnorm(-x*sqrt(2))`, `log1p(exp(x))`) a base-R user would otherwise write by hand.
 **Timing Note**: All timings use the same adaptive batched `system.time`/`microbenchmark` harness as the tables above (medians over 30 cold samples; paths below 0.01 ms fall back to `microbenchmark(times = 5000)`).
 **Timing P-Value**: `Timing Pval` reports a Welch two-sample t-test comparing the EDI and base R timing replicate distributions for each row. The unlabeled final column marks thresholds with `***` for p < 0.001, `**` for p < 0.01, and `*` for p < 0.05.
 **Row Highlighting**: Light green rows indicate `Speedup > 1` and `Timing Pval < 0.05`; light grey rows indicate `NA` timing comparisons from a failed evaluation.
@@ -185,14 +185,20 @@ Unlike the model-fit tables above, these are not full estimators: each row is a 
     <tr><th>Function</th><th>Response</th><th>EDI Time (ms)</th><th>Canonical Pkg</th><th>Canonical Func</th><th>Canonical Time (ms)</th><th>Speedup</th><th>Timing Pval</th><th></th></tr>
   </thead>
   <tbody>
-    <tr style="background-color: #d9fdd3;"><td>fast_digamma</td><td>utility</td><td>0.05</td><td>base/stats</td><td>digamma</td><td>0.37</td><td>6.93x</td><td>1.61e-53</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>fast_dnbinom_mu</td><td>utility</td><td>0.35</td><td>base/stats</td><td>dnbinom(mu=, log=TRUE)</td><td>0.48</td><td>1.4x</td><td>3.83e-34</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>fast_lbeta</td><td>utility</td><td>0.19</td><td>base/stats</td><td>lbeta</td><td>0.47</td><td>2.41x</td><td>6.48e-42</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>fast_lgamma</td><td>utility</td><td>0.06</td><td>base/stats</td><td>lgamma</td><td>0.14</td><td>2.27x</td><td>6.69e-42</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>fast_log_dnorm</td><td>utility</td><td>0.01</td><td>base/stats</td><td>dnorm(log=TRUE)</td><td>0.07</td><td>5.09x</td><td>1.81e-53</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>fast_log_pnorm</td><td>utility</td><td>0.10</td><td>base/stats</td><td>pnorm(log.p=TRUE)</td><td>0.24</td><td>2.33x</td><td>3.29e-42</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>fast_qnorm</td><td>utility</td><td>0.03</td><td>base/stats</td><td>qnorm</td><td>0.08</td><td>2.67x</td><td>1.54e-37</td><td>***</td></tr>
-    <tr style="background-color: #d9fdd3;"><td>fast_trigamma</td><td>utility</td><td>0.02</td><td>base/stats</td><td>trigamma</td><td>0.49</td><td>19.7x</td><td>6.9e-41</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>dnorm_fast</td><td>utility</td><td>0.07</td><td>base/stats</td><td>dnorm</td><td>0.14</td><td>2x</td><td>4.08e-21</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_atan</td><td>utility</td><td>0.06</td><td>base/stats</td><td>atan</td><td>0.09</td><td>1.63x</td><td>4.36e-27</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_digamma</td><td>utility</td><td>0.09</td><td>base/stats</td><td>digamma</td><td>0.47</td><td>5.45x</td><td>1.18e-32</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_dnbinom_mu</td><td>utility</td><td>0.49</td><td>base/stats</td><td>dnbinom(mu=, log=TRUE)</td><td>0.66</td><td>1.35x</td><td>6.8e-12</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_erfc</td><td>utility</td><td>0.12</td><td>base/stats</td><td>2*pnorm(-x*sqrt(2))</td><td>0.35</td><td>2.96x</td><td>6.5e-21</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_lbeta</td><td>utility</td><td>0.26</td><td>base/stats</td><td>lbeta</td><td>0.60</td><td>2.3x</td><td>8.72e-38</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_lgamma</td><td>utility</td><td>0.09</td><td>base/stats</td><td>lgamma</td><td>0.19</td><td>2.05x</td><td>5.21e-35</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_log1pexp</td><td>utility</td><td>0.10</td><td>base/stats</td><td>log1p(exp(x))</td><td>0.14</td><td>1.42x</td><td>1.59e-16</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_log_dnorm</td><td>utility</td><td>0.03</td><td>base/stats</td><td>dnorm(log=TRUE)</td><td>0.11</td><td>3.35x</td><td>1.34e-23</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_log_pnorm</td><td>utility</td><td>0.13</td><td>base/stats</td><td>pnorm(log.p=TRUE)</td><td>0.33</td><td>2.44x</td><td>1.13e-22</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_pchisq_upper</td><td>utility</td><td>0.82</td><td>base/stats</td><td>pchisq(lower.tail=FALSE)</td><td>1.05</td><td>1.28x</td><td>0.0442</td><td>*</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_qnorm</td><td>utility</td><td>0.06</td><td>base/stats</td><td>qnorm</td><td>0.13</td><td>2.23x</td><td>1.19e-28</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>fast_trigamma</td><td>utility</td><td>0.05</td><td>base/stats</td><td>trigamma</td><td>0.65</td><td>13.41x</td><td>2.59e-31</td><td>***</td></tr>
+    <tr style="background-color: #d9fdd3;"><td>pnorm_fast</td><td>utility</td><td>0.10</td><td>base/stats</td><td>pnorm</td><td>0.31</td><td>3.11x</td><td>1.71e-28</td><td>***</td></tr>
   </tbody>
 </table>
 

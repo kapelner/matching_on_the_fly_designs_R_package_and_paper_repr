@@ -66,7 +66,8 @@ patched_extract_r6_methods = function(x) {
 	if (is.na(class_file)) {
 		return(methods)
 	}
-	methods[is.na(methods$file) | methods$file == class_file, , drop = FALSE]
+	keep_files = class_file
+	methods[is.na(methods$file) | methods$file %in% keep_files, , drop = FALSE]
 }
 unlockBinding("extract_r6_methods", asNamespace("roxygen2"))
 assign("extract_r6_methods", patched_extract_r6_methods, envir = asNamespace("roxygen2"))

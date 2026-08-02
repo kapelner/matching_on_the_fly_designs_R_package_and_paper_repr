@@ -94,7 +94,9 @@ likelihood-based models. Explicit starts always override this object-level polic
 \if{html}{\out{<a id="method-Inference-compute_exact_two_sided_pval_for_treatment_effect"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-compute_exact_two_sided_pval_for_treatment_effect}{}}}
 \subsection{\code{Inference$compute_exact_two_sided_pval_for_treatment_effect()}}{
-  Computes an exact two-sided p-value. Subclasses that support exact inference override this.
+  Computes an exact two-sided p-value. Subclasses that support exact
+  inference override this; inference objects that do not support exact methods
+  throw an error.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{Inference$compute_exact_two_sided_pval_for_treatment_effect(...)}
@@ -113,7 +115,9 @@ likelihood-based models. Explicit starts always override this object-level polic
 \if{html}{\out{<a id="method-Inference-compute_exact_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-compute_exact_confidence_interval}{}}}
 \subsection{\code{Inference$compute_exact_confidence_interval()}}{
-  Computes an exact confidence interval. Subclasses that support exact inference override this.
+  Computes an exact confidence interval. Subclasses that support exact
+  inference override this; inference objects that do not support exact methods
+  throw an error.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{Inference$compute_exact_confidence_interval(...)}
@@ -132,7 +136,9 @@ likelihood-based models. Explicit starts always override this object-level polic
 \if{html}{\out{<a id="method-Inference-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-compute_asymp_two_sided_pval}{}}}
 \subsection{\code{Inference$compute_asymp_two_sided_pval()}}{
-  Computes an asymptotic two-sided p-value. Subclasses that support asymptotic inference override this.
+  Computes an asymptotic two-sided p-value. Subclasses that support
+  asymptotic inference override this; inference objects that do not support
+  asymptotic methods throw an error.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{Inference$compute_asymp_two_sided_pval(delta = 0)}
@@ -151,7 +157,9 @@ likelihood-based models. Explicit starts always override this object-level polic
 \if{html}{\out{<a id="method-Inference-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-compute_asymp_confidence_interval}{}}}
 \subsection{\code{Inference$compute_asymp_confidence_interval()}}{
-  Computes an asymptotic confidence interval. Subclasses that support asymptotic inference override this.
+  Computes an asymptotic confidence interval. Subclasses that support
+  asymptotic inference override this; inference objects that do not support
+  asymptotic methods throw an error.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{Inference$compute_asymp_confidence_interval(alpha = 0.05)}
@@ -170,7 +178,12 @@ likelihood-based models. Explicit starts always override this object-level polic
 \if{html}{\out{<a id="method-Inference-compute_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-Inference-compute_estimate}{}}}
 \subsection{\code{Inference$compute_estimate()}}{
-  Computes the treatment estimate.
+  Computes the treatment-effect estimate. Concrete subclasses
+  implement the model-specific estimator, such as a fitted regression
+  coefficient, maximum-likelihood parameter, estimating-equation solution,
+  mean or risk contrast, survival contrast, or rank statistic. Interval,
+  p-value, bootstrap, jackknife, and randomization methods use this method
+  as the canonical point-estimate contract.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{Inference$compute_estimate(estimate_only = FALSE)}

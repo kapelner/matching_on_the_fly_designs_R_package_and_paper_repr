@@ -6,12 +6,11 @@
 #' \code{Inference} subclass that is compatible with the supplied design
 #' object, so the applicable list never goes stale as new classes are added.
 #'
-#' Compatibility is determined by attempting to construct each candidate class
-#' with \code{des_obj}.  A class is deemed \emph{not} applicable only when its
-#' initializer explicitly rejects the combination via a response-type or
-#' design-type mismatch error; any other outcome (successful construction
-#' \emph{or} an unrelated error such as a missing optional package) is treated
-#' as applicable.
+#' Discovery uses package metadata rather than constructor probing: only
+#' exported, non-abstract \code{Inference} generators are considered, and
+#' compatibility is evaluated from the completed design's response and design
+#' metadata. Optional-package failures and constructor side effects therefore
+#' cannot affect the discovered class list.
 #'
 #' @export
 #' @examples
@@ -31,7 +30,10 @@ InferenceSuite = R6::R6Class("InferenceSuite",
 		#' @field applicable_design_classes Character vector of applicable inference
 		#'   class names derived during initialization.
 		applicable_design_classes = NULL,
-		#' @description Initialize an \code{InferenceSuite}.
+		#' @description Initialize an \code{\link[EDI:InferenceSuite]{InferenceSuite}}
+		#'   wrapper that coordinates multiple inference objects for the same
+		#'   completed design and exposes their estimates, p-values, and confidence
+		#'   intervals through one object.
 		#' @param des_obj A completed \code{Design} object.
 		#' @param inference_params A named list of lists supplying additional
 		#'   constructor arguments for specific inference classes.  Each name
@@ -98,11 +100,12 @@ InferenceSuite = R6::R6Class("InferenceSuite",
 	private = list(
 		des_obj          = NULL,
 		inference_params = NULL,
-		# Known non-instantiable base / infrastructure classes
-		.base_class_names = c(
+		# Known abstract / infrastructure classes. Discovery also treats any
+		# generator whose name contains "Abstract" as abstract.
+		.abstract_class_names = c(
 			"Inference",
 			"InferenceAsymp", "InferenceJackknife", "InferenceNonParamBootstrap", "InferenceBayesianBootstrap", "InferenceRand",
-			"InferenceRandCI", "InferenceExact",
+			"InferenceRandCI", "InferenceRandBootstrap", "InferenceRandBootstrapCI", "InferenceExact",
 			"InferenceAsympLik", "InferenceParamBootstrap",
 			"InferenceKKPassThroughCompound", "InferenceKKPassThroughCompoundNoParamBootstrap",
 			"InferenceAsympLikStdModCache", "InferenceAsympLikStdModCacheNoParamBootstrap",
@@ -110,9 +113,6 @@ InferenceSuite = R6::R6Class("InferenceSuite",
 			"InferenceCountCompositeLikelihood",
 			"InferenceMLEorKMSummaryTable"
 		),
-		# Error patterns that signal a genuine incompatibility
-		.incompat_pattern =
-			"only available for|requires a .* design|only available for uncensored|not recommended for",
 		.is_inference_subclass = function(obj) {
 			if (!inherits(obj, "R6ClassGenerator")) return(FALSE)
 			anc = obj
@@ -122,30 +122,79 @@ InferenceSuite = R6::R6Class("InferenceSuite",
 			}
 			FALSE
 		},
+		.is_exported_inference_class = function(nm) {
+			nm %in% getNamespaceExports("EDI")
+		},
+		.is_abstract_inference_class = function(nm) {
+			nm %in% private$.abstract_class_names || grepl("Abstract", nm, fixed = TRUE)
+		},
+		.design_metadata = function(des_obj) {
+			list(
+				response_type = des_obj$get_response_type(),
+				is_kk = isTRUE(des_obj$is_a_kk_matching_capable()),
+				is_blocking = inherits(des_obj, "DesignBlocking") || inherits(des_obj, "DesignFixedBlocking"),
+				any_censoring = isTRUE(des_obj$any_censoring())
+			)
+		},
+		.class_compatibility_metadata = function(nm) {
+			if (grepl("^InferenceContin", nm) || grepl("^InferenceBai", nm)) {
+				response_types = "continuous"
+			} else if (grepl("^InferenceCount", nm)) {
+				response_types = "count"
+			} else if (grepl("^InferenceIncid", nm) || grepl("^InferenceIncidence", nm)) {
+				response_types = "incidence"
+			} else if (grepl("^InferenceOrdinal", nm)) {
+				response_types = "ordinal"
+			} else if (grepl("^InferenceProp", nm)) {
+				response_types = "proportion"
+			} else if (grepl("^InferenceSurvival", nm)) {
+				response_types = "survival"
+			} else if (grepl("^InferenceAll", nm)) {
+				response_types = c("continuous", "incidence", "count", "proportion", "survival", "ordinal")
+			} else {
+				response_types = character()
+			}
+			list(
+				abstract = private$.is_abstract_inference_class(nm),
+				exported = private$.is_exported_inference_class(nm),
+				response_types = response_types,
+				requires_kk = grepl("KK", nm, fixed = TRUE),
+				requires_blocking = nm %in% c("InferenceIncidCMH", "InferenceIncidExtendedRobins"),
+				requires_uncensored = nm %in% c(
+					"InferenceSurvivalKMDiff",
+					"InferenceSurvivalLogRank",
+					"InferenceSurvivalRestrictedMeanDiff",
+					"InferenceSurvivalGehanWilcox"
+				)
+			)
+			},
+			.is_compatible_with_design_metadata = function(nm, design_meta) {
+				class_meta = private$.class_compatibility_metadata(nm)
+				if (isTRUE(class_meta$abstract) || !isTRUE(class_meta$exported)) return(FALSE)
+				if (length(class_meta$response_types) == 0L) return(FALSE)
+				if (!(design_meta$response_type %in% class_meta$response_types)) {
+					return(FALSE)
+				}
+				if (isTRUE(class_meta$requires_kk) && !isTRUE(design_meta$is_kk)) return(FALSE)
+				if (isTRUE(class_meta$requires_blocking) && !isTRUE(design_meta$is_blocking)) return(FALSE)
+				if (isTRUE(class_meta$requires_uncensored) && isTRUE(design_meta$any_censoring)) return(FALSE)
+				TRUE
+		},
 		.discover_applicable_design_classes = function(des_obj) {
 			ns        = getNamespace("EDI")
 			all_names = ls(ns)
-			# Filter to concrete Inference subclasses
+			design_meta = private$.design_metadata(des_obj)
+			# Filter to exported, concrete Inference subclasses. Aliases are removed
+			# by requiring the namespace binding name to match the generator classname.
 			candidates = Filter(function(nm) {
-				if (nm %in% private$.base_class_names)   return(FALSE)
-				if (grepl("Abstract", nm, fixed = TRUE)) return(FALSE)
-				private$.is_inference_subclass(get(nm, envir = ns))
+				obj = get(nm, envir = ns)
+				private$.is_inference_subclass(obj) &&
+					identical(obj$classname, nm) &&
+					private$.is_exported_inference_class(nm) &&
+					!private$.is_abstract_inference_class(nm)
 			}, all_names)
-			# Probe compatibility via try-construction (stdout suppressed to silence cat() calls)
 			applicable = Filter(function(nm) {
-				cls = get(nm, envir = ns)
-				result = NULL
-				utils::capture.output(
-					result <- tryCatch(
-						suppressWarnings(suppressMessages(cls$new(des_obj))),
-						error = function(e) e
-					)
-				)
-				if (inherits(result, "error")) {
-					msg = conditionMessage(result)
-					return(!grepl(private$.incompat_pattern, msg, ignore.case = TRUE))
-				}
-				TRUE
+				private$.is_compatible_with_design_metadata(nm, design_meta)
 			}, candidates)
 			sort(applicable)
 		}

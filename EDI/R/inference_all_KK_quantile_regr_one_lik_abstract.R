@@ -59,7 +59,8 @@ InferenceAbstractKKQuantileRegrOneLik = R6::R6Class("InferenceAbstractKKQuantile
 			private$shared_combined_likelihood(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Compute the treatment estimate with bootstrap weights.
+		#' @description Recomputes the treatment estimate under bootstrap weights; see
+		#'   \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}}.
 		#' @param subject_or_block_weights Numeric vector. Row weights for bootstrap.
 		#' @param estimate_only Logical. If TRUE, skip variance component calculations.
 		#' @return The treatment estimate.

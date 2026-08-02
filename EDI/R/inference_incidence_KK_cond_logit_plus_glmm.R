@@ -52,7 +52,9 @@ InferenceIncidKKCondLogitPlusGLMMOneLik = R6::R6Class("InferenceIncidKKCondLogit
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKCondLogitPlusGLMM,
 	public = list(
-		#' @description Initialize
+		#' @description Initialize KK conditional-logit plus GLMM one-likelihood
+		#'   incidence inference and configure the combined likelihood used by
+		#'   \code{\link[EDI:InferenceIncidKKCondLogitPlusGLMMOneLik]{InferenceIncidKKCondLogitPlusGLMMOneLik}}.
 		#' @param des_obj A completed \code{Design} object with an incidence response.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param max_abs_reasonable_coef Cap for reasonable coefficient estimates.

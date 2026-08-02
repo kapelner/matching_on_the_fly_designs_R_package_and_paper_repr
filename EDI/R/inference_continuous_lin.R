@@ -45,7 +45,8 @@ InferenceContinLin = R6::R6Class("InferenceContinLin",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @description Recomputes the class-specific treatment estimate under bootstrap weights; see
+		#'   \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}}.
 		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
@@ -102,7 +103,8 @@ InferenceContinLin = R6::R6Class("InferenceContinLin",
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Computes a two-sided p-value for the treatment effect.
+		#' @description Uses the shared asymptotic two-sided p-value contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta The null treatment effect. Defaults to 0.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {

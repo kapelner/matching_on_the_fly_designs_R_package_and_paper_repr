@@ -26,7 +26,9 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
 	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
-		#' @description Initialize the inference object.
+		#' @description Initialize the paired sign-test inference object for ordinal
+		#'   matched responses and prepare the sign-test statistic used by
+		#'   \code{\link[EDI:InferenceOrdinalPairedSignTest]{InferenceOrdinalPairedSignTest}}.
 		#' @param  des_obj  	A completed KK matching-on-the-fly design object.
 		#' @param  verbose  		Whether to print progress messages.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -114,7 +116,8 @@ InferenceOrdinalPairedSignTest = R6::R6Class("InferenceOrdinalPairedSignTest",
 			private$shared()
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#'   Note that Bootstrap is disabled for this class as subject-level resampling violates the
 		#'   matched-pair design constraint.
 		#' @param B  					Number of bootstrap samples.

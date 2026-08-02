@@ -43,7 +43,8 @@ DesignSeqOneByOneBernoulli = R6::R6Class("DesignSeqOneByOneBernoulli",
 			) {
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, design_formula, seed = seed)
 		},
-		#' @description Assign the next subject to a treatment group
+		#' @description Uses this subclass's sequential assignment rule; see
+		#'   \code{\link[EDI:DesignSeqOneByOne]{DesignSeqOneByOne}}.
 		#'
 		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){

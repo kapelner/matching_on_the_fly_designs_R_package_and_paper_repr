@@ -415,6 +415,64 @@ private:
 	Eigen::VectorXd m_grad_gamma1;
 };
 
+LikelihoodFitResult fast_zero_one_inflated_beta_internal(
+		const Eigen::Ref<const Eigen::MatrixXd>& X,
+		const Eigen::Ref<const Eigen::MatrixXd>& X_zero_one,
+		const Eigen::Ref<const Eigen::VectorXd>& y_eigen,
+		std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+		bool smart_cold_start = true,
+		std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+		std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+		std::string optimization_alg = "lbfgs",
+		std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt) {
+	int p = X.cols();
+	int p_zero_one = X_zero_one.cols();
+	int total = p + 1 + 2 * p_zero_one;
+	Eigen::VectorXd params(total);
+
+	if (warm_start_params.has_value()) {
+		params = *warm_start_params;
+	} else if (smart_cold_start) {
+		// Beta component: OLS on logit(y) for entries in (0, 1)
+		std::vector<int> idx_mid;
+		for(int i=0; i<y_eigen.size(); ++i) if(y_eigen[i] > 0 && y_eigen[i] < 1) idx_mid.push_back(i);
+		if (idx_mid.size() > (size_t)p) {
+			Eigen::MatrixXd X_mid(idx_mid.size(), p);
+			Eigen::VectorXd y_logit(idx_mid.size());
+			for(size_t i=0; i<idx_mid.size(); ++i) {
+				X_mid.row(i) = X.row(idx_mid[i]);
+				double yi = y_eigen[idx_mid[i]];
+				y_logit[i] = std::log(yi / (1.0 - yi));
+			}
+			params.head(p) = safe_ols_solve(X_mid, y_logit);
+		} else {
+			params.head(p).setZero();
+		}
+		params[p] = 2.0; // log_phi warm_start_params
+
+		// Zero/One components: OLS on indicators
+		Eigen::VectorXd y_is_zero = (y_eigen.array() == 0.0).cast<double>();
+		Eigen::VectorXd y_is_one  = (y_eigen.array() == 1.0).cast<double>();
+		params.segment(p + 1, p_zero_one) = ols_smart_cold_start_beta(X_zero_one, y_is_zero);
+		params.tail(p_zero_one)           = ols_smart_cold_start_beta(X_zero_one, y_is_one);
+	} else {
+		params.setZero();
+		params[p] = 2.0;
+	}
+	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
+
+	ZeroOneInflatedBeta fun(y_eigen, X, X_zero_one);
+
+    Eigen::MatrixXd info_start;
+    const Eigen::MatrixXd* info_start_ptr = nullptr;
+    if (warm_start_fisher_info.has_value()) {
+        info_start = *warm_start_fisher_info;
+        info_start_ptr = &info_start;
+    }
+
+	return optimize_fixed_likelihood(fun, params, fixed_spec, 1500, 1e-6, optimization_alg, "lbfgs", 0, info_start_ptr);
+}
+
 #ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 SEXP get_zero_one_inflated_beta_score_cpp(SEXP X_sexp,
@@ -450,64 +508,6 @@ SEXP get_zero_one_inflated_beta_hessian_cpp(SEXP X_sexp,
 	Eigen::Map<const Eigen::VectorXd> params(params_vec.begin(), params_vec.size());
 	ZeroOneInflatedBeta fun(y, X, X_zero_one);
 	return wrap(-fun.hessian(params));
-}
-
-LikelihoodFitResult fast_zero_one_inflated_beta_internal(
-		const Eigen::Ref<const Eigen::MatrixXd>& X,
-		const Eigen::Ref<const Eigen::MatrixXd>& X_zero_one,
-		const Eigen::Ref<const Eigen::VectorXd>& y_eigen,
-		std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
-		bool smart_cold_start = true,
-		std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
-		std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
-		std::string optimization_alg = "lbfgs",
-		std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt) {
-	int p = X.cols();
-	int p_zero_one = X_zero_one.cols();
-	int total = p + 1 + 2 * p_zero_one;
-	Eigen::VectorXd params(total);
-
-	if (warm_start_params.has_value()) {
-		params = *warm_start_params;
-	} else if (smart_cold_start) {
-		// Beta component: OLS on logit(y) for entries in (0, 1)
-		std::vector<int> idx_mid;
-		for(int i=0; i<y_eigen.size(); ++i) if(y_eigen[i] > 0 && y_eigen[i] < 1) idx_mid.push_back(i);
-		if (idx_mid.size() > (size_t)p) {
-			Eigen::MatrixXd X_mid(idx_mid.size(), p);
-			Eigen::VectorXd y_logit(idx_mid.size());
-			for(size_t i=0; i<idx_mid.size(); ++i) {
-				X_mid.row(i) = X.row(idx_mid[i]);
-				double yi = y_eigen[idx_mid[i]];
-				y_logit[i] = std::log(yi / (1.0 - yi));
-			}
-			params.head(p) = safe_ols_solve(X_mid, y_logit);
-		} else {
-			params.head(p).setZero();
-		}
-		params[p] = 2.0; // log_phi warm_start_params
-		
-		// Zero/One components: OLS on indicators
-		Eigen::VectorXd y_is_zero = (y_eigen.array() == 0.0).cast<double>();
-		Eigen::VectorXd y_is_one  = (y_eigen.array() == 1.0).cast<double>();
-		params.segment(p + 1, p_zero_one) = ols_smart_cold_start_beta(X_zero_one, y_is_zero);
-		params.tail(p_zero_one)           = ols_smart_cold_start_beta(X_zero_one, y_is_one);
-	} else {
-		params.setZero();
-		params[p] = 2.0;
-	}
-	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
-
-	ZeroOneInflatedBeta fun(y_eigen, X, X_zero_one);
-
-    Eigen::MatrixXd info_start;
-    const Eigen::MatrixXd* info_start_ptr = nullptr;
-    if (warm_start_fisher_info.has_value()) {
-        info_start = *warm_start_fisher_info;
-        info_start_ptr = &info_start;
-    }
-
-	return optimize_fixed_likelihood(fun, params, fixed_spec, 1500, 1e-6, optimization_alg, "lbfgs", 0, info_start_ptr);
 }
 
 //' @title Fast Zero/One-Inflated Beta Regression (C++)

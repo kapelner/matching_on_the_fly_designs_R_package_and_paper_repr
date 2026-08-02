@@ -26,7 +26,62 @@ des = DesignMatching$new(n = 6, response_type = "continuous")
     \item \href{#method-DesignMatching-clone}{\code{DesignMatching$clone()}}
   }
 }
-\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/DesignBlocking.html'><code>DesignBlocking</code></a>.</p>}}
+\if{html}{\out{<details><summary>+ inherited public methods from DesignBlocking</summary>
+<ul>
+  <li><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-add_all_subject_matched_pair_ids'><code>DesignBlocking$add_all_subject_matched_pair_ids()</code></a></li>
+  <li><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-assert_blocking_design'><code>DesignBlocking$assert_blocking_design()</code></a></li>
+  <li><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-assert_equal_block_sizes'><code>DesignBlocking$assert_equal_block_sizes()</code></a></li>
+  <li><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-get_block_ids'><code>DesignBlocking$get_block_ids()</code></a></li>
+  <li><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-get_cmh_se_w_mat'><code>DesignBlocking$get_cmh_se_w_mat()</code></a></li>
+  <li><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-inject_cmh_se_w_mat'><code>DesignBlocking$inject_cmh_se_w_mat()</code></a></li>
+  <li><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-is_blocking_design'><code>DesignBlocking$is_blocking_design()</code></a></li>
+  <li><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-is_complete_blocking_design'><code>DesignBlocking$is_complete_blocking_design()</code></a></li>
+  <li><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-set_m'><code>DesignBlocking$set_m()</code></a></li>
+  <li><a href='../../EDI/html/DesignBlocking.html#method-DesignBlocking-summarize_blocks'><code>DesignBlocking$summarize_blocks()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from Design</summary>
+<ul>
+  <li><a href='../../EDI/html/Design.html#method-Design-add_all_subject_responses'><code>Design$add_all_subject_responses()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-add_one_subject_response'><code>Design$add_one_subject_response()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-any_censoring'><code>Design$any_censoring()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-assert_all_responses_recorded'><code>Design$assert_all_responses_recorded()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-assert_all_subjects_arrived'><code>Design$assert_all_subjects_arrived()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-assert_even_allocation'><code>Design$assert_even_allocation()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-assert_fixed_sample'><code>Design$assert_fixed_sample()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-check_experiment_completed'><code>Design$check_experiment_completed()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-draw_ws_according_to_design'><code>Design$draw_ws_according_to_design()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-duplicate'><code>Design$duplicate()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-get_X'><code>Design$get_X()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-get_X_imp'><code>Design$get_X_imp()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-get_X_raw'><code>Design$get_X_raw()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-get_dead'><code>Design$get_dead()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-get_design_formula'><code>Design$get_design_formula()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-get_missingness_method'><code>Design$get_missingness_method()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-get_n'><code>Design$get_n()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-get_ordinal_levels'><code>Design$get_ordinal_levels()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-get_original_ordinal_levels'><code>Design$get_original_ordinal_levels()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-get_prob_T'><code>Design$get_prob_T()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-get_response_type'><code>Design$get_response_type()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-get_response_type_original'><code>Design$get_response_type_original()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-get_t'><code>Design$get_t()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-get_w'><code>Design$get_w()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-get_y'><code>Design$get_y()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-get_y_original'><code>Design$get_y_original()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-has_covariates'><code>Design$has_covariates()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-initialize'><code>Design$initialize()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-is_a_bernoulli_capable'><code>Design$is_a_bernoulli_capable()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-is_a_cluster_capable'><code>Design$is_a_cluster_capable()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-is_a_custom_sequential'><code>Design$is_a_custom_sequential()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-is_a_fixed'><code>Design$is_a_fixed()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-is_a_fixed_custom'><code>Design$is_a_fixed_custom()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-is_a_kk_matching_capable'><code>Design$is_a_kk_matching_capable()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-is_a_seq_one_by_one'><code>Design$is_a_seq_one_by_one()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-is_fixed_sample_size'><code>Design$is_fixed_sample_size()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-overwrite_all_subject_assignments'><code>Design$overwrite_all_subject_assignments()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-transform_y'><code>Design$transform_y()</code></a></li>
+</ul>
+</details>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DesignMatching-is_matching_design"></a>}}
 \if{latex}{\out{\hypertarget{method-DesignMatching-is_matching_design}{}}}

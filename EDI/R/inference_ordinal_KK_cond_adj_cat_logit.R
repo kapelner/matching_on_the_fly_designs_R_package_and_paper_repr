@@ -19,7 +19,9 @@ InferenceOrdinalKKCondAdjCatLogitRegr = R6::R6Class("InferenceOrdinalKKCondAdjCa
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
 	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
-		#' @description Initialize the inference object.
+		#' @description Initialize KK adjacent-category conditional-logit inference
+		#'   for ordinal responses and prepare the fitted ordinal likelihood used by
+		#'   \code{\link[EDI:InferenceOrdinalKKCondAdjCatLogitRegr]{InferenceOrdinalKKCondAdjCatLogitRegr}}.
 		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object.
 		#' @param model_formula   Optional formula for covariate adjustment.
 		#' @param verbose Flag for progress messages.
@@ -64,14 +66,17 @@ InferenceOrdinalKKCondAdjCatLogitRegr = R6::R6Class("InferenceOrdinalKKCondAdjCa
 			ordinal_cond_clogit_assert_finite_se(private, class(self)[1])
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Returns the asymptotic p-value.
+		#' @description Return the adjacent-category conditional-logit asymptotic
+		#'   p-value for the treatment coefficient, using the shared Wald semantics
+		#'   documented in \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta Null hypothesis treatment effect.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			private$shared()
 			ordinal_cond_clogit_assert_finite_se(private, class(self)[1])
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B  					Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         Whether to return diagnostics.

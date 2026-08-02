@@ -249,6 +249,8 @@ private:
     }
 };
 
+} // namespace
+
 ModelResult fast_neg_bin_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
                                   const Eigen::Ref<const Eigen::VectorXi>& y,
                                   std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
@@ -313,8 +315,6 @@ ModelResult fast_neg_bin_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
     res.sigma2_hat = -fit.value; // using sigma2_hat to store logLik temporarily
     return res;
 }
-
-} // namespace
 
 //' @title Compute Negative Binomial Regression Score
 //' @description Calculates the score vector (gradient of the log-likelihood) for a negative binomial regression model.

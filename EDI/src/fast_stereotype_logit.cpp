@@ -1,5 +1,6 @@
 #ifdef EDI_CORE_ONLY
 #include "_helper_functions_core.h"
+#include "result_map.h"
 #else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
@@ -806,6 +807,85 @@ LikelihoodFitResult fast_stereotype_logit_internal(
 	}
 
 	return optimize_fixed_likelihood(obj, params, fixed_spec, maxit, tol, optimization_alg, "newton_raphson", 0, info_start_ptr);
+}
+
+// Portable core taking raw X/y (constructs the model internally), unifying
+// fast_stereotype_logit_cpp (fit only) and fast_stereotype_logit_with_var_cpp
+// (fit + ssq_b_1 diagonal variance, via the same profile-likelihood fallback)
+// below so a Python caller gets everything from one call.
+edi::ResultMap fast_stereotype_logit_full_internal(
+    const Eigen::Ref<const Eigen::MatrixXd>& X,
+    const Eigen::Ref<const Eigen::VectorXd>& y,
+    int maxit = 100,
+    double tol = 1e-8,
+    bool smart_cold_start = true,
+    std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+    std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+    std::string optimization_alg = "newton_raphson",
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt,
+    std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+    std::optional<Eigen::VectorXd> warm_start_beta = std::nullopt,
+    bool estimate_only = false
+) {
+    (void)smart_cold_start; // matches original: only warm starts alter initialize_params()'s default
+
+    StereotypeLogitRegression model(X, y);
+    if (model.num_categories() < 2) {
+        throw std::invalid_argument("Stereotype logistic regression requires at least two observed outcome categories.");
+    }
+
+    int n_alpha = model.num_alpha();
+    int p = (int)X.cols();
+    int n_par = model.num_params();
+
+    LikelihoodFitResult fit = fast_stereotype_logit_internal(
+        model, maxit, tol, fixed_idx, fixed_values, optimization_alg,
+        warm_start_fisher_info, warm_start_params, warm_start_beta);
+    VectorXd params = fit.params;
+
+    if (estimate_only) {
+        return edi::ResultMap()
+            .set("b", params.segment(n_alpha, p))
+            .set("alpha", params.head(n_alpha))
+            .set("scores_raw", (model.num_gamma() > 0) ? params.tail(model.num_gamma()) : VectorXd(0))
+            .set("params", params)
+            .set("neg_loglik", fit.value)
+            .set("converged", fit.converged);
+    }
+
+    MatrixXd neg_hess = -model.loglik_hessian(params);
+
+    FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
+    MatrixXd info_free = subset_matrix(neg_hess, fixed_spec.free_idx, fixed_spec.free_idx);
+    int free_j = -1;
+    for (int jj = 0; jj < (int)fixed_spec.free_idx.size(); ++jj)
+        if (fixed_spec.free_idx[jj] == n_alpha) { free_j = jj + 1; break; }
+    double ssq_b_1 = (p >= 1 && free_j > 0) ? compute_diagonal_inverse_entry(info_free, free_j) : std::numeric_limits<double>::quiet_NaN();
+
+    // Fallback profiling logic for variance if still not finite
+    if (!std::isfinite(ssq_b_1) && p >= 1 && !fixed_spec.has_fixed) {
+        double beta_hat = params[n_alpha];
+        double h = std::max(1e-4, 1e-3 * (std::abs(beta_hat) + 1.0));
+        double ll_0 = profile_loglik_for_beta(model, params, beta_hat, n_alpha, p, model.num_gamma(), 0);
+        double ll_p = profile_loglik_for_beta(model, params, beta_hat + h, n_alpha, p, model.num_gamma(), 0);
+        double ll_m = profile_loglik_for_beta(model, params, beta_hat - h, n_alpha, p, model.num_gamma(), 0);
+        double info_beta = -(ll_p - 2.0 * ll_0 + ll_m) / (h * h);
+        if (std::isfinite(info_beta) && info_beta > 0) {
+            ssq_b_1 = 1.0 / info_beta;
+        }
+    }
+
+    return edi::ResultMap()
+        .set("b", params.segment(n_alpha, p))
+        .set("alpha", params.head(n_alpha))
+        .set("scores_raw", (model.num_gamma() > 0) ? params.tail(model.num_gamma()) : VectorXd(0))
+        .set("params", params)
+        .set("neg_loglik", fit.value)
+        .set("ssq_b_1", ssq_b_1)
+        .set("ssq_b_j", ssq_b_1)
+        .set("vcov", std::monostate{})
+        .set("converged", fit.converged)
+        .set("fisher_information", neg_hess);
 }
 
 //' @title Compute Stereotype Logit Score

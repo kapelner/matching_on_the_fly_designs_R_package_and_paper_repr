@@ -18,8 +18,10 @@
 InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurvivalRankRegrIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
-	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
-		#' @description Initialize the inference object.
+	public = list(
+		#' @description Initialize KK survival rank-regression IVWC inference and
+		#'   prepare matched/reservoir Gehan-Wilcoxon rank-regression components used
+		#'   by \code{\link[EDI:InferenceAbstractKKSurvivalRankRegrIVWC]{InferenceAbstractKKSurvivalRankRegrIVWC}}.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -45,13 +47,15 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			}
 			private$init_kk_passthrough(des_obj)
 		},
-		#' @description Returns the estimated treatment effect (log-time ratio).
+		#' @description Returns the model-specific log-time-ratio treatment estimate; see
+		#'   \code{\link[EDI:Inference]{Inference}}.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes the asymptotic confidence interval.
+		#' @description Uses the shared asymptotic confidence-interval contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha                                   The confidence level in the computed
 		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -64,7 +68,9 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Computes the asymptotic p-value.
+		#' @description Compute the survival rank-regression asymptotic p-value for
+		#'   the treatment effect using the fitted rank-regression estimate and
+		#'   standard error. See \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).
 		compute_asymp_two_sided_pval = function(delta = 0){
@@ -84,7 +90,8 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 				NA_real_
 			}
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B  					Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         Whether to return diagnostics.
@@ -93,8 +100,8 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
 		}
-	)),
-	private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+	),
+	private = list(
 		is_a_kk_survival_rank_regr_ivwc = function() TRUE,
 		best_X_colnames_matched = NULL,
 		best_X_colnames_reservoir = NULL,
@@ -325,5 +332,5 @@ InferenceAbstractKKSurvivalRankRegrIVWC = R6::R6Class("InferenceAbstractKKSurviv
 			private$cached_values$beta_T_reservoir     = if (is.finite(beta) && abs(beta) <= private$max_abs_reasonable_coef) beta else NA_real_
 			private$cached_values$ssq_beta_T_reservoir = if (!estimate_only && is.finite(se) && se > 0 && se <= private$max_abs_reasonable_coef) se^2 else NA_real_
 		}
-	))
+	)
 )

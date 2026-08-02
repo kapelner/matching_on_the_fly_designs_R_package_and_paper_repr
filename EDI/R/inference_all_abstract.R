@@ -105,27 +105,40 @@ Inference = R6::R6Class("Inference",
 				))
 			}
 		},
-		#' @description Computes an exact two-sided p-value. Subclasses that support exact inference override this.
+		#' @description Computes an exact two-sided p-value. Subclasses that support exact
+		#'   inference override this; inference objects that do not support exact methods
+		#'   throw an error.
 		#' @param ... Other arguments passed to the method.
 		compute_exact_two_sided_pval_for_treatment_effect = function(...){
 			stop("Exact inference is only supported for exact inference classes.")
 		},
-		#' @description Computes an exact confidence interval. Subclasses that support exact inference override this.
+		#' @description Computes an exact confidence interval. Subclasses that support exact
+		#'   inference override this; inference objects that do not support exact methods
+		#'   throw an error.
 		#' @param ... Other arguments passed to the method.
 		compute_exact_confidence_interval = function(...){
 			stop("Exact inference is only supported for exact inference classes.")
 		},
-		#' @description Computes an asymptotic two-sided p-value. Subclasses that support asymptotic inference override this.
+		#' @description Computes an asymptotic two-sided p-value. Subclasses that support
+		#'   asymptotic inference override this; inference objects that do not support
+		#'   asymptotic methods throw an error.
 		#' @param delta Null treatment effect.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			stop("Asymptotic inference is not implemented for this inference class.")
 		},
-		#' @description Computes an asymptotic confidence interval. Subclasses that support asymptotic inference override this.
+		#' @description Computes an asymptotic confidence interval. Subclasses that support
+		#'   asymptotic inference override this; inference objects that do not support
+		#'   asymptotic methods throw an error.
 		#' @param alpha Significance level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			stop("Asymptotic inference is not implemented for this inference class.")
 		},
-		#' @description Computes the treatment estimate.
+		#' @description Computes the treatment-effect estimate. Concrete subclasses
+		#'   implement the model-specific estimator, such as a fitted regression
+		#'   coefficient, maximum-likelihood parameter, estimating-equation solution,
+		#'   mean or risk contrast, survival contrast, or rank statistic. Interval,
+		#'   p-value, bootstrap, jackknife, and randomization methods use this method
+		#'   as the canonical point-estimate contract.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		#' @return A numeric treatment estimate.
 		compute_estimate = function(estimate_only = FALSE){
@@ -581,12 +594,25 @@ Inference = R6::R6Class("Inference",
 				if (length(X) == 0L) return(list())
 				n_cores = max(1L, min(as.integer(n_cores), length(X)))
 				budget = max(1L, as.integer(budget))
+				deadline = suppressWarnings(as.numeric(getOption("EDI.ci_timeout_deadline", default = NA_real_))[1L])
+				has_deadline = is.finite(deadline)
+				check_deadline = function(label = "Parallel task") {
+					if (has_deadline && proc.time()[["elapsed"]] >= deadline) {
+						stop(paste0(label, " reached elapsed time limit"), call. = FALSE)
+					}
+					invisible(NULL)
+				}
+				# In the comprehensive-test harness the parent process owns the timeout.
+				# Do deadline-bound work serially so socket/fork workers cannot hide a slow
+				# chunk from R.utils::withTimeout or stale worker options.
+				if (has_deadline) n_cores = 1L
 				chunk_count = min(length(X), max(1L, 4L * n_cores))
 				chunk_size = max(1L, ceiling(length(X) / chunk_count))
 				chunks = split(X, ceiling(seq_along(X) / chunk_size))
 				# Run a whole chunk under the requested worker budget so we do not
 				# pay scheduler/export overhead once per iteration.
 				RUN_CHUNK = function(chunk) {
+					check_deadline()
 					ns = asNamespace("EDI")
 					edi_env = ns$edi_env
 					prev_override = edi_env$num_cores_override
@@ -600,7 +626,12 @@ Inference = R6::R6Class("Inference",
 						assign("num_cores_override", prev_override, envir = edi_env)
 						ns$set_package_threads(prev_threads)
 					}, add = TRUE)
-					lapply(chunk, FUN)
+					out = lapply(chunk, function(x) {
+						check_deadline()
+						FUN(x)
+					})
+					check_deadline()
+					out
 				}
 				flatten_chunk_results = function(results) {
 					if (length(results) == 0L) return(list())

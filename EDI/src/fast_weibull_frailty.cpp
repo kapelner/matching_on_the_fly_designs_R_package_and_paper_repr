@@ -1,13 +1,23 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#include "result_map.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
+#endif
 #include <cmath>
 #include <limits>
 #include <vector>
 #include <algorithm>
 #include <numeric>
+#include <optional>
+#include <string>
+#include <stdexcept>
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 namespace {
 
@@ -230,6 +240,7 @@ public:
 
 } // namespace
 
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 double get_weibull_frailty_neg_loglik_cpp(
 	SEXP X_sexp,
@@ -307,7 +318,116 @@ Eigen::MatrixXd get_weibull_frailty_hessian_cpp(
 	WeibullFrailtyLikelihood obj(y, dead, X, group_id, n_gh, max_abs_log_sigma);
 	return -obj.hessian(params);
 }
+#endif // EDI_CORE_ONLY
 
+// Portable core for fast_weibull_frailty_cpp.
+edi::ResultMap fast_weibull_frailty_internal(
+	const Eigen::Ref<const Eigen::MatrixXd>& X,
+	const Eigen::Ref<const Eigen::VectorXd>& y,
+	const Eigen::Ref<const Eigen::VectorXd>& dead,
+	const Eigen::Ref<const Eigen::VectorXi>& group_id,
+	std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+	std::optional<Eigen::VectorXd> warm_start_beta = std::nullopt,
+	bool estimate_only = false,
+	int n_gh = 20,
+	double max_abs_log_sigma = 8.0,
+	int maxit = 300,
+	double eps_g = 1e-6,
+	std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+	std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+	std::string optimization_alg = "lbfgs",
+	std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt
+) {
+	const int p     = (int)X.cols();
+	const int n_par = p + 2;
+
+	WeibullFrailtyLikelihood obj(y, dead, X, group_id, n_gh, max_abs_log_sigma);
+
+	Eigen::VectorXd par(n_par);
+	if (warm_start_params.has_value()) {
+		par = *warm_start_params;
+	} else if (warm_start_beta.has_value()) {
+		const Eigen::VectorXd& sb = *warm_start_beta;
+		if (sb.size() == n_par) {
+			par = sb;
+		} else if (sb.size() == p) {
+			par.head(p) = sb;
+			par[p] = 0.0;
+			par[p+1] = -3.0;
+		}
+	} else {
+		Eigen::VectorXd log_y = y.array().log().matrix();
+		Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(X);
+		Eigen::VectorXd beta_init = qr.solve(log_y);
+		par.head(p) = beta_init;
+		Eigen::VectorXd resid = log_y - X * par.head(p);
+		const double std_resid = std::sqrt(resid.squaredNorm() / std::max(1, (int)y.size() - p));
+		par[p]     = std::log(std_resid * 0.7797);
+		par[p + 1] = 0.0;
+	}
+
+	FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
+
+	Eigen::MatrixXd info_start;
+	Eigen::MatrixXd* info_start_ptr = nullptr;
+	if (warm_start_fisher_info.has_value()) {
+		info_start = *warm_start_fisher_info;
+		info_start_ptr = &info_start;
+	}
+
+	double neg_ll  = std::numeric_limits<double>::quiet_NaN();
+	bool converged = false;
+	try {
+		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
+		par       = fit.params;
+		neg_ll    = fit.value;
+		converged = std::isfinite(neg_ll) && fit.converged;
+	} catch (...) {}
+	// If neg_ll is still NA (optimizer threw or returned non-finite value), evaluate at last iterate
+	if (!std::isfinite(neg_ll) && par.allFinite()) {
+		Eigen::VectorXd grad_tmp(n_par);
+		double val = obj(par, grad_tmp);
+		if (std::isfinite(val)) neg_ll = val;
+	}
+
+	double ssq_b_T = std::numeric_limits<double>::quiet_NaN();
+	Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(n_par, n_par, std::numeric_limits<double>::quiet_NaN());
+	Eigen::VectorXd score = Eigen::VectorXd::Constant(n_par, std::numeric_limits<double>::quiet_NaN());
+	Eigen::MatrixXd information = Eigen::MatrixXd::Constant(n_par, n_par, std::numeric_limits<double>::quiet_NaN());
+	if (!estimate_only && converged) {
+		Eigen::VectorXd grad(n_par);
+		obj(par, grad);
+		score = -grad;
+		information = obj.hessian(par);
+		Eigen::MatrixXd info_free = subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx);
+		Eigen::LDLT<Eigen::MatrixXd> ldlt(info_free);
+		if (ldlt.info() == Eigen::Success) {
+			Eigen::MatrixXd inv_free = ldlt.solve(Eigen::MatrixXd::Identity(info_free.rows(), info_free.cols()));
+			vcov = expand_free_covariance(n_par, fixed_spec, inv_free, true);
+			if (vcov.allFinite()) ssq_b_T = vcov(0, 0);  // j_T = 0 usually
+		}
+	}
+
+	Eigen::MatrixXd neg_information = -information;
+	return edi::ResultMap()
+		.set("params", par)
+		.set("b", par.head(p))
+		.set("log_sigma_eps", par[p])
+		.set("log_sigma_u", par[p + 1])
+		.set("ssq_b_T", ssq_b_T)
+		.set("vcov", vcov)
+		.set("score", score)
+		.set("observed_information", information)
+		.set("information", information)
+		.set("information_type", std::string("observed"))
+		.set("hessian", neg_information)
+		.set("converged", converged)
+		.set("neg_loglik", neg_ll)
+		.set("neg_ll", neg_ll)
+		.set("loglik", std::isfinite(neg_ll) ? -neg_ll : std::numeric_limits<double>::quiet_NaN());
+}
+
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 List fast_weibull_frailty_cpp(
 	SEXP X_sexp,
@@ -335,97 +455,15 @@ List fast_weibull_frailty_cpp(
 	Eigen::Map<const Eigen::VectorXd> dead(dead_r.begin(), dead_r.size());
 	Eigen::Map<const Eigen::VectorXi> group_id(group_id_r.begin(), group_id_r.size());
 
-	const int p     = X.cols();
-	const int n_par = p + 2;
-
-	WeibullFrailtyLikelihood obj(y, dead, X, group_id, n_gh, max_abs_log_sigma);
-
-	Eigen::VectorXd par(n_par);
-	std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
-	std::optional<Eigen::VectorXd> warm_start_beta_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_beta);
-	if (warm_start_params_opt.has_value()) {
-		par = *warm_start_params_opt;
-	} else if (warm_start_beta_opt.has_value()) {
-		const Eigen::VectorXd& sb = *warm_start_beta_opt;
-		if (sb.size() == n_par) {
-			par = sb;
-		} else if (sb.size() == p) {
-			par.head(p) = sb;
-			par[p] = 0.0;
-			par[p+1] = -3.0;
-		}
-	} else {
-		Eigen::VectorXd log_y = y.array().log().matrix();
-		Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(X);
-		Eigen::VectorXd beta_init = qr.solve(log_y);
-		par.head(p) = beta_init;
-		Eigen::VectorXd resid = log_y - X * par.head(p);
-		const double std_resid = std::sqrt(resid.squaredNorm() / std::max(1, (int)y.size() - p));
-		par[p]     = std::log(std_resid * 0.7797);
-		par[p + 1] = 0.0;
-	}
-
-	FixedParamSpec fixed_spec = make_fixed_param_spec(
-		n_par,
+	edi::ResultMap res = fast_weibull_frailty_internal(
+		X, y, dead, group_id,
+		nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+		nullable_to_optional<Eigen::VectorXd>(warm_start_beta),
+		estimate_only, n_gh, max_abs_log_sigma, maxit, eps_g,
 		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
-		nullable_to_optional<Eigen::VectorXd>(fixed_values));
-
-	Eigen::MatrixXd info_start;
-	Eigen::MatrixXd* info_start_ptr = nullptr;
-	std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
-	if (warm_start_fisher_info_opt.has_value()) {
-		info_start = *warm_start_fisher_info_opt;
-		info_start_ptr = &info_start;
-	}
-
-	double neg_ll  = NA_REAL;
-	bool converged = false;
-	try {
-		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
-		par       = fit.params;
-		neg_ll    = fit.value;
-		converged = std::isfinite(neg_ll) && fit.converged;
-	} catch (...) {}
-	// If neg_ll is still NA (optimizer threw or returned non-finite value), evaluate at last iterate
-	if (!std::isfinite(neg_ll) && par.allFinite()) {
-		Eigen::VectorXd grad_tmp(n_par);
-		double val = obj(par, grad_tmp);
-		if (std::isfinite(val)) neg_ll = val;
-	}
-
-	double ssq_b_T = NA_REAL;
-	Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(n_par, n_par, NA_REAL);
-	Eigen::VectorXd score = Eigen::VectorXd::Constant(n_par, NA_REAL);
-	Eigen::MatrixXd information = Eigen::MatrixXd::Constant(n_par, n_par, NA_REAL);
-	if (!estimate_only && converged) {
-		Eigen::VectorXd grad(n_par);
-		obj(par, grad);
-		score = -grad;
-		information = obj.hessian(par);
-		Eigen::MatrixXd info_free = subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx);
-		Eigen::LDLT<Eigen::MatrixXd> ldlt(info_free);
-		if (ldlt.info() == Eigen::Success) {
-			Eigen::MatrixXd inv_free = ldlt.solve(Eigen::MatrixXd::Identity(info_free.rows(), info_free.cols()));
-			vcov = expand_free_covariance(n_par, fixed_spec, inv_free, true);
-			if (vcov.allFinite()) ssq_b_T = vcov(0, 0);  // j_T = 0 usually
-		}
-	}
-
-	Eigen::MatrixXd neg_information = -information;
-	return edi::to_rcpp_list(edi::ResultMap()
-		.set("params", par)
-		.set("b", par.head(p))
-		.set("log_sigma_eps", par[p])
-		.set("log_sigma_u", par[p + 1])
-		.set("ssq_b_T", ssq_b_T)
-		.set("vcov", vcov)
-		.set("score", score)
-		.set("observed_information", information)
-		.set("information", information)
-		.set("information_type", std::string("observed"))
-		.set("hessian", neg_information)
-		.set("converged", converged)
-		.set("neg_loglik", neg_ll)
-		.set("neg_ll", neg_ll)
-		.set("loglik", R_finite(neg_ll) ? -neg_ll : NA_REAL));
+		nullable_to_optional<Eigen::VectorXd>(fixed_values),
+		optimization_alg,
+		nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
+	return edi::to_rcpp_list(res);
 }
+#endif // EDI_CORE_ONLY

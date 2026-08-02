@@ -16,6 +16,11 @@ set(EDI_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../EDI/src)
 find_package(Python 3.9 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG REQUIRED)
 find_package(OpenMP)
+# symmetric_crossprod's EDI_CORE_ONLY branch (_helper_functions_core.h) calls
+# cblas_dsyrk directly (the ABI-stable CBLAS entry point, not R's raw Fortran
+# dsyrk_/F77_CALL convention -- see that header's own comment). Any standard
+# BLAS provider (reference libblas, OpenBLAS, MKL) exports this symbol.
+find_package(BLAS REQUIRED)
 include(FetchContent)
 
 # Prefer a real Eigen3 CMake package (apt's libeigen3-dev, conda-forge, a
@@ -81,12 +86,50 @@ add_compile_definitions(EDI_CORE_ONLY)
 # file that declares/calls it.
 set(EDI_KERNEL_SOURCES
     ${EDI_SRC_DIR}/fast_poisson_glmm.cpp
+    ${EDI_SRC_DIR}/fast_ols.cpp
+    ${EDI_SRC_DIR}/fast_robust_regression.cpp
+    ${EDI_SRC_DIR}/fast_logistic_regression.cpp
+    ${EDI_SRC_DIR}/fast_probit_regression.cpp
+    ${EDI_SRC_DIR}/fast_poisson_regression.cpp
+    ${EDI_SRC_DIR}/fast_negbin_regression.cpp
+    ${EDI_SRC_DIR}/fast_zinb.cpp
+    ${EDI_SRC_DIR}/fast_zero_augmented_poisson.cpp
+    ${EDI_SRC_DIR}/fast_beta_regression.cpp
+    ${EDI_SRC_DIR}/fast_zero_one_inflated_beta.cpp
+    ${EDI_SRC_DIR}/fast_adjacent_category_logit.cpp
+    ${EDI_SRC_DIR}/fast_continuation_ratio_regression.cpp
+    ${EDI_SRC_DIR}/fast_gee.cpp
+    ${EDI_SRC_DIR}/fast_coxph_regression.cpp
+    ${EDI_SRC_DIR}/fast_weibull_regression.cpp
+    ${EDI_SRC_DIR}/fast_gaussian_lmm.cpp
+    ${EDI_SRC_DIR}/fast_logistic_glmm.cpp
+    ${EDI_SRC_DIR}/fast_ordinal_regression.cpp
+    ${EDI_SRC_DIR}/fast_ordinal_probit_regression.cpp
+    ${EDI_SRC_DIR}/fast_ordinal_cauchit_regression.cpp
+    ${EDI_SRC_DIR}/fast_ordinal_cloglog_regression.cpp
+    ${EDI_SRC_DIR}/fast_ordinal_clmm.cpp
+    ${EDI_SRC_DIR}/fast_stereotype_logit.cpp
+    ${EDI_SRC_DIR}/fast_ordinal_glmm.cpp
+    ${EDI_SRC_DIR}/fast_cpoisson_combined.cpp
+    ${EDI_SRC_DIR}/fast_weibull_frailty.cpp
+    ${EDI_SRC_DIR}/fast_clogit_plus_glmm.cpp
+    ${EDI_SRC_DIR}/fast_survival_models_optim.cpp
+    ${EDI_SRC_DIR}/fast_hurdle_poisson_glmm.cpp
+    ${EDI_SRC_DIR}/fast_hurdle_negbin.cpp
+    ${EDI_SRC_DIR}/fast_log_binomial_regression.cpp
 )
 
 pybind11_add_module(_core
     cpp/bindings_module.cpp
     cpp/bindings_fast_math.cpp
     cpp/bindings_glmm.cpp
+    cpp/bindings_continuous.cpp
+    cpp/bindings_binary.cpp
+    cpp/bindings_count.cpp
+    cpp/bindings_proportion.cpp
+    cpp/bindings_ordinal.cpp
+    cpp/bindings_incidence.cpp
+    cpp/bindings_survival.cpp
     ${EDI_KERNEL_SOURCES}
 )
 
@@ -99,6 +142,7 @@ endif()
 if(OpenMP_CXX_FOUND)
     target_link_libraries(_core PRIVATE OpenMP::OpenMP_CXX)
 endif()
+target_link_libraries(_core PRIVATE ${BLAS_LIBRARIES})
 
 target_compile_definitions(_core PRIVATE NDEBUG EIGEN_NO_DEBUG)
 target_compile_options(_core PRIVATE -Wno-ignored-attributes -fno-lto)

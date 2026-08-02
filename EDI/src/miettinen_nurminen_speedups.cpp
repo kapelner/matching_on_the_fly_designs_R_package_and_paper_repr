@@ -1,6 +1,7 @@
 #include <Rcpp.h>
 #include <cmath>
 #include <algorithm>
+#include "fast_erfc.h"
 
 using namespace Rcpp;
 
@@ -106,7 +107,7 @@ double mn_z_statistic_cpp(double x_t, double n_t, double x_c, double n_c, double
 double mn_pvalue_cpp(double x_t, double n_t, double x_c, double n_c, double delta, double p_t_obs, double p_c_obs) {
     double z = mn_z_statistic_cpp(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs);
     if (!std::isfinite(z)) return NA_REAL;
-    return 2.0 * R::pnorm(-std::abs(z), 0.0, 1.0, 1, 0);
+    return 2.0 * pnorm_fast(-std::abs(z));
 }
 
 //' Miettinen-Nurminen Confidence Interval for Risk Difference

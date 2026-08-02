@@ -57,7 +57,10 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 	lock_objects = FALSE,
 	inherit = InferenceCountLikelihood,
 	public = list(
-		#' @description Initialize
+		#' @description Initialize hurdle negative-binomial MLE inference for count
+		#'   responses and prepare the conditional count and hurdle submodels. See
+		#'   \code{\link[EDI:InferenceCountLikelihood]{InferenceCountLikelihood}}
+		#'   for shared likelihood-test methods.
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param model_formula_hurdle Formula for the hurdle submodel. If
@@ -81,7 +84,10 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 			}
 			private$model_formula_hurdle = model_formula_hurdle
 		},
-		#' @description Compute asymp confidence interval
+		#' @description Compute the hurdle negative-binomial asymptotic confidence
+		#'   interval for the treatment coefficient, using the shared count-likelihood
+		#'   semantics documented in
+		#'   \code{\link[EDI:InferenceCountLikelihood]{InferenceCountLikelihood}}.
 		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -96,7 +102,10 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Compute asymp two sided pval for treatment effect
+		#' @description Compute the hurdle negative-binomial asymptotic two-sided
+		#'   p-value for the treatment coefficient, falling back through the shared
+		#'   count-likelihood machinery when needed; see
+		#'   \code{\link[EDI:InferenceCountLikelihood]{InferenceCountLikelihood}}.
 		#' @param delta The null treatment effect (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -115,7 +124,10 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 			if (private$mark_count_likelihood_block_asymp_nonestimable()) return(NA_real_)
 			private$compute_likelihood_test_two_sided_pval(delta = delta, testing_type = "gradient")
 		},
-		#' @description Compute likelihood-based confidence interval
+		#' @description Compute a hurdle negative-binomial likelihood-based confidence
+		#'   interval by inverting the configured likelihood test. See
+		#'   \code{\link[EDI:InferenceCountLikelihood]{InferenceCountLikelihood}}
+		#'   for related score, likelihood-ratio, and gradient methods.
 		#' @param alpha The significance level (default 0.05).
 		compute_gradient_confidence_interval = function(alpha = 0.05){
 			if (private$mark_count_likelihood_block_asymp_nonestimable()) {
@@ -123,7 +135,8 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 			}
 			private$invert_test_pval_confidence_interval(alpha)
 		},
-		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @description Recomputes the class-specific treatment estimate under bootstrap weights; see
+		#'   \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}}.
 		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
@@ -176,26 +189,34 @@ InferenceCountHurdleNegBin = R6::R6Class("InferenceCountHurdleNegBin",
 			private$cache_nonestimable_se("hurdle_negbin_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Non-estimable jackknife bias estimate.
+		#' @description Report that the jackknife bias estimate is unavailable for
+		#'   hurdle negative-binomial fits because delete-one refits are unstable; see
+		#'   \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} for the shared
+		#'   jackknife contract.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_bias_estimate = function(unit = "auto"){
 			private$cache_nonestimable_se("hurdle_negbin_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Non-estimable jackknife standard error.
+		#' @description Report that the jackknife standard error is unavailable for
+		#'   hurdle negative-binomial fits because delete-one refits are unstable; see
+		#'   \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} for the shared
+		#'   jackknife contract.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_std_error = function(unit = "auto"){
 			private$cache_nonestimable_se("hurdle_negbin_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Non-estimable jackknife Wald two-sided p-value.
+		#' @description Reports that jackknife-Wald p-values are unavailable here; see
+		#'   \code{\link[EDI:InferenceJackknife]{InferenceJackknife}}.
 		#' @param delta Null treatment-effect value. Default 0.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_wald_two_sided_pval = function(delta = 0, unit = "auto"){
 			private$cache_nonestimable_se("hurdle_negbin_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Non-estimable jackknife Wald confidence interval.
+		#' @description Reports that jackknife-Wald intervals are unavailable here; see
+		#'   \code{\link[EDI:InferenceJackknife]{InferenceJackknife}}.
 		#' @param alpha Significance level. Default 0.05.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_wald_confidence_interval = function(alpha = 0.05, unit = "auto"){

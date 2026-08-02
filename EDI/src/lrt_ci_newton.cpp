@@ -1,6 +1,7 @@
 #include <RcppEigen.h>
 #include <cmath>
 #include <algorithm>
+#include "fast_gamma_functions.h"
 
 // [[Rcpp::depends(RcppEigen)]]
 
@@ -46,7 +47,7 @@ static LrtEval eval_lrt(
 	if (!R_finite(null_nll)) return res;
 
 	double T_stat = std::max(2.0 * (null_nll - full_negloglik), 0.0);
-	res.p = R::pchisq(T_stat, 1.0, 0, 0);   // lower.tail = FALSE
+	res.p = fast_pchisq_upper(T_stat, 1.0);   // upper tail, df = 1
 	res.valid = true;
 
 	// Derivative via envelope theorem (optional — missing dp just forces bisection)

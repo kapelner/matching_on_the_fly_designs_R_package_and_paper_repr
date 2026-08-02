@@ -22,8 +22,10 @@
 InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullFrailtyIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
-	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
-		#' @description Initialize the inference object.
+	public = list(
+		#' @description Initialize KK Weibull-frailty IVWC survival inference and
+		#'   prepare matched/reservoir parametric survival components used by
+		#'   \code{\link[EDI:InferenceSurvivalKKWeibullFrailtyIVWC]{InferenceSurvivalKKWeibullFrailtyIVWC}}.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -38,13 +40,15 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			super$initialize(des_obj = des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$init_kk_passthrough(des_obj)
 		},
-		#' @description Returns the estimated treatment effect (log-time ratio).
+		#' @description Returns the model-specific log-time-ratio treatment estimate; see
+		#'   \code{\link[EDI:Inference]{Inference}}.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes the asymptotic confidence interval.
+		#' @description Uses the shared asymptotic confidence-interval contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha                                   The confidence level in the computed
 		#'   confidence interval is 1 - \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -57,7 +61,9 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Computes the asymptotic p-value.
+		#' @description Compute the Weibull-frailty asymptotic p-value for the
+		#'   treatment effect using the fitted parametric survival likelihood. See
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta                                   The null difference to test against. Default is 0.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -69,7 +75,8 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B  					Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         Whether to return diagnostics.
@@ -78,15 +85,16 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
 		},
-		#' @description Duplicates the object while preserving caches.
+		#' @description Duplicates this subclass while preserving fit caches; see
+		#'   \code{\link[EDI:Inference]{Inference}}.
 		#' @param verbose Whether the duplicate should be verbose.
 		#' @param make_fork_cluster Whether the duplicate should be allowed to create a fork cluster.
 		duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){
 			inf_obj = super$duplicate(verbose = verbose, make_fork_cluster = make_fork_cluster)
 			inf_obj
 		}
-	))),
-	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+	),
+	private = list(
 		is_a_kk_weibull_frailty_ivwc = function() TRUE,
 		optimization_alg = NULL,
 		best_par = NULL,
@@ -222,11 +230,8 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 			}
 			NA_real_
 		},
-		best_X_colnames_matched = NULL,
-		best_X_colnames_reservoir = NULL,
 		cached_vc_params_matched = NULL,
 		cached_vc_params_reservoir = NULL,
-		max_abs_reasonable_coef = 1e4,
 		frailty_for_matched_pairs = function(estimate_only = FALSE){
 			m_vec = private$m
 			if (is.null(m_vec)) m_vec = rep(NA_integer_, private$n)
@@ -374,7 +379,7 @@ InferenceAbstractKKWeibullFrailtyIVWC = R6::R6Class("InferenceAbstractKKWeibullF
 				return(invisible(NULL))
 			}
 		}
-	)))
+	)
 )
 #' Abstract class for Weibull Frailty Combined-Likelihood Inference
 #'
@@ -383,7 +388,9 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 	lock_objects = FALSE,
 	inherit = InferenceParamBootstrap,
 	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
-		#' @description Initialize the inference object.
+		#' @description Initialize KK Weibull-frailty one-likelihood survival
+		#'   inference and prepare the combined parametric survival likelihood used by
+		#'   \code{\link[EDI:InferenceSurvivalKKWeibullFrailtyOneLik]{InferenceSurvivalKKWeibullFrailtyOneLik}}.
 		#' @param des_obj A completed KK survival design object.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param use_rcpp Logical. If \code{TRUE}, use the internal Rcpp backend.
@@ -399,7 +406,8 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 			super$initialize(des_obj = des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$init_kk_passthrough(des_obj)
 		},
-		#' @description Returns the combined-likelihood estimate of the treatment effect.
+		#' @description Returns the model-specific combined-likelihood treatment estimate; see
+		#'   \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}}.
 		#' @param estimate_only If \code{TRUE}, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_likelihood(estimate_only = estimate_only)
@@ -455,7 +463,8 @@ InferenceAbstractKKWeibullFrailtyOneLik = R6::R6Class("InferenceAbstractKKWeibul
 			private$shared_combined_likelihood(estimate_only = FALSE)
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug Whether to return diagnostics.

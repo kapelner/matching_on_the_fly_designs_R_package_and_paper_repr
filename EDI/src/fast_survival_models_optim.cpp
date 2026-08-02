@@ -1,11 +1,22 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#include "result_map.h"
+#else
 #include <RcppEigen.h>
 #include <Rmath.h>
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
+#endif
+#include <optional>
+#include <string>
+#include <limits>
+#include <stdexcept>
 
 // [[Rcpp::depends(RcppEigen)]]
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 namespace {
 
@@ -455,6 +466,7 @@ public:
 // R-exposed functions
 // -----------------------------------------------------------------------------
 
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 SEXP get_clayton_weibull_aft_score_cpp(
     SEXP X_sexp,
@@ -552,7 +564,187 @@ SEXP get_dep_cens_transform_hessian_cpp(
     Eigen::MatrixXd Hsym = (0.5 * (H + H.transpose())).eval();
     return wrap(Hsym);
 }
+#endif // EDI_CORE_ONLY
 
+// Portable core for the Clayton Copula Weibull AFT fit. pair_idx (k x 2,
+// 0-based row indices into X/y/dead for matched pairs) and singleton_rows
+// (0-based row indices for unpaired reservoir subjects) mirror the R
+// export's contract exactly -- no group_id collapsing happens here, matching
+// the original SEXP-based signature's raw index-array inputs.
+edi::ResultMap fast_clayton_weibull_aft_optim_internal(
+    const Eigen::Ref<const Eigen::MatrixXd>& X,
+    const Eigen::Ref<const Eigen::VectorXd>& y,
+    const Eigen::Ref<const Eigen::VectorXd>& dead,
+    const Eigen::Ref<const Eigen::MatrixXi>& pair_idx,
+    const Eigen::Ref<const Eigen::VectorXi>& singleton_rows,
+    const Eigen::Ref<const Eigen::VectorXd>& warm_start_params,
+    bool estimate_only = false,
+    int maxit = 2000,
+    double reltol = 1e-9,
+    std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+    std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+    std::string optimization_alg = "lbfgs",
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt
+) {
+    ClaytonWeibullLikelihood fun(y, dead, X, pair_idx, singleton_rows);
+    Eigen::VectorXd params = warm_start_params;
+    FixedParamSpec fixed_spec = make_fixed_param_spec(params.size(), fixed_idx, fixed_values);
+    params = apply_fixed_values(params, fixed_spec);
+
+    Eigen::MatrixXd H_start;
+    const Eigen::MatrixXd* h_ptr = nullptr;
+    if (warm_start_fisher_info.has_value()) {
+        H_start = *warm_start_fisher_info;
+        h_ptr = &H_start;
+    }
+
+    LikelihoodFitResult fit;
+    try {
+        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, reltol, optimization_alg, "lbfgs", 0, h_ptr);
+    } catch (const std::exception& e) {
+        const Eigen::VectorXd p_fixed = apply_fixed_values(params, fixed_spec);
+        double last_val = std::numeric_limits<double>::quiet_NaN();
+        try {
+            Eigen::VectorXd g(p_fixed.size());
+            last_val = fun(p_fixed, g);
+        } catch (...) {}
+        return edi::ResultMap()
+            .set("converged", false).set("error", std::string(e.what()))
+            .set("par", p_fixed).set("params", p_fixed).set("b", p_fixed)
+            .set("value", last_val).set("neg_loglik", last_val).set("neg_ll", last_val);
+    } catch (...) {
+        const Eigen::VectorXd p_fixed = apply_fixed_values(params, fixed_spec);
+        double last_val = std::numeric_limits<double>::quiet_NaN();
+        try {
+            Eigen::VectorXd g(p_fixed.size());
+            last_val = fun(p_fixed, g);
+        } catch (...) {}
+        return edi::ResultMap()
+            .set("converged", false).set("error", std::string("unknown"))
+            .set("par", p_fixed).set("params", p_fixed).set("b", p_fixed)
+            .set("value", last_val).set("neg_loglik", last_val).set("neg_ll", last_val);
+    }
+    params = fit.params;
+
+    edi::ResultMap out;
+    out.set("par", params)
+       .set("params", params)
+       .set("b", params)
+       .set("value", fit.value)
+       .set("neg_loglik", fit.value)
+       .set("neg_ll", fit.value)
+       .set("loglik", std::isfinite(fit.value) ? -fit.value : std::numeric_limits<double>::quiet_NaN())
+       .set("niter", fit.niter)
+       .set("converged", fit.converged);
+
+    if (estimate_only) {
+        return out;
+    }
+
+    Eigen::MatrixXd observed_information = fun.hessian(params);
+    Eigen::VectorXd score(params.size());
+    fun(params, score);
+    score = -score;
+    Eigen::MatrixXd vcov = covariance_from_information(observed_information);
+    Eigen::MatrixXd neg_observed_information = -observed_information;
+    out.set("score", score)
+       .set("observed_information", observed_information)
+       .set("information", observed_information)
+       .set("information_type", std::string("observed"))
+       .set("hessian", neg_observed_information)
+       .set("fisher_information", observed_information)
+       .set("vcov", vcov);
+
+    return out;
+}
+
+// Portable core for the Dependent Censoring Transformation Regression fit.
+edi::ResultMap fast_dep_cens_transform_optim_internal(
+    const Eigen::Ref<const Eigen::MatrixXd>& X,
+    const Eigen::Ref<const Eigen::VectorXd>& y,
+    const Eigen::Ref<const Eigen::VectorXd>& dead,
+    std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+    bool smart_cold_start = true,
+    bool estimate_only = false,
+    int maxit = 2000,
+    double reltol = 1e-9,
+    std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+    std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+    std::string optimization_alg = "lbfgs",
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt
+) {
+    int p = (int)X.cols();
+    int total = 2 * p + 3;
+    Eigen::VectorXd params(total);
+    if (warm_start_params.has_value()) {
+        params = *warm_start_params;
+    } else if (smart_cold_start) {
+        params.setZero();
+        Eigen::VectorXd log_y = (y.array() + 1e-8).log().matrix();
+        Eigen::VectorXd b_ols = safe_ols_solve(X, log_y);
+        params.head(p) = b_ols; // beta_event
+        params.segment(p, p) = b_ols; // beta_cens
+        params[2 * p] = 0.0; // log_sigma_event
+        params[2 * p + 1] = 0.0; // log_sigma_cens
+        params[2 * p + 2] = 0.0; // log_theta
+    } else {
+        params.setZero();
+    }
+
+    DepCensTransformLikelihood fun(y, dead, X);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
+    params = apply_fixed_values(params, fixed_spec);
+
+    Eigen::MatrixXd H_start;
+    const Eigen::MatrixXd* h_ptr = nullptr;
+    if (warm_start_fisher_info.has_value()) {
+        H_start = *warm_start_fisher_info;
+        h_ptr = &H_start;
+    }
+
+    LikelihoodFitResult fit;
+    try {
+        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, reltol, optimization_alg, "lbfgs", 0, h_ptr);
+    } catch (const std::exception& e) {
+        return edi::ResultMap().set("converged", false).set("error", std::string(e.what()));
+    } catch (...) {
+        return edi::ResultMap().set("converged", false).set("error", std::string("unknown"));
+    }
+    params = fit.params;
+
+    edi::ResultMap out;
+    out.set("par", params)
+       .set("params", params)
+       .set("b", params)
+       .set("value", fit.value)
+       .set("neg_loglik", fit.value)
+       .set("neg_ll", fit.value)
+       .set("loglik", std::isfinite(fit.value) ? -fit.value : std::numeric_limits<double>::quiet_NaN())
+       .set("niter", fit.niter)
+       .set("converged", fit.converged);
+
+    if (estimate_only) {
+        return out;
+    }
+
+    Eigen::MatrixXd observed_information = fun.hessian(params);
+    Eigen::VectorXd score(params.size());
+    fun(params, score);
+    score = -score;
+    Eigen::MatrixXd vcov = covariance_from_information(observed_information);
+    Eigen::MatrixXd neg_observed_information = -observed_information;
+    out.set("score", score)
+       .set("observed_information", observed_information)
+       .set("information", observed_information)
+       .set("information_type", std::string("observed"))
+       .set("hessian", neg_observed_information)
+       .set("fisher_information", observed_information)
+       .set("vcov", vcov);
+
+    return out;
+}
+
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 List fast_clayton_weibull_aft_optim_cpp(
     SEXP X_sexp,
@@ -582,80 +774,13 @@ List fast_clayton_weibull_aft_optim_cpp(
     Eigen::Map<const Eigen::VectorXi> singleton_rows(singleton_rows_int_vec.begin(), singleton_rows_int_vec.size());
     Eigen::Map<const Eigen::VectorXd> warm_start_params(warm_start_params_vec.begin(), warm_start_params_vec.size());
 
-    ClaytonWeibullLikelihood fun(y, dead, X, pair_idx, singleton_rows);
-    Eigen::VectorXd params = warm_start_params;
-    FixedParamSpec fixed_spec = make_fixed_param_spec(
-        params.size(),
+    edi::ResultMap out = fast_clayton_weibull_aft_optim_internal(
+        X, y, dead, pair_idx, singleton_rows, warm_start_params,
+        estimate_only, maxit, reltol,
         nullable_to_optional<Eigen::VectorXi>(fixed_idx),
-        nullable_to_optional<Eigen::VectorXd>(fixed_values));
-    params = apply_fixed_values(params, fixed_spec);
-
-    Eigen::MatrixXd H_start;
-    const Eigen::MatrixXd* h_ptr = nullptr;
-    std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
-    if (warm_start_fisher_info_opt.has_value()) {
-        H_start = *warm_start_fisher_info_opt;
-        h_ptr = &H_start;
-    }
-
-    LikelihoodFitResult fit;
-    try {
-        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, reltol, optimization_alg, "lbfgs", 0, h_ptr);
-    } catch (const std::exception& e) {
-        Rcout << "Optimization failed: " << e.what() << std::endl;
-        const Eigen::VectorXd p_fixed = apply_fixed_values(params, fixed_spec);
-        double last_val = NA_REAL;
-        try {
-            Eigen::VectorXd g(p_fixed.size());
-            last_val = fun(p_fixed, g);
-        } catch (...) {}
-        return edi::to_rcpp_list(edi::ResultMap()
-            .set("converged", false).set("error", std::string(e.what()))
-            .set("par", p_fixed).set("params", p_fixed).set("b", p_fixed)
-            .set("value", last_val).set("neg_loglik", last_val).set("neg_ll", last_val));
-    } catch (...) {
-        const Eigen::VectorXd p_fixed = apply_fixed_values(params, fixed_spec);
-        double last_val = NA_REAL;
-        try {
-            Eigen::VectorXd g(p_fixed.size());
-            last_val = fun(p_fixed, g);
-        } catch (...) {}
-        return edi::to_rcpp_list(edi::ResultMap()
-            .set("converged", false).set("error", std::string("unknown"))
-            .set("par", p_fixed).set("params", p_fixed).set("b", p_fixed)
-            .set("value", last_val).set("neg_loglik", last_val).set("neg_ll", last_val));
-    }
-    params = fit.params;
-
-    edi::ResultMap out;
-    out.set("par", params)
-       .set("params", params)
-       .set("b", params)
-       .set("value", fit.value)
-       .set("neg_loglik", fit.value)
-       .set("neg_ll", fit.value)
-       .set("loglik", R_finite(fit.value) ? -fit.value : NA_REAL)
-       .set("niter", fit.niter)
-       .set("converged", fit.converged);
-
-    if (estimate_only) {
-        return edi::to_rcpp_list(out);
-    }
-
-    Eigen::MatrixXd observed_information = fun.hessian(params);
-    Eigen::VectorXd score(params.size());
-    fun(params, score);
-    score = -score;
-    Eigen::MatrixXd vcov = covariance_from_information(observed_information);
-    Eigen::MatrixXd neg_observed_information = -observed_information;
-    out.set("score", score)
-       .set("observed_information", observed_information)
-       .set("information", observed_information)
-       .set("information_type", std::string("observed"))
-       .set("hessian", neg_observed_information)
-       .set("fisher_information", observed_information)
-       .set("vcov", vcov);
-
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
     return edi::to_rcpp_list(out);
 }
 
@@ -681,79 +806,14 @@ List fast_dep_cens_transform_optim_cpp(
     Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
     Eigen::Map<const Eigen::VectorXd> dead(dead_vec.begin(), dead_vec.size());
 
-    int p = X.cols();
-    int total = 2 * p + 3;
-    Eigen::VectorXd params(total);
-    std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
-    if (warm_start_params_opt.has_value()) {
-        params = *warm_start_params_opt;
-    } else if (smart_cold_start) {
-        params.setZero();
-        Eigen::VectorXd log_y = (y.array() + 1e-8).log().matrix();
-        Eigen::VectorXd b_ols = safe_ols_solve(X, log_y);
-        params.head(p) = b_ols; // beta_event
-        params.segment(p, p) = b_ols; // beta_cens
-        params[2 * p] = 0.0; // log_sigma_event
-        params[2 * p + 1] = 0.0; // log_sigma_cens
-        params[2 * p + 2] = 0.0; // log_theta
-    } else {
-        params.setZero();
-    }
-    
-    DepCensTransformLikelihood fun(y, dead, X);
-    FixedParamSpec fixed_spec = make_fixed_param_spec(
-        total,
+    edi::ResultMap out = fast_dep_cens_transform_optim_internal(
+        X, y, dead,
+        nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+        smart_cold_start, estimate_only, maxit, reltol,
         nullable_to_optional<Eigen::VectorXi>(fixed_idx),
-        nullable_to_optional<Eigen::VectorXd>(fixed_values));
-    params = apply_fixed_values(params, fixed_spec);
-
-    Eigen::MatrixXd H_start;
-    const Eigen::MatrixXd* h_ptr = nullptr;
-    std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
-    if (warm_start_fisher_info_opt.has_value()) {
-        H_start = *warm_start_fisher_info_opt;
-        h_ptr = &H_start;
-    }
-
-    LikelihoodFitResult fit;
-    try {
-        fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, reltol, optimization_alg, "lbfgs", 0, h_ptr);
-    } catch (const std::exception& e) {
-        Rcout << "Optimization failed: " << e.what() << std::endl;
-        return edi::to_rcpp_list(edi::ResultMap().set("converged", false).set("error", std::string(e.what())));
-    } catch (...) {
-        return edi::to_rcpp_list(edi::ResultMap().set("converged", false).set("error", std::string("unknown")));
-    }
-    params = fit.params;
-
-    edi::ResultMap out;
-    out.set("par", params)
-       .set("params", params)
-       .set("b", params)
-       .set("value", fit.value)
-       .set("neg_loglik", fit.value)
-       .set("neg_ll", fit.value)
-       .set("loglik", R_finite(fit.value) ? -fit.value : NA_REAL)
-       .set("niter", fit.niter)
-       .set("converged", fit.converged);
-
-    if (estimate_only) {
-        return edi::to_rcpp_list(out);
-    }
-
-    Eigen::MatrixXd observed_information = fun.hessian(params);
-    Eigen::VectorXd score(params.size());
-    fun(params, score);
-    score = -score;
-    Eigen::MatrixXd vcov = covariance_from_information(observed_information);
-    Eigen::MatrixXd neg_observed_information = -observed_information;
-    out.set("score", score)
-       .set("observed_information", observed_information)
-       .set("information", observed_information)
-       .set("information_type", std::string("observed"))
-       .set("hessian", neg_observed_information)
-       .set("fisher_information", observed_information)
-       .set("vcov", vcov);
-
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
     return edi::to_rcpp_list(out);
 }
+#endif // EDI_CORE_ONLY

@@ -51,8 +51,9 @@ InferencePropKKQuantileRegrIVWC = R6::R6Class("InferencePropKKQuantileRegrIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKQuantileRegrIVWC,
 	public = list(
-		#' @description Initialize a sequential experimental design estimation and test object
-		#' after the sequential design is completed.
+		#' @description Initialize proportion-response KK IVWC quantile-regression
+		#'   inference on the logit response scale; see
+		#'   \code{\link[EDI:InferenceAbstractKKQuantileRegrIVWC]{InferenceAbstractKKQuantileRegrIVWC}}.
 		#' @param des_obj A DesignSeqOneByOne object whose entire n subjects
 		#'   are assigned and response y is recorded within.
 		#' @param tau                             The quantile level for regression on the logit

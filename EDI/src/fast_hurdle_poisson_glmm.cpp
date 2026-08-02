@@ -11,17 +11,26 @@
 // Parameter vector: par = [beta_0, beta_1(treatment), ..., beta_{p-1}, log_sigma]
 //   Total length: p + 1
 
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#include "result_map.h"
+#else
 #include "_helper_functions.h"
-#include "_glmm_engine.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
+#endif
+#include "_glmm_engine.h"
 #include <cmath>
 #include <vector>
 #include <algorithm>
 #include <numeric>
 #include <limits>
+#include <optional>
+#include <string>
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 namespace {
 
@@ -417,6 +426,170 @@ public:
 
 } // namespace
 
+// Portable core. Filters to positive-count observations (truncated Poisson
+// component) and fits via optimize_fixed_likelihood, exactly mirroring
+// fast_hurdle_poisson_glmm_cpp below (which becomes a thin SEXP-unwrapping
+// shim over this). Preserves all hot-loop perf work in
+// HurdlePoissonGLMMObjective (preallocated lam/eneg buffers, exp-sharing,
+// single GEMV per group, estimate_only early return) unchanged.
+edi::ResultMap fast_hurdle_poisson_glmm_internal(
+    const Eigen::Ref<const Eigen::MatrixXd>& X,
+    const Eigen::Ref<const Eigen::VectorXd>& y,
+    const Eigen::Ref<const Eigen::VectorXi>& group_id,
+    int j_T,
+    std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+    bool smart_cold_start = true,
+    bool estimate_only = false,
+    int n_gh = 7,
+    int maxit = 300,
+    double eps_g = 1e-6,
+    std::string optimization_alg = "lbfgs",
+    std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+    std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt
+) {
+    const int n_all = (int)X.rows();
+    const int p     = (int)X.cols();
+    const int total = p + 1;
+
+    // Filter to positive-count observations (truncated Poisson component)
+    std::vector<int> pos_idx;
+    pos_idx.reserve(n_all);
+    for (int i = 0; i < n_all; ++i) {
+        if (y[i] > 0.0) pos_idx.push_back(i);
+    }
+    const int n_pos = (int)pos_idx.size();
+
+    if (n_pos <= p) {
+        return edi::ResultMap()
+            .set("params", Eigen::VectorXd::Constant(total, std::numeric_limits<double>::quiet_NaN()))
+            .set("b", Eigen::VectorXd::Constant(p, std::numeric_limits<double>::quiet_NaN()))
+            .set("log_sigma", std::numeric_limits<double>::quiet_NaN())
+            .set("ssq_b_T", std::numeric_limits<double>::quiet_NaN())
+            .set("converged", false)
+            .set("neg_loglik", std::numeric_limits<double>::quiet_NaN())
+            .set("gradient_norm", std::numeric_limits<double>::quiet_NaN())
+            .set("variance_boundary_hit", std::monostate{});
+    }
+
+    Eigen::MatrixXd X_pos(n_pos, p);
+    Eigen::VectorXd y_pos(n_pos);
+    std::vector<int> gid_pos(n_pos);
+    for (int k = 0; k < n_pos; ++k) {
+        const int i = pos_idx[k];
+        X_pos.row(k) = X.row(i);
+        y_pos[k]     = y[i];
+        gid_pos[k]   = group_id[i];
+    }
+
+    HurdlePoissonGLMMData dat(X_pos, y_pos, gid_pos, n_gh);
+
+    Eigen::VectorXd par(total);
+    if (warm_start_params.has_value()) {
+        par = *warm_start_params;
+    } else if (smart_cold_start) {
+        par.setZero();
+        Eigen::VectorXd log_y = y_pos.array().log().matrix();
+        Eigen::VectorXd legacy_beta = Eigen::VectorXd::Zero(p);
+        if (try_safe_ols_solve(X_pos, log_y, legacy_beta)) {
+            par.head(p) = legacy_beta;
+        }
+        par[total - 1] = -3.0;
+    } else {
+        par.head(p).setZero();
+        par[total - 1] = -3.0;
+    }
+
+    HurdlePoissonGLMMObjective obj(dat);
+    FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
+
+    Eigen::MatrixXd info_start;
+    Eigen::MatrixXd* info_start_ptr = nullptr;
+    if (warm_start_fisher_info.has_value()) {
+        info_start = *warm_start_fisher_info;
+        info_start_ptr = &info_start;
+    }
+
+    double neg_ll = std::numeric_limits<double>::quiet_NaN();
+    bool converged = false;
+    double gradient_norm = std::numeric_limits<double>::quiet_NaN();
+    try {
+        LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
+        par       = fit.params;
+        neg_ll    = fit.value;
+        converged = std::isfinite(neg_ll) && fit.converged;
+        gradient_norm = fit.gradient_norm;
+    } catch (...) {
+        return edi::ResultMap()
+            .set("params", par)
+            .set("b", par.head(p))
+            .set("log_sigma", par[total - 1])
+            .set("ssq_b_T", std::numeric_limits<double>::quiet_NaN())
+            .set("converged", false)
+            .set("neg_loglik", std::numeric_limits<double>::quiet_NaN())
+            .set("gradient_norm", std::numeric_limits<double>::quiet_NaN())
+            .set("variance_boundary_hit", std::monostate{});
+    }
+    const bool variance_boundary_hit = glmm::glmm_variance_boundary_hit(par[total - 1]);
+
+    const double pen         = soft_barrier_hp(par[total - 1]);
+    const double true_neg_ll = neg_ll - pen;
+
+    // Early return: skip score/Hessian computation when only point estimates are needed.
+    if (estimate_only) {
+        Eigen::MatrixXd vcov_na = Eigen::MatrixXd::Constant(total, total, std::numeric_limits<double>::quiet_NaN());
+        return edi::ResultMap()
+            .set("params", par)
+            .set("b", par.head(p))
+            .set("log_sigma", par[total - 1])
+            .set("ssq_b_T", std::numeric_limits<double>::quiet_NaN())
+            .set("vcov", vcov_na)
+            .set("converged", converged)
+            .set("neg_loglik", true_neg_ll)
+            .set("neg_ll", true_neg_ll)
+            .set("loglik", std::isfinite(true_neg_ll) ? -true_neg_ll : std::numeric_limits<double>::quiet_NaN())
+            .set("gradient_norm", gradient_norm)
+            .set("variance_boundary_hit", variance_boundary_hit);
+    }
+
+    Eigen::VectorXd score(total);
+    obj(par, score);
+    score[total - 1] -= soft_barrier_hp_grad(par[total - 1]);
+    score = -score;
+    Eigen::MatrixXd information = obj.hessian(par);
+    information(total - 1, total - 1) -= soft_barrier_hp_hessian(par[total - 1]);
+
+    double ssq_b_T = std::numeric_limits<double>::quiet_NaN();
+    Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(total, total, std::numeric_limits<double>::quiet_NaN());
+    if (converged) {
+        Eigen::MatrixXd information_free = subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx);
+        Eigen::MatrixXd cov_free = covariance_from_information(information_free);
+        vcov = expand_free_covariance(total, fixed_spec, cov_free, true);
+        if (j_T < p) ssq_b_T = vcov(j_T, j_T);
+    }
+
+    Eigen::MatrixXd neg_information = -information;
+    return edi::ResultMap()
+        .set("params", par)
+        .set("b", par.head(p))
+        .set("log_sigma", par[total - 1])
+        .set("ssq_b_T", ssq_b_T)
+        .set("vcov", vcov)
+        .set("score", score)
+        .set("observed_information", information)
+        .set("information", information)
+        .set("information_type", std::string("observed"))
+        .set("hessian", neg_information)
+        .set("converged", converged)
+        .set("neg_loglik", true_neg_ll)
+        .set("neg_ll", true_neg_ll)
+        .set("loglik", std::isfinite(true_neg_ll) ? -true_neg_ll : std::numeric_limits<double>::quiet_NaN())
+        .set("fisher_information", information)
+        .set("gradient_norm", gradient_norm)
+        .set("variance_boundary_hit", variance_boundary_hit);
+}
+
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 Eigen::VectorXd get_hurdle_poisson_glmm_score_cpp(
 	SEXP X_r,
@@ -681,150 +854,19 @@ List fast_hurdle_poisson_glmm_cpp(
 	Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
 	Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
 	Eigen::Map<const Eigen::VectorXi> group_id(group_id_int.begin(), group_id_int.size());
-	const int n_all = (int)X.rows();
-	const int p     = (int)X.cols();
-	const int total = p + 1;
 
-	// Filter to positive-count observations (truncated Poisson component)
-	std::vector<int> pos_idx;
-	pos_idx.reserve(n_all);
-	for (int i = 0; i < n_all; ++i) {
-		if (y[i] > 0.0) pos_idx.push_back(i);
-	}
-	const int n_pos = (int)pos_idx.size();
-
-	if (n_pos <= p) {
-		return List::create(
-			Named("params")     = Eigen::VectorXd::Constant(total, NA_REAL),
-			Named("b")          = Eigen::VectorXd::Constant(p, NA_REAL),
-			Named("log_sigma")  = NA_REAL,
-			Named("ssq_b_T")    = NA_REAL,
-			Named("converged")  = false,
-			Named("neg_loglik") = NA_REAL,
-			Named("gradient_norm") = NA_REAL,
-			Named("variance_boundary_hit") = NA_LOGICAL
-		);
-	}
-
-	Eigen::MatrixXd X_pos(n_pos, p);
-	Eigen::VectorXd y_pos(n_pos);
-	std::vector<int> gid_pos(n_pos);
-	for (int k = 0; k < n_pos; ++k) {
-		const int i = pos_idx[k];
-		X_pos.row(k) = X.row(i);
-		y_pos[k]     = y[i];
-		gid_pos[k]   = group_id[i];
-	}
-
-	HurdlePoissonGLMMData dat(X_pos, y_pos, gid_pos, n_gh);
-
-	Eigen::VectorXd par(total);
-	std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
-	if (warm_start_params_opt.has_value()) {
-		par = *warm_start_params_opt;
-	} else if (smart_cold_start) {
-		par.setZero();
-		Eigen::VectorXd log_y = y_pos.array().log().matrix();
-		Eigen::VectorXd legacy_beta = Eigen::VectorXd::Zero(p);
-		if (try_safe_ols_solve(X_pos, log_y, legacy_beta)) {
-			par.head(p) = legacy_beta;
-		}
-		par[total - 1] = -3.0;
-	} else {
-		par.head(p).setZero();
-		par[total - 1] = -3.0;
-	}
-
-	HurdlePoissonGLMMObjective obj(dat);
-	FixedParamSpec fixed_spec = make_fixed_param_spec(
-		total,
+	edi::ResultMap res = fast_hurdle_poisson_glmm_internal(
+		X, y, group_id, j_T,
+		nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+		smart_cold_start, estimate_only, n_gh, maxit, eps_g, optimization_alg,
 		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
-		nullable_to_optional<Eigen::VectorXd>(fixed_values));
+		nullable_to_optional<Eigen::VectorXd>(fixed_values),
+		nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
 
-	Eigen::MatrixXd info_start;
-	Eigen::MatrixXd* info_start_ptr = nullptr;
-	std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
-	if (warm_start_fisher_info_opt.has_value()) {
-		info_start = *warm_start_fisher_info_opt;
-		info_start_ptr = &info_start;
+	List out = edi::to_rcpp_list(res);
+	if (res.get_if<std::monostate>("variance_boundary_hit") != nullptr) {
+		out["variance_boundary_hit"] = NA_LOGICAL;
 	}
-
-	double neg_ll = NA_REAL;
-	bool converged = false;
-	double gradient_norm = NA_REAL;
-	try {
-		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
-		par       = fit.params;
-		neg_ll    = fit.value;
-		converged = std::isfinite(neg_ll) && fit.converged;
-		gradient_norm = fit.gradient_norm;
-	} catch (...) {
-		return List::create(
-			Named("params")     = par,
-			Named("b")          = par.head(p),
-			Named("log_sigma")  = par[total - 1],
-			Named("ssq_b_T")    = NA_REAL,
-			Named("converged")  = false,
-			Named("neg_loglik") = NA_REAL,
-			Named("gradient_norm") = NA_REAL,
-			Named("variance_boundary_hit") = NA_LOGICAL
-		);
-	}
-	const bool variance_boundary_hit = glmm::glmm_variance_boundary_hit(par[total - 1]);
-
-	const double pen         = soft_barrier_hp(par[total - 1]);
-	const double true_neg_ll = neg_ll - pen;
-
-	// Early return: skip score/Hessian computation when only point estimates are needed.
-	if (estimate_only) {
-		Eigen::MatrixXd vcov_na = Eigen::MatrixXd::Constant(total, total, NA_REAL);
-		return edi::to_rcpp_list(edi::ResultMap()
-			.set("params", par)
-			.set("b", par.head(p))
-			.set("log_sigma", par[total - 1])
-			.set("ssq_b_T", NA_REAL)
-			.set("vcov", vcov_na)
-			.set("converged", converged)
-			.set("neg_loglik", true_neg_ll)
-			.set("neg_ll", true_neg_ll)
-			.set("loglik", R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL)
-			.set("gradient_norm", gradient_norm)
-			.set("variance_boundary_hit", variance_boundary_hit));
-	}
-
-	Eigen::VectorXd score(total);
-	obj(par, score);
-	score[total - 1] -= soft_barrier_hp_grad(par[total - 1]);
-	score = -score;
-	Eigen::MatrixXd information = obj.hessian(par);
-	information(total - 1, total - 1) -= soft_barrier_hp_hessian(par[total - 1]);
-
-	double ssq_b_T = NA_REAL;
-	Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(total, total, NA_REAL);
-	if (converged) {
-		Eigen::MatrixXd information_free = subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx);
-		Eigen::MatrixXd cov_free = covariance_from_information(information_free);
-		vcov = expand_free_covariance(total, fixed_spec, cov_free, true);
-		if (j_T < p) ssq_b_T = vcov(j_T, j_T);
-	}
-
-	Eigen::MatrixXd neg_information = -information;
-	return edi::to_rcpp_list(edi::ResultMap()
-		.set("params", par)
-		.set("b", par.head(p))
-		.set("log_sigma", par[total - 1])
-		.set("ssq_b_T", ssq_b_T)
-		.set("vcov", vcov)
-		.set("score", score)
-		.set("observed_information", information)
-		.set("information", information)
-		.set("information_type", std::string("observed"))
-		.set("hessian", neg_information)
-		.set("converged", converged)
-		.set("neg_loglik", true_neg_ll)
-		.set("neg_ll", true_neg_ll)
-		.set("loglik", R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL)
-		.set("fisher_information", information)
-		.set("gradient_norm", gradient_norm)
-		.set("variance_boundary_hit", variance_boundary_hit));
+	return out;
 }
+#endif // EDI_CORE_ONLY

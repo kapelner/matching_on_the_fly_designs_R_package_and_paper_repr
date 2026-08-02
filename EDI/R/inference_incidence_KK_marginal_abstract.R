@@ -5,7 +5,9 @@ InferenceAbstractKKMarginalIncid = R6::R6Class("InferenceAbstractKKMarginalIncid
 	lock_objects = FALSE,
 	inherit = InferenceParamBootstrap,
 	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
-		#' @description Initialize
+		#' @description Initialize the shared KK marginal-incidence inference base,
+		#'   validate the binary matched/reservoir design, and prepare caches used by
+		#'   \code{\link[EDI:InferenceAbstractKKMarginalIncid]{InferenceAbstractKKMarginalIncid}}.
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -23,7 +25,8 @@ InferenceAbstractKKMarginalIncid = R6::R6Class("InferenceAbstractKKMarginalIncid
 			}
 			private$init_kk_passthrough(des_obj)
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B  					Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         Whether to return diagnostics.

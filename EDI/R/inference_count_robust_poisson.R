@@ -37,13 +37,15 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-		#' @description Compute the treatment effect estimate.
+		#' @description Computes the class-specific treatment-effect estimate; see
+		#'   \code{\link[EDI:Inference]{Inference}}.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @description Recomputes the class-specific treatment estimate under bootstrap weights; see
+		#'   \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}}.
 		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
@@ -83,13 +85,15 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			private$set_fit_warm_start(as.numeric(attempt$fit$b), "beta", fisher = attempt$fit$XtWX)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes an approximate confidence interval.
+		#' @description Uses the shared asymptotic confidence-interval contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			private$shared(estimate_only = FALSE)
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Computes an approximate two-sided p-value.
+		#' @description Uses the shared asymptotic two-sided p-value contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta Null treatment effect value.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			private$shared(estimate_only = FALSE)

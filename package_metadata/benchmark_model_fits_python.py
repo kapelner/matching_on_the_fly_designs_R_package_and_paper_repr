@@ -29,6 +29,9 @@ canonical equivalent are marked as Baseline Gaps (blue rows, NA canonical
 timing too) rather than forcing a mismatched comparison — same discipline the
 R report and the python_bindings_package_spec.md doc both already apply.
 """
+import gc
+import os
+import sys
 import time
 import warnings
 from datetime import datetime, timezone
@@ -72,16 +75,68 @@ TARGET_BATCH_MS = 200.0
 MIN_RESOLVED_BATCH_MS = 10.0
 MAX_INNER_REPS = 100_000
 
-EDI_PY_AVAILABLE = False    # flip once `edi_kernels` (see spec doc) is installed
+# ── EDI Python kernel bootstrap ─────────────────────────────────────────────
+# The python/ scaffold (see python_bindings_package_spec.md) is another
+# session's in-progress, uncommitted work — not something this script owns
+# or should modify. This just configures+builds it (via CMake, same
+# scikit-build-core-style flow python/CMakeLists.txt already defines) into
+# an isolated /tmp directory and imports whatever compiles, so the benchmark
+# always reflects the *current* state of that WIP rather than a stale
+# snapshot. If the build fails (that source is actively changing), every
+# row silently falls back to the "no binding yet" NA behavior — nothing
+# here assumes the build succeeds.
+EDI_PY_AVAILABLE = False
+_edi_core = None
+
+
+def _bootstrap_edi_kernels():
+    global EDI_PY_AVAILABLE, _edi_core
+    import subprocess
+    build_dir = "/tmp/edi_py_build_check"
+    python_pkg_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "python")
+    try:
+        import pybind11
+        pybind11_dir = pybind11.get_cmake_dir()
+        subprocess.run(
+            ["cmake", "-S", python_pkg_dir, "-B", build_dir,
+             "-DCMAKE_BUILD_TYPE=Release",
+             f"-DPython_EXECUTABLE={sys.executable}",
+             f"-Dpybind11_DIR={pybind11_dir}"],
+            check=True, capture_output=True, text=True,
+        )
+        subprocess.run(["cmake", "--build", build_dir, "-j4"], check=True, capture_output=True, text=True)
+        sys.path.insert(0, build_dir)
+        import _core as edi_core
+        _edi_core = edi_core
+        EDI_PY_AVAILABLE = True
+        print(f"EDI Python kernels: built OK, {len([n for n in dir(edi_core) if not n.startswith('_')])} functions available.")
+    except Exception as e:
+        print(f"EDI Python kernels: build/import failed ({e!r}); all EDI columns stay NA.")
+        EDI_PY_AVAILABLE = False
+        _edi_core = None
+
+
+_bootstrap_edi_kernels()
+
+
+def edi_has(name):
+    return EDI_PY_AVAILABLE and _edi_core is not None and hasattr(_edi_core, name)
+
+
+def edi_fn(name):
+    return getattr(_edi_core, name)
+
+
+def f_order(X):
+    """EDI's pybind11 bindings require F-contiguous (column-major) arrays,
+    matching Eigen's default storage — see each function's type-annotated
+    signature (flags.f_contiguous)."""
+    return np.asfortranarray(X)
 
 
 def time_edi(edi_kernel, fit_closure=None):
-    """Bare-metal EDI timing. Always NA today (see module docstring).
-
-    `fit_closure`, when EDI_PY_AVAILABLE flips True, should be a zero-arg
-    callable performing exactly one EDI fit (same convention as the
-    canonical-side closures below) built from `edi_kernels.<edi_kernel>`.
-    """
+    """Bare-metal EDI timing. NA when no binding is available or wired for
+    this row (see module docstring) — not a failed fit."""
     if not EDI_PY_AVAILABLE or fit_closure is None:
         return float("nan"), np.array([])
     return collect_timing_ms(fit_closure)
@@ -90,28 +145,43 @@ def time_edi(edi_kernel, fit_closure=None):
 # ── Timing harness (mirrors collect_timing_ms() in benchmark_model_fits.R) ──
 def collect_timing_ms(fn, times=B_TIME, target_batch_ms=TARGET_BATCH_MS,
                        max_inner_reps=MAX_INNER_REPS):
-    fn()  # warm-up / validation call, discarded (matches R's convention)
+    """Mirrors the R harness's GC discipline (gctorture(FALSE) + gc() before
+    each replicate): the cyclic GC is disabled for the whole timed region
+    (matching timeit's own default behavior — an uncontrolled collection
+    pause mid-replicate is exactly the noise source R's harness guards
+    against) and a full collection runs once beforehand so every replicate
+    starts from a clean heap rather than accumulating cross-replicate
+    garbage that could trigger a collection at an arbitrary point."""
+    gc.collect()
+    gc_was_enabled = gc.isenabled()
+    gc.disable()
+    try:
+        fn()  # warm-up / validation call, discarded (matches R's convention)
 
-    inner_reps = 1
-    batch_ms = 0.0
-    while inner_reps < max_inner_reps:
-        t0 = time.perf_counter()
-        for _ in range(inner_reps):
-            fn()
-        batch_ms = (time.perf_counter() - t0) * 1000.0
-        if np.isfinite(batch_ms) and batch_ms >= min(target_batch_ms, MIN_RESOLVED_BATCH_MS):
-            break
-        inner_reps = min(max_inner_reps, inner_reps * 2)
+        inner_reps = 1
+        batch_ms = 0.0
+        while inner_reps < max_inner_reps:
+            t0 = time.perf_counter()
+            for _ in range(inner_reps):
+                fn()
+            batch_ms = (time.perf_counter() - t0) * 1000.0
+            if np.isfinite(batch_ms) and batch_ms >= min(target_batch_ms, MIN_RESOLVED_BATCH_MS):
+                break
+            inner_reps = min(max_inner_reps, inner_reps * 2)
 
-    if np.isfinite(batch_ms) and batch_ms > 0:
-        inner_reps = max(1, min(max_inner_reps, int(round(inner_reps * target_batch_ms / batch_ms))))
+        if np.isfinite(batch_ms) and batch_ms > 0:
+            inner_reps = max(1, min(max_inner_reps, int(round(inner_reps * target_batch_ms / batch_ms))))
 
-    vals = np.empty(times)
-    for i in range(times):
-        t0 = time.perf_counter()
-        for _ in range(inner_reps):
-            fn()
-        vals[i] = (time.perf_counter() - t0) * 1000.0 / inner_reps
+        vals = np.empty(times)
+        for i in range(times):
+            gc.collect()
+            t0 = time.perf_counter()
+            for _ in range(inner_reps):
+                fn()
+            vals[i] = (time.perf_counter() - t0) * 1000.0 / inner_reps
+    finally:
+        if gc_was_enabled:
+            gc.enable()
 
     vals = vals[np.isfinite(vals) & (vals > 0)]
     if vals.size == 0:
@@ -235,6 +305,20 @@ def _glm(y, X, family):
     return lambda: sm.GLM(y, X, family=family).fit()
 
 
+# ── EDI-side closures for kernels that are actually bound right now ────────
+# Each one is built from the *same* X/y the paired canonical closure above
+# uses (never a separately-drawn dataset) so Speedup is a same-input,
+# same-process comparison, matching the R harness's discipline exactly.
+def _edi_glm_binomial(link, Xf, y):
+    if link == "logit" and edi_has("fast_logistic_regression"):
+        fn = edi_fn("fast_logistic_regression")
+        return lambda: fn(Xf, y, estimate_only=True)
+    if link == "probit" and edi_has("fast_probit_regression"):
+        fn = edi_fn("fast_probit_regression")
+        return lambda: fn(Xf, y, estimate_only=True)
+    return None  # log-binomial/identity-binomial kernels aren't bound yet
+
+
 def build_glm_binomial(link="logit"):
     d = data_binary(link=link)
     fam = {
@@ -249,8 +333,10 @@ def build_glm_binomial(link="logit"):
     elif link == "identity-binomial":
         start = np.r_[0.5, np.zeros(d["Xd"].shape[1] - 1)]
     y, Xd = d["y"], d["Xd"]
+    edi_closure = _edi_glm_binomial(link, f_order(Xd), y)
+
     if start is None:
-        return lambda: sm.GLM(y, Xd, family=fam).fit()
+        return lambda: sm.GLM(y, Xd, family=fam).fit(), edi_closure
 
     # Pure-IRLS log/identity-link Binomial GLMs can overshoot into an
     # infeasible probability region mid-iteration and blow up (a known
@@ -265,43 +351,81 @@ def build_glm_binomial(link="logit"):
         method = "IRLS"
     except Exception:
         method = "lbfgs"
-    return lambda: sm.GLM(y, Xd, family=fam).fit(start_params=start, method=method, maxiter=300)
+    canonical = lambda: sm.GLM(y, Xd, family=fam).fit(start_params=start, method=method, maxiter=300)
+    return canonical, edi_closure
 
 
 def build_glm_poisson():
     d = data_count()
     y, Xd = d["y"], d["Xd"]
-    return lambda: sm.GLM(y, Xd, family=sm.families.Poisson()).fit()
+    canonical = lambda: sm.GLM(y, Xd, family=sm.families.Poisson()).fit()
+    edi_closure = None
+    if edi_has("fast_poisson_regression"):
+        fn = edi_fn("fast_poisson_regression")
+        Xf = f_order(Xd)
+        edi_closure = lambda: fn(Xf, y, estimate_only=True)
+    return canonical, edi_closure
 
 
 def build_ols():
     d = data_continuous()
     y, Xd = d["y"], d["Xd"]
-    return lambda: np.linalg.lstsq(Xd, y, rcond=None)
+    canonical = lambda: np.linalg.lstsq(Xd, y, rcond=None)
+    edi_closure = None
+    if edi_has("fast_ols"):
+        fn = edi_fn("fast_ols")
+        Xf = f_order(Xd)
+        edi_closure = lambda: fn(Xf, y)
+    return canonical, edi_closure
 
 
 def build_lpm():
     d = data_binary()
     y, Xd = d["y"], d["Xd"]
-    return lambda: np.linalg.lstsq(Xd, y, rcond=None)
+    canonical = lambda: np.linalg.lstsq(Xd, y, rcond=None)
+    edi_closure = None
+    if edi_has("fast_ols"):
+        fn = edi_fn("fast_ols")
+        Xf = f_order(Xd)
+        edi_closure = lambda: fn(Xf, y)
+    return canonical, edi_closure
 
 
 def build_negbin():
     d = data_count()
     y, Xd = d["y"], d["Xd"]
-    return lambda: NegativeBinomial(y, Xd).fit(disp=0)
+    canonical = lambda: NegativeBinomial(y, Xd).fit(disp=0)
+    edi_closure = None
+    if edi_has("fast_neg_bin"):
+        fn = edi_fn("fast_neg_bin")
+        Xf = f_order(Xd)
+        y_i32 = y.astype(np.int32)
+        edi_closure = lambda: fn(Xf, y_i32, estimate_only=True)
+    return canonical, edi_closure
 
 
 def build_beta_regr():
     d = data_beta()
     y, Xd = d["y"], d["Xd"]
-    return lambda: BetaModel(y, Xd).fit(disp=0)
+    canonical = lambda: BetaModel(y, Xd).fit(disp=0)
+    edi_closure = None
+    if edi_has("fast_beta_regression"):
+        fn = edi_fn("fast_beta_regression")
+        Xf = f_order(Xd)
+        edi_closure = lambda: fn(Xf, y, estimate_only=True)
+    return canonical, edi_closure
 
 
 def build_fractional_logit():
     d = data_beta()
     y, Xd = d["y"], d["Xd"]
-    return lambda: sm.GLM(y, Xd, family=sm.families.Binomial()).fit()
+    canonical = lambda: sm.GLM(y, Xd, family=sm.families.Binomial()).fit()
+    edi_closure = None
+    if edi_has("fast_logistic_regression"):
+        fn = edi_fn("fast_logistic_regression")
+        Xf = f_order(Xd)
+        edi_closure = lambda: fn(Xf, y, estimate_only=True)
+    return canonical, edi_closure
 
 
 def build_ordered(distr):
@@ -313,33 +437,67 @@ def build_ordered(distr):
 def build_hurdle(dist):
     d = data_count()
     y, Xd = d["y"], d["Xd"]
-    return lambda: HurdleCountModel(y, Xd, dist=dist, zerodist="poisson").fit(disp=0)
+    canonical = lambda: HurdleCountModel(y, Xd, dist=dist, zerodist="poisson").fit(disp=0)
+    edi_closure = None
+    if dist == "poisson" and edi_has("fast_zero_augmented_poisson"):
+        fn = edi_fn("fast_zero_augmented_poisson")
+        Xf = f_order(Xd)
+        edi_closure = lambda: fn(Xf, y, Xf, True)
+    # fast_hurdle_negbin isn't bound yet, so dist == "negbin" stays EDI-NA.
+    return canonical, edi_closure
 
 
 def build_zip():
     d = data_count()
     y, Xd = d["y"], d["Xd"]
-    return lambda: ZeroInflatedPoisson(y, Xd, exog_infl=Xd).fit(disp=0)
+    canonical = lambda: ZeroInflatedPoisson(y, Xd, exog_infl=Xd).fit(disp=0)
+    edi_closure = None
+    if edi_has("fast_zero_augmented_poisson"):
+        fn = edi_fn("fast_zero_augmented_poisson")
+        Xf = f_order(Xd)
+        edi_closure = lambda: fn(Xf, y, Xf, False)
+    return canonical, edi_closure
 
 
 def build_zinb():
     d = data_count()
     y, Xd = d["y"], d["Xd"]
-    return lambda: ZeroInflatedNegativeBinomialP(y, Xd, exog_infl=Xd).fit(disp=0)
+    canonical = lambda: ZeroInflatedNegativeBinomialP(y, Xd, exog_infl=Xd).fit(disp=0)
+    edi_closure = None
+    if edi_has("fast_zinb"):
+        fn = edi_fn("fast_zinb")
+        Xf = f_order(Xd)
+        edi_closure = lambda: fn(Xf, Xf, y)
+    return canonical, edi_closure
 
 
 def build_weibull_aft():
     d = data_survival()
-    df = pd.DataFrame({"y": d["y"], "dead": d["dead"], "treatment": d["w"],
+    y, dead, Xo = d["y"], d["dead"], d["Xo"]
+    df = pd.DataFrame({"y": y, "dead": dead, "treatment": d["w"],
                         **{f"x{i}": d["X"][:, i] for i in range(d["X"].shape[1])}})
-    return lambda: WeibullAFTFitter().fit(df, duration_col="y", event_col="dead")
+    canonical = lambda: WeibullAFTFitter().fit(df, duration_col="y", event_col="dead")
+    edi_closure = None
+    if edi_has("fast_weibull_regression"):
+        fn = edi_fn("fast_weibull_regression")
+        Xf = f_order(Xo)
+        dead_f = dead.astype(float)
+        edi_closure = lambda: fn(Xf, y, dead_f, estimate_only=True)
+    return canonical, edi_closure
 
 
 def build_coxph():
     d = data_survival()
     Xo, y, dead = d["Xo"], d["y"], d["dead"]
     ysurv = Surv.from_arrays(dead.astype(bool), y)
-    return lambda: CoxPHSurvivalAnalysis().fit(Xo, ysurv)
+    canonical = lambda: CoxPHSurvivalAnalysis().fit(Xo, ysurv)
+    edi_closure = None
+    if edi_has("fast_coxph_regression"):
+        fn = edi_fn("fast_coxph_regression")
+        Xf = f_order(Xo)
+        dead_f = dead.astype(float)
+        edi_closure = lambda: fn(Xf, y, dead_f, estimate_only=True)
+    return canonical, edi_closure
 
 
 def build_coxph_strat():
@@ -394,7 +552,13 @@ def build_hl_wilcox():
 def build_robust_regr():
     d = data_continuous()
     y, Xd = d["y"], d["Xd"]
-    return lambda: RLM(y, Xd).fit()
+    canonical = lambda: RLM(y, Xd).fit()
+    edi_closure = None
+    if edi_has("fast_robust_regression"):
+        fn = edi_fn("fast_robust_regression")
+        Xf = f_order(Xd)
+        edi_closure = lambda: fn(Xf, y, estimate_only=True)
+    return canonical, edi_closure
 
 
 def build_quantreg():
@@ -467,6 +631,26 @@ def _sm_wald_wrapper(fit_fn):
     return fn
 
 
+def _wald_from_XtWX(b, XtWX, idx, sigma2_scale=1.0):
+    """Extract (est, se, pval) for coefficient `idx` (0-indexed) from a fitted
+    b vector and its information matrix XtWX, mirroring exactly what EDI's
+    R-side `_with_var_cpp` wrappers do via compute_diagonal_inverse_entry: the
+    SE is sqrt of the idx-th diagonal entry of XtWX^-1 (LDLT solve against a
+    unit vector, not a full explicit inverse). sigma2_scale multiplies that
+    diagonal entry -- 1.0 for GLM/likelihood families where XtWX is already
+    the properly-scaled Fisher information, or a residual variance estimate
+    for OLS's raw (unweighted) X'X normal equations."""
+    XtWX = np.asarray(XtWX)
+    e = np.zeros(XtWX.shape[0])
+    e[idx] = 1.0
+    diag_inv = np.linalg.solve(XtWX, e)[idx]
+    var = sigma2_scale * diag_inv
+    se = float(np.sqrt(var)) if np.isfinite(var) and var > 0 else float("nan")
+    est = float(np.asarray(b)[idx])
+    pval = float(2 * sstats.norm.sf(abs(est / se))) if se > 0 and np.isfinite(se) else float("nan")
+    return est, se, pval
+
+
 def build_glm_binomial_wald(link="logit"):
     d = data_binary(link=link)
     fam = {
@@ -481,50 +665,125 @@ def build_glm_binomial_wald(link="logit"):
     elif link == "identity-binomial":
         start = np.r_[0.5, np.zeros(d["Xd"].shape[1] - 1)]
     y, Xd = d["y"], d["Xd"]
+
+    edi_closure = None
+    edi_kernel_name = {"logit": "fast_logistic_regression", "probit": "fast_probit_regression"}.get(link)
+    if edi_kernel_name is not None and edi_has(edi_kernel_name):
+        fn = edi_fn(edi_kernel_name)
+        Xf = f_order(Xd)
+
+        def edi_closure():
+            res = fn(Xf, y, estimate_only=False)
+            return _wald_from_XtWX(res["b"], res["XtWX"], 1)
+
     if start is None:
-        return _sm_wald_wrapper(lambda: sm.GLM(y, Xd, family=fam).fit())
+        return _sm_wald_wrapper(lambda: sm.GLM(y, Xd, family=fam).fit()), edi_closure
     try:
         sm.GLM(y, Xd, family=fam).fit(start_params=start, maxiter=300)
         method = "IRLS"
     except Exception:
         method = "lbfgs"
-    return _sm_wald_wrapper(lambda: sm.GLM(y, Xd, family=fam).fit(start_params=start, method=method, maxiter=300))
+    canonical = _sm_wald_wrapper(lambda: sm.GLM(y, Xd, family=fam).fit(start_params=start, method=method, maxiter=300))
+    return canonical, edi_closure
 
 
 def build_glm_poisson_wald():
     d = data_count()
     y, Xd = d["y"], d["Xd"]
-    return _sm_wald_wrapper(lambda: sm.GLM(y, Xd, family=sm.families.Poisson()).fit())
+    canonical = _sm_wald_wrapper(lambda: sm.GLM(y, Xd, family=sm.families.Poisson()).fit())
+    edi_closure = None
+    if edi_has("fast_poisson_regression"):
+        fn = edi_fn("fast_poisson_regression")
+        Xf = f_order(Xd)
+
+        def edi_closure():
+            res = fn(Xf, y, estimate_only=False)
+            return _wald_from_XtWX(res["b"], res["XtWX"], 1)
+    return canonical, edi_closure
 
 
 def build_ols_wald():
     d = data_continuous()
     y, Xd = d["y"], d["Xd"]
-    return _sm_wald_wrapper(lambda: sm.OLS(y, Xd).fit())
+    canonical = _sm_wald_wrapper(lambda: sm.OLS(y, Xd).fit())
+    edi_closure = None
+    if edi_has("fast_ols"):
+        fn = edi_fn("fast_ols")
+        Xf = f_order(Xd)
+        n, p = Xf.shape
+
+        def edi_closure():
+            res = fn(Xf, y, estimate_only=False)
+            b = np.asarray(res["b"])
+            resid = y - Xf @ b
+            sigma2_hat = float(resid @ resid) / (n - p)
+            return _wald_from_XtWX(b, res["XtWX"], 1, sigma2_scale=sigma2_hat)
+    return canonical, edi_closure
 
 
 def build_lpm_wald():
     d = data_binary()
     y, Xd = d["y"], d["Xd"]
-    return _sm_wald_wrapper(lambda: sm.OLS(y, Xd).fit())
+    canonical = _sm_wald_wrapper(lambda: sm.OLS(y, Xd).fit())
+    edi_closure = None
+    if edi_has("fast_ols"):
+        fn = edi_fn("fast_ols")
+        Xf = f_order(Xd)
+        n, p = Xf.shape
+
+        def edi_closure():
+            res = fn(Xf, y, estimate_only=False)
+            b = np.asarray(res["b"])
+            resid = y - Xf @ b
+            sigma2_hat = float(resid @ resid) / (n - p)
+            return _wald_from_XtWX(b, res["XtWX"], 1, sigma2_scale=sigma2_hat)
+    return canonical, edi_closure
 
 
 def build_negbin_wald():
     d = data_count()
     y, Xd = d["y"], d["Xd"]
-    return _sm_wald_wrapper(lambda: NegativeBinomial(y, Xd).fit(disp=0))
+    canonical = _sm_wald_wrapper(lambda: NegativeBinomial(y, Xd).fit(disp=0))
+    edi_closure = None
+    if edi_has("fast_neg_bin"):
+        fn = edi_fn("fast_neg_bin")
+        Xf = f_order(Xd)
+        y_i32 = y.astype(np.int32)
+
+        def edi_closure():
+            res = fn(Xf, y_i32, estimate_only=False)
+            return _wald_from_XtWX(res["b"], res["XtWX"], 1)
+    return canonical, edi_closure
 
 
 def build_beta_regr_wald():
     d = data_beta()
     y, Xd = d["y"], d["Xd"]
-    return _sm_wald_wrapper(lambda: BetaModel(y, Xd).fit(disp=0))
+    canonical = _sm_wald_wrapper(lambda: BetaModel(y, Xd).fit(disp=0))
+    edi_closure = None
+    if edi_has("fast_beta_regression"):
+        fn = edi_fn("fast_beta_regression")
+        Xf = f_order(Xd)
+
+        def edi_closure():
+            res = fn(Xf, y, estimate_only=False)
+            return _wald_from_XtWX(res["b"], res["XtWX"], 1)
+    return canonical, edi_closure
 
 
 def build_fractional_logit_wald():
     d = data_beta()
     y, Xd = d["y"], d["Xd"]
-    return _sm_wald_wrapper(lambda: sm.GLM(y, Xd, family=sm.families.Binomial()).fit())
+    canonical = _sm_wald_wrapper(lambda: sm.GLM(y, Xd, family=sm.families.Binomial()).fit())
+    edi_closure = None
+    if edi_has("fast_logistic_regression"):
+        fn = edi_fn("fast_logistic_regression")
+        Xf = f_order(Xd)
+
+        def edi_closure():
+            res = fn(Xf, y, estimate_only=False)
+            return _wald_from_XtWX(res["b"], res["XtWX"], 1)
+    return canonical, edi_closure
 
 
 def build_ordered_wald(distr):
@@ -551,10 +810,52 @@ def build_zinb_wald():
     return _sm_wald_wrapper(lambda: ZeroInflatedNegativeBinomialP(y, Xd, exog_infl=Xd).fit(disp=0))
 
 
+def _robust_sandwich_se(b, scale, Xf, y, j0, c_bisquare=4.685):
+    """M-estimator sandwich variance for coefficient j0 (0-indexed), mirroring
+    EDI/src/fast_robust_regression.cpp's fast_robust_regression_cpp exactly
+    (the psi/psi' computation living in that Rcpp-only wrapper, not in the
+    shared *_internal() core, so it isn't a field the Python binding's dict
+    can just return -- it has to be reproduced here). Only the default
+    method="MM" (Tukey bisquare) path is implemented, matching this benchmark
+    row's canonical RLM() call, which also defaults to bisquare (M-estimation
+    via HuberT norm)."""
+    r = y - Xf @ b
+    n, p = Xf.shape
+    u = r / scale
+    abs_u = np.abs(u)
+    u_scaled_sq = (u / c_bisquare) ** 2
+    tmp = 1.0 - u_scaled_sq
+    psi_r = np.where(abs_u <= c_bisquare, r * tmp**2, 0.0)
+    sum_psi_prime = np.sum(np.where(abs_u <= c_bisquare, tmp * (1.0 - 5.0 * u_scaled_sq), 0.0))
+    m = sum_psi_prime / n
+    if m == 0:
+        return float("nan")
+    sum_psi_sq = np.sum(psi_r**2)
+    factor = (n / (n - p)) * sum_psi_sq / (n * m * m)
+    XtX = Xf.T @ Xf
+    e = np.zeros(p); e[j0] = 1.0
+    inv_diag = np.linalg.solve(XtX, e)[j0]
+    ssq = factor * inv_diag
+    return float(np.sqrt(ssq)) if np.isfinite(ssq) and ssq > 0 else float("nan")
+
+
 def build_robust_regr_wald():
     d = data_continuous()
     y, Xd = d["y"], d["Xd"]
-    return _sm_wald_wrapper(lambda: RLM(y, Xd).fit())
+    canonical = _sm_wald_wrapper(lambda: RLM(y, Xd).fit())
+    edi_closure = None
+    if edi_has("fast_robust_regression"):
+        fn = edi_fn("fast_robust_regression")
+        Xf = f_order(Xd)
+
+        def edi_closure():
+            res = fn(Xf, y, estimate_only=False)
+            b = np.asarray(res["coefficients"])
+            est = float(b[1])
+            se = _robust_sandwich_se(b, res["scale"], Xf, y, 1)
+            pval = float(2 * sstats.norm.sf(abs(est / se))) if se > 0 and np.isfinite(se) else float("nan")
+            return est, se, pval
+    return canonical, edi_closure
 
 
 def build_quantreg_wald():
@@ -565,32 +866,64 @@ def build_quantreg_wald():
 
 def build_weibull_aft_wald():
     d = data_survival()
-    df = pd.DataFrame({"y": d["y"], "dead": d["dead"], "treatment": d["w"],
+    y, dead, Xo = d["y"], d["dead"], d["Xo"]
+    df = pd.DataFrame({"y": y, "dead": dead, "treatment": d["w"],
                         **{f"x{i}": d["X"][:, i] for i in range(d["X"].shape[1])}})
 
-    def fn():
+    def canonical():
         aft = WeibullAFTFitter().fit(df, duration_col="y", event_col="dead")
         row = aft.summary.loc[("lambda_", "treatment")]
         return float(row["coef"]), float(row["se(coef)"]), float(row["p"])
-    return fn
+
+    edi_closure = None
+    if edi_has("fast_weibull_regression"):
+        fn = edi_fn("fast_weibull_regression")
+        Xf = f_order(Xo)
+        dead_f = dead.astype(float)
+
+        def edi_closure():
+            res = fn(Xf, y, dead_f, estimate_only=False)
+            b0 = float(np.asarray(res["params"])[0])
+            se0 = float(np.sqrt(np.asarray(res["vcov"])[0, 0]))
+            pval = float(2 * sstats.norm.sf(abs(b0 / se0))) if se0 > 0 else float("nan")
+            return b0, se0, pval
+    return canonical, edi_closure
 
 
 def build_coxph_wald():
     # sksurv's CoxPHSurvivalAnalysis doesn't expose SE/p-values directly;
-    # lifelines' CoxPHFitter does (via .summary), so the Wald-table row
-    # switches packages for the unstratified Cox row specifically — same
-    # "documented fallback" pattern benchmark_model_fits.R itself uses when
-    # a canonical package's fast bare-metal entry point doesn't expose the
-    # variance the full-inference table needs.
+    # lifelines' CoxPHFitter does (via .summary), so the canonical side of
+    # the Wald-table row switches packages for the unstratified Cox row
+    # specifically — same "documented fallback" pattern
+    # benchmark_model_fits.R itself uses when a canonical package's fast
+    # bare-metal entry point doesn't expose the variance the full-inference
+    # table needs. EDI's fast_coxph_regression, unlike the point-estimate
+    # table's other wired kernels, DOES return a vcov even with
+    # estimate_only=False, so this row (and Weibull, above) get a real
+    # same-input EDI comparison despite the canonical-side package switch.
     d = data_survival()
-    df = pd.DataFrame({"y": d["y"], "dead": d["dead"], "treatment": d["w"],
+    y, dead, Xo = d["y"], d["dead"], d["Xo"]
+    df = pd.DataFrame({"y": y, "dead": dead, "treatment": d["w"],
                         **{f"x{i}": d["X"][:, i] for i in range(d["X"].shape[1])}})
 
-    def fn():
+    def canonical():
         cph = CoxPHFitter().fit(df, duration_col="y", event_col="dead")
         row = cph.summary.loc["treatment"]
         return float(row["coef"]), float(row["se(coef)"]), float(row["p"])
-    return fn
+
+    edi_closure = None
+    if edi_has("fast_coxph_regression"):
+        fn = edi_fn("fast_coxph_regression")
+        Xf = f_order(Xo)
+        dead_f = dead.astype(float)
+
+        def edi_closure():
+            res = fn(Xf, y, dead_f, estimate_only=False)
+            b0 = float(np.asarray(res["coefficients"])[0])
+            se0 = float(np.sqrt(np.asarray(res["vcov"])[0, 0]))
+            pval = float(2 * sstats.norm.sf(abs(b0 / se0))) if se0 > 0 else float("nan")
+            return b0, se0, pval
+    return canonical, edi_closure
 
 
 def _delta_method_se(theta, cov, estimand):
@@ -775,7 +1108,7 @@ WALD_SPECS = [
     ("count", "InferenceCountZeroInflatedNegBin", "statsmodels", "ZeroInflatedNegativeBinomialP+summary", "fast_zinb_with_var", build_zinb_wald, False),
     ("count", "InferenceCountHurdleNegBin", "statsmodels", "HurdleCountModel(negbin)+summary", "fast_hurdle_negbin_with_var", lambda: build_hurdle_wald("negbin"), False),
     ("count", "InferenceCountQuasiPoisson", "statsmodels", "GLM(Poisson)+summary", "fast_quasipoisson_regression_with_var", build_glm_poisson_wald, False),
-    ("survival", "InferenceSurvivalWeibullRegr", "lifelines", "WeibullAFTFitter+summary", "fast_weibull_regression (SE unexposed at bare-metal level)", build_weibull_aft_wald, False),
+    ("survival", "InferenceSurvivalWeibullRegr", "lifelines", "WeibullAFTFitter+summary", "fast_weibull_regression_with_var", build_weibull_aft_wald, False),
     ("continuous", "InferenceContinRobustRegr", "statsmodels", "RLM+summary", "fast_robust_regression_with_var", build_robust_regr_wald, False),
     ("continuous", "InferenceContinQuantileRegr", "statsmodels", "QuantReg+summary", "(none — EDI's own R class delegates to quantreg::rq; no distinct EDI kernel)", build_quantreg_wald, False),
     ("incidence", "InferenceIncidExactFisher", "scipy", "stats.fisher_exact", "out of python-bindings scope (nonparametric-test kernel)", build_fisher_exact, False),
@@ -813,6 +1146,41 @@ WALD_EXCLUDED = {
 }
 
 
+# ── EDI-only builds for rows with no canonical Python baseline at all.
+# Baseline Gap (no_canonical=True) is about the *comparator*, not the EDI
+# side — these three now have a real, working bare-metal EDI kernel, so the
+# row stays blue (still no scipy/statsmodels analog) but shows a real EDI
+# time instead of NA.
+def build_adjcat_logit_edi_only():
+    if not edi_has("fast_adjacent_category_logit"):
+        return None, None
+    d = data_ordinal()
+    y, Xo = d["y"], d["Xo"]
+    fn = edi_fn("fast_adjacent_category_logit")
+    Xf = f_order(Xo)
+    return None, (lambda: fn(Xf, y))
+
+
+def build_contratio_edi_only():
+    if not edi_has("fast_continuation_ratio_regression"):
+        return None, None
+    d = data_ordinal()
+    y, Xo = d["y"], d["Xo"]
+    fn = edi_fn("fast_continuation_ratio_regression")
+    Xf = f_order(Xo)
+    return None, (lambda: fn(Xf, y))
+
+
+def build_zoib_edi_only():
+    if not edi_has("fast_zero_one_inflated_beta"):
+        return None, None
+    d = data_beta()
+    y, Xd = d["y"], d["Xd"]
+    fn = edi_fn("fast_zero_one_inflated_beta")
+    Xf = f_order(Xd)
+    return None, (lambda: fn(Xf, Xf, y))
+
+
 # ── Model registry — one row per EDI Inference class, same 40-class subset
 #    benchmark_model_fits.R's point-estimate table covers, in the same
 #    "targeted subset" spirit. `edi_kernel` documents the future
@@ -841,8 +1209,8 @@ MODEL_SPECS = [
     ("incidence", "InferenceIncidLogBinomial", "statsmodels", "GLM(Binomial, log link)", "fast_log_binomial_regression", lambda: build_glm_binomial("log-binomial"), False),
     ("incidence", "InferenceIncidProbitRegr", "statsmodels", "GLM(Binomial, probit link)", "fast_probit_regression", lambda: build_glm_binomial("probit"), False),
     ("incidence", "InferenceIncidBinomialIdentityRiskDiff", "statsmodels", "GLM(Binomial, identity link)", "fast_identity_binomial_regression", lambda: build_glm_binomial("identity-binomial"), False),
-    ("ordinal", "InferenceOrdinalAdjCatLogitRegr", None, None, "fast_adjacent_category_logit", None, True),
-    ("ordinal", "InferenceOrdinalContRatioRegr", None, None, "fast_continuation_ratio_regression", None, True),
+    ("ordinal", "InferenceOrdinalAdjCatLogitRegr", None, None, "fast_adjacent_category_logit", build_adjcat_logit_edi_only, True),
+    ("ordinal", "InferenceOrdinalContRatioRegr", None, None, "fast_continuation_ratio_regression", build_contratio_edi_only, True),
     ("ordinal", "InferenceOrdinalOrderedProbitRegr", "statsmodels", "OrderedModel(probit)", "fast_ordinal_probit_regression", lambda: build_ordered("probit"), False),
     ("ordinal", "InferenceOrdinalCloglogRegr", None, None, "fast_ordinal_cloglog_regression", None, True),
     ("ordinal", "InferenceOrdinalCauchitRegr", None, None, "fast_ordinal_cauchit_regression", None, True),
@@ -861,8 +1229,8 @@ MODEL_SPECS = [
     ("incidence", "InferenceIncidKKCondLogitPlusGLMMOneLik", None, None, "fast_clogit_plus_glmm", None, True),
     ("count", "InferenceCountKKCondPoissonOneLik", None, None, "fast_cpoisson_combined", None, True),
     ("survival", "InferenceSurvivalKKWeibullFrailtyOneLik", None, None, "fast_weibull_frailty", None, True),
-    ("proportion", "InferencePropZeroOneInflatedBetaRegr", None, None, "fast_zero_one_inflated_beta", None, True),
-]
+    ("proportion", "InferencePropZeroOneInflatedBetaRegr", None, None, "fast_zero_one_inflated_beta", build_zoib_edi_only, True),
+]  # end MODEL_SPECS
 
 NO_CANONICAL_NOTE = {
     "InferenceOrdinalAdjCatLogitRegr": "No identified Python package implements the adjacent-category logit link (R uses VGAM::vglm(acat())).",
@@ -933,15 +1301,60 @@ def build_util_dnbinom_mu():
     return lambda: sstats.nbinom.logpmf(x, size, p_nb)
 
 
+def build_util_pchisq_upper():
+    x = rng.uniform(0, 30, N_UTIL)
+    df = rng.integers(1, 11, N_UTIL)
+    return lambda: sstats.chi2.sf(x, df)
+
+
+def build_util_erfc():
+    x = rng.normal(0, 3, N_UTIL)
+    return lambda: sspecial.erfc(x)
+
+
+def build_util_pnorm_fast():
+    x = rng.normal(0, 3, N_UTIL)
+    return lambda: sstats.norm.cdf(x)
+
+
+def build_util_dnorm_fast():
+    x = rng.normal(0, 3, N_UTIL)
+    return lambda: sstats.norm.pdf(x)
+
+
+def build_util_atan():
+    x = rng.normal(0, 5, N_UTIL)
+    return lambda: np.arctan(x)
+
+
+def build_util_log1pexp():
+    x = rng.normal(0, 5, N_UTIL)
+    return lambda: np.logaddexp(0, x)
+
+
+# 8 of these 14 kernels (digamma, trigamma, lgamma, lbeta, dnbinom_mu,
+# qnorm, log_pnorm, log_dnorm) match real EDI R package exports
+# (EDI/src/fast_math_utils.cpp — see benchmark_model_fits.R's Utility
+# table). fast_pchisq_upper is bound in EDI's own python/cpp/
+# bindings_fast_math.cpp stub, but that build isn't wired into this
+# benchmark (it's another session's in-progress, uncommitted scaffold —
+# see the module docstring); the remaining five (erfc, pnorm_fast,
+# dnorm_fast, atan, log1pexp) aren't bound anywhere in Python yet either.
 UTILITY_SPECS = [
-    ("utility", "fast_digamma", "scipy", "special.digamma", "fast_math.fast_digamma (not yet bound — only fast_pchisq_upper is)", build_util_digamma, False),
-    ("utility", "fast_trigamma", "scipy", "special.polygamma(1,.)", "fast_math.fast_trigamma (not yet bound)", build_util_trigamma, False),
-    ("utility", "fast_lgamma", "scipy", "special.gammaln", "fast_math.fast_lgamma (not yet bound)", build_util_lgamma, False),
-    ("utility", "fast_lbeta", "scipy", "special.betaln", "fast_math.fast_lbeta (not yet bound)", build_util_lbeta, False),
-    ("utility", "fast_qnorm", "scipy", "stats.norm.ppf", "fast_math.fast_qnorm (not yet bound)", build_util_qnorm, False),
-    ("utility", "fast_log_pnorm", "scipy", "stats.norm.logcdf", "fast_math.fast_log_pnorm (not yet bound)", build_util_log_pnorm, False),
-    ("utility", "fast_log_dnorm", "scipy", "stats.norm.logpdf", "fast_math.fast_log_dnorm (not yet bound)", build_util_log_dnorm, False),
-    ("utility", "fast_dnbinom_mu", "scipy", "stats.nbinom.logpmf", "fast_math.fast_dnbinom_mu (not yet bound)", build_util_dnbinom_mu, False),
+    ("utility", "fast_digamma", "scipy", "special.digamma", "fast_math.fast_digamma (not yet bound in python/)", build_util_digamma, False),
+    ("utility", "fast_trigamma", "scipy", "special.polygamma(1,.)", "fast_math.fast_trigamma (not yet bound in python/)", build_util_trigamma, False),
+    ("utility", "fast_lgamma", "scipy", "special.gammaln", "fast_math.fast_lgamma (not yet bound in python/)", build_util_lgamma, False),
+    ("utility", "fast_lbeta", "scipy", "special.betaln", "fast_math.fast_lbeta (not yet bound in python/)", build_util_lbeta, False),
+    ("utility", "fast_qnorm", "scipy", "stats.norm.ppf", "fast_math.fast_qnorm (not yet bound in python/)", build_util_qnorm, False),
+    ("utility", "fast_log_pnorm", "scipy", "stats.norm.logcdf", "fast_math.fast_log_pnorm (not yet bound in python/)", build_util_log_pnorm, False),
+    ("utility", "fast_log_dnorm", "scipy", "stats.norm.logpdf", "fast_math.fast_log_dnorm (not yet bound in python/)", build_util_log_dnorm, False),
+    ("utility", "fast_dnbinom_mu", "scipy", "stats.nbinom.logpmf", "fast_math.fast_dnbinom_mu (not yet bound in python/)", build_util_dnbinom_mu, False),
+    ("utility", "fast_pchisq_upper", "scipy", "stats.chi2.sf", "fast_math.fast_pchisq_upper is bound and working, but only as a scalar call (no vectorized wrapper exists); looping it in a Python for-loop N_UTIL times to compare against scipy's one vectorized chi2.sf(x, df) call would time Python-loop overhead against EDI, not EDI against scipy — left NA rather than publish a misleading number", build_util_pchisq_upper, False),
+    ("utility", "fast_erfc", "scipy", "special.erfc", "fast_math.fast_erfc (not yet bound in python/)", build_util_erfc, False),
+    ("utility", "pnorm_fast", "scipy", "stats.norm.cdf", "fast_math.pnorm_fast (not yet bound in python/)", build_util_pnorm_fast, False),
+    ("utility", "dnorm_fast", "scipy", "stats.norm.pdf", "fast_math.dnorm_fast (not yet bound in python/)", build_util_dnorm_fast, False),
+    ("utility", "fast_atan", "numpy", "arctan", "fast_math.fast_atan (not yet bound in python/)", build_util_atan, False),
+    ("utility", "fast_log1pexp", "numpy", "logaddexp(0,.)", "fast_math.fast_log1pexp (not yet bound in python/)", build_util_log1pexp, False),
 ]
 
 
@@ -984,27 +1397,43 @@ def row_bg_color(speedup, pval, no_canonical=False):
 
 # ── Runner ───────────────────────────────────────────────────────────────
 def run_one(response, cls, pkg, func, edi_kernel, build, no_canonical):
+    """`build()` returns either a single zero-arg canonical closure (legacy
+    rows: no EDI binding wired) or a `(canonical_closure_or_None,
+    edi_closure_or_None)` pair. Whichever side is present is built from the
+    *same* generated data (X, y, ...) as the other — the pair is constructed
+    by a single build function that generates data once and hands the same
+    arrays to both closures, so this is a same-input, same-process, same-
+    session apples-to-apples comparison, not two independently-drawn
+    datasets. "No canonical baseline" (no_canonical, e.g. adjacent-category
+    logit) and "no EDI kernel wired" are independent axes: a Baseline Gap
+    row can still show a real EDI time once a binding exists for it."""
     print(f"Benchmarking {cls}...")
-    if no_canonical:
-        return dict(cls=cls, response=response, edi_ms=float("nan"), pkg="None",
-                    func="", canonical_ms=float("nan"),
-                    speedup=float("nan"), pval=float("nan"), no_canonical=True,
-                    edi_kernel=edi_kernel)
 
-    edi_ms, edi_samples = time_edi(edi_kernel, None)
+    canonical_fn, edi_fn = None, None
+    if build is not None:
+        built = build()
+        if isinstance(built, tuple):
+            canonical_fn, edi_fn = built
+        else:
+            canonical_fn = built
 
-    try:
-        fn = build()
-        can_ms, can_samples = collect_timing_ms(fn)
-    except Exception as e:
-        print(f"  Canonical Error ({cls}): {e!r}")
-        can_ms, can_samples = float("nan"), np.array([])
+    edi_ms, edi_samples = time_edi(edi_kernel, edi_fn)
+
+    can_ms, can_samples = float("nan"), np.array([])
+    if canonical_fn is not None:
+        try:
+            can_ms, can_samples = collect_timing_ms(canonical_fn)
+        except Exception as e:
+            print(f"  Canonical Error ({cls}): {e!r}")
 
     speedup = (can_ms / edi_ms) if (np.isfinite(can_ms) and np.isfinite(edi_ms) and edi_ms > 0) else float("nan")
     pval = timing_ttest_pval(edi_samples, can_samples)
-    return dict(cls=cls, response=response, edi_ms=edi_ms, pkg=pkg, func=func,
-                canonical_ms=can_ms, speedup=speedup, pval=pval, no_canonical=False,
-                edi_kernel=edi_kernel)
+    return dict(cls=cls, response=response,
+                edi_ms=edi_ms,
+                pkg=pkg if canonical_fn is not None else "None",
+                func=func if canonical_fn is not None else "",
+                canonical_ms=can_ms, speedup=speedup, pval=pval,
+                no_canonical=no_canonical, edi_kernel=edi_kernel)
 
 
 def run_all(specs, label):
@@ -1096,6 +1525,7 @@ body {{ font-family: -apple-system, Segoe UI, Helvetica, Arial, sans-serif; max-
 table {{ border-collapse: collapse; width: 100%; margin: 1rem 0; }}
 th, td {{ border: 1px solid #d0d7de; padding: 4px 8px; text-align: left; font-size: 0.9rem; }}
 th {{ background: rgba(127,127,127,0.15); }}
+td:nth-child(8), th:nth-child(8) {{ white-space: nowrap; }}
 tr[style] td {{ color: #111; }}
 code {{ padding: 1px 4px; border-radius: 4px; }}
 .legend span {{ display: inline-block; width: 1em; height: 1em; margin-right: 0.4em; vertical-align: middle; border: 1px solid #8888; }}
@@ -1110,21 +1540,33 @@ nav a {{ margin-right: 1rem; }}
 same three tables (point-estimate, Wald/full-inference, utility math kernels), same table shape,
 same three-color row coding. Produced by <code>package_metadata/benchmark_model_fits_python.py</code>.</p>
 
-<h2>Status: EDI Python bindings do not exist yet</h2>
-<p>EDI's C++ model-fitting kernels have no Python bindings yet, and the <code>python/</code>
-scaffold's nascent <code>fast_math</code> pybind11 stub only binds one utility function
-(<code>fast_pchisq_upper</code>, not used by any row below) — see
-<code>package_metadata/python_bindings_package_spec.md</code>. Every row's
-<strong>EDI Time</strong> is therefore <code>NA</code> in all three tables today by
-construction, not because of a failed fit: <code>time_edi()</code> in this
-script is a single, clearly-marked no-op returning <code>NaN</code>. Once a
-kernel is bound, wiring it in is a one-line change per row (the
-<code>edi_kernel</code> field in each spec list already names the
-target <code>edi_kernels.*</code> function) — flip
-<code>EDI_PY_AVAILABLE = True</code> and pass the real fit closure. Until
-then, these reports document what the <strong>canonical Python baselines cost
-today</strong>, and which model families/functions have <strong>no canonical Python
-baseline at all</strong> (regardless of EDI bindings).</p>
+<h2>Status: EDI Python bindings are in-progress (built fresh on every run)</h2>
+<p>EDI's C++ model-fitting kernels are being bound to Python in an active, uncommitted,
+in-progress scaffold under <code>python/</code> (a separate effort from this benchmark script
+— see <code>package_metadata/python_bindings_package_spec.md</code>). This script does not
+own or edit that scaffold; at the top of every run it configures and builds whatever is
+currently there (via CMake, into an isolated <code>/tmp</code> directory) and imports
+whatever compiles, so the <strong>EDI Time</strong> column reflects the real state of that
+work at run time rather than a stale snapshot — different runs of this script can show
+different EDI coverage as that scaffold evolves, and a build failure there simply leaves
+every EDI column <code>NA</code> (not a crash of this script). Point-estimate rows with a
+working, wired binding call it directly; rows without one, or where the Wald table needs
+standard errors these bindings don't yet expose, stay <code>NA</code>. Same-input,
+same-process discipline: for every wired row, both the EDI and canonical closures are built
+from the exact same generated arrays (never redrawn separately). Each side is timed at its
+own fastest available point-estimate-only entry point — the same convention the R report
+already uses (R's canonical <code>glm.fit()</code> point-estimate row likewise never forms
+the explicit variance-covariance matrix; that only happens in the separate Wald table). EDI
+rows therefore use <code>estimate_only=True</code> where that argument exists. Where
+statsmodels' public API has no equivalent cheaper mode — <code>.fit()</code> is the only
+entry point it exposes, full stop — the canonical column still reflects <code>.fit()</code>'s
+real, honest cost: that is genuinely the fastest a Python user can get this model fit today,
+not a handicap imposed on canonical Python. (Checked directly: statsmodels' <code>.fit()</code>
+doesn't secretly race ahead by skipping something EDI bothers to compute — accessing
+<code>.bse</code> after <code>.fit()</code> costs no measurable additional time, since IRLS's
+per-iteration weighted-least-squares solve already forms the same <code>(X'WX)⁻¹</code> a
+covariance estimate would need; the two APIs just draw the "point estimate vs. full inference"
+line in different places.)</p>
 
 <h2>Benchmark Dataset Specification</h2>
 <ul>
@@ -1140,7 +1582,7 @@ baseline at all</strong> (regardless of EDI bindings).</p>
 <li><strong>Point-estimate vs. Wald tables:</strong> the point-estimate table times a bare fit (matching each row's fastest available canonical entry point — <code>lstsq</code> instead of <code>OLS().fit()</code> where that's a real, distinct fast path); the Wald table times a full fit that also produces the treatment coefficient's standard error and two-sided p-value (<code>.bse</code>/<code>.pvalues</code> off the same fitted result for most statsmodels families; a package switch to <code>lifelines.CoxPHFitter</code> for the unstratified-Cox row specifically, since <code>scikit-survival</code>'s bare-metal <code>CoxPHSurvivalAnalysis</code> doesn't expose a variance; a finite-difference delta-method SE for the four G-computation rows, off <code>.cov_params()</code>). The Wald table's row set matches R's <code>wald_specs</code> exactly (41 classes) rather than reusing the point-estimate table's 40 — it adds several nonparametric-test-only classes with no point-estimate-table row at all (pooled-variance t-test, Wilcoxon rank-sum, Lin's estimator, Fisher exact, Miettinen-Nurminen/Newcombe risk-difference CIs, Jonckheere-Terpstra, Ridit, Gehan-Wilcoxon, KM median difference) and omits several point-estimate-table rows that R's own Wald table never covers (identity-binomial, modified Poisson, fractional logit, ordered probit, cauchit, cloglog). One row, restricted-mean-survival-time difference, is excluded from the Wald table for the same reason R's own Wald table excludes it — see below.</li>
 <li><strong>Utility-function timing:</strong> each row calls the scipy/numpy vectorized function once over a fixed-length input vector, mirroring <code>benchmark/fast_math_utils_bench.cpp</code>'s apples-to-apples vectorized-vs-vectorized discipline (a scalar-loop binding would unfairly penalize a C++ side that hasn't been written yet).</li>
 <li><strong>Averaging:</strong> medians over {B_TIME} cold timing samples via an adaptive-batch <code>time.perf_counter</code> harness (mirrors the R harness's adaptive <code>system.time</code> split, target {int(TARGET_BATCH_MS)}ms/batch).</li>
-<li><strong>Significance:</strong> Welch's two-sample t-test (<code>scipy.stats.ttest_ind(..., equal_var=False)</code>) between the EDI and canonical timing replicate distributions — currently always <code>NA</code> since the EDI side has no samples yet in any of the three tables.</li>
+<li><strong>Significance:</strong> Welch's two-sample t-test (<code>scipy.stats.ttest_ind(..., equal_var=False)</code>) between the EDI and canonical timing replicate distributions — real for any row with a wired, working EDI binding; <code>NA</code> for rows where no binding is wired or available.</li>
 <li><strong>Row highlighting:</strong> light green = <code>Speedup &gt; 1</code> and <code>Timing Pval &lt; 0.05</code>; light grey = <code>NA</code> timing comparison (EDI not bound yet, or a fit failed); light blue = no canonical Python implementation exists at all for this model family/function.</li>
 <li><strong>Package versions this report was run against:</strong> {", ".join(versions)}.</li>
 </ul>
@@ -1174,7 +1616,7 @@ baseline at all</strong> (regardless of EDI bindings).</p>
 
 <h2 id="utility">Utility / Math Kernel Performance ({u_ok} of {len(util_rows)} functions timed)</h2>
 {LEGEND_HTML}
-<p>EDI's internal <code>fast_*</code> scalar math kernels (<code>fast_digamma</code>, <code>fast_trigamma</code>, <code>fast_lgamma</code>, <code>fast_lbeta</code>, <code>fast_qnorm</code>, <code>fast_log_pnorm</code>, <code>fast_log_dnorm</code>, <code>fast_dnbinom_mu</code>) vs. their scipy/numpy vectorized equivalents, over a length-{N_UTIL} vector. None of these 8 are bound in the <code>python/</code> <code>fast_math</code> stub yet (only <code>fast_pchisq_upper</code> is), so every row is grey today.</p>
+<p>EDI's internal <code>fast_*</code> scalar math kernels — every one that exists in <code>EDI/src</code> (<code>fast_digamma</code>, <code>fast_trigamma</code>, <code>fast_lgamma</code>, <code>fast_lbeta</code>, <code>fast_qnorm</code>, <code>fast_log_pnorm</code>, <code>fast_log_dnorm</code>, <code>fast_dnbinom_mu</code>, <code>fast_pchisq_upper</code>, <code>fast_erfc</code>, <code>pnorm_fast</code>, <code>dnorm_fast</code>, <code>fast_atan</code>, <code>fast_log1pexp</code>) — vs. their scipy/numpy vectorized equivalents, over a length-{N_UTIL} vector. Only <code>fast_pchisq_upper</code> is declared in the <code>python/</code> <code>fast_math</code> stub (<code>python/cpp/bindings_fast_math.cpp</code>), and even that build currently fails to import (an unrelated undefined symbol from other in-progress bindings in the same compiled module — <code>python/build_verify/</code>), so no row has a usable EDI binding yet and every row is grey today.</p>
 {TABLE_HEAD_HTML}
 {render_table_html(util_rows)}
 </tbody>

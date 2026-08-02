@@ -48,7 +48,10 @@ class names derived during initialization.}
 \if{html}{\out{<a id="method-InferenceSuite-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceSuite-initialize}{}}}
 \subsection{\code{InferenceSuite$new()}}{
-  Initialize an \code{InferenceSuite}.
+  Initialize an \code{\link[EDI:InferenceSuite]{InferenceSuite}}
+  wrapper that coordinates multiple inference objects for the same
+  completed design and exposes their estimates, p-values, and confidence
+  intervals through one object.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{InferenceSuite$new(des_obj, model_formula = NULL, inference_params = list())}

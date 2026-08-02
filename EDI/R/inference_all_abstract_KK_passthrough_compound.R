@@ -5,7 +5,10 @@
 #' An abstract R6 class that provides relevant methods when the designs are KK matching-on-the-fly.
 #'
 #' @keywords internal
-inference_kk_passthrough_compound_public = utils::modifyList(utils::modifyList(as.list(InferenceMixinKKPassThrough$public), as.list(InferenceMixinKKPassThroughCompound$public)), list(
+inference_kk_passthrough_compound_components = compose_inference_mixins(
+	target_name = "InferenceKKPassThroughCompound",
+	mixin_names = EDI_MIXIN_COMPOSITIONS$InferenceKKPassThroughCompound,
+	public = list(
 		#' @description Initialize
 		#' @param des_obj         A DesignSeqOneByOne object.
 		#' @param model_formula   Optional formula for covariate adjustment.
@@ -16,7 +19,8 @@ inference_kk_passthrough_compound_public = utils::modifyList(utils::modifyList(a
 			super$initialize(des_obj, verbose = verbose, harden = harden, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$init_kk_passthrough(des_obj)
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B  					Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         Whether to return diagnostics.
@@ -25,7 +29,8 @@ inference_kk_passthrough_compound_public = utils::modifyList(utils::modifyList(a
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
 		},
-		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @description Recomputes the class-specific treatment estimate under bootstrap weights; see
+		#'   \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}}.
 		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE) {
@@ -80,14 +85,14 @@ inference_kk_passthrough_compound_public = utils::modifyList(utils::modifyList(a
 			
 			as.numeric(w_star * d_bar_w + (1 - w_star) * r_bar_w)
 		}
-	))
-inference_kk_passthrough_compound_private = utils::modifyList(as.list(InferenceMixinKKPassThrough$private), as.list(InferenceMixinKKPassThroughCompound$private))
+	)
+)
 
 InferenceKKPassThroughCompound = R6::R6Class("InferenceKKPassThroughCompound",
 	lock_objects = FALSE,
 	inherit = InferenceParamBootstrap,
-	public = inference_kk_passthrough_compound_public,
-	private = c(inference_kk_passthrough_compound_private, list(
+	public = inference_kk_passthrough_compound_components$public,
+	private = c(inference_kk_passthrough_compound_components$private, list(
 		is_a_kk_passthrough_compound = function() TRUE
 	))
 )
@@ -103,8 +108,8 @@ InferenceKKPassThroughCompound = R6::R6Class("InferenceKKPassThroughCompound",
 InferenceKKPassThroughCompoundNoParamBootstrap = R6::R6Class("InferenceKKPassThroughCompoundNoParamBootstrap",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
-	public = inference_kk_passthrough_compound_public,
-	private = c(inference_kk_passthrough_compound_private, list(
+	public = inference_kk_passthrough_compound_components$public,
+	private = c(inference_kk_passthrough_compound_components$private, list(
 		is_a_kk_passthrough_compound_no_param_bootstrap = function() TRUE
 	))
 )

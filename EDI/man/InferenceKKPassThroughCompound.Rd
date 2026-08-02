@@ -40,8 +40,10 @@ An abstract R6 class that provides relevant methods when the designs are KK matc
 
 Initialize
 
-Creates the bootstrap distribution of the estimate for the treatment effect.
+Uses the shared nonparametric bootstrap distribution contract; see
+  \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 
-Computes the treatment effect estimate for a weighted bootstrap sample.
+Recomputes the class-specific treatment estimate under bootstrap weights; see
+  \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}}.
 }
 \keyword{internal}

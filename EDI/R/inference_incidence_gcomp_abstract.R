@@ -45,7 +45,8 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 			}
 			private$prob_clip_eps = prob_clip_eps
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B  					Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         Whether to return diagnostics.
@@ -98,7 +99,8 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 			private$shared(estimate_only = FALSE)
 			private$compute_effect_confidence_interval(alpha)
 		},
-		#' @description Computes a two-sided p-value for the treatment effect.
+		#' @description Uses the shared asymptotic two-sided p-value contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta The null treatment effect. Defaults to 0 for RD and 1 for RR.
 		compute_asymp_two_sided_pval = function(delta = NULL){
 			private$shared(estimate_only = FALSE)
@@ -110,7 +112,8 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 			private$shared(estimate_only = FALSE)
 			private$compute_effect_pvalue(delta)
 		},
-		#' @description Computes a Wald confidence interval.
+		#' @description Uses the shared Wald confidence-interval contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha The confidence level in the computed confidence interval is 1 - \code{alpha}.
 		compute_wald_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {

@@ -19,7 +19,9 @@ InferenceIncidKKGEE = R6::R6Class("InferenceIncidKKGEE",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = utils::modifyList(as.list(InferenceMixinKKGEEShared$public), list(
-		#' @description Initialize the inference object.
+		#' @description Initialize KK combined binary-response inference, validate the
+		#'   matched/reservoir design, and prepare the component models used by
+		#'   \code{\link[EDI:InferenceIncidKKGEE]{InferenceIncidKKGEE}}.
 		#' @param des_obj A completed \code{Design} object with an incidence response.
 		#' @param model_formula   Optional formula for covariate adjustment.
 		#' @param verbose Whether to print progress messages.
@@ -29,25 +31,31 @@ InferenceIncidKKGEE = R6::R6Class("InferenceIncidKKGEE",
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 			private$init_kk_gee_shared(des_obj, use_rcpp = use_rcpp, model_formula = model_formula)
 		},
-		#' @description Compute the treatment estimate.
+		#' @description Compute the KK combined binary-response treatment estimate by
+		#'   fitting the configured matched/reservoir incidence components and caching
+		#'   the effect for related \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}
+		#'   methods.
 		#' @param estimate_only Whether to skip standard-error calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared_gee_dispatch(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes an approximate confidence interval.
+		#' @description Uses the shared asymptotic confidence-interval contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			private$shared_gee_dispatch(estimate_only = FALSE)
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Computes an approximate two-sided p-value.
+		#' @description Uses the shared asymptotic two-sided p-value contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta Null treatment effect value.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			private$shared_gee_dispatch(estimate_only = FALSE)
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-		#' @description Computes the treatment effect estimate for a bootstrap sample.
+		#' @description Recomputes the class-specific treatment estimate for a bootstrap sample; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param subject_or_block_weights Row weights for the bootstrap sample.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
@@ -76,7 +84,8 @@ InferenceIncidKKGEE = R6::R6Class("InferenceIncidKKGEE",
 			private$cached_values$nonestimable_stage = if (is.finite(private$cached_values$beta_hat_T)) NULL else "estimate"
 			private$cached_values$beta_hat_T
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B  					Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         Whether to return diagnostics.
@@ -99,7 +108,9 @@ InferenceAbstractKKCondLogitPlusGLMMOneLik = R6::R6Class("InferenceAbstractKKCon
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKCondLogitPlusGLMM,
 	public = list(
-		#' @description Initialize
+		#' @description Initialize KK combined incidence likelihood inference and set
+		#'   up the conditional-logit / marginal model components used by related
+		#'   \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}} methods.
 		#' @param des_obj A completed \code{Design} object with an incidence response.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param max_abs_reasonable_coef Cap for reasonable coefficient estimates.

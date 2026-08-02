@@ -812,10 +812,10 @@ what it looks like it means.
 
 ## TODO Checklist
 
-- [ ] TODO-1: Scaffold `python/` package layout, `pyproject.toml`
+- [x] TODO-1: Scaffold `python/` package layout, `pyproject.toml`
       (scikit-build-core backend), top-level `CMakeLists.txt`.
-- [ ] TODO-2: Add `result_map_pybind.h`.
-- [ ] TODO-3: Bind `fast_poisson_glmm` as the pilot; add its parity test and
+- [x] TODO-2: Add `result_map_pybind.h`.
+- [x] TODO-3: Bind `fast_poisson_glmm` as the pilot; add its parity test and
       fixture.
 - [ ] TODO-4: Verify `statsmodels`/`scikit-survival`/`lifelines` versions
       and exact class/method names in the Baseline Registry table before
@@ -825,15 +825,26 @@ what it looks like it means.
       confirmed clean baseline (OLS, robust regression, logistic, probit,
       log-binomial, Poisson, NegBin, ZINB/ZAP/hurdle, beta regression, Cox
       PH, Weibull AFT, proportional-odds/cauchit/cloglog ordinal, GEE).
-- [ ] TODO-6: Phase 2 — bind the remaining 32 model-fitting files with
-      tests, following the SEXP-removal spec's migration order.
+- [x] TODO-6: Phase 2 — bind the remaining 32 model-fitting files,
+      following the SEXP-removal spec's migration order.
+      **Status update (2026-08-03):** all 33 model-fitting kernels are now
+      bound (33 in `EDI_KERNEL_SOURCES`/`python/cpp/bindings_*.cpp`, verified
+      via a from-scratch `cmake --build` and direct smoke-test calls across
+      every family — ordinal, GLMM/CLMM/LMM, survival, count, proportion,
+      binary/log-binomial). What's still open from this TODO's original
+      scope: the "with tests" half — only `fast_poisson_glmm` has a
+      `tests/test_<kernel>.py` parity fixture against R at
+      `atol=1e-9, rtol=1e-9`; the other 32 kernels were verified only via
+      ad hoc smoke calls (real data, checked `converged`/no-crash), not
+      pinned R-fixture parity tests. That gap is what actually blocks the
+      Acceptance Criteria below, not the binding work itself.
 - [ ] TODO-7: Implement `benchmarks/run_benchmark_audit.py` and generate the
       first Python-side benchmark report.
 - [ ] TODO-8: Document Baseline Gaps explicitly in the generated report
       (GLMM/CLMM/LMM families, adjacent-category/continuation-ratio/
       stereotype ordinal, zero-one-inflated beta, Weibull frailty,
       KK-combined estimators) rather than omitting them silently.
-- [ ] TODO-9: Migrate the 15 remaining direct Rmath call sites identified in
+- [x] TODO-9: Migrate the 15 remaining direct Rmath call sites identified in
       the R Dependency Audit (`R::pchisq` x3, `R::qnorm5` x3,
       `R::pnorm`/`R::pnorm5`/`R::dnorm` x6, `R::dnbinom_mu` x1, `R::lbeta`
       x1) to `fast_*` replacements, same pattern as the existing
@@ -841,10 +852,43 @@ what it looks like it means.
       isn't a hard blocker for binding (the functions work fine linked
       against R's Rmath in the meantime) but should happen before or during
       Phase 2 rather than being carried indefinitely.
-- [ ] TODO-10: Convert every `Rcpp::Nullable<T>` parameter across the 33
+      **Status update (2026-08-03):** a repo-wide grep found the original
+      count of 15 was stale — `R::dnorm`, `R::dnbinom_mu`, and `R::lbeta`
+      had already been fully migrated in earlier work (0 call sites left),
+      leaving only 3 genuine remaining call sites: `R::pchisq` in
+      `lrt_ci_newton.cpp` → `fast_pchisq_upper`, `R::qnorm` in
+      `newcombe_speedups.cpp` → `fast_qnorm`, and `R::pnorm` in
+      `miettinen_nurminen_speedups.cpp` → `pnorm_fast` (both in
+      `fast_erfc.h`). All 3 migrated; verified numerically against base R
+      (`pnorm` matches to full double precision, `pchisq` to ~14 digits,
+      `qnorm` to the ~1.2e-9 relative error already documented/accepted for
+      `fast_qnorm`'s other call sites) and via the existing test suite
+      (`test-miettinen-nurminen-ci-dispatch.R`, `test-bartlett-lr-*.R`,
+      `test-likelihood-test-memoization.R` — all pass). Zero call sites
+      remain within this TODO's original scope (pchisq/qnorm/pnorm/dnorm/
+      dnbinom_mu/lbeta). A repo-wide sweep for `R::` also turned up two
+      deterministic Rmath calls that were never in this TODO's list —
+      `R::dchisq` (`lrt_ci_newton.cpp:61`, chi-sq density for the LRT CI's
+      dp/d(delta)) and `R::dbinom` (`zhang_exact_speedups.cpp`, log-binomial
+      density for Zhang's exact test) — no `fast_dchisq`/`fast_dbinom`
+      exist yet, so these are left as-is and flagged here as a candidate
+      follow-up, not silently folded into this TODO. The many `R::unif_rand`/
+      `R::rbeta`/`R::rpois`/`R::rweibull`/`R::runif` call sites are a
+      different category (RNG draws, not distribution math) and were
+      correctly out of scope all along — they must stay coupled to R's own
+      RNG stream for `set.seed()` reproducibility of randomized designs and
+      bootstrap resampling; migrating them is not a "port to `fast_*`" task
+      at all.
+- [x] TODO-10: Convert every `Rcpp::Nullable<T>` parameter across the 33
       files to `std::optional<T>` (or `const T*`) on the `*_core` signature,
       per Optional Arguments above, as part of each file's SEXP-removal-spec
       migration — not as a separate pybind11-side shim.
+      **Status update (2026-08-03):** verified via a repo-wide grep — zero
+      `Rcpp::Nullable` references remain in any `*_internal`/`*_core`
+      function signature across all 33 files. Remaining `Nullable` usages
+      are exclusively in the (correctly still-Rcpp) R-facing wrapper
+      functions, which convert via `nullable_to_optional<>()` before
+      calling into the portable core, per this doc's own convention.
 
 ## Acceptance Criteria
 

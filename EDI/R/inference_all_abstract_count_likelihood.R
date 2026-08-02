@@ -7,13 +7,23 @@
 #'
 #' @keywords internal
 inference_count_likelihood_public = list(
-		#' @description Computes the treatment estimate using the underlying model.
+		#' @description Computes the treatment-effect estimate using the underlying
+		#'   count likelihood model. Concrete subclasses fit a Poisson, negative
+		#'   binomial, zero-inflated, hurdle, or combined likelihood model and cache
+		#'   the treatment coefficient for related
+		#'   \code{\link[EDI:InferenceCountLikelihood]{InferenceCountLikelihood}}
+		#'   p-value and confidence-interval methods.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes an asymptotic confidence interval using the configured test.
+		#' @description Computes an asymptotic confidence interval for the treatment
+		#'   effect using the configured count-likelihood test. Wald intervals use the
+		#'   fitted count-model coefficient and standard error; score,
+		#'   likelihood-ratio, gradient, and bootstrap-calibrated paths delegate to
+		#'   \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}} or
+		#'   \code{\link[EDI:InferenceParamBootstrap]{InferenceParamBootstrap}}.
 		#' @param alpha Significance level 1 - \code{alpha}. Default 0.05.
 		#' @return A confidence interval.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -26,7 +36,11 @@ inference_count_likelihood_public = list(
 			}
 			super$compute_asymp_confidence_interval(alpha)
 		},
-		#' @description Computes an asymptotic two-sided p-value using the configured test.
+		#' @description Computes an asymptotic two-sided p-value for the treatment
+		#'   effect using the configured count-likelihood test. Wald tests compare
+		#'   the fitted count-model treatment coefficient to \code{delta}; score,
+		#'   likelihood-ratio, and gradient tests evaluate the corresponding
+		#'   null-restricted likelihood statistic.
 		#' @param delta Null treatment effect to test against. Default 0.
 		#' @return The asymptotic p-value.
 		compute_asymp_two_sided_pval = function(delta = 0){

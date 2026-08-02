@@ -5,7 +5,11 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKMarginalIncid,
 	public = list(
-		#' @description Compute treatment estimate
+		#' @description Compute the KK marginal incidence treatment-effect estimate
+		#'   using the class-specific marginal risk-difference or risk-ratio
+		#'   estimator and cache it for related
+		#'   \code{\link[EDI:InferenceAbstractKKMarginalIncid]{InferenceAbstractKKMarginalIncid}}
+		#'   methods.
 		#' @param estimate_only Logical. If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
@@ -50,7 +54,9 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 			private$cached_values$s_beta_hat_T = NA_real_
 			private$cached_values$beta_hat_T
 		},
-		#' @description Compute asymp confidence interval
+		#' @description Compute the KK marginal incidence asymptotic confidence
+		#'   interval using the cached marginal effect and design-aware standard
+		#'   error. See \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha Numeric. Significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -62,7 +68,9 @@ InferenceAbstractKKModifiedPoisson = R6::R6Class("InferenceAbstractKKModifiedPoi
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Compute asymp two sided pval for treatment effect
+		#' @description Compute the KK marginal incidence asymptotic two-sided
+		#'   p-value using the cached marginal effect and design-aware standard
+		#'   error. See \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta Numeric. Null treatment effect value (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {

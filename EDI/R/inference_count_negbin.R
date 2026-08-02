@@ -38,7 +38,8 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @description Recomputes the class-specific treatment estimate under bootstrap weights; see
+		#'   \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}}.
 		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
@@ -131,26 +132,34 @@ InferenceCountNegBin = R6::R6Class("InferenceCountNegBin",
 			private$cache_nonestimable_se("negbin_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Non-estimable jackknife bias estimate.
+		#' @description Report that the jackknife bias estimate is unavailable for
+		#'   negative-binomial fits when delete-one refits are not stable; see
+		#'   \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} for the shared
+		#'   jackknife contract.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_bias_estimate = function(unit = "auto"){
 			private$cache_nonestimable_se("negbin_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Non-estimable jackknife standard error.
+		#' @description Report that the jackknife standard error is unavailable for
+		#'   negative-binomial fits when delete-one refits are not stable; see
+		#'   \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} for the shared
+		#'   jackknife contract.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_std_error = function(unit = "auto"){
 			private$cache_nonestimable_se("negbin_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Non-estimable jackknife Wald two-sided p-value.
+		#' @description Reports that jackknife-Wald p-values are unavailable here; see
+		#'   \code{\link[EDI:InferenceJackknife]{InferenceJackknife}}.
 		#' @param delta Null treatment-effect value. Default 0.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_wald_two_sided_pval = function(delta = 0, unit = "auto"){
 			private$cache_nonestimable_se("negbin_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Non-estimable jackknife Wald confidence interval.
+		#' @description Reports that jackknife-Wald intervals are unavailable here; see
+		#'   \code{\link[EDI:InferenceJackknife]{InferenceJackknife}}.
 		#' @param alpha Significance level. Default 0.05.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_wald_confidence_interval = function(alpha = 0.05, unit = "auto"){

@@ -12,7 +12,10 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 	inherit = InferenceCountLikelihood,
 	public = list(
 				
-		#' @description Initialize
+		#' @description Initialize zero-augmented count-likelihood inference, prepare
+		#'   the conditional count and zero/hurdle auxiliary model formulas, and set
+		#'   up the shared \code{\link[EDI:InferenceCountLikelihood]{InferenceCountLikelihood}}
+		#'   likelihood-test machinery.
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -52,7 +55,10 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			private$use_rcpp = use_rcpp
 			private$model_formula_zero = model_formula_zero
 		},
-		#' @description Compute asymp confidence interval
+		#' @description Compute the zero-augmented count-model asymptotic confidence
+		#'   interval for the conditional treatment coefficient, with bootstrap
+		#'   fallback when a stable model standard error is unavailable. See
+		#'   \code{\link[EDI:InferenceCountLikelihood]{InferenceCountLikelihood}}.
 		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -72,7 +78,10 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Compute asymp two sided pval for treatment effect
+		#' @description Compute the zero-augmented count-model asymptotic two-sided
+		#'   p-value for the conditional treatment coefficient, with bootstrap
+		#'   fallback when a stable model standard error is unavailable. See
+		#'   \code{\link[EDI:InferenceCountLikelihood]{InferenceCountLikelihood}}.
 		#' @param delta The null treatment effect (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -90,7 +99,8 @@ InferenceCountZeroAugmentedPoissonAbstract = R6::R6Class("InferenceCountZeroAugm
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-		#' @description Computes the treatment effect estimate for a weighted bootstrap sample.
+		#' @description Recomputes the class-specific treatment estimate under bootstrap weights; see
+		#'   \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}}.
 		#' @param subject_or_block_weights Bootstrap weights at the subject or block level.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){

@@ -108,7 +108,32 @@ struct ModelResult {
 };
 
 // Pure C++ internal helpers
-double compute_diagonal_inverse_entry(const Eigen::Ref<const Eigen::MatrixXd>& M, int j);
+inline double compute_diagonal_inverse_entry(const Eigen::Ref<const Eigen::MatrixXd>& M, int j) {
+    Eigen::VectorXd b = Eigen::VectorXd::Unit(M.rows(), j - 1);
+
+    // Prefer a direct LDLT decomposition for well-behaved symmetric systems.
+    Eigen::LDLT<Eigen::MatrixXd> ldlt(M);
+
+    if (ldlt.info() == Eigen::Success) {
+        Eigen::VectorXd x = ldlt.solve(b);
+        if (x.allFinite()) {
+            return x(j - 1);
+        }
+    }
+
+    // Fall back to a rank-revealing solve for near-singular or indefinite systems.
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(M);
+    if (qr.rank() == 0) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+
+    Eigen::VectorXd x = qr.solve(b);
+    if (!x.allFinite()) {
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+
+    return x(j - 1);
+}
 
 struct WeibullStart {
     Eigen::VectorXd beta;

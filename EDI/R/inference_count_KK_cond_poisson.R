@@ -55,7 +55,11 @@ InferenceCountKKHurdlePoissonIVWC = R6::R6Class("InferenceCountKKHurdlePoissonIV
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
-		#' @description Initialize
+		#' @description Initialize KK hurdle-Poisson IVWC inference for count
+		#'   responses, validate the matched/reservoir structure, and prepare the
+		#'   component likelihood fits. See
+		#'   \code{\link[EDI:InferenceCountLikelihood]{InferenceCountLikelihood}}
+		#'   for shared count-likelihood inference methods.
 		#' @param des_obj A completed \code{Design} object with count responses.
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use our internal Rcpp
 		#'   implementations where available. If \code{FALSE}, use \pkg{glmmTMB} for
@@ -93,14 +97,19 @@ InferenceCountKKHurdlePoissonIVWC = R6::R6Class("InferenceCountKKHurdlePoissonIV
 				}
 			}
 		},
-		#' @description Compute treatment estimate
+		#' @description Compute the IVWC hurdle-Poisson treatment-effect estimate by
+		#'   fitting matched-pair and reservoir count models and combining their
+		#'   log-rate treatment coefficients.
 		#' @param estimate_only If \code{TRUE}, skip standard-error calculations.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Compute asymp confidence interval
+		#' @description Compute the IVWC hurdle-Poisson asymptotic confidence interval
+		#'   from the combined treatment estimate and standard error; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}} for the shared Wald
+		#'   interval semantics.
 		#' @param alpha Confidence level.
 		#' @param alpha The significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -113,7 +122,10 @@ InferenceCountKKHurdlePoissonIVWC = R6::R6Class("InferenceCountKKHurdlePoissonIV
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Compute asymp two sided pval for treatment effect
+		#' @description Compute the IVWC hurdle-Poisson asymptotic two-sided p-value
+		#'   from the combined treatment estimate and standard error; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}} for the shared Wald
+		#'   p-value semantics.
 		#' @param delta The null treatment effect (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -132,14 +144,16 @@ InferenceCountKKHurdlePoissonIVWC = R6::R6Class("InferenceCountKKHurdlePoissonIV
 				NA_real_
 			}
 		},
-		#' @description Computes the treatment effect estimate for a bootstrap sample.
+		#' @description Recomputes the class-specific treatment estimate for a bootstrap sample; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param subject_or_block_weights Row weights for the bootstrap sample.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
 			private$shared_combined_bootstrap(subject_or_block_weights, estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B Integer. Number of bootstrap samples (default 501).
 		#' @param show_progress Logical. Whether to show a progress bar.
 		#' @param debug Logical. Whether to return diagnostics.
@@ -420,7 +434,11 @@ InferenceCountKKHurdlePoissonOneLik = R6::R6Class("InferenceCountKKHurdlePoisson
 	lock_objects = FALSE,
 	inherit = InferenceParamBootstrap,
 	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
-		#' @description Initialize
+		#' @description Initialize KK hurdle-Poisson one-likelihood inference for
+		#'   count responses and prepare the combined matched/reservoir likelihood.
+		#'   See \code{\link[EDI:InferenceCountKKHurdlePoissonOneLik]{InferenceCountKKHurdlePoissonOneLik}}
+		#'   and \code{\link[EDI:InferenceParamBootstrap]{InferenceParamBootstrap}}
+		#'   for related likelihood and bootstrap methods.
 		#' @param des_obj A completed \code{Design} object with count responses.
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use our internal Rcpp
 		#'   implementations where available. If \code{FALSE}, use \pkg{glmmTMB}.
@@ -452,7 +470,9 @@ InferenceCountKKHurdlePoissonOneLik = R6::R6Class("InferenceCountKKHurdlePoisson
 				private$compute_basic_match_data()
 			}
 		},
-		#' @description Compute treatment estimate
+		#' @description Compute the one-likelihood hurdle-Poisson treatment-effect
+		#'   estimate by fitting the combined count likelihood and caching the
+		#'   treatment log-rate coefficient for related p-value and interval methods.
 		#' @param estimate_only If \code{TRUE}, skip standard-error calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_hurdle(estimate_only = estimate_only)
@@ -468,7 +488,10 @@ InferenceCountKKHurdlePoissonOneLik = R6::R6Class("InferenceCountKKHurdlePoisson
 			row_weights = as.numeric(private$expand_subject_or_block_weights_to_row_weights(subject_or_block_weights))
 			private$compute_weighted_combined_hurdle_estimate(row_weights, estimate_only = estimate_only)
 		},
-		#' @description Compute asymp confidence interval
+		#' @description Compute the configured asymptotic confidence interval for the
+		#'   one-likelihood hurdle-Poisson treatment coefficient, delegating to Wald,
+		#'   score, likelihood-ratio, or gradient paths as documented in
+		#'   \code{\link[EDI:InferenceCountLikelihood]{InferenceCountLikelihood}}.
 		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			switch(
@@ -530,7 +553,10 @@ InferenceCountKKHurdlePoissonOneLik = R6::R6Class("InferenceCountKKHurdlePoisson
 			if (all(is.finite(ci_design[1:2]))) private$clear_nonestimable_state()
 			.conservative_kk_onelik_ci(ci_model, ci_design, alpha)
 		},
-		#' @description Compute asymp two sided pval
+		#' @description Compute the configured asymptotic two-sided p-value for the
+		#'   one-likelihood hurdle-Poisson treatment coefficient, delegating to Wald,
+		#'   score, likelihood-ratio, or gradient paths as documented in
+		#'   \code{\link[EDI:InferenceCountLikelihood]{InferenceCountLikelihood}}.
 		#' @param delta Null treatment effect value.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			switch(
@@ -592,7 +618,10 @@ InferenceCountKKHurdlePoissonOneLik = R6::R6Class("InferenceCountKKHurdlePoisson
 			if (is.finite(p_design)) private$clear_nonestimable_state()
 			.conservative_kk_onelik_pval(p_model, p_design)
 		},
-		#' @description Compute asymp confidence interval
+		#' @description Compute the Wald confidence interval for the one-likelihood
+		#'   hurdle-Poisson treatment coefficient, falling back to bootstrap when the
+		#'   model standard error is unavailable. See
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha Confidence level.
 		compute_wald_confidence_interval = function(alpha = 0.05){
 			private$shared_combined_hurdle()
@@ -610,7 +639,8 @@ InferenceCountKKHurdlePoissonOneLik = R6::R6Class("InferenceCountKKHurdlePoisson
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B Integer. Number of bootstrap samples (default 501).
 		#' @param show_progress Logical. Whether to show a progress bar.
 		#' @param debug Logical. Whether to return diagnostics.
@@ -618,11 +648,7 @@ InferenceCountKKHurdlePoissonOneLik = R6::R6Class("InferenceCountKKHurdlePoisson
 		#' @return A numeric vector of bootstrap estimates.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
-		},
-		#' @description Whether likelihood-ratio parametric bootstrap is supported.
-		#'
-		#' @return \code{TRUE}.
-		supports_lik_ratio_param_bootstrap = function() TRUE
+		}
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		m = NULL,
@@ -630,6 +656,9 @@ InferenceCountKKHurdlePoissonOneLik = R6::R6Class("InferenceCountKKHurdlePoisson
 		use_rcpp = TRUE,
 		max_abs_reasonable_coef = 1e4,
 		supports_likelihood_tests = function(){
+			TRUE
+		},
+		supports_lik_ratio_param_bootstrap = function(){
 			TRUE
 		},
 		get_supported_testing_types_impl = function(){
@@ -1185,7 +1214,9 @@ InferenceCountKKCondPoissonOneLik = R6::R6Class("InferenceCountKKCondPoissonOneL
 	lock_objects = FALSE,
 	inherit = InferenceParamBootstrap,
 	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
-		#' @description Initialize
+		#' @description Initialize conditional-Poisson one-likelihood inference for
+		#'   KK count designs and prepare the combined likelihood used by
+		#'   \code{\link[EDI:InferenceCountKKCondPoissonOneLik]{InferenceCountKKCondPoissonOneLik}}.
 		#' @param des_obj A completed \code{Design} object with count responses.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param verbose A flag indicating whether messages should be displayed.
@@ -1200,7 +1231,9 @@ InferenceCountKKCondPoissonOneLik = R6::R6Class("InferenceCountKKCondPoissonOneL
 			}
 			private$init_kk_passthrough(des_obj)
 		},
-		#' @description Compute the treatment estimate.
+		#' @description Compute the conditional-Poisson one-likelihood treatment
+		#'   estimate by fitting the combined matched/reservoir likelihood and caching
+		#'   the treatment log-rate coefficient for related likelihood-test methods.
 		#' @param estimate_only Whether to skip standard-error calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared_combined_cpoisson(estimate_only = estimate_only)
@@ -1226,7 +1259,8 @@ InferenceCountKKCondPoissonOneLik = R6::R6Class("InferenceCountKKCondPoissonOneL
 			private$cached_values$s_beta_hat_T = NA_real_
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes an approximate confidence interval.
+		#' @description Uses the shared asymptotic confidence-interval contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha Numeric. Significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			switch(
@@ -1237,7 +1271,8 @@ InferenceCountKKCondPoissonOneLik = R6::R6Class("InferenceCountKKCondPoissonOneL
 				gradient = self$compute_gradient_confidence_interval(alpha = alpha)
 			)
 		},
-		#' @description Computes an approximate two-sided p-value.
+		#' @description Uses the shared asymptotic two-sided p-value contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta Numeric. Null treatment effect value (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			switch(
@@ -1248,7 +1283,8 @@ InferenceCountKKCondPoissonOneLik = R6::R6Class("InferenceCountKKCondPoissonOneL
 				gradient = self$compute_gradient_two_sided_pval(delta = delta)
 			)
 		},
-		#' @description Computes a Wald confidence interval.
+		#' @description Uses the shared Wald confidence-interval contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha Numeric. Significance level (default 0.05).
 		compute_wald_confidence_interval = function(alpha = 0.05){
 			private$shared_combined_cpoisson(estimate_only = FALSE)
@@ -1350,7 +1386,8 @@ InferenceCountKKCondPoissonOneLik = R6::R6Class("InferenceCountKKCondPoissonOneL
 			if (is.finite(p_design)) private$clear_nonestimable_state()
 			.conservative_kk_onelik_pval(p_model, p_design)
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B Integer. Number of bootstrap samples (default 501).
 		#' @param show_progress Logical. Whether to show a progress bar.
 		#' @param debug Logical. Whether to return diagnostics.
@@ -1358,15 +1395,14 @@ InferenceCountKKCondPoissonOneLik = R6::R6Class("InferenceCountKKCondPoissonOneL
 		#' @return A numeric vector of bootstrap estimates.
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
-		},
-		#' @description Whether likelihood-ratio parametric bootstrap is supported.
-		#'
-		#' @return \code{TRUE}.
-		supports_lik_ratio_param_bootstrap = function() TRUE
+		}
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
 		cached_mod = NULL,
 		max_abs_reasonable_coef = 1e4,
+		supports_lik_ratio_param_bootstrap = function(){
+			TRUE
+		},
 		get_supported_testing_types_impl = function(){
 			c("wald", "score", "gradient", "lik_ratio")
 		},
@@ -1521,9 +1557,10 @@ InferenceCountKKCondPoissonOneLik = R6::R6Class("InferenceCountKKCondPoissonOneL
 				yT_v = as.numeric(yT_v),
 				n_k_v = as.numeric(n_k_v),
 				X_diff_v = as.matrix(X_diff_v),
-				y_r_v = as.numeric(y_r_v),
-				w_r_v = as.numeric(w_r_v),
-				X_r_v = as.matrix(X_r_v)
+				y_r = as.numeric(y_r_v),
+				w_r = as.numeric(w_r_v),
+				X_r = as.matrix(X_r_v),
+				j_treat = 2L
 			)
 			private$cached_values$beta_hat_T = as.numeric(mod$b[2L])
 			if (!estimate_only) private$cached_values$s_beta_hat_T = sqrt(as.numeric(mod$ssq_b_j))

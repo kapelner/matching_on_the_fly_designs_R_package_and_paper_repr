@@ -36,11 +36,25 @@ Intermediate base class for count-based likelihood families
 (Poisson, Negative Binomial, Zero-Inflated, Hurdle). This class centralizes
 count-specific parameter packing, warm starts, and likelihood dispatch.
 
-Computes the treatment estimate using the underlying model.
+Computes the treatment-effect estimate using the underlying
+  count likelihood model. Concrete subclasses fit a Poisson, negative
+  binomial, zero-inflated, hurdle, or combined likelihood model and cache
+  the treatment coefficient for related
+  \code{\link[EDI:InferenceCountLikelihood]{InferenceCountLikelihood}}
+  p-value and confidence-interval methods.
 
-Computes an asymptotic confidence interval using the configured test.
+Computes an asymptotic confidence interval for the treatment
+  effect using the configured count-likelihood test. Wald intervals use the
+  fitted count-model coefficient and standard error; score,
+  likelihood-ratio, gradient, and bootstrap-calibrated paths delegate to
+  \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}} or
+  \code{\link[EDI:InferenceParamBootstrap]{InferenceParamBootstrap}}.
 
-Computes an asymptotic two-sided p-value using the configured test.
+Computes an asymptotic two-sided p-value for the treatment
+  effect using the configured count-likelihood test. Wald tests compare
+  the fitted count-model treatment coefficient to \code{delta}; score,
+  likelihood-ratio, and gradient tests evaluate the corresponding
+  null-restricted likelihood statistic.
 
 Computes the Wald two-sided p-value regardless of configured testing type.
 

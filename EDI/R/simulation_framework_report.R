@@ -31,7 +31,10 @@
 SimulationFrameworkReport = R6::R6Class("SimulationFrameworkReport",
   lock_objects = FALSE,
   public = list(
-    #' @description Create a new \code{SimulationFrameworkReport}.
+    #' @description Create a new
+    #'   \code{\link[EDI:SimulationFrameworkReport]{SimulationFrameworkReport}}
+    #'   object that stores simulation results, captured errors, and summary
+    #'   helpers returned by \code{\link[EDI:SimulationFramework]{SimulationFramework}}.
     #'
     #' @param sim_or_filename Either a completed \code{SimulationFramework} object
     #'   or a character string giving the path to a \code{.csv} or \code{.csv.bz2}

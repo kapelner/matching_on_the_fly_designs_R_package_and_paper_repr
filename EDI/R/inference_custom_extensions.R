@@ -29,13 +29,19 @@ InferenceCustomAsymp = R6::R6Class("InferenceCustomAsymp",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-		#' @description User-defined fit method.
+		#' @description Calls the user-defined fit callback for this custom inference path; see
+		#'   \code{\link[EDI:InferenceCustomAsymp]{InferenceCustomAsymp}}.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		#' @return A list with fit results.
 		fit = function(estimate_only = FALSE){
 			stop("Custom inference subclasses must implement public$fit(estimate_only = FALSE).")
 		},
-		#' @description Compute the treatment estimate.
+		#' @description Compute the treatment-effect estimate by delegating to the
+		#'   user-supplied custom estimator. See
+		#'   \code{\link[EDI:InferenceCustomRand]{InferenceCustomRand}},
+		#'   \code{\link[EDI:InferenceCustomAsymp]{InferenceCustomAsymp}}, and
+		#'   \code{\link[EDI:InferenceCustomBoot]{InferenceCustomBoot}} for related
+		#'   extension classes.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		#' @return The treatment estimate.
 		compute_estimate = function(estimate_only = FALSE){
@@ -120,13 +126,17 @@ InferenceCustomRand = R6::R6Class("InferenceCustomRand",
 	lock_objects = FALSE,
 	inherit = InferenceRand,
 	public = list(
-		#' @description User-defined fit method.
+		#' @description Calls the user-defined fit callback for this custom inference path; see
+		#'   \code{\link[EDI:InferenceCustomAsymp]{InferenceCustomAsymp}}.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		#' @return A list with fit results.
 		fit = function(estimate_only = FALSE){
 			stop("Custom inference subclasses must implement public$fit(estimate_only = FALSE).")
 		},
-		#' @description Compute the treatment estimate.
+		#' @description Compute the treatment-effect estimate by delegating to the
+		#'   user-supplied custom bootstrap estimator. See
+		#'   \code{\link[EDI:InferenceCustomBoot]{InferenceCustomBoot}} and
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		#' @return The treatment estimate.
 		compute_estimate = function(estimate_only = FALSE){
@@ -158,13 +168,17 @@ InferenceCustomBoot = R6::R6Class("InferenceCustomBoot",
 	lock_objects = FALSE,
 	inherit = InferenceJackknife,
 	public = list(
-		#' @description User-defined fit method.
+		#' @description Calls the user-defined fit callback for this custom inference path; see
+		#'   \code{\link[EDI:InferenceCustomAsymp]{InferenceCustomAsymp}}.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		#' @return A list with fit results.
 		fit = function(estimate_only = FALSE){
 			stop("Custom inference subclasses must implement public$fit(estimate_only = FALSE).")
 		},
-		#' @description Compute the treatment estimate.
+		#' @description Compute the treatment-effect estimate by delegating to the
+		#'   user-supplied custom asymptotic estimator. See
+		#'   \code{\link[EDI:InferenceCustomAsymp]{InferenceCustomAsymp}} and
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		#' @return The treatment estimate.
 		compute_estimate = function(estimate_only = FALSE){

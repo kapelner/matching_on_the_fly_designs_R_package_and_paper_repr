@@ -1,36 +1,11 @@
 #include "_helper_functions.h"
+
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
 
 
 //typedef Eigen::Map<Eigen::MatrixXd> MapMat;
 //typedef Eigen::Map<Eigen::VectorXd> MapVec;
-
-double compute_diagonal_inverse_entry(const Eigen::Ref<const Eigen::MatrixXd>& M, int j) {
-	Eigen::VectorXd b = Eigen::VectorXd::Unit(M.rows(), j - 1);
-
-	// Prefer a direct LDLT decomposition for well-behaved symmetric systems.
-	Eigen::LDLT<Eigen::MatrixXd> ldlt(M);
-
-	if (ldlt.info() == Eigen::Success) {
-		Eigen::VectorXd x = ldlt.solve(b);
-		if (x.allFinite()) {
-			return x(j - 1);
-		}
-	}
-
-	// Fall back to a rank-revealing solve for near-singular or indefinite systems.
-	Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(M);
-	if (qr.rank() == 0) {
-		return NA_REAL;
-	}
-
-	Eigen::VectorXd x = qr.solve(b);
-	if (!x.allFinite()) {
-		return NA_REAL;
-	}
-
-	return x(j - 1);
-}
 
 // [[Rcpp::export]]
 Eigen::MatrixXd eigen_Xt_times_X_cpp(SEXP X_sexp) {
@@ -102,3 +77,4 @@ double var_cpp(SEXP x_sexp) {
 	}
 	return (x.array() - x.mean()).square().sum() / (x.size() - 1);
 }
+#endif // EDI_CORE_ONLY

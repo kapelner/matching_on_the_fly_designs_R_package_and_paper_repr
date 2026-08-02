@@ -1,6 +1,19 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#include "result_map.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
+#include <RcppEigen.h>
+#endif
+#include <optional>
+#include <string>
+#include <limits>
+#include <stdexcept>
+
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 using namespace Eigen;
 
 namespace {
@@ -46,7 +59,16 @@ inline Eigen::ArrayXd log1pexp_array(const Eigen::ArrayXd& eta) {
 // At convergence H = observed information; vcov = H^{-1}; ssq_b_j = H^{-1}[1,1].
 //
 
-static List cpoisson_combined_score_info_cpp_impl(
+// Plain struct (not edi::ResultMap) since this is only ever consumed within
+// this same translation unit -- see result_map.h's comment on when a plain
+// struct is preferable to ResultMap for internal (non-R/Python-boundary)
+// helper return values.
+struct ScoreInfoResult {
+	VectorXd score;
+	MatrixXd info;
+};
+
+static ScoreInfoResult cpoisson_combined_score_info_cpp_impl(
 	const Eigen::Ref<const Eigen::VectorXd>& yT_v,
 	const Eigen::Ref<const Eigen::VectorXd>& n_k_v,
 	const Eigen::Ref<const Eigen::MatrixXd>& X_diff_v,
@@ -108,7 +130,7 @@ static List cpoisson_combined_score_info_cpp_impl(
 		info.block(2, 2, p, p).noalias() += weighted_crossprod(X_r, mu_r);
 	}
 
-	return List::create(Named("score") = score, Named("info") = info);
+	return ScoreInfoResult{score, info};
 }
 
 static double cpoisson_combined_neg_loglik_cpp_impl(
@@ -154,6 +176,7 @@ static double cpoisson_combined_neg_loglik_cpp_impl(
 //' @return A numeric vector representing the score.
 //' @export
 //' @keywords internal
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 SEXP get_cpoisson_combined_score_cpp(
 	const NumericVector& yT_v_r,
@@ -172,8 +195,8 @@ SEXP get_cpoisson_combined_score_cpp(
 	Eigen::Map<const Eigen::MatrixXd> X_r(X_r_r.begin(), X_r_r.rows(), X_r_r.cols());
 	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
 
-	List out = cpoisson_combined_score_info_cpp_impl(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params);
-	return wrap(Rcpp::as<Eigen::VectorXd>(out["score"]));
+	ScoreInfoResult out = cpoisson_combined_score_info_cpp_impl(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params);
+	return wrap(out.score);
 }
 
 //' @title Compute Combined Conditional-Poisson Hessian
@@ -206,10 +229,10 @@ SEXP get_cpoisson_combined_hessian_cpp(
 	Eigen::Map<const Eigen::MatrixXd> X_r(X_r_r.begin(), X_r_r.rows(), X_r_r.cols());
 	Eigen::Map<const Eigen::VectorXd> params(params_r.begin(), params_r.size());
 
-	List out = cpoisson_combined_score_info_cpp_impl(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params);
-	MatrixXd info = Rcpp::as<Eigen::MatrixXd>(out["info"]);
-	return wrap(-info);
+	ScoreInfoResult out = cpoisson_combined_score_info_cpp_impl(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params);
+	return wrap(-out.info);
 }
+#endif // EDI_CORE_ONLY
 
 //' @title Fast Combined Conditional-Poisson Regression (C++)
 //' @description High-performance fitting of a model combining conditional Poisson (for matched pairs) and marginal Poisson (for reservoir subjects).
@@ -226,30 +249,22 @@ SEXP get_cpoisson_combined_hessian_cpp(
 //' @return A list containing coefficients, variance estimates, and likelihood statistics.
 //' @export
 //' @keywords internal
-// [[Rcpp::export]]
-SEXP fast_cpoisson_combined_with_var_cpp(
-	const NumericVector& yT_v_r,       // treated count per valid pair (nd)
-	const NumericVector& n_k_v_r,      // total count per valid pair (nd)
-	const NumericMatrix& X_diff_v_r,   // covariate diffs (nd x p; p=0 valid)
-	const NumericVector& y_r_r,        // reservoir outcomes (nR)
-	const NumericVector& w_r_r,        // reservoir treatment indicator (nR)
-	const NumericMatrix& X_r_r,        // reservoir covariates (nR x p)
+edi::ResultMap fast_cpoisson_combined_internal(
+	const Eigen::Ref<const Eigen::VectorXd>& yT_v,       // treated count per valid pair (nd)
+	const Eigen::Ref<const Eigen::VectorXd>& n_k_v,      // total count per valid pair (nd)
+	const Eigen::Ref<const Eigen::MatrixXd>& X_diff_v,   // covariate diffs (nd x p; p=0 valid)
+	const Eigen::Ref<const Eigen::VectorXd>& y_r,        // reservoir outcomes (nR)
+	const Eigen::Ref<const Eigen::VectorXd>& w_r,        // reservoir treatment indicator (nR)
+	const Eigen::Ref<const Eigen::MatrixXd>& X_r,        // reservoir covariates (nR x p)
 	int    maxit = 100,
 	double tol   = 1e-8,
-	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
-	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
-	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
-	Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
-	Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
+	std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+	std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+	std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt,
+	std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+	std::optional<Eigen::VectorXd> warm_start_beta = std::nullopt,
 	bool estimate_only = false
 ) {
-	Eigen::Map<const Eigen::VectorXd> yT_v(yT_v_r.begin(), yT_v_r.size());
-	Eigen::Map<const Eigen::VectorXd> n_k_v(n_k_v_r.begin(), n_k_v_r.size());
-	Eigen::Map<const Eigen::MatrixXd> X_diff_v(X_diff_v_r.begin(), X_diff_v_r.rows(), X_diff_v_r.cols());
-	Eigen::Map<const Eigen::VectorXd> y_r(y_r_r.begin(), y_r_r.size());
-	Eigen::Map<const Eigen::VectorXd> w_r(w_r_r.begin(), w_r_r.size());
-	Eigen::Map<const Eigen::MatrixXd> X_r(X_r_r.begin(), X_r_r.rows(), X_r_r.cols());
-
 	const int nd = (int)yT_v.size();
 	const int nR = (int)y_r.size();
 	const int p  = (int)X_diff_v.cols();
@@ -258,13 +273,11 @@ SEXP fast_cpoisson_combined_with_var_cpp(
 	// ---- Initialise params -----------------------------------------------
 	VectorXd params = VectorXd::Zero(np);
 
-	auto warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
-	auto warm_start_beta_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_beta);
-	if (warm_start_params_opt.has_value()) {
-		params = *warm_start_params_opt;
-		if (params.size() != np) stop("warm_start_params size mismatch");
-	} else if (warm_start_beta_opt.has_value()) {
-		VectorXd sb = *warm_start_beta_opt;
+	if (warm_start_params.has_value()) {
+		params = *warm_start_params;
+		if (params.size() != np) throw std::invalid_argument("warm_start_params size mismatch");
+	} else if (warm_start_beta.has_value()) {
+		VectorXd sb = *warm_start_beta;
 		if (sb.size() == np) {
 			params = sb;
 		} else if (sb.size() == p + 1) {
@@ -275,10 +288,7 @@ SEXP fast_cpoisson_combined_with_var_cpp(
 		if (nR > 0) params[0] = std::log(std::max(1.0, y_r.mean()));
 	}
 
-	FixedParamSpec fixed_spec = make_fixed_param_spec(
-		np,
-		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
-		nullable_to_optional<Eigen::VectorXd>(fixed_values));
+	FixedParamSpec fixed_spec = make_fixed_param_spec(np, fixed_idx, fixed_values);
 	for (int k = 0; k < (int)fixed_spec.fixed_idx.size(); ++k) {
 		params[fixed_spec.fixed_idx[k]] = fixed_spec.fixed_values[k];
 	}
@@ -286,7 +296,6 @@ SEXP fast_cpoisson_combined_with_var_cpp(
 	VectorXd grad(np);
 	MatrixXd H(np, np);
 	bool converged = false;
-	auto warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
 
 	for (int iter = 0; iter < maxit; ++iter) {
 		const double  beta_0  = params[0];
@@ -296,9 +305,9 @@ SEXP fast_cpoisson_combined_with_var_cpp(
 		grad.setZero();
 		H.setZero();
 
-        if (iter == 0 && warm_start_fisher_info_opt.has_value()) {
-            H = *warm_start_fisher_info_opt;
-            if (H.rows() != np || H.cols() != np) Rcpp::stop("warm_start_fisher_info must be a (p+2) x (p+2) matrix");
+        if (iter == 0 && warm_start_fisher_info.has_value()) {
+            H = *warm_start_fisher_info;
+            if (H.rows() != np || H.cols() != np) throw std::invalid_argument("warm_start_fisher_info must be a (p+2) x (p+2) matrix");
             
             // Still need to compute gradient
             VectorXd eta_p = VectorXd::Constant(nd, beta_T);
@@ -395,25 +404,25 @@ SEXP fast_cpoisson_combined_with_var_cpp(
 	}
 
 	if (estimate_only) {
-		return edi::to_rcpp_list(edi::ResultMap()
+		return edi::ResultMap()
 			.set("b", params)
 			.set("params", params)
-			.set("converged", converged));
+			.set("converged", converged);
 	}
 
 	// ---- Extract Var(beta_T) from H^{-1}[1,1] (1-based index 2) ---------
-	List final_si = cpoisson_combined_score_info_cpp_impl(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params);
-	VectorXd score = Rcpp::as<VectorXd>(final_si["score"]);
-	MatrixXd info = Rcpp::as<MatrixXd>(final_si["info"]);
+	ScoreInfoResult final_si = cpoisson_combined_score_info_cpp_impl(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params);
+	VectorXd score = final_si.score;
+	MatrixXd info = final_si.info;
 	MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);
 	int free_2 = -1;
 	for (int jj = 0; jj < (int)fixed_spec.free_idx.size(); ++jj)
 		if (fixed_spec.free_idx[jj] == 1) { free_2 = jj + 1; break; }
-	double ssq_b_j = (np >= 2 && free_2 > 0) ? compute_diagonal_inverse_entry(info_free, free_2) : NA_REAL;
+	double ssq_b_j = (np >= 2 && free_2 > 0) ? compute_diagonal_inverse_entry(info_free, free_2) : std::numeric_limits<double>::quiet_NaN();
 	double neg_loglik = cpoisson_combined_neg_loglik_cpp_impl(yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, params);
 
 	Eigen::MatrixXd neg_info = -info;
-	return edi::to_rcpp_list(edi::ResultMap()
+	return edi::ResultMap()
 		.set("b", params)
 		.set("params", params)
 		.set("ssq_b_j", ssq_b_j)
@@ -425,6 +434,43 @@ SEXP fast_cpoisson_combined_with_var_cpp(
 		.set("hessian", neg_info)
 		.set("neg_loglik", neg_loglik)
 		.set("neg_ll", neg_loglik)
-		.set("loglik", R_finite(neg_loglik) ? -neg_loglik : NA_REAL)
-		.set("converged", converged));
+		.set("loglik", std::isfinite(neg_loglik) ? -neg_loglik : std::numeric_limits<double>::quiet_NaN())
+		.set("converged", converged);
 }
+
+#ifndef EDI_CORE_ONLY
+// [[Rcpp::export]]
+SEXP fast_cpoisson_combined_with_var_cpp(
+	const NumericVector& yT_v_r,       // treated count per valid pair (nd)
+	const NumericVector& n_k_v_r,      // total count per valid pair (nd)
+	const NumericMatrix& X_diff_v_r,   // covariate diffs (nd x p; p=0 valid)
+	const NumericVector& y_r_r,        // reservoir outcomes (nR)
+	const NumericVector& w_r_r,        // reservoir treatment indicator (nR)
+	const NumericMatrix& X_r_r,        // reservoir covariates (nR x p)
+	int    maxit = 100,
+	double tol   = 1e-8,
+	Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericMatrix> warm_start_fisher_info = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericVector> warm_start_params = R_NilValue,
+	Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
+	bool estimate_only = false
+) {
+	Eigen::Map<const Eigen::VectorXd> yT_v(yT_v_r.begin(), yT_v_r.size());
+	Eigen::Map<const Eigen::VectorXd> n_k_v(n_k_v_r.begin(), n_k_v_r.size());
+	Eigen::Map<const Eigen::MatrixXd> X_diff_v(X_diff_v_r.begin(), X_diff_v_r.rows(), X_diff_v_r.cols());
+	Eigen::Map<const Eigen::VectorXd> y_r(y_r_r.begin(), y_r_r.size());
+	Eigen::Map<const Eigen::VectorXd> w_r(w_r_r.begin(), w_r_r.size());
+	Eigen::Map<const Eigen::MatrixXd> X_r(X_r_r.begin(), X_r_r.rows(), X_r_r.cols());
+
+	edi::ResultMap res = fast_cpoisson_combined_internal(
+		yT_v, n_k_v, X_diff_v, y_r, w_r, X_r, maxit, tol,
+		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
+		nullable_to_optional<Eigen::VectorXd>(fixed_values),
+		nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+		nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+		nullable_to_optional<Eigen::VectorXd>(warm_start_beta),
+		estimate_only);
+	return edi::to_rcpp_list(res);
+}
+#endif // EDI_CORE_ONLY

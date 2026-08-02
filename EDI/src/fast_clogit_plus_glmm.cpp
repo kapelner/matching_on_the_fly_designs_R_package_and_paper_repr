@@ -1,10 +1,20 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#include "result_map.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
+#endif
 #include <cmath>
 #include <limits>
+#include <optional>
+#include <string>
+#include <stdexcept>
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 namespace {
 
@@ -296,7 +306,7 @@ public:
 		if (has_concordant) {
 			const double log_sigma = par[p_full - 1];
 			if (!std::isfinite(log_sigma) || std::abs(log_sigma) > max_abs_log_sigma) {
-				H.setConstant(NA_REAL);
+				H.setConstant(std::numeric_limits<double>::quiet_NaN());
 				return H;
 			}
 
@@ -413,6 +423,7 @@ public:
 
 } // namespace
 
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 SEXP get_clogit_plus_glmm_score_cpp(
 	const NumericMatrix& X_disc_r,
@@ -466,7 +477,148 @@ SEXP get_clogit_plus_glmm_hessian_cpp(
 	);
 	return wrap(-obj.hessian(params));
 }
+#endif // EDI_CORE_ONLY
 
+// Portable core for fast_clogit_plus_glmm_cpp.
+edi::ResultMap fast_clogit_plus_glmm_internal(
+	const Eigen::Ref<const Eigen::MatrixXd>& X_disc,
+	const Eigen::Ref<const Eigen::VectorXd>& y_disc,
+	const Eigen::Ref<const Eigen::MatrixXd>& X_conc,
+	const Eigen::Ref<const Eigen::VectorXd>& y_conc,
+	const Eigen::Ref<const Eigen::VectorXi>& group_conc,
+	bool has_discordant,
+	bool has_concordant,
+	std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+	std::optional<Eigen::VectorXd> warm_start_beta = std::nullopt,
+	bool estimate_only = false,
+	double max_abs_log_sigma = 8.0,
+	int maxit = 200,
+	double eps_g = 1e-5,
+	std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+	std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+	std::string optimization_alg = "lbfgs",
+	std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt,
+	int n_gh = 20
+) {
+	Eigen::Map<const Eigen::MatrixXd> X_disc_m(X_disc.data(), X_disc.rows(), X_disc.cols());
+	Eigen::Map<const Eigen::VectorXd> y_disc_m(y_disc.data(), y_disc.size());
+	Eigen::Map<const Eigen::MatrixXd> X_conc_m(X_conc.data(), X_conc.rows(), X_conc.cols());
+	Eigen::Map<const Eigen::VectorXd> y_conc_m(y_conc.data(), y_conc.size());
+	Eigen::Map<const Eigen::VectorXi> group_conc_m(group_conc.data(), group_conc.size());
+
+	ClogitPlusGLMMObjective obj(
+		X_disc_m, y_disc_m, X_conc_m, y_conc_m, group_conc_m,
+		has_discordant, has_concordant, n_gh, max_abs_log_sigma
+	);
+
+	int p_disc = has_discordant ? (int)X_disc.cols() : 0;
+	int p_conc = has_concordant ? (int)X_conc.cols() : 0;
+	int n_par = (has_discordant && has_concordant) ? p_conc + 1 : (has_concordant ? p_conc + 1 : p_disc);
+
+	Eigen::VectorXd par = Eigen::VectorXd::Zero(n_par);
+
+	if (warm_start_params.has_value()) {
+		par = *warm_start_params;
+		if (par.size() != n_par) throw std::invalid_argument("warm_start_params size mismatch");
+	} else if (warm_start_beta.has_value()) {
+		const Eigen::VectorXd& sb = *warm_start_beta;
+		if (sb.size() == n_par) {
+			par = sb;
+		} else {
+			// Try to fill beta part
+			int n_beta = has_concordant ? p_conc : p_disc;
+			if (sb.size() == n_beta) {
+				par.head(n_beta) = sb;
+			}
+		}
+	}
+
+	FixedParamSpec fixed_spec = make_fixed_param_spec(par.size(), fixed_idx, fixed_values);
+
+	Eigen::MatrixXd info_start;
+	Eigen::MatrixXd* info_start_ptr = nullptr;
+	if (warm_start_fisher_info.has_value()) {
+		info_start = *warm_start_fisher_info;
+		info_start_ptr = &info_start;
+	}
+
+	const double NaN = std::numeric_limits<double>::quiet_NaN();
+	double neg_ll = NaN;
+	bool converged = false;
+	try {
+		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
+		par = fit.params;
+		neg_ll = fit.value;
+		converged = std::isfinite(neg_ll) && fit.converged;
+	} catch (...) {
+		return edi::ResultMap()
+			.set("params", par)
+			.set("b", par)
+			.set("beta_T", NaN)
+			.set("se_beta_T", NaN)
+			.set("ssq_b_j", NaN)
+			.set("converged", false)
+			.set("neg_loglik", NaN);
+	}
+
+	const int j_beta_T = has_concordant ? 1 : 0; // 0-based
+	double ssq_b_j = NaN;
+	if (estimate_only) {
+		return edi::ResultMap()
+			.set("params", par)
+			.set("b", par)
+			.set("beta_T", par[j_beta_T])
+			.set("se_beta_T", NaN)
+			.set("ssq_b_j", NaN)
+			.set("vcov", std::monostate{})
+			.set("score", std::monostate{})
+			.set("observed_information", std::monostate{})
+			.set("information", std::monostate{})
+			.set("information_type", std::string("observed"))
+			.set("hessian", std::monostate{})
+			.set("converged", converged)
+			.set("neg_loglik", neg_ll)
+			.set("neg_ll", neg_ll)
+			.set("loglik", std::isfinite(neg_ll) ? -neg_ll : NaN);
+	}
+
+	Eigen::MatrixXd info = obj.hessian(par);
+	Eigen::VectorXd score(par.size());
+	obj(par, score);
+	score = -score;
+	Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(par.size(), par.size(), NaN);
+	if (converged) {
+		Eigen::MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);
+		Eigen::LDLT<Eigen::MatrixXd> ldlt(info_free);
+		if (ldlt.info() == Eigen::Success) {
+			Eigen::MatrixXd inv_free = ldlt.solve(Eigen::MatrixXd::Identity(info_free.rows(), info_free.cols()));
+			vcov = expand_free_covariance(par.size(), fixed_spec, inv_free, true);
+			if (vcov.allFinite()) ssq_b_j = vcov(j_beta_T, j_beta_T);
+		}
+	}
+	double se_beta_T = (std::isfinite(ssq_b_j) && ssq_b_j > 0.0) ? std::sqrt(ssq_b_j) : NaN;
+
+	Eigen::MatrixXd neg_info = -info;
+	return edi::ResultMap()
+		.set("params", par)
+		.set("b", par)
+		.set("beta_T", par[j_beta_T])
+		.set("se_beta_T", se_beta_T)
+		.set("ssq_b_j", ssq_b_j)
+		.set("vcov", vcov)
+		.set("score", score)
+		.set("observed_information", info)
+		.set("information", info)
+		.set("information_type", std::string("observed"))
+		.set("hessian", neg_info)
+		.set("converged", converged)
+		.set("neg_loglik", neg_ll)
+		.set("neg_ll", neg_ll)
+		.set("loglik", std::isfinite(neg_ll) ? -neg_ll : NaN)
+		.set("fisher_information", info);
+}
+
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 SEXP fast_clogit_plus_glmm_cpp(
 	const NumericMatrix& X_disc_r,
@@ -493,121 +645,17 @@ SEXP fast_clogit_plus_glmm_cpp(
 	Eigen::Map<const Eigen::VectorXd> y_conc(y_conc_r.begin(), y_conc_r.size());
 	Eigen::Map<const Eigen::VectorXi> group_conc(group_conc_r.begin(), group_conc_r.size());
 
-	ClogitPlusGLMMObjective obj(
+	edi::ResultMap res = fast_clogit_plus_glmm_internal(
 		X_disc, y_disc, X_conc, y_conc, group_conc,
-		has_discordant, has_concordant, 20, max_abs_log_sigma
-	);
-
-	int p_disc = has_discordant ? (int)X_disc.cols() : 0;
-	int p_conc = has_concordant ? (int)X_conc.cols() : 0;
-	int n_par = (has_discordant && has_concordant) ? p_conc + 1 : (has_concordant ? p_conc + 1 : p_disc);
-
-	Eigen::VectorXd par = Eigen::VectorXd::Zero(n_par);
-
-	auto warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
-	auto warm_start_beta_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_beta);
-	if (warm_start_params_opt.has_value()) {
-		par = *warm_start_params_opt;
-		if (par.size() != n_par) stop("warm_start_params size mismatch");
-	} else if (warm_start_beta_opt.has_value()) {
-		VectorXd sb = *warm_start_beta_opt;
-		if (sb.size() == n_par) {
-			par = sb;
-		} else {
-			// Try to fill beta part
-			int n_beta = has_concordant ? p_conc : p_disc;
-			if (sb.size() == n_beta) {
-				par.head(n_beta) = sb;
-			}
-		}
-	}
-
-	FixedParamSpec fixed_spec = make_fixed_param_spec(
-		par.size(),
+		has_discordant, has_concordant,
+		nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+		nullable_to_optional<Eigen::VectorXd>(warm_start_beta),
+		estimate_only, max_abs_log_sigma, maxit, eps_g,
 		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
-		nullable_to_optional<Eigen::VectorXd>(fixed_values));
-
-	auto warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
-	Eigen::MatrixXd info_start;
-	Eigen::MatrixXd* info_start_ptr = nullptr;
-	if (warm_start_fisher_info_opt.has_value()) {
-		info_start = *warm_start_fisher_info_opt;
-		info_start_ptr = &info_start;
-	}
-
-	double neg_ll = NA_REAL;
-	int niter = maxit;
-	bool converged = false;
-	try {
-		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
-		par = fit.params;
-		neg_ll = fit.value;
-		niter = fit.niter;
-		converged = std::isfinite(neg_ll) && fit.converged;
-	} catch (...) {
-		return edi::to_rcpp_list(edi::ResultMap()
-			.set("params", par)
-			.set("b", par)
-			.set("beta_T", NA_REAL)
-			.set("se_beta_T", NA_REAL)
-			.set("ssq_b_j", NA_REAL)
-			.set("converged", false)
-			.set("neg_loglik", NA_REAL));
-	}
-
-		const int j_beta_T = has_concordant ? 1 : 0; // 0-based
-		double ssq_b_j = NA_REAL;
-		if (estimate_only) {
-			return edi::to_rcpp_list(edi::ResultMap()
-				.set("params", par)
-				.set("b", par)
-				.set("beta_T", par[j_beta_T])
-				.set("se_beta_T", NA_REAL)
-				.set("ssq_b_j", NA_REAL)
-				.set("vcov", std::monostate{})
-				.set("score", std::monostate{})
-				.set("observed_information", std::monostate{})
-				.set("information", std::monostate{})
-				.set("information_type", std::string("observed"))
-				.set("hessian", std::monostate{})
-				.set("converged", converged)
-				.set("neg_loglik", neg_ll)
-				.set("neg_ll", neg_ll)
-				.set("loglik", R_finite(neg_ll) ? -neg_ll : NA_REAL));
-		}
-
-		Eigen::MatrixXd info = obj.hessian(par);
-		Eigen::VectorXd score(par.size());
-		obj(par, score);
-		score = -score;
-		Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(par.size(), par.size(), NA_REAL);
-		if (converged) {
-		Eigen::MatrixXd info_free = subset_matrix(info, fixed_spec.free_idx, fixed_spec.free_idx);
-		Eigen::LDLT<Eigen::MatrixXd> ldlt(info_free);
-		if (ldlt.info() == Eigen::Success) {
-			Eigen::MatrixXd inv_free = ldlt.solve(Eigen::MatrixXd::Identity(info_free.rows(), info_free.cols()));
-			vcov = expand_free_covariance(par.size(), fixed_spec, inv_free, true);
-			if (vcov.allFinite()) ssq_b_j = vcov(j_beta_T, j_beta_T);
-		}
-	}
-	double se_beta_T = (std::isfinite(ssq_b_j) && ssq_b_j > 0.0) ? std::sqrt(ssq_b_j) : NA_REAL;
-
-	Eigen::MatrixXd neg_info = -info;
-	return edi::to_rcpp_list(edi::ResultMap()
-		.set("params", par)
-		.set("b", par)
-		.set("beta_T", par[j_beta_T])
-		.set("se_beta_T", se_beta_T)
-		.set("ssq_b_j", ssq_b_j)
-		.set("vcov", vcov)
-		.set("score", score)
-		.set("observed_information", info)
-		.set("information", info)
-		.set("information_type", std::string("observed"))
-		.set("hessian", neg_info)
-		.set("converged", converged)
-		.set("neg_loglik", neg_ll)
-		.set("neg_ll", neg_ll)
-		.set("loglik", R_finite(neg_ll) ? -neg_ll : NA_REAL)
-		.set("fisher_information", info));
+		nullable_to_optional<Eigen::VectorXd>(fixed_values),
+		optimization_alg,
+		nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+		20);
+	return edi::to_rcpp_list(res);
 }
+#endif // EDI_CORE_ONLY

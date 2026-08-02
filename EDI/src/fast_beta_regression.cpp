@@ -218,6 +218,8 @@ public:
 	}
 };
 
+} // namespace
+
 ModelResult fast_beta_regression_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
                                         const Eigen::Ref<const Eigen::VectorXd>& y,
                                         const Eigen::VectorXd* weights = nullptr,
@@ -270,8 +272,6 @@ ModelResult fast_beta_regression_internal(const Eigen::Ref<const Eigen::MatrixXd
     res.converged = fit.converged;
     return res;
 }
-
-} // namespace
 
 //' @title Compute Beta Regression Score
 //' @description Calculates the score vector (gradient of the log-likelihood) for a beta regression model.

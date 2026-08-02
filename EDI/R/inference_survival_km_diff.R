@@ -21,7 +21,9 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 	lock_objects = FALSE,
 	inherit = InferenceAsymp,
 	public = list(
-		#' @description Initialize the Inference object.
+		#' @description Initialize Kaplan-Meier median-difference survival inference
+		#'   and prepare treatment-group survival curves used by
+		#'   \code{\link[EDI:InferenceSurvivalKMDiff]{InferenceSurvivalKMDiff}}.
 		#'
 		#' @param des_obj The design object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -36,7 +38,8 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 			}
 			super$initialize(des_obj, verbose = verbose, model_formula = model_formula, smart_cold_start_default = smart_cold_start_default)
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B  					Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         Whether to return diagnostics.
@@ -45,7 +48,8 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			super$approximate_bootstrap_distribution_beta_hat_T(B, show_progress, debug, bootstrap_type)
 		},
-		#' @description Computes the appropriate estimate for mean difference
+		#' @description Computes the class-specific mean or survival contrast; see
+		#'   \code{\link[EDI:InferenceMLEorKMSummaryTable]{InferenceMLEorKMSummaryTable}}.
 		#'
 		#' @return  The setting-appropriate (see description) numeric estimate of the treatment effect
 		#'
@@ -70,7 +74,8 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes the treatment effect estimate for a bootstrap sample.
+		#' @description Recomputes the class-specific treatment estimate for a bootstrap sample; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param subject_or_block_weights Row weights for the bootstrap sample.
 		#' @param estimate_only If TRUE, skip variance calculations.
 		compute_estimate_with_bootstrap_weights = function(subject_or_block_weights, estimate_only = FALSE){
@@ -143,7 +148,8 @@ InferenceSurvivalKMDiff = R6::R6Class("InferenceSurvivalKMDiff",
 			surv_diff = survival::survdiff(survival_obj ~ private$w)
 			surv_diff$pvalue
 		},
-		#' @description Computes a 1-alpha level frequentist confidence interval for the randomization test
+		#' @description Uses the shared randomization confidence-interval contract; see
+		#'   \code{\link[EDI:InferenceRandCI]{InferenceRandCI}}.
 		#'
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.

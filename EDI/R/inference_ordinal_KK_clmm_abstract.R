@@ -5,7 +5,9 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLik,
 	public = utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
-		#' @description Initialize
+		#' @description Initialize KK cumulative-link mixed-model inference for
+		#'   ordinal responses, validate the matched design, and prepare the ordinal
+		#'   likelihood used by \code{\link[EDI:InferenceAbstractKKOrdinalCLMM]{InferenceAbstractKKOrdinalCLMM}}.
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula   Optional formula for covariate adjustment.
 		#' @param use_rcpp Logical. If \code{TRUE} (default), use the internal Rcpp
@@ -30,7 +32,9 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			private$use_rcpp = use_rcpp
 			private$init_kk_passthrough(des_obj)
 		},
-		#' @description Compute treatment estimate
+		#' @description Compute the ordinal CLMM treatment-effect estimate by fitting
+		#'   the cumulative-link mixed model and caching the treatment coefficient for
+		#'   related \code{\link[EDI:InferenceAsymp]{InferenceAsymp}} methods.
 		#' @param estimate_only Logical. If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
@@ -54,7 +58,9 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			private$cached_values$s_beta_hat_T = NA_real_
 			private$cached_values$beta_hat_T
 		},
-		#' @description Compute asymp confidence interval
+		#' @description Compute the ordinal CLMM asymptotic confidence interval for
+		#'   the treatment coefficient using the fitted-model standard error. See
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha Numeric. Significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -66,7 +72,9 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Compute asymp two sided pval for treatment effect
+		#' @description Compute the ordinal CLMM asymptotic two-sided p-value for the
+		#'   treatment coefficient using the fitted-model standard error. See
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta Numeric. Null treatment effect value (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -85,7 +93,8 @@ InferenceAbstractKKOrdinalCLMM = R6::R6Class("InferenceAbstractKKOrdinalCLMM",
 				NA_real_
 			}
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B Integer. Number of bootstrap samples (default 501).
 		#' @param show_progress Logical. Whether to show a progress bar.
 		#' @param debug Logical. Whether to return diagnostics.
@@ -426,7 +435,9 @@ InferenceOrdinalKKCLMM = R6::R6Class("InferenceOrdinalKKCLMM",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKOrdinalCLMM,
 	public = list(
-		#' @description Initialize
+		#' @description Initialize the logit-link ordinal KK CLMM subclass; see the
+		#'   shared ordinal mixed-model contract in
+		#'   \code{\link[EDI:InferenceAbstractKKOrdinalCLMM]{InferenceAbstractKKOrdinalCLMM}}.
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param use_rcpp Use internal Rcpp implementation (default \code{TRUE}).
@@ -458,7 +469,9 @@ InferenceOrdinalKKCLMMProbit = R6::R6Class("InferenceOrdinalKKCLMMProbit",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKOrdinalCLMM,
 	public = list(
-		#' @description Initialize
+		#' @description Initialize the probit-link ordinal KK CLMM subclass; see the
+		#'   shared ordinal mixed-model contract in
+		#'   \code{\link[EDI:InferenceAbstractKKOrdinalCLMM]{InferenceAbstractKKOrdinalCLMM}}.
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param use_rcpp Use internal Rcpp implementation (default \code{TRUE}).
@@ -491,7 +504,9 @@ InferenceOrdinalKKCLMMCauchit = R6::R6Class("InferenceOrdinalKKCLMMCauchit",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKOrdinalCLMM,
 	public = list(
-		#' @description Initialize
+		#' @description Initialize the cloglog-link ordinal KK CLMM subclass; see the
+		#'   shared ordinal mixed-model contract in
+		#'   \code{\link[EDI:InferenceAbstractKKOrdinalCLMM]{InferenceAbstractKKOrdinalCLMM}}.
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param use_rcpp Use internal Rcpp implementation (default \code{TRUE}).
@@ -523,7 +538,9 @@ InferenceOrdinalKKCLMMCloglog = R6::R6Class("InferenceOrdinalKKCLMMCloglog",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKOrdinalCLMM,
 	public = list(
-		#' @description Initialize
+		#' @description Initialize the cauchit-link ordinal KK CLMM subclass; see the
+		#'   shared ordinal mixed-model contract in
+		#'   \code{\link[EDI:InferenceAbstractKKOrdinalCLMM]{InferenceAbstractKKOrdinalCLMM}}.
 		#' @param des_obj A completed \code{Design} object.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param use_rcpp Use internal Rcpp implementation (default \code{TRUE}).

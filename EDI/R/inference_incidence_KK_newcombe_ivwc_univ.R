@@ -25,8 +25,10 @@
 InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
-	public = as.list(utils::modifyList(as.list(InferenceMixinKKPassThrough$public), list(
-		#' @description Initialize the inference object.
+	public = list(
+		#' @description Initialize KK Newcombe risk-difference IVWC inference and
+		#'   prepare matched/reservoir paired-binomial components used by
+		#'   \code{\link[EDI:InferenceIncidKKNewcombeRiskDiff]{InferenceIncidKKNewcombeRiskDiff}}.
 		#' @param des_obj A completed KK \code{DesignSeqOneByOne} object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -48,19 +50,16 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-		#' @description Computes the treatment effect estimate.
+		#' @description Computes the class-specific treatment-effect estimate; see
+		#'   \code{\link[EDI:Inference]{Inference}}.
 		#' @param estimate_only flag.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			est = private$cached_values$beta_hat_T
 			if (is.null(est) || length(est) != 1L) NA_real_ else est
 		}
-	))),
-	private = as.list(utils::modifyList(as.list(InferenceKKPassThroughCompoundNoParamBootstrap$private %||% list()), list(
-		m = NULL,
-		cached_mod = NULL,
-		best_X_colnames = NULL,
-		max_abs_reasonable_coef = 1e4,
+	),
+	private = list(
 		compute_basic_match_data = function(){
 			# Use the optimized Zhang helper to get counts
 			private$cached_values$KKstats = compute_zhang_match_data_cpp(private$get_X(), private$y, private$w, private$m)
@@ -138,5 +137,5 @@ InferenceIncidKKNewcombeRiskDiff = R6::R6Class("InferenceIncidKKNewcombeRiskDiff
 			private$cached_values$s_beta_hat_T = sqrt(res$variance)
 			private$cached_values$df = NA_real_
 		}
-	)))
+	)
 )

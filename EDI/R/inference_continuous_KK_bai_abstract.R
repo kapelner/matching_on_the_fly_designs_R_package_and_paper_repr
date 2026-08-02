@@ -13,8 +13,9 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
 	public = list(
-		#' @description Initialize a sequential experimental design estimation and test object after the
-		#' sequential design is completed.
+		#' @description Initialize Bai adjusted-t inference for a completed KK
+		#' continuous-response design, including the optional convex combination of
+		#' matched-pair and reservoir estimates.
 		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
 		#'   and response y is recorded within.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
@@ -133,7 +134,11 @@ InferenceBaiAdjustedT = R6::R6Class("InferenceBaiAdjustedT",
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Computes a 2-sided p-value
+		#' @description Compute the Bai-adjusted two-sided p-value for the treatment
+		#'   effect using the matched-design adjusted statistic. See related
+		#'   \code{\link[EDI:InferenceBaiAdjustedT]{InferenceBaiAdjustedT}} and
+		#'   \code{\link[EDI:InferenceBaiAdjustedTKK14]{InferenceBaiAdjustedTKK14}}
+		#'   methods.
 		#'
 		#' @param delta   The null difference to test against. For any treatment effect at all
 		#'   this is set to zero (the default).

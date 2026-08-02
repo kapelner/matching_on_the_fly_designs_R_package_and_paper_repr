@@ -15,7 +15,12 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 	lock_objects = FALSE,
 	inherit = InferenceMLEorKMSummaryTable,
 	public = list(
-		#' @description Computes an asymptotic confidence interval using the configured test.
+		#' @description Computes an asymptotic confidence interval for the treatment
+		#'   effect using the configured likelihood-backed test. Wald intervals use
+		#'   the fitted estimate and standard error; score, likelihood-ratio,
+		#'   gradient, and Bartlett-corrected likelihood-ratio intervals are obtained
+		#'   by inverting the corresponding test. For purely Wald asymptotic dispatch,
+		#'   see \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#'
 		#' @param alpha Significance level 1 - \code{alpha}. Default 0.05.
 		#'
@@ -34,7 +39,12 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 				lik_ratio_bartlett_exact = private$compute_lik_ratio_bartlett_exact_confidence_interval_impl(alpha)
 			)
 		},
-		#' @description Computes an asymptotic two-sided p-value using the configured test.
+		#' @description Computes an asymptotic two-sided p-value for the treatment
+		#'   effect using the configured likelihood-backed test. Depending on
+		#'   \code{testing_type}, this evaluates a Wald, score, likelihood-ratio,
+		#'   gradient, or Bartlett-corrected likelihood-ratio statistic under the
+		#'   null value \code{delta}. For count-specific likelihood families, see
+		#'   \code{\link[EDI:InferenceCountLikelihood]{InferenceCountLikelihood}}.
 		#'
 		#' @param delta Null treatment effect to test against. Default 0.
 		#'
@@ -111,12 +121,18 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 		get_supported_information_preferences = function(){
 			private$get_supported_information_preferences_impl()
 		},
-		#' @description Computes the score two-sided p-value regardless of configured testing type.
+		#' @description Computes the score two-sided p-value regardless of configured
+		#'   testing type. The score test evaluates the null-restricted fit and uses
+		#'   the configured information matrix preference; compare with
+		#'   \code{compute_asymp_two_sided_pval()} for configured-test dispatch.
 		#' @param delta Null treatment effect.
 		compute_score_two_sided_pval = function(delta = 0){
 			private$compute_score_two_sided_pval_impl(delta)
 		},
-		#' @description Computes the score confidence interval regardless of configured testing type.
+		#' @description Computes the score confidence interval regardless of configured
+		#'   testing type by inverting score-test p-values over candidate treatment
+		#'   effects. Compare with \code{compute_asymp_confidence_interval()} for
+		#'   configured-test dispatch.
 		#' @param alpha Significance level. Default 0.05.
 		compute_score_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -125,13 +141,20 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 			private$compute_score_confidence_interval_impl(alpha)
 		},
 
-		#' @description Computes the likelihood-ratio two-sided p-value regardless of configured testing type.
+		#' @description Computes the likelihood-ratio two-sided p-value regardless of
+		#'   configured testing type. This compares unrestricted and null-restricted
+		#'   fits at \code{delta}; subclasses may use a full, partial, quasi-, or
+		#'   composite likelihood as described in
+		#'   \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}}.
 		#' @param delta Null treatment effect.
 		compute_lik_ratio_two_sided_pval = function(delta = 0){
 			private$compute_lik_ratio_two_sided_pval_impl(delta)
 		},
 
-		#' @description Computes the likelihood-ratio confidence interval regardless of configured testing type.
+		#' @description Computes the likelihood-ratio confidence interval regardless of
+		#'   configured testing type by inverting likelihood-ratio p-values over
+		#'   candidate treatment effects. Compare with score and gradient intervals
+		#'   in this class.
 		#' @param alpha Significance level. Default 0.05.
 		compute_lik_ratio_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -348,26 +371,26 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 		},
 
 
-		#' Returns NULL, or a list describing the likelihood surface at the
-		#' fitted point, consumed by InferenceExtInformationMatrix,
-		#' InferenceExtLikelihoodTestMemoization, and (optionally)
-		#' InferenceMixinOffOptimumLikelihoodEval. Concrete classes typically
-		#' include X, y, j, full_fit, fit_null(delta, start), extract_start(fit),
-		#' score(fit), observed_information(fit), fisher_information(fit), and
-		#' neg_loglik(fit) -- all evaluated at a completed fit object, never at
-		#' an arbitrary theta.
-		#'
-		#' Two additional fields are optional and independent of the above:
-		#' neg_loglik_at(theta) and information_at(theta, source) evaluate the
-		#' negative log-likelihood / information matrix at an arbitrary
-		#' parameter vector rather than a completed fit. Only add these if a
-		#' genuine f(theta) native evaluator already backs the *_information(fit)
-		#' closures above (see e.g. get_negbin_regression_hessian_cpp(X, y,
-		#' theta) in inference_count_negbin.R); do not synthesize one via
-		#' numerical differentiation just to satisfy this contract. Classes
-		#' that add these two fields may splice in
-		#' InferenceMixinOffOptimumLikelihoodEval to get
-		#' evaluate_penalized_neg_loglik_at() for free.
+		# Returns NULL, or a list describing the likelihood surface at the
+		# fitted point, consumed by InferenceExtInformationMatrix,
+		# InferenceExtLikelihoodTestMemoization, and (optionally)
+		# InferenceMixinOffOptimumLikelihoodEval. Concrete classes typically
+		# include X, y, j, full_fit, fit_null(delta, start), extract_start(fit),
+		# score(fit), observed_information(fit), fisher_information(fit), and
+		# neg_loglik(fit) -- all evaluated at a completed fit object, never at
+		# an arbitrary theta.
+		#
+		# Two additional fields are optional and independent of the above:
+		# neg_loglik_at(theta) and information_at(theta, source) evaluate the
+		# negative log-likelihood / information matrix at an arbitrary
+		# parameter vector rather than a completed fit. Only add these if a
+		# genuine f(theta) native evaluator already backs the *_information(fit)
+		# closures above (see e.g. get_negbin_regression_hessian_cpp(X, y,
+		# theta) in inference_count_negbin.R); do not synthesize one via
+		# numerical differentiation just to satisfy this contract. Classes
+		# that add these two fields may splice in
+		# InferenceMixinOffOptimumLikelihoodEval to get
+		# evaluate_penalized_neg_loglik_at() for free.
 		get_likelihood_test_spec = function(){
 			NULL
 		},
@@ -388,32 +411,32 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 			FALSE
 		},
 
-		#' Whether this class exposes an approximate (Monte-Carlo) Bartlett-corrected
-		#' likelihood-ratio test/CI via get_bartlett_factor_approx(). Default FALSE;
-		#' InferenceParamBootstrap overrides this to delegate to
-		#' supports_lik_ratio_param_bootstrap().
+		# Whether this class exposes an approximate (Monte-Carlo) Bartlett-corrected
+		# likelihood-ratio test/CI via get_bartlett_factor_approx(). Default FALSE;
+		# InferenceParamBootstrap overrides this to delegate to
+		# supports_lik_ratio_param_bootstrap().
 		supports_bartlett_likelihood_ratio_approx = function(){
 			FALSE
 		},
 
-		#' Monte-Carlo estimate of the Bartlett correction factor c(delta), such that
-		#' LR_B(delta) = LR(delta) / c(delta) is referred to chi-square(1). B controls
-		#' the number of null-simulated replicates (ignored by classes that don't
-		#' simulate). Default NULL (unimplemented).
+		# Monte-Carlo estimate of the Bartlett correction factor c(delta), such that
+		# LR_B(delta) = LR(delta) / c(delta) is referred to chi-square(1). B controls
+		# the number of null-simulated replicates (ignored by classes that don't
+		# simulate). Default NULL (unimplemented).
 		get_bartlett_factor_approx = function(spec, delta, full_fit, null_fit, B = 99){
 			NULL
 		},
 
-		#' Whether this class exposes an exact (closed-form analytic) Bartlett-corrected
-		#' likelihood-ratio test/CI via get_bartlett_factor_exact(). Default FALSE;
-		#' individual families opt in once their bespoke analytic factor is derived.
+		# Whether this class exposes an exact (closed-form analytic) Bartlett-corrected
+		# likelihood-ratio test/CI via get_bartlett_factor_exact(). Default FALSE;
+		# individual families opt in once their bespoke analytic factor is derived.
 		supports_bartlett_likelihood_ratio_exact = function(){
 			FALSE
 		},
 
-		#' Closed-form analytic Bartlett correction factor c(delta) (e.g. a
-		#' Cordeiro-style GLM correction). No simulation, no replicate count.
-		#' Default NULL (unimplemented).
+		# Closed-form analytic Bartlett correction factor c(delta) (e.g. a
+		# Cordeiro-style GLM correction). No simulation, no replicate count.
+		# Default NULL (unimplemented).
 		get_bartlett_factor_exact = function(spec, delta, full_fit, null_fit){
 			NULL
 		},
@@ -426,13 +449,13 @@ InferenceAsympLik = R6::R6Class("InferenceAsympLik",
 			}
 		},
 
-		#' Wraps get_supported_testing_types_impl() to conditionally append the
-		#' Bartlett testing types. Kept as a separate wrapper (rather than folded
-		#' into get_supported_testing_types_impl() itself) because many concrete
-		#' and abstract subclasses across the codebase override
-		#' get_supported_testing_types_impl() directly with a hard-coded vector;
-		#' appending here means those overrides don't each need to be touched to
-		#' pick up Bartlett support.
+		# Wraps get_supported_testing_types_impl() to conditionally append the
+		# Bartlett testing types. Kept as a separate wrapper (rather than folded
+		# into get_supported_testing_types_impl() itself) because many concrete
+		# and abstract subclasses across the codebase override
+		# get_supported_testing_types_impl() directly with a hard-coded vector;
+		# appending here means those overrides don't each need to be touched to
+		# pick up Bartlett support.
 		get_supported_testing_types_with_bartlett = function(){
 			types = private$get_supported_testing_types_impl()
 			if (isTRUE(private$supports_bartlett_likelihood_ratio_approx())) {

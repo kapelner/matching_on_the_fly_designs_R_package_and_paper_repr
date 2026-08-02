@@ -8,16 +8,23 @@
 //
 // Groups: matched pairs have size 2; reservoir subjects have size 1.
 
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#include "result_map.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
+#endif
 #include <cmath>
 #include <vector>
 #include <algorithm>
 #include <numeric>
 #include <limits>
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 static const double LOG2PI = std::log(2.0 * M_PI);
 
@@ -208,7 +215,7 @@ Eigen::MatrixXd lmm_analytic_hessian(const LMMData& dat,
 
     Eigen::MatrixXd H = Eigen::MatrixXd::Zero(k, k);
     if (!std::isfinite(v_e) || !std::isfinite(v_b) || v_e < 1e-300) {
-        H.setConstant(NA_REAL);
+        H.setConstant(std::numeric_limits<double>::quiet_NaN());
         return H;
     }
 
@@ -357,6 +364,118 @@ Eigen::VectorXd make_start(const LMMData& dat)
 
 } // anonymous namespace
 
+// Portable core. Unlike the R wrapper below, "b" here is a plain (unnamed)
+// Eigen::VectorXd -- R's b_r carries a names() attribute (b0, b1, ...,
+// log_sigma_e, log_sigma_b) that has no ResultMap equivalent; the Python
+// caller indexes positionally instead (same convention every other bound
+// kernel already uses).
+edi::ResultMap fast_gaussian_lmm_internal(
+    const Eigen::Ref<const Eigen::MatrixXd>& X,
+    const Eigen::Ref<const Eigen::VectorXd>& y,
+    const Eigen::Ref<const Eigen::VectorXi>& group_id,
+    std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+    std::optional<Eigen::VectorXd> warm_start_beta = std::nullopt,
+    bool estimate_only = false,
+    int maxit = 300,
+    double eps_g = 1e-6,
+    std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+    std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+    std::string optimization_alg = "lbfgs",
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt,
+    std::optional<Eigen::VectorXd> weights = std::nullopt
+) {
+    const int n = (int)y.size(), p = (int)X.cols();
+
+    std::vector<int> gid(n);
+    {
+        const int* gid_ptr = group_id.data();
+        std::vector<int> gid_r(gid_ptr, gid_ptr + n);
+        std::vector<int> uniq = gid_r;
+        std::sort(uniq.begin(), uniq.end());
+        uniq.erase(std::unique(uniq.begin(), uniq.end()), uniq.end());
+        for (int i = 0; i < n; ++i)
+            gid[i] = (int)(std::lower_bound(uniq.begin(), uniq.end(), gid_r[i]) - uniq.begin());
+    }
+
+    std::vector<double> w_vec;
+    if (weights.has_value()) {
+        w_vec.assign(weights->data(), weights->data() + weights->size());
+    }
+    LMMData dat(y, X, gid, w_vec);
+    GaussianLMMObjective obj(dat);
+
+    Eigen::VectorXd par = make_start(dat);
+    if (warm_start_params.has_value()) {
+        const Eigen::VectorXd& sp = *warm_start_params;
+        if (sp.size() == p + 2)
+            for (int i = 0; i < p + 2; ++i) par[i] = sp[i];
+    } else if (warm_start_beta.has_value()) {
+        const Eigen::VectorXd& sb = *warm_start_beta;
+        if (sb.size() == p + 2) {
+            par = sb;
+        } else if (sb.size() == p) {
+            par.head(p) = sb;
+        }
+    }
+    FixedParamSpec fixed_spec = make_fixed_param_spec(p + 2, fixed_idx, fixed_values);
+
+    Eigen::MatrixXd info_start;
+    const Eigen::MatrixXd* info_start_ptr = nullptr;
+    if (warm_start_fisher_info.has_value()) {
+        info_start = *warm_start_fisher_info;
+        info_start_ptr = &info_start;
+    }
+
+    double neg_ll = 1e300;
+    int niter = maxit;
+    bool converged = false;
+    try {
+        LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
+        par = fit.params;
+        neg_ll = fit.value;
+        niter = fit.niter;
+        converged = std::isfinite(neg_ll) && fit.converged;
+    } catch (...) {
+        converged = false;
+    }
+
+    if (estimate_only) {
+        return edi::ResultMap()
+            .set("b", par)
+            .set("ssq_b_T", std::numeric_limits<double>::quiet_NaN())
+            .set("neg_loglik", neg_ll)
+            .set("converged", converged)
+            .set("niter", niter);
+    }
+
+    Eigen::MatrixXd H = obj.hessian(par);
+    Eigen::MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
+    Eigen::LDLT<Eigen::MatrixXd> ldlt(H_free);
+
+    double ssq_b_T = std::numeric_limits<double>::quiet_NaN();
+    Eigen::MatrixXd vcov_r = Eigen::MatrixXd::Constant(p + 2, p + 2, std::numeric_limits<double>::quiet_NaN());
+
+    if (ldlt.info() == Eigen::Success) {
+        Eigen::MatrixXd V_free = ldlt.solve(Eigen::MatrixXd::Identity(H_free.rows(), H_free.cols()));
+        Eigen::MatrixXd V = expand_free_covariance(p + 2, fixed_spec, V_free, true);
+        if (V.allFinite()) {
+            ssq_b_T = V(1, 1);
+            vcov_r = V;
+        }
+    }
+
+    return edi::ResultMap()
+        .set("b", par)
+        .set("params", par)
+        .set("ssq_b_T", ssq_b_T)
+        .set("vcov", vcov_r)
+        .set("neg_loglik", neg_ll)
+        .set("converged", converged)
+        .set("niter", niter)
+        .set("fisher_information", H);
+}
+
+#ifndef EDI_CORE_ONLY
 // ── R-exported: fit Gaussian LMM ─────────────────────────────────────────────
 // [[Rcpp::export]]
 List fast_gaussian_lmm_cpp(
@@ -381,70 +500,20 @@ List fast_gaussian_lmm_cpp(
     Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
     Eigen::Map<const Eigen::VectorXi> group_id(group_id_int.begin(), group_id_int.size());
 
-    const int n = y.size(), p = X.cols();
+    const int p = (int)X.cols();
 
-    // Convert group_id to 0-based sorted integer IDs
-    std::vector<int> gid(n);
-    {
-        // Map R group ids (any positive integers) to 0-based consecutive ints
-        const int* gid_ptr = group_id.data();
-        std::vector<int> gid_r(gid_ptr, gid_ptr + n);
-        std::vector<int> uniq = gid_r;
-        std::sort(uniq.begin(), uniq.end());
-        uniq.erase(std::unique(uniq.begin(), uniq.end()), uniq.end());
-        for (int i = 0; i < n; ++i)
-            gid[i] = (int)(std::lower_bound(uniq.begin(), uniq.end(), gid_r[i]) - uniq.begin());
-    }
-
-    std::vector<double> w_vec;
-    if (weights.isNotNull()) {
-        NumericVector wts(weights);
-        w_vec.assign(wts.begin(), wts.end());
-    }
-    LMMData dat(y, X, gid, w_vec);
-    GaussianLMMObjective obj(dat);
-
-    // Starting point
-    Eigen::VectorXd par = make_start(dat);
-    std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
-    std::optional<Eigen::VectorXd> warm_start_beta_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_beta);
-    if (warm_start_params_opt.has_value()) {
-        const Eigen::VectorXd& sp = *warm_start_params_opt;
-        if (sp.size() == p + 2)
-            for (int i = 0; i < p + 2; ++i) par[i] = sp[i];
-    } else if (warm_start_beta_opt.has_value()) {
-        const Eigen::VectorXd& sb = *warm_start_beta_opt;
-        if (sb.size() == p + 2) {
-            par = sb;
-        } else if (sb.size() == p) {
-            par.head(p) = sb;
-        }
-    }
-    FixedParamSpec fixed_spec = make_fixed_param_spec(
-        p + 2,
+    edi::ResultMap res = fast_gaussian_lmm_internal(
+        X, y, group_id,
+        nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+        nullable_to_optional<Eigen::VectorXd>(warm_start_beta),
+        estimate_only, maxit, eps_g,
         nullable_to_optional<Eigen::VectorXi>(fixed_idx),
-        nullable_to_optional<Eigen::VectorXd>(fixed_values));
+        nullable_to_optional<Eigen::VectorXd>(fixed_values),
+        optimization_alg,
+        nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info),
+        nullable_to_optional<Eigen::VectorXd>(weights));
 
-    Eigen::MatrixXd info_start;
-    const Eigen::MatrixXd* info_start_ptr = nullptr;
-    std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
-    if (warm_start_fisher_info_opt.has_value()) {
-        info_start = *warm_start_fisher_info_opt;
-        info_start_ptr = &info_start;
-    }
-
-    double neg_ll = 1e300;
-    int niter = maxit;
-    bool converged = false;
-    try {
-        LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
-        par = fit.params;
-        neg_ll = fit.value;
-        niter = fit.niter;
-        converged = std::isfinite(neg_ll) && fit.converged;
-    } catch (...) {
-        converged = false;
-    }
+    const Eigen::VectorXd& par = *res.get_if<Eigen::VectorXd>("b");
 
     // Return par names: β[0..p-1], log_sigma_e, log_sigma_b
     NumericVector b_r(p + 2);
@@ -455,44 +524,9 @@ List fast_gaussian_lmm_cpp(
     b_names[p+1] = "log_sigma_b";
     b_r.names() = b_names;
 
-    if (estimate_only) {
-        List out = edi::to_rcpp_list(edi::ResultMap()
-            .set("ssq_b_T", NA_REAL)
-            .set("neg_loglik", neg_ll)
-            .set("converged", converged)
-            .set("niter", niter));
-        out["b"] = b_r;
-        return out;
-    }
-
-    // Variance-covariance via Hessian of neg_ll (reuses obj's scratch buffers)
-    Eigen::MatrixXd H = obj.hessian(par);
-    Eigen::MatrixXd H_free = subset_matrix(H, fixed_spec.free_idx, fixed_spec.free_idx);
-    Eigen::LDLT<Eigen::MatrixXd> ldlt(H_free);
-
-    double ssq_b_T = NA_REAL;
-    Eigen::MatrixXd vcov_r = Eigen::MatrixXd::Constant(p + 2, p + 2, NA_REAL);
-
-    if (ldlt.info() == Eigen::Success) {
-        Eigen::MatrixXd V_free = ldlt.solve(Eigen::MatrixXd::Identity(H_free.rows(), H_free.cols()));
-        Eigen::MatrixXd V = expand_free_covariance(p + 2, fixed_spec, V_free, true);
-        if (V.allFinite()) {
-            ssq_b_T = V(1, 1);   // treatment is index 1 (after intercept at 0)
-            for (int i = 0; i < p + 2; ++i)
-                for (int j = 0; j < p + 2; ++j)
-                    vcov_r(i, j) = V(i, j);
-        }
-    }
-
-    List out = edi::to_rcpp_list(edi::ResultMap()
-        .set("ssq_b_T", ssq_b_T)
-        .set("vcov", vcov_r)
-        .set("neg_loglik", neg_ll)
-        .set("converged", converged)
-        .set("niter", niter)
-        .set("fisher_information", H));
+    List out = edi::to_rcpp_list(res);
     out["b"] = b_r;
-    out["params"] = b_r;
+    if (out.containsElementNamed("params")) out["params"] = b_r;
     return out;
 }
 
@@ -662,3 +696,4 @@ NumericMatrix get_gaussian_lmm_fisher_cpp(
     Eigen::MatrixXd H = lmm_fisher_hessian(dat, par, h_rel);
     return wrap(H);
 }
+#endif // EDI_CORE_ONLY

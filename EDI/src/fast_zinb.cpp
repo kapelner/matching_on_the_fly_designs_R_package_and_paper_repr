@@ -161,6 +161,8 @@ public:
     }
 };
 
+} // namespace
+
 LikelihoodFitResult fast_zinb_internal(const Eigen::Ref<const Eigen::MatrixXd>& Xc,
                                        const Eigen::Ref<const Eigen::MatrixXd>& Xz,
                                        const Eigen::Ref<const Eigen::VectorXd>& y_vec,
@@ -201,8 +203,6 @@ LikelihoodFitResult fast_zinb_internal(const Eigen::Ref<const Eigen::MatrixXd>& 
 
     return optimize_fixed_likelihood(obj, par, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_ptr);
 }
-
-} // namespace
 
 //' @title Fast Zero-Inflated Negative Binomial Regression (C++)
 //' @description High-performance zero-inflated negative binomial model fitting via L-BFGS.

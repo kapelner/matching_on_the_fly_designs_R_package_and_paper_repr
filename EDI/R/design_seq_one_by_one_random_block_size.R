@@ -70,7 +70,8 @@ DesignSeqOneByOneRandomBlockSize = R6::R6Class("DesignSeqOneByOneRandomBlockSize
 				}
 			}
 		},
-		#' @description Assign the next subject to a treatment group
+		#' @description Uses this subclass's sequential assignment rule; see
+		#'   \code{\link[EDI:DesignSeqOneByOne]{DesignSeqOneByOne}}.
 		#'
 		#' @return 	The treatment assignment (0 or 1)
 		assign_wt = function(){

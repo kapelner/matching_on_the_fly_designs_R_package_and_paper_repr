@@ -1,17 +1,25 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#include "result_map.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
+#endif
 #include <vector>
 #include <numeric>
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <map>
 #include <unordered_map>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 namespace {
 
@@ -237,7 +245,7 @@ struct CoxFitResult {
     // reuses total_grad, already computed each iteration, at zero extra cost.
     double gradient_norm;
 
-    CoxFitResult() : neg_ll(NA_REAL), converged(false), iterations(0), gradient_norm(NA_REAL) {}
+    CoxFitResult() : neg_ll(std::numeric_limits<double>::quiet_NaN()), converged(false), iterations(0), gradient_norm(std::numeric_limits<double>::quiet_NaN()) {}
 };
 
 CoxFitResult cox_newton_raphson(
@@ -362,7 +370,7 @@ CoxFitResult cox_newton_raphson(
             Eigen::MatrixXd vcov_free = lu.inverse();
             res.vcov = expand_free_covariance(p, fixed_spec, vcov_free, true);
         } else {
-            res.vcov = Eigen::MatrixXd::Constant(p, p, NA_REAL);
+            res.vcov = Eigen::MatrixXd::Constant(p, p, std::numeric_limits<double>::quiet_NaN());
         }
     }
 
@@ -460,7 +468,7 @@ CoxFitResult cox_lbfgs(
             Eigen::MatrixXd vcov_free = lu.inverse();
             res.vcov = expand_free_covariance(p, fixed_spec, vcov_free, true);
         } else {
-            res.vcov = Eigen::MatrixXd::Constant(p, p, NA_REAL);
+            res.vcov = Eigen::MatrixXd::Constant(p, p, std::numeric_limits<double>::quiet_NaN());
         }
     }
     return res;
@@ -585,6 +593,53 @@ Eigen::MatrixXd compute_robust_vcov(
 
 } // namespace
 
+// Portable core (unstratified, no cluster-robust vcov -- those two options
+// stay R-facing-only for now): builds the same single-stratum CoxData cox_fit
+// already needs and returns a plain edi::ResultMap. cox_fit/CoxData/
+// CoxFitResult stay inside the anonymous namespace above; that's fine since
+// this call happens within the same translation unit.
+edi::ResultMap fast_coxph_regression_internal(
+    const Eigen::Ref<const Eigen::MatrixXd>& X,
+    const Eigen::Ref<const Eigen::VectorXd>& y,
+    const Eigen::Ref<const Eigen::VectorXd>& dead,
+    std::optional<Eigen::VectorXd> warm_start_beta = std::nullopt,
+    bool smart_cold_start = true,
+    bool estimate_only = false,
+    int maxit = 20,
+    double tol = 1e-9,
+    std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+    std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+    std::string optimization_alg = "newton_raphson",
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt
+) {
+    int p = (int)X.cols();
+    FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
+    std::vector<CoxData> strata_data;
+    strata_data.emplace_back(y, dead, X);
+    CoxFitResult fit = cox_fit(
+        strata_data, warm_start_beta, smart_cold_start, fixed_spec, estimate_only,
+        maxit, tol, optimization_alg, warm_start_fisher_info);
+    Eigen::Map<const Eigen::VectorXd> coef_r(fit.beta.data(), p);
+    if (estimate_only) {
+        return edi::ResultMap()
+            .set("coefficients", coef_r)
+            .set("converged", fit.converged)
+            .set("neg_ll", fit.neg_ll)
+            .set("iterations", fit.iterations)
+            .set("fisher_information", fit.hess_mat)
+            .set("gradient_norm", fit.gradient_norm);
+    }
+    return edi::ResultMap()
+        .set("coefficients", coef_r)
+        .set("vcov", fit.vcov)
+        .set("converged", fit.converged)
+        .set("neg_ll", fit.neg_ll)
+        .set("iterations", fit.iterations)
+        .set("fisher_information", fit.hess_mat)
+        .set("gradient_norm", fit.gradient_norm);
+}
+
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 SEXP build_cox_data_cache_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead) {
     auto* data = new std::vector<CoxData>();
@@ -959,3 +1014,4 @@ NumericVector compute_coxph_rand_bootstrap_parallel_cpp(
     }
     return wrap(results);
 }
+#endif // EDI_CORE_ONLY

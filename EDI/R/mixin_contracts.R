@@ -80,6 +80,9 @@ EDI_MIXIN_CONTRACTS = list(
 EDI_MIXIN_COMPOSITIONS = list(
 	InferenceKKPassThroughCompound = c(
 		"InferenceMixinKKPassThrough", "InferenceMixinKKPassThroughCompound"
+	),
+	InferenceKKPassThroughCompoundNoParamBootstrap = c(
+		"InferenceMixinKKPassThrough", "InferenceMixinKKPassThroughCompound"
 	)
 )
 
@@ -87,5 +90,97 @@ EDI_MIXIN_ALLOWED_COLLISIONS = list(
 	InferenceKKPassThroughCompound = list(
 		private = "compute_basic_match_data",
 		public = character()
+	),
+	InferenceKKPassThroughCompoundNoParamBootstrap = list(
+		private = "compute_basic_match_data",
+		public = character()
 	)
 )
+
+EDI_MIXIN_ALLOWED_OVERRIDES = list(
+	InferenceKKPassThroughCompound = list(
+		private = character(),
+		public = c("approximate_bootstrap_distribution_beta_hat_T", "compute_estimate_with_bootstrap_weights")
+	),
+	InferenceKKPassThroughCompoundNoParamBootstrap = list(
+		private = character(),
+		public = c("approximate_bootstrap_distribution_beta_hat_T", "compute_estimate_with_bootstrap_weights")
+	)
+)
+
+EDI_MIXIN_DEPENDENCIES = list(
+	InferenceMixinKKPassThroughCompound = "InferenceMixinKKPassThrough"
+)
+
+assert_valid_mixin_composition = function(target_name, mixin_names, public_overrides = character(), private_overrides = character()) {
+	duplicated_mixins = sort(unique(mixin_names[duplicated(mixin_names)]))
+	if (length(duplicated_mixins) > 0L) {
+		stop(sprintf(
+			"%s composes duplicate mixin component(s): %s",
+			target_name,
+			paste(duplicated_mixins, collapse = ", ")
+		), call. = FALSE)
+	}
+	for (mixin_name in mixin_names) {
+		deps = EDI_MIXIN_DEPENDENCIES[[mixin_name]]
+		missing_deps = setdiff(deps, mixin_names)
+		if (length(missing_deps) > 0L) {
+			stop(sprintf(
+				"%s composes %s without required component(s): %s",
+				target_name,
+				mixin_name,
+				paste(missing_deps, collapse = ", ")
+			), call. = FALSE)
+		}
+	}
+	for (slot in c("public", "private")) {
+		slot_names = as.character(unlist(lapply(mixin_names, function(mixin_name) {
+			mixin = get(mixin_name, envir = parent.frame(2L), inherits = TRUE)
+			names(mixin[[slot]])
+		}), use.names = FALSE))
+		collisions = sort(unique(slot_names[duplicated(slot_names)]))
+		allowed = EDI_MIXIN_ALLOWED_COLLISIONS[[target_name]][[slot]]
+		undeclared = setdiff(collisions, allowed)
+		if (length(undeclared) > 0L) {
+			stop(sprintf(
+				"%s has undeclared %s mixin collision(s): %s",
+				target_name,
+				slot,
+				paste(undeclared, collapse = ", ")
+			), call. = FALSE)
+		}
+		override_names = if (slot == "public") public_overrides else private_overrides
+		override_collisions = intersect(slot_names, override_names)
+		allowed_overrides = EDI_MIXIN_ALLOWED_OVERRIDES[[target_name]][[slot]]
+		undeclared_overrides = setdiff(override_collisions, allowed_overrides)
+		if (length(undeclared_overrides) > 0L) {
+			stop(sprintf(
+				"%s overrides inherited %s method(s) without declaration: %s",
+				target_name,
+				slot,
+				paste(undeclared_overrides, collapse = ", ")
+			), call. = FALSE)
+		}
+	}
+	invisible(TRUE)
+}
+
+compose_inference_mixins = function(target_name, mixin_names, public = list(), private = list()) {
+	assert_valid_mixin_composition(
+		target_name = target_name,
+		mixin_names = mixin_names,
+		public_overrides = names(public),
+		private_overrides = names(private)
+	)
+	composed_public = list()
+	composed_private = list()
+	for (mixin_name in mixin_names) {
+		mixin = get(mixin_name, envir = parent.frame(), inherits = TRUE)
+		composed_public = utils::modifyList(composed_public, as.list(mixin$public))
+		composed_private = utils::modifyList(composed_private, as.list(mixin$private))
+	}
+	list(
+		public = utils::modifyList(composed_public, public),
+		private = utils::modifyList(composed_private, private)
+	)
+}

@@ -233,7 +233,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
   lock_objects = FALSE,
   # ── public ─────────────────────────────────────────────────────────────────
   public = list(
-    #' @description Create a new \code{SimulationFramework}.
+    #' @description Create a new \code{\link[EDI:SimulationFramework]{SimulationFramework}}
+    #'   object that stores simulation design settings, response-generation
+    #'   settings, inference methods, and replication controls.
     #'
     #' @param response_type \strong{(required)} Character scalar or vector.  The type of
     #'   outcome variable.  One of \code{"continuous"}, \code{"incidence"},
@@ -762,7 +764,10 @@ SimulationFramework = R6::R6Class("SimulationFramework",
       private$has_run     = FALSE
     },
     # ── run() ─────────────────────────────────────────────────────────────────
-    #' @description Execute the simulation replications.
+    #' @description Execute the configured simulation replications, run each
+    #'   requested design and inference method, collect estimates/p-values/CIs and
+    #'   errors, and return a
+    #'   \code{\link[EDI:SimulationFrameworkReport]{SimulationFrameworkReport}}.
     #'
     #' @return The \code{SimulationFramework} object itself (invisibly).
     run = function() {

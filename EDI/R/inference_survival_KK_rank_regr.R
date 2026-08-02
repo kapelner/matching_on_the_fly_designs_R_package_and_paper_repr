@@ -23,7 +23,9 @@ InferenceSurvivalKKRankRegrIVWC = R6::R6Class("InferenceSurvivalKKRankRegrIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKSurvivalRankRegrIVWC,
 	public = list(
-		#' @description Initialize the inference object.
+		#' @description Initialize the legacy KK survival rank-regression inference
+		#'   object and prepare the Gehan-Wilcoxon rank-regression model used by
+		#'   \code{\link[EDI:InferenceSurvivalKKRankRegrIVWC]{InferenceSurvivalKKRankRegrIVWC}}.
 		#' @param des_obj A completed \code{DesignSeqOneByOneKK14} object with a survival response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is

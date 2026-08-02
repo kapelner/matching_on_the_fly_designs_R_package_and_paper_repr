@@ -40,21 +40,26 @@ InferenceIncidCMH = R6::R6Class("InferenceIncidCMH",
 	lock_objects = FALSE,
 	inherit = InferenceAllSimpleMeanDiff,
 	public = list(
-		#' @description Computes an approximate confidence interval.
+		#' @description Uses the shared asymptotic confidence-interval contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha Numeric. Significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			self$compute_estimate()
 			private$get_standard_error()
 			super$compute_asymp_confidence_interval(alpha)
 		},
-		#' @description Computes an approximate two-sided p-value.
+		#' @description Uses the shared asymptotic two-sided p-value contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta Numeric. Null treatment effect value (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			self$compute_estimate()
 			private$get_standard_error()
 			super$compute_asymp_two_sided_pval(delta)
 		},
-		#' @description Initialize CMH incidence inference.
+		#' @description Initialize Cochran-Mantel-Haenszel incidence inference,
+		#'   validate the stratified binary-response design, and prepare the
+		#'   stratum-adjusted test used by
+		#'   \code{\link[EDI:InferenceIncidCMH]{InferenceIncidCMH}}.
 		#' @param des_obj A completed design object.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param se_est_num_vectors For non-block designs, the number of randomization vectors

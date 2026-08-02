@@ -151,7 +151,8 @@ InferencePropGCompAbstract = R6::R6Class("InferencePropGCompAbstract",
 				c(NA_real_, NA_real_)
 			})
 		},
-		#' @description Computes a two-sided p-value for the treatment effect.
+		#' @description Uses the shared asymptotic two-sided p-value contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta The null mean difference. Defaults to 0.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {

@@ -1,14 +1,11 @@
 #' Extension for User-Supplied Custom Randomization Statistics
 #'
-#' A Pattern-1 file-split extension (plain list with \code{$public} and
-#' \code{$private} slots), spliced into exactly one class (\code{InferenceRand})
-#' -- not a reusable mixin. Bundles the machinery that lets a user override the
-#' default randomization-inference statistic with either a plain R function or
-#' a compiled/compilable C++ function. Splice into \code{InferenceRand} (the
-#' only host) via
-#' \code{public = c(InferenceExtCustomRandomizationStatistic$public, list(...))}
-#' and
-#' \code{private = c(InferenceExtCustomRandomizationStatistic$private, list(...))}.
+#' A Pattern-1 file-split extension (plain list with \code{$private} machinery),
+#' spliced into exactly one class (\code{InferenceRand}) -- not a reusable mixin.
+#' Bundles the internals that let a user override the default randomization-
+#' inference statistic with either a plain R function or a compiled/compilable
+#' C++ function. The public setter methods live directly on \code{InferenceRand}
+#' so that roxygen can attach method documentation and stable anchors.
 #'
 #' Self-contained: the only host-class state it touches beyond its own three
 #' private fields is \code{private$cached_values}, the shared invalidation
@@ -17,56 +14,6 @@
 #' @keywords internal
 #' @noRd
 InferenceExtCustomRandomizationStatistic = list(
-	public = list(
-		#' @description Set Custom Randomization Statistic Computation
-		#' @param custom_randomization_statistic_function  A function that returns a scalar value.
-		set_custom_randomization_statistic_function = function(custom_randomization_statistic_function){
-			if (!is.null(custom_randomization_statistic_function) && !is.null(private[["compiled_cpp_stat_fn"]])) {
-				stop("Cannot specify both custom_randomization_statistic_function and custom_randomization_statistic_cpp.")
-			}
-			if (should_run_asserts()) {
-				assertFunction(custom_randomization_statistic_function, null.ok = TRUE)
-			}
-			private[["custom_randomization_statistic_function"]] = custom_randomization_statistic_function
-			private$cached_values$t0s_rand = NULL
-			private$cached_values$rand_distr_cache = list()
-			private$cached_values$custom_stat_analysis = NULL
-		},
-		#' @description Set Custom Randomization Statistic as a C++ Function
-		#' @param fn  Either a C++ source code string or a pre-compiled Rcpp function returning a
-		#'   scalar \code{double}. Must accept either \code{(NumericVector y, IntegerVector w)} or
-		#'   \code{(NumericVector y, IntegerVector w, IntegerVector dead)} as arguments.
-		#'   Passing a source string (recommended) enables safe use with parallel workers; passing
-		#'   a pre-compiled function works only in the main process (XPtrs become NULL when
-		#'   serialized to worker nodes). Pass \code{NULL} to clear.
-		#'   Cannot be combined with \code{set_custom_randomization_statistic_function}.
-		set_custom_randomization_statistic_cpp = function(fn){
-			if (!is.null(fn) && !is.null(private[["custom_randomization_statistic_function"]])) {
-				stop("Cannot specify both custom_randomization_statistic_function and custom_randomization_statistic_cpp.")
-			}
-			if (!is.null(fn)) {
-				if (is.character(fn) && length(fn) == 1L) {
-					compiled = Rcpp::cppFunction(fn)
-					arity = length(formals(compiled))
-					if (!arity %in% c(2L, 3L)) stop("custom_randomization_statistic_cpp source must define a function with 2 arguments (y, w) or 3 arguments (y, w, dead); got ", arity, ".")
-					private[["compiled_cpp_stat_src"]] = fn
-					private[["compiled_cpp_stat_fn"]] = compiled
-				} else {
-					if (!is.function(fn)) stop("custom_randomization_statistic_cpp must be a C++ source string or compiled Rcpp function, not a ", class(fn)[1], ".")
-					arity = length(formals(fn))
-					if (!arity %in% c(2L, 3L)) stop("custom_randomization_statistic_cpp must accept 2 arguments (y, w) or 3 arguments (y, w, dead); got ", arity, ".")
-					private[["compiled_cpp_stat_src"]] = NULL
-					private[["compiled_cpp_stat_fn"]] = fn
-				}
-			} else {
-				private[["compiled_cpp_stat_src"]] = NULL
-				private[["compiled_cpp_stat_fn"]] = NULL
-			}
-			private$cached_values$t0s_rand = NULL
-			private$cached_values$rand_distr_cache = list()
-			private$cached_values$custom_stat_analysis = NULL
-		}
-	),
 	private = list(
 		custom_randomization_statistic_function = NULL,
 		compiled_cpp_stat_fn = NULL,

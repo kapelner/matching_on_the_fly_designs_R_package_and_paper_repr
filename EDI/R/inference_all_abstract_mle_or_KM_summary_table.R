@@ -47,7 +47,11 @@ InferenceMLEorKMSummaryTable = R6::R6Class("InferenceMLEorKMSummaryTable",
 			private$shared()
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Computes a 2-sided p-value
+		#' @description Compute a two-sided p-value for model-summary-table
+		#'   inference by using the cached treatment estimate and standard error from
+		#'   the fitted model or Kaplan-Meier summary. See
+		#'   \code{\link[EDI:InferenceMLEorKMSummaryTable]{InferenceMLEorKMSummaryTable}}
+		#'   and \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#'
 		#' @param delta                                   The null difference to test against. For
 		#'   any treatment effect at all this is set to zero (the default).

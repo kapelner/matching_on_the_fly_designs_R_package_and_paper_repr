@@ -1634,7 +1634,7 @@ if (requireNamespace("commonmark", quietly = TRUE)) {
   html_doc = c(
     "<!doctype html>",
     '<html><head><meta charset="utf-8">',
-    "<title>EDI R Canonical Benchmarks</title>",
+    "<title>EDI R Baseline Benchmarks</title>",
     "<style>",
     ":root { color-scheme: light dark; }",
     "body { font-family: -apple-system, Segoe UI, Helvetica, Arial, sans-serif; max-width: 1200px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }",
@@ -1651,6 +1651,7 @@ if (requireNamespace("commonmark", quietly = TRUE)) {
     "table { border-collapse: collapse; width: 100%; margin: 1rem 0; }",
     "th, td { border: 1px solid #d0d7de; padding: 4px 8px; text-align: left; font-size: 0.9rem; }",
     "th { background: rgba(127,127,127,0.15); }",
+    "td:nth-child(8), th:nth-child(8) { white-space: nowrap; }",
     "tr[style] td { color: #111; }",
     "code { padding: 1px 4px; border-radius: 4px; }",
     ".legend span { display: inline-block; width: 1em; height: 1em; margin-right: 0.4em; vertical-align: middle; border: 1px solid #8888; }",

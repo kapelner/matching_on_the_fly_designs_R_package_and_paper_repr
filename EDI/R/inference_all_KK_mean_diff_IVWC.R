@@ -29,8 +29,9 @@
 InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
-	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+	public = list(
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B  					Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         Whether to return diagnostics.
@@ -48,66 +49,6 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
-		},
-		#' @description Whether likelihood-ratio parametric bootstrap is supported.
-		#'
-		#' @return \code{TRUE}.
-		supports_lik_ratio_param_bootstrap = function() TRUE,
-		#' @description Whether likelihood-based tests are supported.
-		#'
-		#' @return \code{TRUE}.
-		supports_likelihood_tests = function() TRUE,
-		#' @description Simulate responses under a likelihood null model.
-		#'
-		#' @param spec A likelihood-test specification list.
-		#' @param delta The null treatment effect.
-		#' @param null_fit The fitted null model object.
-		#'
-		#' @return A list containing simulated full and null likelihood components.
-		simulate_under_lik_null = function(spec, delta, null_fit){
-			# Generative model: Matched pairs + Reservoir Gaussian
-			KKstats = private$cached_values$KKstats
-			n = private$n
-			w = spec$w
-			m = KKstats$m
-			
-			# 1. Simulate matched pairs
-			ssq_D = KKstats$ssqD_bar * m 
-			b_null = as.numeric(null_fit$b)
-			y_diffs_sim = rnorm(m, b_null[2], sqrt(ssq_D))
-			
-			# 2. Simulate reservoir
-			ssq_R = KKstats$ssqR
-			y_res_sim = numeric(length(KKstats$y_reservoir))
-			w_res = KKstats$w_reservoir
-			y_res_sim[w_res == 1] = b_null[1] + b_null[2] + rnorm(sum(w_res == 1), 0, sqrt(ssq_R))
-			y_res_sim[w_res == 0] = b_null[1] + rnorm(sum(w_res == 0), 0, sqrt(ssq_R))
-			
-			list(
-				full_fit = list(b = b_null, y_diffs = y_diffs_sim, y_res = y_res_sim),
-				fit_null = function(d, start = NULL){
-					list(b = c(b_null[1], d), y_diffs = y_diffs_sim, y_res = y_res_sim)
-				},
-				neg_loglik = function(fit){
-					b = fit$b
-					ll_m = -0.5 * sum((y_diffs_sim - b[2])^2) / ssq_D
-					ll_r = -0.5 * sum((y_res_sim - (b[1] + w_res * b[2]))^2) / ssq_R
-					-(ll_m + ll_r)
-				}
-			)
-		},
-		#' @description Get the likelihood-test specification.
-		#'
-		#' @return A likelihood-test specification list, or \code{NULL}.
-		get_likelihood_test_spec = function(){
-			private$shared(estimate_only = FALSE)
-			if (is.null(private$cached_values$beta_hat_T)) return(NULL)
-			KKstats = private$cached_values$KKstats
-			list(
-				w = private$w,
-				full_fit = list(b = c(mean(KKstats$y_reservoir[KKstats$w_reservoir==0], na.rm=T), private$cached_values$beta_hat_T)),
-				j = 2L
-			)
 		},
 		#' @description Computes a 1-alpha level frequentist confidence interval
 		#'
@@ -129,7 +70,10 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Computes a 2-sided p-value
+		#' @description Compute the KK mean-difference two-sided p-value using the
+		#'   configured asymptotic or likelihood-backed test. See
+		#'   \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}} for the shared
+		#'   score, likelihood-ratio, and gradient-test semantics.
 		#'
 		#' @param delta   The null difference to test against. For any treatment effect at all this is
 		#'   set to zero (the default).
@@ -145,7 +89,8 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-		#' @description Computes a 1-alpha level frequentist confidence interval for the randomization test
+		#' @description Uses the shared randomization confidence-interval contract; see
+		#'   \code{\link[EDI:InferenceRandCI]{InferenceRandCI}}.
 		#'
 		#' @param alpha The confidence level in the computed confidence
 		#'   interval is 1 - \code{alpha}. The default is 0.05.
@@ -163,8 +108,8 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 			}
 			super$compute_rand_confidence_interval(alpha = alpha, r = r, pval_epsilon = pval_epsilon, show_progress = show_progress, ci_search_control = ci_search_control)
 		}
-	))),
-	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+	),
+	private = list(
 		compute_fast_bootstrap_distr = function(B, i_reservoir, n_reservoir, m, y, w, m_vec) {
 			# Only safe for simple additive/linear combinations right now.
 			if (!is.null(private[["custom_randomization_statistic_function"]])) return(NULL)
@@ -283,7 +228,7 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 					}
 				}
 		}
-	)))
+	)
 )
 
 #' @export

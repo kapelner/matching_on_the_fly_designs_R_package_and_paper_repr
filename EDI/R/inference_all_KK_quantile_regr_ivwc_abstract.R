@@ -9,8 +9,12 @@
 InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRegrIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractQuantileRandCI,
-	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
-		#' @description Initialize
+	public = list(
+		#' @description Initialize KK inverse-variance combined quantile-regression
+		#'   inference. The parent validates the completed KK design, stores the
+		#'   quantile level, applies the response transformation supplied by the
+		#'   concrete subclass, and prepares matched-pair plus reservoir data for the
+		#'   IVWC quantile-regression estimator.
 		#' @param des_obj         A DesignSeqOneByOne object whose entire n subjects are assigned
 		#'   and response y is recorded within.
 		#' @param tau The quantile level for regression, strictly between 0 and 1. The default
@@ -47,7 +51,8 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 				private$compute_basic_match_data()
 			}
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B  					Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         Whether to return diagnostics.
@@ -96,8 +101,8 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		}
-	))),
-	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
+	),
+	private = list(
 		is_a_kk_quantile_regr_ivwc = function() TRUE,
 		tau = NULL,
 		transform_y_fn_list = NULL,  # list(fn = ...) wrapping avoids R6 treating function as a locked method
@@ -392,5 +397,5 @@ InferenceAbstractKKQuantileRegrIVWC = R6::R6Class("InferenceAbstractKKQuantileRe
 			if (is.null(fit)) return(NA_real_)
 			tryCatch(coef(fit)[["trt__"]], error = function(e) NA_real_)
 		}
-	)))
+	)
 )

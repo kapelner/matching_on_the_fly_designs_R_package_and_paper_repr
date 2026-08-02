@@ -48,7 +48,10 @@ report$summarize()
 \if{html}{\out{<a id="method-SimulationFrameworkReport-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-SimulationFrameworkReport-initialize}{}}}
 \subsection{\code{SimulationFrameworkReport$new()}}{
-  Create a new \code{SimulationFrameworkReport}.
+  Create a new
+  \code{\link[EDI:SimulationFrameworkReport]{SimulationFrameworkReport}}
+  object that stores simulation results, captured errors, and summary
+  helpers returned by \code{\link[EDI:SimulationFramework]{SimulationFramework}}.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{SimulationFrameworkReport$new(sim_or_filename, alpha = NULL)}

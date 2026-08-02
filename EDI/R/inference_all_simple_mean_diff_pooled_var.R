@@ -20,7 +20,10 @@ InferenceAllSimpleMeanDiffPooledVar = R6::R6Class("InferenceAllSimpleMeanDiffPoo
 	lock_objects = FALSE,
 	inherit = InferenceAllSimpleMeanDiff,
 	public = list(
-		#' @description Initialize simple pooled-variance inference.
+		#' @description Initialize simple pooled-variance mean-difference inference
+		#'   for continuous responses and prepare the pooled standard-error
+		#'   calculation used by
+		#'   \code{\link[EDI:InferenceAllSimpleMeanDiffPooledVar]{InferenceAllSimpleMeanDiffPooledVar}}.
 		#' @param des_obj A completed design object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -36,12 +39,14 @@ InferenceAllSimpleMeanDiffPooledVar = R6::R6Class("InferenceAllSimpleMeanDiffPoo
 				assertNoCensoring(private$any_censoring)
 			}
 		},
-		#' @description Compute the treatment effect estimate.
+		#' @description Computes the class-specific treatment-effect estimate; see
+		#'   \code{\link[EDI:Inference]{Inference}}.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			super$compute_estimate(estimate_only = estimate_only)
 		},
-		#' @description Computes an approximate confidence interval.
+		#' @description Uses the shared asymptotic confidence-interval contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -54,7 +59,8 @@ InferenceAllSimpleMeanDiffPooledVar = R6::R6Class("InferenceAllSimpleMeanDiffPoo
 			names(ci) = paste0(c(alpha / 2, 1 - alpha / 2) * 100, "%")
 			ci
 		},
-		#' @description Computes an approximate two-sided p-value.
+		#' @description Uses the shared asymptotic two-sided p-value contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta Null treatment effect value.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -65,7 +71,8 @@ InferenceAllSimpleMeanDiffPooledVar = R6::R6Class("InferenceAllSimpleMeanDiffPoo
 			t_stat = (pooled_stats$estimate - delta) / pooled_stats$se
 			2 * stats::pt(-abs(t_stat), df = pooled_stats$df)
 		},
-		#' @description Creates the bootstrap distribution of the estimate for the treatment effect.
+		#' @description Uses the shared nonparametric bootstrap distribution contract; see
+		#'   \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}}.
 		#' @param B  					Number of bootstrap samples.
 		#' @param show_progress Whether to show a progress bar.
 		#' @param debug         Whether to return diagnostics.

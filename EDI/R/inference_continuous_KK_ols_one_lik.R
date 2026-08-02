@@ -22,7 +22,9 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompound,
 	public = list(
-		#' @description Initialize the inference object.
+		#' @description Initialize the KK one-likelihood OLS inference object and
+		#'   prepare the combined matched/reservoir design used by
+		#'   \code{\link[EDI:InferenceContinKKOLSOneLik]{InferenceContinKKOLSOneLik}}.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -51,7 +53,8 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 			private$fit_combined(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Compute the treatment estimate with bootstrap weights.
+		#' @description Recomputes the treatment estimate under bootstrap weights; see
+		#'   \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}}.
 		#' @param subject_or_block_weights Numeric vector. Row weights for bootstrap.
 		#' @param estimate_only Logical. If TRUE, skip variance component calculations.
 		#' @return The treatment estimate.
@@ -74,7 +77,8 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 			}
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes the approximate confidence interval.
+		#' @description Uses the shared asymptotic confidence-interval contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha The confidence level in the computed confidence interval is 1 -
 		#'   \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -95,7 +99,9 @@ InferenceContinKKOLSOneLik = R6::R6Class("InferenceContinKKOLSOneLik",
 				lik_ratio = private$invert_lik_ratio_ci_newton(alpha)
 			)
 		},
-		#' @description Computes the approximate p-value.
+		#' @description Computes the one-likelihood OLS asymptotic p-value using the
+		#'   shared Wald/asymptotic semantics documented in
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta The null difference to test against. For any treatment effect at all this
 		#'   is set to zero (the default).
 		compute_asymp_two_sided_pval = function(delta = 0){

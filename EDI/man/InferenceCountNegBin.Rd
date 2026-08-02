@@ -34,7 +34,127 @@ inf$compute_estimate()
     \item \href{#method-InferenceCountNegBin-clone}{\code{InferenceCountNegBin$clone()}}
   }
 }
-\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceCountLikelihood.html'><code>InferenceCountLikelihood</code></a>.</p>}}
+\if{html}{\out{<details><summary>+ inherited public methods from InferenceCountLikelihood</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceCountLikelihood.html#method-InferenceCountLikelihood-compute_asymp_confidence_interval'><code>InferenceCountLikelihood$compute_asymp_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceCountLikelihood.html#method-InferenceCountLikelihood-compute_asymp_two_sided_pval'><code>InferenceCountLikelihood$compute_asymp_two_sided_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceCountLikelihood.html#method-InferenceCountLikelihood-compute_estimate'><code>InferenceCountLikelihood$compute_estimate()</code></a></li>
+  <li><a href='../../EDI/html/InferenceCountLikelihood.html#method-InferenceCountLikelihood-compute_gradient_confidence_interval'><code>InferenceCountLikelihood$compute_gradient_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceCountLikelihood.html#method-InferenceCountLikelihood-compute_gradient_two_sided_pval'><code>InferenceCountLikelihood$compute_gradient_two_sided_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceCountLikelihood.html#method-InferenceCountLikelihood-compute_lik_ratio_bootstrap_confidence_interval'><code>InferenceCountLikelihood$compute_lik_ratio_bootstrap_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceCountLikelihood.html#method-InferenceCountLikelihood-compute_lik_ratio_bootstrap_two_sided_pval'><code>InferenceCountLikelihood$compute_lik_ratio_bootstrap_two_sided_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceCountLikelihood.html#method-InferenceCountLikelihood-compute_lik_ratio_confidence_interval'><code>InferenceCountLikelihood$compute_lik_ratio_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceCountLikelihood.html#method-InferenceCountLikelihood-compute_lik_ratio_two_sided_pval'><code>InferenceCountLikelihood$compute_lik_ratio_two_sided_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceCountLikelihood.html#method-InferenceCountLikelihood-compute_score_confidence_interval'><code>InferenceCountLikelihood$compute_score_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceCountLikelihood.html#method-InferenceCountLikelihood-compute_score_two_sided_pval'><code>InferenceCountLikelihood$compute_score_two_sided_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceCountLikelihood.html#method-InferenceCountLikelihood-compute_wald_confidence_interval'><code>InferenceCountLikelihood$compute_wald_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceCountLikelihood.html#method-InferenceCountLikelihood-compute_wald_two_sided_pval'><code>InferenceCountLikelihood$compute_wald_two_sided_pval()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceParamBootstrap</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_param_bootstrap_confidence_interval'><code>InferenceParamBootstrap$compute_param_bootstrap_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_param_bootstrap_estimate'><code>InferenceParamBootstrap$compute_param_bootstrap_estimate()</code></a></li>
+  <li><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-compute_param_bootstrap_pval'><code>InferenceParamBootstrap$compute_param_bootstrap_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-get_last_param_bootstrap_diagnostics'><code>InferenceParamBootstrap$get_last_param_bootstrap_diagnostics()</code></a></li>
+  <li><a href='../../EDI/html/InferenceParamBootstrap.html#method-InferenceParamBootstrap-get_last_param_bootstrap_estimate_diagnostics'><code>InferenceParamBootstrap$get_last_param_bootstrap_estimate_diagnostics()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceAsympLik</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_bartlett_approx_confidence_interval'><code>InferenceAsympLik$compute_lik_ratio_bartlett_approx_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_bartlett_approx_two_sided_pval'><code>InferenceAsympLik$compute_lik_ratio_bartlett_approx_two_sided_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_bartlett_confidence_interval'><code>InferenceAsympLik$compute_lik_ratio_bartlett_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_bartlett_exact_confidence_interval'><code>InferenceAsympLik$compute_lik_ratio_bartlett_exact_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_bartlett_exact_two_sided_pval'><code>InferenceAsympLik$compute_lik_ratio_bartlett_exact_two_sided_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-compute_lik_ratio_bartlett_two_sided_pval'><code>InferenceAsympLik$compute_lik_ratio_bartlett_two_sided_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_information_preference'><code>InferenceAsympLik$get_information_preference()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_information_source_used'><code>InferenceAsympLik$get_information_source_used()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_supported_information_preferences'><code>InferenceAsympLik$get_supported_information_preferences()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_supported_testing_types'><code>InferenceAsympLik$get_supported_testing_types()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-get_testing_type'><code>InferenceAsympLik$get_testing_type()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_information_preference'><code>InferenceAsympLik$set_information_preference()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAsympLik.html#method-InferenceAsympLik-set_testing_type'><code>InferenceAsympLik$set_testing_type()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceAsymp</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>InferenceAsymp$get_mod()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>InferenceAsymp$get_summary()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceJackknife</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceBayesianBootstrap</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></li>
+  <li><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceRandBootstrapCI</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceRandBootstrapCI.html#method-InferenceRandBootstrapCI-compute_rand_bootstrap_confidence_interval'><code>InferenceRandBootstrapCI$compute_rand_bootstrap_confidence_interval()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceRandBootstrap</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceRandBootstrap.html#method-InferenceRandBootstrap-approximate_rand_bootstrap_distribution_beta_hat_T'><code>InferenceRandBootstrap$approximate_rand_bootstrap_distribution_beta_hat_T()</code></a></li>
+  <li><a href='../../EDI/html/InferenceRandBootstrap.html#method-InferenceRandBootstrap-compute_rand_bootstrap_two_sided_pval'><code>InferenceRandBootstrap$compute_rand_bootstrap_two_sided_pval()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceNonParamBootstrap</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T'><code>InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_m_out_of_n_bootstrap_distribution_beta_hat_T'><code>InferenceNonParamBootstrap$approximate_m_out_of_n_bootstrap_distribution_beta_hat_T()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_subsampling_distribution_beta_hat_T'><code>InferenceNonParamBootstrap$approximate_subsampling_distribution_beta_hat_T()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_confidence_interval'><code>InferenceNonParamBootstrap$compute_m_out_of_n_bootstrap_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_two_sided_pval'><code>InferenceNonParamBootstrap$compute_m_out_of_n_bootstrap_two_sided_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_confidence_interval'><code>InferenceNonParamBootstrap$compute_subsampling_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_sensitivity'><code>InferenceNonParamBootstrap$compute_subsampling_sensitivity()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_two_sided_pval'><code>InferenceNonParamBootstrap$compute_subsampling_two_sided_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-select_optimal_b_subsampling'><code>InferenceNonParamBootstrap$select_optimal_b_subsampling()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-select_optimal_m_out_of_n_bootstrap'><code>InferenceNonParamBootstrap$select_optimal_m_out_of_n_bootstrap()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceRandCI</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>InferenceRandCI$compute_rand_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>InferenceRandCI$compute_rand_two_sided_pval()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceRand</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></li>
+  <li><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_cpp'><code>InferenceRand$set_custom_randomization_statistic_cpp()</code></a></li>
+  <li><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>InferenceRand$set_custom_randomization_statistic_function()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from Inference</summary>
+<ul>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>Inference$compute_exact_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>Inference$duplicate()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_analysis_data'><code>Inference$get_analysis_data()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_covariates'><code>Inference$get_covariates()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_design_object'><code>Inference$get_design_object()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_model_formula'><code>Inference$get_model_formula()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_reason'><code>Inference$get_nonestimable_reason()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_stage'><code>Inference$get_nonestimable_stage()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_optimization_alg'><code>Inference$get_optimization_alg()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_response'><code>Inference$get_response()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_response_type'><code>Inference$get_response_type()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>Inference$get_treatment()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>Inference$is_nonestimable()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>Inference$set_optimization_alg()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>Inference$set_seed()</code></a></li>
+</ul>
+</details>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceCountNegBin-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountNegBin-initialize}{}}}
@@ -71,7 +191,8 @@ design's imputed covariates.}
 \if{html}{\out{<a id="method-InferenceCountNegBin-compute_estimate_with_bootstrap_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountNegBin-compute_estimate_with_bootstrap_weights}{}}}
 \subsection{\code{InferenceCountNegBin$compute_estimate_with_bootstrap_weights()}}{
-  Computes the treatment effect estimate for a weighted bootstrap sample.
+  Recomputes the class-specific treatment estimate under bootstrap weights; see
+  \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}}.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{InferenceCountNegBin$compute_estimate_with_bootstrap_weights(
@@ -114,7 +235,10 @@ design's imputed covariates.}
 \if{html}{\out{<a id="method-InferenceCountNegBin-compute_jackknife_bias_estimate"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountNegBin-compute_jackknife_bias_estimate}{}}}
 \subsection{\code{InferenceCountNegBin$compute_jackknife_bias_estimate()}}{
-  Non-estimable jackknife bias estimate.
+  Report that the jackknife bias estimate is unavailable for
+  negative-binomial fits when delete-one refits are not stable; see
+  \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} for the shared
+  jackknife contract.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{InferenceCountNegBin$compute_jackknife_bias_estimate(unit = "auto")}
@@ -133,7 +257,10 @@ design's imputed covariates.}
 \if{html}{\out{<a id="method-InferenceCountNegBin-compute_jackknife_std_error"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountNegBin-compute_jackknife_std_error}{}}}
 \subsection{\code{InferenceCountNegBin$compute_jackknife_std_error()}}{
-  Non-estimable jackknife standard error.
+  Report that the jackknife standard error is unavailable for
+  negative-binomial fits when delete-one refits are not stable; see
+  \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} for the shared
+  jackknife contract.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{InferenceCountNegBin$compute_jackknife_std_error(unit = "auto")}
@@ -152,7 +279,8 @@ design's imputed covariates.}
 \if{html}{\out{<a id="method-InferenceCountNegBin-compute_jackknife_wald_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountNegBin-compute_jackknife_wald_two_sided_pval}{}}}
 \subsection{\code{InferenceCountNegBin$compute_jackknife_wald_two_sided_pval()}}{
-  Non-estimable jackknife Wald two-sided p-value.
+  Reports that jackknife-Wald p-values are unavailable here; see
+  \code{\link[EDI:InferenceJackknife]{InferenceJackknife}}.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{InferenceCountNegBin$compute_jackknife_wald_two_sided_pval(
@@ -175,7 +303,8 @@ design's imputed covariates.}
 \if{html}{\out{<a id="method-InferenceCountNegBin-compute_jackknife_wald_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceCountNegBin-compute_jackknife_wald_confidence_interval}{}}}
 \subsection{\code{InferenceCountNegBin$compute_jackknife_wald_confidence_interval()}}{
-  Non-estimable jackknife Wald confidence interval.
+  Reports that jackknife-Wald intervals are unavailable here; see
+  \code{\link[EDI:InferenceJackknife]{InferenceJackknife}}.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{InferenceCountNegBin$compute_jackknife_wald_confidence_interval(

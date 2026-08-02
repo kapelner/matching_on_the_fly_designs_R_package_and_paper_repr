@@ -11,16 +11,23 @@
 // log_sigma is parameterized with a soft-barrier penalty rather than a hard cut.
 // This avoids the infinite-gradient issue at the boundary.
 
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#include "result_map.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
+#endif
 #include <cmath>
 #include <vector>
 #include <algorithm>
 #include <numeric>
 #include <limits>
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 namespace {
 
@@ -362,6 +369,7 @@ public:
 
 } // namespace
 
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 Eigen::VectorXd get_logistic_glmm_score_cpp(
 	SEXP X_r,
@@ -437,7 +445,158 @@ double get_logistic_glmm_neg_loglik_cpp(
 	LogisticGLMMObjective obj(dat);
 	return likelihood_value(obj, params) - log_sigma_penalty(params[X.cols()]);
 }
+#endif // EDI_CORE_ONLY
 
+// Portable core.
+edi::ResultMap fast_logistic_glmm_internal(
+	const Eigen::Ref<const Eigen::MatrixXd>& X,
+	const Eigen::Ref<const Eigen::VectorXd>& y,
+	const Eigen::Ref<const Eigen::VectorXi>& group_id,
+	int j_T,
+	std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+	bool smart_cold_start = true,
+	bool estimate_only = false,
+	int n_gh = 20,
+	int maxit = 300,
+	double eps_g = 1e-6,
+	std::string optimization_alg = "lbfgs",
+	std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+	std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+	std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt
+) {
+	const int n = (int)X.rows();
+	const int p = (int)X.cols();
+	const int total = p + 1; // betas + log_sigma
+
+	std::vector<int> gid_v(group_id.data(), group_id.data() + n);
+
+	LogisticGLMMData dat(X, y, gid_v, n_gh);
+
+	Eigen::VectorXd par(total);
+	if (warm_start_params.has_value()) {
+		const Eigen::VectorXd& sp = *warm_start_params;
+		if (sp.size() == total) {
+			for (int i = 0; i < total; ++i) par[i] = sp[i];
+		}
+	} else if (smart_cold_start) {
+		par.head(p) = ols_smart_cold_start_beta(X, y);
+		par[total - 1] = -3.0;
+	} else {
+		par.head(p).setZero();
+		par[total - 1] = -3.0;
+	}
+
+	LogisticGLMMObjective obj(dat);
+	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
+
+	Eigen::MatrixXd info_start;
+	Eigen::MatrixXd* info_start_ptr = nullptr;
+	if (warm_start_fisher_info.has_value()) {
+		info_start = *warm_start_fisher_info;
+		info_start_ptr = &info_start;
+	}
+
+	double neg_ll = std::numeric_limits<double>::quiet_NaN();
+	int niter = maxit;
+	bool converged = false;
+	double gradient_norm = std::numeric_limits<double>::quiet_NaN();
+	try {
+		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
+		par = fit.params;
+		neg_ll = fit.value;
+		niter = fit.niter;
+		converged = std::isfinite(neg_ll) && fit.converged;
+		gradient_norm = fit.gradient_norm;
+	} catch (...) {
+		return edi::ResultMap()
+			.set("params", par)
+			.set("b", par.head(p))
+			.set("log_sigma", par[total - 1])
+			.set("ssq_b_T", std::numeric_limits<double>::quiet_NaN())
+			.set("converged", false)
+			.set("neg_loglik", std::numeric_limits<double>::quiet_NaN())
+			.set("gradient_norm", std::numeric_limits<double>::quiet_NaN())
+			.set("variance_boundary_hit", std::monostate{});
+	}
+	// The fitted random-effect log-variance landed at or beyond the same
+	// boundary where the soft barrier above starts penalizing it -- a
+	// distinct pathology from separation (a collapsing/diverging variance
+	// component, not a diverging fixed-effect coefficient).
+	const bool variance_boundary_hit = std::isfinite(par[total - 1]) &&
+		std::abs(par[total - 1]) >= kLogSigmaPenaltyCenter;
+
+	// Remove soft-barrier penalty from neg_ll so it reflects the true neg log-likelihood
+	double true_neg_ll = neg_ll;
+	if (estimate_only) {
+		const double pen = log_sigma_penalty(par[total - 1]);
+		true_neg_ll = neg_ll - pen;
+		return edi::ResultMap()
+			.set("params", par)
+			.set("b", par.head(p))
+			.set("log_sigma", par[total - 1])
+			.set("ssq_b_T", std::numeric_limits<double>::quiet_NaN())
+			.set("vcov", std::monostate{})
+			.set("score", std::monostate{})
+			.set("observed_information", std::monostate{})
+			.set("information", std::monostate{})
+			.set("information_type", std::string("observed"))
+			.set("hessian", std::monostate{})
+			.set("converged", converged)
+			.set("neg_loglik", true_neg_ll)
+			.set("neg_ll", true_neg_ll)
+			.set("loglik", std::isfinite(true_neg_ll) ? -true_neg_ll : std::numeric_limits<double>::quiet_NaN())
+			.set("fisher_information", std::monostate{})
+			.set("gradient_norm", gradient_norm)
+			.set("variance_boundary_hit", variance_boundary_hit);
+	}
+
+	Eigen::VectorXd score = Eigen::VectorXd::Constant(total, std::numeric_limits<double>::quiet_NaN());
+	Eigen::MatrixXd information = Eigen::MatrixXd::Constant(total, total, std::numeric_limits<double>::quiet_NaN());
+	try {
+		const double pen = log_sigma_penalty(par[total - 1]);
+		true_neg_ll = neg_ll - pen;
+		obj(par, score);
+		score[total - 1] -= log_sigma_penalty_grad(par[total - 1]);
+		score = -score;
+		information = obj.hessian(par);
+		information(total - 1, total - 1) -= log_sigma_penalty_hessian(par[total - 1]);
+	} catch (...) {
+		converged = false;
+	}
+
+	double ssq_b_T = std::numeric_limits<double>::quiet_NaN();
+	Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(total, total, std::numeric_limits<double>::quiet_NaN());
+	if (converged) {
+		Eigen::MatrixXd information_free = subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx);
+		Eigen::MatrixXd cov_free = covariance_from_information(information_free);
+		vcov = expand_free_covariance(total, fixed_spec, cov_free, true);
+		if (j_T < p) {
+			ssq_b_T = vcov(j_T, j_T);
+		}
+	}
+
+	Eigen::MatrixXd neg_information = -information;
+	return edi::ResultMap()
+		.set("params", par)
+		.set("b", par.head(p))
+		.set("log_sigma", par[total - 1])
+		.set("ssq_b_T", ssq_b_T)
+		.set("vcov", vcov)
+		.set("score", score)
+		.set("observed_information", information)
+		.set("information", information)
+		.set("information_type", std::string("observed"))
+		.set("hessian", neg_information)
+		.set("converged", converged)
+		.set("neg_loglik", true_neg_ll)
+		.set("neg_ll", true_neg_ll)
+		.set("loglik", std::isfinite(true_neg_ll) ? -true_neg_ll : std::numeric_limits<double>::quiet_NaN())
+		.set("fisher_information", information)
+		.set("gradient_norm", gradient_norm)
+		.set("variance_boundary_hit", variance_boundary_hit);
+}
+
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 List fast_logistic_glmm_cpp(
 	SEXP X_r,       // n x p, includes intercept; treatment at col j_T (0-based)
@@ -461,142 +620,23 @@ List fast_logistic_glmm_cpp(
 	Eigen::Map<const Eigen::MatrixXd> X(X_mat.begin(), X_mat.nrow(), X_mat.ncol());
 	Eigen::Map<const Eigen::VectorXd> y(y_vec.begin(), y_vec.size());
 	Eigen::Map<const Eigen::VectorXi> group_id(group_id_int.begin(), group_id_int.size());
-	const int n = (int)X.rows();
-	const int p = (int)X.cols();
-	const int total = p + 1; // betas + log_sigma
 
-	std::vector<int> gid_v(group_id.data(), group_id.data() + n);
-
-	LogisticGLMMData dat(X, y, gid_v, n_gh);
-
-	// Initialize
-	Eigen::VectorXd par(total);
-	std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
-	if (warm_start_params_opt.has_value()) {
-		const Eigen::VectorXd& sp = *warm_start_params_opt;
-		if (sp.size() == total) {
-			for (int i = 0; i < total; ++i) par[i] = sp[i];
-		}
-	} else if (smart_cold_start) {
-		// Logistic smart warm_start_params: OLS on y
-		par.head(p) = ols_smart_cold_start_beta(X, y);
-		par[total - 1] = -3.0;
-	} else {
-		par.head(p).setZero();
-		par[total - 1] = -3.0;
-	}
-
-	LogisticGLMMObjective obj(dat);
-	FixedParamSpec fixed_spec = make_fixed_param_spec(
-		total,
+	edi::ResultMap res = fast_logistic_glmm_internal(
+		X, y, group_id, j_T,
+		nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+		smart_cold_start, estimate_only, n_gh, maxit, eps_g, optimization_alg,
 		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
-		nullable_to_optional<Eigen::VectorXd>(fixed_values));
+		nullable_to_optional<Eigen::VectorXd>(fixed_values),
+		nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
 
-	Eigen::MatrixXd info_start;
-	Eigen::MatrixXd* info_start_ptr = nullptr;
-	std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
-	if (warm_start_fisher_info_opt.has_value()) {
-		info_start = *warm_start_fisher_info_opt;
-		info_start_ptr = &info_start;
+	List out = edi::to_rcpp_list(res);
+	// Catch-block path: variance_boundary_hit is std::monostate there
+	// (unrepresentable as R's NA_LOGICAL via ResultMap) -- translate back to
+	// NA_LOGICAL only for that one field, matching this function's original
+	// R-facing contract exactly.
+	if (res.get_if<std::monostate>("variance_boundary_hit")) {
+		out["variance_boundary_hit"] = NA_LOGICAL;
 	}
-
-	double neg_ll = NA_REAL;
-	int niter = maxit;
-	bool converged = false;
-	double gradient_norm = NA_REAL;
-	try {
-		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
-		par = fit.params;
-		neg_ll = fit.value;
-		niter = fit.niter;
-		converged = std::isfinite(neg_ll) && fit.converged;
-		gradient_norm = fit.gradient_norm;
-	} catch (...) {
-		return List::create(
-			Named("params")     = par,
-			Named("b")          = par.head(p),
-			Named("log_sigma")  = par[total - 1],
-			Named("ssq_b_T")    = NA_REAL,
-			Named("converged")  = false,
-			Named("neg_loglik") = NA_REAL,
-			Named("gradient_norm") = NA_REAL,
-			Named("variance_boundary_hit") = NA_LOGICAL
-		);
-	}
-	// The fitted random-effect log-variance landed at or beyond the same
-	// boundary where the soft barrier above starts penalizing it -- a
-	// distinct pathology from separation (a collapsing/diverging variance
-	// component, not a diverging fixed-effect coefficient).
-	const bool variance_boundary_hit = std::isfinite(par[total - 1]) &&
-		std::abs(par[total - 1]) >= kLogSigmaPenaltyCenter;
-
-	// Remove soft-barrier penalty from neg_ll so it reflects the true neg log-likelihood
-	double true_neg_ll = neg_ll;
-	if (estimate_only) {
-		const double pen = log_sigma_penalty(par[total - 1]);
-		true_neg_ll = neg_ll - pen;
-		return edi::to_rcpp_list(edi::ResultMap()
-			.set("params", par)
-			.set("b", par.head(p))
-			.set("log_sigma", par[total - 1])
-			.set("ssq_b_T", NA_REAL)
-			.set("vcov", std::monostate{})
-			.set("score", std::monostate{})
-			.set("observed_information", std::monostate{})
-			.set("information", std::monostate{})
-			.set("information_type", std::string("observed"))
-			.set("hessian", std::monostate{})
-			.set("converged", converged)
-			.set("neg_loglik", true_neg_ll)
-			.set("neg_ll", true_neg_ll)
-			.set("loglik", R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL)
-			.set("fisher_information", std::monostate{})
-			.set("gradient_norm", gradient_norm)
-			.set("variance_boundary_hit", variance_boundary_hit));
-	}
-
-	Eigen::VectorXd score = Eigen::VectorXd::Constant(total, NA_REAL);
-	Eigen::MatrixXd information = Eigen::MatrixXd::Constant(total, total, NA_REAL);
-	try {
-		const double pen = log_sigma_penalty(par[total - 1]);
-		true_neg_ll = neg_ll - pen;
-		obj(par, score);
-		score[total - 1] -= log_sigma_penalty_grad(par[total - 1]);
-		score = -score;
-		information = obj.hessian(par);
-		information(total - 1, total - 1) -= log_sigma_penalty_hessian(par[total - 1]);
-	} catch (...) {
-		converged = false;
-	}
-
-	double ssq_b_T = NA_REAL;
-	Eigen::MatrixXd vcov = Eigen::MatrixXd::Constant(total, total, NA_REAL);
-	if (converged) {
-		Eigen::MatrixXd information_free = subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx);
-		Eigen::MatrixXd cov_free = covariance_from_information(information_free);
-		vcov = expand_free_covariance(total, fixed_spec, cov_free, true);
-		if (j_T < p) {
-			ssq_b_T = vcov(j_T, j_T);
-		}
-	}
-
-	Eigen::MatrixXd neg_information = -information;
-	return edi::to_rcpp_list(edi::ResultMap()
-		.set("params", par)
-		.set("b", par.head(p))
-		.set("log_sigma", par[total - 1])
-		.set("ssq_b_T", ssq_b_T)
-		.set("vcov", vcov)
-		.set("score", score)
-		.set("observed_information", information)
-		.set("information", information)
-		.set("information_type", std::string("observed"))
-		.set("hessian", neg_information)
-		.set("converged", converged)
-		.set("neg_loglik", true_neg_ll)
-		.set("neg_ll", true_neg_ll)
-		.set("loglik", R_finite(true_neg_ll) ? -true_neg_ll : NA_REAL)
-		.set("fisher_information", information)
-		.set("gradient_norm", gradient_norm)
-		.set("variance_boundary_hit", variance_boundary_hit));
+	return out;
 }
+#endif // EDI_CORE_ONLY

@@ -7,7 +7,12 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 	lock_objects = FALSE,
 	inherit = InferenceJackknife,
 	public = list(
-		#' @description Computes an asymptotic confidence interval using the configured test.
+		#' @description Computes an asymptotic confidence interval for the treatment
+		#'   effect using the configured large-sample test. For the default Wald path,
+		#'   the method first calls \code{compute_estimate()}, retrieves the
+		#'   class-specific standard error, and forms a normal or t interval around
+		#'   the estimate. Likelihood-backed subclasses may override the dispatch; see
+		#'   \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}}.
 		#'
 		#' @param alpha  				Significance level 1 - \code{alpha}. Default 0.05.
 		#'
@@ -18,7 +23,12 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			}
 			private$compute_wald_confidence_interval_impl(alpha)
 		},
-		#' @description Computes an asymptotic two-sided p-value using the configured test.
+		#' @description Computes an asymptotic two-sided p-value for the treatment
+		#'   effect using the configured large-sample test. For the default Wald path,
+		#'   the method compares \code{compute_estimate()} to the null value
+		#'   \code{delta} using the class-specific standard error and a normal or t
+		#'   reference distribution. Likelihood-backed subclasses may override the
+		#'   dispatch; see \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}}.
 		#'
 		#' @param delta  				Null treatment effect to test against. Default 0.
 		#'
@@ -33,12 +43,18 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 		get_supported_testing_types = function(){
 			private$get_supported_testing_types_impl()
 		},
-		#' @description Computes the Wald two-sided p-value regardless of configured testing type.
+		#' @description Computes the Wald two-sided p-value regardless of configured
+		#'   testing type. This directly uses the treatment estimate, its standard
+		#'   error, and the available degrees of freedom; compare with
+		#'   \code{compute_asymp_two_sided_pval()} for configured-test dispatch.
 		#' @param delta Null treatment effect.
 		compute_wald_two_sided_pval = function(delta = 0){
 			private$compute_wald_two_sided_pval_impl(delta)
 		},
-		#' @description Computes the Wald confidence interval regardless of configured testing type.
+		#' @description Computes the Wald confidence interval regardless of configured
+		#'   testing type. This directly uses the treatment estimate, its standard
+		#'   error, and the available degrees of freedom; compare with
+		#'   \code{compute_asymp_confidence_interval()} for configured-test dispatch.
 		#' @param alpha Significance level. Default 0.05.
 		compute_wald_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -46,7 +62,11 @@ InferenceAsymp = R6::R6Class("InferenceAsymp",
 			}
 			private$compute_wald_confidence_interval_impl(alpha)
 		},
-		#' @description Abstract method to compute the treatment estimate.
+		#' @description Abstract method to compute the treatment-effect estimate.
+		#'   Concrete subclasses implement the model-specific calculation, such as an
+		#'   MLE coefficient, estimating-equation coefficient, standardized contrast,
+		#'   or rank/statistic-based treatment effect. Related p-value and interval
+		#'   methods call this method before using class-specific uncertainty estimates.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		#' @return 	A scalar treatment estimate.
 		compute_estimate = function(estimate_only = FALSE){

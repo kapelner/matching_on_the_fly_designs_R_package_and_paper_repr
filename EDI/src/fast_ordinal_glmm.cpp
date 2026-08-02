@@ -4,15 +4,26 @@
 //   u_i ~ N(0, sigma^2)    (random intercept per matched pair / singleton)
 //   y_ij \in {1, ..., K}
 
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#include "result_map.h"
+#else
 #include "_helper_functions.h"
-#include "_glmm_engine.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
+#endif
+#include "_glmm_engine.h"
 #include <cmath>
 #include <vector>
 #include <algorithm>
+#include <optional>
+#include <string>
+#include <limits>
+#include <stdexcept>
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 using namespace Eigen;
 
 namespace {
@@ -195,6 +206,146 @@ VectorXd ols_start_beta(const Eigen::Ref<const MatrixXd>& X, const Eigen::Ref<co
 
 } // namespace
 
+// Portable core. variance_boundary_hit is a bool everywhere except the
+// catch(...) fallback path, where the original R export returned NA_LOGICAL
+// (no boundary diagnostic is meaningful if the fit itself threw) -- that one
+// branch uses std::monostate{} instead; the (still-guarded) R wrapper below
+// detects it and patches in NA_LOGICAL to preserve the exact original
+// contract.
+edi::ResultMap fast_ordinal_glmm_internal(
+	const Eigen::Ref<const Eigen::MatrixXd>& X,     // n x p, NO intercept column; treatment at column j_T (0-based)
+	const Eigen::Ref<const Eigen::VectorXi>& y,     // 1-indexed ordinal outcomes, length n
+	const Eigen::Ref<const Eigen::VectorXi>& group_id, // group IDs, length n (sorted internally)
+	int K,                        // number of ordinal levels
+	int j_T,                      // 0-based treatment column index in X
+	bool smart_cold_start = true,
+	bool estimate_only = false,
+	int n_gh = 20,
+	double max_abs_log_sigma = 8.0,
+	int maxit = 300,
+	double eps_g = 1e-6,
+	std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+	std::optional<Eigen::VectorXd> warm_start_beta = std::nullopt,
+	std::string optimization_alg = "lbfgs",
+	std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+	std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+	std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt
+) {
+	const int n = (int)X.rows();
+	const int p = (int)X.cols();
+	const int n_alpha = K - 1;
+	const int total = n_alpha + p + 1; // cutpoint params + betas + log_sigma
+	FixedParamSpec fixed_spec = make_fixed_param_spec(total, fixed_idx, fixed_values);
+
+	// Convert Eigen/R vectors to std::vector for OrdinalGLMMData
+	std::vector<int> y_v(n), gid_v(n);
+	for (int i = 0; i < n; ++i) { y_v[i] = y[i]; gid_v[i] = group_id[i]; }
+
+	OrdinalGLMMData dat(X, y_v, gid_v, K, n_gh, max_abs_log_sigma);
+
+	// Initialize parameters
+	Eigen::VectorXd par(total);
+	if (warm_start_params.has_value()) {
+		const Eigen::VectorXd& sv = *warm_start_params;
+		if (sv.size() == total) {
+			for (int i = 0; i < total; ++i) par[i] = sv[i];
+		} else {
+			// Fallback: zero-initialize
+			par.head(n_alpha).setZero();
+			par.segment(n_alpha, p).setZero();
+			par[total - 1] = -3.0;
+		}
+	} else if (warm_start_beta.has_value()) {
+		const VectorXd& sb = *warm_start_beta;
+		if (sb.size() == total) {
+			par = sb;
+		} else if (sb.size() == p) {
+			par.head(n_alpha).setZero();
+			par.segment(n_alpha, p) = sb;
+			par[total - 1] = -3.0;
+		} else {
+            par.head(n_alpha).setZero();
+			par.segment(n_alpha, p).setZero();
+			par[total - 1] = -3.0;
+        }
+	} else if (smart_cold_start) {
+		// Cutpoints: alpha_1 = 0, log_diffs = 0 (evenly spaced by 1)
+		par.head(n_alpha).setZero();
+		// Betas: OLS on y (rough)
+		Eigen::VectorXd y_double = y.cast<double>();
+		par.segment(n_alpha, p) = ols_start_beta(X, y_double);
+		par[total - 1] = -3.0;
+	} else {
+		par.head(n_alpha).setZero();
+		par.segment(n_alpha, p).setZero();
+		par[total - 1] = -3.0;
+	}
+
+	OrdinalGLMMObjective obj(dat);
+
+	Eigen::MatrixXd info_start;
+	const Eigen::MatrixXd* info_start_ptr = nullptr;
+	if (warm_start_fisher_info.has_value()) {
+		info_start = *warm_start_fisher_info;
+		info_start_ptr = &info_start;
+	}
+
+	double neg_ll = std::numeric_limits<double>::quiet_NaN();
+	bool converged = false;
+	double gradient_norm = std::numeric_limits<double>::quiet_NaN();
+	try {
+		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
+		par = fit.params;
+		neg_ll = fit.value;
+		converged = std::isfinite(neg_ll) && fit.converged;
+		gradient_norm = fit.gradient_norm;
+	} catch (...) {
+		return edi::ResultMap()
+			.set("b", par.segment(n_alpha, p))
+			.set("alpha", par.head(n_alpha))
+			.set("log_sigma", par[total - 1])
+			.set("ssq_b_T", std::numeric_limits<double>::quiet_NaN())
+			.set("converged", false)
+			.set("neg_loglik", std::numeric_limits<double>::quiet_NaN())
+			.set("gradient_norm", std::numeric_limits<double>::quiet_NaN())
+			.set("variance_boundary_hit", std::monostate{});
+	}
+	// This file's boundary is the caller-configurable max_abs_log_sigma (hard
+	// clamp, no separate soft-barrier zone), not the fixed 5.0 threshold used
+	// by the soft-barrier GLMM families -- so the diagnostic must use dat's
+	// own value rather than the shared engine's constant.
+	const bool variance_boundary_hit = std::isfinite(par[total - 1]) &&
+		std::abs(par[total - 1]) >= dat.max_abs_log_sigma;
+
+	const int j_T_full = n_alpha + j_T;
+	Eigen::MatrixXd information = obj.hessian(par);
+	double ssq_b_T = std::numeric_limits<double>::quiet_NaN();
+	if (!estimate_only && converged) {
+		Eigen::MatrixXd H_free = subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx);
+		Eigen::LDLT<Eigen::MatrixXd> ldlt(H_free);
+		if (ldlt.info() == Eigen::Success) {
+			Eigen::MatrixXd inv_free = ldlt.solve(Eigen::MatrixXd::Identity(H_free.rows(), H_free.cols()));
+			if (inv_free.allFinite()) {
+				Eigen::MatrixXd inv = expand_free_covariance(total, fixed_spec, inv_free, true);
+				if (j_T_full < total) ssq_b_T = inv(j_T_full, j_T_full);
+			}
+		}
+	}
+
+	return edi::ResultMap()
+		.set("b", par.segment(n_alpha, p))
+		.set("alpha", par.head(n_alpha))
+		.set("params", par)
+		.set("log_sigma", par[total - 1])
+		.set("ssq_b_T", ssq_b_T)
+		.set("converged", converged)
+		.set("neg_loglik", neg_ll)
+		.set("fisher_information", information)
+		.set("gradient_norm", gradient_norm)
+		.set("variance_boundary_hit", variance_boundary_hit);
+}
+
+#ifndef EDI_CORE_ONLY
 //' @title Fast Ordinal GLMM (C++)
 //' @description High-performance ordinal cumulative-logit GLMM fitting using Gauss-Hermite quadrature and L-BFGS.
 //' @param X A numeric matrix of predictors (no intercept).
@@ -241,123 +392,20 @@ List fast_ordinal_glmm_cpp(
     Eigen::Map<const Eigen::VectorXi> map_y(y.begin(), y.size());
     Eigen::Map<const Eigen::VectorXi> map_group_id(group_id.begin(), group_id.size());
 
-	const int n = map_X.rows();
-	const int p = map_X.cols();
-	const int n_alpha = K - 1;
-	const int total = n_alpha + p + 1; // cutpoint params + betas + log_sigma
-	FixedParamSpec fixed_spec = make_fixed_param_spec(
-		total,
+	edi::ResultMap res = fast_ordinal_glmm_internal(
+		map_X, map_y, map_group_id, K, j_T, smart_cold_start, estimate_only, n_gh,
+		max_abs_log_sigma, maxit, eps_g,
+		nullable_to_optional<Eigen::VectorXd>(warm_start_params),
+		nullable_to_optional<Eigen::VectorXd>(warm_start_beta),
+		optimization_alg,
 		nullable_to_optional<Eigen::VectorXi>(fixed_idx),
-		nullable_to_optional<Eigen::VectorXd>(fixed_values));
+		nullable_to_optional<Eigen::VectorXd>(fixed_values),
+		nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info));
 
-	// Convert Eigen/R vectors to std::vector for OrdinalGLMMData
-	std::vector<int> y_v(n), gid_v(n);
-	for (int i = 0; i < n; ++i) { y_v[i] = map_y[i]; gid_v[i] = map_group_id[i]; }
-
-	OrdinalGLMMData dat(map_X, y_v, gid_v, K, n_gh, max_abs_log_sigma);
-
-	// Initialize parameters
-	Eigen::VectorXd par(total);
-	std::optional<Eigen::VectorXd> warm_start_params_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_params);
-	std::optional<Eigen::VectorXd> warm_start_beta_opt = nullable_to_optional<Eigen::VectorXd>(warm_start_beta);
-	if (warm_start_params_opt.has_value()) {
-		const Eigen::VectorXd& sv = *warm_start_params_opt;
-		if (sv.size() == total) {
-			for (int i = 0; i < total; ++i) par[i] = sv[i];
-		} else {
-			// Fallback: zero-initialize
-			par.head(n_alpha).setZero();
-			par.segment(n_alpha, p).setZero();
-			par[total - 1] = -3.0;
-		}
-	} else if (warm_start_beta_opt.has_value()) {
-		const VectorXd& sb = *warm_start_beta_opt;
-		if (sb.size() == total) {
-			par = sb;
-		} else if (sb.size() == p) {
-			par.head(n_alpha).setZero();
-			par.segment(n_alpha, p) = sb;
-			par[total - 1] = -3.0;
-		} else {
-            par.head(n_alpha).setZero();
-			par.segment(n_alpha, p).setZero();
-			par[total - 1] = -3.0;
-        }
-	} else if (smart_cold_start) {
-		// Cutpoints: alpha_1 = 0, log_diffs = 0 (evenly spaced by 1)
-		par.head(n_alpha).setZero();
-		// Betas: OLS on y (rough)
-		Eigen::VectorXd y_double = map_y.cast<double>();
-		par.segment(n_alpha, p) = ols_start_beta(map_X, y_double);
-		par[total - 1] = -3.0;
-	} else {
-		par.head(n_alpha).setZero();
-		par.segment(n_alpha, p).setZero();
-		par[total - 1] = -3.0;
+	List out = edi::to_rcpp_list(res);
+	if (res.get_if<std::monostate>("variance_boundary_hit")) {
+		out["variance_boundary_hit"] = NA_LOGICAL;
 	}
-
-	OrdinalGLMMObjective obj(dat);
-
-	Eigen::MatrixXd info_start;
-	const Eigen::MatrixXd* info_start_ptr = nullptr;
-	std::optional<Eigen::MatrixXd> warm_start_fisher_info_opt = nullable_to_optional<Eigen::MatrixXd>(warm_start_fisher_info);
-	if (warm_start_fisher_info_opt.has_value()) {
-		info_start = *warm_start_fisher_info_opt;
-		info_start_ptr = &info_start;
-	}
-
-	double neg_ll = NA_REAL;
-	bool converged = false;
-	double gradient_norm = NA_REAL;
-	try {
-		LikelihoodFitResult fit = optimize_fixed_likelihood(obj, par, fixed_spec, maxit, eps_g, optimization_alg, "lbfgs", 0, info_start_ptr);
-		par = fit.params;
-		neg_ll = fit.value;
-		converged = std::isfinite(neg_ll) && fit.converged;
-		gradient_norm = fit.gradient_norm;
-	} catch (...) {
-		return List::create(
-			Named("b")          = par.segment(n_alpha, p),
-			Named("alpha")      = par.head(n_alpha),
-			Named("log_sigma")  = par[total - 1],
-			Named("ssq_b_T")    = NA_REAL,
-			Named("converged")  = false,
-			Named("neg_loglik") = NA_REAL,
-			Named("gradient_norm") = NA_REAL,
-			Named("variance_boundary_hit") = NA_LOGICAL
-		);
-	}
-	// This file's boundary is the caller-configurable max_abs_log_sigma (hard
-	// clamp, no separate soft-barrier zone), not the fixed 5.0 threshold used
-	// by the soft-barrier GLMM families -- so the diagnostic must use dat's
-	// own value rather than the shared engine's constant.
-	const bool variance_boundary_hit = std::isfinite(par[total - 1]) &&
-		std::abs(par[total - 1]) >= dat.max_abs_log_sigma;
-
-	const int j_T_full = n_alpha + j_T;
-	Eigen::MatrixXd information = obj.hessian(par);
-	double ssq_b_T = NA_REAL;
-	if (!estimate_only && converged) {
-		Eigen::MatrixXd H_free = subset_matrix(information, fixed_spec.free_idx, fixed_spec.free_idx);
-		Eigen::LDLT<Eigen::MatrixXd> ldlt(H_free);
-		if (ldlt.info() == Eigen::Success) {
-			Eigen::MatrixXd inv_free = ldlt.solve(Eigen::MatrixXd::Identity(H_free.rows(), H_free.cols()));
-			if (inv_free.allFinite()) {
-				Eigen::MatrixXd inv = expand_free_covariance(total, fixed_spec, inv_free, true);
-				if (j_T_full < total) ssq_b_T = inv(j_T_full, j_T_full);
-			}
-		}
-	}
-
-	return edi::to_rcpp_list(edi::ResultMap()
-		.set("b", par.segment(n_alpha, p))
-		.set("alpha", par.head(n_alpha))
-		.set("params", par)
-		.set("log_sigma", par[total - 1])
-		.set("ssq_b_T", ssq_b_T)
-		.set("converged", converged)
-		.set("neg_loglik", neg_ll)
-		.set("fisher_information", information)
-		.set("gradient_norm", gradient_norm)
-		.set("variance_boundary_hit", variance_boundary_hit));
+	return out;
 }
+#endif // EDI_CORE_ONLY

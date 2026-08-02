@@ -11,7 +11,9 @@ InferenceContinKKRobustRegrIVWC = R6::R6Class("InferenceContinKKRobustRegrIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
 	public = list(
-		#' @description Initialize the inference object.
+		#' @description Initialize KK inverse-variance combined robust-regression
+		#'   inference and prepare the matched/reservoir components used by
+		#'   \code{\link[EDI:InferenceContinKKRobustRegrIVWC]{InferenceContinKKRobustRegrIVWC}}.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -55,13 +57,15 @@ InferenceContinKKRobustRegrIVWC = R6::R6Class("InferenceContinKKRobustRegrIVWC",
 			private$rlm_start_with_ols = start_with_ols
 			private$use_rcpp = use_rcpp
 		},
-		#' @description Returns the estimated treatment effect.
+		#' @description Returns the class-specific treatment-effect estimate; see
+		#'   \code{\link[EDI:Inference]{Inference}}.
 		#' @param estimate_only Logical. If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes the approximate confidence interval.
+		#' @description Uses the shared asymptotic confidence-interval contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha Numeric. Significance level (default 0.05).
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			if (should_run_asserts()) {
@@ -73,7 +77,9 @@ InferenceContinKKRobustRegrIVWC = R6::R6Class("InferenceContinKKRobustRegrIVWC",
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Computes the approximate p-value.
+		#' @description Computes the robust-regression asymptotic p-value using the
+		#'   shared Wald/asymptotic semantics documented in
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta Numeric. Null treatment effect value (default 0).
 		compute_asymp_two_sided_pval = function(delta = 0){
 			if (should_run_asserts()) {
@@ -85,7 +91,10 @@ InferenceContinKKRobustRegrIVWC = R6::R6Class("InferenceContinKKRobustRegrIVWC",
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-		#' @description Duplicate
+		#' @description Duplicate the robust-regression inference object while
+		#'   preserving the selected match-specific formulas and clearing cached fit
+		#'   results; see \code{\link[EDI:Inference]{Inference}} for the common
+		#'   duplication contract.
 		#' @param verbose Logical. A flag indicating whether messages should be displayed.
 		#' @param make_fork_cluster Logical. Whether the duplicate should be allowed to create a fork cluster.
 		duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){

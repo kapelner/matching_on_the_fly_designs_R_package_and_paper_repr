@@ -1,12 +1,19 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#include "result_map.h"
+#else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
 #include <RcppEigen.h>
 #include <Rmath.h>
+#endif
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 namespace {
 
@@ -78,6 +85,81 @@ public:
 
 } // namespace
 
+// Portable core: same fit as fast_weibull_regression_cpp below, but built
+// directly on edi::ResultMap rather than _helper_functions.h's Rcpp-coupled
+// make_uniform_likelihood_fit_result (params/neg_loglik/converged/score/
+// observed_information/hessian/information/information_type/vcov -- same
+// field set, information_type fixed at "observed" since fisher_information
+// is never passed here, matching that helper's own default).
+edi::ResultMap fast_weibull_regression_internal(
+    const Eigen::Ref<const Eigen::MatrixXd>& X,
+    const Eigen::Ref<const Eigen::VectorXd>& y,
+    const Eigen::Ref<const Eigen::VectorXd>& dead,
+    std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+    bool smart_cold_start = true,
+    bool estimate_only = false,
+    int maxit = 100,
+    double tol = 1e-8,
+    std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+    std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+    std::string optimization_alg = "lbfgs",
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt
+) {
+    int p = (int)X.cols();
+    FixedParamSpec fixed_spec = make_fixed_param_spec(p + 1, fixed_idx, fixed_values);
+    WeibullAFTLikelihood fun(y, dead, X);
+
+    Eigen::VectorXd params = Eigen::VectorXd::Zero(p + 1);
+    if (warm_start_params.has_value()) {
+        params = *warm_start_params;
+        if (params.size() != p + 1) throw std::invalid_argument("warm_start_params must have length equal to ncol(X) + 1");
+    } else {
+        WeibullStart legacy_start;
+        legacy_start.beta = Eigen::VectorXd::Zero(p);
+        legacy_start.log_sigma = 0.0;
+
+        WeibullStart start = smart_cold_start ? weibull_aft_start_or_legacy(X, y, dead, legacy_start, fixed_spec) : legacy_start;
+        params = weibull_start_to_params(start);
+    }
+
+    params = apply_fixed_values(params, fixed_spec);
+
+    Eigen::MatrixXd info;
+    const Eigen::MatrixXd* info_ptr = nullptr;
+    if (warm_start_fisher_info.has_value()) {
+        info = *warm_start_fisher_info;
+        info_ptr = &info;
+    }
+
+    LikelihoodFitResult fit = optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_ptr);
+
+    if (estimate_only) {
+        return edi::ResultMap()
+            .set("b", fit.params.head(p))
+            .set("log_sigma", fit.params[p])
+            .set("converged", fit.converged)
+            .set("iterations", fit.niter);
+    }
+
+    Eigen::MatrixXd hess = fun.hessian(fit.params);
+    Eigen::VectorXd score = -likelihood_score(fun, fit.params);
+    Eigen::MatrixXd neg_hess = -hess;
+    Eigen::MatrixXd vcov = covariance_from_information(hess);
+    return edi::ResultMap()
+        .set("params", fit.params)
+        .set("neg_loglik", fit.value)
+        .set("neg_ll", fit.value)
+        .set("loglik", std::isfinite(fit.value) ? -fit.value : std::numeric_limits<double>::quiet_NaN())
+        .set("converged", fit.converged)
+        .set("score", score)
+        .set("observed_information", hess)
+        .set("hessian", neg_hess)
+        .set("information", hess)
+        .set("information_type", std::string("observed"))
+        .set("vcov", vcov);
+}
+
+#ifndef EDI_CORE_ONLY
 //' @title Compute Weibull Regression Score
 //' @description Calculates the score vector (gradient of the log-likelihood) for a Weibull AFT regression model.
 //' @param X A numeric matrix of predictors.
@@ -295,3 +377,4 @@ List fast_weibull_regression_cpp(SEXP X_sexp,
     Eigen::MatrixXd hess = fun.hessian(fit.params);
     return make_uniform_likelihood_fit_result(fit.params, fit.value, fit.converged, -likelihood_score(fun, fit.params), hess, false);
 }
+#endif // EDI_CORE_ONLY

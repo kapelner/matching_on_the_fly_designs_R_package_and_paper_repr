@@ -82,7 +82,9 @@ report$summarize()
 \if{html}{\out{<a id="method-SimulationFramework-initialize"></a>}}
 \if{latex}{\out{\hypertarget{method-SimulationFramework-initialize}{}}}
 \subsection{\code{SimulationFramework$new()}}{
-  Create a new \code{SimulationFramework}.
+  Create a new \code{\link[EDI:SimulationFramework]{SimulationFramework}}
+  object that stores simulation design settings, response-generation
+  settings, inference methods, and replication controls.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{SimulationFramework$new(
@@ -426,7 +428,10 @@ Default \code{TRUE}.}
 \if{html}{\out{<a id="method-SimulationFramework-run"></a>}}
 \if{latex}{\out{\hypertarget{method-SimulationFramework-run}{}}}
 \subsection{\code{SimulationFramework$run()}}{
-  Execute the simulation replications.
+  Execute the configured simulation replications, run each
+  requested design and inference method, collect estimates/p-values/CIs and
+  errors, and return a
+  \code{\link[EDI:SimulationFrameworkReport]{SimulationFrameworkReport}}.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{SimulationFramework$run()}

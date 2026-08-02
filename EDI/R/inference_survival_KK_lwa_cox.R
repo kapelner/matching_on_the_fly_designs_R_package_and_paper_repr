@@ -21,7 +21,9 @@ InferenceSurvivalKKLWACoxPHIVWC = R6::R6Class("InferenceSurvivalKKLWACoxPHIVWC",
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKLWACoxIVWC,
 	public = list(
-		#' @description Initialize the inference object.
+		#' @description Initialize the KK LWA Cox IVWC subclass and delegate shared
+		#'   marginal Cox setup to
+		#'   \code{\link[EDI:InferenceAbstractKKLWACoxIVWC]{InferenceAbstractKKLWACoxIVWC}}.
 		#' @param des_obj A completed \code{Design} object with a survival response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -56,7 +58,9 @@ InferenceSurvivalKKLWACoxPHOneLik = R6::R6Class("InferenceSurvivalKKLWACoxPHOneL
 	lock_objects = FALSE,
 	inherit = InferenceAbstractKKLWACoxOneLik,
 	public = list(
-		#' @description Initialize the inference object.
+		#' @description Initialize the KK LWA Cox one-likelihood subclass and delegate
+		#'   shared marginal Cox setup to
+		#'   \code{\link[EDI:InferenceAbstractKKLWACoxOneLik]{InferenceAbstractKKLWACoxOneLik}}.
 		#' @param des_obj A completed \code{Design} object with a survival response.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is

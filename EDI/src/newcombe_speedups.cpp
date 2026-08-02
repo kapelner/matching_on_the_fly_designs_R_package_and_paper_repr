@@ -1,6 +1,7 @@
 #include <Rcpp.h>
 #include <cmath>
 #include <algorithm>
+#include "fast_erfc.h"
 
 using namespace Rcpp;
 
@@ -10,7 +11,7 @@ using namespace Rcpp;
 NumericVector wilson_score_interval_cpp(double x, double n, double alpha) {
     if (n <= 0) return NumericVector::create(NA_REAL, NA_REAL);
     double p = x / n;
-    double z = R::qnorm(1.0 - alpha / 2.0, 0.0, 1.0, 1, 0);
+    double z = fast_qnorm(1.0 - alpha / 2.0);
     double z2 = z * z;
     
     double denom = 2.0 * (n + z2);

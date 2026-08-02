@@ -22,7 +22,9 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 	lock_objects = FALSE,
 	inherit = InferenceParamBootstrap,
 	public = list(
-		#' @description Initialize the inference object.
+		#' @description Initialize simple Wilcoxon inference and prepare the
+		#'   rank-based treatment statistic used by
+		#'   \code{\link[EDI:InferenceAllSimpleWilcox]{InferenceAllSimpleWilcox}}.
 		#' @param des_obj  A completed \code{DesignSeqOneByOne} object.
 		#' @param model_formula   Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   the formula from the design object is used and its pre-computed design matrix is
@@ -138,26 +140,34 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 			private$cache_nonestimable_estimate("wilcox_hl_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Non-estimable jackknife bias estimate.
+		#' @description Report that the jackknife bias estimate is unavailable for
+		#'   this simple Wilcoxon estimator; see
+		#'   \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} for the shared
+		#'   jackknife contract.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_bias_estimate = function(unit = "auto"){
 			private$cache_nonestimable_estimate("wilcox_hl_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Non-estimable jackknife standard error.
+		#' @description Report that the jackknife standard error is unavailable for
+		#'   this simple Wilcoxon estimator; see
+		#'   \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} for the shared
+		#'   jackknife contract.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_std_error = function(unit = "auto"){
 			private$cache_nonestimable_se("wilcox_hl_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Non-estimable jackknife Wald two-sided p-value.
+		#' @description Reports that jackknife-Wald p-values are unavailable here; see
+		#'   \code{\link[EDI:InferenceJackknife]{InferenceJackknife}}.
 		#' @param delta Null treatment-effect value. Default 0.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_wald_two_sided_pval = function(delta = 0, unit = "auto"){
 			private$cache_nonestimable_se("wilcox_hl_jackknife_not_supported")
 			NA_real_
 		},
-		#' @description Non-estimable jackknife Wald confidence interval.
+		#' @description Reports that jackknife-Wald intervals are unavailable here; see
+		#'   \code{\link[EDI:InferenceJackknife]{InferenceJackknife}}.
 		#' @param alpha Significance level. Default 0.05.
 		#' @param unit Deletion unit. Default \code{"auto"}.
 		compute_jackknife_wald_confidence_interval = function(alpha = 0.05, unit = "auto"){

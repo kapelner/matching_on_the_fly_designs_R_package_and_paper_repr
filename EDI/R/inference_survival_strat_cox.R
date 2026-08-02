@@ -22,7 +22,9 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 	lock_objects = FALSE,
 	inherit = InferenceAsympLikStdModCache,
 	public = list(
-		#' @description Initialize
+		#' @description Initialize stratified Cox proportional-hazards inference and
+		#'   prepare the partial-likelihood fit used by
+		#'   \code{\link[EDI:InferenceSurvivalStratCoxPHRegr]{InferenceSurvivalStratCoxPHRegr}}.
 		#' @param des_obj A completed \code{Design} object with a survival response.
 		#' @param model_formula Optional formula for covariate adjustment. If \code{NULL} (default),
 		#'   covariates from the design object are included. Use \code{~ 1} for univariate.
@@ -66,7 +68,10 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 			private$cached_values$s_beta_hat_T = NA_real_
 			private$cached_values$beta_hat_T
 		},
-		#' @description Compute confidence interval rand
+		#' @description Compute a randomization-based confidence interval for the
+		#'   stratified Cox treatment effect by inverting the class-specific
+		#'   randomization p-value. See
+		#'   \code{\link[EDI:InferenceRandCI]{InferenceRandCI}}.
 		#' @param alpha The significance level (default 0.05).
 		#' @param r Number of vectors to draw.
 		#' @param pval_epsilon The bisection convergence tolerance.

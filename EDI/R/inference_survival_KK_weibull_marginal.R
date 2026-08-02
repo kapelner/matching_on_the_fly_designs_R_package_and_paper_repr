@@ -106,7 +106,8 @@ InferenceSurvivalKKWeibullMarginal = R6::R6Class("InferenceSurvivalKKWeibullMarg
 		approximate_bootstrap_distribution_beta_hat_T = function(B = 501, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL){
 			eval(body(InferenceMixinKKPassThrough$public$approximate_bootstrap_distribution_beta_hat_T))
 		},
-		#' @description Duplicates the object while preserving caches.
+		#' @description Duplicates this subclass while preserving fit caches; see
+		#'   \code{\link[EDI:Inference]{Inference}}.
 		#' @param verbose Whether the duplicate should be verbose.
 		#' @param make_fork_cluster Whether the duplicate should be allowed to create a fork cluster.
 		duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){

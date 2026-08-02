@@ -39,7 +39,8 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 			private$init_kk_glmm_shared(des_obj)
 			private$use_rcpp = use_rcpp
 		},
-		#' @description Compute the treatment effect estimate.
+		#' @description Computes the class-specific treatment-effect estimate; see
+		#'   \code{\link[EDI:Inference]{Inference}}.
 		#' @param estimate_only If TRUE, skip variance component calculations.
 		compute_estimate = function(estimate_only = FALSE){
 			private$shared(estimate_only = estimate_only)
@@ -70,7 +71,8 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 			private$cached_values$summary_table = NULL
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes a Wald confidence interval.
+		#' @description Uses the shared Wald confidence-interval contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha Significance level.
 		compute_wald_confidence_interval = function(alpha = 0.05){
 			private$shared(estimate_only = FALSE)
@@ -98,7 +100,8 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 			p_design = self$compute_wald_two_sided_pval(delta = delta)
 			.conservative_kk_onelik_pval(p_model, p_design)
 		},
-		#' @description Computes an approximate confidence interval.
+		#' @description Uses the shared asymptotic confidence-interval contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha Confidence level.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
 			switch(
@@ -108,7 +111,8 @@ InferenceCountKKGLMM = R6::R6Class("InferenceCountKKGLMM",
 				self$compute_wald_confidence_interval(alpha = alpha)
 			)
 		},
-		#' @description Computes an approximate two-sided p-value.
+		#' @description Uses the shared asymptotic two-sided p-value contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta Null treatment effect value.
 		compute_asymp_two_sided_pval = function(delta = 0){
 			switch(

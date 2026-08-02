@@ -37,6 +37,26 @@ test_that("supports_lik_ratio_param_bootstrap() correctly gates parametric LR bo
 	}
 })
 
+test_that("InferenceAllKKMeanDiffIVWC does not expose unsupported likelihood APIs", {
+	make_kk_design = function(responses) {
+		des = DesignSeqOneByOneKK14$new(n = length(responses), response_type = "continuous")
+		for (i in seq_along(responses)) {
+			des$add_one_subject_to_experiment_and_assign(data.frame(x = rnorm(1)))
+		}
+		des$add_all_subject_responses(responses)
+		des
+	}
+
+	obj = InferenceAllKKMeanDiffIVWC$new(
+		make_kk_design(c(2.1, 1.4, 3.2, 0.8, 2.7, 1.9))
+	)
+
+	expect_false("supports_lik_ratio_param_bootstrap" %in% names(obj))
+	expect_false("supports_likelihood_tests" %in% names(obj))
+	expect_false("simulate_under_lik_null" %in% names(obj))
+	expect_false("get_likelihood_test_spec" %in% names(obj))
+})
+
 test_that("supported families still expose parametric LR bootstrap methods", {
 	des = DesignSeqOneByOneBernoulli$new(n = 6, response_type = "incidence")
 	for (i in 1:6) {

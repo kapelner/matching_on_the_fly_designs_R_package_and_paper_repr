@@ -9,7 +9,9 @@ InferenceContinKKRobustRegrOneLik = R6::R6Class("InferenceContinKKRobustRegrOneL
 	inherit = InferenceKKPassThroughCompoundNoParamBootstrap,
 	public = list(
 				
-		#' @description Initialize the inference object.
+		#' @description Initialize KK one-likelihood robust-regression inference and
+		#'   prepare the combined matched/reservoir design used by
+		#'   \code{\link[EDI:InferenceContinKKRobustRegrOneLik]{InferenceContinKKRobustRegrOneLik}}.
 		#' @param des_obj  	A DesignSeqOneByOne object (must be a KK design).
 		#' @param method  		Robust-regression fitting method for `MASS::rlm`; one of `"M"` or `"MM"`.
 		#' @param maxit  		Maximum number of robust-regression iterations. If `NULL`, a
@@ -86,7 +88,8 @@ InferenceContinKKRobustRegrOneLik = R6::R6Class("InferenceContinKKRobustRegrOneL
 			}
 			private$cached_values$beta_hat_T
 		},
-		#' @description Computes the approximate confidence interval.
+		#' @description Uses the shared asymptotic confidence-interval contract; see
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param alpha The confidence level in the computed confidence interval is 1 -
 		#'   \code{alpha}. The default is 0.05.
 		compute_asymp_confidence_interval = function(alpha = 0.05){
@@ -99,7 +102,9 @@ InferenceContinKKRobustRegrOneLik = R6::R6Class("InferenceContinKKRobustRegrOneL
 			}
 			private$compute_z_or_t_ci_from_s_and_df(alpha)
 		},
-		#' @description Computes the approximate p-value.
+		#' @description Computes the one-likelihood robust-regression asymptotic
+		#'   p-value using the shared Wald/asymptotic semantics documented in
+		#'   \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
 		#' @param delta The null difference to test against. For any treatment effect at all this
 		#'   is set to zero (the default).
 		compute_asymp_two_sided_pval = function(delta = 0){
@@ -137,7 +142,10 @@ InferenceContinKKRobustRegrOneLik = R6::R6Class("InferenceContinKKRobustRegrOneL
 			}
 			private$compute_z_or_t_two_sided_pval_from_s_and_df(delta)
 		},
-		#' @description Duplicate
+		#' @description Duplicate the one-likelihood robust-regression inference
+		#'   object while preserving the selected match-specific formulas and clearing
+		#'   cached fit results; see \code{\link[EDI:Inference]{Inference}} for the
+		#'   common duplication contract.
 		#' @param verbose A flag indicating whether messages should be displayed.
 		#' @param make_fork_cluster Whether the duplicate should be allowed to create a fork cluster.
 		duplicate = function(verbose = FALSE, make_fork_cluster = FALSE){

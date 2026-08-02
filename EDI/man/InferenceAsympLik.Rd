@@ -44,12 +44,108 @@ supporting parametric-bootstrap LR calibration — inherit instead from
     \item \href{#method-InferenceAsympLik-clone}{\code{InferenceAsympLik$clone()}}
   }
 }
-\if{html}{\out{<p>+ inherited public methods from <a href='../../EDI/html/InferenceMLEorKMSummaryTable.html'><code>InferenceMLEorKMSummaryTable</code></a>.</p>}}
+\if{html}{\out{<details><summary>+ inherited public methods from InferenceMLEorKMSummaryTable</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceMLEorKMSummaryTable.html#method-InferenceMLEorKMSummaryTable-compute_estimate'><code>InferenceMLEorKMSummaryTable$compute_estimate()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceAsymp</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_confidence_interval'><code>InferenceAsymp$compute_wald_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-compute_wald_two_sided_pval'><code>InferenceAsymp$compute_wald_two_sided_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_mod'><code>InferenceAsymp$get_mod()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAsymp.html#method-InferenceAsymp-get_summary'><code>InferenceAsymp$get_summary()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceJackknife</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-approximate_jackknife_distribution_beta_hat_T'><code>InferenceJackknife$approximate_jackknife_distribution_beta_hat_T()</code></a></li>
+  <li><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_bias_estimate'><code>InferenceJackknife$compute_jackknife_bias_estimate()</code></a></li>
+  <li><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_estimate'><code>InferenceJackknife$compute_jackknife_estimate()</code></a></li>
+  <li><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_std_error'><code>InferenceJackknife$compute_jackknife_std_error()</code></a></li>
+  <li><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_confidence_interval'><code>InferenceJackknife$compute_jackknife_wald_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceJackknife.html#method-InferenceJackknife-compute_jackknife_wald_two_sided_pval'><code>InferenceJackknife$compute_jackknife_wald_two_sided_pval()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceBayesianBootstrap</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-approximate_bayesian_bootstrap_distribution_beta_hat_T'><code>InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T()</code></a></li>
+  <li><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_confidence_interval'><code>InferenceBayesianBootstrap$compute_bayesian_bootstrap_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_bayesian_bootstrap_two_sided_pval'><code>InferenceBayesianBootstrap$compute_bayesian_bootstrap_two_sided_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceBayesianBootstrap.html#method-InferenceBayesianBootstrap-compute_estimate_with_bootstrap_weights'><code>InferenceBayesianBootstrap$compute_estimate_with_bootstrap_weights()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceRandBootstrapCI</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceRandBootstrapCI.html#method-InferenceRandBootstrapCI-compute_rand_bootstrap_confidence_interval'><code>InferenceRandBootstrapCI$compute_rand_bootstrap_confidence_interval()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceRandBootstrap</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceRandBootstrap.html#method-InferenceRandBootstrap-approximate_rand_bootstrap_distribution_beta_hat_T'><code>InferenceRandBootstrap$approximate_rand_bootstrap_distribution_beta_hat_T()</code></a></li>
+  <li><a href='../../EDI/html/InferenceRandBootstrap.html#method-InferenceRandBootstrap-compute_rand_bootstrap_two_sided_pval'><code>InferenceRandBootstrap$compute_rand_bootstrap_two_sided_pval()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceNonParamBootstrap</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_bootstrap_distribution_beta_hat_T'><code>InferenceNonParamBootstrap$approximate_bootstrap_distribution_beta_hat_T()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_m_out_of_n_bootstrap_distribution_beta_hat_T'><code>InferenceNonParamBootstrap$approximate_m_out_of_n_bootstrap_distribution_beta_hat_T()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-approximate_subsampling_distribution_beta_hat_T'><code>InferenceNonParamBootstrap$approximate_subsampling_distribution_beta_hat_T()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_confidence_interval'><code>InferenceNonParamBootstrap$compute_bootstrap_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_bootstrap_two_sided_pval'><code>InferenceNonParamBootstrap$compute_bootstrap_two_sided_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_confidence_interval'><code>InferenceNonParamBootstrap$compute_m_out_of_n_bootstrap_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_m_out_of_n_bootstrap_two_sided_pval'><code>InferenceNonParamBootstrap$compute_m_out_of_n_bootstrap_two_sided_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_confidence_interval'><code>InferenceNonParamBootstrap$compute_subsampling_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_sensitivity'><code>InferenceNonParamBootstrap$compute_subsampling_sensitivity()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-compute_subsampling_two_sided_pval'><code>InferenceNonParamBootstrap$compute_subsampling_two_sided_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-select_optimal_b_subsampling'><code>InferenceNonParamBootstrap$select_optimal_b_subsampling()</code></a></li>
+  <li><a href='../../EDI/html/InferenceNonParamBootstrap.html#method-InferenceNonParamBootstrap-select_optimal_m_out_of_n_bootstrap'><code>InferenceNonParamBootstrap$select_optimal_m_out_of_n_bootstrap()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceRandCI</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_confidence_interval'><code>InferenceRandCI$compute_rand_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceRandCI.html#method-InferenceRandCI-compute_rand_two_sided_pval'><code>InferenceRandCI$compute_rand_two_sided_pval()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceRand</summary>
+<ul>
+  <li><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></li>
+  <li><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_cpp'><code>InferenceRand$set_custom_randomization_statistic_cpp()</code></a></li>
+  <li><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>InferenceRand$set_custom_randomization_statistic_function()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from Inference</summary>
+<ul>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>Inference$compute_exact_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>Inference$duplicate()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_analysis_data'><code>Inference$get_analysis_data()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_covariates'><code>Inference$get_covariates()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_design_object'><code>Inference$get_design_object()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_model_formula'><code>Inference$get_model_formula()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_reason'><code>Inference$get_nonestimable_reason()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_nonestimable_stage'><code>Inference$get_nonestimable_stage()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_optimization_alg'><code>Inference$get_optimization_alg()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_response'><code>Inference$get_response()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_response_type'><code>Inference$get_response_type()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-get_treatment'><code>Inference$get_treatment()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-initialize'><code>Inference$initialize()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>Inference$is_nonestimable()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>Inference$set_optimization_alg()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>Inference$set_seed()</code></a></li>
+</ul>
+</details>}}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-InferenceAsympLik-compute_asymp_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsympLik-compute_asymp_confidence_interval}{}}}
 \subsection{\code{InferenceAsympLik$compute_asymp_confidence_interval()}}{
-  Computes an asymptotic confidence interval using the configured test.
+  Computes an asymptotic confidence interval for the treatment
+  effect using the configured likelihood-backed test. Wald intervals use
+  the fitted estimate and standard error; score, likelihood-ratio,
+  gradient, and Bartlett-corrected likelihood-ratio intervals are obtained
+  by inverting the corresponding test. For purely Wald asymptotic dispatch,
+  see \code{\link[EDI:InferenceAsymp]{InferenceAsymp}}.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{InferenceAsympLik$compute_asymp_confidence_interval(alpha = 0.05)}
@@ -71,7 +167,12 @@ supporting parametric-bootstrap LR calibration — inherit instead from
 \if{html}{\out{<a id="method-InferenceAsympLik-compute_asymp_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsympLik-compute_asymp_two_sided_pval}{}}}
 \subsection{\code{InferenceAsympLik$compute_asymp_two_sided_pval()}}{
-  Computes an asymptotic two-sided p-value using the configured test.
+  Computes an asymptotic two-sided p-value for the treatment
+  effect using the configured likelihood-backed test. Depending on
+  \code{testing_type}, this evaluates a Wald, score, likelihood-ratio,
+  gradient, or Bartlett-corrected likelihood-ratio statistic under the
+  null value \code{delta}. For count-specific likelihood families, see
+  \code{\link[EDI:InferenceCountLikelihood]{InferenceCountLikelihood}}.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{InferenceAsympLik$compute_asymp_two_sided_pval(delta = 0)}
@@ -202,7 +303,10 @@ supporting parametric-bootstrap LR calibration — inherit instead from
 \if{html}{\out{<a id="method-InferenceAsympLik-compute_score_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsympLik-compute_score_two_sided_pval}{}}}
 \subsection{\code{InferenceAsympLik$compute_score_two_sided_pval()}}{
-  Computes the score two-sided p-value regardless of configured testing type.
+  Computes the score two-sided p-value regardless of configured
+  testing type. The score test evaluates the null-restricted fit and uses
+  the configured information matrix preference; compare with
+  \code{compute_asymp_two_sided_pval()} for configured-test dispatch.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{InferenceAsympLik$compute_score_two_sided_pval(delta = 0)}
@@ -221,7 +325,10 @@ supporting parametric-bootstrap LR calibration — inherit instead from
 \if{html}{\out{<a id="method-InferenceAsympLik-compute_score_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsympLik-compute_score_confidence_interval}{}}}
 \subsection{\code{InferenceAsympLik$compute_score_confidence_interval()}}{
-  Computes the score confidence interval regardless of configured testing type.
+  Computes the score confidence interval regardless of configured
+  testing type by inverting score-test p-values over candidate treatment
+  effects. Compare with \code{compute_asymp_confidence_interval()} for
+  configured-test dispatch.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{InferenceAsympLik$compute_score_confidence_interval(alpha = 0.05)}
@@ -240,7 +347,11 @@ supporting parametric-bootstrap LR calibration — inherit instead from
 \if{html}{\out{<a id="method-InferenceAsympLik-compute_lik_ratio_two_sided_pval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsympLik-compute_lik_ratio_two_sided_pval}{}}}
 \subsection{\code{InferenceAsympLik$compute_lik_ratio_two_sided_pval()}}{
-  Computes the likelihood-ratio two-sided p-value regardless of configured testing type.
+  Computes the likelihood-ratio two-sided p-value regardless of
+  configured testing type. This compares unrestricted and null-restricted
+  fits at \code{delta}; subclasses may use a full, partial, quasi-, or
+  composite likelihood as described in
+  \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}}.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{InferenceAsympLik$compute_lik_ratio_two_sided_pval(delta = 0)}
@@ -259,7 +370,10 @@ supporting parametric-bootstrap LR calibration — inherit instead from
 \if{html}{\out{<a id="method-InferenceAsympLik-compute_lik_ratio_confidence_interval"></a>}}
 \if{latex}{\out{\hypertarget{method-InferenceAsympLik-compute_lik_ratio_confidence_interval}{}}}
 \subsection{\code{InferenceAsympLik$compute_lik_ratio_confidence_interval()}}{
-  Computes the likelihood-ratio confidence interval regardless of configured testing type.
+  Computes the likelihood-ratio confidence interval regardless of
+  configured testing type by inverting likelihood-ratio p-values over
+  candidate treatment effects. Compare with score and gradient intervals
+  in this class.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{InferenceAsympLik$compute_lik_ratio_confidence_interval(alpha = 0.05)}
@@ -500,48 +614,7 @@ is unavailable and the approximate factor is used instead. Default 99.}
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{alpha}}{Significance level. Default 0.05.
-Returns NULL, or a list describing the likelihood surface at the
-fitted point, consumed by InferenceExtInformationMatrix,
-InferenceExtLikelihoodTestMemoization, and (optionally)
-InferenceMixinOffOptimumLikelihoodEval. Concrete classes typically
-include X, y, j, full_fit, fit_null(delta, start), extract_start(fit),
-score(fit), observed_information(fit), fisher_information(fit), and
-neg_loglik(fit) -- all evaluated at a completed fit object, never at
-an arbitrary theta.
-
-Two additional fields are optional and independent of the above:
-neg_loglik_at(theta) and information_at(theta, source) evaluate the
-negative log-likelihood / information matrix at an arbitrary
-parameter vector rather than a completed fit. Only add these if a
-genuine f(theta) native evaluator already backs the *_information(fit)
-closures above (see e.g. get_negbin_regression_hessian_cpp(X, y,
-theta) in inference_count_negbin.R); do not synthesize one via
-numerical differentiation just to satisfy this contract. Classes
-that add these two fields may splice in
-InferenceMixinOffOptimumLikelihoodEval to get
-evaluate_penalized_neg_loglik_at() for free.
-Whether this class exposes an approximate (Monte-Carlo) Bartlett-corrected
-likelihood-ratio test/CI via get_bartlett_factor_approx(). Default FALSE;
-InferenceParamBootstrap overrides this to delegate to
-supports_lik_ratio_param_bootstrap().
-Monte-Carlo estimate of the Bartlett correction factor c(delta), such that
-LR_B(delta) = LR(delta) / c(delta) is referred to chi-square(1). B controls
-the number of null-simulated replicates (ignored by classes that don't
-simulate). Default NULL (unimplemented).
-Whether this class exposes an exact (closed-form analytic) Bartlett-corrected
-likelihood-ratio test/CI via get_bartlett_factor_exact(). Default FALSE;
-individual families opt in once their bespoke analytic factor is derived.
-Closed-form analytic Bartlett correction factor c(delta) (e.g. a
-Cordeiro-style GLM correction). No simulation, no replicate count.
-Default NULL (unimplemented).
-Wraps get_supported_testing_types_impl() to conditionally append the
-Bartlett testing types. Kept as a separate wrapper (rather than folded
-into get_supported_testing_types_impl() itself) because many concrete
-and abstract subclasses across the codebase override
-get_supported_testing_types_impl() directly with a hard-coded vector;
-appending here means those overrides don't each need to be touched to
-pick up Bartlett support.}
+      \item{\code{alpha}}{Significance level. Default 0.05.}
     }
     \if{html}{\out{</div>}}
   }

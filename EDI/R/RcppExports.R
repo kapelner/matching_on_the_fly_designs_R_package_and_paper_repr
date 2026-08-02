@@ -272,6 +272,8 @@ compute_bai_distr_parallel_cpp <- function(w_mat_sexp, m_mat_sexp, y_sexp, delta
 #' @return A numeric vector representing the score.
 #' @export
 #' @keywords internal
+NULL
+
 get_beta_regression_score_cpp <- function(X_sexp, y_sexp, params_sexp) {
     .Call(`_EDI_get_beta_regression_score_cpp`, X_sexp, y_sexp, params_sexp)
 }
@@ -467,6 +469,25 @@ compute_coxph_rand_bootstrap_parallel_cpp <- function(y0, dead, Xc, i_mat, w_mat
 #' @return A numeric vector representing the score.
 #' @export
 #' @keywords internal
+NULL
+
+#' @title Fast Combined Conditional-Poisson Regression (C++)
+#' @description High-performance fitting of a model combining conditional Poisson (for matched pairs) and marginal Poisson (for reservoir subjects).
+#' @param yT_v Treated counts per pair.
+#' @param n_k_v Total counts per pair.
+#' @param X_diff_v Covariate differences.
+#' @param y_r Reservoir outcomes.
+#' @param w_r Reservoir treatment indicators.
+#' @param X_r Reservoir covariates.
+#' @param maxit Maximum number of iterations.
+#' @param tol Convergence tolerance.
+#' @param fixed_idx Optional indices of fixed parameters.
+#' @param fixed_values Optional values for fixed parameters.
+#' @return A list containing coefficients, variance estimates, and likelihood statistics.
+#' @export
+#' @keywords internal
+NULL
+
 get_cpoisson_combined_score_cpp <- function(yT_v_r, n_k_v_r, X_diff_v_r, y_r_r, w_r_r, X_r_r, params_r) {
     .Call(`_EDI_get_cpoisson_combined_score_cpp`, yT_v_r, n_k_v_r, X_diff_v_r, y_r_r, w_r_r, X_r_r, params_r)
 }
@@ -487,21 +508,6 @@ get_cpoisson_combined_hessian_cpp <- function(yT_v_r, n_k_v_r, X_diff_v_r, y_r_r
     .Call(`_EDI_get_cpoisson_combined_hessian_cpp`, yT_v_r, n_k_v_r, X_diff_v_r, y_r_r, w_r_r, X_r_r, params_r)
 }
 
-#' @title Fast Combined Conditional-Poisson Regression (C++)
-#' @description High-performance fitting of a model combining conditional Poisson (for matched pairs) and marginal Poisson (for reservoir subjects).
-#' @param yT_v Treated counts per pair.
-#' @param n_k_v Total counts per pair.
-#' @param X_diff_v Covariate differences.
-#' @param y_r Reservoir outcomes.
-#' @param w_r Reservoir treatment indicators.
-#' @param X_r Reservoir covariates.
-#' @param maxit Maximum number of iterations.
-#' @param tol Convergence tolerance.
-#' @param fixed_idx Optional indices of fixed parameters.
-#' @param fixed_values Optional values for fixed parameters.
-#' @return A list containing coefficients, variance estimates, and likelihood statistics.
-#' @export
-#' @keywords internal
 fast_cpoisson_combined_with_var_cpp <- function(yT_v_r, n_k_v_r, X_diff_v_r, y_r_r, w_r_r, X_r_r, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_fisher_info = NULL, warm_start_params = NULL, warm_start_beta = NULL, estimate_only = FALSE) {
     .Call(`_EDI_fast_cpoisson_combined_with_var_cpp`, yT_v_r, n_k_v_r, X_diff_v_r, y_r_r, w_r_r, X_r_r, maxit, tol, fixed_idx, fixed_values, warm_start_fisher_info, warm_start_params, warm_start_beta, estimate_only)
 }
@@ -979,6 +985,8 @@ matrix_rank_cpp <- function(A_r, tol = 1e-7) {
 #' @return A numeric vector representing the score.
 #' @export
 #' @keywords internal
+NULL
+
 get_negbin_regression_score_cpp <- function(X_sexp, y_sexp, params_sexp) {
     .Call(`_EDI_get_negbin_regression_score_cpp`, X_sexp, y_sexp, params_sexp)
 }
@@ -1511,6 +1519,8 @@ shuffle_cpp <- function(w_sexp) {
 #' @return A numeric vector representing the score.
 #' @export
 #' @keywords internal
+NULL
+
 get_stereotype_logit_score_cpp <- function(X, y, params) {
     .Call(`_EDI_get_stereotype_logit_score_cpp`, X, y, params)
 }
@@ -1861,6 +1871,8 @@ fast_zero_one_inflated_beta_cpp <- function(X_sexp, X_zero_one_sexp, y_sexp, war
 #' @return A list containing coefficients and convergence status.
 #' @export
 #' @keywords internal
+NULL
+
 fast_zinb_cpp <- function(X, Xzi, y, warm_start_params = NULL, maxit = 1000L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, optimization_alg = "lbfgs", smart_cold_start = TRUE, warm_start_fisher_info = NULL, estimate_only = FALSE) {
     .Call(`_EDI_fast_zinb_cpp`, X, Xzi, y, warm_start_params, maxit, tol, fixed_idx, fixed_values, optimization_alg, smart_cold_start, warm_start_fisher_info, estimate_only)
 }
