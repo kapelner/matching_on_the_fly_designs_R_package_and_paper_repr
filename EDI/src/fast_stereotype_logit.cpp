@@ -618,6 +618,7 @@ static VectorXd optimize_nuisance_given_beta(
 
     VectorXd grad(d);
     for (int iter = 0; iter < maxit; ++iter) {
+        edi_check_R_user_interrupt_every(iter);
         double current_ll = nuisance_loglik_grad(model, nuisance, beta_fixed, n_alpha, p, n_gamma, &grad, beta_index);
         if (grad.norm() < tol) {
             break;
@@ -634,7 +635,9 @@ static VectorXd optimize_nuisance_given_beta(
         VectorXd step = lu.solve(grad);
         double scale = 1.0;
         bool accepted = false;
+        int step_iter = 0;
         while (scale > 1e-8) {
+            edi_check_R_user_interrupt_every(step_iter++);
             VectorXd next_nuisance = nuisance - scale * step;
             double next_ll = nuisance_loglik_grad(
                 model, next_nuisance, beta_fixed, n_alpha, p, n_gamma, NULL, beta_index
@@ -692,6 +695,7 @@ static VectorXd stereotype_newton_fit(
     }
 
     for (int iter = 0; iter < maxit; ++iter) {
+        edi_check_R_user_interrupt_every(iter);
         double current_ll = model.loglik_grad(params, &grad);
         if (!std::isfinite(current_ll) || !grad.allFinite()) {
             break;
@@ -710,8 +714,10 @@ static VectorXd stereotype_newton_fit(
         VectorXd step = lu.solve(grad);
         double scale = 1.0;
         bool accepted = false;
+        int step_iter = 0;
 
         while (scale > 1e-8) {
+            edi_check_R_user_interrupt_every(step_iter++);
             VectorXd next_params = params - scale * step;
             double next_ll = model.loglik_grad(next_params, NULL);
             if (std::isfinite(next_ll) && next_ll > current_ll) {

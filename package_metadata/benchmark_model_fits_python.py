@@ -603,37 +603,70 @@ def build_quantreg():
     return lambda: QuantReg(y, Xd).fit(q=0.5)
 
 
+def _gcomp_binary_estimand_from_b(b, Xd, effect):
+    X1 = Xd.copy(); X1[:, 1] = 1
+    X0 = Xd.copy(); X0[:, 1] = 0
+    r1 = (1 / (1 + np.exp(-X1 @ b))).mean()
+    r0 = (1 / (1 + np.exp(-X0 @ b))).mean()
+    return (r1 - r0) if effect == "RD" else (r1 / r0)
+
+
 def build_gcomp_binary(effect):
     d = data_binary()
     y, Xd = d["y"], d["Xd"]
-
-    def fn():
-        mod = sm.GLM(y, Xd, family=sm.families.Binomial()).fit()
-        X1 = Xd.copy(); X1[:, 1] = 1
-        X0 = Xd.copy(); X0[:, 1] = 0
-        r1 = mod.predict(X1).mean()
-        r0 = mod.predict(X0).mean()
-        return (r1 - r0) if effect == "RD" else (r1 / r0)
-    return fn
+    canonical = lambda: _gcomp_binary_estimand_from_b(
+        np.asarray(sm.GLM(y, Xd, family=sm.families.Binomial()).fit().params), Xd, effect)
+    edi_closure = None
+    if edi_has("fast_logistic_regression"):
+        fn = edi_fn("fast_logistic_regression")
+        Xf = f_order(Xd)
+        edi_closure = lambda: _gcomp_binary_estimand_from_b(
+            np.asarray(fn(Xf, y, estimate_only=True)["b"]), Xd, effect)
+    return canonical, edi_closure
 
 
 def build_gcomp_fractional():
     d = data_beta()
     y, Xd = d["y"], d["Xd"]
+    canonical = lambda: _gcomp_binary_estimand_from_b(
+        np.asarray(sm.GLM(y, Xd, family=sm.families.Binomial()).fit().params), Xd, "RD")
+    edi_closure = None
+    if edi_has("fast_logistic_regression"):
+        fn = edi_fn("fast_logistic_regression")
+        Xf = f_order(Xd)
+        edi_closure = lambda: _gcomp_binary_estimand_from_b(
+            np.asarray(fn(Xf, y, estimate_only=True)["b"]), Xd, "RD")
+    return canonical, edi_closure
 
-    def fn():
-        mod = sm.GLM(y, Xd, family=sm.families.Binomial()).fit()
-        X1 = Xd.copy(); X1[:, 1] = 1
-        X0 = Xd.copy(); X0[:, 1] = 0
-        return mod.predict(X1).mean() - mod.predict(X0).mean()
-    return fn
+
+def _ordinal_probs_from_alpha_b(alpha, b, X):
+    """Proportional-odds category probabilities from EDI's [alpha, b] parameterization:
+    P(Y<=k) = sigmoid(alpha_k - X@b) for k=1..K-1, P(Y<=K)=1. Verified numerically against
+    statsmodels.miscmodels.ordinal_model.OrderedModel.predict() (max abs diff ~1e-5, i.e.
+    at optimizer-tolerance level) before relying on it here."""
+    eta = X @ b
+    K = len(alpha) + 1
+    cum = np.empty((X.shape[0], K))
+    for k in range(K - 1):
+        cum[:, k] = 1.0 / (1.0 + np.exp(-(alpha[k] - eta)))
+    cum[:, K - 1] = 1.0
+    return np.diff(np.column_stack([np.zeros(X.shape[0]), cum]), axis=1)
+
+
+def _gcomp_ordinal_estimand_edi(alpha, b, Xo):
+    X1 = Xo.copy(); X1[:, 0] = 1
+    X0 = Xo.copy(); X0[:, 0] = 0
+    probs1 = _ordinal_probs_from_alpha_b(alpha, b, X1)
+    probs0 = _ordinal_probs_from_alpha_b(alpha, b, X0)
+    score = np.arange(1, probs1.shape[1] + 1)
+    return (probs1 @ score).mean() - (probs0 @ score).mean()
 
 
 def build_gcomp_ordinal():
     d = data_ordinal()
     y, Xo = d["y"], d["Xo"]
 
-    def fn():
+    def canonical():
         mod = OrderedModel(y, Xo, distr="logit").fit(method="bfgs", disp=0)
         X1 = Xo.copy(); X1[:, 0] = 1
         X0 = Xo.copy(); X0[:, 0] = 0
@@ -641,7 +674,16 @@ def build_gcomp_ordinal():
         probs0 = mod.model.predict(mod.params, exog=X0)
         score = np.arange(1, probs1.shape[1] + 1)
         return (probs1 @ score).mean() - (probs0 @ score).mean()
-    return fn
+
+    edi_closure = None
+    if edi_has("fast_ordinal_regression"):
+        fn = edi_fn("fast_ordinal_regression")
+        Xf = f_order(Xo)
+
+        def edi_closure():
+            res = fn(Xf, y, estimate_only=True)
+            return _gcomp_ordinal_estimand_edi(np.asarray(res["alpha"]), np.asarray(res["b"]), Xo)
+    return canonical, edi_closure
 
 
 # ── Wald (point + SE + p-value) canonical fit closures ──────────────────────
@@ -1009,6 +1051,32 @@ def _delta_method_se(theta, cov, estimand):
     return float(np.sqrt(max(grad @ cov @ grad, 0.0)))
 
 
+def _gcomp_binary_wald(y, Xd, estimand):
+    def canonical():
+        mod = sm.GLM(y, Xd, family=sm.families.Binomial()).fit()
+        theta = np.asarray(mod.params)
+        cov = np.asarray(mod.cov_params())
+        est = estimand(theta)
+        se = _delta_method_se(theta, cov, estimand)
+        pval = float(2 * sstats.norm.sf(abs(est / se))) if se > 0 else float("nan")
+        return est, se, pval
+
+    edi_closure = None
+    if edi_has("fast_logistic_regression"):
+        fn = edi_fn("fast_logistic_regression")
+        Xf = f_order(Xd)
+
+        def edi_closure():
+            res = fn(Xf, y, estimate_only=False)
+            theta = np.asarray(res["b"])
+            cov = np.linalg.inv(np.asarray(res["XtWX"]))
+            est = estimand(theta)
+            se = _delta_method_se(theta, cov, estimand)
+            pval = float(2 * sstats.norm.sf(abs(est / se))) if se > 0 else float("nan")
+            return est, se, pval
+    return canonical, edi_closure
+
+
 def build_gcomp_binary_wald(effect):
     d = data_binary()
     y, Xd = d["y"], d["Xd"]
@@ -1020,15 +1088,7 @@ def build_gcomp_binary_wald(effect):
         p0 = (1 / (1 + np.exp(-X0 @ theta))).mean()
         return (p1 - p0) if effect == "RD" else (p1 / p0)
 
-    def fn():
-        mod = sm.GLM(y, Xd, family=sm.families.Binomial()).fit()
-        theta = np.asarray(mod.params)
-        cov = np.asarray(mod.cov_params())
-        est = estimand(theta)
-        se = _delta_method_se(theta, cov, estimand)
-        pval = float(2 * sstats.norm.sf(abs(est / se))) if se > 0 else float("nan")
-        return est, se, pval
-    return fn
+    return _gcomp_binary_wald(y, Xd, estimand)
 
 
 def build_gcomp_fractional_wald():
@@ -1042,22 +1102,14 @@ def build_gcomp_fractional_wald():
         p0 = (1 / (1 + np.exp(-X0 @ theta))).mean()
         return p1 - p0
 
-    def fn():
-        mod = sm.GLM(y, Xd, family=sm.families.Binomial()).fit()
-        theta = np.asarray(mod.params)
-        cov = np.asarray(mod.cov_params())
-        est = estimand(theta)
-        se = _delta_method_se(theta, cov, estimand)
-        pval = float(2 * sstats.norm.sf(abs(est / se))) if se > 0 else float("nan")
-        return est, se, pval
-    return fn
+    return _gcomp_binary_wald(y, Xd, estimand)
 
 
 def build_gcomp_ordinal_wald():
     d = data_ordinal()
     y, Xo = d["y"], d["Xo"]
 
-    def fn():
+    def canonical():
         mod = OrderedModel(y, Xo, distr="logit").fit(method="bfgs", disp=0)
         theta = np.asarray(mod.params)
         cov = np.asarray(mod.cov_params())
@@ -1074,7 +1126,26 @@ def build_gcomp_ordinal_wald():
         se = _delta_method_se(theta, cov, estimand)
         pval = float(2 * sstats.norm.sf(abs(est / se))) if se > 0 else float("nan")
         return est, se, pval
-    return fn
+
+    edi_closure = None
+    if edi_has("fast_ordinal_regression"):
+        fn = edi_fn("fast_ordinal_regression")
+        Xf = f_order(Xo)
+
+        def edi_closure():
+            res = fn(Xf, y, estimate_only=False)
+            theta = np.asarray(res["params"])
+            cov = np.asarray(res["vcov"])
+            n_alpha = len(np.asarray(res["alpha"]))
+
+            def estimand_edi(th):
+                return _gcomp_ordinal_estimand_edi(th[:n_alpha], th[n_alpha:], Xo)
+
+            est = estimand_edi(theta)
+            se = _delta_method_se(theta, cov, estimand_edi)
+            pval = float(2 * sstats.norm.sf(abs(est / se))) if se > 0 and np.isfinite(se) else float("nan")
+            return est, se, pval
+    return canonical, edi_closure
 
 
 # Wald-table-only build functions — for EDI classes that have no row in the

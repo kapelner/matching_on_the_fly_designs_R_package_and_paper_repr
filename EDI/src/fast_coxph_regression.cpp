@@ -291,6 +291,7 @@ CoxFitResult cox_newton_raphson(
     int iter = 0;
 
     for (iter = 0; iter < maxit; ++iter) {
+        edi_check_R_user_interrupt_every(iter);
         total_grad.setZero();
         total_hess.setZero();
         double ll = 0.0;
@@ -349,6 +350,7 @@ CoxFitResult cox_newton_raphson(
         double step = 1.0;
         double ll_candidate = eval_ll_candidate(step);
         for (int h = 0; h < kMaxHalvings && ll_candidate >= ll; ++h) {
+            edi_check_R_user_interrupt_every(h);
             step *= 0.5;
             ll_candidate = eval_ll_candidate(step);
         }

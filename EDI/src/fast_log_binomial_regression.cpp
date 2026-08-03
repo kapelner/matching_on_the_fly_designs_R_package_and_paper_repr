@@ -206,6 +206,7 @@ edi::ResultMap fit_constrained_binomial_cpp_impl(const Eigen::Ref<const Eigen::M
 
   int iterations = 0;
   for (int iter = 0; iter < maxit; ++iter) {
+    edi_check_R_user_interrupt_every(iter);
     iterations = iter + 1;
     const Eigen::VectorXd eta = eta_fixed + X_free * beta_free;
 
@@ -272,7 +273,9 @@ edi::ResultMap fit_constrained_binomial_cpp_impl(const Eigen::Ref<const Eigen::M
     Eigen::VectorXd beta_free_new = beta_free;
     Eigen::VectorXd eta_try(n);
     bool accepted = false;
+    int step_iter = 0;
     while (step >= 1e-8) {
+      edi_check_R_user_interrupt_every(step_iter++);
       eta_try.noalias() = eta + step * delta_eta;
       const double ll_new = loglik_from_eta(eta_try, y, link_type);
       if (std::isfinite(ll_new) && ll_new >= ll_curr - 1e-10) {
@@ -382,6 +385,7 @@ edi::ResultMap fit_constrained_binomial_weighted_cpp_impl(const Eigen::Ref<const
 
   int iterations = 0;
   for (int iter = 0; iter < maxit; ++iter) {
+    edi_check_R_user_interrupt_every(iter);
     iterations = iter + 1;
     const Eigen::VectorXd eta = eta_fixed + X_free * beta_free;
     const bool use_warm_weights = (iter == 0 && has_warm_start_weights);
@@ -443,7 +447,9 @@ edi::ResultMap fit_constrained_binomial_weighted_cpp_impl(const Eigen::Ref<const
     Eigen::VectorXd beta_new = beta;
     Eigen::VectorXd beta_free_new = beta_free;
     bool accepted = false;
+    int step_iter = 0;
     while (step >= 1e-8) {
+      edi_check_R_user_interrupt_every(step_iter++);
       eta_try.noalias() = eta + step * delta_eta;
       const double ll_new = weighted_loglik_from_eta(eta_try, y, obs_weights, link_type);
       if (std::isfinite(ll_new) && ll_new >= ll_curr - 1e-10) {

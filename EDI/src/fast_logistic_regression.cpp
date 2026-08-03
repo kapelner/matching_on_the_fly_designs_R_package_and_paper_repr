@@ -179,6 +179,7 @@ ModelResult fast_logistic_regression_internal(const Eigen::Ref<const Eigen::Matr
     double last_grad_norm = std::numeric_limits<double>::quiet_NaN();
 
     for (int iter = 0; iter < maxit; iter++) {
+        edi_check_R_user_interrupt_every(iter);
         iterations++;
         eta.noalias() = eta_fixed;
         eta.noalias() += X_free * beta_free;

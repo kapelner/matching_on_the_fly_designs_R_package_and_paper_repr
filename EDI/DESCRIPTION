@@ -231,6 +231,7 @@ Collate:
     'inference_survival_rmst.R'
     'inference_survival_strat_cox.R'
     'inference_survival_weibull.R'
+    'inference_class_registry.R'
     'other_helpers.R'
     'RcppExports.R'
     'simulations_framework.R'

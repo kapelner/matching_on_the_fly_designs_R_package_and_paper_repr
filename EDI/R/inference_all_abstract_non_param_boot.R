@@ -1051,6 +1051,17 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			}
 			invisible(FALSE)
 		},
+		is_resampling_control_condition = function(e){
+			msg = conditionMessage(e)
+			inherits(e, "TimeoutException") ||
+				inherits(e, "interrupt") ||
+				grepl("reached elapsed time limit", msg, fixed = TRUE) ||
+				grepl("reached CPU time limit", msg, fixed = TRUE)
+		},
+		resampling_error_to_na = function(e){
+			if (private$is_resampling_control_condition(e)) stop(e)
+			NA_real_
+		},
 		bootstrap_estimates_extreme = function(theta, est = NA_real_, max_abs = private$bootstrap_extreme_estimate_threshold){
 			theta = as.numeric(theta)
 			theta = theta[is.finite(theta)]

@@ -80,6 +80,18 @@ using BLAS_INT_CORE = int;
 using Eigen::VectorXd;
 using Eigen::MatrixXd;
 
+inline void edi_check_R_user_interrupt() {
+#ifndef EDI_CORE_ONLY
+    Rcpp::checkUserInterrupt();
+#endif
+}
+
+inline void edi_check_R_user_interrupt_every(int iter, int stride = 16) {
+    if (stride <= 1 || iter % stride == 0) {
+        edi_check_R_user_interrupt();
+    }
+}
+
 // Pure C++ result structure to avoid R List contention
 struct ModelResult {
     Eigen::VectorXd b;
@@ -959,6 +971,22 @@ public:
 };
 
 template <typename LikelihoodFunctor>
+class InterruptibleLikelihoodFunctor {
+private:
+    LikelihoodFunctor& m_fun;
+    int m_eval_count;
+
+public:
+    explicit InterruptibleLikelihoodFunctor(LikelihoodFunctor& fun) :
+        m_fun(fun), m_eval_count(0) {}
+
+    double operator()(const Eigen::VectorXd& params, Eigen::VectorXd& grad) {
+        edi_check_R_user_interrupt_every(m_eval_count++);
+        return m_fun(params, grad);
+    }
+};
+
+template <typename LikelihoodFunctor>
 inline LikelihoodFitResult optimize_likelihood_lbfgs(LikelihoodFunctor& fun,
                                                      Eigen::VectorXd params,
                                                      int maxit,
@@ -976,12 +1004,17 @@ inline LikelihoodFitResult optimize_likelihood_lbfgs(LikelihoodFunctor& fun,
     LBFGSpp::LBFGSSolver<double> solver(lbfgs_params);
     LikelihoodFitResult fit;
     fit.params = params;
+    InterruptibleLikelihoodFunctor<LikelihoodFunctor> interruptible_fun(fun);
     try {
-        fit.niter = solver.minimize(fun, fit.params, fit.value);
+        fit.niter = solver.minimize(interruptible_fun, fit.params, fit.value);
         fit.converged = (fit.niter < maxit);
         // Already tracked internally at every iteration as part of LBFGSpp's
         // own stopping check (m_gnorm); reading it back is not a new evaluation.
         fit.gradient_norm = solver.final_grad_norm();
+#ifndef EDI_CORE_ONLY
+    } catch (Rcpp::internal::InterruptedException&) {
+        throw;
+#endif
     } catch (...) {
         fit.value = std::numeric_limits<double>::quiet_NaN();
         fit.converged = false;
@@ -1029,6 +1062,7 @@ inline LikelihoodFitResult optimize_likelihood_newton(LikelihoodFunctor& fun,
     double last_grad_norm = std::numeric_limits<double>::quiet_NaN();
 
     for (int iter = 0; iter < maxit; ++iter) {
+        edi_check_R_user_interrupt_every(iter);
         Eigen::VectorXd grad(params.size());
         double current_value = fun(params, grad);
         if (!std::isfinite(current_value) || !grad.allFinite()) break;
@@ -1053,7 +1087,9 @@ inline LikelihoodFitResult optimize_likelihood_newton(LikelihoodFunctor& fun,
 
         double step_scale = 1.0;
         bool accepted = false;
+        int step_iter = 0;
         while (step_scale > 1e-4) {
+            edi_check_R_user_interrupt_every(step_iter++);
             Eigen::VectorXd candidate = params - step_scale * step;
             double candidate_value = likelihood_value(fun, candidate);
             if (std::isfinite(candidate_value) && candidate_value < current_value) {
@@ -1106,6 +1142,10 @@ inline LikelihoodFitResult optimize_likelihood_newton_then_lbfgs(LikelihoodFunct
             (!std::isfinite(newton_fit.value) || lbfgs_fit.value < newton_fit.value)) {
             return lbfgs_fit;
         }
+#ifndef EDI_CORE_ONLY
+    } catch (Rcpp::internal::InterruptedException&) {
+        throw;
+#endif
     } catch (...) {
         // Keep the best damped-Newton result when the fallback optimizer also fails.
     }

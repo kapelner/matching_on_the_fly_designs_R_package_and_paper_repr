@@ -89,8 +89,13 @@ def test_estimate_only_matches_full_fit_beta():
     X, y, group_id = _synthetic_data()
     res = fast_gaussian_lmm(X, y, group_id, estimate_only=True)
 
-    assert res["vcov"] is None
-    assert res["fisher_information"] is None
+    # Unlike fast_poisson_glmm (which includes vcov/fisher_information as
+    # None in its estimate_only branch), fast_gaussian_lmm's estimate_only
+    # branch omits those keys entirely -- see fast_gaussian_lmm_internal in
+    # EDI/src/fast_gaussian_lmm.cpp. Documenting the actual contract here
+    # rather than assuming parity with the poisson_glmm kernel.
+    assert "vcov" not in res
+    assert "fisher_information" not in res
     assert res["b"] == pytest.approx(R_B, abs=1e-6, rel=1e-6)
 
 

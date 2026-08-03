@@ -206,7 +206,8 @@ ModelResult fast_poisson_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
 
     double current_nll = compute_neg_loglik(beta_free);
 
-	for (int iter = 0; iter < maxit; ++iter) {
+    for (int iter = 0; iter < maxit; ++iter) {
+        edi_check_R_user_interrupt_every(iter);
         res.iterations = iter + 1;
         
         eta.noalias() = eta_fixed;
@@ -256,6 +257,7 @@ ModelResult fast_poisson_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
         double step_size = 1.0;
         bool step_ok = false;
         for (int s = 0; s < 10; ++s) {
+            edi_check_R_user_interrupt_every(s);
             eta_try.noalias() = eta + step_size * delta_eta;
             double try_nll = compute_neg_loglik_from_eta(eta_try);
             if (try_nll < current_nll + 1e-10) {

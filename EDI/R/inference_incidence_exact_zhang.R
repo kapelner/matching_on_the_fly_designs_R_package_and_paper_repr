@@ -99,6 +99,3 @@ InferenceIncidenceExactZhang = R6::R6Class("InferenceIncidenceExactZhang",
 		}
 	)
 )
-
-# Backwards-compatible alias for the shortened legacy name.
-InferenceIncidExactZhang = InferenceIncidenceExactZhang

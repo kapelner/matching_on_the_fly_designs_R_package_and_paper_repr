@@ -38,6 +38,100 @@ test_that("every mixin has a documented host contract and is collated after the 
 	}
 })
 
+test_that("every mixin is registered as an inference component", {
+	EDI:::populate_inference_component_registry()
+	components = EDI:::inference_component_registry_as_list()
+	mixin_names = ls(asNamespace("EDI"), pattern = "^InferenceMixin")
+
+	expect_setequal(names(components), mixin_names)
+	for (component_name in names(components)) {
+		component = components[[component_name]]
+		expect_silent(EDI:::validate_inference_component(component))
+		expect_named(component, c(
+			"name", "status", "source_name", "file", "public", "private",
+			"dependencies", "provides_public_methods", "provides_private_methods",
+			"owns_state", "requires_state", "requires_public_methods",
+			"requires_private_methods", "optional_public_methods",
+			"optional_private_methods", "requires_super_methods",
+			"requires_capabilities", "provides_capabilities",
+			"allowed_likelihood_tiers", "conflicts", "allowed_host_overrides",
+			"forbidden_refs"
+		))
+		expect_true(component$status %in% c("active", "scaffold"))
+		expect_true(is.list(component$public))
+		expect_true(is.list(component$private))
+		expect_true(is.character(component$owns_state))
+		expect_true(is.character(component$requires_state))
+		expect_true(is.character(component$requires_public_methods))
+		expect_true(is.character(component$requires_private_methods))
+		expect_true(is.character(component$optional_public_methods))
+		expect_true(is.character(component$optional_private_methods))
+		expect_true(is.character(component$dependencies))
+		expect_true(is.character(component$requires_capabilities))
+		expect_true(is.character(component$provides_capabilities))
+		expect_true(is.character(component$conflicts))
+		expect_true(all(component$allowed_likelihood_tiers %in% EDI:::EDI_COMPONENT_ALLOWED_LIKELIHOOD_TIERS))
+	}
+})
+
+test_that("component provided method metadata matches actual list names", {
+	EDI:::populate_inference_component_registry()
+	components = EDI:::inference_component_registry_as_list()
+	for (component in components) {
+		expect_identical(
+			sort(component$provides_public_methods),
+			sort(EDI:::component_public_names(component))
+		)
+		expect_identical(
+			sort(component$provides_private_methods),
+			sort(EDI:::component_private_names(component))
+		)
+	}
+})
+
+test_that("scaffold components are registered but cannot be effective class components", {
+	EDI:::populate_inference_component_registry()
+	components = EDI:::inference_component_registry_as_list()
+	scaffolds = names(Filter(function(component) {
+		identical(component$status, "scaffold")
+	}, components))
+
+	expect_setequal(scaffolds, c(
+		"InferenceMixinCordeiroFerrariApprox",
+		"InferenceMixinLemonteGradientApprox"
+	))
+	expect_silent(EDI:::validate_no_scaffold_effective_components())
+
+	metadata = list(
+		abstract = FALSE,
+		exported = FALSE,
+		response_types = "continuous",
+		design_families = "all",
+		compatibility = EDI:::always_compatible_inference_metadata,
+		likelihood_tier = "none",
+		required_packages = character()
+	)
+	on.exit(EDI:::populate_inference_class_registry(), add = TRUE)
+	EDI:::register_inference_class(
+		name = "InferenceTemporaryScaffoldComponentHost",
+		parent = "Inference",
+		metadata = metadata,
+		direct_components = "InferenceMixinCordeiroFerrariApprox"
+	)
+	expect_error(
+		EDI:::get_effective_components("InferenceTemporaryScaffoldComponentHost"),
+		"Scaffold component"
+	)
+})
+
+test_that("component body references are declared by component contracts", {
+	EDI:::populate_inference_component_registry()
+	components = EDI:::inference_component_registry_as_list()
+	for (component in components) {
+		expect_silent(EDI:::validate_component_body_references(component))
+	}
+})
+
 test_that("mixin composition has no undocumented method-name collisions", {
 	for (target in names(EDI:::EDI_MIXIN_COMPOSITIONS)) {
 		mixins = EDI:::EDI_MIXIN_COMPOSITIONS[[target]]
@@ -96,6 +190,217 @@ test_that("mixin composition declares dependencies and intended overrides", {
 			public_overrides = "approximate_bootstrap_distribution_beta_hat_T"
 		),
 		"without declaration"
+	)
+})
+
+test_that("define_inference_class assembles component public and private members", {
+	on.exit(EDI:::populate_inference_component_registry(), add = TRUE)
+	EDI:::register_inference_component(EDI:::InferenceComponent(
+		name = "InferenceTemporaryFactoryComponent",
+		status = "active",
+		file = "test",
+		public = list(
+			component_public = function() private$component_private()
+		),
+		private = list(
+			component_state = "assembled",
+			component_private = function() private$component_state
+		),
+		owns_state = "component_state",
+		provides_capabilities = "temporary_factory_capability"
+	))
+	gen = EDI:::define_inference_class(
+		classname = "InferenceTemporaryFactoryHost",
+		components = "InferenceTemporaryFactoryComponent",
+		public = list(
+			host_public = function() "host"
+		),
+		private = list(
+			host_private = function() "private"
+		),
+		metadata = list(
+			likelihood_tier = "none"
+		)
+	)
+	obj = gen$new()
+
+	expect_false(gen$lock_objects)
+	expect_identical(obj$component_public(), "assembled")
+	expect_identical(obj$host_public(), "host")
+	expect_true("component_public" %in% names(gen$public_methods))
+	expect_true("component_private" %in% names(gen$private_methods))
+})
+
+test_that("factory validation rejects unsatisfied component contracts", {
+	on.exit(EDI:::populate_inference_component_registry(), add = TRUE)
+	EDI:::register_inference_component(EDI:::InferenceComponent(
+		name = "InferenceTemporaryNeedsHostContract",
+		status = "active",
+		file = "test",
+		requires_public_methods = "needed_public",
+		requires_private_methods = "needed_private",
+		requires_state = "needed_state"
+	))
+
+	expect_error(
+		EDI:::define_inference_class(
+			classname = "InferenceTemporaryMissingPublic",
+			components = "InferenceTemporaryNeedsHostContract",
+			private = list(
+				needed_private = function() TRUE,
+				needed_state = TRUE
+			)
+		),
+		"missing public method"
+	)
+	expect_error(
+		EDI:::define_inference_class(
+			classname = "InferenceTemporaryMissingPrivate",
+			components = "InferenceTemporaryNeedsHostContract",
+			public = list(needed_public = function() TRUE),
+			private = list(needed_state = TRUE)
+		),
+		"missing private method"
+	)
+	expect_error(
+		EDI:::define_inference_class(
+			classname = "InferenceTemporaryMissingState",
+			components = "InferenceTemporaryNeedsHostContract",
+			public = list(needed_public = function() TRUE),
+			private = list(needed_private = function() TRUE)
+		),
+		"missing private state"
+	)
+	expect_silent(EDI:::define_inference_class(
+		classname = "InferenceTemporarySatisfiedContract",
+		components = "InferenceTemporaryNeedsHostContract",
+		public = list(needed_public = function() TRUE),
+		private = list(
+			needed_private = function() TRUE,
+			needed_state = TRUE
+		)
+	))
+})
+
+test_that("factory validation enforces likelihood tiers and capabilities", {
+	on.exit(EDI:::populate_inference_component_registry(), add = TRUE)
+	EDI:::register_inference_component(EDI:::InferenceComponent(
+		name = "InferenceTemporaryProviderCapability",
+		status = "active",
+		file = "test",
+		provides_capabilities = "temporary_needed_capability"
+	))
+	EDI:::register_inference_component(EDI:::InferenceComponent(
+		name = "InferenceTemporaryNeedsCapability",
+		status = "active",
+		file = "test",
+		requires_capabilities = "temporary_needed_capability"
+	))
+
+	expect_error(
+		EDI:::define_inference_class(
+			classname = "InferenceTemporaryWrongTier",
+			components = "InferenceMixinOffOptimumLikelihoodEval",
+			metadata = list(likelihood_tier = "none")
+		),
+		"disallowed likelihood tier"
+	)
+	expect_error(
+		EDI:::define_inference_class(
+			classname = "InferenceTemporaryMissingCapability",
+			components = "InferenceTemporaryNeedsCapability"
+		),
+		"missing capability"
+	)
+	expect_silent(EDI:::define_inference_class(
+		classname = "InferenceTemporarySatisfiedCapability",
+		components = c("InferenceTemporaryProviderCapability", "InferenceTemporaryNeedsCapability")
+	))
+	expect_error(
+		EDI:::define_inference_class(
+			classname = "InferenceTemporaryCapabilityMissingMethod",
+			components = "InferenceTemporaryProviderCapability",
+			public_methods_for_capability = list(
+				temporary_needed_capability = "capability_public_method"
+			)
+		),
+		"without public method"
+	)
+	expect_silent(EDI:::define_inference_class(
+		classname = "InferenceTemporaryCapabilityHasMethod",
+		components = "InferenceTemporaryProviderCapability",
+		public = list(capability_public_method = function() TRUE),
+		public_methods_for_capability = list(
+			temporary_needed_capability = "capability_public_method"
+		)
+	))
+})
+
+test_that("factory validation rejects collisions unless overrides declare them", {
+	on.exit(EDI:::populate_inference_component_registry(), add = TRUE)
+	EDI:::register_inference_component(EDI:::InferenceComponent(
+		name = "InferenceTemporaryCollisionA",
+		status = "active",
+		file = "test",
+		public = list(dup_public = function() "a"),
+		private = list(dup_private = function() "a")
+	))
+	EDI:::register_inference_component(EDI:::InferenceComponent(
+		name = "InferenceTemporaryCollisionB",
+		status = "active",
+		file = "test",
+		public = list(dup_public = function() "b"),
+		private = list(dup_private = function() "b")
+	))
+	EDI:::register_inference_component(EDI:::InferenceComponent(
+		name = "InferenceTemporaryStateCollision",
+		status = "active",
+		file = "test",
+		private = list(dup_private = "state")
+	))
+
+	expect_error(
+		EDI:::assemble_public(
+			"BadCollisionHost",
+			c("InferenceTemporaryCollisionA", "InferenceTemporaryCollisionB"),
+			resolve = FALSE
+		),
+		"undeclared public component collision"
+	)
+	expect_silent(EDI:::assemble_public(
+		"DeclaredCollisionHost",
+		c("InferenceTemporaryCollisionA", "InferenceTemporaryCollisionB"),
+		overrides = list(public = "dup_public"),
+		resolve = FALSE
+	))
+	expect_error(
+		EDI:::assemble_private(
+			"BadStateCollisionHost",
+			c("InferenceTemporaryCollisionA", "InferenceTemporaryStateCollision"),
+			resolve = FALSE
+		),
+		"method/state collision"
+	)
+	expect_error(
+		EDI:::define_inference_class(
+			classname = "InferenceTemporaryPublicPrivateDup",
+			public = list(same_name = function() TRUE),
+			private = list(same_name = function() TRUE)
+		),
+		"public/private name duplication"
+	)
+	expect_silent(EDI:::validate_inference_class_definition(
+		classname = "InferenceTemporaryDeclaredPublicPrivateDup",
+		public = list(same_name = function() TRUE),
+		private = list(same_name = function() TRUE),
+		overrides = list(public_private = "same_name")
+	))
+	expect_error(
+		EDI:::define_inference_class(
+			classname = "InferenceTemporaryLocked",
+			lock_objects = TRUE
+		),
+		"lock_objects = FALSE"
 	)
 })
 

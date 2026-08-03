@@ -227,6 +227,7 @@ InferenceExtExchangeableResamplingUnits = list(
 			}, simplify = FALSE)
 		},
 		compute_resampling_draw_distribution = function(draws, operation, show_progress = TRUE, debug = FALSE, cache_key = NULL){
+			private$check_bootstrap_replicate_deadline(paste0(operation, " setup"))
 			private$ensure_resampling_distribution_cache(operation)
 			if (!isTRUE(debug) && !is.null(cache_key)) {
 				cached = private$get_cached_resampling_distribution(operation, cache_key)
@@ -236,15 +237,21 @@ InferenceExtExchangeableResamplingUnits = list(
 			if (n_draws == 0L) return(numeric(0))
 			if (isTRUE(debug)) {
 				debug_results = lapply(draws, function(draw) {
+					private$check_bootstrap_replicate_deadline(paste0(operation, " debug replicate"))
 					iter_warns = character(0)
 					iter_errs = character(0)
 					iter_val = withCallingHandlers(
 						tryCatch({
 							sub_inf = private$bootstrap_subset_inference(draw, smooth = FALSE)
 							if (is.null(sub_inf)) NA_real_ else as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
-						}, error = function(e) { iter_errs <<- c(iter_errs, conditionMessage(e)); NA_real_ }),
+						}, error = function(e) {
+							if (private$is_resampling_control_condition(e)) stop(e)
+							iter_errs <<- c(iter_errs, conditionMessage(e))
+							NA_real_
+						}),
 						warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
 					)
+					private$check_bootstrap_replicate_deadline(paste0(operation, " debug replicate"))
 					list(val = as.numeric(iter_val)[1L], errors = iter_errs, warnings = iter_warns)
 				})
 				values = vapply(debug_results, function(x) x$val, numeric(1))
@@ -275,12 +282,15 @@ InferenceExtExchangeableResamplingUnits = list(
 				)
 			} else {
 				as.numeric(unlist(private$par_lapply(seq_along(draws), function(i) {
+					private$check_bootstrap_replicate_deadline(paste0(operation, " replicate"))
 					sub_inf = private$bootstrap_subset_inference(draws[[i]], smooth = FALSE)
 					if (is.null(sub_inf)) return(NA_real_)
-					tryCatch({
+					out = tryCatch({
 						theta = as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
 						if (is.finite(theta)) theta else NA_real_
-					}, error = function(e) NA_real_)
+					}, error = private$resampling_error_to_na)
+					private$check_bootstrap_replicate_deadline(paste0(operation, " replicate"))
+					out
 				}, n_cores = actual_cores, show_progress = show_progress), use.names = FALSE))
 			}
 			if (!is.numeric(values)) values = as.numeric(values)

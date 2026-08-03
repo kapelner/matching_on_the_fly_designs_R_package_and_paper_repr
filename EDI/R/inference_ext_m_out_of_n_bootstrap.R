@@ -51,6 +51,7 @@ InferenceExtMOutOfNBootstrap = list(
 		approximate_m_out_of_n_bootstrap_distribution_beta_hat_T_impl = function(B = 501, m = NULL, show_progress = TRUE, debug = FALSE, bootstrap_type = NULL, scaling = "sqrt_n", center = "full_estimate"){
 			private$active_resampling_operation = "m_out_of_n_boot"
 			on.exit(private$active_resampling_operation <- NULL, add = TRUE)
+			private$check_bootstrap_replicate_deadline("m-out-of-n bootstrap setup")
 			if (should_run_asserts()) {
 				private$assert_design_supports_resampling("m-out-of-n bootstrap inference")
 				private$assert_valid_bootstrap_type(bootstrap_type)
@@ -77,6 +78,7 @@ InferenceExtMOutOfNBootstrap = list(
 				cached = private$get_cached_resampling_distribution("m_out_of_n_boot", cache_key)
 				if (!is.null(cached)) return(cached)
 			}
+			private$check_bootstrap_replicate_deadline("m-out-of-n bootstrap draw generation")
 			if (!is.null(private$seed)) {
 				had_seed = exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
 				if (had_seed) old_seed = get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
@@ -103,7 +105,8 @@ InferenceExtMOutOfNBootstrap = list(
 				cache_key = cache_key
 			)
 			if (isTRUE(debug)) {
-				est = tryCatch(as.numeric(self$compute_estimate(estimate_only = TRUE))[1L], error = function(e) NA_real_)
+				private$check_bootstrap_replicate_deadline("m-out-of-n bootstrap debug summary")
+				est = tryCatch(as.numeric(self$compute_estimate(estimate_only = TRUE))[1L], error = private$resampling_error_to_na)
 				res$centered_scaled_values = private$resampling_scaling_factor(m, scaling) * (res$values - est)
 				res$full_estimate = est
 				res$m = m
@@ -138,6 +141,7 @@ InferenceExtMOutOfNBootstrap = list(
 		#' @return A numeric two-sided p-value, or \code{NA_real_} if the path is
 		#'   non-estimable.
 		compute_m_out_of_n_bootstrap_two_sided_pval_impl = function(delta = 0, B = 501, m = NULL, type = "centered", show_progress = TRUE, min_number_usable_samples = 5L, bootstrap_type = NULL, scaling = "sqrt_n"){
+			private$check_bootstrap_replicate_deadline("m-out-of-n bootstrap p-value setup")
 			if (should_run_asserts()) {
 				assertNumeric(delta, len = 1)
 				assertCount(B, positive = TRUE)
@@ -203,6 +207,7 @@ InferenceExtMOutOfNBootstrap = list(
 		#' @return A length-2 numeric confidence interval, or
 		#'   \code{c(NA_real_, NA_real_)} if the path is non-estimable.
 		compute_m_out_of_n_bootstrap_confidence_interval_impl = function(alpha = 0.05, B = 501, m = NULL, type = "basic", show_progress = TRUE, min_number_usable_samples = 5L, bootstrap_type = NULL, scaling = "sqrt_n"){
+			private$check_bootstrap_replicate_deadline("m-out-of-n bootstrap CI setup")
 			if (should_run_asserts()) {
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 				assertCount(B, positive = TRUE)
@@ -305,10 +310,11 @@ InferenceExtMOutOfNBootstrap = list(
 			paste(as.integer(B), as.integer(m), bootstrap_type %||% "NULL", private$resampling_scaling_key(scaling), center, sep = "|")
 		},
 		m_out_of_n_bootstrap_centered_pivot = function(B, m, unit_info, show_progress = TRUE, bootstrap_type = NULL, scaling = "sqrt_n"){
+			private$check_bootstrap_replicate_deadline("m-out-of-n bootstrap centered pivot")
 			cache_key = private$m_out_of_n_bootstrap_cache_key(B = B, m = m, bootstrap_type = bootstrap_type, scaling = scaling, center = "full_estimate")
 			cached = private$get_cached_centered_resampling_pivot("m_out_of_n_boot", cache_key)
 			if (!is.null(cached)) return(cached)
-			est = tryCatch(as.numeric(self$compute_estimate(estimate_only = TRUE))[1L], error = function(e) NA_real_)
+			est = tryCatch(as.numeric(self$compute_estimate(estimate_only = TRUE))[1L], error = private$resampling_error_to_na)
 			if (!is.finite(est)) {
 				return(list(ok = FALSE, reason = "m_out_of_n_original_estimate_unavailable"))
 			}
@@ -353,9 +359,10 @@ InferenceExtMOutOfNBootstrap = list(
 			invisible(worker_state)
 		},
 		evaluate_m_out_of_n_bootstrap_size = function(m, B, alpha, bootstrap_type = NULL, scaling = "sqrt_n", show_progress = FALSE){
+			private$check_bootstrap_replicate_deadline("m-out-of-n bootstrap m selection")
 			unit_info = private$get_exchangeable_units(unit = "auto", resampling_type = bootstrap_type)
 			m = private$resolve_resampling_size(m, unit_info$n_units, "m")
-			est = tryCatch(as.numeric(self$compute_estimate(estimate_only = TRUE))[1L], error = function(e) NA_real_)
+			est = tryCatch(as.numeric(self$compute_estimate(estimate_only = TRUE))[1L], error = private$resampling_error_to_na)
 			if (!is.finite(est)) {
 				return(list(status = "nonestimable", dominant_failure_reason = "m_out_of_n_original_estimate_unavailable", finite_fraction = 0, n_finite = 0L))
 			}

@@ -105,6 +105,22 @@ Inference = R6::R6Class("Inference",
 				))
 			}
 		},
+		#' @description Returns the effective metadata-backed capabilities for this inference object.
+		#' @return A character vector of capability names.
+		capabilities = function(){
+			class_name = class(self)[1L]
+			if (!exists("get_effective_capabilities", mode = "function")) return(character())
+			get_effective_capabilities(class_name)
+		},
+		#' @description Returns whether this inference object supports a metadata-backed capability.
+		#' @param capability Capability name or names.
+		#' @return A logical vector aligned with \code{capability}.
+		supports = function(capability){
+			if (!is.character(capability) || length(capability) < 1L || anyNA(capability)) {
+				stop("`capability` must be a non-empty character vector with no missing values.", call. = FALSE)
+			}
+			stats::setNames(capability %in% self$capabilities(), capability)
+		},
 		#' @description Computes an exact two-sided p-value. Subclasses that support exact
 		#'   inference override this; inference objects that do not support exact methods
 		#'   throw an error.

@@ -155,6 +155,7 @@ RobustModelResult fast_robust_regression_internal(
     Eigen::VectorXd b_old = b_free;
     
     for (int iter = 1; iter <= maxit; ++iter) {
+        edi_check_R_user_interrupt_every(iter);
         res.iterations = iter;
         
         // Update weights

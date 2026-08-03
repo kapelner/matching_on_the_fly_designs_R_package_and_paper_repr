@@ -694,6 +694,7 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 	# BRT pval: skip only if bootstrap structurally broken OR rand itself slow; ContinRobustRegr keeps BRT pval
 	skip_brt_pval = skip_bootstrap || skip_rand_slow
 	skip_brt_ci   = skip_bootstrap || skip_bootstrap_slow || skip_rand_slow || skip_rand_ci_slow || skip_brt_ci_all_slow
+	run_brt_for_class = RUN_BRT || is_exact_inference_class(c("InferenceIncidLogBinomial"))
 	skip_bayesian_bootstrap = skip_bootstrap || skip_bootstrap_slow ||
 		!isTRUE(tryCatch(seq_des_inf$.__enclos_env__$private$supports_bayesian_bootstrap(), error = function(e) TRUE))
 	supports_parametric_bootstrap =
@@ -702,8 +703,11 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 			seq_des_inf$.__enclos_env__$private$supports_lik_ratio_param_bootstrap(),
 			error = function(e) FALSE
 		))
+	run_parametric_bootstrap_ci_for_class =
+		run_parametric_bootstrap_ci ||
+		is_exact_inference_class(c("InferenceIncidLogBinomial"))
 	supports_parametric_bootstrap_ci =
-		run_parametric_bootstrap_ci &&
+		run_parametric_bootstrap_ci_for_class &&
 		supports_parametric_bootstrap &&
 		isTRUE(tryCatch({
 			ci_support_fn = seq_des_inf$.__enclos_env__$private$supports_lik_ratio_param_bootstrap_confidence_interval
@@ -728,7 +732,7 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 	supports_bartlett =
 		(isTRUE(tryCatch(seq_des_inf$.__enclos_env__$private$supports_bartlett_likelihood_ratio_exact(), error = function(e) FALSE)) ||
 		 isTRUE(tryCatch(seq_des_inf$.__enclos_env__$private$supports_bartlett_likelihood_ratio_approx(), error = function(e) FALSE)))
-	supports_bartlett_ci = run_parametric_bootstrap_ci && supports_bartlett
+	supports_bartlett_ci = run_parametric_bootstrap_ci_for_class && supports_bartlett
 	supports_incidence_rand_pval =
 		response_type != "incidence" ||
 		isTRUE(tryCatch(seq_des_inf$.__enclos_env__$private$should_use_zhang_incidence_randomization(), error = function(e) FALSE)) ||
@@ -1471,7 +1475,7 @@ call_direct_asymp = function(method_name, testing_type, ...){
 		safe_call("compute_rand_confidence_interval", seq_des_inf$compute_rand_confidence_interval(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE))
 	}
 	# Bootstrap randomization test (BRT): row bootstrap + fresh assignment draw from the design
-	if (RUN_BRT && should_run_test_family("rand_bootstrap") && !skip_slow && !skip_brt_pval && !skip_rand && !skip_rand_pval && response_type %in% c("continuous", "survival", "proportion", "incidence", "count", "ordinal")){
+	if (run_brt_for_class && should_run_test_family("rand_bootstrap") && !skip_slow && !skip_brt_pval && !skip_rand && !skip_rand_pval && response_type %in% c("continuous", "survival", "proportion", "incidence", "count", "ordinal")){
 		if (run_debug_resampling) {
 			safe_call_debug("approximate_rand_bootstrap_distribution_beta_hat_T_debug",
 						seq_des_inf$approximate_rand_bootstrap_distribution_beta_hat_T(B = B_debug, debug = TRUE, show_progress = FALSE))
@@ -1494,7 +1498,7 @@ call_direct_asymp = function(method_name, testing_type, ...){
 					  seq_des_inf$compute_rand_bootstrap_two_sided_pval(B = r, type = brt_pval_type, show_progress = FALSE))
 		}
 	}
-	if (RUN_BRT && should_run_test_family("rand_bootstrap") && !skip_slow && !skip_brt_ci && !skip_rand && !skip_ci_rand && test_compute_confidence_interval_rand && response_type %in% c("continuous", "proportion", "count", "survival")){
+	if (run_brt_for_class && should_run_test_family("rand_bootstrap") && !skip_slow && !skip_brt_ci && !skip_rand && !skip_ci_rand && test_compute_confidence_interval_rand && response_type %in% c("continuous", "proportion", "count", "survival")){
 		safe_call("compute_rand_bootstrap_confidence_interval", seq_des_inf$compute_rand_bootstrap_confidence_interval(B = r, pval_epsilon = pval_epsilon, show_progress = FALSE))
 		for (brt_ci_type in c("studentized", "symmetric-percentile-t", "smoothed")) {
 			if (brt_ci_type == "smoothed" && skip_brt_ci_smoothed_slow) next

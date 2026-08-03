@@ -298,6 +298,7 @@ edi::ResultMap fast_cpoisson_combined_internal(
 	bool converged = false;
 
 	for (int iter = 0; iter < maxit; ++iter) {
+		edi_check_R_user_interrupt_every(iter);
 		const double  beta_0  = params[0];
 		const double  beta_T  = params[1];
 		const VectorXd beta_xs = params.tail(p);

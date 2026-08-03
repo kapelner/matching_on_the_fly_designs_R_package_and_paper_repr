@@ -230,6 +230,3 @@ InferenceAllKKMeanDiffIVWC = R6::R6Class("InferenceAllKKMeanDiffIVWC",
 		}
 	)
 )
-
-#' @export
-InferenceAllKKCompoundMeanDiff <- InferenceAllKKMeanDiffIVWC
