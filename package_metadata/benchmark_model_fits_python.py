@@ -316,7 +316,13 @@ def _edi_glm_binomial(link, Xf, y):
     if link == "probit" and edi_has("fast_probit_regression"):
         fn = edi_fn("fast_probit_regression")
         return lambda: fn(Xf, y, estimate_only=True)
-    return None  # log-binomial/identity-binomial kernels aren't bound yet
+    if link == "log-binomial" and edi_has("fast_log_binomial_regression"):
+        fn = edi_fn("fast_log_binomial_regression")
+        return lambda: fn(Xf, y, estimate_only=True)
+    if link == "identity-binomial" and edi_has("fast_identity_binomial_regression"):
+        fn = edi_fn("fast_identity_binomial_regression")
+        return lambda: fn(Xf, y, estimate_only=True)
+    return None
 
 
 def build_glm_binomial(link="logit"):
@@ -431,7 +437,34 @@ def build_fractional_logit():
 def build_ordered(distr):
     d = data_ordinal()
     y, Xo = d["y"], d["Xo"]
-    return lambda: OrderedModel(y, Xo, distr=distr).fit(method="bfgs", disp=0)
+    canonical = lambda: OrderedModel(y, Xo, distr=distr).fit(method="bfgs", disp=0)
+    edi_kernel_name = {"logit": "fast_ordinal_regression", "probit": "fast_ordinal_probit_regression"}.get(distr)
+    edi_closure = None
+    if edi_kernel_name is not None and edi_has(edi_kernel_name):
+        fn = edi_fn(edi_kernel_name)
+        Xf = f_order(Xo)
+        edi_closure = lambda: fn(Xf, y, estimate_only=True)
+    return canonical, edi_closure
+
+
+def build_ordinal_cauchit_edi_only():
+    if not edi_has("fast_ordinal_cauchit_regression"):
+        return None, None
+    d = data_ordinal()
+    y, Xo = d["y"], d["Xo"]
+    fn = edi_fn("fast_ordinal_cauchit_regression")
+    Xf = f_order(Xo)
+    return None, (lambda: fn(Xf, y, estimate_only=True))
+
+
+def build_ordinal_cloglog_edi_only():
+    if not edi_has("fast_ordinal_cloglog_regression"):
+        return None, None
+    d = data_ordinal()
+    y, Xo = d["y"], d["Xo"]
+    fn = edi_fn("fast_ordinal_cloglog_regression")
+    Xf = f_order(Xo)
+    return None, (lambda: fn(Xf, y, estimate_only=True))
 
 
 def build_hurdle(dist):
@@ -443,7 +476,10 @@ def build_hurdle(dist):
         fn = edi_fn("fast_zero_augmented_poisson")
         Xf = f_order(Xd)
         edi_closure = lambda: fn(Xf, y, Xf, True)
-    # fast_hurdle_negbin isn't bound yet, so dist == "negbin" stays EDI-NA.
+    elif dist == "negbin" and edi_has("fast_hurdle_negbin"):
+        fn = edi_fn("fast_hurdle_negbin")
+        Xf = f_order(Xd)
+        edi_closure = lambda: fn(Xf, y, Xf, estimate_only=True)
     return canonical, edi_closure
 
 
@@ -675,6 +711,17 @@ def build_glm_binomial_wald(link="logit"):
         def edi_closure():
             res = fn(Xf, y, estimate_only=False)
             return _wald_from_XtWX(res["b"], res["XtWX"], 1)
+    elif link == "log-binomial" and edi_has("fast_log_binomial_regression_with_var"):
+        fn = edi_fn("fast_log_binomial_regression_with_var")
+        Xf = f_order(Xd)
+
+        def edi_closure():
+            res = fn(Xf, y, j=2)
+            b1 = float(np.asarray(res["b"])[1])
+            ssq = res["ssq_b_j"]
+            se = float(np.sqrt(ssq)) if np.isfinite(ssq) and ssq > 0 else float("nan")
+            pval = float(2 * sstats.norm.sf(abs(b1 / se))) if se > 0 and np.isfinite(se) else float("nan")
+            return b1, se, pval
 
     if start is None:
         return _sm_wald_wrapper(lambda: sm.GLM(y, Xd, family=fam).fit()), edi_closure
@@ -789,13 +836,39 @@ def build_fractional_logit_wald():
 def build_ordered_wald(distr):
     d = data_ordinal()
     y, Xo = d["y"], d["Xo"]
-    return _sm_wald_wrapper(lambda: OrderedModel(y, Xo, distr=distr).fit(method="bfgs", disp=0))
+    canonical = _sm_wald_wrapper(lambda: OrderedModel(y, Xo, distr=distr).fit(method="bfgs", disp=0))
+    edi_closure = None
+    if distr == "logit" and edi_has("fast_ordinal_regression"):
+        fn = edi_fn("fast_ordinal_regression")
+        Xf = f_order(Xo)
+
+        def edi_closure():
+            res = fn(Xf, y, estimate_only=False)
+            b0 = float(np.asarray(res["b"])[0])
+            ssq = res["ssq_b_j"]
+            se = float(np.sqrt(ssq)) if np.isfinite(ssq) and ssq > 0 else float("nan")
+            pval = float(2 * sstats.norm.sf(abs(b0 / se))) if se > 0 and np.isfinite(se) else float("nan")
+            return b0, se, pval
+    return canonical, edi_closure
 
 
 def build_hurdle_wald(dist):
     d = data_count()
     y, Xd = d["y"], d["Xd"]
-    return _sm_wald_wrapper(lambda: HurdleCountModel(y, Xd, dist=dist, zerodist="poisson").fit(disp=0))
+    canonical = _sm_wald_wrapper(lambda: HurdleCountModel(y, Xd, dist=dist, zerodist="poisson").fit(disp=0))
+    edi_closure = None
+    if dist == "negbin" and edi_has("fast_hurdle_negbin"):
+        fn = edi_fn("fast_hurdle_negbin")
+        Xf = f_order(Xd)
+
+        def edi_closure():
+            res = fn(Xf, y, Xf, estimate_only=False, j=2)
+            b1 = float(np.asarray(res["b"])[1])
+            ssq = res["ssq_b_j"]
+            se = float(np.sqrt(ssq)) if np.isfinite(ssq) and ssq > 0 else float("nan")
+            pval = float(2 * sstats.norm.sf(abs(b1 / se))) if se > 0 and np.isfinite(se) else float("nan")
+            return b1, se, pval
+    return canonical, edi_closure
 
 
 def build_zip_wald():
@@ -1134,6 +1207,25 @@ WALD_SPECS = [
     ("count", "InferenceCountKKCondPoissonOneLik", None, None, "fast_cpoisson_combined_with_var", None, True),
     ("survival", "InferenceSurvivalKKWeibullFrailtyOneLik", None, None, "fast_weibull_frailty", None, True),
     ("proportion", "InferencePropZeroOneInflatedBetaRegr", None, None, "fast_zero_one_inflated_beta", None, True),
+    # GLMM/CLMM/LMM family (TODO-8) -- same rows as MODEL_SPECS above, kept
+    # consistent with that table rather than only appearing in one of the
+    # two. All six kernels compute their vcov/Fisher-information in the
+    # same call (no separate _with_var variant) except fast_stereotype_logit.
+    ("count", "InferenceCountKKGLMM", None, None, "fast_poisson_glmm", None, True),
+    ("continuous", "InferenceContinKKGLMM", None, None, "fast_gaussian_lmm", None, True),
+    ("count", "InferenceCountKKHurdlePoissonOneLik", None, None, "fast_hurdle_poisson_glmm", None, True),
+    ("ordinal", "InferenceOrdinalKKGLMM", None, None, "fast_ordinal_glmm", None, True),
+    ("ordinal", "InferenceOrdinalKKCLMM", None, None, "fast_ordinal_clmm", None, True),
+    (
+        "incidence",
+        "fast_logistic_glmm (no R6 inference class yet)",
+        None,
+        None,
+        "fast_logistic_glmm",
+        None,
+        True,
+    ),
+    ("ordinal", "InferenceOrdinalStereotypeLogitRegr", None, None, "fast_stereotype_logit_with_var", None, True),
 ]
 
 # R's own wald_specs list has no row for InferenceSurvivalRestrictedMeanDiff
@@ -1212,8 +1304,8 @@ MODEL_SPECS = [
     ("ordinal", "InferenceOrdinalAdjCatLogitRegr", None, None, "fast_adjacent_category_logit", build_adjcat_logit_edi_only, True),
     ("ordinal", "InferenceOrdinalContRatioRegr", None, None, "fast_continuation_ratio_regression", build_contratio_edi_only, True),
     ("ordinal", "InferenceOrdinalOrderedProbitRegr", "statsmodels", "OrderedModel(probit)", "fast_ordinal_probit_regression", lambda: build_ordered("probit"), False),
-    ("ordinal", "InferenceOrdinalCloglogRegr", None, None, "fast_ordinal_cloglog_regression", None, True),
-    ("ordinal", "InferenceOrdinalCauchitRegr", None, None, "fast_ordinal_cauchit_regression", None, True),
+    ("ordinal", "InferenceOrdinalCloglogRegr", None, None, "fast_ordinal_cloglog_regression", build_ordinal_cloglog_edi_only, True),
+    ("ordinal", "InferenceOrdinalCauchitRegr", None, None, "fast_ordinal_cauchit_regression", build_ordinal_cauchit_edi_only, True),
     ("survival", "InferenceSurvivalLogRank", "lifelines", "statistics.logrank_test", "out of python-bindings scope (nonparametric-test kernel, EDI:::fast_logrank_stats_cpp)", build_logrank, False),
     ("continuous", "InferenceAllSimpleWilcox", "numpy", "median(HL pairwise diff)", "out of python-bindings scope (nonparametric-test kernel, EDI:::wilcox_hl_point_estimate_cpp)", build_hl_wilcox, False),
     ("incidence", "InferenceIncidModifiedPoisson", "statsmodels", "GLM(Poisson)", "fast_poisson_regression", build_glm_poisson, False),
@@ -1230,11 +1322,44 @@ MODEL_SPECS = [
     ("count", "InferenceCountKKCondPoissonOneLik", None, None, "fast_cpoisson_combined", None, True),
     ("survival", "InferenceSurvivalKKWeibullFrailtyOneLik", None, None, "fast_weibull_frailty", None, True),
     ("proportion", "InferencePropZeroOneInflatedBetaRegr", None, None, "fast_zero_one_inflated_beta", build_zoib_edi_only, True),
+    # GLMM/CLMM/LMM family (TODO-8, python_bindings_package_spec.md): all
+    # six kernels below are bound (python/cpp/bindings_glmm.cpp,
+    # bindings_ordinal.cpp) but were entirely absent from this table until
+    # now -- not a single NA/gap row, just missing outright. Adding them
+    # as documented Baseline Gaps (builder=None -- see NO_CANONICAL_NOTE
+    # below for why no statsmodels/scipy analog exists) rather than a
+    # timing builder is the minimal fix for "don't omit silently"; wiring
+    # a real EDI-only bare-metal timer (matching the adjcat/contratio/zoib
+    # rows' build_*_edi_only pattern above) is a follow-up, not attempted
+    # here to avoid a larger, more collision-prone change to this file's
+    # in-progress dataset-generation helpers.
+    ("count", "InferenceCountKKGLMM", None, None, "fast_poisson_glmm", None, True),
+    ("continuous", "InferenceContinKKGLMM", None, None, "fast_gaussian_lmm", None, True),
+    ("count", "InferenceCountKKHurdlePoissonOneLik", None, None, "fast_hurdle_poisson_glmm", None, True),
+    ("ordinal", "InferenceOrdinalKKGLMM", None, None, "fast_ordinal_glmm", None, True),
+    ("ordinal", "InferenceOrdinalKKCLMM", None, None, "fast_ordinal_clmm", None, True),
+    (
+        "incidence",
+        "fast_logistic_glmm (no R6 inference class yet)",
+        None,
+        None,
+        "fast_logistic_glmm",
+        None,
+        True,
+    ),
+    ("ordinal", "InferenceOrdinalStereotypeLogitRegr", None, None, "fast_stereotype_logit", None, True),
 ]  # end MODEL_SPECS
 
 NO_CANONICAL_NOTE = {
     "InferenceOrdinalAdjCatLogitRegr": "No identified Python package implements the adjacent-category logit link (R uses VGAM::vglm(acat())).",
     "InferenceOrdinalContRatioRegr": "No identified Python package implements the continuation-ratio link (R uses VGAM::vglm(cratio())).",
+    "InferenceCountKKGLMM": "Poisson GLMM with a random intercept, fit via adaptive Gauss-Hermite quadrature + MLE: no pure-Python package offers a comparable ML (not variational/Bayesian) GLMM fitter -- see python_bindings_package_spec.md Baseline Gaps.",
+    "InferenceContinKKGLMM": "Gaussian LMM with a random intercept, fit via MLE: statsmodels' MixedLM uses REML/a different estimation path by default and isn't a direct like-for-like timing comparison -- see python_bindings_package_spec.md Baseline Gaps.",
+    "InferenceCountKKHurdlePoissonOneLik": "Hurdle-Poisson GLMM with a random intercept: no pure-Python package combines a hurdle count model with adaptive-quadrature GLMM fitting.",
+    "InferenceOrdinalKKGLMM": "Proportional-odds ordinal GLMM with a random intercept: no pure-Python package offers ML ordinal-GLMM fitting with adaptive quadrature.",
+    "InferenceOrdinalKKCLMM": "Same as InferenceOrdinalKKGLMM, generalized to logit/probit/cauchit/cloglog links.",
+    "fast_logistic_glmm (no R6 inference class yet)": "Logistic GLMM with a random intercept via adaptive quadrature: the C++ kernel exists and is Python-bound, but (per a repo-wide grep of EDI/R) has no R6 inference class consuming it yet, so there's no R-side class name to give this row either -- flagged here as a bound-but-unconsumed kernel, not a mislabeled Baseline Gap.",
+    "InferenceOrdinalStereotypeLogitRegr": "Stereotype logit ordinal regression: R uses VGAM::vglm(multinomial(...)) style fitting; no identified Python package implements the stereotype-logit link specifically.",
     "InferenceOrdinalCloglogRegr": "statsmodels.miscmodels.ordinal_model.OrderedModel's distr= argument only officially supports 'probit'/'logit' strings; cloglog is not a documented/tested option, so this is treated as a gap rather than an unverified custom-distribution hack.",
     "InferenceOrdinalCauchitRegr": "Same as cloglog: OrderedModel's distr= only documents 'probit'/'logit'.",
     "InferenceIncidKKCondLogitPlusGLMMOneLik": "KK combined (matched-pair + reservoir) joint-likelihood estimator: no canonical analog in either R or Python (see python_bindings_package_spec.md Baseline Gaps).",
@@ -1251,85 +1376,102 @@ NO_CANONICAL_NOTE = {
 # Hurdle likelihoods and probit cold-start heuristics above) benchmarked
 # against scipy's/numpy's vectorized equivalents, over a fixed-length
 # vector, mirroring benchmark/fast_math_utils_bench.cpp's methodology.
-# EDI's python/ fast_math pybind11 stub currently only binds
-# fast_pchisq_upper (see python/cpp/bindings_fast_math.cpp) — none of the 8
-# functions below — so this table's EDI column is NA for the same "not
-# bound yet" reason as the two tables above, not a different one.
+# All 14 are bound in python/cpp/bindings_fast_math.cpp as thin elementwise
+# vectorizing wrappers around the same portable inline scalar functions
+# EDI's own model-fitting kernels already call internally.
 N_UTIL = 5000
+
+
+def _util_edi(name):
+    return edi_fn(name) if edi_has(name) else None
 
 
 def build_util_digamma():
     x = rng.uniform(0.5, 50, N_UTIL)
-    return lambda: sspecial.digamma(x)
+    fn = _util_edi("fast_digamma")
+    return (lambda: sspecial.digamma(x)), (None if fn is None else (lambda: fn(x)))
 
 
 def build_util_trigamma():
     x = rng.uniform(0.5, 50, N_UTIL)
-    return lambda: sspecial.polygamma(1, x)
+    fn = _util_edi("fast_trigamma")
+    return (lambda: sspecial.polygamma(1, x)), (None if fn is None else (lambda: fn(x)))
 
 
 def build_util_lgamma():
     x = rng.uniform(0.5, 50, N_UTIL)
-    return lambda: sspecial.gammaln(x)
+    fn = _util_edi("fast_lgamma")
+    return (lambda: sspecial.gammaln(x)), (None if fn is None else (lambda: fn(x)))
 
 
 def build_util_lbeta():
     a = rng.uniform(1, 20, N_UTIL)
     b = rng.uniform(1, 20, N_UTIL)
-    return lambda: sspecial.betaln(a, b)
+    fn = _util_edi("fast_lbeta")
+    return (lambda: sspecial.betaln(a, b)), (None if fn is None else (lambda: fn(a, b)))
 
 
 def build_util_qnorm():
     p = rng.uniform(0.001, 0.999, N_UTIL)
-    return lambda: sstats.norm.ppf(p)
+    fn = _util_edi("fast_qnorm")
+    return (lambda: sstats.norm.ppf(p)), (None if fn is None else (lambda: fn(p)))
 
 
 def build_util_log_pnorm():
     x = rng.normal(0, 3, N_UTIL)
-    return lambda: sstats.norm.logcdf(x)
+    fn = _util_edi("fast_log_pnorm")
+    return (lambda: sstats.norm.logcdf(x)), (None if fn is None else (lambda: fn(x)))
 
 
 def build_util_log_dnorm():
     x = rng.normal(0, 3, N_UTIL)
-    return lambda: sstats.norm.logpdf(x)
+    fn = _util_edi("fast_log_dnorm")
+    return (lambda: sstats.norm.logpdf(x)), (None if fn is None else (lambda: fn(x)))
 
 
 def build_util_dnbinom_mu():
-    x = rng.poisson(5, N_UTIL)
+    x = rng.poisson(5, N_UTIL).astype(float)
     size, mu = 2.0, 5.0
     p_nb = size / (size + mu)
-    return lambda: sstats.nbinom.logpmf(x, size, p_nb)
+    fn = _util_edi("fast_dnbinom_mu")
+    return (lambda: sstats.nbinom.logpmf(x, size, p_nb)), (None if fn is None else (lambda: fn(x, size, mu, return_log=True)))
 
 
 def build_util_pchisq_upper():
     x = rng.uniform(0, 30, N_UTIL)
-    df = rng.integers(1, 11, N_UTIL)
-    return lambda: sstats.chi2.sf(x, df)
+    df = rng.integers(1, 11, N_UTIL).astype(float)
+    fn = _util_edi("fast_pchisq_upper")
+    return (lambda: sstats.chi2.sf(x, df)), (None if fn is None else (lambda: fn(x, df)))
 
 
 def build_util_erfc():
     x = rng.normal(0, 3, N_UTIL)
-    return lambda: sspecial.erfc(x)
+    fn = _util_edi("fast_erfc")
+    return (lambda: sspecial.erfc(x)), (None if fn is None else (lambda: fn(x)))
 
 
 def build_util_pnorm_fast():
     x = rng.normal(0, 3, N_UTIL)
-    return lambda: sstats.norm.cdf(x)
+    fn = _util_edi("pnorm_fast")
+    return (lambda: sstats.norm.cdf(x)), (None if fn is None else (lambda: fn(x)))
 
 
 def build_util_dnorm_fast():
     x = rng.normal(0, 3, N_UTIL)
-    return lambda: sstats.norm.pdf(x)
+    fn = _util_edi("dnorm_fast")
+    return (lambda: sstats.norm.pdf(x)), (None if fn is None else (lambda: fn(x)))
 
 
 def build_util_atan():
     x = rng.normal(0, 5, N_UTIL)
-    return lambda: np.arctan(x)
+    fn = _util_edi("fast_atan")
+    return (lambda: np.arctan(x)), (None if fn is None else (lambda: fn(x)))
 
 
 def build_util_log1pexp():
     x = rng.normal(0, 5, N_UTIL)
-    return lambda: np.logaddexp(0, x)
+    fn = _util_edi("fast_log1pexp")
+    return (lambda: np.logaddexp(0, x)), (None if fn is None else (lambda: fn(x)))
 
 
 # 8 of these 14 kernels (digamma, trigamma, lgamma, lbeta, dnbinom_mu,

@@ -724,24 +724,48 @@ model-fitting families actually in scope now (rank tests, exact/CMH tests,
 and proportion-CI methods are dropped from this table — their C++ files are
 permanently out of scope, see Scope above):
 
+**Status update (2026-08-03, TODO-4):** verified against the actual installed
+versions in the `edi-py-bench` venv — `statsmodels==0.14.6`,
+`scikit-survival==0.28.0`, `lifelines==0.30.0`. Every class named below
+exists and imports cleanly at these versions; no floor-version pins are
+needed beyond what's already installed. Findings that change the table
+below are called out inline; two are consequential enough to repeat here:
+(1) `OrderedModel` DOES support cauchit/cloglog — not via the `distr=`
+string shortcut (only `'probit'`/`'logit'` strings work), but by passing a
+`scipy.stats` distribution instance directly (`stats.cauchy` for cauchit,
+`stats.gumbel_l` for cloglog — verified mathematically: cloglog's inverse
+link is exactly the Gumbel-min CDF `1-exp(-exp(x))`, cauchit's is exactly
+the standard Cauchy CDF). Both fit and converge on synthetic data. This
+demotes those two rows from Baseline Gap to a real (if slightly unusual)
+wiring. (2) `fast_hurdle_negbin_cpp`'s hurdle mechanism is an independent
+logistic regression on the zero/positive indicator (`fast_logistic_regression_internal`
+in `fast_hurdle_negbin.cpp`), whereas `HurdleCountModel`'s `zerodist=` models
+the zero/positive split via a *censored* Poisson/NegBin likelihood, not a
+separate logistic fit — a different hurdle parameterization, not a
+literal match. Timing comparisons are still fair (same asymptotic
+complexity class), but coefficient/estimate parity checks against this
+baseline would need to account for the different zero-mechanism, or should
+be validated against the R implementation instead (already covered by
+`EDI/tests/testthat/test-hurdle-negbin-*.R`).
+
 | Response family | EDI kernel example | R canonical (existing) | Python canonical baseline | Notes |
 |---|---|---|---|---|
 | Continuous / OLS | `fast_ols_cpp` | `lm.fit` | `numpy.linalg.lstsq` (lowest level) or `statsmodels.regression.linear_model.OLS(...).fit()` | Use `lstsq` for the bare-metal row; add an `OLS` row too since `benchmark_model_fits.md` includes both levels for some families. |
-| Continuous / robust regression | `fast_robust_regression_cpp` | `Rfit`/robust equivalents | `statsmodels.robust.robust_linear_model.RLM` | Confirm the R side's robust-loss default (e.g. Huber) matches `RLM`'s default `M`-estimator before treating a timing/estimate mismatch as a bug. |
+| Continuous / robust regression | `fast_robust_regression_cpp` | `Rfit`/robust equivalents | `statsmodels.robust.robust_linear_model.RLM` | **Verified mismatch, not just a defaults check:** EDI's default `method="MM"` is a two-stage S-then-M estimator; `RLM`'s default `M=None` resolves to a single-stage `HuberT` M-estimator (confirmed via `RLM(y, X).M` → `HuberT` instance) — these are different estimator classes, not just different tuning constants. For a fair timing/estimate comparison, either call EDI with `method="M"` (it supports plain M-estimation too, `c=1.345` matches `HuberT`'s default tuning constant exactly) or note the MM-vs-M mismatch explicitly in the report rather than treating a coefficient difference as a bug. |
 | Incidence / logistic | `fast_logistic_regression_cpp` | `glm.fit` | `statsmodels.genmod.generalized_linear_model.GLM(family=sm.families.Binomial())` | statsmodels' IRLS fit is the closest low-level analog to `glm.fit`. |
 | Incidence / probit, log-binomial | `fast_probit_regression_cpp`, `fast_log_binomial_regression_cpp` | `glm.fit(family=binomial(link=...))` | `statsmodels GLM(family=Binomial(link=probit()/log()))` | |
 | Count / Poisson | `fast_poisson_regression_cpp` | `glm.fit` | `statsmodels GLM(family=sm.families.Poisson())` | |
 | Count / NegBin | `fast_negbin_regression_cpp` | `MASS::glm.nb` | `statsmodels.discrete.discrete_model.NegativeBinomial` | `NegativeBinomial` jointly estimates dispersion via MLE, matching `glm.nb`'s semantics more closely than `GLM(family=NegativeBinomial(alpha=fixed))`. |
-| Count / ZINB, ZAP, hurdle negbin | `fast_zinb_cpp`, `fast_zero_augmented_poisson_cpp`, `fast_hurdle_negbin_cpp` | (custom) | `statsmodels.discrete.count_model.{ZeroInflatedPoisson,ZeroInflatedNegativeBinomialP}`, `statsmodels.discrete.truncated_model.HurdleCountModel` | Verify exact class names against the installed statsmodels version before wiring — these moved between statsmodels releases. |
-| Proportion / beta regression | `fast_beta_regression_cpp` | `betareg::betareg.fit` | `statsmodels.othermod.betareg.BetaModel` | Confirm availability — added in a specific statsmodels minor version; pin a floor version in `benchmarks/requirements.txt`. |
+| Count / ZINB, ZAP, hurdle negbin | `fast_zinb_cpp`, `fast_zero_augmented_poisson_cpp`, `fast_hurdle_negbin_cpp` | (custom) | `statsmodels.discrete.count_model.{ZeroInflatedPoisson,ZeroInflatedNegativeBinomialP}`, `statsmodels.discrete.truncated_model.HurdleCountModel` | **Verified present at 0.14.6**, all three import and construct from raw `endog`/`exog` arrays (no formula/DataFrame requirement). `HurdleCountModel(dist="negbin", zerodist=...)` — `zerodist` only accepts `"poisson"`/`"negbin"` (raises `NotImplementedError` otherwise), and its hurdle mechanism differs structurally from EDI's — see status note above. |
+| Proportion / beta regression | `fast_beta_regression_cpp` | `betareg::betareg.fit` | `statsmodels.othermod.betareg.BetaModel` | **Verified present at 0.14.6**, takes raw `endog`/`exog` (+ optional `exog_precision`) directly; no additional version pin needed. |
 | Proportion / zero-one-inflated beta | `fast_zero_one_inflated_beta_cpp` | (custom) | none identified | Baseline Gap — see below. |
-| Survival / Cox PH | `fast_coxph_regression_cpp` | `survival::coxph.fit` | `sksurv.linear_model.CoxPHSurvivalAnalysis` (scikit-survival) | Prefer scikit-survival over `lifelines.CoxPHFitter` for the bare-metal row — it accepts raw NumPy arrays directly; `lifelines` wants a DataFrame, which adds construction overhead. |
-| Survival / Weibull AFT | `fast_weibull_regression_cpp` | `survival::survreg` | `lifelines.WeibullAFTFitter` | |
+| Survival / Cox PH | `fast_coxph_regression_cpp` | `survival::coxph.fit` | `sksurv.linear_model.CoxPHSurvivalAnalysis` (scikit-survival) | Prefer scikit-survival over `lifelines.CoxPHFitter` for the bare-metal row. **Verified at sksurv 0.28.0**: `.fit(self, X, y)` takes a raw 2D array `X` and a structured array `y` (event/time fields) directly — no DataFrame construction; `lifelines.CoxPHFitter.fit` requires a `pandas.DataFrame` (`df, duration_col, event_col=...`), confirming the stated overhead difference. |
+| Survival / Weibull AFT | `fast_weibull_regression_cpp` | `survival::survreg` | `lifelines.WeibullAFTFitter` | **Verified at lifelines 0.30.0**: `.fit(self, df, duration_col, event_col=None, ...)` requires a `pandas.DataFrame` — the bare-metal timing row must include DataFrame construction from the NumPy fixture, or explicitly flag it as formula-API overhead the same way `benchmark_model_fits.md` already flags formula-API fallbacks. |
 | Survival / Weibull frailty | `fast_weibull_frailty_cpp` | (custom/`frailtypack`) | none identified | Baseline Gap — see below. |
-| Ordinal / proportional odds (logit/probit) | `fast_ordinal_regression_cpp`, `fast_ordinal_probit_regression_cpp` | `ordinal::clm` | `statsmodels.miscmodels.ordinal_model.OrderedModel(distr="logit"/"probit")` | Verify `OrderedModel`'s supported `distr` values against the installed version before assuming cloglog/cauchit support — these may not both be implemented; treat unsupported links as a Baseline Gap (below), not a silent skip. |
-| Ordinal / cauchit, cloglog | `fast_ordinal_cauchit_regression_cpp`, `fast_ordinal_cloglog_regression_cpp` | `ordinal::clm(link=...)` | `statsmodels OrderedModel` if the installed version supports the link, else Baseline Gap | |
+| Ordinal / proportional odds (logit/probit) | `fast_ordinal_regression_cpp`, `fast_ordinal_probit_regression_cpp` | `ordinal::clm` | `statsmodels.miscmodels.ordinal_model.OrderedModel(distr="logit"/"probit")` | **Verified at 0.14.6**: `distr` accepts the string shortcuts `'probit'`/`'logit'` only for those two links (see source `__init__`: `if distr == 'probit': ... elif distr == 'logit': ...`, no other string branches). |
+| Ordinal / cauchit, cloglog | `fast_ordinal_cauchit_regression_cpp`, `fast_ordinal_cloglog_regression_cpp` | `ordinal::clm(link=...)` | `statsmodels.miscmodels.ordinal_model.OrderedModel(distr=scipy.stats.cauchy)` / `OrderedModel(distr=scipy.stats.gumbel_l)` | **No longer a Baseline Gap** — verified both fit and converge on synthetic data at statsmodels 0.14.6 via a `scipy.stats.rv_continuous` instance passed as `distr` (not a string). Not the same wiring as the logit/probit row (needs `scipy.stats` imported and the right distribution picked), so keep the two rows separate in `baselines.py` rather than templating them together. |
 | Ordinal / adjacent-category, continuation-ratio, stereotype | `fast_adjacent_category_logit_cpp`, `fast_continuation_ratio_regression_cpp`, `fast_stereotype_logit_cpp` | `VGAM::vglm` | none identified | Baseline Gap — see below. |
-| GEE | `fast_gee_cpp` | `geepack::geeglm` | `statsmodels.genmod.generalized_estimating_equations.GEE` | Direct match; confirm working-correlation-structure defaults line up. |
+| GEE | `fast_gee_cpp` | `geepack::geeglm` | `statsmodels.genmod.generalized_estimating_equations.GEE` | **Verified aligned, not just "direct match":** both default to an independence working-correlation structure — `geepack::geeglm`'s `corstr` defaults to `"independence"`, and `GEE(...).cov_struct` (when left `None`) resolves to `statsmodels.genmod.cov_struct.Independence` — confirmed by inspecting the constructed object at 0.14.6. No mismatch to flag. |
 | GLMM (all families) | `fast_poisson_glmm_cpp`, `fast_logistic_glmm_cpp`, `fast_hurdle_poisson_glmm_cpp`, `fast_ordinal_glmm_cpp`, `fast_ordinal_clmm_cpp`, `fast_gaussian_lmm_cpp` | `glmmTMB`/`lme4` | none identified | Baseline Gap — see below. |
 | KK combined (matched + reservoir) | `fast_clogit_plus_glmm_cpp`, `fast_cpoisson_combined_cpp` | (custom KK estimator) | none identified | Baseline Gap — no canonical analog exists in either language; correctness reference is the R implementation itself. |
 
@@ -817,14 +841,53 @@ what it looks like it means.
 - [x] TODO-2: Add `result_map_pybind.h`.
 - [x] TODO-3: Bind `fast_poisson_glmm` as the pilot; add its parity test and
       fixture.
-- [ ] TODO-4: Verify `statsmodels`/`scikit-survival`/`lifelines` versions
+- [x] TODO-4: Verify `statsmodels`/`scikit-survival`/`lifelines` versions
       and exact class/method names in the Baseline Registry table before
       writing `benchmarks/baselines.py` — several entries above are marked
       "verify before wiring."
-- [ ] TODO-5: Implement `benchmarks/baselines.py` for the families with a
+      **Status update (2026-08-03):** verified against the `edi-py-bench`
+      venv's installed versions (`statsmodels==0.14.6`,
+      `scikit-survival==0.28.0`, `lifelines==0.30.0`) — every class named
+      in the Baseline Registry table exists and imports cleanly; no missing
+      classes, no version-floor pins needed. Findings recorded inline in
+      the table above and its preceding status note: `OrderedModel` cauchit/
+      cloglog moved from Baseline Gap to a real (verified working, fit and
+      converge) baseline via `scipy.stats` distribution instances rather
+      than string shortcuts; `RLM`'s default resolves to `HuberT`
+      M-estimation while EDI's own default is `MM`-estimation (a real
+      estimator-class mismatch, not just a tuning-constant difference —
+      use `method="M"` on the EDI side for a fair comparison); GEE's
+      independence-correlation defaults confirmed aligned on both sides;
+      `HurdleCountModel`'s zero-mechanism (censored count) confirmed
+      structurally different from EDI's (independent logistic hurdle);
+      `sksurv.CoxPHSurvivalAnalysis`/`lifelines.WeibullAFTFitter`'s raw-array
+      vs. DataFrame-required APIs confirmed, validating the doc's existing
+      stated preference for scikit-survival on the Cox PH bare-metal row.
+- [x] TODO-5: Implement `benchmarks/baselines.py` for the families with a
       confirmed clean baseline (OLS, robust regression, logistic, probit,
       log-binomial, Poisson, NegBin, ZINB/ZAP/hurdle, beta regression, Cox
       PH, Weibull AFT, proportional-odds/cauchit/cloglog ordinal, GEE).
+      **Status update (2026-08-03):** implemented at
+      `python/benchmarks/baselines.py`, the exact path this doc's Package
+      Layout specifies — a standalone `BASELINES` registry (20 entries: the
+      12 families above, several expanding to multiple kernels, e.g.
+      log-binomial + identity-binomial, ZINB + ZAP + hurdle-NegBin, and the
+      4 ordinal links), each a `Baseline(package, function, fit, notes)`
+      dataclass whose `fit(X, y, ...)` callable takes raw NumPy arrays with
+      no dataset generation, EDI timing, or report rendering mixed in (that
+      stays `run_benchmark_audit.py`'s job, per Package Layout). Encodes
+      every TODO-4 finding directly (cauchit/cloglog via `scipy.stats`
+      distribution instances, `RLM(M=HuberT)` for a fair robust-regression
+      comparison against EDI's `method="M"`, `HurdleCountModel`'s
+      structurally different zero-mechanism noted in both the module
+      docstring and the registry entry's `notes`) — corrects the two gaps
+      found in `package_metadata/benchmark_model_fits_python.py`'s
+      equivalent (co-located, not standalone) baseline-wiring: that file
+      has no GEE row and still treats cauchit/cloglog as EDI-only/no-baseline.
+      Verified by calling every one of the 20 registry entries against
+      realistic synthetic data for its family (continuous/binary/count/
+      proportion/survival/ordinal/GEE) in the `edi-py-bench` venv — all 20
+      fit successfully and return a real fitted-model object.
 - [x] TODO-6: Phase 2 — bind the remaining 32 model-fitting files,
       following the SEXP-removal spec's migration order.
       **Status update (2026-08-03):** all 33 model-fitting kernels are now
@@ -838,12 +901,54 @@ what it looks like it means.
       ad hoc smoke calls (real data, checked `converged`/no-crash), not
       pinned R-fixture parity tests. That gap is what actually blocks the
       Acceptance Criteria below, not the binding work itself.
-- [ ] TODO-7: Implement `benchmarks/run_benchmark_audit.py` and generate the
+- [x] TODO-7: Implement `benchmarks/run_benchmark_audit.py` and generate the
       first Python-side benchmark report.
-- [ ] TODO-8: Document Baseline Gaps explicitly in the generated report
+      **Status update (2026-08-03):** implemented, but at
+      `package_metadata/benchmark_model_fits_python.py` /
+      `.html`, not the `python/benchmarks/run_benchmark_audit.py` path this
+      doc's Package Layout specifies — reconcile the location (move the
+      script, or update Package Layout to match reality) before calling
+      this fully settled. Verified the generated report's column headers
+      are byte-identical to `benchmark_model_fits_R.html`'s (`Class`,
+      `Response`, `EDI Time (ms)`, `Canonical Pkg`, `Canonical Func`,
+      `Canonical Time (ms)`, `Speedup`, `Timing Pval`), satisfying the
+      "same column shape" requirement. The existing HTML report is dated
+      2026-08-02 19:30:47 UTC — generated before this session's kernel-
+      binding work finished — so it's a real "first report" but a *stale*
+      one; most EDI-timing cells will read differently (many currently-NA
+      rows should now have real timings) once regenerated against the
+      now-complete 33-kernel binding.
+- [x] TODO-8: Document Baseline Gaps explicitly in the generated report
       (GLMM/CLMM/LMM families, adjacent-category/continuation-ratio/
       stereotype ordinal, zero-one-inflated beta, Weibull frailty,
       KK-combined estimators) rather than omitting them silently.
+      **Status update (2026-08-03):** completed the gap the first pass over
+      this TODO found — adjacent-category, continuation-ratio, zero-one-
+      inflated beta, Weibull frailty, and the KK-combined estimators were
+      already documented gap rows, but the entire GLMM/CLMM/LMM family
+      (`fast_poisson_glmm`, `fast_logistic_glmm`, `fast_hurdle_poisson_glmm`,
+      `fast_ordinal_glmm`, `fast_ordinal_clmm`, `fast_gaussian_lmm`) and
+      `fast_stereotype_logit` were silently absent from both the
+      point-estimate (`MODEL_SPECS`) and Wald (`WALD_SPECS`) tables in
+      `package_metadata/benchmark_model_fits_python.py`. Added all 7 as
+      explicit `no_canonical=True` rows to both tables (matching the
+      existing `(family, R6_class, None, None, edi_kernel, builder, True)`
+      shape, `builder=None` — consistent with the existing KK-combined
+      rows, real bare-metal EDI timing for these is a follow-up, not
+      required for "don't omit silently"), with per-kernel
+      `NO_CANONICAL_NOTE` explanations (mostly: no pure-Python package
+      offers ML GLMM fitting with adaptive Gauss-Hermite quadrature, same
+      reasoning as this doc's own Baseline Gaps section). R6 class names
+      resolved by grepping `EDI/R` for each kernel's actual caller (e.g.
+      `fast_poisson_glmm_cpp` → `InferenceCountKKGLMM` in
+      `inference_count_KK_combined.R`); `fast_logistic_glmm` turned out to
+      have no R6 consumer class at all yet (bound and working, but nothing
+      in `EDI/R` calls it) — labeled explicitly as such rather than
+      inventing a class name. Verified by importing the module and
+      confirming all 7 keys resolve in both tables with a note, and that
+      `python -m py_compile` and a full module import still succeed
+      (`main()` is `__main__`-guarded, so this didn't trigger a full
+      benchmark run).
 - [x] TODO-9: Migrate the 15 remaining direct Rmath call sites identified in
       the R Dependency Audit (`R::pchisq` x3, `R::qnorm5` x3,
       `R::pnorm`/`R::pnorm5`/`R::dnorm` x6, `R::dnbinom_mu` x1, `R::lbeta`
@@ -908,3 +1013,198 @@ The feature is complete when:
 - Every `Rcpp::Nullable<T>` argument across the bound files has a working
   `std::optional`-based Python equivalent with a passing omitted-argument
   test.
+
+**Status update (2026-08-03) — verified against each criterion in turn:**
+
+1. **`pip install ./python` builds from a clean checkout — MET (after a
+   fix).** Found genuinely broken: `pyproject.toml` declared
+   `readme = "README.md"` but `python/README.md` didn't exist, so pip
+   failed at the metadata-generation stage before ever reaching the CMake
+   build — a real bug this session's earlier `cmake --build` testing never
+   caught, since bypassing `pip`/scikit-build-core's packaging layer
+   entirely also bypasses this check. Fixed by adding `python/README.md`;
+   retested with a fresh venv (`pip install ./python`) — wheel builds,
+   installs, and `import edi_kernels` exposes all 38 functions.
+2. **Every bound kernel has an R-fixture parity test at
+   `atol=1e-9, rtol=1e-9` — NOT MET.** Only `fast_poisson_glmm` has one
+   (`python/tests/test_fast_poisson_glmm.py`); the other 32 kernels were
+   verified this session only via ad hoc smoke calls (real data, checked
+   `converged`/no exception), not committed, re-runnable, pinned-fixture
+   tests. This is the single largest remaining gap.
+3. **Benchmark report, same column shape, Baseline Gaps marked — PARTIAL,
+   Baseline-Gap half now MET.** See TODO-7/TODO-8 status notes above:
+   column shape confirmed identical to the R report; script exists at the
+   wrong path per this doc's own Package Layout; report artifact is stale
+   (predates this session's bindings). The GLMM/CLMM/LMM family plus
+   `fast_stereotype_logit` were silently omitted rather than marked as
+   Baseline Gaps (the specific failure TODO-8 exists to prevent) — this is
+   now fixed, all 7 added as documented gap rows to both `MODEL_SPECS` and
+   `WALD_SPECS`. What's still PARTIAL about this criterion is purely the
+   location/staleness issue, not missing gap documentation anymore.
+4. **No kernel core duplicated/reimplemented — MET.** Every `_internal`
+   function extracted this session is a direct call into (or thin
+   restructuring of) the existing `EDI/src/*.cpp` logic; every
+   `cpp/bindings_*.cpp` file is argument marshaling + a call into that
+   `_internal` function, never a reimplementation. Consistent with the
+   "extract, don't duplicate" discipline used throughout Task 45.
+5. **All 33 model-fitting files bound, nothing out-of-scope pulled in —
+   MET.** 37 kernel functions (33 files, some with multiple entry points
+   e.g. log/identity-binomial) bound and confirmed importable; `CMakeLists.txt`'s
+   `EDI_KERNEL_SOURCES` lists exactly the 33 in-scope files, no
+   resampling/design/nonparametric-test `.cpp` pulled in.
+6. **Every `Nullable<T>` has a working `optional` equivalent with a passing
+   omitted-argument test — PARTIAL.** The `std::optional` conversion itself
+   is confirmed complete (TODO-10). The "passing omitted-argument test"
+   half doesn't exist as a dedicated, committed test — this session's
+   smoke tests did call kernels with several optional arguments left at
+   their defaults and they worked, but that's not the same as a test suite
+   that systematically exercises every optional parameter's omission per
+   kernel.
+
+**Net: the package is not yet "done" per this doc's own Acceptance
+Criteria**, even though the binding work itself (Phase 1 + Phase 2, TODO-1
+through TODO-6's core scope, TODO-9, TODO-10) is genuinely complete and
+verified, and `baselines.py` (TODO-5) and the Baseline Gap documentation
+(TODO-8) are now both done. What's left, in priority order: (a) parity-
+fixture tests for the 32 untested kernels [criterion 2], (b) regenerating
+the benchmark report against the completed bindings (it now has all the
+right rows, including the 7 gap rows this pass added, but the artifact on
+disk still predates most of this session's binding work) and wiring it to
+call `python/benchmarks/baselines.py`'s registry directly instead of (or
+in addition to) its own co-located `build_*()` closures, now that both
+exist [TODO-7], (c) omitted-argument test coverage [criterion 6].
+
+## Release Checklist (PyPI)
+
+### Licensing — resolve this first, before anything else here
+
+`EDI/DESCRIPTION` declares `License: GPL-3`, and this extension compiles
+`EDI/src/*.cpp` **directly** into the wheel (not a copy, not a subprocess
+call to a separately-licensed R process) — that makes `edi_kernels` a
+combined/derivative work under GPL-3, not a work that can be released
+under a separate permissive license (MIT, BSD, Apache-2.0, etc.) no matter
+what license header `python/` itself carries. Concretely:
+
+- `python/pyproject.toml` needs a `license = "GPL-3.0-or-later"` (or
+  whatever exact GPL-3 variant `EDI/DESCRIPTION` means — confirm "GPL-3"
+  there is `GPL-3.0-only` vs `GPL-3.0-or-later` before picking the SPDX
+  identifier) and a `python/LICENSE` file (copy of the repo root
+  `LICENSE`, not a paraphrase).
+- The two fetched build dependencies are both GPL-3-compatible as
+  dependencies of a GPL-3 work: Eigen is MPL-2.0, LBFGSpp is MIT — neither
+  imposes a stronger copyleft that would conflict. No dependency swap is
+  needed on the licensing axis (this was already the deciding factor for
+  fetching LBFGSpp from its own upstream instead of RcppNumerical's copy —
+  see "Standalone Rmath Library Dependency" above — but confirm it again
+  here since a *release* forces the question in a way local development
+  didn't).
+- Do not let a generic `pip install` template (e.g. a copy-pasted
+  `pyproject.toml` `license` field from an unrelated permissively-licensed
+  project) silently ship as anything other than GPL-3 — that would be
+  either a real license violation or a broken build once someone notices
+  and re-licenses it, either way not a one-line fix after the fact once a
+  wheel is public on PyPI.
+- If distributing under GPL-3 is not actually wanted (e.g. the intent is a
+  permissively-licensed thin wrapper around a *separately installed* EDI),
+  that requires re-architecting this package to link a shared library at
+  runtime rather than compiling `EDI/src/*.cpp` in statically — a materially
+  different design than what this spec builds, and should be a deliberate
+  decision made before Phase 1, not discovered at release time.
+
+### Versioning
+
+- `python/pyproject.toml`'s `version` should track `EDI/DESCRIPTION`'s
+  `Version` field (currently `1.0.0`) rather than drift independently — a
+  Python user comparing behavior against the R package needs the version
+  numbers to mean the same underlying kernel code. Simplest scheme:
+  `{EDI version}.postN` where `N` increments for Python-packaging-only
+  changes (binding fixes, build-system changes) that don't touch
+  `EDI/src/*.cpp` at all; bump to match `EDI/DESCRIPTION` directly whenever
+  it changes.
+- Tag releases in git as `py-vX.Y.Z` (distinct from any R-side release tag
+  convention already in use) so `git describe`/CI can disambiguate which
+  side of the repo a tag is about, since both packages share this one repo.
+
+### Building portable wheels
+
+- `EDI_PY_PORTABLE=ON` (already wired in `CMakeLists.txt`, currently
+  `OFF` by default in `[tool.scikit-build.cmake.define]`) must be `ON` for
+  any wheel that leaves this machine — `-march=native` bakes in
+  instruction-set assumptions (AVX-512, this machine's specific `-mtune`)
+  that will `SIGILL` on an older or different CPU. Flip the default in
+  `pyproject.toml` for release builds, or pass
+  `--config-settings=cmake.define.EDI_PY_PORTABLE=ON` per-build via
+  `cibuildwheel`'s config — do not ship a `-march=native` wheel to PyPI.
+- Use [`cibuildwheel`](https://cibuildwheel.pypa.io/) to build manylinux
+  (glibc, matching the R package's own Linux support target),
+  macOS (both `x86_64` and `arm64` — build both, don't assume Rosetta
+  coverage is acceptable for a numerical library), and Windows wheels in
+  CI. `cibuildwheel`'s `manylinux` containers don't have a system
+  BLAS/Eigen preinstalled, but that's fine here — `CMakeLists.txt` already
+  `FetchContent`s Eigen when no system copy is found, and `find_package(BLAS)`
+  needs at minimum a reference BLAS available in the container image (add
+  `apt-get install -y libblas-dev` or equivalent to `CIBW_BEFORE_ALL` for
+  the manylinux job if the chosen base image doesn't already have one —
+  confirmed portable per the `_helper_functions_core.h` comment on
+  `cblas_dsyrk`, see Build System above, but the container still needs
+  *some* BLAS installed to link against).
+- `FetchContent`-ing Eigen/LBFGSpp from their upstream git repos at build
+  time (see Build System above) means every wheel build needs network
+  access — `cibuildwheel`'s containers have it by default, but a locked-down
+  CI runner or an offline sdist build will fail. For a `pip install
+  edi_kernels` **source** install (as opposed to a prebuilt wheel) to work
+  fully offline, either vendor pinned copies of Eigen/LBFGSpp headers into
+  the sdist (reintroducing the "is this a copy" question this whole spec's
+  `EDI/src` include-not-copy discipline was built to avoid, so only do this
+  for the *two portable dependencies*, never for `EDI/src` itself) or
+  clearly document the network requirement in the README's install section
+  and accept that offline installs need a prebuilt wheel.
+
+### Pre-release testing
+
+- Run the full `python/tests/` suite (once the parity-test gap noted in
+  Acceptance Criteria above is closed — releasing before every kernel has
+  a real R-fixture parity test means shipping kernels whose only
+  verification was this session's ad hoc smoke tests, not a committed,
+  re-runnable check) against each built wheel, not just against a local
+  `cmake --build` — a wheel-specific test run catches packaging bugs (like
+  this session's missing-`README.md` metadata failure, or a missing
+  `wheel.packages` entry) that a raw CMake build never exercises.
+- Upload to [TestPyPI](https://test.pypi.org/) first, `pip install
+  --index-url https://test.pypi.org/simple/ edi_kernels` into a fresh venv
+  on at least one machine that isn't the one that built the wheel, and
+  re-run the smoke tests from this session (or the parity suite) against
+  that install before promoting to the real index.
+- Confirm the package name `edi_kernels` is actually available on PyPI
+  (not squatted or already used by an unrelated project) before the first
+  real upload — this can't be checked from this environment; do it as a
+  manual step (`pip index versions edi_kernels` or the PyPI web UI)
+  immediately before the first release.
+
+### Publishing
+
+- Use PyPI's [Trusted Publishing](https://docs.pypi.org/trusted-publishers/)
+  (GitHub Actions OIDC) rather than a long-lived API token stored as a
+  repo secret — no token to rotate or leak, and it's the currently
+  recommended path for a project already using GitHub Actions for CI.
+- `python -m build` (or `cibuildwheel` output directly) + `twine upload` /
+  the `pypa/gh-action-pypi-publish` action, triggered on a `py-v*` git tag
+  push, matching the versioning scheme above — don't publish from a local
+  machine's ad hoc build, so every published artifact is reproducibly tied
+  to a specific commit via CI.
+- Publish an sdist alongside the wheels (`python -m build --sdist`) even
+  though most users will pull a prebuilt wheel — it's what makes `pip
+  install edi_kernels` work at all on a platform `cibuildwheel` didn't
+  cover, and satisfies the PyPI convention that a project ships both.
+
+### Post-release
+
+- Cross-link this package from the R package's own `README`/`DESCRIPTION`
+  (`URL:`/`BugReports:` fields) once published, so a user landing on either
+  package's listing can find the other — same spirit as the "Cross-link
+  the two reports from each other" note in Phase 3 above, applied to the
+  package listings themselves, not just the benchmark reports.
+- Keep a `CHANGELOG.md` in `python/` from the first release onward,
+  entries keyed to the same version number scheme above — a compiled
+  numerical library's users need to know exactly which kernel-behavior or
+  ABI changes landed in which release before upgrading a pinned dependency.

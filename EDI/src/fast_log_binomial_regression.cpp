@@ -285,7 +285,7 @@ edi::ResultMap fit_constrained_binomial_cpp_impl(const Eigen::Ref<const Eigen::M
       step *= 0.5;
     }
     if (!accepted) break;
-    if ((beta_free_new - beta_free).norm() < tol) {
+    if ((beta_free_new - beta_free).norm() / (beta_free_new.norm() + 1e-10) < tol) {
       beta = beta_new;
       beta_free = beta_free_new;
       converged = true;
@@ -456,7 +456,7 @@ edi::ResultMap fit_constrained_binomial_weighted_cpp_impl(const Eigen::Ref<const
       step *= 0.5;
     }
     if (!accepted) break;
-    if ((beta_free_new - beta_free).norm() < tol) {
+    if ((beta_free_new - beta_free).norm() / (beta_free_new.norm() + 1e-10) < tol) {
       beta = beta_new;
       beta_free = beta_free_new;
       converged = true;
@@ -846,7 +846,7 @@ Eigen::MatrixXd get_identity_binomial_regression_weighted_hessian_cpp(SEXP X_r,
 List fast_log_binomial_regression_cpp(SEXP X_r,
                                       SEXP y_r,
                                       int maxit = 100,
-                                      double tol = 1e-8,
+                                      double tol = 1e-6,
                                       Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                       Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                       Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
@@ -881,7 +881,7 @@ List fast_log_binomial_regression_with_var_cpp(SEXP X_r,
                                                SEXP y_r,
                                                int j = 2,
                                                int maxit = 100,
-                                               double tol = 1e-8,
+                                               double tol = 1e-6,
                                                Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                                Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
@@ -915,7 +915,7 @@ List fast_log_binomial_regression_weighted_cpp(SEXP X_r,
                                                SEXP y_r,
                                                SEXP weights_r,
                                                int maxit = 100,
-                                               double tol = 1e-8,
+                                               double tol = 1e-6,
                                                Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                                Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
@@ -950,7 +950,7 @@ List fast_log_binomial_regression_weighted_cpp(SEXP X_r,
 List fast_identity_binomial_regression_cpp(SEXP X_r,
                                            SEXP y_r,
                                            int maxit = 100,
-                                           double tol = 1e-8,
+                                           double tol = 1e-6,
                                            Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                            Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                            Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
@@ -984,7 +984,7 @@ List fast_identity_binomial_regression_with_var_cpp(SEXP X_r,
                                                     SEXP y_r,
                                                     int j = 2,
                                                     int maxit = 100,
-                                                    double tol = 1e-8,
+                                                    double tol = 1e-6,
                                                     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                     Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                                     Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,
@@ -1018,7 +1018,7 @@ List fast_identity_binomial_regression_weighted_cpp(SEXP X_r,
                                                     SEXP y_r,
                                                     SEXP weights_r,
                                                     int maxit = 100,
-                                                    double tol = 1e-8,
+                                                    double tol = 1e-6,
                                                     Rcpp::Nullable<Rcpp::IntegerVector> fixed_idx = R_NilValue,
                                                     Rcpp::Nullable<Rcpp::NumericVector> fixed_values = R_NilValue,
                                                     Rcpp::Nullable<Rcpp::NumericVector> warm_start_beta = R_NilValue,

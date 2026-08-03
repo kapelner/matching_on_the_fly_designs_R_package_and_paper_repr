@@ -614,13 +614,9 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 	is_any_inference_class = function(classes){
 		any(vapply(classes, function(cls) is(seq_des_inf, cls), logical(1)))
 	}
-	is_current_slow_path = function(paths){
-		any(vapply(paths, function(path){
-			identical(response_type, path$response_type) &&
-				identical(design_type, path$design_type) &&
-				identical(dataset_name, path$dataset_name) &&
-				identical(inference_result_label, path$inference_result_label)
-		}, logical(1)))
+	inference_class_label = sub(" \\(model_formula=.*$", "", inference_base_label)
+	is_exact_inference_class = function(classes){
+		inference_class_label %in% classes
 	}
 	skip_bootstrap = is_any_inference_class(c(
 		"InferenceCountPoissonKKGEE",
@@ -645,53 +641,55 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 		"InferencePropFractionalLogit",
 		"InferenceCountHurdleNegBin"
 	))
-	skip_bootstrap_slow = is_any_inference_class(c(
+	skip_bootstrap_slow = is_exact_inference_class(c(
 		"InferenceContinRobustRegr",  # M-estimator refits are too slow for routine testing
 		"InferenceContinKKGLMM"       # all resampling >30s avg
 	))
-    # Per-operation slow skips (avg >30s in comprehensive_tests_*_20260720.log)
-    skip_rand_slow            = is_any_inference_class(c("InferenceContinKKGLMM"))
-    skip_rand_ci_slow         = is_any_inference_class(c("InferenceSurvivalWeibullRegr", "InferenceSurvivalKKClaytonCopulaOneLik", "InferenceSurvivalKKWeibullFrailtyOneLik", "InferenceSurvivalKKWeibullMarginal", "InferencePropQuantileRegr", "InferencePropKKGEE", "InferencePropBetaRegr"))  # PropBetaRegr rand CI avg 32.3s / p80 43.6s / max 2035.9s at n=334; SurvivalKKWeibullMarginal rand CI avg 32.2s
-    skip_score_ci_slow        = is_any_inference_class(c("InferenceSurvivalKKWeibullFrailtyOneLik"))  # score CI avg 50.1s / max 324.8s at n=13
-    skip_lik_ratio_ci_slow    = is_any_inference_class(c("InferenceSurvivalKKClaytonCopulaOneLik", "InferenceSurvivalDepCensTransformRegr"))  # lik-ratio CI avg 39s / max 234s at n=6; DepCensTransformRegr max 9546.6s
-    skip_bbt_pval_slow        = is_any_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # Bayesian bootstrap pval avg 32.4s / p80 40.6s / max 68.4s at n=32
-    skip_bbt_pval_symmetric_slow = is_any_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # Bayesian bootstrap symmetric pval avg 30.6s / max 54.9s at n=18
-    skip_bbt_ci_slow          = is_any_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))
-    skip_bbt_ci_default_slow  = is_any_inference_class(c("InferenceIncidExactFisher"))  # Bayesian bootstrap CI avg 26.0s / max 60.9s on SPBR pima
-    skip_boot_ci_default_slow = is_any_inference_class(c("InferenceIncidRiskDiff", "InferenceIncidExactFisher", "InferenceContinKKQuantileRegrOneLik", "InferenceSurvivalDepCensTransformRegr"))  # RiskDiff bootstrap CI avg 261.1s / max 2014.1s at n=8; IncidExactFisher bootstrap CI avg 31.8s / max 66.3s; ContinKKQuantileRegrOneLik bootstrap CI mean 109.0s / max 9434.3s at n=98; DepCensTransformRegr bootstrap CI max 44948.6s
-    skip_boot_stud_slow       = is_any_inference_class(c("InferenceIncidRiskDiff", "InferenceIncidExactFisher", "InferenceSurvivalGehanWilcox"))  # RiskDiff bootstrap studentized CI avg 261.1s / max 2014.1s at n=8; IncidExactFisher bootstrap studentized CI avg 31.2s / max 75.4s; GehanWilcox studentized CI max 10443.4s
-    skip_boot_pval_stud_slow  = is_any_inference_class(c("InferenceAllSimpleMeanDiff", "InferenceIncidExactFisher"))  # SimpleMeanDiff bootstrap studentized pval avg 178.8s / max 2001.5s at n=12; IncidExactFisher avg 30.9s / max 50.8s
-    skip_boot_pval_symmetric_slow = is_any_inference_class(c("InferenceIncidKKGCompRiskRatio"))  # bootstrap symmetric pval max 10456.5s
+	# Per-operation slow skips. These are class+method only; no design,
+	# dataset, formula, or response-specific slow gates.
+	skip_rand_slow            = is_exact_inference_class(c("InferenceContinKKGLMM"))
+	skip_rand_ci_slow         = is_exact_inference_class(c("InferenceSurvivalWeibullRegr", "InferenceSurvivalKKClaytonCopulaOneLik", "InferenceSurvivalKKWeibullFrailtyOneLik", "InferenceSurvivalKKWeibullMarginal", "InferencePropQuantileRegr", "InferencePropKKGEE", "InferencePropBetaRegr"))  # PropBetaRegr rand CI avg 32.3s / p80 43.6s / max 2035.9s at n=334; SurvivalKKWeibullMarginal rand CI avg 32.2s
+	skip_score_ci_slow        = is_exact_inference_class(c("InferenceSurvivalKKWeibullFrailtyOneLik"))  # score CI avg 50.1s / max 324.8s at n=13
+	skip_lik_ratio_ci_slow    = is_exact_inference_class(c("InferenceSurvivalKKClaytonCopulaOneLik", "InferenceSurvivalDepCensTransformRegr"))  # lik-ratio CI avg 39s / max 234s at n=6; DepCensTransformRegr max 9546.6s
+	skip_bbt_pval_slow        = is_exact_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # Bayesian bootstrap pval avg 32.4s / p80 40.6s / max 68.4s at n=32
+	skip_bbt_pval_symmetric_slow = is_exact_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # Bayesian bootstrap symmetric pval avg 30.6s / max 54.9s at n=18
+	skip_bbt_pval_wald_slow   = is_exact_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # Bayesian bootstrap Wald pval avg 39.0s / p80 58.4s / max 58.6s
+	skip_bbt_pval_studentized_slow = is_exact_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # Bayesian bootstrap studentized pval avg 36.9s / p80 60.3s / max 66.2s
+	skip_bbt_ci_slow          = is_exact_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))
+	skip_bbt_ci_default_slow  = is_exact_inference_class(c("InferenceIncidExactFisher"))  # Bayesian bootstrap CI avg 26.0s / max 60.9s on SPBR pima
+	skip_boot_ci_default_slow = is_exact_inference_class(c("InferenceIncidRiskDiff", "InferenceIncidExactFisher", "InferenceContinKKQuantileRegrOneLik", "InferenceSurvivalDepCensTransformRegr"))  # RiskDiff bootstrap CI avg 261.1s / max 2014.1s at n=8; IncidExactFisher bootstrap CI avg 31.8s / max 66.3s; ContinKKQuantileRegrOneLik bootstrap CI mean 109.0s / max 9434.3s at n=98; DepCensTransformRegr bootstrap CI max 44948.6s
+	skip_boot_ci_basic_slow   = is_exact_inference_class(c("InferenceIncidExactFisher"))  # ExactFisher bootstrap basic CI avg 34.4s / p80 34.7s / max 35.3s
+	skip_boot_stud_slow       = is_exact_inference_class(c("InferenceIncidRiskDiff", "InferenceIncidExactFisher", "InferenceSurvivalGehanWilcox", "InferenceSurvivalDepCensTransformRegr", "InferenceOrdinalKKGEE", "InferenceIncidModifiedPoisson"))  # RiskDiff bootstrap studentized CI avg 261.1s / max 2014.1s at n=8; IncidExactFisher bootstrap studentized CI avg 31.2s / max 75.4s; GehanWilcox studentized CI max 10443.4s; DepCensTransformRegr avg 50.7s; OrdinalKKGEE avg 37.7s; ModifiedPoisson avg 31.6s
+	skip_boot_pval_stud_slow  = is_exact_inference_class(c("InferenceAllSimpleMeanDiff", "InferenceIncidExactFisher", "InferenceSurvivalGehanWilcox", "InferenceOrdinalKKGEE"))  # SimpleMeanDiff bootstrap studentized pval avg 178.8s / max 2001.5s at n=12; IncidExactFisher avg 30.9s / max 50.8s; GehanWilcox avg 73.6s; OrdinalKKGEE avg 34.6s
+	skip_boot_pval_symmetric_slow = is_exact_inference_class(c("InferenceIncidKKGCompRiskRatio"))  # bootstrap symmetric pval max 10456.5s
 	skip_boot_ci_slow         = FALSE
-	skip_jack_slow            = is_any_inference_class(c("InferenceSurvivalKKClaytonCopulaOneLik", "InferenceContinKKGLMM"))  # ClaytonCopula frailty refits; ContinKKGLMM jackknife estimate avg 54s / max 102s
-	skip_pboot_ci_slow        = is_any_inference_class(c("InferenceSurvivalKKClaytonCopulaOneLik"))
-	skip_rand_delta_pval_slow = is_any_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # delta=0.5 variant avg 205s
-	skip_brt_pval_smoothed_slow = is_any_inference_class(c("InferenceOrdinalKKGLMM", "InferenceOrdinalContRatioRegr", "InferenceOrdinalStereotypeLogitRegr", "InferenceOrdinalAdjCatLogitRegr", "InferenceSurvivalDepCensTransformRegr"))  # smoothed pval avg >30s; AdjCatLogit avg 499s / max 2694s
-	skip_brt_pval_typed_slow    = is_any_inference_class(c("InferenceCountKKHurdlePoissonOneLik", "InferenceCountKKCondPoissonOneLik"))  # studentized+sympt-t pval avg 264s / 82s
-	skip_brt_ci_all_slow        = is_any_inference_class(c("InferenceSurvivalGehanWilcox", "InferenceSurvivalWeibullRegr", "InferencePropBetaRegr", "InferencePropKKGEE"))  # all CI types avg >30s for listed paths; PropKKGEE BRT CI avg 37-43s at n=18
-	skip_brt_ci_smoothed_slow   = is_any_inference_class(c("InferenceAllSimpleWilcox", "InferencePropKKQuantileRegrOneLik"))  # smoothed CI avg 94s / 32s
-	skip_brt_ci_typed_slow      = is_any_inference_class(c("InferencePropKKQuantileRegrOneLik"))  # studentized CI avg 34s
-	# m-out-of-n / PRW slow skips from 20260729 comprehensive results, avg >30s.
-	# CI and p-value share the same distribution cache; once CI is skipped, p-value
-	# would be cold on the same slow path, so gate both calls.
-	skip_m_out_of_n_slow = is_current_slow_path(list(
-		list(response_type = "survival",   design_type = "KK21stepwise",     dataset_name = "diamonds", inference_result_label = "InferenceSurvivalKKClaytonCopulaOneLik [design_formula=~.]"),                         # CI avg 408.7s
-		list(response_type = "survival",   design_type = "FixedBinaryMatch", dataset_name = "diamonds", inference_result_label = "InferenceSurvivalKKClaytonCopulaOneLik [design_formula=~.]"),                         # CI avg 390.7s
-		list(response_type = "proportion", design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferencePropZeroOneInflatedBetaRegr (model_formula=~1) [design_formula=~1]"),          # CI avg 72.0s
-		list(response_type = "survival",   design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferenceSurvivalWeibullRegr (model_formula=~1) [design_formula=~1]"),                 # CI avg 62.1s
-		list(response_type = "survival",   design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferenceSurvivalStratCoxPHRegr (model_formula=~1) [design_formula=~1]"),              # CI avg 59.9s
-		list(response_type = "survival",   design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferenceSurvivalCoxPHRegr (model_formula=~1) [design_formula=~1]"),                   # CI avg 58.6s
-		list(response_type = "proportion", design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferencePropQuantileRegr (model_formula=~1) [design_formula=~1]"),                    # CI avg 55.8s
-		list(response_type = "proportion", design_type = "Bernoulli",        dataset_name = "diamonds", inference_result_label = "InferencePropZeroOneInflatedBetaRegr (model_formula=~1) [design_formula=~1]"),          # CI avg 31.5s
-		list(response_type = "proportion", design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferencePropBetaRegr (model_formula=~1) [design_formula=~1]"),                        # CI avg 45.5s
-		list(response_type = "proportion", design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferencePropFractionalLogit (model_formula=~1) [design_formula=~1]"),                 # CI avg 43.9s
-		list(response_type = "count",      design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferenceCountHurdleNegBin (model_formula=~.) [design_formula=~1]")                    # CI avg 33.2s
+	skip_jack_slow            = is_exact_inference_class(c("InferenceSurvivalKKClaytonCopulaOneLik", "InferenceContinKKGLMM"))  # ClaytonCopula frailty refits; ContinKKGLMM jackknife estimate avg 54s / max 102s
+	skip_pboot_ci_slow        = is_exact_inference_class(c("InferenceSurvivalKKClaytonCopulaOneLik"))
+	skip_lik_ratio_bootstrap_pval_slow = is_exact_inference_class(c("InferenceSurvivalStratCoxPHRegr"))  # LR param bootstrap pval avg 73.6s / max 76.4s
+	skip_param_bootstrap_estimate_slow = is_exact_inference_class(c("InferenceSurvivalStratCoxPHRegr"))  # param bootstrap estimate avg 73.0s / max 77.5s
+	skip_param_bootstrap_pval_slow = is_exact_inference_class(c("InferenceSurvivalStratCoxPHRegr"))  # param bootstrap pval avg 80.2s / max 183.9s
+	skip_param_bootstrap_ci_slow = is_exact_inference_class(c("InferenceSurvivalStratCoxPHRegr"))  # param bootstrap CI avg 73.2s / max 86.3s
+	skip_bartlett_pval_slow = is_exact_inference_class(c("InferenceSurvivalStratCoxPHRegr"))  # Bartlett LR pval avg 73.0s / max 73.6s
+	skip_rand_delta_pval_slow = is_exact_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik", "InferenceOrdinalKKGEE"))  # delta=0.5 variant avg 205s; OrdinalKKGEE avg 30.2s / max 41.7s
+	skip_brt_pval_smoothed_slow = is_exact_inference_class(c("InferenceOrdinalKKGLMM", "InferenceOrdinalContRatioRegr", "InferenceOrdinalStereotypeLogitRegr", "InferenceOrdinalAdjCatLogitRegr", "InferenceSurvivalDepCensTransformRegr"))  # smoothed pval avg >30s; AdjCatLogit avg 499s / max 2694s
+	skip_brt_pval_typed_slow    = is_exact_inference_class(c("InferenceCountKKHurdlePoissonOneLik", "InferenceCountKKCondPoissonOneLik"))  # studentized+sympt-t pval avg 264s / 82s
+	skip_brt_ci_all_slow        = is_exact_inference_class(c("InferenceSurvivalGehanWilcox", "InferenceSurvivalWeibullRegr", "InferencePropBetaRegr", "InferencePropKKGEE"))  # all CI types avg >30s for listed paths; PropKKGEE BRT CI avg 37-43s at n=18
+	skip_brt_ci_smoothed_slow   = is_exact_inference_class(c("InferenceAllSimpleWilcox", "InferencePropKKQuantileRegrOneLik"))  # smoothed CI avg 94s / 32s
+	skip_brt_ci_typed_slow      = is_exact_inference_class(c("InferencePropKKQuantileRegrOneLik"))  # studentized CI avg 34s
+	skip_m_out_of_n_slow = is_exact_inference_class(c(
+		"InferenceSurvivalKKClaytonCopulaOneLik",
+		"InferencePropZeroOneInflatedBetaRegr",
+		"InferenceSurvivalWeibullRegr",
+		"InferenceSurvivalStratCoxPHRegr",
+		"InferenceSurvivalCoxPHRegr",
+		"InferencePropQuantileRegr",
+		"InferencePropBetaRegr",
+		"InferencePropFractionalLogit",
+		"InferenceCountHurdleNegBin"
 	))
-	skip_subsampling_slow = is_current_slow_path(list(
-		list(response_type = "survival", design_type = "KK21stepwise",     dataset_name = "diamonds", inference_result_label = "InferenceSurvivalKKClaytonCopulaOneLik [design_formula=~.]"),              # CI avg 414.0s
-		list(response_type = "survival", design_type = "FixedBinaryMatch", dataset_name = "diamonds", inference_result_label = "InferenceSurvivalKKClaytonCopulaOneLik [design_formula=~.]"),              # CI avg 335.1s
-		list(response_type = "count",    design_type = "Bernoulli",        dataset_name = "diamonds", inference_result_label = "InferenceCountHurdleNegBin (model_formula=~.) [design_formula=~.]"),       # CI avg 34.6s
-		list(response_type = "count",    design_type = "FixedBlocking",    dataset_name = "diamonds", inference_result_label = "InferenceCountHurdleNegBin (model_formula=~.) [design_formula=~1]")       # CI avg 32.3s
+	skip_subsampling_slow = is_exact_inference_class(c(
+		"InferenceSurvivalKKClaytonCopulaOneLik",
+		"InferenceCountHurdleNegBin"
 	))
 	# BRT pval: skip only if bootstrap structurally broken OR rand itself slow; ContinRobustRegr keeps BRT pval
 	skip_brt_pval = skip_bootstrap || skip_rand_slow
@@ -739,6 +737,7 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 	skip_mle_pval  = FALSE
 	skip_rand_pval = is(seq_des_inf, "InferenceContinMultGLS") || is(seq_des_inf, "InferencePropGCompMeanDiff") || is(seq_des_inf, "InferencePropGCompMeanDiff") || is(seq_des_inf, "InferenceSurvivalKKClaytonCopulaOneLik")
 	skip_regular_rand_pval = skip_rand_pval || !supports_incidence_rand_pval
+	skip_custom_rand_pval = skip_regular_rand_pval || response_type == "incidence"
 	skip_ci_rand   = is_any_inference_class(c(
 		"InferenceContinMultKKQuantileRegrOneLik",
 		"InferencePropGCompMeanDiff",
@@ -757,7 +756,7 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 		"InferenceCountKKHurdlePoissonOneLik"
 	)) || response_type == "count" ||
 		(response_type != "continuous" && is(seq_des_inf, "InferenceAllSimpleMeanDiff"))
-	skip_ci_rand_custom = is_any_inference_class(c("InferenceContinKKRobustRegrOneLik", "InferenceSurvivalKKClaytonCopulaOneLik"))  # custom rand CI slow: robust avg 336.6s / max 1994.8s at n=6; Clayton avg 41.9s / max 1993.3s at n=53
+	skip_ci_rand_custom = is_exact_inference_class(c("InferenceContinKKRobustRegrOneLik", "InferenceSurvivalKKClaytonCopulaOneLik"))  # custom rand CI slow: robust avg 336.6s / max 1994.8s at n=6; Clayton avg 41.9s / max 1993.3s at n=53
 	supports_jackknife = is(seq_des_inf, "InferenceJackknife") ||
 		(
 			"compute_jackknife_wald_two_sided_pval" %in% names(seq_des_inf) &&
@@ -1301,6 +1300,10 @@ call_direct_asymp = function(method_name, testing_type, ...){
 			message("          Skipping compute_bootstrap_confidence_interval (too slow)")
 		}
 		for (boot_ci_type in c("basic", "bca", "studentized")) {
+			if (boot_ci_type == "basic" && skip_boot_ci_basic_slow) {
+				message("          Skipping compute_bootstrap_confidence_interval_basic (too slow)")
+				next
+			}
 			if (boot_ci_type == "studentized" && skip_boot_stud_slow) {
 				message("          Skipping compute_bootstrap_confidence_interval_studentized (too slow)")
 				next
@@ -1385,21 +1388,37 @@ call_direct_asymp = function(method_name, testing_type, ...){
 				message("          Skipping compute_bayesian_bootstrap_two_sided_pval_symmetric (too slow)")
 				next
 			}
+			if (bayes_pval_type == "wald" && skip_bbt_pval_wald_slow) {
+				message("          Skipping compute_bayesian_bootstrap_two_sided_pval_wald (too slow)")
+				next
+			}
+			if (bayes_pval_type == "studentized" && skip_bbt_pval_studentized_slow) {
+				message("          Skipping compute_bayesian_bootstrap_two_sided_pval_studentized (too slow)")
+				next
+			}
 			safe_call(paste0("compute_bayesian_bootstrap_two_sided_pval_", bayes_pval_type),
 					  seq_des_inf$compute_bayesian_bootstrap_two_sided_pval(B = r, type = bayes_pval_type, na.rm = TRUE, show_progress = FALSE))
 		}
 	}
-	if (should_run_test_family("parametric_bootstrap") && !skip_slow && supports_parametric_bootstrap){
+	if (should_run_test_family("parametric_bootstrap") && !skip_slow && supports_parametric_bootstrap && !skip_lik_ratio_bootstrap_pval_slow){
 		safe_call("compute_lik_ratio_bootstrap_two_sided_pval", seq_des_inf$compute_lik_ratio_bootstrap_two_sided_pval(B = r, show_progress = FALSE))
+	} else if (should_run_test_family("parametric_bootstrap") && supports_parametric_bootstrap && skip_lik_ratio_bootstrap_pval_slow) {
+		message("          Skipping compute_lik_ratio_bootstrap_two_sided_pval (too slow)")
 	}
-	if (should_run_test_family("parametric_bootstrap") && !skip_slow && supports_parametric_bootstrap_estimate){
+	if (should_run_test_family("parametric_bootstrap") && !skip_slow && supports_parametric_bootstrap_estimate && !skip_param_bootstrap_estimate_slow){
 		safe_call("compute_param_bootstrap_estimate", seq_des_inf$compute_param_bootstrap_estimate(B = r, show_progress = FALSE))
+	} else if (should_run_test_family("parametric_bootstrap") && supports_parametric_bootstrap_estimate && skip_param_bootstrap_estimate_slow) {
+		message("          Skipping compute_param_bootstrap_estimate (too slow)")
 	}
-	if (should_run_test_family("parametric_bootstrap") && !skip_slow && supports_parametric_bootstrap_estimate){
+	if (should_run_test_family("parametric_bootstrap") && !skip_slow && supports_parametric_bootstrap_estimate && !skip_param_bootstrap_pval_slow){
 		safe_call("compute_param_bootstrap_pval", seq_des_inf$compute_param_bootstrap_pval(delta = 0, B = r, show_progress = FALSE))
+	} else if (should_run_test_family("parametric_bootstrap") && supports_parametric_bootstrap_estimate && skip_param_bootstrap_pval_slow) {
+		message("          Skipping compute_param_bootstrap_pval (too slow)")
 	}
-	if (should_run_test_family("parametric_bootstrap") && !skip_slow && supports_parametric_bootstrap_estimate){
+	if (should_run_test_family("parametric_bootstrap") && !skip_slow && supports_parametric_bootstrap_estimate && !skip_param_bootstrap_ci_slow){
 		safe_call("compute_param_bootstrap_confidence_interval", seq_des_inf$compute_param_bootstrap_confidence_interval(B = r, show_progress = FALSE))
+	} else if (should_run_test_family("parametric_bootstrap") && supports_parametric_bootstrap_estimate && skip_param_bootstrap_ci_slow) {
+		message("          Skipping compute_param_bootstrap_confidence_interval (too slow)")
 	}
 	if (should_run_test_family("parametric_bootstrap") && !skip_slow && supports_parametric_bootstrap_ci && !skip_pboot_ci_slow){
 		safe_call("compute_lik_ratio_bootstrap_confidence_interval",
@@ -1410,8 +1429,10 @@ call_direct_asymp = function(method_name, testing_type, ...){
 			)
 		)
 	}
-	if (should_run_test_family("bartlett") && !skip_slow && supports_bartlett){
+	if (should_run_test_family("bartlett") && !skip_slow && supports_bartlett && !skip_bartlett_pval_slow){
 		safe_call("compute_lik_ratio_bartlett_two_sided_pval", seq_des_inf$compute_lik_ratio_bartlett_two_sided_pval(B = r))
+	} else if (should_run_test_family("bartlett") && supports_bartlett && skip_bartlett_pval_slow) {
+		message("          Skipping compute_lik_ratio_bartlett_two_sided_pval (too slow)")
 	}
 	if (should_run_test_family("bartlett") && !skip_slow && supports_bartlett_ci && !skip_pboot_ci_slow){
 		safe_call("compute_lik_ratio_bartlett_confidence_interval", seq_des_inf$compute_lik_ratio_bartlett_confidence_interval(B = r))
@@ -1484,8 +1505,10 @@ call_direct_asymp = function(method_name, testing_type, ...){
 	}
 	if (should_run_test_family("rand_custom")){
 		seq_des_inf$set_custom_randomization_statistic_cpp(welch_t_stat_cpp)
-		if (!skip_slow && !skip_regular_rand_pval){
+		if (!skip_slow && !skip_custom_rand_pval){
 			safe_call("compute_rand_two_sided_pval(custom)", seq_des_inf$compute_rand_two_sided_pval(r = r, show_progress = FALSE))
+		} else if (response_type == "incidence") {
+			message("    Skipping compute_rand_two_sided_pval(custom) (custom randomization statistic unsupported for incidence)")
 		}
 		if (!skip_slow && !skip_ci_rand && test_compute_confidence_interval_rand && response_type %in% c("continuous", "proportion", "survival")){
 			if (!skip_ci_rand_custom){
