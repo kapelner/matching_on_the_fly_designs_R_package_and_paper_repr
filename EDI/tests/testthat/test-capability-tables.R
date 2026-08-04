@@ -43,11 +43,16 @@ test_that("capability tables declare requirements and public API methods", {
 	expect_true(is.list(EDI:::capability_requires))
 	expect_true(is.list(EDI:::public_methods_for_capability))
 	expect_true(all(c(
+		"exact_test",
+		"exact_binomial_incidence",
+		"exact_fisher_incidence",
+		"exact_zhang_incidence",
 		"likelihood_ratio",
 		"estimating_equation_likelihood_ratio",
 		"parametric_likelihood_bootstrap"
 	) %in% names(EDI:::capability_requires)))
 	expect_true(all(c(
+		"exact_test",
 		"likelihood_ratio",
 		"estimating_equation_likelihood_ratio",
 		"parametric_likelihood_bootstrap"
@@ -58,6 +63,10 @@ test_that("capability tables declare requirements and public API methods", {
 	)
 	expect_true("simulate_under_lik_null" %in%
 		EDI:::capability_requires$parametric_likelihood_bootstrap$private_methods)
+	expect_true(all(c(
+		"compute_exact_confidence_interval",
+		"compute_exact_two_sided_pval_for_treatment_effect"
+	) %in% EDI:::public_methods_for_capability$exact_test))
 })
 
 test_that("root supports and capabilities are metadata queries", {

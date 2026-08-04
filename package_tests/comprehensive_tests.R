@@ -47,6 +47,13 @@ welch_t_stat_cpp = '
 
 source(repo_path("EDI", "tests", "testthat", "helper-likelihood-method-smoke.R"))
 
+supports_exact_inference = function(inf_obj) {
+	isTRUE(tryCatch(
+		inf_obj$supports("exact_test")[["exact_test"]],
+		error = function(e) FALSE
+	)) || is(inf_obj, "InferenceExact")
+}
+
 max_n_dataset = 148 #needs to be divisible by 4 for some blocking designs
 source(repo_path("package_tests", "_dataset_load.R"))
 # options(error = recover)
@@ -1180,8 +1187,8 @@ call_direct_asymp = function(method_name, testing_type, ...){
 	is_zhang_inference = is(seq_des_inf, "InferenceIncidenceExactZhang") || is(seq_des_inf, "InferenceIncidExactZhang")
 	zhang_valid_design = response_type == "incidence" &&
 		design_supports_zhang_incidence(des_obj_for_exact)
-	supports_exact_inference = if (is_zhang_inference) zhang_valid_design else is(seq_des_inf, "InferenceExact")
-	if (should_run_test_family("exact") && response_type == "incidence" && supports_exact_inference){
+	has_exact_inference = if (is_zhang_inference) zhang_valid_design else supports_exact_inference(seq_des_inf)
+	if (should_run_test_family("exact") && response_type == "incidence" && has_exact_inference){
 		safe_call_family("exact", "compute_exact_two_sided_pval_for_treatment_effect", seq_des_inf$compute_exact_two_sided_pval_for_treatment_effect())
 		if (is_zhang_inference) {
 			safe_call_family("exact", "compute_exact_confidence_interval", seq_des_inf$compute_exact_confidence_interval(args_for_type = list(Zhang = list(combination_method = "Fisher", pval_epsilon = pval_epsilon))))
@@ -1189,7 +1196,7 @@ call_direct_asymp = function(method_name, testing_type, ...){
 			safe_call_family("exact", "compute_exact_confidence_interval", seq_des_inf$compute_exact_confidence_interval(pval_epsilon = pval_epsilon))
 		}
 	}
-	skip_asymp = is(seq_des_inf, "InferenceExact") &&
+	skip_asymp = supports_exact_inference(seq_des_inf) &&
 		!is(seq_des_inf, "InferenceAsymp") &&
 		!is(seq_des_inf, "InferenceAsympLik")
 

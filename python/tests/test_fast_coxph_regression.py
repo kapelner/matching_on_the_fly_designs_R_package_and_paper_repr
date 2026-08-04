@@ -82,6 +82,9 @@ def test_estimate_only_omits_vcov_fields():
     X, y, dead = _synthetic_data()
     res = fast_coxph_regression(X, y, dead, estimate_only=True)
 
-    assert res["vcov"] is None
-    assert res["fisher_information"] is None
+    # estimate_only skips the vcov computation entirely (the key is absent,
+    # not set to None) but still includes fisher_information/gradient_norm
+    # -- see fast_coxph_regression_internal in EDI/src/fast_coxph_regression.cpp.
+    assert "vcov" not in res
+    assert res["fisher_information"].shape == (X.shape[1], X.shape[1])
     assert res["coefficients"] == pytest.approx(R_COEFFICIENTS, abs=1e-6, rel=1e-6)

@@ -446,6 +446,90 @@ randomization distributions.
   listing them again.
 - [x] Add tests proving capabilities are inherited from effective components.
 
+### Lazy Component Loading
+
+- [ ] Split component metadata from component implementation so class
+  discovery, capability queries, compatibility checks, and method availability
+  are resolved without parsing heavy component bodies.
+- [ ] Add `component_loader` metadata to `InferenceComponent()` for components
+  whose public/private lists should be loaded on demand.
+- [ ] Keep lightweight method stubs for capability-backed public APIs on the
+  assembled class; each stub should load the component implementation and then
+  dispatch to the real method on first use.
+- [ ] Add a per-class component implementation cache so a component is loaded
+  at most once per R session and repeated bootstrap calls do not pay parse or
+  assembly cost repeatedly.
+- [ ] Add `load_inference_component(component_name)` with deterministic errors
+  for missing source files, missing optional packages, invalid component
+  objects, and contract mismatches after load.
+- [ ] Make lazy loading invisible to `supports()`, `capabilities()`,
+  `InferenceSuite` discovery, and migration validation; these must continue to
+  use eager metadata only.
+- [ ] Classify components by load policy: `eager` for root contracts and cheap
+  shared methods, `lazy` for expensive optional methods such as parametric
+  likelihood bootstrap, Bartlett correction, simulation-heavy randomization
+  bootstrap, Bayesian bootstrap, and GLMM/ordinal/count likelihood plumbing.
+- [ ] Add tests that a class advertising `parametric_likelihood_bootstrap` does
+  not load the parametric-bootstrap implementation until
+  `compute_lik_ratio_bootstrap_*()` or diagnostics are called.
+- [ ] Add tests that lazy loading preserves public method presence before load,
+  produces identical results after load, and leaves unsupported methods absent.
+- [ ] Add tests that lazy component dependencies are loaded in resolved
+  topological order and that dependency cycles still fail before any
+  implementation body is loaded.
+- [ ] Add tests that optional-package failures occur only when invoking the lazy
+  capability, not during package load, registry population, or class discovery.
+- [ ] Benchmark package load and `InferenceSuite` discovery before and after
+  lazy loading, with explicit targets for parse time and loaded object count.
+
+#### Performance Gates
+
+- [ ] Keep only a small static metadata table eager at package load.
+- [ ] Do not scan, instantiate, or force every R6 generator during package
+  load.
+- [ ] Cache `get_effective_components()` and `get_effective_capabilities()` so
+  repeated object construction and discovery do not recompute component
+  closure.
+- [ ] Run expensive contract validation only in tests, CI, or explicit
+  development mode; normal package use should validate only cheap metadata
+  invariants.
+- [ ] Lazy-load heavy component implementations only on first use of the
+  corresponding capability.
+- [ ] Keep `InferenceSuite` discovery metadata-only, with no constructors and
+  no component implementation loading.
+- [ ] Add package-load and `InferenceSuite` discovery benchmarks as performance
+  gates before enabling the shallow hierarchy by default.
+
+#### Runtime Performance Traps
+
+- [ ] Cache resolved dispatch targets after first use so bootstrap,
+  likelihood, and randomization hot paths do not repeat capability lookup,
+  component resolution, loader checks, and wrapper dispatch on every call.
+- [ ] Cache effective components and effective capabilities at class scope, not
+  object scope, so registry cost is not shifted from package load into every
+  object construction or method call.
+- [ ] Lazy-load by component or coherent component bundle, not by individual
+  method, to avoid many tiny parse/load operations.
+- [ ] Keep lazy stubs small: they should reference component names and method
+  names, not capture component objects, full registries, parsed bodies, or large
+  environments.
+- [ ] Avoid dynamic R6 method rebinding on every object or call; use stable
+  stubs that resolve once and store a function pointer or class-level dispatch
+  cache.
+- [ ] Keep contract completeness checks, parser-backed body-reference checks,
+  collision audits, and full component validation out of production paths; run
+  them only in tests, CI, or explicit development mode.
+- [ ] Keep metadata tables lightweight: plain scalars, vectors, small lists,
+  and cheap predicates only. Do not store method bodies, parsed expressions, or
+  R6 generators in eager metadata.
+- [ ] Assemble component public/private lists once per class, not during every
+  object construction.
+- [ ] Keep `InferenceSuite` compatibility predicates pure and cheap; do not
+  normalize the same design repeatedly, probe optional packages repeatedly, or
+  fit/touch models during discovery.
+- [ ] Cache optional-package availability so repeated `requireNamespace()`
+  checks across many classes do not dominate discovery or first-use cost.
+
 ### Class Definition
 
 - [x] Implement `define_inference_class()`.
@@ -478,38 +562,295 @@ randomization distributions.
 
 ### Component Extraction
 
-- [ ] Extract `RandomizationTest`.
-- [ ] Extract `RandomizationCI`.
-- [ ] Extract `NonparametricBootstrap`.
-- [ ] Extract `RandomizationBootstrap`.
-- [ ] Extract `BayesianBootstrap`.
-- [ ] Extract `Jackknife`.
-- [ ] Extract `Wald`.
-- [ ] Extract `LikelihoodTests`.
-- [ ] Extract `ParametricLikelihoodBootstrap`.
-- [ ] Extract `StandardModelCache`.
-- [ ] Extract `CountLikelihoodPlumbing`.
-- [ ] Extract `KKPassThrough`.
-- [ ] Extract `KKCompound`.
-- [ ] Extract `KKGEE`.
-- [ ] Extract `KKGLMM`.
-- [ ] Extract `OffOptimumLikelihoodEval`.
-- [ ] Extract `BartlettApproximation` only if it provides real behavior.
+- [x] Extract `RandomizationTest`.
+- [x] Extract `RandomizationCI`.
+- [x] Extract `NonparametricBootstrap`.
+- [x] Extract `RandomizationBootstrap`.
+- [x] Extract `BayesianBootstrap`.
+- [x] Extract `Jackknife`.
+- [x] Extract `Wald`.
+- [x] Extract `LikelihoodTests`.
+- [x] Extract `ParametricLikelihoodBootstrap`.
+- [x] Extract `StandardModelCache`.
+- [x] Extract `CountLikelihoodPlumbing`.
+- [x] Extract `KKPassThrough`.
+- [x] Extract `KKCompound`.
+- [x] Extract `KKGEE`.
+- [x] Extract `KKGLMM`.
+- [x] Extract `OffOptimumLikelihoodEval`.
+- [x] Extract `BartlettApproximation` because
+  `InferenceExtBartlettApprox` provides real private behavior.
 
 ### Shallow Hierarchy Migration
 
-- [ ] Add a manifest of current generators and reviewed target metadata.
-- [ ] Move simple no-likelihood estimators to `Inference` plus components.
-- [ ] Move GEE, robust, sandwich, and quasi-likelihood estimators to shallow
-  family bases plus components.
-- [ ] Move Cox, conditional, and other partial-likelihood estimators to shallow
-  family bases plus components.
-- [ ] Move full-likelihood GLM, count, ordinal, incidence, and survival
-  estimators to shallow family bases plus components.
-- [ ] Move KK and IVWC estimators after KK component contracts are complete.
-- [ ] Delete any algorithmic base after it has no descendants.
-- [ ] Add a test that no concrete class descends from an algorithmic
-  compatibility base.
+- [x] Add a manifest of current generators and reviewed target metadata.
+- [x] Add a migration gate that rejects any class marked migrated while it still
+  descends from an algorithmic compatibility base.
+- [x] Add `mark_inference_class_migrated()` that only updates manifest status
+  after validating current parent, effective components, effective
+  capabilities, and public optional method presence.
+- [x] Add a manifest summary test that reports pending counts by current parent,
+  likelihood tier, response type, and KK/non-KK status.
+- [x] Add a migration-order helper that lists leaf concrete classes before
+  concrete parents so family migrations do not strand subclasses.
+- [x] Add a strict opt-in test flag,
+  `EDI_REQUIRE_SHALLOW_INFERENCE_HIERARCHY`, that fails if any concrete class is
+  still pending.
+
+#### Migration Harness
+
+- [x] Add reusable golden-test fixtures for continuous, incidence, count,
+  proportion, ordinal, and survival completed designs.
+- [x] Add a helper that compares old and new class outputs for estimate, SE,
+  Wald/asymptotic CI, Wald/asymptotic p-value, likelihood tests, bootstrap,
+  randomization, and jackknife methods when supported.
+- [x] Add a method-availability snapshot helper that records public methods
+  exposed before migration and compares them to capability-driven public
+  methods after migration.
+- [x] Add a private-state owner snapshot helper that detects new duplicated
+  state owners after a class is moved to components.
+- [x] Add a temporary dual-definition convention for one migrated class at a
+  time, e.g. `InferenceFooLegacy` and `InferenceFoo`, only inside tests or
+  migration fixtures; do not add package-level legacy aliases.
+- [x] Require every family migration PR to include before/after manifest counts
+  and the list of classes newly marked `migrated`.
+
+#### Simple No-Likelihood Estimators
+
+- [x] Identify all `likelihood_tier = "none"` concrete classes and split them
+  into exact/randomization, jackknife/asymptotic, and pure estimator groups.
+- [x] Extract `ExactTest` from `InferenceExact`.
+- [x] Replace `is(inf_obj, "InferenceExact")` dispatch in simulation and
+  package-test paths with `supports("exact_test")` or equivalent metadata-backed
+  capability checks.
+
+Current blocker: concrete exact classes still expose bootstrap, randomization,
+Bayesian-bootstrap, and jackknife methods through the old `InferenceExact`
+ancestry. Before moving them to `Inference + ExactTest`, each class needs an
+explicit capability decision and golden comparison for the optional methods it
+keeps or drops.
+
+##### Exact Behavior Extraction
+
+- [x] Add a manifest table for exact incidence classes with one row per class:
+  `InferenceIncidExactBinomial`, `InferenceIncidExactFisher`, and
+  `InferenceIncidenceExactZhang`.
+- [x] For each exact incidence class, record current public optional methods
+  inherited from `InferenceExact`, including exact, bootstrap, randomization,
+  Bayesian-bootstrap, and jackknife methods.
+- [x] For each exact incidence class, decide which inherited optional methods
+  are intentional capabilities and which are legacy accidental surface area.
+- [x] Add `ExactBinomialIncidence` component for matched-pair binomial behavior
+  if `InferenceIncidExactBinomial` keeps behavior not shared by all exact tests.
+- [x] Add `ExactFisherIncidence` component for Fisher/mantelhaen table-building
+  behavior if `InferenceIncidExactFisher` keeps behavior not shared by all exact
+  tests.
+- [x] Add `ExactZhangIncidence` component for Zhang helper integration if
+  `InferenceIncidenceExactZhang` keeps behavior not shared by all exact tests.
+- [x] Decide whether `InferenceIncidCMH` is an exact-test component, a
+  Wald/asymptotic blocked-incidence component, or both; do not group it with
+  exact incidence classes until its public capabilities match that decision.
+- [x] Add tests that exact-specific component public/private provided names
+  match their actual list names.
+- [x] Add parser-backed tests that exact-specific component references are
+  declared as provided, required, optional, owned, or forbidden.
+
+##### Custom Randomization Migration
+
+- [ ] Identify every concrete or extension class that currently inherits
+  `InferenceRand` directly.
+- [ ] Split custom randomization hosts into public extension bases and concrete
+  package estimators.
+- [ ] Add target metadata for each custom randomization host:
+  `parent = "Inference"`, `components = "RandomizationTest"`, and explicit
+  class-owned capabilities if any.
+- [ ] Add golden tests comparing current and migrated randomization p-values and
+  randomization distributions on the continuous and incidence fixtures.
+- [ ] Replace direct `InferenceRand` inheritance in one custom randomization host
+  at a time.
+- [ ] Remove any inherited randomization confidence-interval or bootstrap APIs
+  from migrated custom-randomization hosts unless the matching component is
+  listed explicitly.
+- [ ] Mark each custom-randomization class migrated only after method snapshots
+  and golden randomization tests pass.
+
+##### Exact Class Migration
+
+- [ ] Add a temporary test-only legacy definition for
+  `InferenceIncidExactBinomialLegacy` and compare it with the migrated
+  `InferenceIncidExactBinomial`.
+- [ ] Migrate `InferenceIncidExactBinomial` to `Inference` plus `ExactTest` and
+  `ExactBinomialIncidence`.
+- [ ] Preserve or intentionally remove inherited bootstrap, randomization,
+  Bayesian-bootstrap, and jackknife APIs on `InferenceIncidExactBinomial`
+  according to the exact capability manifest.
+- [ ] Add golden tests for binomial exact estimate, exact p-value, exact CI, and
+  any retained optional methods.
+- [ ] Mark `InferenceIncidExactBinomial` migrated after golden tests and method
+  snapshots pass.
+- [ ] Add a temporary test-only legacy definition for
+  `InferenceIncidExactFisherLegacy` and compare it with the migrated
+  `InferenceIncidExactFisher`.
+- [ ] Migrate `InferenceIncidExactFisher` to `Inference` plus `ExactTest` and
+  `ExactFisherIncidence`.
+- [ ] Preserve or intentionally remove inherited bootstrap, randomization,
+  Bayesian-bootstrap, and jackknife APIs on `InferenceIncidExactFisher`
+  according to the exact capability manifest.
+- [ ] Add golden tests for Fisher exact estimate, exact p-value, exact CI, and
+  any retained optional methods across iBCRD, blocking, and matching fixtures.
+- [ ] Mark `InferenceIncidExactFisher` migrated after golden tests and method
+  snapshots pass.
+- [ ] Add a temporary test-only legacy definition for
+  `InferenceIncidenceExactZhangLegacy` and compare it with the migrated
+  `InferenceIncidenceExactZhang`.
+- [ ] Migrate `InferenceIncidenceExactZhang` to `Inference` plus `ExactTest` and
+  `ExactZhangIncidence`.
+- [ ] Preserve or intentionally remove inherited bootstrap, randomization,
+  Bayesian-bootstrap, and jackknife APIs on `InferenceIncidenceExactZhang`
+  according to the exact capability manifest.
+- [ ] Add golden tests for Zhang estimate, exact p-value, exact CI, and any
+  retained optional methods on Bernoulli and matching-capable incidence
+  fixtures.
+- [ ] Mark `InferenceIncidenceExactZhang` migrated after golden tests and method
+  snapshots pass.
+
+##### Simple Estimator Migration
+
+- [ ] Identify simple mean-difference no-likelihood classes and record their
+  current direct parent, effective components, public methods, and private-state
+  owners.
+- [ ] Identify Wilcoxon/rank no-likelihood classes and record their current
+  direct parent, effective components, public methods, and private-state owners.
+- [ ] Decide whether each simple estimator keeps randomization, randomization
+  CI, nonparametric bootstrap, randomization bootstrap, Bayesian bootstrap, and
+  jackknife APIs.
+- [ ] Migrate one simple mean-difference class to `Inference` plus only the
+  components that match its retained capabilities.
+- [ ] Add golden tests for estimate, randomization, bootstrap, Bayesian
+  bootstrap, and jackknife outputs for that first simple mean-difference class.
+- [ ] Repeat the simple mean-difference migration class by class, using the
+  migration-order helper so leaf classes move before concrete parents.
+- [ ] Migrate one Wilcoxon/rank class to `Inference` plus only the components
+  that match its retained capabilities.
+- [ ] Add golden tests for estimate, randomization, bootstrap, Bayesian
+  bootstrap, and jackknife outputs for that first Wilcoxon/rank class.
+- [ ] Repeat the Wilcoxon/rank migration class by class, using the
+  migration-order helper so leaf classes move before concrete parents.
+
+##### No-Likelihood Migration Marking
+
+- [ ] Require every no-likelihood migration PR to include before/after manifest
+  counts by no-likelihood group.
+- [ ] Require every no-likelihood migration PR to list newly migrated classes and
+  the optional methods intentionally kept or dropped for each class.
+- [ ] Require `mark_inference_class_migrated()` to pass for each newly migrated
+  no-likelihood class before checking off its class-specific migration TODO.
+- [ ] Require golden output comparison to pass before marking any no-likelihood
+  class `migrated`.
+- [ ] Require method-availability snapshots to pass before marking any
+  no-likelihood class `migrated`.
+- [ ] Require private-state owner snapshots to pass before marking any
+  no-likelihood class `migrated`.
+- [ ] After all no-likelihood classes are migrated, delete no-longer-used
+  algorithmic bases in this family and remove them from
+  `EDI_INFERENCE_ALGORITHM_COMPATIBILITY_BASES`.
+
+#### Quasi And Robust Estimators
+
+- [ ] Identify all `likelihood_tier = "quasi"` concrete classes and verify
+  whether each uses GEE, robust/sandwich, quasi-likelihood, or composite
+  likelihood behavior.
+- [ ] Extract `RobustSandwich` from robust regression and modified Poisson paths.
+- [ ] Extract `CompositeLikelihoodTests` if composite likelihood needs public
+  APIs distinct from normalized likelihood tests.
+- [ ] Migrate `KKGEE` users to `Inference` plus `KKGEE` and required estimator
+  components after host requirements are fully declared.
+- [ ] Migrate count quasi-Poisson and robust Poisson classes to `Inference` plus
+  `CountLikelihoodPlumbing` and quasi-specific components.
+- [ ] Ensure quasi classes do not expose normalized likelihood-ratio capability
+  unless represented by `estimating_equation_likelihood_ratio`.
+- [ ] Mark migrated quasi/robust classes only after estimate, SE, CI, p-value,
+  and method-availability snapshots match.
+
+#### Partial-Likelihood Estimators
+
+- [ ] Identify all `likelihood_tier = "partial"` concrete classes.
+- [ ] Extract Cox/stratified-Cox shared behavior from
+  `InferenceAsympLikStdModCache`.
+- [ ] Extract conditional-logit shared behavior from current conditional
+  incidence and ordinal classes.
+- [ ] Extract LWA Cox and survival rank-regression shared behavior before moving
+  their concrete classes.
+- [ ] Migrate non-KK partial-likelihood classes to `Inference` plus
+  `LikelihoodTests`, `StandardModelCache`, and family-specific components.
+- [ ] Migrate KK partial-likelihood classes only after `KKPassThrough` and
+  `KKCompound` host contracts pass collision and dependency validation.
+- [ ] Verify partial-likelihood classes do not gain
+  `parametric_likelihood_bootstrap` unless they provide a null simulator.
+
+#### Full-Likelihood Estimators
+
+- [ ] Identify all `likelihood_tier = "full"` concrete classes and split them by
+  GLM, count, ordinal, incidence, proportion, survival, and KK/IVWC families.
+- [ ] Extract GLM-family standard-model-cache behavior that is currently shared
+  through `InferenceAsympLikStdModCache`.
+- [ ] Extract count likelihood family behavior that is currently shared through
+  `InferenceCountLikelihood`, `InferenceCountLikelihoodNoParamBootstrap`, and
+  `InferenceCountCompositeLikelihood`.
+- [ ] Extract zero-augmented count behavior from
+  `InferenceCountZeroAugmentedPoissonAbstract`.
+- [ ] Extract ordinal likelihood behavior for proportional odds, adjacent
+  category, cloglog, cauchit, stereotype, continuation-ratio, and ordered probit
+  paths.
+- [ ] Extract incidence likelihood behavior for logit, probit, log-binomial,
+  modified Poisson, binomial identity, and g-computation paths.
+- [ ] Extract survival likelihood behavior for Weibull, dependent-censoring
+  transform, Clayton copula, and frailty paths.
+- [ ] Migrate full-likelihood classes to `Inference` plus
+  `LikelihoodTests`, `StandardModelCache`, `ParametricLikelihoodBootstrap` when
+  warranted, and family-specific components.
+- [ ] Verify every migrated full-likelihood class has finite smoke tests for
+  supported likelihood, bootstrap, and Bartlett paths.
+
+#### KK And IVWC Estimators
+
+- [ ] Finish declaring every `KKPassThrough`, `KKCompound`, `KKGEE`, and
+  `KKGLMM` host requirement as required, optional, owned, or forbidden.
+- [ ] Remove all direct `InferenceMixinKKPassThrough$public` and
+  `InferenceMixinKKPassThrough$private` splices from concrete classes.
+- [ ] Replace every `eval(body(InferenceMixinKKPassThrough$...))` usage with a
+  named component override or helper.
+- [ ] Migrate KK IVWC classes to `Inference` plus `KKPassThrough`,
+  `KKCompound`, and estimator-specific components.
+- [ ] Migrate KK one-likelihood classes to `Inference` plus `KKPassThrough`,
+  `LikelihoodTests`, `ParametricLikelihoodBootstrap` when warranted, and
+  estimator-specific likelihood components.
+- [ ] Migrate KK GEE and GLMM classes after GEE/GLMM component contracts reject
+  missing host hooks at class definition time.
+- [ ] Add focused KK regression tests for matched-set weights, IVWC weighting,
+  rank reduction, nonestimable fits, and block/cluster edge cases.
+
+#### Base Deletion
+
+- [ ] After a current algorithmic base has no concrete descendants, convert it
+  into an internal component source or delete it.
+- [ ] Delete `InferenceRand`, `InferenceRandCI`, `InferenceNonParamBootstrap`,
+  `InferenceRandBootstrap`, `InferenceRandBootstrapCI`,
+  `InferenceBayesianBootstrap`, `InferenceJackknife`, `InferenceExact`,
+  `InferenceAsymp`, `InferenceAsympLik`, `InferenceParamBootstrap`,
+  `InferenceAsympLikStdModCache`, count likelihood bases, and KK compound bases
+  only after no concrete class inherits from them.
+- [ ] Remove the base from `EDI_INFERENCE_ALGORITHM_COMPATIBILITY_BASES` in the
+  same change that deletes or converts it.
+- [ ] Enable `EDI_REQUIRE_SHALLOW_INFERENCE_HIERARCHY` in normal tests once all
+  concrete classes are migrated.
+- [ ] Add the final strict test that no concrete class descends from an
+  algorithmic compatibility base.
+
+The manifest records 106 concrete generators as `pending` because they still
+inherit through algorithmic compatibility bases. The final strict gate, `no
+concrete class descends from an algorithmic compatibility base`, becomes
+actionable after those pending records are drained family by family.
 
 ### Discovery
 

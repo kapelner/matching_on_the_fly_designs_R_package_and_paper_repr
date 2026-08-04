@@ -894,13 +894,32 @@ what it looks like it means.
       bound (33 in `EDI_KERNEL_SOURCES`/`python/cpp/bindings_*.cpp`, verified
       via a from-scratch `cmake --build` and direct smoke-test calls across
       every family — ordinal, GLMM/CLMM/LMM, survival, count, proportion,
-      binary/log-binomial). What's still open from this TODO's original
-      scope: the "with tests" half — only `fast_poisson_glmm` has a
-      `tests/test_<kernel>.py` parity fixture against R at
-      `atol=1e-9, rtol=1e-9`; the other 32 kernels were verified only via
-      ad hoc smoke calls (real data, checked `converged`/no-crash), not
-      pinned R-fixture parity tests. That gap is what actually blocks the
-      Acceptance Criteria below, not the binding work itself.
+      binary/log-binomial).
+      **Status update (2026-08-04):** the "with tests" half is now also
+      done — every one of the 37 bound Python functions (all 33 files'
+      primary entry point, plus `fast_log_binomial_regression_with_var`/
+      `fast_identity_binomial_regression_with_var`, the two secondary
+      entry points that happen to be separately exported) has a real
+      `python/tests/test_<kernel>.py` parity fixture computed via
+      `Rscript` calling the installed `EDI:::<kernel>_cpp(...)` on the
+      exact same synthetic data, checked at `atol=1e-9, rtol=1e-9`. 102
+      tests total, all passing. Two real result-shape gotchas surfaced and
+      got documented in the affected tests rather than papered over: (1)
+      several kernels (`fast_gaussian_lmm`, `fast_coxph_regression`,
+      `fast_weibull_regression`) omit `vcov`/`params` keys entirely under
+      `estimate_only=True` rather than setting them to `None` the way
+      `fast_poisson_glmm` does — inconsistent across kernels, now
+      documented per-file rather than assumed uniform; (2)
+      `fast_zero_one_inflated_beta_cpp`'s R-facing return list has no
+      `converged`/`iterations`/`gradient_norm` fields at all even though
+      the Python binding's `LikelihoodFitResult` surfaces them — that
+      test only cross-checks the fields both sides actually expose
+      (`params`/`neg_loglik`). Also found (during the Group 1 batch) two
+      genuine R/Python default-value mismatches, since fixed in the
+      relevant binding files: `fast_neg_bin`'s `smart_cold_start` default
+      differed (R `FALSE` vs Python `true`), and `fast_log_binomial_regression`/
+      `fast_identity_binomial_regression`'s `tol` default differed (R
+      `1e-8` vs Python `1e-6`).
 - [x] TODO-7: Implement `benchmarks/run_benchmark_audit.py` and generate the
       first Python-side benchmark report.
       **Status update (2026-08-03):** implemented, but at

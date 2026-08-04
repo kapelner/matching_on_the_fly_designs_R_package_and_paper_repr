@@ -739,7 +739,7 @@ get_identity_binomial_regression_weighted_hessian_cpp <- function(X_r, y_r, weig
 #' @return A list containing coefficients and fitted values.
 #' @export
 #' @keywords internal
-fast_log_binomial_regression_cpp <- function(X_r, y_r, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
+fast_log_binomial_regression_cpp <- function(X_r, y_r, maxit = 100L, tol = 1e-6, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
     .Call(`_EDI_fast_log_binomial_regression_cpp`, X_r, y_r, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info, estimate_only)
 }
 
@@ -758,7 +758,7 @@ fast_log_binomial_regression_cpp <- function(X_r, y_r, maxit = 100L, tol = 1e-8,
 #' @return A list containing coefficients, vcov, and standard errors.
 #' @export
 #' @keywords internal
-fast_log_binomial_regression_with_var_cpp <- function(X_r, y_r, j = 2L, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
+fast_log_binomial_regression_with_var_cpp <- function(X_r, y_r, j = 2L, maxit = 100L, tol = 1e-6, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
     .Call(`_EDI_fast_log_binomial_regression_with_var_cpp`, X_r, y_r, j, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info)
 }
 
@@ -777,7 +777,7 @@ fast_log_binomial_regression_with_var_cpp <- function(X_r, y_r, j = 2L, maxit = 
 #' @return A list containing coefficients and fitted values.
 #' @export
 #' @keywords internal
-fast_log_binomial_regression_weighted_cpp <- function(X_r, y_r, weights_r, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
+fast_log_binomial_regression_weighted_cpp <- function(X_r, y_r, weights_r, maxit = 100L, tol = 1e-6, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
     .Call(`_EDI_fast_log_binomial_regression_weighted_cpp`, X_r, y_r, weights_r, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info, estimate_only)
 }
 
@@ -795,7 +795,7 @@ fast_log_binomial_regression_weighted_cpp <- function(X_r, y_r, weights_r, maxit
 #' @return A list containing coefficients and fitted values.
 #' @export
 #' @keywords internal
-fast_identity_binomial_regression_cpp <- function(X_r, y_r, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
+fast_identity_binomial_regression_cpp <- function(X_r, y_r, maxit = 100L, tol = 1e-6, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
     .Call(`_EDI_fast_identity_binomial_regression_cpp`, X_r, y_r, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info)
 }
 
@@ -814,7 +814,7 @@ fast_identity_binomial_regression_cpp <- function(X_r, y_r, maxit = 100L, tol = 
 #' @return A list containing coefficients, vcov, and standard errors.
 #' @export
 #' @keywords internal
-fast_identity_binomial_regression_with_var_cpp <- function(X_r, y_r, j = 2L, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
+fast_identity_binomial_regression_with_var_cpp <- function(X_r, y_r, j = 2L, maxit = 100L, tol = 1e-6, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL) {
     .Call(`_EDI_fast_identity_binomial_regression_with_var_cpp`, X_r, y_r, j, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info)
 }
 
@@ -833,7 +833,7 @@ fast_identity_binomial_regression_with_var_cpp <- function(X_r, y_r, j = 2L, max
 #' @return A list containing coefficients and fitted values.
 #' @export
 #' @keywords internal
-fast_identity_binomial_regression_weighted_cpp <- function(X_r, y_r, weights_r, maxit = 100L, tol = 1e-8, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
+fast_identity_binomial_regression_weighted_cpp <- function(X_r, y_r, weights_r, maxit = 100L, tol = 1e-6, fixed_idx = NULL, fixed_values = NULL, warm_start_beta = NULL, smart_cold_start = TRUE, warm_start_weights = NULL, warm_start_fisher_info = NULL, estimate_only = FALSE) {
     .Call(`_EDI_fast_identity_binomial_regression_weighted_cpp`, X_r, y_r, weights_r, maxit, tol, fixed_idx, fixed_values, warm_start_beta, smart_cold_start, warm_start_weights, warm_start_fisher_info, estimate_only)
 }
 

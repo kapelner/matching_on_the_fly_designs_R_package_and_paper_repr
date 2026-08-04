@@ -11,6 +11,7 @@
 
 #ifdef EDI_CORE_ONLY
 #include "_helper_functions_core.h"
+#include "result_map.h"
 #else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
@@ -202,6 +203,53 @@ LikelihoodFitResult fast_zinb_internal(const Eigen::Ref<const Eigen::MatrixXd>& 
     }
 
     return optimize_fixed_likelihood(obj, par, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_ptr);
+}
+
+// Portable (EDI_CORE_ONLY-safe) sibling of fast_zinb_cpp below: identical
+// logic (fit via fast_zinb_internal, then -- only when !estimate_only -- an
+// extra ZeroInflatedNegBin::hessian(params) call, inverted into vcov), just
+// returning edi::ResultMap directly instead of going through
+// make_uniform_likelihood_fit_result's Rcpp::List (that helper lives in the
+// Rcpp-only _helper_functions.h), so a separate Python binding translation
+// unit can call it.
+edi::ResultMap fast_zinb_with_var_internal(const Eigen::Ref<const Eigen::MatrixXd>& Xc,
+                                           const Eigen::Ref<const Eigen::MatrixXd>& Xz,
+                                           const Eigen::Ref<const Eigen::VectorXd>& y_vec,
+                                           std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+                                           int maxit = 1000, double tol = 1e-8,
+                                           std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+                                           std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+                                           std::string optimization_alg = "lbfgs",
+                                           bool smart_cold_start = true,
+                                           std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt,
+                                           bool estimate_only = false) {
+    LikelihoodFitResult fit = fast_zinb_internal(
+        Xc, Xz, y_vec, warm_start_params, maxit, tol, fixed_idx, fixed_values,
+        optimization_alg, smart_cold_start, warm_start_fisher_info);
+
+    if (estimate_only) {
+        return edi::ResultMap()
+            .set("params", fit.params)
+            .set("converged", fit.converged)
+            .set("neg_ll", fit.value)
+            .set("iterations", fit.niter);
+    }
+
+    ZeroInflatedNegBin obj(y_vec, Xc, Xz);
+    const int n_par = (int)Xc.cols() + (int)Xz.cols() + 1;
+    FixedParamSpec fixed_spec = make_fixed_param_spec(n_par, fixed_idx, fixed_values);
+    Eigen::MatrixXd hess = obj.hessian(fit.params);
+    Eigen::MatrixXd H_free = subset_matrix(hess, fixed_spec.free_idx, fixed_spec.free_idx);
+    Eigen::MatrixXd cov_free = H_free.inverse();
+    Eigen::MatrixXd vcov = expand_free_covariance(n_par, fixed_spec, cov_free, true);
+
+    return edi::ResultMap()
+        .set("params", fit.params)
+        .set("vcov", vcov)
+        .set("converged", fit.converged)
+        .set("neg_ll", fit.value)
+        .set("fisher_information", hess)
+        .set("iterations", fit.niter);
 }
 
 //' @title Fast Zero-Inflated Negative Binomial Regression (C++)

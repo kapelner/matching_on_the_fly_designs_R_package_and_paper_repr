@@ -2668,6 +2668,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     .log_skip = function(rep, design, inference, inference_type) {
       invisible(NULL)
     },
+    .supports_exact_inference = function(inf_obj) {
+      isTRUE(tryCatch(
+        inf_obj$supports("exact_test")[["exact_test"]],
+        error = function(e) FALSE
+      )) || is(inf_obj, "InferenceExact")
+    },
     .valid_inference_types = function(inf_obj) {
       valid_inference_types = character(0L)
       if (is(inf_obj, "InferenceAsymp")) {
@@ -2676,7 +2682,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           intersect(private$inf_types, c("asymp_ci", "asymp_pval"))
         )
       }
-      if (is(inf_obj, "InferenceExact")) {
+      if (private$.supports_exact_inference(inf_obj)) {
         valid_inference_types = c(
           valid_inference_types,
           intersect(private$inf_types, c("exact_ci", "exact_pval"))
@@ -3123,7 +3129,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           valid_inference_types = character(0)
           if (is(inf_obj, "InferenceAsymp")) 
             valid_inference_types = c(valid_inference_types, intersect(state$inf_types, c("asymp_ci", "asymp_pval")))
-          if (is(inf_obj, "InferenceExact"))
+          if (private$.supports_exact_inference(inf_obj))
             valid_inference_types = c(valid_inference_types, intersect(state$inf_types, c("exact_ci", "exact_pval")))
           if (is(inf_obj, "InferenceNonParamBootstrap"))
             valid_inference_types = c(valid_inference_types, intersect(state$inf_types, c("boot_ci", "boot_pval")))
@@ -3268,7 +3274,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             }
           }
           
-          if (is(inf_obj, "InferenceExact") && any(c("exact_ci", "exact_pval") %in% pending_inference_types)) {
+          if (private$.supports_exact_inference(inf_obj) && any(c("exact_ci", "exact_pval") %in% pending_inference_types)) {
             if ("exact_pval" %in% pending_inference_types) {
               args = get_args("exact_pval")
               pval_e = tryCatch(do.call(inf_obj$compute_exact_two_sided_pval_for_treatment_effect, args), error = function(e) {

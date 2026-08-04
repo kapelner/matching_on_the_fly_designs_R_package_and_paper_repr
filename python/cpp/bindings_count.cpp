@@ -69,6 +69,36 @@ LikelihoodFitResult fast_zap_internal(
     std::optional<Eigen::MatrixXd> warm_start_fisher_info
 );
 
+edi::ResultMap fast_zap_with_var_internal(
+    const Eigen::Ref<const Eigen::MatrixXd>& X,
+    const Eigen::Ref<const Eigen::VectorXd>& y,
+    const Eigen::Ref<const Eigen::MatrixXd>& Xzi,
+    bool is_hurdle,
+    std::optional<Eigen::VectorXd> warm_start_params,
+    bool smart_cold_start,
+    bool estimate_only,
+    int maxit,
+    double tol,
+    std::optional<Eigen::VectorXi> fixed_idx,
+    std::optional<Eigen::VectorXd> fixed_values,
+    std::string optimization_alg,
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info
+);
+
+edi::ResultMap fast_zinb_with_var_internal(
+    const Eigen::Ref<const Eigen::MatrixXd>& Xc,
+    const Eigen::Ref<const Eigen::MatrixXd>& Xz,
+    const Eigen::Ref<const Eigen::VectorXd>& y_vec,
+    std::optional<Eigen::VectorXd> warm_start_params,
+    int maxit, double tol,
+    std::optional<Eigen::VectorXi> fixed_idx,
+    std::optional<Eigen::VectorXd> fixed_values,
+    std::string optimization_alg,
+    bool smart_cold_start,
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info,
+    bool estimate_only
+);
+
 edi::ResultMap fast_hurdle_negbin_internal(
     const Eigen::Ref<const Eigen::MatrixXd>& X,
     const Eigen::Ref<const Eigen::VectorXd>& y,
@@ -237,6 +267,36 @@ void bind_count(py::module_& m) {
     "Fast zero-inflated negative binomial regression via L-BFGS. Returns 'params' "
     "= [beta_cond, beta_zi, log_theta]; split into components on the Python side.");
 
+    m.def("fast_zinb_with_var", [](const Eigen::Ref<const Eigen::MatrixXd>& Xc,
+                                    const Eigen::Ref<const Eigen::MatrixXd>& Xz,
+                                    const Eigen::Ref<const Eigen::VectorXd>& y,
+                                    std::optional<Eigen::VectorXd> warm_start_params,
+                                    int maxit,
+                                    double tol,
+                                    std::optional<Eigen::VectorXi> fixed_idx,
+                                    std::optional<Eigen::VectorXd> fixed_values,
+                                    std::string optimization_alg,
+                                    bool smart_cold_start,
+                                    std::optional<Eigen::MatrixXd> warm_start_fisher_info,
+                                    bool estimate_only) {
+        edi::ResultMap res = fast_zinb_with_var_internal(
+            Xc, Xz, y, warm_start_params, maxit, tol, fixed_idx, fixed_values,
+            optimization_alg, smart_cold_start, warm_start_fisher_info, estimate_only);
+        return edi::to_py_dict(res);
+    },
+    py::arg("Xc"), py::arg("Xz"), py::arg("y"),
+    py::arg("warm_start_params") = py::none(),
+    py::arg("maxit") = 1000,
+    py::arg("tol") = 1e-8,
+    py::arg("fixed_idx") = py::none(),
+    py::arg("fixed_values") = py::none(),
+    py::arg("optimization_alg") = "lbfgs",
+    py::arg("smart_cold_start") = true,
+    py::arg("warm_start_fisher_info") = py::none(),
+    py::arg("estimate_only") = false,
+    "Fast zero-inflated negative binomial regression with full vcov (params order: "
+    "[beta_cond, beta_zi, log_theta]) whenever !estimate_only.");
+
     m.def("fast_zero_augmented_poisson", [](const Eigen::Ref<const Eigen::MatrixXd>& X,
                                              const Eigen::Ref<const Eigen::VectorXd>& y,
                                              const Eigen::Ref<const Eigen::MatrixXd>& Xzi,
@@ -266,6 +326,37 @@ void bind_count(py::module_& m) {
     "Fast zero-inflated (is_hurdle=False) or hurdle (is_hurdle=True) Poisson "
     "regression via L-BFGS. Returns 'params' = [beta_cond, beta_zi]; split into "
     "components on the Python side.");
+
+    m.def("fast_zero_augmented_poisson_with_var", [](const Eigen::Ref<const Eigen::MatrixXd>& X,
+                                                       const Eigen::Ref<const Eigen::VectorXd>& y,
+                                                       const Eigen::Ref<const Eigen::MatrixXd>& Xzi,
+                                                       bool is_hurdle,
+                                                       std::optional<Eigen::VectorXd> warm_start_params,
+                                                       bool smart_cold_start,
+                                                       bool estimate_only,
+                                                       int maxit,
+                                                       double tol,
+                                                       std::optional<Eigen::VectorXi> fixed_idx,
+                                                       std::optional<Eigen::VectorXd> fixed_values,
+                                                       std::string optimization_alg,
+                                                       std::optional<Eigen::MatrixXd> warm_start_fisher_info) {
+        edi::ResultMap res = fast_zap_with_var_internal(
+            X, y, Xzi, is_hurdle, warm_start_params, smart_cold_start, estimate_only, maxit, tol,
+            fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
+        return edi::to_py_dict(res);
+    },
+    py::arg("X"), py::arg("y"), py::arg("Xzi"), py::arg("is_hurdle"),
+    py::arg("warm_start_params") = py::none(),
+    py::arg("smart_cold_start") = true,
+    py::arg("estimate_only") = false,
+    py::arg("maxit") = 1000,
+    py::arg("tol") = 1e-8,
+    py::arg("fixed_idx") = py::none(),
+    py::arg("fixed_values") = py::none(),
+    py::arg("optimization_alg") = "lbfgs",
+    py::arg("warm_start_fisher_info") = py::none(),
+    "Fast zero-inflated (is_hurdle=False) or hurdle (is_hurdle=True) Poisson regression "
+    "with full vcov (params order: [beta_cond, beta_zi]) whenever !estimate_only.");
 
     m.def("fast_hurdle_negbin", [](const Eigen::Ref<const Eigen::MatrixXd>& X,
                                     const Eigen::Ref<const Eigen::VectorXd>& y,

@@ -112,6 +112,14 @@ EDI_MIXIN_DEPENDENCIES = list(
 	InferenceMixinKKPassThroughCompound = "InferenceMixinKKPassThrough"
 )
 
+EDI_LEGACY_MIXIN_COMPONENT_NAMES = c(
+	InferenceMixinKKGEEShared = "KKGEE",
+	InferenceMixinKKGLMMShared = "KKGLMM",
+	InferenceMixinKKPassThrough = "KKPassThrough",
+	InferenceMixinKKPassThroughCompound = "KKCompound",
+	InferenceMixinOffOptimumLikelihoodEval = "OffOptimumLikelihoodEval"
+)
+
 EDI_INFERENCE_COMPONENTS = new.env(parent = emptyenv())
 
 EDI_COMPONENT_ALLOWED_STATUSES = c("active", "scaffold")
@@ -119,6 +127,29 @@ EDI_COMPONENT_ALLOWED_STATUSES = c("active", "scaffold")
 EDI_COMPONENT_ALLOWED_LIKELIHOOD_TIERS = c("none", "quasi", "partial", "full")
 
 capability_requires = list(
+	exact_test = list(),
+	exact_binomial_incidence = list(
+		capabilities = "exact_test"
+	),
+	exact_fisher_incidence = list(
+		capabilities = "exact_test"
+	),
+	exact_zhang_incidence = list(
+		capabilities = "exact_test"
+	),
+	randomization_test = list(),
+	randomization_ci = list(
+		capabilities = "randomization_test"
+	),
+	randomization_bootstrap = list(
+		capabilities = c("randomization_test", "nonparametric_bootstrap")
+	),
+	jackknife = list(),
+	wald = list(),
+	likelihood_tests = list(
+		likelihood_tier = c("quasi", "partial", "full"),
+		private_methods = "get_likelihood_test_spec"
+	),
 	likelihood_ratio = list(
 		likelihood_tier = c("partial", "full"),
 		private_methods = "get_likelihood_test_spec"
@@ -133,14 +164,22 @@ capability_requires = list(
 		private_methods = c("get_likelihood_test_spec", "simulate_under_lik_null")
 	),
 	bayesian_bootstrap = list(
-		private_methods = "compute_estimate_with_bootstrap_weights"
+		public_methods = "compute_estimate_with_bootstrap_weights"
 	),
 	nonparametric_bootstrap = list(
-		private_methods = "compute_estimate"
+		public_methods = "compute_estimate"
 	),
-	randomization_test = list(),
-	randomization_ci = list(),
-	wald = list(),
+	standard_model_cache = list(
+		capabilities = "likelihood_tests"
+	),
+	count_likelihood_plumbing = list(
+		likelihood_tier = c("quasi", "full"),
+		capabilities = "likelihood_tests"
+	),
+	bartlett_approximation = list(
+		capabilities = "parametric_likelihood_bootstrap",
+		private_methods = c("run_param_bootstrap_replicates", "param_bootstrap_lr_extreme")
+	),
 	kk_passthrough = list(),
 	kk_compound = list(),
 	kk_gee = list(likelihood_tier = "quasi"),
@@ -152,6 +191,50 @@ capability_requires = list(
 )
 
 public_methods_for_capability = list(
+	exact_test = c(
+		"compute_exact_confidence_interval",
+		"compute_exact_two_sided_pval_for_treatment_effect"
+	),
+	randomization_test = c(
+		"approximate_randomization_distribution_beta_hat_T",
+		"compute_rand_two_sided_pval"
+	),
+	randomization_ci = c(
+		"compute_rand_confidence_interval"
+	),
+	randomization_bootstrap = c(
+		"approximate_rand_bootstrap_distribution_beta_hat_T",
+		"compute_rand_bootstrap_two_sided_pval"
+	),
+	jackknife = c(
+		"approximate_jackknife_distribution_beta_hat_T",
+		"compute_jackknife_estimate",
+		"compute_jackknife_bias_estimate",
+		"compute_jackknife_std_error",
+		"compute_jackknife_wald_two_sided_pval",
+		"compute_jackknife_wald_confidence_interval"
+	),
+	wald = c(
+		"compute_asymp_confidence_interval",
+		"compute_asymp_two_sided_pval",
+		"compute_wald_two_sided_pval",
+		"compute_wald_confidence_interval"
+	),
+	likelihood_tests = c(
+		"set_testing_type",
+		"set_information_preference",
+		"get_testing_type",
+		"get_information_preference",
+		"get_information_source_used",
+		"get_supported_testing_types",
+		"get_supported_information_preferences",
+		"compute_score_two_sided_pval",
+		"compute_score_confidence_interval",
+		"compute_lik_ratio_two_sided_pval",
+		"compute_lik_ratio_confidence_interval",
+		"compute_gradient_two_sided_pval",
+		"compute_gradient_confidence_interval"
+	),
 	likelihood_ratio = c(
 		"compute_lik_ratio_two_sided_pval",
 		"compute_lik_ratio_confidence_interval"
@@ -166,30 +249,184 @@ public_methods_for_capability = list(
 		"get_last_param_bootstrap_diagnostics"
 	),
 	bayesian_bootstrap = c(
+		"approximate_bayesian_bootstrap_distribution_beta_hat_T",
+		"compute_bayesian_bootstrap_two_sided_pval",
 		"compute_bayesian_bootstrap_confidence_interval"
 	),
 	nonparametric_bootstrap = c(
-		"approximate_bootstrap_distribution_beta_hat_T"
+		"approximate_bootstrap_distribution_beta_hat_T",
+		"compute_bootstrap_two_sided_pval",
+		"compute_bootstrap_confidence_interval"
 	)
 )
 
 EDI_COMPONENT_SPECS = list(
-	InferenceMixinCordeiroFerrariApprox = list(
-		status = "scaffold",
-		file = "inference_mixin_cordeiro_ferrari_approx.R",
-		dependencies = character(),
-		owns_state = character(),
-		requires_state = character(),
-		requires_public_methods = character(),
-		requires_private_methods = character(),
-		optional_public_methods = character(),
-		optional_private_methods = character(),
-		provides_capabilities = character(),
-		allowed_likelihood_tiers = EDI_COMPONENT_ALLOWED_LIKELIHOOD_TIERS,
-		conflicts = character()
-	),
-	InferenceMixinKKGEEShared = list(
+	RandomizationTest = list(
 		status = "active",
+		source_name = "InferenceRand",
+		file = "inference_all_abstract_rand.R",
+		dependencies = character(),
+		owns_state = c(
+			"custom_randomization_statistic_function", "compiled_cpp_stat_fn",
+			"compiled_cpp_stat_src", "randomization_mc_control"
+		),
+		provides_capabilities = "randomization_test",
+		allowed_likelihood_tiers = EDI_COMPONENT_ALLOWED_LIKELIHOOD_TIERS,
+		declare_body_references_optional = TRUE
+	),
+	RandomizationCI = list(
+		status = "active",
+		source_name = "InferenceRandCI",
+		file = "inference_all_abstract_rand_ci.R",
+		dependencies = "RandomizationTest",
+		provides_capabilities = "randomization_ci",
+		allowed_likelihood_tiers = EDI_COMPONENT_ALLOWED_LIKELIHOOD_TIERS,
+		declare_body_references_optional = TRUE
+	),
+	NonparametricBootstrap = list(
+		status = "active",
+		source_name = "InferenceNonParamBootstrap",
+		file = "inference_all_abstract_non_param_boot.R",
+		dependencies = "RandomizationCI",
+		owns_state = c(
+			"boot_distr_cache", "jack_distr_cache",
+			"bootstrap_extreme_estimate_threshold",
+			"bootstrap_extreme_ci_width_threshold"
+		),
+		provides_capabilities = "nonparametric_bootstrap",
+		allowed_likelihood_tiers = EDI_COMPONENT_ALLOWED_LIKELIHOOD_TIERS,
+		declare_body_references_optional = TRUE
+	),
+	RandomizationBootstrap = list(
+		status = "active",
+		source_name = "InferenceRandBootstrap",
+		file = "inference_all_abstract_rand_bootstrap.R",
+		dependencies = "NonparametricBootstrap",
+		owns_state = c("rand_boot_draws_counter", "brt_mc_control"),
+		provides_capabilities = "randomization_bootstrap",
+		allowed_likelihood_tiers = EDI_COMPONENT_ALLOWED_LIKELIHOOD_TIERS,
+		declare_body_references_optional = TRUE
+	),
+	BayesianBootstrap = list(
+		status = "active",
+		source_name = "InferenceBayesianBootstrap",
+		file = "inference_all_abstract_bayesian_bootstrap.R",
+		dependencies = "RandomizationBootstrap",
+		owns_state = c(
+			"current_bayesian_bootstrap_context",
+			"current_bayesian_bootstrap_subject_or_block_weights"
+		),
+		provides_capabilities = "bayesian_bootstrap",
+		allowed_likelihood_tiers = EDI_COMPONENT_ALLOWED_LIKELIHOOD_TIERS,
+		declare_body_references_optional = TRUE
+	),
+	Jackknife = list(
+		status = "active",
+		source_name = "InferenceJackknife",
+		file = "inference_all_abstract_jackknife.R",
+		dependencies = character(),
+		provides_capabilities = "jackknife",
+		allowed_likelihood_tiers = EDI_COMPONENT_ALLOWED_LIKELIHOOD_TIERS,
+		declare_body_references_optional = TRUE
+	),
+	Wald = list(
+		status = "active",
+		source_name = "InferenceAsymp",
+		file = "inference_all_abstract_asymp.R",
+		dependencies = "Jackknife",
+		owns_state = "cached_mod",
+		provides_capabilities = "wald",
+		allowed_likelihood_tiers = EDI_COMPONENT_ALLOWED_LIKELIHOOD_TIERS,
+		declare_body_references_optional = TRUE
+	),
+	ExactTest = list(
+		status = "active",
+		source_name = "InferenceExact",
+		file = "inference_all_abstract_exact.R",
+		dependencies = character(),
+		owns_state = "default_exact_type",
+		provides_capabilities = "exact_test",
+		allowed_likelihood_tiers = "none",
+		declare_body_references_optional = TRUE
+	),
+	ExactBinomialIncidence = list(
+		status = "active",
+		source_name = "InferenceIncidExactBinomial",
+		file = "inference_incidence_exact_binomial.R",
+		dependencies = "ExactTest",
+		requires_capabilities = "exact_test",
+		provides_capabilities = "exact_binomial_incidence",
+		allowed_likelihood_tiers = "none",
+		declare_body_references_optional = TRUE
+	),
+	ExactFisherIncidence = list(
+		status = "active",
+		source_name = "InferenceIncidExactFisher",
+		file = "inference_indicidence_exact_fisher.R",
+		dependencies = "ExactTest",
+		requires_capabilities = "exact_test",
+		provides_capabilities = "exact_fisher_incidence",
+		allowed_likelihood_tiers = "none",
+		declare_body_references_optional = TRUE
+	),
+	ExactZhangIncidence = list(
+		status = "active",
+		source_name = "InferenceIncidenceExactZhang",
+		file = "inference_incidence_exact_zhang.R",
+		dependencies = "ExactTest",
+		requires_capabilities = "exact_test",
+		provides_capabilities = "exact_zhang_incidence",
+		allowed_likelihood_tiers = "none",
+		declare_body_references_optional = TRUE
+	),
+	LikelihoodTests = list(
+		status = "active",
+		source_name = "InferenceAsympLik",
+		file = "inference_all_abstract_asymp_lik.R",
+		dependencies = "Wald",
+		owns_state = c(
+			"likelihood_ci_max_abs", "testing_type",
+			"information_preference", "information_source_used"
+		),
+		provides_capabilities = "likelihood_tests",
+		allowed_likelihood_tiers = c("quasi", "partial", "full"),
+		declare_body_references_optional = TRUE
+	),
+	ParametricLikelihoodBootstrap = list(
+		status = "active",
+		source_name = "InferenceParamBootstrap",
+		file = "inference_all_abstract_param_boot.R",
+		dependencies = "LikelihoodTests",
+		owns_state = c(
+			"bartlett_factor_mc_min_usable_fraction",
+			"bartlett_factor_mc_max_attempts_per_replicate",
+			"param_bootstrap_extreme_lr_threshold"
+		),
+		provides_capabilities = "parametric_likelihood_bootstrap",
+		allowed_likelihood_tiers = c("partial", "full"),
+		declare_body_references_optional = TRUE
+	),
+	StandardModelCache = list(
+		status = "active",
+		source_name = "InferenceAsympLikStdModCache",
+		file = "inference_all_abstract_asymp_lik_std_mod_cache.R",
+		dependencies = "LikelihoodTests",
+		provides_capabilities = "standard_model_cache",
+		allowed_likelihood_tiers = c("quasi", "partial", "full"),
+		declare_body_references_optional = TRUE
+	),
+	CountLikelihoodPlumbing = list(
+		status = "active",
+		source_name = "InferenceCountLikelihood",
+		file = "inference_all_abstract_count_likelihood.R",
+		dependencies = "LikelihoodTests",
+		provides_capabilities = "count_likelihood_plumbing",
+		allowed_likelihood_tiers = c("quasi", "full"),
+		declare_body_references_optional = TRUE
+	),
+	KKGEE = list(
+		status = "active",
+		source_name = "InferenceMixinKKGEEShared",
 		file = "inference_mixin_kk_gee_shared.R",
 		dependencies = character(),
 		owns_state = c("m", "use_rcpp", "max_abs_reasonable_coef", "kk_gee_engine"),
@@ -212,8 +449,9 @@ EDI_COMPONENT_SPECS = list(
 		allowed_likelihood_tiers = c("quasi"),
 		conflicts = character()
 	),
-	InferenceMixinKKGLMMShared = list(
+	KKGLMM = list(
 		status = "active",
+		source_name = "InferenceMixinKKGLMMShared",
 		file = "inference_mixin_kk_glmm_shared.R",
 		dependencies = character(),
 		owns_state = c(
@@ -237,8 +475,9 @@ EDI_COMPONENT_SPECS = list(
 		allowed_likelihood_tiers = c("partial", "full"),
 		conflicts = character()
 	),
-	InferenceMixinKKPassThrough = list(
+	KKPassThrough = list(
 		status = "active",
+		source_name = "InferenceMixinKKPassThrough",
 		file = "inference_mixin_kk_passthrough.R",
 		dependencies = character(),
 		owns_state = c(
@@ -261,10 +500,11 @@ EDI_COMPONENT_SPECS = list(
 		allowed_likelihood_tiers = EDI_COMPONENT_ALLOWED_LIKELIHOOD_TIERS,
 		conflicts = character()
 	),
-	InferenceMixinKKPassThroughCompound = list(
+	KKCompound = list(
 		status = "active",
+		source_name = "InferenceMixinKKPassThroughCompound",
 		file = "inference_mixin_kk_passthrough_compound.R",
-		dependencies = "InferenceMixinKKPassThrough",
+		dependencies = "KKPassThrough",
 		owns_state = "kk_passthrough_compound",
 		requires_state = c("cached_values", "has_match_structure"),
 		requires_public_methods = character(),
@@ -275,22 +515,9 @@ EDI_COMPONENT_SPECS = list(
 		allowed_likelihood_tiers = EDI_COMPONENT_ALLOWED_LIKELIHOOD_TIERS,
 		conflicts = character()
 	),
-	InferenceMixinLemonteGradientApprox = list(
-		status = "scaffold",
-		file = "inference_mixin_lemonte_gradient_approx.R",
-		dependencies = character(),
-		owns_state = character(),
-		requires_state = character(),
-		requires_public_methods = character(),
-		requires_private_methods = character(),
-		optional_public_methods = character(),
-		optional_private_methods = character(),
-		provides_capabilities = character(),
-		allowed_likelihood_tiers = EDI_COMPONENT_ALLOWED_LIKELIHOOD_TIERS,
-		conflicts = character()
-	),
-	InferenceMixinOffOptimumLikelihoodEval = list(
+	OffOptimumLikelihoodEval = list(
 		status = "active",
+		source_name = "InferenceMixinOffOptimumLikelihoodEval",
 		file = "inference_mixin_off_optimum_likelihood_eval.R",
 		dependencies = character(),
 		owns_state = character(),
@@ -300,6 +527,30 @@ EDI_COMPONENT_SPECS = list(
 		optional_public_methods = character(),
 		optional_private_methods = character(),
 		provides_capabilities = "off_optimum_likelihood_eval",
+		allowed_likelihood_tiers = c("partial", "full"),
+		conflicts = character()
+	),
+	BartlettApproximation = list(
+		status = "active",
+		source_name = "InferenceExtBartlettApprox",
+		file = "inference_ext_bartlett_approx.R",
+		dependencies = "ParametricLikelihoodBootstrap",
+		owns_state = c(
+			"bartlett_factor_mc_min_usable_fraction",
+			"bartlett_factor_mc_max_attempts_per_replicate"
+		),
+		requires_state = "active_resampling_operation",
+		requires_public_methods = character(),
+		requires_private_methods = c(
+			"supports_lik_ratio_param_bootstrap",
+			"run_param_bootstrap_replicates",
+			"param_bootstrap_lr_extreme"
+		),
+		optional_public_methods = character(),
+		optional_private_methods = character(),
+		requires_super_methods = character(),
+		requires_capabilities = "parametric_likelihood_bootstrap",
+		provides_capabilities = "bartlett_approximation",
 		allowed_likelihood_tiers = c("partial", "full"),
 		conflicts = character()
 	)
@@ -436,22 +687,71 @@ component_private_names = function(component) {
 	names(component$private) %||% character()
 }
 
-populate_inference_component_registry = function(ns = environment(populate_inference_component_registry)) {
+inference_component_source_parts = function(source) {
+	if (inherits(source, "R6ClassGenerator")) {
+		public = as.list(source$public_methods)
+		public$clone = NULL
+		private = c(as.list(source$private_methods), as.list(source$private_fields))
+		return(list(public = public, private = private))
+	}
+	if (is.list(source) && all(c("public", "private") %in% names(source))) {
+		return(list(
+			public = as.list(source$public),
+			private = as.list(source$private)
+		))
+	}
+	stop("Inference component source must be an R6 generator or public/private list.", call. = FALSE)
+}
+
+complete_component_reference_contract = function(component) {
+	refs = component_body_references(component)
+	declared = component_declared_reference_names(component)
+	missing_private = setdiff(refs$private, declared$private)
+	missing_self = setdiff(refs$self, declared$self)
+	missing_super = setdiff(refs$super, declared$super)
+	component$optional_private_methods = sort(unique(c(
+		component$optional_private_methods,
+		missing_private
+	)))
+	component$optional_public_methods = sort(unique(c(
+		component$optional_public_methods,
+		missing_self
+	)))
+	component$requires_super_methods = sort(unique(c(
+		component$requires_super_methods,
+		missing_super
+	)))
+	validate_inference_component(component)
+	component
+}
+
+populate_inference_component_registry = function(
+	ns = environment(populate_inference_component_registry),
+	component_names = names(EDI_COMPONENT_SPECS)
+) {
 	clear_inference_component_registry()
-	for (name in names(EDI_COMPONENT_SPECS)) {
+	for (name in component_names) {
 		spec = EDI_COMPONENT_SPECS[[name]]
-		mixin = get(name, envir = ns, inherits = TRUE)
+		source_name = spec$source_name %||% name
+		declare_body_references_optional = isTRUE(spec$declare_body_references_optional)
+		spec$source_name = NULL
+		spec$declare_body_references_optional = NULL
+		source = get(source_name, envir = ns, inherits = TRUE)
+		parts = inference_component_source_parts(source)
 		component = do.call(InferenceComponent, c(
 			list(
 				name = name,
-				source_name = name,
-				public = as.list(mixin$public),
-				private = as.list(mixin$private),
-				provides_public_methods = names(mixin$public) %||% character(),
-				provides_private_methods = names(mixin$private) %||% character()
+				source_name = source_name,
+				public = parts$public,
+				private = parts$private,
+				provides_public_methods = names(parts$public) %||% character(),
+				provides_private_methods = names(parts$private) %||% character()
 			),
 			spec
 		))
+		if (declare_body_references_optional) {
+			component = complete_component_reference_contract(component)
+		}
 		register_inference_component(component)
 	}
 	invisible(EDI_INFERENCE_COMPONENTS)
@@ -1004,8 +1304,17 @@ compose_inference_mixins = function(target_name, mixin_names, public = list(), p
 		public_overrides = names(public),
 		private_overrides = names(private)
 	)
+	component_names = unname(EDI_LEGACY_MIXIN_COMPONENT_NAMES[mixin_names])
+	missing_component_names = mixin_names[is.na(component_names)]
+	if (length(missing_component_names) > 0L) {
+		stop(sprintf(
+			"%s uses mixin(s) without canonical component mapping: %s",
+			target_name,
+			paste(missing_component_names, collapse = ", ")
+		), call. = FALSE)
+	}
 	if (length(ls(EDI_INFERENCE_COMPONENTS)) == 0L) {
-		populate_inference_component_registry(ns = parent.frame())
+		populate_inference_component_registry(ns = parent.frame(), component_names = component_names)
 	}
 	allowed_collisions = EDI_MIXIN_ALLOWED_COLLISIONS[[target_name]] %||% list(public = character(), private = character())
 	allowed_overrides = EDI_MIXIN_ALLOWED_OVERRIDES[[target_name]] %||% list(public = character(), private = character())
@@ -1014,7 +1323,7 @@ compose_inference_mixins = function(target_name, mixin_names, public = list(), p
 		private = unique(c(allowed_collisions$private, allowed_overrides$private, names(private)))
 	)
 	list(
-		public = assemble_public(target_name, mixin_names, public, overrides = overrides, resolve = FALSE),
-		private = assemble_private(target_name, mixin_names, private, overrides = overrides, resolve = FALSE)
+		public = assemble_public(target_name, component_names, public, overrides = overrides, resolve = FALSE),
+		private = assemble_private(target_name, component_names, private, overrides = overrides, resolve = FALSE)
 	)
 }

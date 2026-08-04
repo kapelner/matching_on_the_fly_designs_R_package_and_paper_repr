@@ -641,6 +641,73 @@ edi::ResultMap fast_coxph_regression_internal(
         .set("gradient_norm", fit.gradient_norm);
 }
 
+// Stratified sibling of fast_coxph_regression_internal above: groups rows by
+// `strata` into one CoxData per stratum (mirroring
+// build_stratified_cox_data_cache_cpp's grouping below, minus the XPtr
+// caching) and fits a single shared beta jointly across strata via the same
+// cox_fit() used by the unstratified path -- CoxData/CoxFitResult/cox_fit
+// all already live above, portably, in this file's anonymous namespace.
+// External linkage (like fast_coxph_regression_internal) so a separate
+// Python binding translation unit can call it.
+edi::ResultMap fast_stratified_coxph_regression_internal(
+    const Eigen::Ref<const Eigen::MatrixXd>& X,
+    const Eigen::Ref<const Eigen::VectorXd>& y,
+    const Eigen::Ref<const Eigen::VectorXd>& dead,
+    const Eigen::Ref<const Eigen::VectorXi>& strata,
+    std::optional<Eigen::VectorXd> warm_start_beta = std::nullopt,
+    bool smart_cold_start = true,
+    bool estimate_only = false,
+    int maxit = 20,
+    double tol = 1e-9,
+    std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+    std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+    std::string optimization_alg = "newton_raphson",
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt
+) {
+    const int p = (int)X.cols();
+    const int n = (int)X.rows();
+    FixedParamSpec fixed_spec = make_fixed_param_spec(p, fixed_idx, fixed_values);
+
+    std::map<int, std::vector<int>> strata_map;
+    for (int i = 0; i < n; ++i) strata_map[strata[i]].push_back(i);
+    RowMajorMatrixXd X_rm = X;
+    std::vector<CoxData> strata_data;
+    strata_data.reserve(strata_map.size());
+    for (auto const& kv : strata_map) {
+        const std::vector<int>& idx = kv.second;
+        const int ns = (int)idx.size();
+        Eigen::VectorXd y_s(ns), dead_s(ns);
+        RowMajorMatrixXd X_s(ns, p);
+        for (int ii = 0; ii < ns; ++ii) {
+            int id = idx[ii];
+            y_s[ii] = y[id]; dead_s[ii] = dead[id]; X_s.row(ii) = X_rm.row(id);
+        }
+        strata_data.emplace_back(y_s, dead_s, X_s);
+    }
+
+    CoxFitResult fit = cox_fit(
+        strata_data, warm_start_beta, smart_cold_start, fixed_spec, estimate_only,
+        maxit, tol, optimization_alg, warm_start_fisher_info);
+    Eigen::Map<const Eigen::VectorXd> coef_r(fit.beta.data(), p);
+    if (estimate_only) {
+        return edi::ResultMap()
+            .set("coefficients", coef_r)
+            .set("converged", fit.converged)
+            .set("neg_ll", fit.neg_ll)
+            .set("iterations", fit.iterations)
+            .set("fisher_information", fit.hess_mat)
+            .set("gradient_norm", fit.gradient_norm);
+    }
+    return edi::ResultMap()
+        .set("coefficients", coef_r)
+        .set("vcov", fit.vcov)
+        .set("converged", fit.converged)
+        .set("neg_ll", fit.neg_ll)
+        .set("iterations", fit.iterations)
+        .set("fisher_information", fit.hess_mat)
+        .set("gradient_norm", fit.gradient_norm);
+}
+
 #ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 SEXP build_cox_data_cache_cpp(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Eigen::VectorXd& dead) {

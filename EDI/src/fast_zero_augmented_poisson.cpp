@@ -1,5 +1,6 @@
 #ifdef EDI_CORE_ONLY
 #include "_helper_functions_core.h"
+#include "result_map.h"
 #else
 #include "_helper_functions.h"
 #include "result_map_rcpp.h"
@@ -300,6 +301,58 @@ LikelihoodFitResult fast_zap_internal(const Eigen::Ref<const Eigen::MatrixXd>& X
     }
 
     return optimize_fixed_likelihood(fun, params, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, h_ptr);
+}
+
+// Portable (EDI_CORE_ONLY-safe) sibling of fast_zero_augmented_poisson_cpp
+// below: identical logic (fit via fast_zap_internal, then -- only when
+// !estimate_only -- an extra ZeroAugmentedPoisson::hessian(params) call,
+// inverted into vcov), just returning edi::ResultMap directly instead of
+// going through SEXP/Rcpp::List, so a separate Python binding translation
+// unit can call it. Covers both ZIP (is_hurdle=false) and hurdle-Poisson
+// (is_hurdle=true) since both share this one kernel.
+edi::ResultMap fast_zap_with_var_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
+                                          const Eigen::Ref<const Eigen::VectorXd>& y,
+                                          const Eigen::Ref<const Eigen::MatrixXd>& Xzi,
+                                          bool is_hurdle,
+                                          std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
+                                          bool smart_cold_start = true,
+                                          bool estimate_only = false,
+                                          int maxit = 1000,
+                                          double tol = 1e-8,
+                                          std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
+                                          std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
+                                          std::string optimization_alg = "lbfgs",
+                                          std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt) {
+    const int total_p = (int)X.cols() + (int)Xzi.cols();
+    FixedParamSpec fixed_spec = make_fixed_param_spec(total_p, fixed_idx, fixed_values);
+
+    LikelihoodFitResult fit = fast_zap_internal(
+        X, y, Xzi, is_hurdle, warm_start_params, smart_cold_start, maxit, tol,
+        fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
+
+    Eigen::VectorXd params = fit.params;
+    ZeroAugmentedPoisson fun(y, X, Xzi, is_hurdle);
+
+    if (estimate_only) {
+        return edi::ResultMap()
+            .set("params", params)
+            .set("converged", fit.converged)
+            .set("neg_ll", fit.value)
+            .set("gradient_norm", fit.gradient_norm);
+    }
+
+    Eigen::MatrixXd observed_information = fun.hessian(params);
+    Eigen::MatrixXd H_free = subset_matrix(observed_information, fixed_spec.free_idx, fixed_spec.free_idx);
+    Eigen::MatrixXd cov_free = H_free.inverse();
+    Eigen::MatrixXd vcov = expand_free_covariance(total_p, fixed_spec, cov_free, true);
+
+    return edi::ResultMap()
+        .set("params", params)
+        .set("vcov", vcov)
+        .set("converged", fit.converged)
+        .set("neg_ll", fit.value)
+        .set("fisher_information", observed_information)
+        .set("gradient_norm", fit.gradient_norm);
 }
 
 #ifndef EDI_CORE_ONLY

@@ -7,7 +7,9 @@ Timing-Pval table shape as benchmark_model_fits_R.html, same three-color row
 coding (green = EDI faster + significant, grey = NA timing comparison, blue =
 no canonical Python implementation exists), same underlying dataset spec
 (N=1000 for most families, N=500 for survival, 4 continuous covariates + a
-balanced binary treatment).
+balanced binary treatment). When package_metadata/benchmark_model_fits.md is
+already in combined R+Python format, this script also refreshes its Python
+section from the freshly generated HTML.
 
 EDI has no Python bindings yet (see python_bindings_package_spec.md) — the
 `python/` scaffold in this repo currently only exposes the `fast_math` scalar
@@ -295,7 +297,9 @@ def data_survival_strat(n=N_SURV, p=P):
         **{f"x{i}": X[:, i] for i in range(X.shape[1])},
         "strata": pd.Series(s1).astype(int).astype(str) + "_" + pd.Series(s2).astype(int).astype(str),
     })
-    return dict(df=df)
+    strata_int = (s1.astype(int) * 10 + s2.astype(int)).astype(np.int32)
+    Xo = np.column_stack([w, X])
+    return dict(df=df, Xo=Xo, y=y, dead=dead, strata=strata_int)
 
 
 # ── Canonical fit closures, one per model family (grouped where the R
@@ -540,7 +544,34 @@ def build_coxph_strat():
     d = data_survival_strat()
     df = d["df"]
     covs = [c for c in df.columns if c not in ("y", "dead", "strata")]
-    return lambda: CoxPHFitter().fit(df[["y", "dead", "strata"] + covs], duration_col="y", event_col="dead", strata=["strata"])
+    canonical = lambda: CoxPHFitter().fit(df[["y", "dead", "strata"] + covs], duration_col="y", event_col="dead", strata=["strata"])
+    edi_closure = None
+    if edi_has("fast_stratified_coxph_regression"):
+        fn = edi_fn("fast_stratified_coxph_regression")
+        Xf = f_order(d["Xo"])
+        y, dead, strata = d["y"], d["dead"].astype(float), d["strata"]
+        edi_closure = lambda: fn(Xf, y, dead, strata, estimate_only=True)
+    return canonical, edi_closure
+
+
+def build_coxph_strat_wald():
+    d = data_survival_strat()
+    df = d["df"]
+    covs = [c for c in df.columns if c not in ("y", "dead", "strata")]
+    canonical = lambda: CoxPHFitter().fit(df[["y", "dead", "strata"] + covs], duration_col="y", event_col="dead", strata=["strata"])
+    edi_closure = None
+    if edi_has("fast_stratified_coxph_regression"):
+        fn = edi_fn("fast_stratified_coxph_regression")
+        Xf = f_order(d["Xo"])
+        y, dead, strata = d["y"], d["dead"].astype(float), d["strata"]
+
+        def edi_closure():
+            res = fn(Xf, y, dead, strata, estimate_only=False)
+            b0 = float(np.asarray(res["coefficients"])[0])
+            se0 = float(np.sqrt(np.asarray(res["vcov"])[0, 0]))
+            pval = float(2 * sstats.norm.sf(abs(b0 / se0))) if se0 > 0 else float("nan")
+            return b0, se0, pval
+    return canonical, edi_closure
 
 
 def build_logrank():
@@ -894,6 +925,17 @@ def build_ordered_wald(distr):
     return canonical, edi_closure
 
 
+def _zap_wald_edi_closure(fn, Xf, y, is_hurdle):
+    def edi_closure():
+        res = fn(Xf, y, Xf, is_hurdle=is_hurdle, estimate_only=False)
+        b1 = float(np.asarray(res["params"])[1])
+        var = np.asarray(res["vcov"])[1, 1]
+        se = float(np.sqrt(var)) if np.isfinite(var) and var > 0 else float("nan")
+        pval = float(2 * sstats.norm.sf(abs(b1 / se))) if se > 0 and np.isfinite(se) else float("nan")
+        return b1, se, pval
+    return edi_closure
+
+
 def build_hurdle_wald(dist):
     d = data_count()
     y, Xd = d["y"], d["Xd"]
@@ -910,19 +952,42 @@ def build_hurdle_wald(dist):
             se = float(np.sqrt(ssq)) if np.isfinite(ssq) and ssq > 0 else float("nan")
             pval = float(2 * sstats.norm.sf(abs(b1 / se))) if se > 0 and np.isfinite(se) else float("nan")
             return b1, se, pval
+    elif dist == "poisson" and edi_has("fast_zero_augmented_poisson_with_var"):
+        fn = edi_fn("fast_zero_augmented_poisson_with_var")
+        Xf = f_order(Xd)
+        edi_closure = _zap_wald_edi_closure(fn, Xf, y, True)
     return canonical, edi_closure
 
 
 def build_zip_wald():
     d = data_count()
     y, Xd = d["y"], d["Xd"]
-    return _sm_wald_wrapper(lambda: ZeroInflatedPoisson(y, Xd, exog_infl=Xd).fit(disp=0))
+    canonical = _sm_wald_wrapper(lambda: ZeroInflatedPoisson(y, Xd, exog_infl=Xd).fit(disp=0))
+    edi_closure = None
+    if edi_has("fast_zero_augmented_poisson_with_var"):
+        fn = edi_fn("fast_zero_augmented_poisson_with_var")
+        Xf = f_order(Xd)
+        edi_closure = _zap_wald_edi_closure(fn, Xf, y, False)
+    return canonical, edi_closure
 
 
 def build_zinb_wald():
     d = data_count()
     y, Xd = d["y"], d["Xd"]
-    return _sm_wald_wrapper(lambda: ZeroInflatedNegativeBinomialP(y, Xd, exog_infl=Xd).fit(disp=0))
+    canonical = _sm_wald_wrapper(lambda: ZeroInflatedNegativeBinomialP(y, Xd, exog_infl=Xd).fit(disp=0))
+    edi_closure = None
+    if edi_has("fast_zinb_with_var"):
+        fn = edi_fn("fast_zinb_with_var")
+        Xf = f_order(Xd)
+
+        def edi_closure():
+            res = fn(Xf, Xf, y, estimate_only=False)
+            b1 = float(np.asarray(res["params"])[1])
+            var = np.asarray(res["vcov"])[1, 1]
+            se = float(np.sqrt(var)) if np.isfinite(var) and var > 0 else float("nan")
+            pval = float(2 * sstats.norm.sf(abs(b1 / se))) if se > 0 and np.isfinite(se) else float("nan")
+            return b1, se, pval
+    return canonical, edi_closure
 
 
 def _robust_sandwich_se(b, scale, Xf, y, j0, c_bisquare=4.685):
@@ -1263,7 +1328,7 @@ WALD_SPECS = [
     ("ordinal", "InferenceOrdinalAdjCatLogitRegr", None, None, "fast_adjacent_category_logit_with_var", None, True),
     ("ordinal", "InferenceOrdinalContRatioRegr", None, None, "fast_continuation_ratio_regression_with_var", None, True),
     ("survival", "InferenceSurvivalLogRank", "lifelines", "statistics.logrank_test", "out of python-bindings scope (nonparametric-test kernel); identical call as the point-estimate row — logrank_test always returns a full test", build_logrank, False),
-    ("survival", "InferenceSurvivalStratCoxPHRegr", "lifelines", "CoxPHFitter(strata=)", "fast_coxph_regression_with_var (prebuilt/stratified path); identical call as the point-estimate row — lifelines computes the variance unconditionally", build_coxph_strat, False),
+    ("survival", "InferenceSurvivalStratCoxPHRegr", "lifelines", "CoxPHFitter(strata=)", "fast_stratified_coxph_regression_with_var (prebuilt/stratified path)", build_coxph_strat_wald, False),
     ("incidence", "InferenceIncidRiskDiff", "statsmodels", "OLS+summary (LPM)", "fast_ols_with_var", build_lpm_wald, False),
     ("count", "InferenceCountRobustPoisson", "statsmodels", "GLM(Poisson)+summary", "fast_poisson_regression_with_var", build_glm_poisson_wald, False),
     ("proportion", "InferencePropGCompMeanDiff", "statsmodels", "GLM(Binomial)+gcomp+delta-method SE", "fast_logistic_regression + gcomp utility (out of python-bindings scope)", build_gcomp_fractional_wald, False),
@@ -1690,6 +1755,58 @@ TABLE_HEAD_HTML = ('<table>\n<thead><tr><th>Class</th><th>Response</th><th>EDI T
                     '<th>Speedup</th><th>Timing Pval</th><th></th></tr></thead>\n<tbody>\n')
 
 
+def python_benchmark_markdown_lines_from_html(html, source_path):
+    lines = html.splitlines()
+    body_start = next((i for i, line in enumerate(lines) if "<body>" in line), None)
+    body_end = next((i for i, line in enumerate(lines) if "</body>" in line), None)
+    if body_start is None or body_end is None or body_start >= body_end:
+        return [
+            "## Python Benchmarks",
+            "",
+            f"_Could not parse Python benchmark body from `{source_path}`._",
+        ]
+
+    out = []
+    for line in lines[(body_start + 1):body_end]:
+        if line.startswith("<nav>"):
+            continue
+        if line.startswith("<h1>") and line.endswith("</h1>"):
+            out.append("## Python Benchmarks")
+        elif line.startswith("<p><em>Generated: ") and line.endswith("</em></p>"):
+            out.append("_Generated: " + line[len("<p><em>Generated: "):-len("</em></p>")] + "_")
+        elif line.startswith("<h2"):
+            close = line.find(">")
+            text = line[(close + 1):-len("</h2>")] if close >= 0 and line.endswith("</h2>") else line
+            out.append("### " + text)
+        else:
+            out.append(line.replace("<sup>2</sup>", "^2"))
+    out.extend(["", f"_Source: `{source_path}`._"])
+    return out
+
+
+def sync_combined_markdown_with_python_html(html, source_path,
+                                            md_path="package_metadata/benchmark_model_fits.md"):
+    if not os.path.exists(md_path):
+        return
+    with open(md_path, "r") as f:
+        lines = f.read().splitlines()
+
+    try:
+        py_start = lines.index("## Python Benchmarks")
+    except ValueError:
+        return
+
+    style_start = next((i for i in range(py_start + 1, len(lines)) if lines[i] == "<style>"), len(lines))
+    updated = (
+        lines[:py_start] +
+        python_benchmark_markdown_lines_from_html(html, source_path) +
+        [""] +
+        lines[style_start:]
+    )
+    with open(md_path, "w") as f:
+        f.write("\n".join(updated) + "\n")
+
+
 def counts(rows):
     n_gap = sum(1 for r in rows if r["no_canonical"])
     n_ok = sum(1 for r in rows if not r["no_canonical"] and np.isfinite(r["canonical_ms"]))
@@ -1843,6 +1960,7 @@ line in different places.)</p>
     out_path = "package_metadata/benchmark_model_fits_python.html"
     with open(out_path, "w") as f:
         f.write(html)
+    sync_combined_markdown_with_python_html(html, out_path)
     print(f"\nWrote {out_path}: point-estimate {m_ok}/{len(model_rows)} ok ({m_gap} gaps, {m_fail} failed), "
           f"Wald {w_ok}/{len(wald_rows)} ok ({w_gap} gaps, {w_fail} failed), "
           f"utility {u_ok}/{len(util_rows)} ok ({u_fail} failed).")

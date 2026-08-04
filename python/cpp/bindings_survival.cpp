@@ -24,6 +24,22 @@ edi::ResultMap fast_coxph_regression_internal(
     std::optional<Eigen::MatrixXd> warm_start_fisher_info
 );
 
+edi::ResultMap fast_stratified_coxph_regression_internal(
+    const Eigen::Ref<const Eigen::MatrixXd>& X,
+    const Eigen::Ref<const Eigen::VectorXd>& y,
+    const Eigen::Ref<const Eigen::VectorXd>& dead,
+    const Eigen::Ref<const Eigen::VectorXi>& strata,
+    std::optional<Eigen::VectorXd> warm_start_beta,
+    bool smart_cold_start,
+    bool estimate_only,
+    int maxit,
+    double tol,
+    std::optional<Eigen::VectorXi> fixed_idx,
+    std::optional<Eigen::VectorXd> fixed_values,
+    std::string optimization_alg,
+    std::optional<Eigen::MatrixXd> warm_start_fisher_info
+);
+
 edi::ResultMap fast_weibull_frailty_internal(
     const Eigen::Ref<const Eigen::MatrixXd>& X,
     const Eigen::Ref<const Eigen::VectorXd>& y,
@@ -118,6 +134,38 @@ void bind_survival(py::module_& m) {
     py::arg("warm_start_fisher_info") = py::none(),
     "Fast Cox proportional-hazards regression via Newton-Raphson (unstratified, "
     "no cluster-robust vcov).");
+
+    m.def("fast_stratified_coxph_regression", [](const Eigen::Ref<const Eigen::MatrixXd>& X,
+                                                  const Eigen::Ref<const Eigen::VectorXd>& y,
+                                                  const Eigen::Ref<const Eigen::VectorXd>& dead,
+                                                  const Eigen::Ref<const Eigen::VectorXi>& strata,
+                                                  std::optional<Eigen::VectorXd> warm_start_beta,
+                                                  bool smart_cold_start,
+                                                  bool estimate_only,
+                                                  int maxit,
+                                                  double tol,
+                                                  std::optional<Eigen::VectorXi> fixed_idx,
+                                                  std::optional<Eigen::VectorXd> fixed_values,
+                                                  std::string optimization_alg,
+                                                  std::optional<Eigen::MatrixXd> warm_start_fisher_info) {
+        edi::ResultMap res = fast_stratified_coxph_regression_internal(
+            X, y, dead, strata, warm_start_beta, smart_cold_start, estimate_only, maxit, tol,
+            fixed_idx, fixed_values, optimization_alg, warm_start_fisher_info);
+        return edi::to_py_dict(res);
+    },
+    py::arg("X"), py::arg("y"), py::arg("dead"), py::arg("strata"),
+    py::arg("warm_start_beta") = py::none(),
+    py::arg("smart_cold_start") = true,
+    py::arg("estimate_only") = false,
+    py::arg("maxit") = 20,
+    py::arg("tol") = 1e-9,
+    py::arg("fixed_idx") = py::none(),
+    py::arg("fixed_values") = py::none(),
+    py::arg("optimization_alg") = "newton_raphson",
+    py::arg("warm_start_fisher_info") = py::none(),
+    "Fast stratified Cox proportional-hazards regression via Newton-Raphson: one shared "
+    "beta fit jointly across strata-specific baseline hazards. strata: integer group "
+    "labels, any values (grouped internally, not required to be 0-based/contiguous).");
 
     m.def("fast_weibull_regression", [](const Eigen::Ref<const Eigen::MatrixXd>& X,
                                         const Eigen::Ref<const Eigen::VectorXd>& y,

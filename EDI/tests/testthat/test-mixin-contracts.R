@@ -16,6 +16,18 @@ edi_r_source_files = function() {
 	files
 }
 
+canonical_component_names = function() {
+	c(
+		"RandomizationTest", "RandomizationCI", "NonparametricBootstrap",
+		"RandomizationBootstrap", "BayesianBootstrap", "Jackknife", "Wald",
+		"ExactTest", "ExactBinomialIncidence", "ExactFisherIncidence",
+		"ExactZhangIncidence",
+		"LikelihoodTests", "ParametricLikelihoodBootstrap", "StandardModelCache",
+		"CountLikelihoodPlumbing", "KKPassThrough", "KKCompound", "KKGEE",
+		"KKGLMM", "OffOptimumLikelihoodEval", "BartlettApproximation"
+	)
+}
+
 test_that("every mixin has a documented host contract and is collated after the registry", {
 	contracts = EDI:::EDI_MIXIN_CONTRACTS
 	mixin_names = ls(asNamespace("EDI"), pattern = "^InferenceMixin")
@@ -38,12 +50,12 @@ test_that("every mixin has a documented host contract and is collated after the 
 	}
 })
 
-test_that("every mixin is registered as an inference component", {
+test_that("active behavior components are registered with canonical names", {
 	EDI:::populate_inference_component_registry()
 	components = EDI:::inference_component_registry_as_list()
-	mixin_names = ls(asNamespace("EDI"), pattern = "^InferenceMixin")
 
-	expect_setequal(names(components), mixin_names)
+	expect_setequal(names(components), canonical_component_names())
+	expect_false(any(grepl("^InferenceMixin", names(components))))
 	for (component_name in names(components)) {
 		component = components[[component_name]]
 		expect_silent(EDI:::validate_inference_component(component))
@@ -72,6 +84,14 @@ test_that("every mixin is registered as an inference component", {
 		expect_true(is.character(component$conflicts))
 		expect_true(all(component$allowed_likelihood_tiers %in% EDI:::EDI_COMPONENT_ALLOWED_LIKELIHOOD_TIERS))
 	}
+	expect_identical(components$KKPassThrough$source_name, "InferenceMixinKKPassThrough")
+	expect_identical(components$RandomizationTest$source_name, "InferenceRand")
+	expect_identical(components$ExactTest$source_name, "InferenceExact")
+	expect_identical(components$ExactBinomialIncidence$source_name, "InferenceIncidExactBinomial")
+	expect_identical(components$ExactFisherIncidence$source_name, "InferenceIncidExactFisher")
+	expect_identical(components$ExactZhangIncidence$source_name, "InferenceIncidenceExactZhang")
+	expect_identical(components$BartlettApproximation$source_name, "InferenceExtBartlettApprox")
+	expect_gt(length(components$BartlettApproximation$private), 0L)
 })
 
 test_that("component provided method metadata matches actual list names", {
@@ -89,18 +109,31 @@ test_that("component provided method metadata matches actual list names", {
 	}
 })
 
-test_that("scaffold components are registered but cannot be effective class components", {
+test_that("exact-specific components provide names matching their source lists", {
 	EDI:::populate_inference_component_registry()
 	components = EDI:::inference_component_registry_as_list()
-	scaffolds = names(Filter(function(component) {
-		identical(component$status, "scaffold")
-	}, components))
+	for (component_name in c("ExactBinomialIncidence", "ExactFisherIncidence", "ExactZhangIncidence")) {
+		component = components[[component_name]]
+		expect_identical(
+			sort(component$provides_public_methods),
+			sort(EDI:::component_public_names(component))
+		)
+		expect_identical(
+			sort(component$provides_private_methods),
+			sort(EDI:::component_private_names(component))
+		)
+	}
+})
 
-	expect_setequal(scaffolds, c(
-		"InferenceMixinCordeiroFerrariApprox",
-		"InferenceMixinLemonteGradientApprox"
-	))
+test_that("scaffold components are forbidden from effective class components", {
+	EDI:::populate_inference_component_registry()
 	expect_silent(EDI:::validate_no_scaffold_effective_components())
+	on.exit(EDI:::populate_inference_component_registry(), add = TRUE)
+	EDI:::register_inference_component(EDI:::InferenceComponent(
+		name = "TemporaryScaffoldComponent",
+		status = "scaffold",
+		file = "test"
+	))
 
 	metadata = list(
 		abstract = FALSE,
@@ -116,7 +149,7 @@ test_that("scaffold components are registered but cannot be effective class comp
 		name = "InferenceTemporaryScaffoldComponentHost",
 		parent = "Inference",
 		metadata = metadata,
-		direct_components = "InferenceMixinCordeiroFerrariApprox"
+		direct_components = "TemporaryScaffoldComponent"
 	)
 	expect_error(
 		EDI:::get_effective_components("InferenceTemporaryScaffoldComponentHost"),
@@ -129,6 +162,14 @@ test_that("component body references are declared by component contracts", {
 	components = EDI:::inference_component_registry_as_list()
 	for (component in components) {
 		expect_silent(EDI:::validate_component_body_references(component))
+	}
+})
+
+test_that("exact-specific component body references are declared by their contracts", {
+	EDI:::populate_inference_component_registry()
+	components = EDI:::inference_component_registry_as_list()
+	for (component_name in c("ExactBinomialIncidence", "ExactFisherIncidence", "ExactZhangIncidence")) {
+		expect_silent(EDI:::validate_component_body_references(components[[component_name]]))
 	}
 })
 
@@ -300,7 +341,7 @@ test_that("factory validation enforces likelihood tiers and capabilities", {
 	expect_error(
 		EDI:::define_inference_class(
 			classname = "InferenceTemporaryWrongTier",
-			components = "InferenceMixinOffOptimumLikelihoodEval",
+			components = "OffOptimumLikelihoodEval",
 			metadata = list(likelihood_tier = "none")
 		),
 		"disallowed likelihood tier"
