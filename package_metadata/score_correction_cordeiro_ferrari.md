@@ -195,7 +195,7 @@ ships a checkable reference implementation.
 | `InferenceIncidBinomialIdentityRiskDiff` | `fast_identity_binomial_regression_cpp` | Easy | Partially — identity link gives `d2μ=0` so `f=0` identically (nice simplification), but again not a wired-up `mdscore` family combo out of the box |
 | `InferenceIncidKKClogitOneLik` | `fast_logistic_regression_with_var_cpp` | Borderline | No — bespoke combined conditional-logit + reservoir likelihood, not a plain single-equation GLM |
 | `InferenceIncidKKGLMM` | `fast_logistic_glmm_cpp` | Difficult | No — quadrature-integrated random effects has no GLM hat-matrix structure |
-| `InferenceIncidKKClogitPlusGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | Difficult | No — hybrid |
+| `InferenceIncidKKCondLogitGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | Difficult | No — hybrid |
 
 ### Count
 

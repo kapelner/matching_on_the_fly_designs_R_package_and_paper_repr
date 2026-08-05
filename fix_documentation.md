@@ -1136,16 +1136,16 @@ Each numbered item below is an API entry whose generated description is thin or 
 - [ ] TODO #490: Method `InferenceIncidKKCondLogitOneLik$new()` (current description `209` chars).
 - [ ] TODO #491: Topic `InferenceIncidKKCondLogitOneLik` (current description `308` chars).
 
-### `InferenceIncidKKCondLogitPlusGLMMIVWC.Rd`
+### `InferenceIncidKKCondLogitGLMMIVWC.Rd`
 
-- [ ] TODO #492: Method `InferenceIncidKKCondLogitPlusGLMMIVWC$clone()` (current description `57` chars).
-- [ ] TODO #493: Topic `InferenceIncidKKCondLogitPlusGLMMIVWC` (current description `368` chars).
+- [ ] TODO #492: Method `InferenceIncidKKCondLogitGLMMIVWC$clone()` (current description `57` chars).
+- [ ] TODO #493: Topic `InferenceIncidKKCondLogitGLMMIVWC` (current description `368` chars).
 
-### `InferenceIncidKKCondLogitPlusGLMMOneLik.Rd`
+### `InferenceIncidKKCondLogitGLMMOneLik.Rd`
 
-- [ ] TODO #494: Method `InferenceIncidKKCondLogitPlusGLMMOneLik$clone()` (current description `57` chars).
-- [ ] TODO #495: Method `InferenceIncidKKCondLogitPlusGLMMOneLik$new()` (current description `122` chars).
-- [ ] TODO #496: Topic `InferenceIncidKKCondLogitPlusGLMMOneLik` (current description `383` chars).
+- [ ] TODO #494: Method `InferenceIncidKKCondLogitGLMMOneLik$clone()` (current description `57` chars).
+- [ ] TODO #495: Method `InferenceIncidKKCondLogitGLMMOneLik$new()` (current description `122` chars).
+- [ ] TODO #496: Topic `InferenceIncidKKCondLogitGLMMOneLik` (current description `383` chars).
 
 ### `InferenceIncidKKGCompRiskDiff.Rd`
 

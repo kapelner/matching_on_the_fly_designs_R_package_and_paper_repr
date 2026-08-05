@@ -4,10 +4,32 @@
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 #include "result_map_pybind.h"
+#include "_helper_functions_core.h"
+#include <limits>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace py = pybind11;
+
+ModelResult fast_gehan_wilcox_result(
+    const Eigen::Ref<const Eigen::VectorXd>& time,
+    const std::vector<int>& dead,
+    const std::vector<int>& w
+);
+
+ModelResult fast_logrank_result(
+    const Eigen::Ref<const Eigen::VectorXd>& time,
+    const std::vector<int>& dead,
+    const std::vector<int>& w
+);
+
+double get_survival_stat_diff_result(
+    const Eigen::Ref<const Eigen::VectorXd>& y,
+    const Eigen::Ref<const Eigen::VectorXi>& dead,
+    const Eigen::Ref<const Eigen::VectorXi>& w,
+    const std::string& requested_stat
+);
 
 edi::ResultMap fast_coxph_regression_internal(
     const Eigen::Ref<const Eigen::MatrixXd>& X,
@@ -292,4 +314,55 @@ void bind_survival(py::module_& m) {
     py::arg("optimization_alg") = "lbfgs",
     py::arg("warm_start_fisher_info") = py::none(),
     "Fast dependent-censoring transformation-model regression via L-BFGS.");
+
+    m.def("fast_gehan_wilcox_stats", [](const Eigen::Ref<const Eigen::VectorXd>& time,
+                                         const std::vector<int>& dead,
+                                         const std::vector<int>& w) {
+        ModelResult res = fast_gehan_wilcox_result(time, dead, w);
+        int n_treat = 0;
+        for (int val : w) if (val == 1) ++n_treat;
+        py::dict out;
+        out["score"] = res.dispersion;
+        out["var_score"] = (res.sigma2_hat > 0.0) ? py::cast(res.sigma2_hat) : py::cast(std::numeric_limits<double>::quiet_NaN());
+        out["beta_hat"] = res.b.size() > 0 ? res.b[0] : std::numeric_limits<double>::quiet_NaN();
+        out["se_beta_hat"] = res.ssq_b_2;
+        out["n_treat"] = n_treat;
+        out["n_control"] = static_cast<int>(w.size()) - n_treat;
+        return out;
+    },
+    py::arg("time"), py::arg("dead"), py::arg("w"),
+    "Peto-Prentice (Gehan-Wilcoxon, rho=1) two-sample survival test. dead/w are "
+    "0/1 vectors (event indicator / treatment indicator). Returns score, "
+    "var_score (Peto-Prentice-weighted logrank score/variance), beta_hat "
+    "(treatment-minus-control mean of Peto-Prentice-weighted martingale "
+    "residuals -- the point estimate), se_beta_hat, n_treat, n_control.");
+
+    m.def("fast_logrank_stats", [](const Eigen::Ref<const Eigen::VectorXd>& time,
+                                    const std::vector<int>& dead,
+                                    const std::vector<int>& w) {
+        ModelResult res = fast_logrank_result(time, dead, w);
+        int n_treat = 0;
+        for (int val : w) if (val == 1) ++n_treat;
+        py::dict out;
+        out["score"] = res.dispersion;
+        out["var_score"] = (res.sigma2_hat > 0.0) ? py::cast(res.sigma2_hat) : py::cast(std::numeric_limits<double>::quiet_NaN());
+        out["beta_hat"] = res.b.size() > 0 ? res.b[0] : std::numeric_limits<double>::quiet_NaN();
+        out["se_beta_hat"] = res.ssq_b_2;
+        out["n_treat"] = n_treat;
+        out["n_control"] = static_cast<int>(w.size()) - n_treat;
+        return out;
+    },
+    py::arg("time"), py::arg("dead"), py::arg("w"),
+    "Standard (rho=0) two-sample log-rank test. dead/w are 0/1 vectors "
+    "(event indicator / treatment indicator). Returns score, var_score, "
+    "beta_hat (treatment-minus-control mean of martingale residuals -- the "
+    "point estimate), se_beta_hat, n_treat, n_control.");
+
+    m.def("get_survival_stat_diff", &get_survival_stat_diff_result,
+    py::arg("y"), py::arg("dead"), py::arg("w"), py::arg("requested_stat") = "median",
+    "Difference (treatment minus control) in a per-group Kaplan-Meier "
+    "statistic. requested_stat is 'median' (KM median survival time, "
+    "matching survival::quantile.survfit's step-function semantics) or "
+    "'restricted_mean'. dead/w are 0/1 vectors (event indicator / treatment "
+    "indicator).");
 }

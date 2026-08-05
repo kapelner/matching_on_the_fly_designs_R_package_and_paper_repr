@@ -1,16 +1,23 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#include <stdexcept>
+#else
 // [[Rcpp::depends(RcppEigen)]]
 #include "_helper_functions.h"
+#endif
 #include <limits>
 #include <unordered_map>
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 namespace {
 
 bool all_finite_mat(const Eigen::MatrixXd& M) {
   for (int j = 0; j < M.cols(); ++j) {
     for (int i = 0; i < M.rows(); ++i) {
-      if (!R_finite(M(i, j))) {
+      if (!std::isfinite(M(i, j))) {
         return false;
       }
     }
@@ -20,43 +27,124 @@ bool all_finite_mat(const Eigen::MatrixXd& M) {
 
 bool all_finite_vec(const Eigen::VectorXd& x) {
   for (int i = 0; i < x.size(); ++i) {
-    if (!R_finite(x[i])) {
+    if (!std::isfinite(x[i])) {
       return false;
     }
   }
   return true;
 }
 
-List summarize_with_vcov(const Eigen::VectorXd& coef_hat,
-                         const Eigen::MatrixXd& vcov,
-                         int j_treat) {
-  const int p = coef_hat.size();
+}  // namespace
+
+struct SummarizeWithVcovResult {
+  double beta_hat;
+  double ssq_hat;
+  double se;
+  Eigen::MatrixXd vcov;
+  Eigen::VectorXd std_err;
+  Eigen::VectorXd z_vals;
+};
+
+// Portable (EDI_CORE_ONLY-safe) core shared by ols_hc2_post_fit_cpp,
+// glm_sandwich_post_fit_cpp, and glm_cluster_sandwich_post_fit_cpp below:
+// identical logic to the original summarize_with_vcov, just throwing
+// std::invalid_argument instead of Rcpp::stop() and returning a plain
+// struct instead of Rcpp::List.
+SummarizeWithVcovResult summarize_with_vcov_result(const Eigen::VectorXd& coef_hat,
+                                                    const Eigen::MatrixXd& vcov,
+                                                    int j_treat) {
+  const int p = static_cast<int>(coef_hat.size());
   const int j_treat0 = j_treat - 1;
   if (j_treat0 < 0 || j_treat0 >= p) {
-    stop("treatment column index is out of bounds");
+    throw std::invalid_argument("treatment column index is out of bounds");
   }
   if (!all_finite_mat(vcov)) {
-    stop("non-finite covariance matrix");
+    throw std::invalid_argument("non-finite covariance matrix");
   }
 
   Eigen::VectorXd std_err(p);
   Eigen::VectorXd z_vals(p);
   for (int j = 0; j < p; ++j) {
     const double var_j = vcov(j, j);
-    std_err[j] = (R_finite(var_j) && var_j >= 0.0) ? std::sqrt(var_j) : NA_REAL;
-    z_vals[j] = (R_finite(std_err[j]) && std_err[j] > 0.0) ? coef_hat[j] / std_err[j] : NA_REAL;
+    std_err[j] = (std::isfinite(var_j) && var_j >= 0.0) ? std::sqrt(var_j) : std::numeric_limits<double>::quiet_NaN();
+    z_vals[j] = (std::isfinite(std_err[j]) && std_err[j] > 0.0) ? coef_hat[j] / std_err[j] : std::numeric_limits<double>::quiet_NaN();
   }
 
   const double ssq_hat = vcov(j_treat0, j_treat0);
   const double beta_hat = coef_hat[j_treat0];
 
+  return SummarizeWithVcovResult{
+    beta_hat, ssq_hat,
+    (std::isfinite(ssq_hat) && ssq_hat >= 0.0) ? std::sqrt(ssq_hat) : std::numeric_limits<double>::quiet_NaN(),
+    vcov, std_err, z_vals
+  };
+}
+
+// Portable (EDI_CORE_ONLY-safe) sibling of ols_hc2_setup_cpp +
+// ols_hc2_post_fit_precomputed_cpp + ols_hc2_post_fit_cpp below: identical
+// HC2 sandwich-SE logic (bread = (X'X)^-1, hat = leverage, omega =
+// resid^2/(1-hat), meat = X' diag(omega) X, vcov = bread*meat*bread), fused
+// into one call on plain Eigen types so a separate Python binding
+// translation unit can call it without ols_hc2_post_fit_cpp's internal
+// SEXP round-trip through ols_hc2_setup_cpp.
+SummarizeWithVcovResult ols_hc2_post_fit_result(const Eigen::Ref<const Eigen::MatrixXd>& X_fit,
+                                                const Eigen::Ref<const Eigen::VectorXd>& y,
+                                                const Eigen::Ref<const Eigen::VectorXd>& coef_hat,
+                                                int j_treat) {
+  const int n = static_cast<int>(X_fit.rows());
+  const int p = static_cast<int>(X_fit.cols());
+  if (!all_finite_mat(X_fit)) {
+    throw std::invalid_argument("non-finite design matrix");
+  }
+  if (static_cast<int>(y.size()) != n || static_cast<int>(coef_hat.size()) != p) {
+    throw std::invalid_argument("dimension mismatch in ols_hc2_post_fit_result");
+  }
+  if (!all_finite_vec(coef_hat)) {
+    throw std::invalid_argument("non-finite inputs");
+  }
+
+  const Eigen::MatrixXd XtX = X_fit.transpose() * X_fit;
+  Eigen::LDLT<Eigen::MatrixXd> ldlt(XtX);
+  if (ldlt.info() != Eigen::Success) {
+    throw std::runtime_error("failed to factorize X'X");
+  }
+  const Eigen::MatrixXd bread = ldlt.solve(Eigen::MatrixXd::Identity(p, p));
+  if (ldlt.info() != Eigen::Success || !all_finite_mat(bread)) {
+    throw std::runtime_error("failed to invert X'X");
+  }
+
+  const Eigen::VectorXd hat = (X_fit * bread).cwiseProduct(X_fit).rowwise().sum();
+
+  const Eigen::VectorXd resid = y - X_fit * coef_hat;
+  if (!all_finite_vec(resid)) {
+    throw std::invalid_argument("non-finite residuals");
+  }
+
+  Eigen::VectorXd omega(n);
+  for (int i = 0; i < n; ++i) {
+    omega[i] = resid[i] * resid[i] / std::max(1.0 - hat[i], std::numeric_limits<double>::epsilon());
+  }
+
+  Eigen::MatrixXd meat = weighted_crossprod(X_fit, omega);
+  Eigen::MatrixXd vcov = bread * meat * bread;
+  vcov = 0.5 * (vcov + vcov.transpose());
+  return summarize_with_vcov_result(coef_hat, vcov, j_treat);
+}
+
+#ifndef EDI_CORE_ONLY
+namespace {
+
+List summarize_with_vcov(const Eigen::VectorXd& coef_hat,
+                         const Eigen::MatrixXd& vcov,
+                         int j_treat) {
+  SummarizeWithVcovResult res = summarize_with_vcov_result(coef_hat, vcov, j_treat);
   return List::create(
-    _["beta_hat"] = beta_hat,
-    _["ssq_hat"] = ssq_hat,
-    _["se"] = (R_finite(ssq_hat) && ssq_hat >= 0.0) ? std::sqrt(ssq_hat) : NA_REAL,
-    _["vcov"] = vcov,
-    _["std_err"] = std_err,
-    _["z_vals"] = z_vals
+    _["beta_hat"] = res.beta_hat,
+    _["ssq_hat"] = res.ssq_hat,
+    _["se"] = res.se,
+    _["vcov"] = res.vcov,
+    _["std_err"] = res.std_err,
+    _["z_vals"] = res.z_vals
   );
 }
 
@@ -287,3 +375,4 @@ List glm_cluster_sandwich_post_fit_cpp(SEXP X_fit_sexp,
   vcov = 0.5 * (vcov + vcov.transpose());
   return summarize_with_vcov(coef_hat, vcov, j_treat);
 }
+#endif // EDI_CORE_ONLY

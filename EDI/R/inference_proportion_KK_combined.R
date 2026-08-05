@@ -116,7 +116,7 @@ InferencePropKKGEE = R6::R6Class("InferencePropKKGEE",
 #' @export
 InferencePropKKGLMM = R6::R6Class("InferencePropKKGLMM",
 	lock_objects = FALSE,
-	inherit = InferenceAbstractKKCondLogitPlusGLMM,
+	inherit = InferenceAbstractKKCondLogitGLMM,
 	public = list(
 		#' @description Initialize KK proportion-response GLMM inference and prepare
 		#'   the mixed-model likelihood used by

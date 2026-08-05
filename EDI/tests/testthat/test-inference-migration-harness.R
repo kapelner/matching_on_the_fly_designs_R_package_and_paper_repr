@@ -113,3 +113,85 @@ test_that("migration family PR summary reports counts and newly migrated classes
 	expect_identical(summary$newly_migrated, "InferenceA")
 	expect_silent(expect_inference_migration_family_pr_summary_complete(summary))
 })
+
+test_that("custom randomization migration golden tests compare distribution and p-value", {
+	custom_rand_public = list(
+		fit = function(estimate_only = FALSE) {
+			w = private$w
+			y = private$y
+			list(
+				estimate = mean(y[w == 1L]) - mean(y[w == -1L]),
+				model = NULL
+			)
+		}
+	)
+	CustomRandLegacy = R6::R6Class(
+		"MigrationHarnessCustomRandLegacy",
+		lock_objects = FALSE,
+		inherit = EDI:::InferenceRand,
+		public = c(
+			custom_rand_public,
+			list(compute_estimate = EDI:::InferenceCustomRand$public_methods$compute_estimate)
+		)
+	)
+	CustomRandMigrated = R6::R6Class(
+		"MigrationHarnessCustomRandMigrated",
+		lock_objects = FALSE,
+		inherit = EDI:::InferenceCustomRand,
+		public = custom_rand_public
+	)
+	make_permutations = function(n, r) {
+		list(
+			w_mat = matrix(as.numeric((seq_len(n * r) + rep(seq_len(r), each = n)) %% 2L), nrow = n, ncol = r),
+			m_mat = NULL
+		)
+	}
+	method_calls_for = function(n, r = 9L) {
+		permutations = make_permutations(n, r)
+		list(
+			randomization_distr = list(
+				method = "approximate_randomization_distribution_beta_hat_T",
+				args = list(r = r, show_progress = FALSE, permutations = permutations)
+			),
+			randomization_pval = list(
+				method = "compute_rand_two_sided_pval",
+				args = list(delta = 0, r = r, show_progress = FALSE, permutations = permutations)
+			)
+		)
+	}
+
+	builders = inference_migration_golden_design_builders()
+	for (response_type in c("continuous", "incidence")) {
+		design = builders[[response_type]](n = 12L, seed = 20260728L)
+		expect_silent(expect_inference_migration_outputs_equal(
+			legacy_class = CustomRandLegacy,
+			migrated_class = CustomRandMigrated,
+			design = design,
+			method_calls = method_calls_for(n = 12L),
+			tolerance = 1e-12
+		))
+	}
+})
+
+test_that("migrated custom randomization host exposes only randomization-test optional APIs", {
+	EDI:::populate_inference_class_registry()
+	methods = inference_migration_public_methods("InferenceCustomRand")
+	randomization_methods = EDI:::inference_optional_method_names_for_capabilities("randomization_test")
+	disallowed_methods = EDI:::inference_optional_method_names_for_capabilities(c(
+		"randomization_ci",
+		"randomization_bootstrap",
+		"nonparametric_bootstrap",
+		"bayesian_bootstrap",
+		"jackknife"
+	))
+
+	expect_true(all(randomization_methods %in% methods))
+	expect_equal(intersect(disallowed_methods, methods), character())
+	expect_identical(EDI:::get_effective_components("InferenceCustomRand"), "RandomizationTest")
+	expect_identical(EDI:::get_effective_capabilities("InferenceCustomRand"), "randomization_test")
+	expect_silent(EDI:::mark_custom_randomization_classes_migrated("InferenceCustomRand"))
+	expect_identical(
+		EDI:::get_inference_hierarchy_migration_record("InferenceCustomRand")$migration_status,
+		"migrated"
+	)
+})

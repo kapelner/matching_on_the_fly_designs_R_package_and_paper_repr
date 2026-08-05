@@ -117,6 +117,39 @@ test_that("compute_param_bootstrap_estimate satisfies the bias-correction reconc
 	expect_equal(est, expected, tolerance = 1e-12)
 })
 
+test_that("parametric bootstrap estimate drops extreme finite refits", {
+	des <- make_param_boot_logit_design(seed = 20260725L, n = 120L)
+	inf <- InferenceIncidLogRegr$new(des, model_formula = ~ x1 + x2, verbose = FALSE)
+	inf$num_cores <- 1L
+	priv_env <- inf$.__enclos_env__$private
+	priv_env$param_bootstrap_extreme_estimate_threshold <- 10
+	draws <- c(0.2, 1e9, 0.4)
+	i <- 0L
+	unlockBinding("simulate_under_lik_null", priv_env)
+	assign("simulate_under_lik_null", function(spec, delta, null_fit){
+		i <<- i + 1L
+		b <- rep.int(0, length(spec$full_fit$b))
+		b[spec$j] <- draws[[i]]
+		list(full_fit = list(b = b))
+	}, envir = priv_env)
+	lockBinding("simulate_under_lik_null", priv_env)
+
+	est <- inf$compute_param_bootstrap_estimate(
+		B = length(draws),
+		min_number_usable_samples = 2L,
+		max_attempts_per_replicate = 1L,
+		show_progress = FALSE
+	)
+	diag <- inf$get_last_param_bootstrap_estimate_diagnostics()
+
+	expect_true(is.finite(est))
+	expect_equal(diag$n_extreme, 1L)
+	expect_equal(diag$n_success, 2L)
+	expect_equal(diag$n_failure, 1L)
+	expect_equal(diag$replicate_estimates, c(0.2, NA_real_, 0.4))
+	expect_equal(est, 2 * diag$raw_estimate - mean(c(0.2, 0.4)), tolerance = 1e-12)
+})
+
 test_that("compute_param_bootstrap_estimate errors when the family does not support it", {
 	des <- make_param_boot_logit_design(seed = 20260725L, n = 90L)
 	inf <- InferenceIncidLogRegr$new(des, model_formula = ~ x1 + x2, verbose = FALSE)

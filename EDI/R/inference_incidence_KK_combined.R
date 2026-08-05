@@ -104,9 +104,9 @@ InferenceIncidKKGEE = R6::R6Class("InferenceIncidKKGEE",
 #' Abstract class for Conditional Logistic Combined-Likelihood Combined Inference
 #'
 #' @keywords internal
-InferenceAbstractKKCondLogitPlusGLMMOneLik = R6::R6Class("InferenceAbstractKKCondLogitPlusGLMMOneLik",
+InferenceAbstractKKCondLogitGLMMOneLik = R6::R6Class("InferenceAbstractKKCondLogitGLMMOneLik",
 	lock_objects = FALSE,
-	inherit = InferenceAbstractKKCondLogitPlusGLMM,
+	inherit = InferenceAbstractKKCondLogitGLMM,
 	public = list(
 		#' @description Initialize KK combined incidence likelihood inference and set
 		#'   up the conditional-logit / marginal model components used by related
@@ -123,7 +123,7 @@ InferenceAbstractKKCondLogitPlusGLMMOneLik = R6::R6Class("InferenceAbstractKKCon
 		}
 	),
 	private = list(
-		is_a_kk_cond_logit_plus_glmm_one_lik = function() TRUE,
+		is_a_kk_cond_logit_glmm_one_lik = function() TRUE,
 		supports_likelihood_tests = function() TRUE,
 		get_likelihood_test_spec = function(){
 			private$shared(estimate_only = FALSE)

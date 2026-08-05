@@ -45,6 +45,39 @@ InferenceExtParamBootstrapEstimate = list(
 			if (!length(coef) || length(j) != 1L || !is.finite(j) || j < 1L || length(coef) < j) return(NA_real_)
 			coef[j]
 		},
+		param_bootstrap_estimate_threshold = function(){
+			candidates = c(
+				private$param_bootstrap_extreme_estimate_threshold,
+				private$bootstrap_extreme_estimate_threshold,
+				private$max_abs_reasonable_coef,
+				EDI_SEPARATION_THRESHOLD
+			)
+			candidates = suppressWarnings(as.numeric(candidates))
+			candidates = candidates[is.finite(candidates) & candidates > 0]
+			if (length(candidates)) min(candidates) else EDI_SEPARATION_THRESHOLD
+		},
+		param_bootstrap_estimate_extreme = function(theta, est = NA_real_, max_abs = private$param_bootstrap_estimate_threshold()){
+			theta = as.numeric(theta)
+			theta = theta[is.finite(theta)]
+			if (!length(theta)) return(FALSE)
+			max_abs = suppressWarnings(as.numeric(max_abs)[1L])
+			if (!is.finite(max_abs) || max_abs <= 0) max_abs = EDI_SEPARATION_THRESHOLD
+			if (any(abs(theta) > max_abs)) return(TRUE)
+			scale_ref = max(1, abs(as.numeric(est)[1L]), stats::median(abs(theta)), na.rm = TRUE)
+			if (!is.finite(scale_ref) || scale_ref <= 0) scale_ref = 1
+			theta_width = diff(stats::quantile(theta, probs = c(0.025, 0.975), names = FALSE, type = 8))
+			is.finite(theta_width) && theta_width > max_abs * scale_ref
+		},
+		param_bootstrap_confidence_interval_extreme = function(ci, est = NA_real_, max_abs = private$param_bootstrap_estimate_threshold()){
+			ci = as.numeric(ci)
+			if (length(ci) < 2L || !all(is.finite(ci[1:2]))) return(FALSE)
+			max_abs = suppressWarnings(as.numeric(max_abs)[1L])
+			if (!is.finite(max_abs) || max_abs <= 0) max_abs = EDI_SEPARATION_THRESHOLD
+			if (any(abs(ci[1:2]) > max_abs)) return(TRUE)
+			scale_ref = max(1, abs(as.numeric(est)[1L]), na.rm = TRUE)
+			width = abs(diff(ci[1:2]))
+			is.finite(width) && width > max_abs * scale_ref
+		},
 		# Shared batch runner used by both compute_param_bootstrap_estimate()
 		# and compute_param_bootstrap_confidence_interval(): extracts the raw
 		# (unrestricted) estimate from the likelihood-test spec, runs B
@@ -65,7 +98,12 @@ InferenceExtParamBootstrapEstimate = list(
 			raw_estimate = private$extract_param_bootstrap_estimate_coef(spec$full_fit, j)
 			if (!is.finite(raw_estimate)) {
 				if (!isTRUE(self$is_nonestimable("estimate")))
-					private$cache_nonestimable_se("param_bootstrap_estimate_raw_estimate_nonfinite")
+					private$cache_nonestimable_estimate("param_bootstrap_estimate_raw_estimate_nonfinite")
+				return(NULL)
+			}
+			if (private$param_bootstrap_estimate_extreme(raw_estimate)) {
+				if (!isTRUE(self$is_nonestimable("estimate")))
+					private$cache_nonestimable_estimate("param_bootstrap_estimate_raw_estimate_extreme")
 				return(NULL)
 			}
 
@@ -77,6 +115,17 @@ InferenceExtParamBootstrapEstimate = list(
 				show_progress = show_progress
 			)
 			replicate_estimates = vapply(run$results, function(res) if (isTRUE(res$success)) as.numeric(res$b) else NA_real_, numeric(1))
+			threshold = private$param_bootstrap_estimate_threshold()
+			extreme_reps = is.finite(replicate_estimates) & abs(replicate_estimates) > threshold
+			if (!any(extreme_reps) && private$param_bootstrap_estimate_extreme(replicate_estimates, est = raw_estimate)) {
+				extreme_reps = is.finite(replicate_estimates)
+			}
+			replicate_estimates[extreme_reps] = NA_real_
+			n_extreme = sum(extreme_reps) + sum(vapply(
+				run$results,
+				function(res) identical(res$reason, "simulated_refit_extreme_estimate"),
+				logical(1)
+			))
 			finite_reps = replicate_estimates[is.finite(replicate_estimates)]
 			n_success = length(finite_reps)
 			n_failure = length(replicate_estimates) - n_success
@@ -87,6 +136,7 @@ InferenceExtParamBootstrapEstimate = list(
 				replicate_estimates = replicate_estimates,
 				n_success = as.integer(n_success),
 				n_failure = as.integer(n_failure),
+				n_extreme = as.integer(n_extreme),
 				used_deterministic_mode = isTRUE(run$used_deterministic_mode)
 			)
 
@@ -159,6 +209,10 @@ InferenceExtParamBootstrapEstimate = list(
 					}
 					if (!is.finite(boot_coef)) {
 						last_result = list(success = FALSE, b = NA_real_, reason = "simulated_refit_failure", attempts = as.integer(attempt))
+						next
+					}
+					if (private$param_bootstrap_estimate_extreme(boot_coef, est = private$extract_param_bootstrap_estimate_coef(full_fit, j))) {
+						last_result = list(success = FALSE, b = NA_real_, reason = "simulated_refit_extreme_estimate", attempts = as.integer(attempt))
 						next
 					}
 					return(list(success = TRUE, b = boot_coef, reason = "success", attempts = as.integer(attempt)))

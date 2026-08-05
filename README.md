@@ -2,6 +2,11 @@
 
 Code for the R package `EDI` and the code to reproduce the simulations in the papers listed below. You can get started by cloning and running `R CMD INSTALL EDI` from the root of this repo. Then try running the code in the folder `package_tests`.
 
+If you just want the model-fitting kernels from Python without an R
+installation, see [`python/`](python/) — a `pybind11` package (`edi_kernels`)
+that compiles the same `EDI/src/*.cpp` kernels directly, no R/Rcpp
+dependency.
+
 For a local performance build, you can opt into native compiler flags without
 changing the default portable build:
 

@@ -657,21 +657,29 @@ keeps or drops.
 
 ##### Custom Randomization Migration
 
-- [ ] Identify every concrete or extension class that currently inherits
+- [x] Identify every concrete or extension class that currently inherits
   `InferenceRand` directly.
-- [ ] Split custom randomization hosts into public extension bases and concrete
+- [x] Split custom randomization hosts into public extension bases and concrete
   package estimators.
-- [ ] Add target metadata for each custom randomization host:
+- [x] Add target metadata for each custom randomization host:
   `parent = "Inference"`, `components = "RandomizationTest"`, and explicit
   class-owned capabilities if any.
-- [ ] Add golden tests comparing current and migrated randomization p-values and
+- [x] Add golden tests comparing current and migrated randomization p-values and
   randomization distributions on the continuous and incidence fixtures.
-- [ ] Replace direct `InferenceRand` inheritance in one custom randomization host
+- [x] Convert randomization simulation and comprehensive-test dispatch from
+  `is(obj, "InferenceRand")` / `is(obj, "InferenceRandCI")` to
+  `supports("randomization_test")` / `supports("randomization_ci")` before
+  changing production custom-randomization inheritance.
+- [x] Replace direct `InferenceRand` inheritance in one custom randomization host
   at a time.
-- [ ] Remove any inherited randomization confidence-interval or bootstrap APIs
+- [x] Add tests proving a migrated custom-randomization host does not expose
+  randomization confidence-interval, randomization-bootstrap, nonparametric-
+  bootstrap, Bayesian-bootstrap, or jackknife APIs unless the matching component
+  is listed.
+- [x] Remove any inherited randomization confidence-interval or bootstrap APIs
   from migrated custom-randomization hosts unless the matching component is
   listed explicitly.
-- [ ] Mark each custom-randomization class migrated only after method snapshots
+- [x] Mark each custom-randomization class migrated only after method snapshots
   and golden randomization tests pass.
 
 ##### Exact Class Migration

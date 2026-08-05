@@ -97,7 +97,7 @@ are `IVWC`:
 | `InferenceIncidGCompRiskRatio` | Incidence g-comp | `InferenceIncidGCompAbstract` | Weighted g-computation |
 | `InferenceIncidKKGEE` | Incidence KK GEE | `InferenceIncidKKGEE` | Native weighted KK GEE |
 | `InferenceIncidKKCondLogitOneLik` | Incidence KK one-likelihood | `InferenceAbstractKKCondLogitOneLik` | Weighted combined logistic surrogate |
-| `InferenceIncidKKCondLogitPlusGLMMOneLik` | Incidence KK hybrid one-likelihood | `InferenceAbstractKKCondLogitPlusGLMM` | Weighted logistic mixed-model surrogate |
+| `InferenceIncidKKCondLogitGLMMOneLik` | Incidence KK hybrid one-likelihood | `InferenceAbstractKKCondLogitGLMM` | Weighted logistic mixed-model surrogate |
 | `InferenceIncidKKGCompRiskDiff` | Incidence KK g-comp | `InferenceIncidKKGCompAbstract` | Weighted KK g-computation |
 | `InferenceIncidKKGCompRiskRatio` | Incidence KK g-comp | `InferenceIncidKKGCompAbstract` | Weighted KK g-computation |
 | `InferenceIncidKKModifiedPoisson` | Incidence KK marginal | `InferenceAbstractKKModifiedPoisson` | Weighted KK modified-Poisson point refit |
@@ -197,7 +197,7 @@ inventory.
 - `InferenceContinKKQuantileRegrIVWC`
 - `InferenceContinKKRobustRegrIVWC`
 - `InferenceIncidKKCondLogitIVWC`
-- `InferenceIncidKKCondLogitPlusGLMMIVWC`
+- `InferenceIncidKKCondLogitGLMMIVWC`
 - `InferencePropKKQuantileRegrIVWC`
 - `InferenceSurvivalKKClaytonCopulaIVWC`
 - `InferenceSurvivalKKLWACoxPHIVWC`

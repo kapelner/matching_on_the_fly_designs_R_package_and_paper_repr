@@ -296,7 +296,7 @@ X[beta_T == 1 &
 	"InferenceIncidKKCondLogitOneLik",
 	"InferenceIncidKKCondLogitIVWC",
 	"InferenceIncidKKGEE",
-	"InferenceIncidKKCondLogitPlusGLMMOneLik",
+	"InferenceIncidKKCondLogitGLMMOneLik",
 	"InferencePropBetaRegr",
 	"InferencePropBetaRegr",
 	"InferencePropKKGEE",

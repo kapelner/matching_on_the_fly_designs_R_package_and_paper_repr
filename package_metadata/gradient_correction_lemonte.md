@@ -217,7 +217,7 @@ third/fourth-derivative-differentiable likelihood). Unlike that table, there is 
 | `InferenceIncidBinomialIdentityRiskDiff` | `fast_identity_binomial_regression_cpp` | Easy | Identity link simplifies several derivative terms (`d²μ=0`) |
 | `InferenceIncidKKClogitOneLik` | `fast_logistic_regression_with_var_cpp` | Borderline | Bespoke combined conditional-logit + reservoir likelihood |
 | `InferenceIncidKKGLMM` | `fast_logistic_glmm_cpp` | Difficult | Quadrature-integrated random effects |
-| `InferenceIncidKKClogitPlusGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | Difficult | Hybrid |
+| `InferenceIncidKKCondLogitGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | Difficult | Hybrid |
 
 ### Count
 

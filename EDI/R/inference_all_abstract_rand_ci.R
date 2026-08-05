@@ -152,7 +152,13 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			old_mc_control = temp_inf$.__enclos_env__$private$randomization_mc_control
 			temp_inf$.__enclos_env__$private$randomization_mc_control = ci_search_control
 			on.exit({ temp_inf$.__enclos_env__$private$randomization_mc_control = old_mc_control }, add = TRUE)
-			perms = temp_inf$.__enclos_env__$private$generate_permutations(r)
+			precompute_permutations = !(
+				is.finite(suppressWarnings(as.numeric(ci_search_control$timeout_deadline)[1L])) &&
+				isTRUE(ci_search_control$mc_enable) &&
+				as.integer(ci_search_control$mc_batch_size) < as.integer(r)
+			)
+			perms = if (precompute_permutations) temp_inf$.__enclos_env__$private$generate_permutations(r) else NULL
+			private$check_randomization_ci_deadline(ci_search_control, "Randomization CI permutation setup")
 			ci_pval_cache = if (isTRUE(ci_search_control$pval_cache_enable)) new.env(parent = emptyenv()) else NULL
 			bounds = private$build_randomization_ci_search_bounds(temp_inf, r, alpha, transform_arg, perms, ci_search_control, ci_pval_cache)
 			if (!all(is.finite(c(bounds$l, bounds$u)))) {
@@ -201,7 +207,9 @@ InferenceRandCI = R6::R6Class("InferenceRandCI",
 			if (is.null(deadline)) deadline = getOption("EDI.ci_timeout_deadline", default = NA_real_)
 			deadline = suppressWarnings(as.numeric(deadline)[1L])
 			if (is.na(deadline) || !is.finite(deadline)) return(invisible(FALSE))
-			if (unname(proc.time()[["elapsed"]]) >= deadline) {
+			guard_sec = suppressWarnings(as.numeric(getOption("EDI.ci_timeout_guard_sec", default = 0.5))[1L])
+			if (!is.finite(guard_sec) || guard_sec < 0) guard_sec = 0
+			if (unname(proc.time()[["elapsed"]]) >= deadline - guard_sec) {
 				stop(paste0(label, " reached elapsed time limit"), call. = FALSE)
 			}
 			invisible(FALSE)

@@ -32,6 +32,18 @@ is_separated_coefficient_magnitude = function(x, threshold = EDI_SEPARATION_THRE
   max(abs(x), na.rm = TRUE) > threshold
 }
 
+#' Whether an error is a timeout/interrupt control condition that must not be
+#' converted into an ordinary failed fit or failed resampling replicate.
+#' @keywords internal
+#' @noRd
+is_edi_control_condition = function(e){
+  msg = conditionMessage(e)
+  inherits(e, "TimeoutException") ||
+    inherits(e, "interrupt") ||
+    grepl("reached elapsed time limit", msg, fixed = TRUE) ||
+    grepl("reached CPU time limit", msg, fixed = TRUE)
+}
+
 # Closure to encapsulate the internal assertion override flag (used by SimulationFramework)
 .assert_manager = (function() {
   internal_run_asserts = TRUE
@@ -600,7 +612,7 @@ get_optimization_dispatch_policy = function() {
       "InferenceSurvivalWeibullRegr$" = "lbfgs",
       "InferenceSurvivalStratCoxPHRegr$" = "newton_raphson",
       "InferenceSurvivalKKClaytonCopulaOneLik$" = "lbfgs",
-      "InferenceIncidKKCondLogitPlusGLMMOneLik$"   = "lbfgs"
+      "InferenceIncidKKCondLogitGLMMOneLik$"   = "lbfgs"
     )
   )
 }
@@ -864,7 +876,7 @@ edi_warm_start_dispatch_policy = function(inference_class, operation, n = NULL) 
       return(FALSE)
     }
     if (identical(operation, "jackknife") &&
-        grepl("^InferenceIncidKKCondLogitPlusGLMMIVWC$", inference_class, perl = TRUE)) {
+        grepl("^InferenceIncidKKCondLogitGLMMIVWC$", inference_class, perl = TRUE)) {
       return(FALSE)
     }
   }
@@ -903,7 +915,7 @@ edi_warm_start_dispatch_policy = function(inference_class, operation, n = NULL) 
   if (!is.na(n_val) && n_val >= 500L) {
     if (identical(operation, "bayesian_boot") &&
         (grepl("^InferenceSurvivalKKClaytonCopulaOneLik$",  inference_class, perl = TRUE) ||
-         grepl("^InferenceIncidKKCondLogitPlusGLMMOneLik$", inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidKKCondLogitGLMMOneLik$", inference_class, perl = TRUE) ||
          grepl("^InferenceIncidModifiedPoisson$",           inference_class, perl = TRUE) ||
          grepl("^InferenceOrdinalKKCLMM$",                  inference_class, perl = TRUE) ||
          grepl("^InferencePropZeroOneInflatedBetaRegr$",    inference_class, perl = TRUE))) {
@@ -912,8 +924,8 @@ edi_warm_start_dispatch_policy = function(inference_class, operation, n = NULL) 
     if (identical(operation, "rand") &&
         (grepl("^InferenceContinRobustRegr$",               inference_class, perl = TRUE) ||
          grepl("^InferenceIncidBinomialIdentityRiskDiff$",  inference_class, perl = TRUE) ||
-         grepl("^InferenceIncidKKCondLogitPlusGLMMOneLik$", inference_class, perl = TRUE) ||
-         grepl("^InferenceIncidKKCondLogitPlusGLMMIVWC$",   inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidKKCondLogitGLMMOneLik$", inference_class, perl = TRUE) ||
+         grepl("^InferenceIncidKKCondLogitGLMMIVWC$",   inference_class, perl = TRUE) ||
          grepl("^InferenceIncidGCompRiskRatio$",            inference_class, perl = TRUE) ||
          grepl("^InferenceOrdinalKKCLMM$",                  inference_class, perl = TRUE))) {
       return(FALSE)
@@ -964,7 +976,7 @@ edi_warm_start_dispatch_policy = function(inference_class, operation, n = NULL) 
       return(FALSE)
     }
     if (identical(operation, "non_param_boot") &&
-        (grepl("^InferenceIncidKKCondLogitPlusGLMMOneLik$",inference_class, perl = TRUE) ||
+        (grepl("^InferenceIncidKKCondLogitGLMMOneLik$",inference_class, perl = TRUE) ||
          grepl("^InferenceIncidKKGCompRiskDiff$",          inference_class, perl = TRUE) ||
          grepl("^InferenceIncidRiskDiff$",                 inference_class, perl = TRUE) ||
          grepl("^InferenceOrdinalKKCLMM$",                 inference_class, perl = TRUE) ||

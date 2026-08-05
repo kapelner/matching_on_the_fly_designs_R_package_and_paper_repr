@@ -328,7 +328,7 @@ only the point estimate has.
 | `InferenceIncidBinomialIdentityRiskDiff` | `fast_identity_binomial_regression_cpp` | **Borderline** | Bias formulas are plausible but awkward because of boundary-sensitive parameterization. |
 | `InferenceIncidKKClogitOneLik` | stacked conditional-logistic + reservoir-logistic path via `fast_logistic_regression_with_var_cpp` | **Borderline** | Custom combined likelihood with no off-the-shelf bias formula. |
 | `InferenceIncidKKGLMM` | `fast_logistic_glmm_cpp` | **Difficult** | Quadrature GLMM likelihood with variance components is not a clean first-order bias-correction target. |
-| `InferenceIncidKKClogitPlusGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | **Difficult** | Hybrid conditional-logit plus GLMM structure is too bespoke. |
+| `InferenceIncidKKCondLogitGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | **Difficult** | Hybrid conditional-logit GLMM structure is too bespoke. |
 
 ### Count
 

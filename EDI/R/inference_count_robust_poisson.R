@@ -63,7 +63,10 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 							smart_cold_start = private$smart_cold_start_default,
 							warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
 						),
-						error = function(e) NULL
+						error = function(e) {
+							if (is_edi_control_condition(e)) stop(e)
+							NULL
+						}
 					)
 					if (is.null(res)) return(NULL)
 					list(b = res$b, XtWX = res$XtWX %||% res$fisher_information, ssq_b_2 = NA_real_)
@@ -118,16 +121,19 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 				X_cov = X_data[, intersect(X_cols, colnames(X_data)), drop = FALSE]
 				X = cbind(1, treatment = private$w, X_cov)
 			}
-			res = tryCatch(
-				fast_poisson_regression_cpp(
-					X = X, y = as.numeric(private$y),
-					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
-					smart_cold_start = private$smart_cold_start_default,
-					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X)),
-					estimate_only = TRUE
-				),
-				error = function(e) NULL
-			)
+				res = tryCatch(
+					fast_poisson_regression_cpp(
+						X = X, y = as.numeric(private$y),
+						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
+						smart_cold_start = private$smart_cold_start_default,
+						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X)),
+						estimate_only = TRUE
+					),
+					error = function(e) {
+						if (is_edi_control_condition(e)) stop(e)
+						NULL
+					}
+				)
 
 			if (is.null(res) || !is.finite(res$b[2])){
 				return(NA_real_)
@@ -156,7 +162,10 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit)),
 					estimate_only = estimate_only
 				),
-				error = function(e) NULL
+				error = function(e) {
+					if (is_edi_control_condition(e)) stop(e)
+					NULL
+				}
 			)
 
 			if (is.null(mod)){
@@ -175,7 +184,13 @@ InferenceCountRobustPoisson = R6::R6Class("InferenceCountRobustPoisson",
 			}
 			
 			cross_mat = mod$XtWX
-			bread = tryCatch(solve(cross_mat), error = function(e) NULL)
+			bread = tryCatch(
+				solve(cross_mat),
+				error = function(e) {
+					if (is_edi_control_condition(e)) stop(e)
+					NULL
+				}
+			)
 			if (is.null(bread)){
 				return(list(b = b_full, ssq_b_2 = NA_real_, X_fit = X_fit, j_treat = j_treat, mod = mod, XtWX = mod$XtWX))
 			}

@@ -97,7 +97,12 @@ InferenceRand = R6::R6Class("InferenceRand",
 				private$assert_design_supports_resampling("Randomization inference")
 				assertNumeric(delta); assertCount(r, positive = TRUE); assertFlag(debug)
 			}
-			if (is.null(permutations)) permutations = private$generate_permutations(r)
+			mc_control_for_perms = private$randomization_mc_control
+			defer_permutation_generation_for_mc =
+				is.null(permutations) &&
+				private$sequential_mc_control_enabled(mc_control_for_perms) &&
+				as.integer(mc_control_for_perms$mc_batch_size) < as.integer(r)
+			if (is.null(permutations) && !defer_permutation_generation_for_mc) permutations = private$generate_permutations(r)
 			setup = private$setup_randomization_template_and_shifts(delta, transform_responses, zero_one_logit_clamp)
 			has_custom_randomization_statistic =
 				!is.null(private[["custom_randomization_statistic_function"]]) ||
@@ -313,7 +318,12 @@ InferenceRand = R6::R6Class("InferenceRand",
 					stop("Randomization tests are not supported for incidence. Use Zhang method.")
 				}
 			}
-			if (is.null(permutations)) permutations = private$generate_permutations(r)
+			mc_control_for_perms = private$randomization_mc_control
+			defer_permutation_generation_for_mc =
+				is.null(permutations) &&
+				private$sequential_mc_control_enabled(mc_control_for_perms) &&
+				as.integer(mc_control_for_perms$mc_batch_size) < as.integer(r)
+			if (is.null(permutations) && !defer_permutation_generation_for_mc) permutations = private$generate_permutations(r)
 			if (identical(transform_responses, "none")) {
 				transform_responses = switch(
 					private$des_obj_priv_int$response_type,
@@ -373,7 +383,17 @@ InferenceRand = R6::R6Class("InferenceRand",
 						transform_responses,
 						zero_one_logit_clamp
 					)
+					deadline = suppressWarnings(as.numeric(getOption("EDI.ci_timeout_deadline", default = NA_real_))[1L])
+					check_deadline = function(label = "Randomization custom statistic") {
+						guard_sec = suppressWarnings(as.numeric(getOption("EDI.ci_timeout_guard_sec", default = 0.5))[1L])
+						if (!is.finite(guard_sec) || guard_sec < 0) guard_sec = 0
+						if (is.finite(deadline) && proc.time()[["elapsed"]] >= deadline - guard_sec) {
+							stop(paste0(label, " reached elapsed time limit"), call. = FALSE)
+						}
+						invisible(NULL)
+					}
 					t0s = vapply(seq_len(as.integer(r)), function(idx) {
+						if (idx == 1L || idx %% 25L == 0L) check_deadline()
 						private$run_randomization_iteration(
 							NULL,
 							NULL,
@@ -389,6 +409,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 							zero_one_logit_clamp = zero_one_logit_clamp
 						)
 					}, numeric(1))
+					check_deadline()
 					return(private$compute_two_sided_randomization_pval_from_t0s(t0s, t))
 				}
 			}
@@ -439,6 +460,15 @@ InferenceRand = R6::R6Class("InferenceRand",
 		compute_randomization_distr_via_reused_worker_states = function(permutations, delta, transform_responses, actual_rand_cores, show_progress, setup, zero_one_logit_clamp) {
 			nsim = if (!is.null(permutations$w_mat)) ncol(permutations$w_mat) else length(permutations)
 			if (!isTRUE(nsim > 0L)) return(numeric(0))
+			deadline = suppressWarnings(as.numeric(getOption("EDI.ci_timeout_deadline", default = NA_real_))[1L])
+			check_deadline = function(label = "Randomization reusable-worker draw") {
+				guard_sec = suppressWarnings(as.numeric(getOption("EDI.ci_timeout_guard_sec", default = 0.5))[1L])
+				if (!is.finite(guard_sec) || guard_sec < 0) guard_sec = 0
+				if (is.finite(deadline) && proc.time()[["elapsed"]] >= deadline - guard_sec) {
+					stop(paste0(label, " reached elapsed time limit"), call. = FALSE)
+				}
+				invisible(NULL)
+			}
 			get_perm_w = if (!is.null(permutations$w_mat)) {
 				w_mat_local = permutations$w_mat
 				function(i) w_mat_local[, i]
@@ -458,6 +488,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 				estimate_draw = private[[contract$estimator]]
 				out = numeric(length(idxs))
 				for (k in seq_along(idxs)) {
+					check_deadline()
 					perm_w = get_perm_w(idxs[k])
 					out[k] = tryCatch({
 						load_draw(
@@ -500,6 +531,7 @@ InferenceRand = R6::R6Class("InferenceRand",
 						}
 					}
 				}
+				check_deadline()
 				out
 			}
 			if (actual_rand_cores <= 1L) return(as.numeric(run_chunk(seq_len(nsim))))

@@ -1,13 +1,21 @@
+#ifdef EDI_CORE_ONLY
+#include <Eigen/Dense>
+constexpr double NA_REAL = std::numeric_limits<double>::quiet_NaN();
+inline bool R_IsNA(double x) { return std::isnan(x); }
+#else
 #include <RcppEigen.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+#endif
 #include <algorithm> // for std::sort
 #include <cmath>
 #include <limits>
 #include <vector>
-#ifdef _OPENMP
-#include <omp.h>
-#endif
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 using namespace Eigen;
 
 // File-local struct and helper for the parallel BRT kernel.
@@ -58,6 +66,105 @@ inline double km_stat_inline(SurvEntry* grp, int ng, bool do_rmst,
 
 } // namespace
 
+// Portable (EDI_CORE_ONLY-safe) sibling of get_survival_stat_for_group
+// below: identical KM-median/RMST algorithm, just Eigen::Ref inputs instead
+// of SEXP, so a separate Python binding translation unit can call it
+// (and get_survival_stat_diff_result below, in the same TU, avoiding that
+// function's wrap()/SEXP round-trip through get_survival_stat_for_group).
+double get_survival_stat_for_group_result(const Eigen::Ref<const Eigen::VectorXd>& y,
+                                          const Eigen::Ref<const Eigen::VectorXi>& dead,
+                                          const std::string& requested_stat) {
+    int n = static_cast<int>(y.size());
+    if (n == 0) return NA_REAL;
+
+    struct Subject { double time; int status; };
+    std::vector<Subject> subjects(n);
+    for (int i = 0; i < n; ++i) subjects[i] = {y[i], dead[i]};
+    std::sort(subjects.begin(), subjects.end(), [](const Subject& a, const Subject& b) {
+        return a.time < b.time;
+    });
+
+    double survival_prob = 1.0;
+    std::vector<double> unique_times;
+    std::vector<double> survival_probs;
+    unique_times.push_back(0.0);
+    survival_probs.push_back(1.0);
+
+    for (int i = 0; i < n; ) {
+        double current_time = subjects[i].time;
+        int at_risk_at_time = n - i;
+        int event_count_at_time = 0;
+
+        int j = i;
+        while (j < n && subjects[j].time == current_time) {
+            if (subjects[j].status == 1) event_count_at_time++;
+            j++;
+        }
+
+        if (event_count_at_time > 0) {
+            survival_prob *= (1.0 - (double)event_count_at_time / at_risk_at_time);
+            unique_times.push_back(current_time);
+            survival_probs.push_back(survival_prob);
+        }
+
+        i = j;
+    }
+
+    if (requested_stat == "median") {
+        const double tol = std::sqrt(std::numeric_limits<double>::epsilon());
+        for (size_t i = 0; i < survival_probs.size(); ++i) {
+            if (survival_probs[i] <= 0.5) {
+                if (std::abs(survival_probs[i] - 0.5) < tol && i + 1 < survival_probs.size()) {
+                    return 0.5 * (unique_times[i] + unique_times[i + 1]);
+                }
+                return unique_times[i];
+            }
+        }
+        return NA_REAL;
+    } else if (requested_stat == "restricted_mean") {
+        double restricted_mean = 0.0;
+        for (size_t i = 0; i < unique_times.size() - 1; ++i) {
+            restricted_mean += survival_probs[i] * (unique_times[i + 1] - unique_times[i]);
+        }
+        if (unique_times.size() > 1) {
+            restricted_mean += survival_probs.back() * (subjects.back().time - unique_times.back());
+        }
+        return restricted_mean;
+    }
+
+    return NA_REAL;
+}
+
+// Portable (EDI_CORE_ONLY-safe) sibling of get_survival_stat_diff below.
+double get_survival_stat_diff_result(const Eigen::Ref<const Eigen::VectorXd>& y,
+                                     const Eigen::Ref<const Eigen::VectorXi>& dead,
+                                     const Eigen::Ref<const Eigen::VectorXi>& w,
+                                     const std::string& requested_stat) {
+    std::vector<double> y_control_std, y_treatment_std;
+    std::vector<int> dead_control_std, dead_treatment_std;
+    for (int i = 0; i < w.size(); ++i) {
+        if (w[i] == 0) {
+            y_control_std.push_back(y[i]);
+            dead_control_std.push_back(dead[i]);
+        } else {
+            y_treatment_std.push_back(y[i]);
+            dead_treatment_std.push_back(dead[i]);
+        }
+    }
+
+    Eigen::Map<const Eigen::VectorXd> y_control(y_control_std.data(), y_control_std.size());
+    Eigen::Map<const Eigen::VectorXi> dead_control(dead_control_std.data(), dead_control_std.size());
+    Eigen::Map<const Eigen::VectorXd> y_treatment(y_treatment_std.data(), y_treatment_std.size());
+    Eigen::Map<const Eigen::VectorXi> dead_treatment(dead_treatment_std.data(), dead_treatment_std.size());
+
+    double stat_control = get_survival_stat_for_group_result(y_control, dead_control, requested_stat);
+    double stat_treatment = get_survival_stat_for_group_result(y_treatment, dead_treatment, requested_stat);
+
+    if (R_IsNA(stat_treatment) || R_IsNA(stat_control)) return NA_REAL;
+    return stat_treatment - stat_control;
+}
+
+#ifndef EDI_CORE_ONLY
 //' Calculates the median or restricted mean survival time for a single group
 //'
 //' @param y Numeric vector of survival times.
@@ -454,3 +561,4 @@ NumericVector compute_survival_stat_diff_rand_bootstrap_serial_cpp(
 
   return results;
 }
+#endif // EDI_CORE_ONLY

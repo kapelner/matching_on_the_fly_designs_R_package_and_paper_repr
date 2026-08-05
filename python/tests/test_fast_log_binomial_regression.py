@@ -15,12 +15,20 @@ The expected values below were computed once via:
 in R, on the exact same synthetic dataset (small risk, for IRLS stability
 under the log link) generated below with numpy.random.default_rng(105).
 
-IMPORTANT default mismatch found while building this fixture: R's tol
-default for this kernel is 1e-8 (see EDI/R/RcppExports.R), but the Python
-binding's tol default is 1e-6 (python/cpp/bindings_binary.cpp,
-bind_constrained_binomial) -- a real, worth-fixing drift, not intentional.
-Every call below passes tol=1e-8 explicitly to match R's fixture; without
-that, results agree only to ~1e-7, not the 1e-9 this test enforces.
+NOTE (corrected 2026-08-05): an earlier pass through this file claimed R's
+tol default here was 1e-8 versus Python's 1e-6, and called it a real
+mismatch worth fixing. That was wrong -- EDI/R/RcppExports.R and
+EDI/src/fast_log_binomial_regression.cpp both show R's own default is
+tol=1e-6, identical to the Python binding's (python/cpp/bindings_binary.cpp,
+bind_constrained_binomial). No R/Python default drift exists for this
+kernel's tol. (The likely source of the earlier confusion:
+fast_neg_bin_cpp, a different kernel, has an unused eps_f=1e-8 parameter
+sitting next to eps_g=1e-6 in its own signature.) Every call below still
+passes tol=1e-8 explicitly -- not to match a differing R default, but
+because it's a tighter convergence criterion than either side's 1e-6
+default, chosen for fixture numerical stability at this test's
+atol=rtol=1e-9. Both the R fixture and the Python call use the same
+explicit tol=1e-8, so this is an apples-to-apples comparison either way.
 """
 import numpy as np
 import pytest

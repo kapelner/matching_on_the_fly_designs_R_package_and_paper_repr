@@ -36,6 +36,13 @@ GEEResult gee_pairs_singletons_cpp_impl(
     int maxit, double tol
 );
 
+struct MNCIBounds { double lower; double upper; };
+double mn_pvalue_cpp(double x_t, double n_t, double x_c, double n_c, double delta, double p_t_obs, double p_c_obs);
+MNCIBounds mn_ci_internal(double x_t, double n_t, double x_c, double n_c, double p_t_obs, double p_c_obs, double alpha, double pval_epsilon);
+
+struct NewcombeCIBounds { double lower; double upper; };
+NewcombeCIBounds newcombe_independent_ci_internal(double x1, double n1, double x2, double n2, double alpha);
+
 void bind_incidence(py::module_& m) {
     m.def("gee_pairs_singletons", [](const Eigen::Ref<const Eigen::MatrixXd>& X,
                                       const Eigen::Ref<const Eigen::VectorXd>& y,
@@ -90,4 +97,36 @@ void bind_incidence(py::module_& m) {
     py::arg("tol") = 1e-8,
     "Fast GEE (singleton/pair clusters only) via Fisher scoring. "
     "family is one of 'gaussian', 'binomial', 'poisson'.");
+
+    m.def("mn_ci", [](double x_t, double n_t, double x_c, double n_c, double p_t_obs, double p_c_obs,
+                       double alpha, double pval_epsilon) {
+        MNCIBounds r = mn_ci_internal(x_t, n_t, x_c, n_c, p_t_obs, p_c_obs, alpha, pval_epsilon);
+        py::tuple out(2);
+        out[0] = r.lower;
+        out[1] = r.upper;
+        return out;
+    },
+    py::arg("x_t"), py::arg("n_t"), py::arg("x_c"), py::arg("n_c"),
+    py::arg("p_t_obs"), py::arg("p_c_obs"),
+    py::arg("alpha") = 0.05,
+    py::arg("pval_epsilon") = 1e-7,
+    "Miettinen-Nurminen score confidence interval for a risk difference "
+    "(inverts the constrained score test via bisection). Returns (lower, upper).");
+
+    m.def("mn_pvalue", &mn_pvalue_cpp,
+    py::arg("x_t"), py::arg("n_t"), py::arg("x_c"), py::arg("n_c"),
+    py::arg("delta"), py::arg("p_t_obs"), py::arg("p_c_obs"),
+    "Miettinen-Nurminen two-sided score p-value for testing risk difference = delta.");
+
+    m.def("newcombe_independent_ci", [](double x1, double n1, double x2, double n2, double alpha) {
+        NewcombeCIBounds r = newcombe_independent_ci_internal(x1, n1, x2, n2, alpha);
+        py::tuple out(2);
+        out[0] = r.lower;
+        out[1] = r.upper;
+        return out;
+    },
+    py::arg("x1"), py::arg("n1"), py::arg("x2"), py::arg("n2"),
+    py::arg("alpha") = 0.05,
+    "Newcombe hybrid score confidence interval for independent proportions "
+    "(Method 10). Returns (lower, upper).");
 }

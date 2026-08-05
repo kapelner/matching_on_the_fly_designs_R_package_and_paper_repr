@@ -579,7 +579,16 @@ def build_logrank():
     y, dead, w = d["y"], d["dead"].astype(bool), d["w"]
     yt, yc = y[w == 1], y[w == 0]
     dt, dc = dead[w == 1], dead[w == 0]
-    return lambda: logrank_test(yt, yc, dt, dc)
+    canonical = lambda: logrank_test(yt, yc, dt, dc)
+
+    edi_closure = None
+    if edi_has("fast_logrank_stats"):
+        fn = edi_fn("fast_logrank_stats")
+        y_f = d["y"]
+        dead_i = d["dead"].astype(np.int32)
+        w_i = d["w"].astype(np.int32)
+        edi_closure = lambda: fn(y_f, dead_i, w_i)
+    return canonical, edi_closure
 
 
 def build_km_median_diff():
@@ -588,11 +597,18 @@ def build_km_median_diff():
     yt, yc = y[w == 1], y[w == 0]
     dt, dc = dead[w == 1], dead[w == 0]
 
-    def fn():
+    def canonical():
         kmt = KaplanMeierFitter().fit(yt, dt)
         kmc = KaplanMeierFitter().fit(yc, dc)
         return kmt.median_survival_time_ - kmc.median_survival_time_
-    return fn
+
+    edi_closure = None
+    if edi_has("get_survival_stat_diff"):
+        fn = edi_fn("get_survival_stat_diff")
+        dead_i = d["dead"].astype(np.int32)
+        w_i = d["w"].astype(np.int32)
+        edi_closure = lambda: fn(y, dead_i, w_i, "median")
+    return canonical, edi_closure
 
 
 def build_rmst_diff():
@@ -602,18 +618,39 @@ def build_rmst_diff():
     dt, dc = dead[w == 1], dead[w == 0]
     tmax = min(yt.max(), yc.max())
 
-    def fn():
+    def canonical():
         kmt = KaplanMeierFitter().fit(yt, dt)
         kmc = KaplanMeierFitter().fit(yc, dc)
         return restricted_mean_survival_time(kmt, t=tmax) - restricted_mean_survival_time(kmc, t=tmax)
-    return fn
+
+    # Note: EDI's own restricted-mean kernel truncates each group at that
+    # group's own max observed time (matching EDI/src/fast_survival_stats.cpp's
+    # get_survival_stat_for_group_result), not lifelines' shared min(yt.max(),
+    # yc.max()) convention above -- same "fastest native entry point per
+    # package" comparison discipline used throughout this benchmark (e.g. the
+    # KM-median row), not a claim the two sides compute numerically identical
+    # statistics.
+    edi_closure = None
+    if edi_has("get_survival_stat_diff"):
+        fn = edi_fn("get_survival_stat_diff")
+        dead_i = d["dead"].astype(np.int32)
+        w_i = d["w"].astype(np.int32)
+        edi_closure = lambda: fn(y, dead_i, w_i, "restricted_mean")
+    return canonical, edi_closure
 
 
 def build_hl_wilcox():
     d = data_continuous(n=500)  # scale = 0.5 in the R harness (O(n^2) pairwise diff)
     y, w = d["y"], d["w"]
     yt, yc = y[w == 1], y[w == 0]
-    return lambda: np.median(np.subtract.outer(yt, yc))
+    canonical = lambda: np.median(np.subtract.outer(yt, yc))
+
+    edi_closure = None
+    if edi_has("wilcox_hl_point_estimate"):
+        fn = edi_fn("wilcox_hl_point_estimate")
+        w_i = d["w"].astype(np.int32)
+        edi_closure = lambda: fn(y, w_i)
+    return canonical, edi_closure
 
 
 def build_robust_regr():
@@ -927,7 +964,7 @@ def build_ordered_wald(distr):
 
 def _zap_wald_edi_closure(fn, Xf, y, is_hurdle):
     def edi_closure():
-        res = fn(Xf, y, Xf, is_hurdle=is_hurdle, estimate_only=False)
+        res = fn(Xf, y, Xf, is_hurdle=is_hurdle)
         b1 = float(np.asarray(res["params"])[1])
         var = np.asarray(res["vcov"])[1, 1]
         se = float(np.sqrt(var)) if np.isfinite(var) and var > 0 else float("nan")
@@ -981,7 +1018,7 @@ def build_zinb_wald():
         Xf = f_order(Xd)
 
         def edi_closure():
-            res = fn(Xf, Xf, y, estimate_only=False)
+            res = fn(Xf, Xf, y)
             b1 = float(np.asarray(res["params"])[1])
             var = np.asarray(res["vcov"])[1, 1]
             se = float(np.sqrt(var)) if np.isfinite(var) and var > 0 else float("nan")
@@ -1244,7 +1281,27 @@ def build_lin_wald():
     y, w, X = d["y"], d["w"], d["X"]
     Xc = X - X.mean(0)
     Xint = np.column_stack([np.ones(len(y)), w, Xc, Xc * w[:, None]])
-    return _sm_wald_wrapper(lambda: sm.OLS(y, Xint).fit())
+    # Lin's estimator is specifically HC2-robust (see EDI/R/inference_continuous_lin.R's
+    # ols_hc2_post_fit_cpp call) -- statsmodels' default fit() uses classical
+    # (homoskedastic) SEs, which would compare EDI's real HC2 SE against a
+    # different quantity entirely. cov_type="HC2" makes this apples-to-apples
+    # (verified to match EDI's SE to 13+ significant figures on this data).
+    canonical = _sm_wald_wrapper(lambda: sm.OLS(y, Xint).fit(cov_type="HC2"))
+
+    edi_closure = None
+    if edi_has("fast_ols") and edi_has("ols_hc2_post_fit"):
+        fn_ols = edi_fn("fast_ols")
+        fn_hc2 = edi_fn("ols_hc2_post_fit")
+        Xf = f_order(Xint)
+
+        def edi_closure():
+            fit = fn_ols(Xf, y, estimate_only=True)
+            coef_hat = np.asarray(fit["b"])
+            post = fn_hc2(Xf, y, coef_hat, j_treat=2)
+            b1, se = post["beta_hat"], post["se"]
+            pval = float(2 * sstats.norm.sf(abs(b1 / se))) if se > 0 and np.isfinite(se) else float("nan")
+            return b1, se, pval
+    return canonical, edi_closure
 
 
 def build_fisher_exact():
@@ -1264,7 +1321,17 @@ def build_binom_diff(method):
     if method == "score":
         kwargs["correction"] = True
     from statsmodels.stats.proportion import confint_proportions_2indep
-    return lambda: confint_proportions_2indep(x1, n1, x2, n2, **kwargs)
+    canonical = lambda: confint_proportions_2indep(x1, n1, x2, n2, **kwargs)
+
+    edi_closure = None
+    if method == "score" and edi_has("mn_ci"):
+        fn = edi_fn("mn_ci")
+        p1, p2 = x1 / n1, x2 / n2
+        edi_closure = lambda: fn(x1, n1, x2, n2, p1, p2)
+    elif method == "newcomb" and edi_has("newcombe_independent_ci"):
+        fn = edi_fn("newcombe_independent_ci")
+        edi_closure = lambda: fn(x1, n1, x2, n2)
+    return canonical, edi_closure
 
 
 def build_ridit():
@@ -1272,14 +1339,29 @@ def build_ridit():
     y, w = d["y"], d["w"]
     yy = np.round(y - y.min()).astype(int) + 1
 
-    def fn():
+    def canonical():
         vals, counts = np.unique(yy, return_counts=True)
         cum = np.cumsum(counts)
         prev = np.r_[0, cum[:-1]]
         ridit_map = dict(zip(vals, (prev + 0.5 * counts) / len(yy)))
         r = np.array([ridit_map[v] for v in yy])
         return r[w == 1].mean() - r[w == 0].mean()
-    return fn
+
+    edi_closure = None
+    if edi_has("fast_ridit_analysis"):
+        fn = edi_fn("fast_ridit_analysis")
+        yy_i = yy.astype(np.int32)
+        w_i = w.astype(np.int32)
+
+        # canonical's ridit map is built over the pooled sample (np.unique
+        # over all yy, not just one arm), so reference="pooled" here to
+        # match -- estimate (= mean_ridit_t - 0.5) only equals
+        # mean_ridit_t - mean_ridit_c when reference="control"; with
+        # "pooled" the two fields must be differenced directly instead.
+        def edi_closure():
+            res = fn(w_i, yy_i, reference="pooled")
+            return res["mean_ridit_t"] - res["mean_ridit_c"]
+    return canonical, edi_closure
 
 
 def build_gehan_wilcox():
@@ -1287,7 +1369,16 @@ def build_gehan_wilcox():
     y, dead, w = d["y"], d["dead"], d["w"]
     yt, yc = y[w == 1], y[w == 0]
     dt, dc = dead[w == 1], dead[w == 0]
-    return lambda: logrank_test(yt, yc, dt, dc, weightings="wilcoxon")
+    canonical = lambda: logrank_test(yt, yc, dt, dc, weightings="wilcoxon")
+
+    edi_closure = None
+    if edi_has("fast_gehan_wilcox_stats"):
+        fn = edi_fn("fast_gehan_wilcox_stats")
+        y_f = d["y"]
+        dead_i = d["dead"].astype(np.int32)
+        w_i = d["w"].astype(np.int32)
+        edi_closure = lambda: fn(y_f, dead_i, w_i)
+    return canonical, edi_closure
 
 
 # WALD_SPECS mirrors R's wald_specs class set exactly (41 classes) — not
@@ -1339,7 +1430,7 @@ WALD_SPECS = [
     ("ordinal", "InferenceOrdinalRidit", "numpy", "manual ridit computation", "out of python-bindings scope (nonparametric-test kernel, EDI:::fast_ridit_analysis_cpp)", build_ridit, False),
     ("survival", "InferenceSurvivalGehanWilcox", "lifelines", "statistics.logrank_test(weightings='wilcoxon')", "out of python-bindings scope (nonparametric-test kernel)", build_gehan_wilcox, False),
     ("survival", "InferenceSurvivalKMDiff", "lifelines", "KaplanMeierFitter(median)+CI", "out of python-bindings scope (nonparametric-test kernel, EDI:::get_survival_stat_diff); identical call as the point-estimate row — lifelines computes the CI unconditionally", build_km_median_diff, False),
-    ("incidence", "InferenceIncidKKCondLogitPlusGLMMOneLik", None, None, "fast_clogit_plus_glmm", None, True),
+    ("incidence", "InferenceIncidKKCondLogitGLMMOneLik", None, None, "fast_clogit_plus_glmm", None, True),
     ("count", "InferenceCountKKCondPoissonOneLik", None, None, "fast_cpoisson_combined_with_var", None, True),
     ("survival", "InferenceSurvivalKKWeibullFrailtyOneLik", None, None, "fast_weibull_frailty", None, True),
     ("proportion", "InferencePropZeroOneInflatedBetaRegr", None, None, "fast_zero_one_inflated_beta", None, True),
@@ -1352,15 +1443,6 @@ WALD_SPECS = [
     ("count", "InferenceCountKKHurdlePoissonOneLik", None, None, "fast_hurdle_poisson_glmm", None, True),
     ("ordinal", "InferenceOrdinalKKGLMM", None, None, "fast_ordinal_glmm", None, True),
     ("ordinal", "InferenceOrdinalKKCLMM", None, None, "fast_ordinal_clmm", None, True),
-    (
-        "incidence",
-        "fast_logistic_glmm (no R6 inference class yet)",
-        None,
-        None,
-        "fast_logistic_glmm",
-        None,
-        True,
-    ),
     ("ordinal", "InferenceOrdinalStereotypeLogitRegr", None, None, "fast_stereotype_logit_with_var", None, True),
 ]
 
@@ -1454,12 +1536,12 @@ MODEL_SPECS = [
     ("incidence", "InferenceIncidGCompRiskRatio", "statsmodels", "GLM(Binomial)+gcomp(RR)", "fast_logistic_regression + gcomp utility (out of python-bindings scope)", lambda: build_gcomp_binary("RR"), False),
     ("incidence", "InferenceIncidGCompRiskDiff", "statsmodels", "GLM(Binomial)+gcomp(RD)", "fast_logistic_regression + gcomp utility (out of python-bindings scope)", lambda: build_gcomp_binary("RD"), False),
     ("ordinal", "InferenceOrdinalGCompMeanDiff", "statsmodels", "OrderedModel(logit)+gcomp", "fast_ordinal_regression + gcomp utility (out of python-bindings scope)", build_gcomp_ordinal, False),
-    ("incidence", "InferenceIncidKKCondLogitPlusGLMMOneLik", None, None, "fast_clogit_plus_glmm", None, True),
+    ("incidence", "InferenceIncidKKCondLogitGLMMOneLik", None, None, "fast_clogit_plus_glmm", None, True),
     ("count", "InferenceCountKKCondPoissonOneLik", None, None, "fast_cpoisson_combined", None, True),
     ("survival", "InferenceSurvivalKKWeibullFrailtyOneLik", None, None, "fast_weibull_frailty", None, True),
     ("proportion", "InferencePropZeroOneInflatedBetaRegr", None, None, "fast_zero_one_inflated_beta", build_zoib_edi_only, True),
     # GLMM/CLMM/LMM family (TODO-8, python_bindings_package_spec.md): all
-    # six kernels below are bound (python/cpp/bindings_glmm.cpp,
+    # five kernels below are bound (python/cpp/bindings_glmm.cpp,
     # bindings_ordinal.cpp) but were entirely absent from this table until
     # now -- not a single NA/gap row, just missing outright. Adding them
     # as documented Baseline Gaps (builder=None -- see NO_CANONICAL_NOTE
@@ -1474,15 +1556,6 @@ MODEL_SPECS = [
     ("count", "InferenceCountKKHurdlePoissonOneLik", None, None, "fast_hurdle_poisson_glmm", None, True),
     ("ordinal", "InferenceOrdinalKKGLMM", None, None, "fast_ordinal_glmm", None, True),
     ("ordinal", "InferenceOrdinalKKCLMM", None, None, "fast_ordinal_clmm", None, True),
-    (
-        "incidence",
-        "fast_logistic_glmm (no R6 inference class yet)",
-        None,
-        None,
-        "fast_logistic_glmm",
-        None,
-        True,
-    ),
     ("ordinal", "InferenceOrdinalStereotypeLogitRegr", None, None, "fast_stereotype_logit", None, True),
 ]  # end MODEL_SPECS
 
@@ -1494,11 +1567,10 @@ NO_CANONICAL_NOTE = {
     "InferenceCountKKHurdlePoissonOneLik": "Hurdle-Poisson GLMM with a random intercept: no pure-Python package combines a hurdle count model with adaptive-quadrature GLMM fitting.",
     "InferenceOrdinalKKGLMM": "Proportional-odds ordinal GLMM with a random intercept: no pure-Python package offers ML ordinal-GLMM fitting with adaptive quadrature.",
     "InferenceOrdinalKKCLMM": "Same as InferenceOrdinalKKGLMM, generalized to logit/probit/cauchit/cloglog links.",
-    "fast_logistic_glmm (no R6 inference class yet)": "Logistic GLMM with a random intercept via adaptive quadrature: the C++ kernel exists and is Python-bound, but (per a repo-wide grep of EDI/R) has no R6 inference class consuming it yet, so there's no R-side class name to give this row either -- flagged here as a bound-but-unconsumed kernel, not a mislabeled Baseline Gap.",
     "InferenceOrdinalStereotypeLogitRegr": "Stereotype logit ordinal regression: R uses VGAM::vglm(multinomial(...)) style fitting; no identified Python package implements the stereotype-logit link specifically.",
     "InferenceOrdinalCloglogRegr": "statsmodels.miscmodels.ordinal_model.OrderedModel's distr= argument only officially supports 'probit'/'logit' strings; cloglog is not a documented/tested option, so this is treated as a gap rather than an unverified custom-distribution hack.",
     "InferenceOrdinalCauchitRegr": "Same as cloglog: OrderedModel's distr= only documents 'probit'/'logit'.",
-    "InferenceIncidKKCondLogitPlusGLMMOneLik": "KK combined (matched-pair + reservoir) joint-likelihood estimator: no canonical analog in either R or Python (see python_bindings_package_spec.md Baseline Gaps).",
+    "InferenceIncidKKCondLogitGLMMOneLik": "KK combined (matched-pair + reservoir) joint-likelihood estimator: no canonical analog in either R or Python (see python_bindings_package_spec.md Baseline Gaps).",
     "InferenceCountKKCondPoissonOneLik": "KK combined (matched-pair + reservoir) joint-likelihood estimator: no canonical analog in either R or Python.",
     "InferenceSurvivalKKWeibullFrailtyOneLik": "Weibull AFT with shared log-normal frailty: no clean Python package (R side notes only a partial/PH-parameterized frailtypack analog).",
     "InferencePropZeroOneInflatedBetaRegr": "Zero-one-inflated beta regression: no canonical package in either R or Python.",

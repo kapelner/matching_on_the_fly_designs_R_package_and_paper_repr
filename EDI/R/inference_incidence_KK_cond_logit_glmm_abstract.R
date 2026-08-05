@@ -1,18 +1,18 @@
-#' Abstract Conditional Logistic Plus GLMM Inference
+#' Abstract Conditional Logistic GLMM Inference
 #'
 #' Fits one likelihood with a conditional-logistic contribution from discordant
 #' matched pairs and a random-intercept logistic GLMM contribution from concordant
 #' matched pairs and reservoir subjects.
 #'
 #' @keywords internal
-InferenceAbstractKKCondLogitPlusGLMM = R6::R6Class("InferenceAbstractKKCondLogitPlusGLMM",
+InferenceAbstractKKCondLogitGLMM = R6::R6Class("InferenceAbstractKKCondLogitGLMM",
 	lock_objects = FALSE,
 	inherit = InferenceParamBootstrap,
 	public = as.list(modifyList(as.list(InferenceMixinKKPassThrough$public), list(
-		#' @description Initialize KK conditional-logit plus GLMM incidence
+		#' @description Initialize KK conditional-logit GLMM incidence
 		#'   inference, validate the binary response, and prepare the matched-pair
 		#'   conditional likelihood and reservoir mixed-model components. See
-		#'   \code{\link[EDI:InferenceAbstractKKCondLogitPlusGLMM]{InferenceAbstractKKCondLogitPlusGLMM}}.
+		#'   \code{\link[EDI:InferenceAbstractKKCondLogitGLMM]{InferenceAbstractKKCondLogitGLMM}}.
 		#' @param des_obj A completed \code{Design} object with an incidence or proportion response.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param max_abs_reasonable_coef Cap for reasonable coefficient estimates.
@@ -128,7 +128,7 @@ InferenceAbstractKKCondLogitPlusGLMM = R6::R6Class("InferenceAbstractKKCondLogit
 		}
 	))),
 	private = as.list(modifyList(as.list(InferenceMixinKKPassThrough$private), list(
-		is_a_kk_cond_logit_plus_glmm = function() TRUE,
+		is_a_kk_cond_logit_glmm = function() TRUE,
 		max_abs_reasonable_coef = 50,
 		max_abs_reasonable_se = 10,
 		max_abs_log_sigma = 8,

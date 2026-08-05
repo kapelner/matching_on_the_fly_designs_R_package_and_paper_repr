@@ -2668,11 +2668,14 @@ SimulationFramework = R6::R6Class("SimulationFramework",
     .log_skip = function(rep, design, inference, inference_type) {
       invisible(NULL)
     },
-    .supports_exact_inference = function(inf_obj) {
+    .supports_inference_capability = function(inf_obj, capability, fallback_class = NULL) {
       isTRUE(tryCatch(
-        inf_obj$supports("exact_test")[["exact_test"]],
+        inf_obj$supports(capability)[[capability]],
         error = function(e) FALSE
-      )) || is(inf_obj, "InferenceExact")
+      )) || (!is.null(fallback_class) && is(inf_obj, fallback_class))
+    },
+    .supports_exact_inference = function(inf_obj) {
+      private$.supports_inference_capability(inf_obj, "exact_test", "InferenceExact")
     },
     .valid_inference_types = function(inf_obj) {
       valid_inference_types = character(0L)
@@ -2694,12 +2697,12 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           intersect(private$inf_types, c("boot_ci", "boot_pval"))
         )
       }
-      if (is(inf_obj, "InferenceRand")) {
+      if (private$.supports_inference_capability(inf_obj, "randomization_test")) {
         valid_inference_types = c(
           valid_inference_types,
           intersect(private$inf_types, "rand_pval")
         )
-        if (is(inf_obj, "InferenceRandCI") &&
+        if (private$.supports_inference_capability(inf_obj, "randomization_ci") &&
             private$current_response_type %in% c("continuous", "proportion", "count")) {
           valid_inference_types = c(
             valid_inference_types,
@@ -2827,6 +2830,15 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           ))
         }
         NULL
+      }
+      supports_inference_capability = function(inf_obj, capability, fallback_class = NULL) {
+        isTRUE(tryCatch(
+          inf_obj$supports(capability)[[capability]],
+          error = function(e) FALSE
+        )) || (!is.null(fallback_class) && is(inf_obj, fallback_class))
+      }
+      supports_exact_inference = function(inf_obj) {
+        supports_inference_capability(inf_obj, "exact_test", "InferenceExact")
       }
       state_for_rep = function() {
         state$rep = current_rep_i
@@ -3129,13 +3141,13 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           valid_inference_types = character(0)
           if (is(inf_obj, "InferenceAsymp")) 
             valid_inference_types = c(valid_inference_types, intersect(state$inf_types, c("asymp_ci", "asymp_pval")))
-          if (private$.supports_exact_inference(inf_obj))
+          if (supports_exact_inference(inf_obj))
             valid_inference_types = c(valid_inference_types, intersect(state$inf_types, c("exact_ci", "exact_pval")))
           if (is(inf_obj, "InferenceNonParamBootstrap"))
             valid_inference_types = c(valid_inference_types, intersect(state$inf_types, c("boot_ci", "boot_pval")))
-          if (is(inf_obj, "InferenceRand")) {
+          if (supports_inference_capability(inf_obj, "randomization_test")) {
             valid_inference_types = c(valid_inference_types, intersect(state$inf_types, "rand_pval"))
-            if (is(inf_obj, "InferenceRandCI") && state$response_type %in% c("continuous", "proportion", "count"))
+            if (supports_inference_capability(inf_obj, "randomization_ci") && state$response_type %in% c("continuous", "proportion", "count"))
               valid_inference_types = c(valid_inference_types, intersect(state$inf_types, "rand_ci"))
           }
           # Result key and pending check
@@ -3274,7 +3286,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             }
           }
           
-          if (private$.supports_exact_inference(inf_obj) && any(c("exact_ci", "exact_pval") %in% pending_inference_types)) {
+          if (supports_exact_inference(inf_obj) && any(c("exact_ci", "exact_pval") %in% pending_inference_types)) {
             if ("exact_pval" %in% pending_inference_types) {
               args = get_args("exact_pval")
               pval_e = tryCatch(do.call(inf_obj$compute_exact_two_sided_pval_for_treatment_effect, args), error = function(e) {
@@ -3380,7 +3392,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             }
           }
           
-          if (is(inf_obj, "InferenceRand") && any(c("rand_ci", "rand_pval") %in% pending_inference_types)) {
+          if (supports_inference_capability(inf_obj, "randomization_test") && any(c("rand_ci", "rand_pval") %in% pending_inference_types)) {
             if ("rand_pval" %in% pending_inference_types) {
               args = get_args("rand_pval", list(r = state$r_rand, na.rm = TRUE, show_progress = FALSE))
               pval_r = tryCatch(do.call(inf_obj$compute_rand_two_sided_pval, args), error = function(e) {
@@ -3406,7 +3418,9 @@ SimulationFramework = R6::R6Class("SimulationFramework",
               if (is.list(pval_r) && !is.null(pval_r$fatal_error)) return(pval_r)
               local_record("rand_pval", c(NA_real_, NA_real_), pval_r)
             }
-            if ("rand_ci" %in% pending_inference_types && is(inf_obj, "InferenceRandCI") && state$response_type %in% c("continuous", "proportion", "count")) {
+            if ("rand_ci" %in% pending_inference_types &&
+                supports_inference_capability(inf_obj, "randomization_ci") &&
+                state$response_type %in% c("continuous", "proportion", "count")) {
               args = get_args("rand_ci", list(r = state$r_rand, alpha = state$alpha, pval_epsilon = state$pval_epsilon, show_progress = FALSE))
               ci_r = tryCatch(do.call(inf_obj$compute_rand_confidence_interval, args), error = function(e) {
                 fatal = handle_error(make_error(

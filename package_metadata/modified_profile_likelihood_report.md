@@ -194,7 +194,7 @@ each constrained fit visited during inversion.
 | `InferenceIncidBinomialIdentityRiskDiff` | `fast_identity_binomial_regression_cpp` | **Borderline** | Same as above, though somewhat more awkward algebraically. |
 | `InferenceIncidKKClogitOneLik` | stacked conditional-logistic + reservoir-logistic path via `fast_logistic_regression_with_var_cpp` | **Borderline** | Custom combined likelihood with meaningful nuisance structure, but not plug-and-play. |
 | `InferenceIncidKKGLMM` | `fast_logistic_glmm_cpp` | **Easy** | Variance components are classic nuisance parameters for modified-profile treatment-effect inference. |
-| `InferenceIncidKKClogitPlusGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | **Difficult** | Hybrid conditional-logit plus GLMM structure is too bespoke for a clean shared implementation. |
+| `InferenceIncidKKCondLogitGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | **Difficult** | Hybrid conditional-logit GLMM structure is too bespoke for a clean shared implementation. |
 
 ### Count
 
@@ -301,7 +301,7 @@ These are poor targets for a common modified-profile rollout:
 - frailty models
 - copula models
 - dependent-censoring transform likelihood
-- custom hybrids like `InferenceIncidKKClogitPlusGLMMOneLik` and
+- custom hybrids like `InferenceIncidKKCondLogitGLMMOneLik` and
   `InferenceCountKKCPoissonOneLik`
 
 In these families, nuisance-adjusted profiling quickly becomes a family-specific

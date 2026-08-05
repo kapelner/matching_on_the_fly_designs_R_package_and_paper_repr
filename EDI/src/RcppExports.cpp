@@ -1194,6 +1194,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_gehan_wilcox_stats_cpp
+SEXP fast_gehan_wilcox_stats_cpp(const IntegerVector& w, const NumericVector& y_r, const IntegerVector& dead);
+RcppExport SEXP _EDI_fast_gehan_wilcox_stats_cpp(SEXP wSEXP, SEXP y_rSEXP, SEXP deadSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const IntegerVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y_r(y_rSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type dead(deadSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_gehan_wilcox_stats_cpp(w, y_r, dead));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_hurdle_negbin_count_score_cpp
 Eigen::VectorXd get_hurdle_negbin_count_score_cpp(SEXP X_r, SEXP y_r, SEXP params_sexp);
 RcppExport SEXP _EDI_get_hurdle_negbin_count_score_cpp(SEXP X_rSEXP, SEXP y_rSEXP, SEXP params_sexpSEXP) {
@@ -5207,6 +5220,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_EDI_get_gaussian_lmm_fisher_cpp", (DL_FUNC) &_EDI_get_gaussian_lmm_fisher_cpp, 5},
     {"_EDI_gee_pairs_singletons_weighted_cpp", (DL_FUNC) &_EDI_gee_pairs_singletons_weighted_cpp, 9},
     {"_EDI_gee_pairs_singletons_cpp", (DL_FUNC) &_EDI_gee_pairs_singletons_cpp, 8},
+    {"_EDI_fast_gehan_wilcox_stats_cpp", (DL_FUNC) &_EDI_fast_gehan_wilcox_stats_cpp, 3},
     {"_EDI_get_hurdle_negbin_count_score_cpp", (DL_FUNC) &_EDI_get_hurdle_negbin_count_score_cpp, 3},
     {"_EDI_get_hurdle_negbin_count_hessian_cpp", (DL_FUNC) &_EDI_get_hurdle_negbin_count_hessian_cpp, 3},
     {"_EDI_fast_hurdle_negbin_cpp", (DL_FUNC) &_EDI_fast_hurdle_negbin_cpp, 13},

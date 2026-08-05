@@ -1,10 +1,18 @@
+#ifdef EDI_CORE_ONLY
+#include "_helper_functions_core.h"
+#include <limits>
+constexpr double NA_REAL = std::numeric_limits<double>::quiet_NaN();
+#else
 #include "_helper_functions.h"
 #include <RcppEigen.h>
+#endif
 #include <algorithm>
 #include <cmath>
 #include <vector>
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 
 namespace {
 
@@ -117,6 +125,20 @@ ModelResult fast_logrank_internal(const Eigen::Ref<const Eigen::VectorXd>& time,
 
 } // namespace
 
+// Portable (EDI_CORE_ONLY-safe) sibling of fast_logrank_stats_cpp below:
+// fast_logrank_internal above is already fully portable (plain
+// Eigen::VectorXd/std::vector<int>, returns the shared, already-portable
+// ModelResult struct) but has internal linkage (anonymous namespace), so it
+// can't be called from a separate Python binding translation unit directly.
+// This wrapper -- external linkage, same TU, so it CAN see the anonymous-
+// namespace function -- just re-exposes it under a stable name.
+ModelResult fast_logrank_result(const Eigen::Ref<const Eigen::VectorXd>& time,
+                                 const std::vector<int>& dead,
+                                 const std::vector<int>& w) {
+  return fast_logrank_internal(time, dead, w);
+}
+
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 SEXP fast_logrank_stats_cpp(const IntegerVector& w,
                             const NumericVector& y_r,
@@ -202,3 +224,4 @@ NumericVector compute_logrank_rand_bootstrap_parallel_cpp(
 
   return wrap(results_vec);
 }
+#endif // EDI_CORE_ONLY

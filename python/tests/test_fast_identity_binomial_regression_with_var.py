@@ -8,7 +8,11 @@ sibling) for context on this pair of "_with_var" entry points.
 
 The expected values below were computed once via:
     EDI:::fast_identity_binomial_regression_with_var_cpp(X, y, tol = 1e-8)
-in R, on the exact same synthetic dataset generated below with
+in R -- tol passed explicitly to match the Python call below (a
+tighter-than-default convergence criterion for fixture stability, not a
+workaround for an R/Python default mismatch -- both sides actually default
+to tol=1e-6, see test_fast_log_binomial_regression.py's docstring), on the
+exact same synthetic dataset generated below with
 numpy.random.default_rng(111) (the y draw here uses a fresh continuation
 of the same rng stream as test_fast_log_binomial_regression_with_var.py's
 data -- keep both files' data-generation code in sync if either is

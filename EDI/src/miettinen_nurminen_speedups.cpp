@@ -1,9 +1,13 @@
+#ifdef EDI_CORE_ONLY
+#include <limits>
+constexpr double NA_REAL = std::numeric_limits<double>::quiet_NaN();
+#else
 #include <Rcpp.h>
+using namespace Rcpp;
+#endif
 #include <cmath>
 #include <algorithm>
 #include "fast_erfc.h"
-
-using namespace Rcpp;
 
 //' Constrained MLE for Risk Difference (Miettinen-Nurminen)
 //'
@@ -124,14 +128,22 @@ double mn_pvalue_cpp(double x_t, double n_t, double x_c, double n_c, double delt
 //' @param alpha The confidence level is \code{1 - alpha}.
 //' @param pval_epsilon Bisection tolerance in p-value space.
 //' @return A length-2 numeric vector containing the lower and upper CI bounds.
-// [[Rcpp::export]]
-NumericVector mn_ci_cpp(double x_t, double n_t, double x_c, double n_c, double p_t_obs, double p_c_obs, double alpha, double pval_epsilon) {
+struct MNCIBounds {
+    double lower;
+    double upper;
+};
+
+// Portable (EDI_CORE_ONLY-safe) core: identical bisection-inversion logic as
+// the original mn_ci_cpp body, just returning a plain struct instead of an
+// Rcpp::NumericVector, so a separate Python binding translation unit can
+// call it directly.
+MNCIBounds mn_ci_internal(double x_t, double n_t, double x_c, double n_c, double p_t_obs, double p_c_obs, double alpha, double pval_epsilon) {
     double est = p_t_obs - p_c_obs;
-    
+
     auto pval_fn = [&](double delta) {
         return mn_pvalue_cpp(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs);
     };
-    
+
     auto find_bound = [&](double low_search, double high_search) {
         double l = low_search;
         double u = high_search;
@@ -150,9 +162,17 @@ NumericVector mn_ci_cpp(double x_t, double n_t, double x_c, double n_c, double p
         }
         return (l + u) / 2.0;
     };
-    
+
     double lower = find_bound(-0.999999, est);
     double upper = find_bound(est, 0.999999);
-    
-    return NumericVector::create(lower, upper);
+
+    return MNCIBounds{lower, upper};
 }
+
+#ifndef EDI_CORE_ONLY
+// [[Rcpp::export]]
+NumericVector mn_ci_cpp(double x_t, double n_t, double x_c, double n_c, double p_t_obs, double p_c_obs, double alpha, double pval_epsilon) {
+    MNCIBounds r = mn_ci_internal(x_t, n_t, x_c, n_c, p_t_obs, p_c_obs, alpha, pval_epsilon);
+    return NumericVector::create(r.lower, r.upper);
+}
+#endif

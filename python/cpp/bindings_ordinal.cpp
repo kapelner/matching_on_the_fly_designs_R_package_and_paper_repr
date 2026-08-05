@@ -18,6 +18,22 @@ namespace py = pybind11;
 std::vector<double> get_levels(const Eigen::Ref<const Eigen::VectorXd>& y);
 std::vector<int> map_y_to_1K(const Eigen::Ref<const Eigen::VectorXd>& y, const std::vector<double>& levels);
 
+struct RiditAnalysisResult {
+    double mean_ridit_t;
+    double mean_ridit_c;
+    double estimate;
+    double se;
+    std::vector<double> scores;
+    std::vector<int> levels;
+    std::vector<double> ref_p;
+};
+
+RiditAnalysisResult fast_ridit_analysis_result(
+    const Eigen::Ref<const Eigen::VectorXi>& w,
+    const Eigen::Ref<const Eigen::VectorXi>& y,
+    const std::string& reference
+);
+
 LikelihoodFitResult fast_adjacent_category_logit_internal(
     const Eigen::Ref<const Eigen::MatrixXd>& X,
     const std::vector<int>& y_mapped,
@@ -470,4 +486,25 @@ void bind_ordinal(py::module_& m) {
     py::arg("warm_start_fisher_info") = py::none(),
     "Fast proportional-odds (logit link) ordinal GLMM with a random intercept via "
     "Gauss-Hermite quadrature + L-BFGS. X must NOT include an intercept column.");
+
+    m.def("fast_ridit_analysis", [](const Eigen::Ref<const Eigen::VectorXi>& w,
+                                     const Eigen::Ref<const Eigen::VectorXi>& y,
+                                     std::string reference) {
+        RiditAnalysisResult res = fast_ridit_analysis_result(w, y, reference);
+        py::dict out;
+        out["mean_ridit_t"] = res.mean_ridit_t;
+        out["mean_ridit_c"] = res.mean_ridit_c;
+        out["estimate"] = res.estimate;
+        out["se"] = res.se;
+        out["scores"] = res.scores;
+        out["levels"] = res.levels;
+        out["ref_p"] = res.ref_p;
+        return out;
+    },
+    py::arg("w"), py::arg("y"), py::arg("reference") = "control",
+    "Ridit analysis (Bross 1958): assigns each subject a ridit score relative "
+    "to the empirical distribution of the reference group ('control', "
+    "'treatment', or 'pooled'), then compares treatment/control mean ridits. "
+    "estimate = mean_ridit_t - 0.5 (centered at 0 under the null); se is the "
+    "sample-variance-based SE of the treatment-arm mean ridit.");
 }

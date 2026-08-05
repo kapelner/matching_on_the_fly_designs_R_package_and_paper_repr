@@ -43,6 +43,19 @@ EDI_NO_LIKELIHOOD_SPECIAL_CLASSIFICATIONS = list(
 	)
 )
 
+EDI_CUSTOM_RANDOMIZATION_TARGETS = list(
+	InferenceCustomRand = list(
+		host_kind = "extension_base",
+		target_parent = "Inference",
+		target_components = "RandomizationTest",
+		class_owned_capabilities = character(),
+		intentional_capabilities = "randomization_test",
+		migration_status = "migrated",
+		migration_evidence = c("method_snapshot", "golden_randomization"),
+		notes = "Custom randomization extension hosts should inherit only the root Inference state and add RandomizationTest explicitly; randomization CI and bootstrap APIs are accidental unless their components are listed."
+	)
+)
+
 EDI_INFERENCE_ALGORITHM_COMPATIBILITY_BASES = c(
 	"InferenceAsymp",
 	"InferenceJackknife",
@@ -151,6 +164,7 @@ infer_inference_direct_components = function(name) {
 		InferenceCountCompositeLikelihood = "CountLikelihoodPlumbing",
 		InferenceKKPassThroughCompound = "KKCompound",
 		InferenceKKPassThroughCompoundNoParamBootstrap = "KKCompound",
+		InferenceCustomRand = "RandomizationTest",
 		character()
 	)
 }
@@ -364,6 +378,8 @@ build_inference_hierarchy_migration_record = function(name) {
 		"root"
 	} else if (isTRUE(metadata$abstract)) {
 		"infrastructure"
+	} else if (name %in% names(EDI_CUSTOM_RANDOMIZATION_TARGETS)) {
+		EDI_CUSTOM_RANDOMIZATION_TARGETS[[name]]$migration_status %||% "pending"
 	} else if (length(algorithmic_ancestors) == 0L && identical(metadata$parent, "Inference")) {
 		"migrated"
 	} else {
@@ -722,6 +738,108 @@ exact_incidence_behavior_manifest = function() {
 	stats::setNames(lapply(EDI_EXACT_INCIDENCE_CLASS_NAMES, build_exact_incidence_behavior_record), EDI_EXACT_INCIDENCE_CLASS_NAMES)
 }
 
+custom_randomization_direct_host_names = function(registry = inference_class_registry_as_list()) {
+	direct_inference_rand_children = names(Filter(function(metadata) {
+		identical(metadata$parent, "InferenceRand") && !isTRUE(metadata$abstract)
+	}, registry))
+	sort(direct_inference_rand_children)
+}
+
+custom_randomization_host_names = function() {
+	sort(names(EDI_CUSTOM_RANDOMIZATION_TARGETS))
+}
+
+custom_randomization_host_groups = function(registry = inference_class_registry_as_list()) {
+	direct_hosts = custom_randomization_direct_host_names(registry)
+	missing_targets = setdiff(direct_hosts, names(EDI_CUSTOM_RANDOMIZATION_TARGETS))
+	if (length(missing_targets) > 0L) {
+		stop(sprintf(
+			"Custom randomization host(s) are missing target metadata: %s",
+			paste(missing_targets, collapse = ", ")
+		), call. = FALSE)
+	}
+	hosts = custom_randomization_host_names()
+	targets = EDI_CUSTOM_RANDOMIZATION_TARGETS[hosts]
+	host_kinds = vapply(targets, function(target) target$host_kind %||% "concrete_package_estimator", character(1L))
+	list(
+		extension_bases = sort(hosts[host_kinds == "extension_base"]),
+		concrete_package_estimators = sort(hosts[host_kinds == "concrete_package_estimator"])
+	)
+}
+
+build_custom_randomization_behavior_record = function(name) {
+	target = EDI_CUSTOM_RANDOMIZATION_TARGETS[[name]]
+	if (is.null(target)) {
+		stop(sprintf("%s is not a registered custom randomization host.", name), call. = FALSE)
+	}
+	metadata = get_inference_class_metadata(name)
+	current_public_methods = inference_public_method_names(name)
+	current_optional_methods = sort(unique(intersect(
+		current_public_methods,
+		inference_optional_method_names_for_capabilities(c(
+			"randomization_test",
+			"randomization_ci",
+			"randomization_bootstrap",
+			"nonparametric_bootstrap",
+			"bayesian_bootstrap",
+			"jackknife"
+		))
+	)))
+	intentional_methods = inference_optional_method_names_for_capabilities(target$intentional_capabilities)
+	list(
+		name = name,
+		host_kind = target$host_kind,
+		current_parent = metadata$parent,
+		target_parent = target$target_parent,
+		target_components = target$target_components,
+		class_owned_capabilities = target$class_owned_capabilities,
+		intentional_capabilities = unique(c(target$intentional_capabilities, target$class_owned_capabilities)),
+		migration_status = target$migration_status %||% "pending",
+		migration_evidence = target$migration_evidence %||% character(),
+		current_public_optional_methods = current_optional_methods,
+		intentional_public_methods = intentional_methods,
+		legacy_optional_surface = setdiff(current_optional_methods, intentional_methods),
+		notes = target$notes
+	)
+}
+
+custom_randomization_behavior_manifest = function() {
+	hosts = custom_randomization_host_names()
+	stats::setNames(lapply(hosts, build_custom_randomization_behavior_record), hosts)
+}
+
+mark_custom_randomization_classes_migrated = function(class_names = custom_randomization_host_names()) {
+	required_evidence = c("method_snapshot", "golden_randomization")
+	for (name in class_names) {
+		target = EDI_CUSTOM_RANDOMIZATION_TARGETS[[name]]
+		if (is.null(target)) {
+			stop(sprintf("%s is not a registered custom randomization host.", name), call. = FALSE)
+		}
+		if (!identical(target$migration_status %||% "pending", "migrated")) next
+		missing_evidence = setdiff(required_evidence, target$migration_evidence %||% character())
+		if (length(missing_evidence) > 0L) {
+			stop(sprintf(
+				"%s cannot be marked migrated: missing custom-randomization migration evidence: %s",
+				name,
+				paste(missing_evidence, collapse = ", ")
+			), call. = FALSE)
+		}
+		record = build_custom_randomization_behavior_record(name)
+		if (length(record$legacy_optional_surface) > 0L) {
+			stop(sprintf(
+				"%s cannot be marked migrated: legacy optional public method(s) remain: %s",
+				name,
+				paste(record$legacy_optional_surface, collapse = ", ")
+			), call. = FALSE)
+		}
+		mark_inference_class_migrated(
+			name,
+			public_method_names = record$current_public_optional_methods
+		)
+	}
+	invisible(inference_hierarchy_migration_manifest_as_list()[class_names])
+}
+
 clear_inference_class_registry = function() {
 	rm(list = ls(EDI_INFERENCE_CLASS_REGISTRY), envir = EDI_INFERENCE_CLASS_REGISTRY)
 	invisible(TRUE)
@@ -755,6 +873,7 @@ populate_inference_class_registry = function(ns = environment(populate_inference
 	}
 	validate_inference_class_registry()
 	populate_inference_hierarchy_migration_manifest()
+	mark_custom_randomization_classes_migrated()
 	invisible(EDI_INFERENCE_CLASS_REGISTRY)
 }
 

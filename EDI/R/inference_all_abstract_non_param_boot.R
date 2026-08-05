@@ -483,7 +483,10 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 								sub_inf = private$bootstrap_subset_inference(boot_draw, smooth = FALSE)
 								if (is.null(sub_inf)) NA_real_ else as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
 							}
-						}, error = function(e) { iter_errs <<- c(iter_errs, conditionMessage(e)); NA_real_ }),
+						}, error = function(e) {
+							if (private$is_resampling_control_condition(e)) stop(e)
+							iter_errs <<- c(iter_errs, conditionMessage(e)); NA_real_
+						}),
 						warning = function(w) { iter_warns <<- c(iter_warns, conditionMessage(w)); invokeRestart("muffleWarning") }
 					)
 					private$check_bootstrap_replicate_deadline("Bootstrap debug replicate")
@@ -574,21 +577,21 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			actual_cores = private$effective_parallel_cores("bootstrap", self$num_cores)
 			if (actual_cores > 1L) {
 				do_warmup_iter = if (isTRUE(private$use_reusable_bootstrap_worker())) {
-					function() {
-						worker_state = private$create_reusable_bootstrap_worker()
-						boot_draw = boot_draws[[1L]]
-						private$load_resampling_draw_into_worker("non_param_boot", worker_state, boot_draw)
-						tryCatch(private$estimate_bootstrap_worker(worker_state), error = function(e) NA_real_)
+						function() {
+							worker_state = private$create_reusable_bootstrap_worker()
+							boot_draw = boot_draws[[1L]]
+							private$load_resampling_draw_into_worker("non_param_boot", worker_state, boot_draw)
+							tryCatch(private$estimate_bootstrap_worker(worker_state), error = private$resampling_error_to_na)
+						}
+					} else {
+						function() {
+							boot_draw = boot_draws[[1L]]
+							tryCatch({
+								sub_inf = private$bootstrap_subset_inference(boot_draw, smooth = FALSE)
+								if (is.null(sub_inf)) NA_real_ else as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
+							}, error = private$resampling_error_to_na)
+						}
 					}
-				} else {
-					function() {
-						boot_draw = boot_draws[[1L]]
-						tryCatch({
-							sub_inf = private$bootstrap_subset_inference(boot_draw, smooth = FALSE)
-							if (is.null(sub_inf)) NA_real_ else as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
-						}, error = function(e) NA_real_)
-					}
-				}
 				system.time(do_warmup_iter())  # First call: discarded (cold-start overhead)
 				private$check_bootstrap_replicate_deadline("Bootstrap warmup")
 				t_boot_warmup = system.time(do_warmup_iter())[[3]]  # Second call: representative cost
@@ -612,7 +615,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 					out = tryCatch({
 						sub_inf = private$bootstrap_subset_inference(boot_draw, smooth = FALSE)
 						if (is.null(sub_inf)) NA_real_ else as.numeric(sub_inf$compute_estimate(estimate_only = TRUE))[1L]
-					}, error = function(e) NA_real_)
+					}, error = private$resampling_error_to_na)
 					private$check_bootstrap_replicate_deadline("Bootstrap replicate")
 					out
 				}, n_cores = actual_cores, show_progress = show_progress,
@@ -753,7 +756,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				# t_obs = (est - delta) / se_hat
 				# t*_b  = (T*_b  - est)  / se*_b    [centred at original estimate, not null]
 				# p = P(|t*_b| >= |t_obs|)
-				se_hat = tryCatch(private$infer_original_se(), error = function(e) NA_real_)
+				se_hat = tryCatch(private$infer_original_se(), error = private$resampling_error_to_na)
 				if (!is.finite(se_hat) || se_hat <= 0) {
 					if (isTRUE(private$harden)) private$cache_nonestimable_se("bootstrap_original_standard_error_unavailable")
 					return(NA_real_)
@@ -1022,7 +1025,13 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			if (resolved_unit %in% c("pair", "matched_set")) return(FALSE)
 			if (resolved_unit == "cluster" && !is_blocking_design) return(FALSE)
 			if (!is_blocking_design) return(FALSE)
-			block_ids = tryCatch(design_obj$get_block_ids(), error = function(e) NULL)
+			block_ids = tryCatch(
+				design_obj$get_block_ids(),
+				error = function(e) {
+					if (private$is_resampling_control_condition(e)) stop(e)
+					NULL
+				}
+			)
 			if (is.null(block_ids)) return(FALSE)
 			block_ids = as.integer(block_ids)
 			block_ids = block_ids[is.finite(block_ids) & block_ids > 0L]
@@ -1046,17 +1055,15 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			deadline = getOption("EDI.ci_timeout_deadline", default = NA_real_)
 			deadline = suppressWarnings(as.numeric(deadline)[1L])
 			if (is.na(deadline) || !is.finite(deadline)) return(invisible(FALSE))
-			if (unname(proc.time()[["elapsed"]]) >= deadline) {
+			guard_sec = suppressWarnings(as.numeric(getOption("EDI.ci_timeout_guard_sec", default = 0.5))[1L])
+			if (!is.finite(guard_sec) || guard_sec < 0) guard_sec = 0
+			if (unname(proc.time()[["elapsed"]]) >= deadline - guard_sec) {
 				stop(paste0(label, " reached elapsed time limit"), call. = FALSE)
 			}
 			invisible(FALSE)
 		},
 		is_resampling_control_condition = function(e){
-			msg = conditionMessage(e)
-			inherits(e, "TimeoutException") ||
-				inherits(e, "interrupt") ||
-				grepl("reached elapsed time limit", msg, fixed = TRUE) ||
-				grepl("reached CPU time limit", msg, fixed = TRUE)
+			is_edi_control_condition(e)
 		},
 		resampling_error_to_na = function(e){
 			if (private$is_resampling_control_condition(e)) stop(e)
@@ -1277,14 +1284,14 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				for (k in seq_along(idxs)) {
 					private$check_bootstrap_replicate_deadline(paste0(operation, " replicate"))
 					boot_draw = draws[[idxs[[k]]]]
-					out[k] = tryCatch({
-						if (length(loader_args)) {
-							do.call(load_draw, c(list(worker_state = worker_state, draw = boot_draw), loader_args))
-						} else {
-							load_draw(worker_state, boot_draw)
-						}
-						estimate_draw(worker_state)
-					}, error = function(e) NA_real_)
+						out[k] = tryCatch({
+							if (length(loader_args)) {
+								do.call(load_draw, c(list(worker_state = worker_state, draw = boot_draw), loader_args))
+							} else {
+								load_draw(worker_state, boot_draw)
+							}
+							estimate_draw(worker_state)
+						}, error = private$resampling_error_to_na)
 					private$check_bootstrap_replicate_deadline(paste0(operation, " replicate"))
 				}
 				out
@@ -1380,7 +1387,13 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				}
 			}
 			if (unit == "block") {
-				block_ids = tryCatch(design_obj$get_block_ids(), error = function(e) NULL)
+				block_ids = tryCatch(
+					design_obj$get_block_ids(),
+					error = function(e) {
+						if (private$is_resampling_control_condition(e)) stop(e)
+						NULL
+					}
+				)
 				if (!is.null(block_ids)) {
 					block_ids = as.integer(block_ids)
 					unique_blocks = sort(unique(block_ids[is.finite(block_ids) & block_ids > 0L]))
@@ -1532,7 +1545,10 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				}
 				if (isTRUE(require_se) && !is.finite(se)) se = NA_real_
 				c(theta = theta, se = se)
-			}, error = function(e) c(theta = NA_real_, se = NA_real_))
+			}, error = function(e) {
+				if (private$is_resampling_control_condition(e)) stop(e)
+				c(theta = NA_real_, se = NA_real_)
+			})
 		},
 		approximate_bootstrap_statistics_beta_hat_T = function(B = 501, show_progress = TRUE, na.rm = TRUE, smooth = FALSE, require_se = FALSE){
 			private$active_resampling_operation = "non_param_boot"
@@ -1580,7 +1596,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			if (private$mark_jackknife_nonestimable_if_block_unsupported(unit = unit)) {
 				return(numeric(0))
 			}
-			theta_hat = tryCatch(as.numeric(self$compute_estimate(estimate_only = TRUE))[1L], error = function(e) NA_real_)
+			theta_hat = tryCatch(as.numeric(self$compute_estimate(estimate_only = TRUE))[1L], error = private$resampling_error_to_na)
 			if (is.function(self$is_nonestimable) && isTRUE(self$is_nonestimable("estimate"))) {
 				theta_hat = NA_real_
 			}
@@ -1754,9 +1770,9 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 				fresh = self$duplicate(verbose = FALSE, make_fork_cluster = FALSE)
 				fresh$.__enclos_env__$private$cached_values = list()
 				tryCatch({
-				fresh$compute_estimate(estimate_only = FALSE)
-				as.numeric(fresh$.__enclos_env__$private$cached_values$s_beta_hat_T)[1]
-			}, error = function(e) NA_real_)
+					fresh$compute_estimate(estimate_only = FALSE)
+					as.numeric(fresh$.__enclos_env__$private$cached_values$s_beta_hat_T)[1]
+				}, error = private$resampling_error_to_na)
 		},
 		# BCa p-value via closed-form CI inversion (Efron 1987; Efron & Tibshirani 1993).
 		# Derives the bias-correction (z0) and acceleration (a) constants from the bootstrap

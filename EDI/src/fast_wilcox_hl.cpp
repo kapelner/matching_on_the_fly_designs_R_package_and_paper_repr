@@ -1,6 +1,11 @@
+#ifdef EDI_CORE_ONLY
+#include <Eigen/Dense>
+constexpr double NA_REAL = std::numeric_limits<double>::quiet_NaN();
+#else
 #include <RcppEigen.h>
 #ifdef _OPENMP
 #include <omp.h>
+#endif
 #endif
 #include <algorithm>
 #include <cmath>
@@ -11,12 +16,24 @@
 // [[Rcpp::depends(RcppEigen)]]
 // [[Rcpp::plugins(openmp)]]
 
+#ifndef EDI_CORE_ONLY
 using namespace Rcpp;
+#endif
 using namespace Eigen;
 
 namespace {
 
 constexpr size_t kExactMedianMaterializeLimit = 4096;
+
+inline void check_user_interrupt() {
+#ifndef EDI_CORE_ONLY
+    Rcpp::checkUserInterrupt();
+#endif
+}
+
+inline void check_user_interrupt_every(size_t iter, size_t stride = 1024) {
+    if ((iter % stride) == 0) check_user_interrupt();
+}
 
 double median_in_place(std::vector<double>& values) {
     const size_t n = values.size();
@@ -63,7 +80,9 @@ size_t count_pairwise_diffs_leq(const std::vector<double>& y_t,
     size_t count = 0;
     size_t idx_t = 0;
     const size_t n_t = y_t.size();
+    size_t iter = 0;
     for (double yc : y_c) {
+        check_user_interrupt_every(iter++);
         const double limit = x + yc;
         while (idx_t < n_t && y_t[idx_t] <= limit) ++idx_t;
         count += idx_t;
@@ -78,7 +97,9 @@ double max_pairwise_diff_leq(const std::vector<double>& y_t,
     bool found = false;
     size_t idx_t = 0;
     const size_t n_t = y_t.size();
+    size_t iter = 0;
     for (double yc : y_c) {
+        check_user_interrupt_every(iter++);
         const double limit = x + yc;
         while (idx_t < n_t && y_t[idx_t] <= limit) ++idx_t;
         if (idx_t > 0) {
@@ -103,6 +124,7 @@ double select_pairwise_diff_sorted(const std::vector<double>& y_t,
 
     const size_t target_count = rank + 1;
     for (int iter = 0; iter < 96; ++iter) {
+        check_user_interrupt();
         const double mid = lo + 0.5 * (hi - lo);
         if (mid == lo || mid == hi) break;
         if (count_pairwise_diffs_leq(y_t, y_c, mid) >= target_count) {
@@ -122,6 +144,7 @@ size_t count_walsh_avgs_leq(const std::vector<double>& d, double x) {
     size_t count = 0;
     const double limit = 2.0 * x;
     for (int i = 0; i < m; ++i) {
+        check_user_interrupt_every(static_cast<size_t>(i));
         while (j >= i && d[i] + d[j] > limit) --j;
         if (j < i) break;
         count += static_cast<size_t>(j - i + 1);
@@ -136,6 +159,7 @@ double max_walsh_avg_leq(const std::vector<double>& d, double x) {
     bool found = false;
     const double limit = 2.0 * x;
     for (int i = 0; i < m; ++i) {
+        check_user_interrupt_every(static_cast<size_t>(i));
         while (j >= i && d[i] + d[j] > limit) --j;
         if (j < i) break;
         const double candidate = 0.5 * (d[i] + d[j]);
@@ -157,6 +181,7 @@ double select_walsh_avg_sorted(const std::vector<double>& d, size_t rank) {
 
     const size_t target_count = rank + 1;
     for (int iter = 0; iter < 96; ++iter) {
+        check_user_interrupt();
         const double mid = lo + 0.5 * (hi - lo);
         if (mid == lo || mid == hi) break;
         if (count_walsh_avgs_leq(d, mid) >= target_count) {
@@ -181,6 +206,7 @@ double hl_from_groups(std::vector<double> y_t, std::vector<double> y_c) {
     if (total <= kExactMedianMaterializeLimit) {
         std::vector<double> diffs(total);
         for (size_t i = 0; i < n_t; ++i) {
+            check_user_interrupt_every(i);
             double* p = diffs.data() + i * n_c;
             const double yt = y_t[i];
             for (size_t j = 0; j < n_c; ++j) p[j] = yt - y_c[j];
@@ -208,6 +234,7 @@ double hl_signed_rank(std::vector<double> pair_diffs) {
         std::vector<double> walsh_avgs(total);
         size_t k = 0;
         for (size_t i = 0; i < m; ++i) {
+            check_user_interrupt_every(i);
             const double half_di = 0.5 * pair_diffs[i];
             double* p = walsh_avgs.data() + k;
             const size_t len = m - i;
@@ -263,6 +290,10 @@ double estimate_hl_ssq_signed_rank(const std::vector<double>& pair_diffs) {
     return var_walsh / m;
 }
 
+// apply_shift is only called by the Rcpp-export bootstrap functions further
+// down (none of which this portable build needs), so it's guarded out here
+// too rather than compiled unconditionally.
+#ifndef EDI_CORE_ONLY
 double apply_shift(double y_val, double delta, int transform_code, double zero_one_logit_clamp) {
     if (transform_code == 1) {
         return y_val * std::exp(delta);
@@ -280,9 +311,38 @@ double apply_shift(double y_val, double delta, int transform_code, double zero_o
     }
     return y_val + delta;
 }
+#endif
 
 } // namespace
 
+// Portable (EDI_CORE_ONLY-safe) sibling of wilcox_hl_point_estimate_cpp
+// below: hl_from_groups above is already fully portable (plain
+// std::vector<double>) but has internal linkage (anonymous namespace), so
+// it can't be called from a separate Python binding translation unit
+// directly. This wrapper -- external linkage, same TU, so it CAN see the
+// anonymous-namespace function -- replicates wilcox_hl_point_estimate_cpp's
+// exact filtering/grouping logic on plain Eigen types.
+double wilcox_hl_point_estimate_result(const Eigen::Ref<const Eigen::VectorXd>& y,
+                                        const Eigen::Ref<const Eigen::VectorXi>& w) {
+    std::vector<double> y_t;
+    std::vector<double> y_c;
+    y_t.reserve(y.size());
+    y_c.reserve(y.size());
+
+    const double* y_ptr = y.data();
+    const int* w_ptr = w.data();
+    int n = static_cast<int>(y.size());
+
+    for (int i = 0; i < n; ++i) {
+        if (!std::isfinite(y_ptr[i])) continue;
+        if (w_ptr[i] == 1) y_t.push_back(y_ptr[i]);
+        else if (w_ptr[i] == 0) y_c.push_back(y_ptr[i]);
+    }
+
+    return hl_from_groups(std::move(y_t), std::move(y_c));
+}
+
+#ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]
 double wilcox_hl_signed_rank_point_estimate_cpp(SEXP dy_sexp) {
 	NumericVector dy_vec(dy_sexp);
@@ -598,3 +658,4 @@ NumericVector compute_wilcox_hl_rand_bootstrap_parallel_cpp(
 
     return wrap(results_vec);
 }
+#endif // EDI_CORE_ONLY

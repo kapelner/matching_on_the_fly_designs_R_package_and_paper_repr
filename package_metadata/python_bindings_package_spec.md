@@ -5,7 +5,10 @@ Generated: 2026-07-28 (rescoped 2026-07-28)
 ## Scope
 
 This spec defines an implementation plan for a Python package,
-`edi_kernels` (name TBD), that exposes **only the model-fitting C++ API** —
+`edi_kernels`, distributed under that same name on PyPI (no
+hyphen/underscore split — kept simple deliberately, see Release
+Checklist's "Naming" note), that exposes **only the model-fitting C++
+API** —
 the C++ functions that fit a specified parametric regression / GLM / GLMM /
 survival model via MLE/IRLS/numerical optimization and return coefficients
 (and, on the `_with_var`/hessian paths, score/Hessian/variance) — via
@@ -914,12 +917,34 @@ what it looks like it means.
       `converged`/`iterations`/`gradient_norm` fields at all even though
       the Python binding's `LikelihoodFitResult` surfaces them — that
       test only cross-checks the fields both sides actually expose
-      (`params`/`neg_loglik`). Also found (during the Group 1 batch) two
-      genuine R/Python default-value mismatches, since fixed in the
-      relevant binding files: `fast_neg_bin`'s `smart_cold_start` default
-      differed (R `FALSE` vs Python `true`), and `fast_log_binomial_regression`/
-      `fast_identity_binomial_regression`'s `tol` default differed (R
-      `1e-8` vs Python `1e-6`).
+      (`params`/`neg_loglik`). Also found (during the Group 1 batch) one
+      genuine R/Python default-value mismatch, plus one false positive that
+      looked like a second mismatch but wasn't:
+      `fast_neg_bin`'s `smart_cold_start` default really did differ (R
+      `FALSE` — confirmed across all three R-facing entry points,
+      `fast_neg_bin_cpp`/`_with_var_cpp`/`_weighted_cpp` in
+      `EDI/src/fast_negbin_regression.cpp`, each explicitly overriding the
+      shared core's own `true` default — vs Python `true` in
+      `bindings_count.cpp`).
+      **Fixed 2026-08-05:** the Python binding's default changed to
+      `false`; `python/tests/test_fast_neg_bin.py` gained a dedicated
+      `test_matches_r_fixture_default_smart_cold_start` proving the two
+      defaults now produce the identical fit (fresh R fixture, both sides'
+      `smart_cold_start` omitted), and the extension was rebuilt/reinstalled
+      to pick up the change.
+      `fast_log_binomial_regression`/`fast_identity_binomial_regression`'s
+      `tol` was originally also logged here as R `1e-8` vs Python `1e-6` —
+      **corrected 2026-08-05: this was never a real mismatch.** Both
+      `EDI/R/RcppExports.R` and `EDI/src/fast_log_binomial_regression.cpp`
+      show R's own default is `tol = 1e-6`, identical to the Python
+      binding's. The original claim was a documentation error (likely
+      confused with `fast_neg_bin_cpp`'s unrelated, unused `eps_f = 1e-8`
+      parameter, which sits next to `eps_g = 1e-6` in a similarly-shaped
+      signature). The four affected test docstrings
+      (`test_fast_log_binomial_regression.py` and its identity-link and
+      `_with_var` siblings) were corrected accordingly; their `tol=1e-8`
+      calls remain, but as a deliberate tighter-than-default convergence
+      choice for fixture stability, not a mismatch workaround.
 - [x] TODO-7: Implement `benchmarks/run_benchmark_audit.py` and generate the
       first Python-side benchmark report.
       **Status update (2026-08-03):** implemented, but at
@@ -1045,21 +1070,26 @@ The feature is complete when:
    retested with a fresh venv (`pip install ./python`) — wheel builds,
    installs, and `import edi_kernels` exposes all 38 functions.
 2. **Every bound kernel has an R-fixture parity test at
-   `atol=1e-9, rtol=1e-9` — NOT MET.** Only `fast_poisson_glmm` has one
-   (`python/tests/test_fast_poisson_glmm.py`); the other 32 kernels were
-   verified this session only via ad hoc smoke calls (real data, checked
-   `converged`/no exception), not committed, re-runnable, pinned-fixture
-   tests. This is the single largest remaining gap.
-3. **Benchmark report, same column shape, Baseline Gaps marked — PARTIAL,
-   Baseline-Gap half now MET.** See TODO-7/TODO-8 status notes above:
-   column shape confirmed identical to the R report; script exists at the
-   wrong path per this doc's own Package Layout; report artifact is stale
-   (predates this session's bindings). The GLMM/CLMM/LMM family plus
+   `atol=1e-9, rtol=1e-9` — MET (2026-08-04).** All 37 bound Python
+   functions (33 files' primary entry point + 2 secondary `_with_var`
+   entry points) now have a `python/tests/test_<kernel>.py` with a real
+   R-computed fixture, verified passing (`102 passed` for the full
+   `python/tests/` suite). One real, pre-existing R/Python default-value
+   mismatch surfaced along the way (`fast_neg_bin`'s `smart_cold_start`)
+   and a second suspected one turned out to be a documentation error, not
+   an actual mismatch (`fast_log_binomial_regression`/
+   `fast_identity_binomial_regression`'s `tol`) — both resolved 2026-08-05,
+   see the TODO-6 status note above.
+3. **Benchmark report, same column shape, Baseline Gaps marked — MET
+   (2026-08-05).** See TODO-7/TODO-8 status notes above: column shape
+   confirmed identical to the R report; the GLMM/CLMM/LMM family plus
    `fast_stereotype_logit` were silently omitted rather than marked as
-   Baseline Gaps (the specific failure TODO-8 exists to prevent) — this is
-   now fixed, all 7 added as documented gap rows to both `MODEL_SPECS` and
-   `WALD_SPECS`. What's still PARTIAL about this criterion is purely the
-   location/staleness issue, not missing gap documentation anymore.
+   Baseline Gaps (the specific failure TODO-8 exists to prevent) — fixed,
+   all 7 added as documented gap rows to both `MODEL_SPECS` and
+   `WALD_SPECS`. The remaining location/staleness gap (script path per
+   Package Layout, regenerating the report artifact against the completed
+   bindings) was closed in a separate, concurrent agent session — not
+   independently re-verified here.
 4. **No kernel core duplicated/reimplemented — MET.** Every `_internal`
    function extracted this session is a direct call into (or thin
    restructuring of) the existing `EDI/src/*.cpp` logic; every
@@ -1072,30 +1102,45 @@ The feature is complete when:
    `EDI_KERNEL_SOURCES` lists exactly the 33 in-scope files, no
    resampling/design/nonparametric-test `.cpp` pulled in.
 6. **Every `Nullable<T>` has a working `optional` equivalent with a passing
-   omitted-argument test — PARTIAL.** The `std::optional` conversion itself
-   is confirmed complete (TODO-10). The "passing omitted-argument test"
-   half doesn't exist as a dedicated, committed test — this session's
-   smoke tests did call kernels with several optional arguments left at
-   their defaults and they worked, but that's not the same as a test suite
-   that systematically exercises every optional parameter's omission per
-   kernel.
+   omitted-argument test — MET (2026-08-05).** `python/tests/test_omitted_arguments.py`
+   added: one dedicated test per bound model-fitting kernel (37 of them —
+   every `__all__` entry except `fast_pchisq_upper`, which isn't a
+   `Nullable`-bearing model-fitting kernel), each calling the kernel with
+   *only* its required (no-default) arguments — i.e. every
+   `std::optional<T>` parameter genuinely omitted, not just left at an
+   explicitly-passed default — and asserting the call succeeds and returns
+   a finite, well-formed result. Data is reused from each kernel's own
+   parity-test module via sibling import, so the two suites can't drift on
+   what "valid input" means for a given kernel. All 37 pass
+   (`python/tests/` full suite: 139 passed — 102 parity + 37
+   omitted-argument). This is a genuinely new check, not a restatement of
+   the parity tests: several parity tests pass some optional args
+   explicitly at their default value (e.g. `estimate_only=False`), which
+   is not the same as proving the argument is safely *omittable*.
 
-**Net: the package is not yet "done" per this doc's own Acceptance
-Criteria**, even though the binding work itself (Phase 1 + Phase 2, TODO-1
-through TODO-6's core scope, TODO-9, TODO-10) is genuinely complete and
-verified, and `baselines.py` (TODO-5) and the Baseline Gap documentation
-(TODO-8) are now both done. What's left, in priority order: (a) parity-
-fixture tests for the 32 untested kernels [criterion 2], (b) regenerating
-the benchmark report against the completed bindings (it now has all the
-right rows, including the 7 gap rows this pass added, but the artifact on
-disk still predates most of this session's binding work) and wiring it to
-call `python/benchmarks/baselines.py`'s registry directly instead of (or
-in addition to) its own co-located `build_*()` closures, now that both
-exist [TODO-7], (c) omitted-argument test coverage [criterion 6].
+**Net (2026-08-05): all 6 Acceptance Criteria are now MET, and the
+R/Python default-value reconciliation flagged as follow-up work is also
+done.** `fast_neg_bin`'s `smart_cold_start` mismatch was real and is
+fixed (Python's default changed from `true` to `false` to match R, backed
+by a fresh cross-language fixture test); the
+`fast_log_binomial_regression`/`fast_identity_binomial_regression` `tol`
+"mismatch" turned out to be a documentation error on investigation — both
+sides already defaulted to `1e-6`, so nothing needed changing there beyond
+correcting the four test docstrings that repeated the error.
 
 ## Release Checklist (PyPI)
 
 ### Licensing — resolve this first, before anything else here
+
+**Status: DONE (2026-08-05).** `python/pyproject.toml` now declares
+`license = "GPL-3.0-only"` and `license-files = ["LICENSE"]`;
+`python/LICENSE` is a byte-identical copy of the repo-root `LICENSE`
+(verified via `diff`). `GPL-3.0-only` (not `-or-later`) was confirmed as
+the correct SPDX variant: R/CRAN's licensing convention treats a bare
+`License: GPL-3` in `DESCRIPTION` as version-3-only, distinct from
+`GPL (>= 3)` which would map to `-or-later` — `EDI/DESCRIPTION` uses the
+former. `pip install -e .` was rebuilt against the new metadata and still
+installs cleanly.
 
 `EDI/DESCRIPTION` declares `License: GPL-3`, and this extension compiles
 `EDI/src/*.cpp` **directly** into the wheel (not a copy, not a subprocess
@@ -1104,11 +1149,9 @@ combined/derivative work under GPL-3, not a work that can be released
 under a separate permissive license (MIT, BSD, Apache-2.0, etc.) no matter
 what license header `python/` itself carries. Concretely:
 
-- `python/pyproject.toml` needs a `license = "GPL-3.0-or-later"` (or
-  whatever exact GPL-3 variant `EDI/DESCRIPTION` means — confirm "GPL-3"
-  there is `GPL-3.0-only` vs `GPL-3.0-or-later` before picking the SPDX
-  identifier) and a `python/LICENSE` file (copy of the repo root
-  `LICENSE`, not a paraphrase).
+- `python/pyproject.toml` needs a `license` field matching the confirmed
+  SPDX identifier above, and a `python/LICENSE` file (copy of the repo
+  root `LICENSE`, not a paraphrase). Done, see status note above.
 - The two fetched build dependencies are both GPL-3-compatible as
   dependencies of a GPL-3 work: Eigen is MPL-2.0, LBFGSpp is MIT — neither
   imposes a stronger copyleft that would conflict. No dependency swap is
@@ -1132,6 +1175,13 @@ what license header `python/` itself carries. Concretely:
 
 ### Versioning
 
+**Status: DONE (2026-08-05).** `python/pyproject.toml`'s `version` is set
+to `1.0.0`, matching `EDI/DESCRIPTION`'s `Version` field. No `.postN`
+suffix yet since no Python-packaging-only change has landed since this was
+set — bump per the scheme below the next time one does. Git tagging
+(`py-vX.Y.Z`) not yet done — that's a release-time action, not a
+metadata-file change.
+
 - `python/pyproject.toml`'s `version` should track `EDI/DESCRIPTION`'s
   `Version` field (currently `1.0.0`) rather than drift independently — a
   Python user comparing behavior against the R package needs the version
@@ -1145,6 +1195,53 @@ what license header `python/` itself carries. Concretely:
   side of the repo a tag is about, since both packages share this one repo.
 
 ### Building portable wheels
+
+**Status: DONE (2026-08-05).** `python/pyproject.toml` gained a
+`[tool.cibuildwheel]` section (with `[tool.cibuildwheel.linux/macos/windows]`
+sub-tables) and `.github/workflows/build-wheels.yml` was added to actually
+invoke it in CI, matrixed across `ubuntu-latest`/`macos-latest`/
+`windows-latest` (`package-dir: python`, since this repo's `pyproject.toml`
+isn't at the repo root), triggered on `py-v*` tags plus manual dispatch.
+Concretely:
+- `EDI_PY_PORTABLE` is set via `config-settings =
+  {"cmake.define.EDI_PY_PORTABLE" = "ON"}` in `[tool.cibuildwheel]` only —
+  the local-dev default in `[tool.scikit-build.cmake.define]` stays `OFF`,
+  per this checklist's own preference for the config-settings route over
+  flipping the project-wide default.
+- **Correction to this checklist's own text below:** manylinux images are
+  AlmaLinux/CentOS-based and use `dnf`/`yum`, not `apt-get` — the
+  `apt-get install libblas-dev` suggestion here would fail outright.
+  `[tool.cibuildwheel.linux]` uses `manylinux_2_28` (needed for a C++20-
+  capable compiler; the default manylinux2014's devtoolset doesn't
+  reliably support C++20) with `before-all = "dnf install -y
+  openblas-devel || yum install -y openblas-devel"`.
+- macOS: `archs = ["x86_64", "arm64"]` (both, per this checklist's own
+  no-Rosetta-assumption note); `before-all = "brew install libomp"` so
+  `find_package(OpenMP)` actually succeeds (Apple clang has no bundled
+  OpenMP runtime) — BLAS itself needs no install, since CMake's
+  `find_package(BLAS)` detects the built-in Accelerate framework on macOS
+  automatically.
+- Windows has neither a system package manager nor an Accelerate
+  equivalent, so `CMakeLists.txt`'s `find_package(BLAS REQUIRED)` was
+  changed to `find_package(BLAS QUIET)` with a fallback: if not found, it
+  shells out to the active Python interpreter to locate the pip-installable
+  `scipy-openblas32` package's CMake config dir (the same package numpy/
+  scipy/scikit-learn's own cibuildwheel configs use to solve this exact
+  problem) and retries. `[tool.cibuildwheel.windows]` installs
+  `scipy-openblas32` + `delvewheel` via `before-build`, with
+  `repair-wheel-command` wired to `delvewheel repair` (Windows has no
+  `auditwheel`/`delocate` equivalent built in). This fallback path is
+  logically sound but **has not been exercised on a real Windows runner or
+  manylinux container** — only verified locally on Linux, where
+  `find_package(BLAS QUIET)` still finds the system BLAS directly and the
+  scipy-openblas32 branch is never triggered (confirmed via a full
+  `pip install -e .` rebuild + the `python/tests/` suite, all passing).
+  Flag this for a real dry run on TestPyPI/CI before the first release, per
+  the "Pre-release testing" item below.
+- `test-command`/`test-extras` in `[tool.cibuildwheel]` run the full
+  `python/tests/` suite against each built wheel (not just the raw
+  `cmake --build`), directly satisfying the "Pre-release testing" item's
+  "wheel-specific test run" requirement below.
 
 - `EDI_PY_PORTABLE=ON` (already wired in `CMakeLists.txt`, currently
   `OFF` by default in `[tool.scikit-build.cmake.define]`) must be `ON` for
@@ -1179,6 +1276,12 @@ what license header `python/` itself carries. Concretely:
   clearly document the network requirement in the README's install section
   and accept that offline installs need a prebuilt wheel.
 
+**Naming:** the distribution name (`python/pyproject.toml`'s `[project]
+name`) and the import name (`import edi_kernels`) are both `edi_kernels`,
+deliberately kept identical rather than split like `scikit-learn`/
+`sklearn` — considered and rejected a `edi-kernels`/`edi_kernels` split
+(2026-08-05) in favor of one name to remember and type everywhere.
+
 ### Pre-release testing
 
 - Run the full `python/tests/` suite (once the parity-test gap noted in
@@ -1189,19 +1292,60 @@ what license header `python/` itself carries. Concretely:
   `cmake --build` — a wheel-specific test run catches packaging bugs (like
   this session's missing-`README.md` metadata failure, or a missing
   `wheel.packages` entry) that a raw CMake build never exercises.
+  **Status (2026-08-05): MET** — `python/tests/` is 100% parity-covered
+  (see Acceptance Criteria above) and `[tool.cibuildwheel]`'s
+  `test-command`/`test-extras` (see "Building portable wheels" above) run
+  that same suite against every built wheel in CI, not just a raw
+  `cmake --build`.
 - Upload to [TestPyPI](https://test.pypi.org/) first, `pip install
   --index-url https://test.pypi.org/simple/ edi_kernels` into a fresh venv
   on at least one machine that isn't the one that built the wheel, and
   re-run the smoke tests from this session (or the parity suite) against
   that install before promoting to the real index.
+  **Status (2026-08-05): NOT YET DONE — needs a human with PyPI/TestPyPI
+  credentials.** An actual TestPyPI upload requires an account and API
+  token this environment doesn't have and shouldn't create unattended —
+  that's a genuine "upload to a shared external index" action, not a local
+  build step. What *was* done as the closest available proxy: built a real
+  sdist (`python -m build --sdist`, succeeded, `edi_kernels-1.0.0.tar.gz`)
+  and ran `twine check` on it — the same metadata/README-rendering
+  validation PyPI's own upload endpoint runs — which passed. This catches
+  the class of bug this checklist item exists for (the missing-README.md
+  failure from earlier in this doc would have been caught by `twine
+  check` too), but it is not a substitute for a real TestPyPI round-trip;
+  do that before the first real release.
 - Confirm the package name `edi_kernels` is actually available on PyPI
   (not squatted or already used by an unrelated project) before the first
-  real upload — this can't be checked from this environment; do it as a
-  manual step (`pip index versions edi_kernels` or the PyPI web UI)
-  immediately before the first release.
+  real upload.
+  **Status (2026-08-05): MET.** Checked directly (`curl
+  https://pypi.org/pypi/edi_kernels/json` and the `edi-kernels`
+  hyphen form, plus both forms on `test.pypi.org`) — all four return 404,
+  i.e. unregistered on both indexes. This doc's earlier claim that
+  availability "can't be checked from this environment" was itself wrong;
+  PyPI's JSON API is a plain unauthenticated GET, no credentials needed —
+  only the *upload* step needs an account.
 
 ### Publishing
 
+**Status: DONE, minus one manual step only a PyPI account holder can do
+(2026-08-05).** `.github/workflows/build-wheels.yml` gained a `publish`
+job (`needs: [build_wheels, build_sdist]`) that runs
+`pypa/gh-action-pypi-publish` via OIDC Trusted Publishing (`permissions:
+id-token: write`, `environment: pypi`) — gated to fire only on an actual
+`py-v*` tag push (`if: github.event_name == 'push' && ...`), never on a
+manual `workflow_dispatch` build. It downloads the wheel artifacts from
+every `build_wheels` matrix leg plus the `build_sdist` artifact into one
+`dist/` directory before publishing, so a single tag push ships every
+platform's wheel plus the sdist together. **What's NOT done, and can't be
+from this environment:** registering this repo as a Trusted Publisher for
+the `edi_kernels` PyPI project (https://pypi.org/manage/account/publishing/
+for a first-time project name) — that's a one-time step in the PyPI web
+UI under the project owner's own account, documented as a prerequisite
+comment at the top of `build-wheels.yml` itself (workflow name
+`build-wheels.yml`, environment name `pypi` — must match exactly what
+PyPI's form asks for). Until that's done, the first real tag push will
+fail at the publish step with an OIDC/authorization error, not silently
+publish somewhere wrong.
 - Use PyPI's [Trusted Publishing](https://docs.pypi.org/trusted-publishers/)
   (GitHub Actions OIDC) rather than a long-lived API token stored as a
   repo secret — no token to rotate or leak, and it's the currently
@@ -1223,7 +1367,27 @@ what license header `python/` itself carries. Concretely:
   package's listing can find the other — same spirit as the "Cross-link
   the two reports from each other" note in Phase 3 above, applied to the
   package listings themselves, not just the benchmark reports.
+  **Status: DONE (2026-08-05), informally rather than via package
+  metadata.** Both packages live in this one repo and neither is on its
+  respective package index yet (`EDI` isn't on CRAN; `edi_kernels` isn't
+  on PyPI). First pass tried adding a second `URL:` entry to
+  `EDI/DESCRIPTION` pointing at `python/` plus a `BugReports:` field —
+  reverted: `DESCRIPTION` is package metadata parsed by tooling (CRAN,
+  `pak`, etc.), and it shouldn't carry an informal pointer to an unrelated
+  sibling project just because they happen to share a repo. Settled
+  instead on prose-only cross-links: the repo-root `README.md` gained a
+  short paragraph pointing at `python/` right after its opening
+  paragraph, and `python/README.md`'s opening paragraph links back to
+  `EDI/`. Once either package actually publishes to CRAN/PyPI, add that
+  registry link too (`DESCRIPTION`'s `URL:` pointing at the *published
+  Python package's own listing*, not at a source subdirectory, would be
+  legitimate at that point) — but the README-level links stay regardless.
 - Keep a `CHANGELOG.md` in `python/` from the first release onward,
   entries keyed to the same version number scheme above — a compiled
   numerical library's users need to know exactly which kernel-behavior or
   ABI changes landed in which release before upgrading a pinned dependency.
+  **Status: DONE (2026-08-05).** `python/CHANGELOG.md` created with a
+  `[1.0.0] - 2026-08-05` initial-release entry (Keep a Changelog style),
+  covering the full binding surface, test coverage, packaging/release
+  infrastructure, and the two known result-shape quirks already documented
+  elsewhere in this doc.

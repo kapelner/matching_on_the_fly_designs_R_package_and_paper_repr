@@ -4,10 +4,12 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "edi_kernels"
-version = "0.1.0"
+version = "1.0.0"
 description = "Python bindings for EDI's C++ model-fitting kernels (pybind11, no R/Rcpp dependency)"
 readme = "README.md"
 requires-python = ">=3.9"
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
 dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
@@ -20,3 +22,46 @@ wheel.packages = ["src/edi_kernels"]
 
 [tool.scikit-build.cmake.define]
 EDI_PY_PORTABLE = "OFF"
+
+# Wheels built by cibuildwheel (see below) leave this machine, so they must
+# never bake in -march=native. This does NOT change the default for a plain
+# local `pip install .` (still OFF, i.e. -march=native, for local-dev
+# speed) -- cibuildwheel overrides it per-build via `config-settings`
+# below, per this doc's own "Building portable wheels" checklist, which
+# explicitly prefers that over flipping the pyproject.toml-wide default.
+[tool.cibuildwheel]
+build = "cp39-* cp310-* cp311-* cp312-* cp313-*"
+skip = ["*-win32", "*-manylinux_i686", "*-musllinux*"]
+build-verbosity = 1
+config-settings = { "cmake.define.EDI_PY_PORTABLE" = "ON" }
+test-command = "python -m pytest {project}/tests -q"
+test-extras = ["test"]
+
+[tool.cibuildwheel.linux]
+# manylinux_2_28 (AlmaLinux 8 based) rather than the manylinux2014 default:
+# EDI/src is built as C++20 (CMakeLists.txt CMAKE_CXX_STANDARD), which
+# manylinux2014's stock devtoolset compiler doesn't reliably support.
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+# No BLAS is preinstalled in manylinux containers at all (see
+# CMakeLists.txt's find_package(BLAS) comment) -- openblas-devel provides
+# it via dnf (this image's package manager; NOT apt-get, which manylinux
+# images don't have despite being a common copy-paste default elsewhere).
+before-all = "dnf install -y openblas-devel || yum install -y openblas-devel"
+
+[tool.cibuildwheel.macos]
+archs = ["x86_64", "arm64"]
+# BLAS: macOS ships the Accelerate framework, which CMake's FindBLAS
+# detects automatically -- no install needed. libomp is separate (Apple
+# clang doesn't bundle OpenMP); installed so OpenMP::OpenMP_CXX
+# (CMakeLists.txt's optional find_package(OpenMP)) is actually found rather
+# than silently building single-threaded.
+before-all = "brew install libomp"
+
+[tool.cibuildwheel.windows]
+# No system package manager and no Accelerate-equivalent BLAS on Windows --
+# fall back to the pip-installable scipy-openblas32 package (see
+# CMakeLists.txt's find_package(BLAS) fallback, same package numpy/scipy/
+# scikit-learn's own cibuildwheel configs use for this exact problem).
+before-build = "pip install scipy-openblas32 delvewheel"
+repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel}"

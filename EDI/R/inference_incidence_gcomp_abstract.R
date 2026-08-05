@@ -229,7 +229,10 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X)),
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X))
 				),
-				error = function(e) NULL
+				error = function(e) {
+					if (is_edi_control_condition(e)) stop(e)
+					NULL
+				}
 			)
 			if (is.null(fit) || !private$coefficients_are_usable(as.numeric(fit$b))){
 				return(NA_real_)
@@ -416,7 +419,10 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 						warm_start_beta = boot_ws,
 						warm_start_fisher_info = private$get_fit_warm_start_fisher(p_fit)
 					),
-					error = function(e) NULL
+					error = function(e) {
+						if (is_edi_control_condition(e)) stop(e)
+						NULL
+					}
 				)
 				if (is.null(mod)) {
 					private$gcomp_boot_beta = NULL
@@ -470,7 +476,10 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 						warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_fit)),
 						warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_fit))
 					),
-					error = function(e) NULL
+					error = function(e) {
+						if (is_edi_control_condition(e)) stop(e)
+						NULL
+					}
 				)
 				if (is.null(mod)){
 					return(NULL)
@@ -504,16 +513,19 @@ InferenceIncidGCompAbstract = R6::R6Class("InferenceIncidGCompAbstract",
 					X_curr = X_curr[, -drop_col, drop = FALSE]
 					next
 				}
-				post_fit = tryCatch(
-					gcomp_logistic_post_fit_cpp(
-						X_fit = X_fit,
-						y = as.numeric(private$y),
-						coef_hat = coef_hat,
-						mu_hat = mu_hat,
-						j_treat = j_treat
-					),
-					error = function(e) NULL
-				)
+					post_fit = tryCatch(
+						gcomp_logistic_post_fit_cpp(
+							X_fit = X_fit,
+							y = as.numeric(private$y),
+							coef_hat = coef_hat,
+							mu_hat = mu_hat,
+							j_treat = j_treat
+						),
+						error = function(e) {
+							if (is_edi_control_condition(e)) stop(e)
+							NULL
+						}
+					)
 				if (is.null(post_fit)){
 					if (ncol(X_curr) <= 2L) return(NULL)
 					drop_col = gcomp_select_covariate_to_drop(X_curr, coef_hat)

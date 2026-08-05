@@ -536,6 +536,10 @@ gee_pairs_singletons_cpp <- function(X_r, y_r, group_id_r, family_str, warm_star
     .Call(`_EDI_gee_pairs_singletons_cpp`, X_r, y_r, group_id_r, family_str, warm_start_beta, warm_start_fisher_info, maxit, tol)
 }
 
+fast_gehan_wilcox_stats_cpp <- function(w, y_r, dead) {
+    .Call(`_EDI_fast_gehan_wilcox_stats_cpp`, w, y_r, dead)
+}
+
 get_hurdle_negbin_count_score_cpp <- function(X_r, y_r, params_sexp) {
     .Call(`_EDI_get_hurdle_negbin_count_score_cpp`, X_r, y_r, params_sexp)
 }
@@ -2114,6 +2118,22 @@ match_diffs_cpp <- function(X_sexp, y_sexp, w_sexp, m_vec_sexp, m) {
     .Call(`_EDI_match_diffs_cpp`, X_sexp, y_sexp, w_sexp, m_vec_sexp, m)
 }
 
+#' Miettinen-Nurminen Confidence Interval for Risk Difference
+#'
+#' Computes an approximate Miettinen-Nurminen confidence interval for the risk
+#' difference by inverting the score test with a bisection search.
+#'
+#' @param x_t Number of events in treatment.
+#' @param n_t Number of subjects in treatment.
+#' @param x_c Number of events in control.
+#' @param n_c Number of subjects in control.
+#' @param p_t_obs Observed treatment-arm risk.
+#' @param p_c_obs Observed control-arm risk.
+#' @param alpha The confidence level is \code{1 - alpha}.
+#' @param pval_epsilon Bisection tolerance in p-value space.
+#' @return A length-2 numeric vector containing the lower and upper CI bounds.
+NULL
+
 #' Constrained MLE for Risk Difference (Miettinen-Nurminen)
 #'
 #' Solves the likelihood equations for p_C subject to p_T - p_C = delta.
@@ -2159,32 +2179,22 @@ mn_pvalue_cpp <- function(x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs) {
     .Call(`_EDI_mn_pvalue_cpp`, x_t, n_t, x_c, n_c, delta, p_t_obs, p_c_obs)
 }
 
-#' Miettinen-Nurminen Confidence Interval for Risk Difference
-#'
-#' Computes an approximate Miettinen-Nurminen confidence interval for the risk
-#' difference by inverting the score test with a bisection search.
-#'
-#' @param x_t Number of events in treatment.
-#' @param n_t Number of subjects in treatment.
-#' @param x_c Number of events in control.
-#' @param n_c Number of subjects in control.
-#' @param p_t_obs Observed treatment-arm risk.
-#' @param p_c_obs Observed control-arm risk.
-#' @param alpha The confidence level is \code{1 - alpha}.
-#' @param pval_epsilon Bisection tolerance in p-value space.
-#' @return A length-2 numeric vector containing the lower and upper CI bounds.
 mn_ci_cpp <- function(x_t, n_t, x_c, n_c, p_t_obs, p_c_obs, alpha, pval_epsilon) {
     .Call(`_EDI_mn_ci_cpp`, x_t, n_t, x_c, n_c, p_t_obs, p_c_obs, alpha, pval_epsilon)
 }
 
 #' Wilson Score Interval for a Single Proportion
 #' @keywords internal
+NULL
+
+#' Newcombe Hybrid Score Interval for Independent Proportions (Method 10)
+#' @keywords internal
+NULL
+
 wilson_score_interval_cpp <- function(x, n, alpha) {
     .Call(`_EDI_wilson_score_interval_cpp`, x, n, alpha)
 }
 
-#' Newcombe Hybrid Score Interval for Independent Proportions (Method 10)
-#' @keywords internal
 newcombe_independent_ci_cpp <- function(x1, n1, x2, n2, alpha) {
     .Call(`_EDI_newcombe_independent_ci_cpp`, x1, n1, x2, n2, alpha)
 }

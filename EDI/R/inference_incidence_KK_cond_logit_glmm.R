@@ -13,16 +13,16 @@
 #'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
 #' }
 #' seq_des$add_all_subject_responses(rbinom(10, 1, 0.5))
-#' inf = InferenceIncidKKCondLogitPlusGLMMOneLik$new(seq_des)
+#' inf = InferenceIncidKKCondLogitGLMMOneLik$new(seq_des)
 #' inf$compute_estimate()
 #' }
 #' }
 #'
 #' \strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
 #' @export
-InferenceIncidKKCondLogitPlusGLMMIVWC = R6::R6Class("InferenceIncidKKCondLogitPlusGLMMIVWC",
+InferenceIncidKKCondLogitGLMMIVWC = R6::R6Class("InferenceIncidKKCondLogitGLMMIVWC",
 	lock_objects = FALSE,
-	inherit = InferenceAbstractKKCondLogitPlusGLMM,
+	inherit = InferenceAbstractKKCondLogitGLMM,
 	public = list(
 	),
 	private = list(
@@ -44,17 +44,17 @@ InferenceIncidKKCondLogitPlusGLMMIVWC = R6::R6Class("InferenceIncidKKCondLogitPl
 #'   seq_des$add_one_subject_to_experiment_and_assign(data.frame(x1 = rnorm(1), x2 = rnorm(1)))
 #' }
 #' seq_des$add_all_subject_responses(rbinom(10, 1, 0.5))
-#' inf = InferenceIncidKKCondLogitPlusGLMMOneLik$new(seq_des)
+#' inf = InferenceIncidKKCondLogitGLMMOneLik$new(seq_des)
 #' inf$compute_estimate()
 #' }
 #' @export
-InferenceIncidKKCondLogitPlusGLMMOneLik = R6::R6Class("InferenceIncidKKCondLogitPlusGLMMOneLik",
+InferenceIncidKKCondLogitGLMMOneLik = R6::R6Class("InferenceIncidKKCondLogitGLMMOneLik",
 	lock_objects = FALSE,
-	inherit = InferenceAbstractKKCondLogitPlusGLMM,
+	inherit = InferenceAbstractKKCondLogitGLMM,
 	public = list(
-		#' @description Initialize KK conditional-logit plus GLMM one-likelihood
+		#' @description Initialize KK conditional-logit GLMM one-likelihood
 		#'   incidence inference and configure the combined likelihood used by
-		#'   \code{\link[EDI:InferenceIncidKKCondLogitPlusGLMMOneLik]{InferenceIncidKKCondLogitPlusGLMMOneLik}}.
+		#'   \code{\link[EDI:InferenceIncidKKCondLogitGLMMOneLik]{InferenceIncidKKCondLogitGLMMOneLik}}.
 		#' @param des_obj A completed \code{Design} object with an incidence response.
 		#' @param model_formula Optional formula for covariate adjustment.
 		#' @param max_abs_reasonable_coef Cap for reasonable coefficient estimates.

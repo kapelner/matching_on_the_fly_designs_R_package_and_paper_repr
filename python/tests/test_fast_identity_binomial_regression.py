@@ -17,13 +17,14 @@ in R (note: this R export has no estimate_only parameter -- it always
 computes the full fit), on the exact same synthetic dataset generated below
 with numpy.random.default_rng(106).
 
-IMPORTANT default mismatch found while building this fixture: R's tol
-default for this kernel is 1e-8 (see EDI/R/RcppExports.R), but the Python
-binding's tol default is 1e-6 (python/cpp/bindings_binary.cpp,
-bind_constrained_binomial) -- a real, worth-fixing drift, not intentional
-(same issue as fast_log_binomial_regression). The call below passes
-tol=1e-8 explicitly to match R's fixture; without that, results agree only
-to ~1e-9-1e-8 territory at best, not reliably within this test's 1e-9.
+NOTE (corrected 2026-08-05): an earlier pass through this file claimed a
+tol default mismatch here (same claim, and same correction, as
+test_fast_log_binomial_regression.py). It was wrong -- R's own default
+(EDI/R/RcppExports.R, EDI/src/fast_log_binomial_regression.cpp) is
+tol=1e-6, identical to the Python binding's. No drift exists. The call
+below still passes tol=1e-8 explicitly on both the R-fixture side and here
+-- a deliberately tighter-than-default convergence criterion for fixture
+stability at this test's atol=rtol=1e-9, not a workaround for a mismatch.
 """
 import numpy as np
 import pytest

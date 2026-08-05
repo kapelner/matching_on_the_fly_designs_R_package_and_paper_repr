@@ -1,5 +1,12 @@
 library(EDI)
 
+supports_inference_capability = function(inf_obj, capability) {
+  isTRUE(tryCatch(
+    inf_obj$supports(capability)[[capability]],
+    error = function(e) FALSE
+  ))
+}
+
 # Settings
 n = 100
 p = 5
@@ -95,10 +102,10 @@ run_tests_for_response = function(response_type, inference_classes, model_formul
     }
     
     # 4. Randomization Inference
-    if (inherits(inf, "InferenceRand")) {
+    if (supports_inference_capability(inf, "randomization_test")) {
       tryCatch({
         cat("  Rand P-val:", inf$compute_rand_two_sided_pval(r = r), "\n")
-        if (inherits(inf, "InferenceRandCI")) {
+        if (supports_inference_capability(inf, "randomization_ci")) {
           cat("  Rand CI:", paste(inf$compute_rand_confidence_interval(r = r), collapse = ", "), "\n")
         }
       }, error = function(e) cat("  Rand Error:", e$message, "\n"))
@@ -142,7 +149,7 @@ run_tests_for_response("incidence", list(
   list(InferenceIncidKKCondLogitIVWC, model_formula = ~ .),
   list(InferenceIncidKKCondLogitOneLik, model_formula = ~ .),
   list(InferenceIncidKKGEE, model_formula = ~ .),
-  list(InferenceIncidKKCondLogitPlusGLMMOneLik, model_formula = ~ .)
+  list(InferenceIncidKKCondLogitGLMMOneLik, model_formula = ~ .)
 ))
 
 ##### response_type = proportion

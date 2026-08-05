@@ -54,6 +54,13 @@ supports_exact_inference = function(inf_obj) {
 	)) || is(inf_obj, "InferenceExact")
 }
 
+supports_inference_capability = function(inf_obj, capability) {
+	isTRUE(tryCatch(
+		inf_obj$supports(capability)[[capability]],
+		error = function(e) FALSE
+	))
+}
+
 max_n_dataset = 148 #needs to be divisible by 4 for some blocking designs
 source(repo_path("package_tests", "_dataset_load.R"))
 # options(error = recover)
@@ -655,18 +662,19 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 	# Per-operation slow skips. These are class+method only; no design,
 	# dataset, formula, or response-specific slow gates.
 	skip_rand_slow            = is_exact_inference_class(c("InferenceContinKKGLMM"))
-	skip_rand_ci_slow         = is_exact_inference_class(c("InferenceSurvivalWeibullRegr", "InferenceSurvivalKKClaytonCopulaOneLik", "InferenceSurvivalKKWeibullFrailtyOneLik", "InferenceSurvivalKKWeibullMarginal", "InferencePropQuantileRegr", "InferencePropKKGEE", "InferencePropBetaRegr"))  # PropBetaRegr rand CI avg 32.3s / p80 43.6s / max 2035.9s at n=334; SurvivalKKWeibullMarginal rand CI avg 32.2s
+	skip_rand_ci_slow         = is_exact_inference_class(c("InferenceSurvivalWeibullRegr", "InferenceSurvivalKKClaytonCopulaOneLik", "InferenceSurvivalKKWeibullFrailtyOneLik", "InferenceSurvivalKKWeibullMarginal", "InferencePropQuantileRegr", "InferencePropKKGEE", "InferencePropBetaRegr"))  # PropBetaRegr rand CI avg 32.3s / p80 43.7s / max 2035.9s at n=334; SurvivalKKWeibullMarginal rand CI avg 32.2s
 	skip_score_ci_slow        = is_exact_inference_class(c("InferenceSurvivalKKWeibullFrailtyOneLik"))  # score CI avg 50.1s / max 324.8s at n=13
 	skip_lik_ratio_ci_slow    = is_exact_inference_class(c("InferenceSurvivalKKClaytonCopulaOneLik", "InferenceSurvivalDepCensTransformRegr"))  # lik-ratio CI avg 39s / max 234s at n=6; DepCensTransformRegr max 9546.6s
-	skip_bbt_pval_slow        = is_exact_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # Bayesian bootstrap pval avg 32.4s / p80 40.6s / max 68.4s at n=32
-	skip_bbt_pval_symmetric_slow = is_exact_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # Bayesian bootstrap symmetric pval avg 30.6s / max 54.9s at n=18
-	skip_bbt_pval_wald_slow   = is_exact_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # Bayesian bootstrap Wald pval avg 39.0s / p80 58.4s / max 58.6s
-	skip_bbt_pval_studentized_slow = is_exact_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))  # Bayesian bootstrap studentized pval avg 36.9s / p80 60.3s / max 66.2s
-	skip_bbt_ci_slow          = is_exact_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik"))
+	skip_bbt_pval_slow        = is_exact_inference_class(c("InferenceIncidKKCondLogitGLMMOneLik"))  # Bayesian bootstrap pval avg 32.4s / p80 42.2s / max 68.4s at n=32
+	skip_bbt_pval_symmetric_slow = is_exact_inference_class(c("InferenceIncidKKCondLogitGLMMOneLik"))  # Bayesian bootstrap symmetric pval avg 30.6s / max 54.9s at n=18
+	skip_bbt_pval_wald_slow   = is_exact_inference_class(c("InferenceIncidKKCondLogitGLMMOneLik"))  # Bayesian bootstrap Wald pval avg 39.0s / p80 58.4s / max 58.6s
+	skip_bbt_pval_studentized_slow = is_exact_inference_class(c("InferenceIncidKKCondLogitGLMMOneLik"))  # Bayesian bootstrap studentized pval avg 36.9s / p80 60.3s / max 66.2s
+	skip_bbt_ci_slow          = is_exact_inference_class(c("InferenceIncidKKCondLogitGLMMOneLik"))
 	skip_bbt_ci_default_slow  = is_exact_inference_class(c("InferenceIncidExactFisher"))  # Bayesian bootstrap CI avg 26.0s / max 60.9s on SPBR pima
 	skip_boot_ci_default_slow = is_exact_inference_class(c("InferenceIncidRiskDiff", "InferenceIncidExactFisher", "InferenceContinKKQuantileRegrOneLik", "InferenceSurvivalDepCensTransformRegr"))  # RiskDiff bootstrap CI avg 261.1s / max 2014.1s at n=8; IncidExactFisher bootstrap CI avg 31.8s / max 66.3s; ContinKKQuantileRegrOneLik bootstrap CI mean 109.0s / max 9434.3s at n=98; DepCensTransformRegr bootstrap CI max 44948.6s
 	skip_boot_ci_basic_slow   = is_exact_inference_class(c("InferenceIncidExactFisher"))  # ExactFisher bootstrap basic CI avg 34.4s / p80 34.7s / max 35.3s
-	skip_boot_stud_slow       = is_exact_inference_class(c("InferenceIncidRiskDiff", "InferenceIncidExactFisher", "InferenceSurvivalGehanWilcox", "InferenceSurvivalDepCensTransformRegr", "InferenceOrdinalKKGEE", "InferenceIncidModifiedPoisson"))  # RiskDiff bootstrap studentized CI avg 261.1s / max 2014.1s at n=8; IncidExactFisher bootstrap studentized CI avg 31.2s / max 75.4s; GehanWilcox studentized CI max 10443.4s; DepCensTransformRegr avg 50.7s; OrdinalKKGEE avg 37.7s; ModifiedPoisson avg 31.6s
+	skip_boot_ci_bca_slow     = is_exact_inference_class(c("InferenceIncidKKGCompRiskDiff"))  # KKGCompRiskDiff bootstrap BCA CI avg 45.0s / p80 16.9s / max 10817.7s at n=356
+	skip_boot_stud_slow       = is_exact_inference_class(c("InferenceIncidRiskDiff", "InferenceIncidExactFisher", "InferenceSurvivalGehanWilcox", "InferenceSurvivalDepCensTransformRegr", "InferenceOrdinalKKGEE", "InferenceIncidModifiedPoisson"))  # RiskDiff bootstrap studentized CI avg 261.1s / max 2014.1s at n=8; IncidExactFisher bootstrap studentized CI avg 31.2s / max 75.4s; GehanWilcox studentized CI max 10443.4s; DepCensTransformRegr avg 50.7s; OrdinalKKGEE avg 51.3s / p80 30.1s / max 12084.2s; ModifiedPoisson avg 31.6s
 	skip_boot_pval_stud_slow  = is_exact_inference_class(c("InferenceAllSimpleMeanDiff", "InferenceIncidExactFisher", "InferenceSurvivalGehanWilcox", "InferenceOrdinalKKGEE"))  # SimpleMeanDiff bootstrap studentized pval avg 178.8s / max 2001.5s at n=12; IncidExactFisher avg 30.9s / max 50.8s; GehanWilcox avg 73.6s; OrdinalKKGEE avg 34.6s
 	skip_boot_pval_symmetric_slow = is_exact_inference_class(c("InferenceIncidKKGCompRiskRatio"))  # bootstrap symmetric pval max 10456.5s
 	skip_boot_ci_slow         = FALSE
@@ -677,7 +685,7 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 	skip_param_bootstrap_pval_slow = is_exact_inference_class(c("InferenceSurvivalStratCoxPHRegr"))  # param bootstrap pval avg 80.2s / max 183.9s
 	skip_param_bootstrap_ci_slow = is_exact_inference_class(c("InferenceSurvivalStratCoxPHRegr"))  # param bootstrap CI avg 73.2s / max 86.3s
 	skip_bartlett_pval_slow = is_exact_inference_class(c("InferenceSurvivalStratCoxPHRegr"))  # Bartlett LR pval avg 73.0s / max 73.6s
-	skip_rand_delta_pval_slow = is_exact_inference_class(c("InferenceIncidKKCondLogitPlusGLMMOneLik", "InferenceOrdinalKKGEE"))  # delta=0.5 variant avg 205s; OrdinalKKGEE avg 30.2s / max 41.7s
+	skip_rand_delta_pval_slow = is_exact_inference_class(c("InferenceIncidKKCondLogitGLMMOneLik", "InferenceOrdinalKKGEE"))  # delta=0.5 variant avg 205s; OrdinalKKGEE avg 30.2s / max 41.7s
 	skip_brt_pval_smoothed_slow = is_exact_inference_class(c("InferenceOrdinalKKGLMM", "InferenceOrdinalContRatioRegr", "InferenceOrdinalStereotypeLogitRegr", "InferenceOrdinalAdjCatLogitRegr", "InferenceSurvivalDepCensTransformRegr"))  # smoothed pval avg >30s; AdjCatLogit avg 499s / max 2694s
 	skip_brt_pval_typed_slow    = is_exact_inference_class(c("InferenceCountKKHurdlePoissonOneLik", "InferenceCountKKCondPoissonOneLik"))  # studentized+sympt-t pval avg 264s / 82s
 	skip_brt_ci_all_slow        = is_exact_inference_class(c("InferenceSurvivalGehanWilcox", "InferenceSurvivalWeibullRegr", "InferencePropBetaRegr", "InferencePropKKGEE"))  # all CI types avg >30s for listed paths; PropKKGEE BRT CI avg 37-43s at n=18
@@ -694,9 +702,13 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 		"InferencePropFractionalLogit",
 		"InferenceCountHurdleNegBin"
 	))
+	skip_m_out_of_n_ci_slow = skip_m_out_of_n_slow || is_exact_inference_class(c(
+		"InferenceCountPoissonKKGEE"
+	))
 	skip_subsampling_slow = is_exact_inference_class(c(
 		"InferenceSurvivalKKClaytonCopulaOneLik",
-		"InferenceCountHurdleNegBin"
+		"InferenceCountHurdleNegBin",
+		"InferenceCountPoissonKKGEE"
 	))
 	# BRT pval: skip only if bootstrap structurally broken OR rand itself slow; ContinRobustRegr keeps BRT pval
 	skip_brt_pval = skip_bootstrap || skip_rand_slow
@@ -740,6 +752,12 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 		(isTRUE(tryCatch(seq_des_inf$.__enclos_env__$private$supports_bartlett_likelihood_ratio_exact(), error = function(e) FALSE)) ||
 		 isTRUE(tryCatch(seq_des_inf$.__enclos_env__$private$supports_bartlett_likelihood_ratio_approx(), error = function(e) FALSE)))
 	supports_bartlett_ci = run_parametric_bootstrap_ci_for_class && supports_bartlett
+	supports_randomization_test =
+		supports_inference_capability(seq_des_inf, "randomization_test")
+	supports_randomization_ci =
+		supports_inference_capability(seq_des_inf, "randomization_ci")
+	supports_randomization_bootstrap =
+		supports_inference_capability(seq_des_inf, "randomization_bootstrap")
 	supports_incidence_rand_pval =
 		response_type != "incidence" ||
 		isTRUE(tryCatch(seq_des_inf$.__enclos_env__$private$should_use_zhang_incidence_randomization(), error = function(e) FALSE)) ||
@@ -1315,6 +1333,10 @@ call_direct_asymp = function(method_name, testing_type, ...){
 				message("          Skipping compute_bootstrap_confidence_interval_basic (too slow)")
 				next
 			}
+			if (boot_ci_type == "bca" && skip_boot_ci_bca_slow) {
+				message("          Skipping compute_bootstrap_confidence_interval_bca (too slow)")
+				next
+			}
 			if (boot_ci_type == "studentized" && skip_boot_stud_slow) {
 				message("          Skipping compute_bootstrap_confidence_interval_studentized (too slow)")
 				next
@@ -1327,7 +1349,7 @@ call_direct_asymp = function(method_name, testing_type, ...){
 		if (is.na(small_resampling_size)) {
 			message("          Skipping compute_m_out_of_n_bootstrap_confidence_interval / compute_subsampling_confidence_interval (too few exchangeable units)")
 		} else {
-			if (!skip_m_out_of_n_slow) {
+			if (!skip_m_out_of_n_ci_slow) {
 				safe_call("compute_m_out_of_n_bootstrap_confidence_interval",
 						  seq_des_inf$compute_m_out_of_n_bootstrap_confidence_interval(B = r, m = small_resampling_size, show_progress = FALSE))
 			} else {
@@ -1457,7 +1479,7 @@ call_direct_asymp = function(method_name, testing_type, ...){
 	if (should_run_test_family("jackknife") && !skip_slow && supports_jackknife && !skip_jack_slow){
 		safe_call("compute_jackknife_wald_confidence_interval", seq_des_inf$compute_jackknife_wald_confidence_interval())
 	}
-	if (should_run_test_family("rand") && !skip_slow && !skip_rand && !skip_regular_rand_pval && !skip_rand_slow && response_type %in% c("continuous", "survival", "proportion", "incidence", "count", "ordinal")){
+	if (supports_randomization_test && should_run_test_family("rand") && !skip_slow && !skip_rand && !skip_regular_rand_pval && !skip_rand_slow && response_type %in% c("continuous", "survival", "proportion", "incidence", "count", "ordinal")){
 		if (run_debug_resampling) {
 			safe_call_debug("approximate_randomization_distribution_beta_hat_T_debug",
 						seq_des_inf$approximate_randomization_distribution_beta_hat_T(r = r_debug, debug = TRUE))
@@ -1478,11 +1500,11 @@ call_direct_asymp = function(method_name, testing_type, ...){
 		}
 	}
 
-	if (should_run_test_family("rand") && !skip_slow && !skip_rand && !skip_ci_rand && !skip_rand_slow && !skip_rand_ci_slow && test_compute_confidence_interval_rand && response_type %in% c("continuous", "proportion", "count", "survival")){
+	if (supports_randomization_ci && should_run_test_family("rand") && !skip_slow && !skip_rand && !skip_ci_rand && !skip_rand_slow && !skip_rand_ci_slow && test_compute_confidence_interval_rand && response_type %in% c("continuous", "proportion", "count", "survival")){
 		safe_call("compute_rand_confidence_interval", seq_des_inf$compute_rand_confidence_interval(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE))
 	}
 	# Bootstrap randomization test (BRT): row bootstrap + fresh assignment draw from the design
-	if (run_brt_for_class && should_run_test_family("rand_bootstrap") && !skip_slow && !skip_brt_pval && !skip_rand && !skip_rand_pval && response_type %in% c("continuous", "survival", "proportion", "incidence", "count", "ordinal")){
+	if (supports_randomization_bootstrap && run_brt_for_class && should_run_test_family("rand_bootstrap") && !skip_slow && !skip_brt_pval && !skip_rand && !skip_rand_pval && response_type %in% c("continuous", "survival", "proportion", "incidence", "count", "ordinal")){
 		if (run_debug_resampling) {
 			safe_call_debug("approximate_rand_bootstrap_distribution_beta_hat_T_debug",
 						seq_des_inf$approximate_rand_bootstrap_distribution_beta_hat_T(B = B_debug, debug = TRUE, show_progress = FALSE))
@@ -1505,7 +1527,7 @@ call_direct_asymp = function(method_name, testing_type, ...){
 					  seq_des_inf$compute_rand_bootstrap_two_sided_pval(B = r, type = brt_pval_type, show_progress = FALSE))
 		}
 	}
-	if (run_brt_for_class && should_run_test_family("rand_bootstrap") && !skip_slow && !skip_brt_ci && !skip_rand && !skip_ci_rand && test_compute_confidence_interval_rand && response_type %in% c("continuous", "proportion", "count", "survival")){
+	if (supports_randomization_bootstrap && supports_randomization_ci && run_brt_for_class && should_run_test_family("rand_bootstrap") && !skip_slow && !skip_brt_ci && !skip_rand && !skip_ci_rand && test_compute_confidence_interval_rand && response_type %in% c("continuous", "proportion", "count", "survival")){
 		safe_call("compute_rand_bootstrap_confidence_interval", seq_des_inf$compute_rand_bootstrap_confidence_interval(B = r, pval_epsilon = pval_epsilon, show_progress = FALSE))
 		for (brt_ci_type in c("studentized", "symmetric-percentile-t", "smoothed")) {
 			if (brt_ci_type == "smoothed" && skip_brt_ci_smoothed_slow) next
@@ -1514,14 +1536,14 @@ call_direct_asymp = function(method_name, testing_type, ...){
 					  seq_des_inf$compute_rand_bootstrap_confidence_interval(B = r, type = brt_ci_type, pval_epsilon = pval_epsilon, show_progress = FALSE))
 		}
 	}
-	if (should_run_test_family("rand_custom")){
+	if (supports_randomization_test && should_run_test_family("rand_custom")){
 		seq_des_inf$set_custom_randomization_statistic_cpp(welch_t_stat_cpp)
 		if (!skip_slow && !skip_custom_rand_pval){
 			safe_call("compute_rand_two_sided_pval(custom)", seq_des_inf$compute_rand_two_sided_pval(r = r, show_progress = FALSE))
 		} else if (response_type == "incidence") {
 			message("    Skipping compute_rand_two_sided_pval(custom) (custom randomization statistic unsupported for incidence)")
 		}
-		if (!skip_slow && !skip_ci_rand && test_compute_confidence_interval_rand && response_type %in% c("continuous", "proportion", "survival")){
+		if (supports_randomization_ci && !skip_slow && !skip_ci_rand && test_compute_confidence_interval_rand && response_type %in% c("continuous", "proportion", "survival")){
 			if (!skip_ci_rand_custom){
 				safe_call("compute_rand_confidence_interval(custom)", seq_des_inf$compute_rand_confidence_interval(r = r, pval_epsilon = pval_epsilon, show_progress = FALSE))
 			} else {
@@ -1608,7 +1630,7 @@ run_exhaustive_remaining_inference_classes = function(des_obj, response_type, de
 		"InferenceCustomAsymp",
 		"InferenceCustomBoot",
 		"InferenceCustomRand",
-		"InferenceIncidKKCondLogitPlusGLMMOneLik",
+		"InferenceIncidKKCondLogitGLMMOneLik",
 		"InferenceRandCI",
 		"InferenceQuantileRandCI"
 	))
@@ -1824,7 +1846,7 @@ COVERAGE_MC_SPEC = list(
 	InferenceIncidProbitRegr             = list(rt = "incidence",  design = quote(DesignFixedBernoulli),  gen = quote(InferenceIncidProbitRegr),             mc_n = 20000L),
 	InferenceIncidKKGEE                  = list(rt = "incidence",  design = quote(DesignFixedBinaryMatch), gen = quote(InferenceIncidKKGEE),                  mc_n = 3000L),
 	InferenceIncidKKCondLogitOneLik      = list(rt = "incidence",  design = quote(DesignFixedBinaryMatch), gen = quote(InferenceIncidKKCondLogitOneLik),      mc_n = 3000L),
-	InferenceIncidKKCondLogitPlusGLMMOneLik = list(rt = "incidence", design = quote(DesignFixedBinaryMatch), gen = quote(InferenceIncidKKCondLogitPlusGLMMOneLik), mc_n = 3000L),
+	InferenceIncidKKCondLogitGLMMOneLik = list(rt = "incidence", design = quote(DesignFixedBinaryMatch), gen = quote(InferenceIncidKKCondLogitGLMMOneLik), mc_n = 3000L),
 	InferenceSurvivalCoxPHRegr           = list(rt = "survival",   design = quote(DesignFixedBernoulli),  gen = quote(InferenceSurvivalCoxPHRegr),           mc_n = 20000L),
 	InferenceSurvivalStratCoxPHRegr      = list(rt = "survival",   design = quote(DesignFixedBernoulli),  gen = quote(InferenceSurvivalStratCoxPHRegr),      mc_n = 20000L),
 	InferenceSurvivalWeibullRegr         = list(rt = "survival",   design = quote(DesignFixedBernoulli),  gen = quote(InferenceSurvivalWeibullRegr),         mc_n = 20000L),
@@ -2171,14 +2193,14 @@ run_tests_for_response = function(response_type, design_type, dataset_name, mode
 		run_inference_checks(InferenceIncidWald$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 		if (is_kk_design){
 			run_inference_checks_both_paths(InferenceIncidKKCondLogitOneLik, "InferenceIncidKKCondLogitOneLik", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
-			run_inference_checks_both_paths(InferenceIncidKKCondLogitPlusGLMMOneLik, "InferenceIncidKKCondLogitPlusGLMMOneLik", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
+			run_inference_checks_both_paths(InferenceIncidKKCondLogitGLMMOneLik, "InferenceIncidKKCondLogitGLMMOneLik", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
 			run_inference_checks_both_paths(InferenceIncidKKGEE, "InferenceIncidKKGEE", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
 			inference_banner("InferenceIncidKKNewcombeRiskDiff")
 			run_inference_checks(InferenceIncidKKNewcombeRiskDiff$new(des_obj, model_formula = model_formula), response_type, design_type, dataset_name, n_X, p_X)
 			run_inference_checks_both_paths(InferenceIncidKKGCompRiskDiff, "InferenceIncidKKGCompRiskDiff", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
 			run_inference_checks_both_paths(InferenceIncidKKGCompRiskRatio, "InferenceIncidKKGCompRiskRatio", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
 			run_inference_checks_both_paths(InferenceIncidKKModifiedPoisson, "InferenceIncidKKModifiedPoisson", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
-			run_inference_checks_both_paths(InferenceIncidKKCondLogitPlusGLMMOneLik, "InferenceIncidKKCondLogitPlusGLMMOneLik", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
+			run_inference_checks_both_paths(InferenceIncidKKCondLogitGLMMOneLik, "InferenceIncidKKCondLogitGLMMOneLik", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
 		}
 		run_inference_checks_both_paths(InferenceIncidLogRegr, "InferenceIncidLogRegr", des_obj, response_type, design_type, dataset_name, n_X, p_X, model_formula = model_formula)
 		if (!is_kk_design){

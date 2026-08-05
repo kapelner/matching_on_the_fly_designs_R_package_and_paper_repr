@@ -94,6 +94,7 @@ InferenceSurvivalStratCoxPHRegr = R6::R6Class("InferenceSurvivalStratCoxPHRegr",
 		strat_cox_strata_sub_cache = NULL,
 		cached_mod = NULL,
 		coxph_control = NULL,
+		param_bootstrap_extreme_estimate_threshold = 0.5,
 		get_complexity_tier = function() "light",
 		shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))

@@ -20,7 +20,38 @@ find_package(OpenMP)
 # cblas_dsyrk directly (the ABI-stable CBLAS entry point, not R's raw Fortran
 # dsyrk_/F77_CALL convention -- see that header's own comment). Any standard
 # BLAS provider (reference libblas, OpenBLAS, MKL) exports this symbol.
-find_package(BLAS REQUIRED)
+#
+# Portable-wheel builds (cibuildwheel, see pyproject.toml's
+# [tool.cibuildwheel]) don't reliably have a system BLAS: manylinux
+# containers have no BLAS preinstalled at all, and Windows has no system
+# package manager to provide one. On those platforms this falls back to the
+# `scipy-openblas32` PyPI package (a pip-installable OpenBLAS build with a
+# CMake package config, used the same way by numpy/scipy/scikit-learn's own
+# cibuildwheel configs) -- installed via [tool.cibuildwheel]'s
+# `before-build`, never a hard `EDI/src` dependency.
+find_package(BLAS QUIET)
+if(NOT BLAS_FOUND)
+    execute_process(
+        COMMAND ${Python_EXECUTABLE} -c "import scipy_openblas32 as s; print(s.get_cmake_dir())"
+        OUTPUT_VARIABLE SCIPY_OPENBLAS_CMAKE_DIR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE SCIPY_OPENBLAS_RESULT
+        ERROR_QUIET
+    )
+    if(SCIPY_OPENBLAS_RESULT EQUAL 0 AND SCIPY_OPENBLAS_CMAKE_DIR)
+        message(STATUS "System BLAS not found; using scipy-openblas32's bundled OpenBLAS (${SCIPY_OPENBLAS_CMAKE_DIR}).")
+        list(APPEND CMAKE_PREFIX_PATH ${SCIPY_OPENBLAS_CMAKE_DIR})
+        find_package(BLAS REQUIRED)
+    else()
+        message(FATAL_ERROR
+            "No BLAS found via find_package(BLAS), and scipy-openblas32 isn't "
+            "installed in ${Python_EXECUTABLE} either. Install a system BLAS "
+            "(e.g. `dnf install openblas-devel` on manylinux, a system package "
+            "on Linux/macOS) or `pip install scipy-openblas32` before "
+            "configuring, per this file's comment and pyproject.toml's "
+            "[tool.cibuildwheel].")
+    endif()
+endif()
 include(FetchContent)
 
 # Prefer a real Eigen3 CMake package (apt's libeigen3-dev, conda-forge, a
@@ -117,6 +148,14 @@ set(EDI_KERNEL_SOURCES
     ${EDI_SRC_DIR}/fast_hurdle_poisson_glmm.cpp
     ${EDI_SRC_DIR}/fast_hurdle_negbin.cpp
     ${EDI_SRC_DIR}/fast_log_binomial_regression.cpp
+    ${EDI_SRC_DIR}/miettinen_nurminen_speedups.cpp
+    ${EDI_SRC_DIR}/newcombe_speedups.cpp
+    ${EDI_SRC_DIR}/fast_gehan_wilcox.cpp
+    ${EDI_SRC_DIR}/fast_logrank.cpp
+    ${EDI_SRC_DIR}/fast_wilcox_hl.cpp
+    ${EDI_SRC_DIR}/fast_survival_stats.cpp
+    ${EDI_SRC_DIR}/fast_ridit_analysis.cpp
+    ${EDI_SRC_DIR}/robust_post_fit_speedups.cpp
 )
 
 pybind11_add_module(_core

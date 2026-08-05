@@ -114,10 +114,13 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 			if (delta == 0 && !is.null(private$cached_values$wilcox_asymp_pval) && is.finite(private$cached_values$wilcox_asymp_pval)) {
 				return(private$cached_values$wilcox_asymp_pval)
 			}
-			pv = tryCatch(
-				stats::wilcox.test(yT, yC - delta, exact = FALSE)$p.value,
-				error = function(e) NA_real_
-			)
+				pv = tryCatch(
+					stats::wilcox.test(yT, yC - delta, exact = FALSE)$p.value,
+					error = function(e) {
+						if (is_edi_control_condition(e)) stop(e)
+						NA_real_
+					}
+				)
 			as.numeric(pv)
 		},
 		#' @description Returns the Hodges-Lehmann CI from wilcox.test directly.
@@ -129,7 +132,13 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 			yT = as.numeric(private$y[private$w == 1])
 			yC = as.numeric(private$y[private$w == 0])
 			if (length(yT) == 0L || length(yC) == 0L) return(c(NA_real_, NA_real_))
-			mod = tryCatch(stats::wilcox.test(yT, yC, conf.int = TRUE, exact = FALSE, conf.level = 1 - alpha), error = function(e) NULL)
+			mod = tryCatch(
+				stats::wilcox.test(yT, yC, conf.int = TRUE, exact = FALSE, conf.level = 1 - alpha),
+				error = function(e) {
+					if (is_edi_control_condition(e)) stop(e)
+					NULL
+				}
+			)
 			if (is.null(mod)) return(c(NA_real_, NA_real_))
 			as.numeric(mod$conf.int)
 		},
@@ -193,6 +202,7 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 			if (is.null(row_weights)) {
 				return(wilcox_hl_point_estimate_cpp(as.integer(w_vals), as.numeric(y_vals)))
 			}
+			private$check_bootstrap_replicate_deadline("Wilcox weighted HL setup")
 			# Weighted implementation
 			y_vals = as.numeric(y_vals)
 			w_vals = as.integer(w_vals)
@@ -201,12 +211,15 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 			i_c = which(w_vals == 0L & is.finite(y_vals) & is.finite(row_weights) & row_weights > 0)
 			if (length(i_t) == 0L || length(i_c) == 0L) return(NA_real_)
 			diffs = as.numeric(outer(y_vals[i_t], y_vals[i_c], "-"))
+			private$check_bootstrap_replicate_deadline("Wilcox weighted HL differences")
 			wdiff = as.numeric(outer(row_weights[i_t], row_weights[i_c], "*"))
+			private$check_bootstrap_replicate_deadline("Wilcox weighted HL weights")
 			ok = is.finite(diffs) & is.finite(wdiff) & wdiff > 0
 			if (!any(ok)) return(NA_real_)
 			diffs = diffs[ok]
 			wdiff = wdiff[ok]
 			o = order(diffs)
+			private$check_bootstrap_replicate_deadline("Wilcox weighted HL order")
 			diffs = diffs[o]
 			wdiff = wdiff[o]
 			cw = cumsum(wdiff) / sum(wdiff)
@@ -265,7 +278,13 @@ InferenceAllSimpleWilcox = R6::R6Class("InferenceAllSimpleWilcox",
 				private$cache_nonestimable_estimate("wilcox_empty_treatment_arm")
 				return(invisible(NULL))
 			}
-			mod = tryCatch(stats::wilcox.test(yT, yC, conf.int = TRUE, exact = FALSE), error = function(e) NULL)
+			mod = tryCatch(
+				stats::wilcox.test(yT, yC, conf.int = TRUE, exact = FALSE),
+				error = function(e) {
+					if (is_edi_control_condition(e)) stop(e)
+					NULL
+				}
+			)
 			if (is.null(mod)){
 				private$cache_nonestimable_estimate("wilcox_fit_unavailable")
 				return(invisible(NULL))

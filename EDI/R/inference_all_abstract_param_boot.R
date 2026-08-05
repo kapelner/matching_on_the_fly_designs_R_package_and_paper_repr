@@ -398,7 +398,13 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 				return(NA_real_)
 			}
 
-			2 * batch$raw_estimate - mean(batch$finite_reps)
+			theta = 2 * batch$raw_estimate - mean(batch$finite_reps)
+			if (!is.finite(theta) || private$param_bootstrap_estimate_extreme(theta, est = batch$raw_estimate)) {
+				if (!isTRUE(self$is_nonestimable("estimate")))
+					private$cache_nonestimable_estimate("param_bootstrap_estimate_extreme_bias_correction")
+				return(NA_real_)
+			}
+			theta
 		},
 		#' @description Parametric-bootstrap "basic" (reflected) confidence interval.
 		#'
@@ -469,6 +475,11 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 			hi = 2 * batch$raw_estimate - as.numeric(stats::quantile(batch$finite_reps, alpha / 2, names = FALSE))
 			ci = c(lo, hi)
 			names(ci) = ci_names
+			if (private$param_bootstrap_confidence_interval_extreme(ci, est = batch$raw_estimate)) {
+				if (!isTRUE(self$is_nonestimable("estimate")))
+					private$cache_nonestimable_estimate("param_bootstrap_estimate_extreme_confidence_interval")
+				ci[] = NA_real_
+			}
 			ci
 		},
 		#' @description Parametric-bootstrap two-sided p-value for H0: theta = delta,
@@ -534,6 +545,11 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 			}
 
 			t_delta = 2 * batch$raw_estimate - as.numeric(delta)[1L]
+			if (!is.finite(t_delta) || private$param_bootstrap_estimate_extreme(t_delta, est = batch$raw_estimate)) {
+				if (!isTRUE(self$is_nonestimable("estimate")))
+					private$cache_nonestimable_estimate("param_bootstrap_estimate_extreme_pvalue_reflection")
+				return(NA_real_)
+			}
 			n = length(batch$finite_reps)
 			left_tail = (1 + sum(batch$finite_reps <= t_delta)) / (1 + n)
 			right_tail = (1 + sum(batch$finite_reps >= t_delta)) / (1 + n)
@@ -543,6 +559,7 @@ InferenceParamBootstrap = R6::R6Class("InferenceParamBootstrap",
 	private = c(InferenceExtBartlettApprox$private, InferenceExtParamBootstrapEstimate$private, list(
 		is_a_param_bootstrap = function() TRUE,
 		param_bootstrap_extreme_lr_threshold = EDI_SEPARATION_THRESHOLD,
+		param_bootstrap_extreme_estimate_threshold = EDI_SEPARATION_THRESHOLD,
 		param_bootstrap_lr_extreme = function(lr, max_abs = private$param_bootstrap_extreme_lr_threshold){
 			lr = as.numeric(lr)
 			max_abs = as.numeric(max_abs)[1L]

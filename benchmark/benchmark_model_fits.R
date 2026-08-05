@@ -197,6 +197,89 @@ generate_zoib_data = function(n = 1000, p = 4) {
     )
 }
 
+# --- Data generators for the "(pairs)" KK-GLMM-family rows below ---
+# Pure matched-pairs designs (n_pairs pairs, 2 rows/pair, shared group_id) for
+# the random-intercept GLMM estimators that have no canonical R equivalent
+# either (no R package offers ML, not REML/variational, GLMM fitting with
+# adaptive quadrature for these families). Simpler than
+# generate_kk_incid_combined_data()/generate_kk_weibull_frailty_data() above
+# since there's no discordant/concordant/reservoir split to replicate here --
+# just a single matched-pairs random intercept b_pair ~ N(0, sigma_b^2).
+generate_kk_gaussian_pairs_data = function(n_pairs = 200, p = 4) {
+    beta_x = rnorm(p) * 0.3
+    b_pair = rnorm(n_pairs, 0, 0.6)
+    X_cov = matrix(rnorm(2 * n_pairs * p), 2 * n_pairs, p)
+    w = rep(c(1, 0), n_pairs)
+    group_id = rep(seq_len(n_pairs), each = 2)
+    eta = 0.3 + 0.5 * w + X_cov %*% beta_x + b_pair[group_id]
+    y = as.numeric(eta + rnorm(2 * n_pairs, 0, 0.5))
+    list(
+        X = as.matrix(cbind(`(Intercept)` = 1, w = w, X_cov)),
+        y = y,
+        group_id = as.integer(group_id)
+    )
+}
+
+generate_kk_poisson_pairs_data = function(n_pairs = 200, p = 4) {
+    beta_x = rnorm(p) * 0.2
+    b_pair = rnorm(n_pairs, 0, 0.4)
+    X_cov = matrix(rnorm(2 * n_pairs * p), 2 * n_pairs, p)
+    w = rep(c(1, 0), n_pairs)
+    group_id = rep(seq_len(n_pairs), each = 2)
+    eta = 0.3 + 0.4 * w + X_cov %*% beta_x + b_pair[group_id]
+    y = rpois(2 * n_pairs, exp(eta))
+    list(
+        X = as.matrix(cbind(`(Intercept)` = 1, w = w, X_cov)),
+        y = as.numeric(y),
+        group_id = as.integer(group_id)
+    )
+}
+
+generate_kk_hurdle_poisson_pairs_data = function(n_pairs = 200, p = 4) {
+    beta_x = rnorm(p) * 0.2
+    b_pair = rnorm(n_pairs, 0, 0.4)
+    X_cov = matrix(rnorm(2 * n_pairs * p), 2 * n_pairs, p)
+    w = rep(c(1, 0), n_pairs)
+    group_id = rep(seq_len(n_pairs), each = 2)
+    eta = 0.5 + 0.4 * w + X_cov %*% beta_x + b_pair[group_id]
+    y = rpois(2 * n_pairs, exp(eta))
+    # Force genuine hurdle structure: mix in extra structural zeros on top of
+    # the Poisson's own sampling zeros.
+    p0 = plogis(-0.5 - 0.3 * w)
+    zero_mask = runif(2 * n_pairs) < p0
+    y[zero_mask] = 0L
+    list(
+        X = as.matrix(cbind(`(Intercept)` = 1, w = w, X_cov)),
+        y = as.numeric(y),
+        group_id = as.integer(group_id)
+    )
+}
+
+generate_kk_ordinal_pairs_data = function(n_pairs = 200, p = 4) {
+    beta_x = rnorm(p) * 0.3
+    b_pair = rnorm(n_pairs, 0, 0.5)
+    X_cov = matrix(rnorm(2 * n_pairs * p), 2 * n_pairs, p)
+    w = rep(c(1, 0), n_pairs)
+    group_id = rep(seq_len(n_pairs), each = 2)
+    eta = 0.4 * w + X_cov %*% beta_x + b_pair[group_id]
+    p1 = 1 / (1 + exp(eta - 1))
+    p2 = 1 / (1 + exp(eta + 1)) - p1
+    p3 = 1 - p1 - p2
+    probs = cbind(p1, p2, p3)
+    probs = t(apply(probs, 1, function(x) pmax(x, 1e-6)))
+    probs = probs / rowSums(probs)
+    y = apply(probs, 1, function(pr) sample(1:3, 1, prob = pr))
+    # X has NO intercept column; treatment is the first column (fast_ordinal_clmm_cpp/
+    # fast_ordinal_glmm_cpp both expect j_T = 0L, matching the KK ordinal R6 classes'
+    # own convention -- see inference_ordinal_KK_clmm_abstract.R / inference_ordinal_KK_combined.R).
+    list(
+        X = as.matrix(cbind(w = w, X_cov)),
+        y = as.integer(y),
+        group_id = as.integer(group_id),
+        K = 3L
+    )
+}
+
 collect_timing_ms = function(expr, times = B_TIME, env = parent.frame(), target_batch_ms = TARGET_BATCH_MS, max_inner_reps = MAX_INNER_REPS, fast_path_microbenchmark_reps = FAST_PATH_MICROBENCH_REPS) {
     gctorture(FALSE)
     gc(verbose = FALSE)
@@ -396,7 +479,7 @@ make_edi_bm_no_canonical = function(cls_name, d) {
     for (nm in names(d)) assign(nm, d[[nm]], envir = e)
 
     expr = switch(cls_name,
-        InferenceIncidKKCondLogitPlusGLMMOneLik = quote(EDI:::fast_clogit_plus_glmm_cpp(
+        InferenceIncidKKCondLogitGLMMOneLik = quote(EDI:::fast_clogit_plus_glmm_cpp(
             X_disc = X_disc, y_disc = y_disc, X_conc = X_conc, y_conc = y_conc, group_conc = group_conc,
             has_discordant = TRUE, has_concordant = TRUE, estimate_only = TRUE
         )),
@@ -408,6 +491,21 @@ make_edi_bm_no_canonical = function(cls_name, d) {
         )),
         InferencePropZeroOneInflatedBetaRegr = quote(EDI:::fast_zero_one_inflated_beta_cpp(
             X, X_zero_one, y, estimate_only = TRUE
+        )),
+        "InferenceContinGLMM (pairs)" = quote(EDI:::fast_gaussian_lmm_cpp(
+            X = X, y = y, group_id = group_id, estimate_only = TRUE
+        )),
+        "InferenceCountGLMM (pairs)" = quote(EDI:::fast_poisson_glmm_cpp(
+            X = X, y = y, group_id = group_id, j_T = 1L, estimate_only = TRUE
+        )),
+        "InferenceCountHurdlePoisson (pairs)" = quote(EDI:::fast_hurdle_poisson_glmm_cpp(
+            X = X, y = y, group_id = group_id, j_T = 1L, estimate_only = TRUE
+        )),
+        "InferenceOrdinalCLMM (pairs)" = quote(EDI:::fast_ordinal_clmm_cpp(
+            X = X, y = y, group_id = group_id, K = K, j_T = 0L, estimate_only = TRUE
+        )),
+        "InferenceOrdinalGLMM (pairs)" = quote(fast_ordinal_glmm_cpp(
+            X = X, y = y, group_id = group_id, K = K, j_T = 0L, estimate_only = TRUE
         )),
         NULL
     )
@@ -421,7 +519,7 @@ make_edi_wald_bm_no_canonical = function(cls_name, d) {
     for (nm in names(d)) assign(nm, d[[nm]], envir = e)
 
     expr = switch(cls_name,
-        InferenceIncidKKCondLogitPlusGLMMOneLik = quote({
+        InferenceIncidKKCondLogitGLMMOneLik = quote({
             fit = EDI:::fast_clogit_plus_glmm_cpp(
                 X_disc = X_disc, y_disc = y_disc, X_conc = X_conc, y_conc = y_conc, group_conc = group_conc,
                 has_discordant = TRUE, has_concordant = TRUE, estimate_only = FALSE
@@ -444,6 +542,31 @@ make_edi_wald_bm_no_canonical = function(cls_name, d) {
         InferencePropZeroOneInflatedBetaRegr = quote({
             fit = EDI:::fast_zero_one_inflated_beta_cpp(X, X_zero_one, y, estimate_only = FALSE)
             se = sqrt(fit$vcov[2, 2]); t_stat = as.numeric(fit$b)[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        "InferenceContinGLMM (pairs)" = quote({
+            fit = EDI:::fast_gaussian_lmm_cpp(X = X, y = y, group_id = group_id, estimate_only = FALSE)
+            se = sqrt(fit$ssq_b_T); t_stat = as.numeric(fit$b)[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        "InferenceCountGLMM (pairs)" = quote({
+            fit = EDI:::fast_poisson_glmm_cpp(X = X, y = y, group_id = group_id, j_T = 1L, estimate_only = FALSE)
+            se = sqrt(fit$ssq_b_T); t_stat = as.numeric(fit$b)[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        "InferenceCountHurdlePoisson (pairs)" = quote({
+            fit = EDI:::fast_hurdle_poisson_glmm_cpp(X = X, y = y, group_id = group_id, j_T = 1L, estimate_only = FALSE)
+            se = sqrt(fit$ssq_b_T); t_stat = as.numeric(fit$b)[2] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        "InferenceOrdinalCLMM (pairs)" = quote({
+            fit = EDI:::fast_ordinal_clmm_cpp(X = X, y = y, group_id = group_id, K = K, j_T = 0L, estimate_only = FALSE)
+            se = sqrt(fit$ssq_b_T); t_stat = as.numeric(fit$b)[1] / se
+            2 * stats::pnorm(-abs(t_stat))
+        }),
+        "InferenceOrdinalGLMM (pairs)" = quote({
+            fit = fast_ordinal_glmm_cpp(X = X, y = y, group_id = group_id, K = K, j_T = 0L, estimate_only = FALSE)
+            se = sqrt(fit$ssq_b_T); t_stat = as.numeric(fit$b)[1] / se
             2 * stats::pnorm(-abs(t_stat))
         }),
         NULL
@@ -613,14 +736,24 @@ bench_specs = c(bench_specs, no_can_specs)
 # skip canonical timing entirely (Canonical_Time_ms/Speedup/Timing_Pval stay
 # NA) while still timing the EDI bare-metal kernel via a custom data_fn.
 no_r_support_specs = list(
-    list(cls = "InferenceIncidKKCondLogitPlusGLMMOneLik", pkg = "None", func = "no canonical R implementation",
+    list(cls = "InferenceIncidKKCondLogitGLMMOneLik", pkg = "None", func = "no canonical R implementation",
          data_fn = function() generate_kk_incid_combined_data()),
     list(cls = "InferenceCountKKCondPoissonOneLik", pkg = "None", func = "no canonical R implementation",
          data_fn = function() generate_kk_count_combined_data()),
     list(cls = "InferenceSurvivalKKWeibullFrailtyOneLik", pkg = "None", func = "no canonical R implementation",
          data_fn = function() generate_kk_weibull_frailty_data()),
     list(cls = "InferencePropZeroOneInflatedBetaRegr", pkg = "None", func = "no canonical R implementation",
-         data_fn = function() generate_zoib_data())
+         data_fn = function() generate_zoib_data()),
+    list(cls = "InferenceContinGLMM (pairs)", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_kk_gaussian_pairs_data()),
+    list(cls = "InferenceCountGLMM (pairs)", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_kk_poisson_pairs_data()),
+    list(cls = "InferenceCountHurdlePoisson (pairs)", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_kk_hurdle_poisson_pairs_data()),
+    list(cls = "InferenceOrdinalCLMM (pairs)", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_kk_ordinal_pairs_data()),
+    list(cls = "InferenceOrdinalGLMM (pairs)", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_kk_ordinal_pairs_data())
 )
 bench_specs = c(bench_specs, no_r_support_specs)
 
@@ -972,9 +1105,10 @@ make_edi_wald_bm = function(cls_name, d) {
             res = EDI:::fast_logrank_stats_cpp(w_bm, y_bm, as.integer(dead_bm))
             stats::pchisq(res$score ^ 2 / res$var_score, df = 1, lower.tail = FALSE)
         }),
-        InferenceSurvivalGehanWilcox = quote(
-            survival::survdiff(survival::Surv(y_bm, dead_bm) ~ w_bm, rho = 1)$pvalue
-        ),
+        InferenceSurvivalGehanWilcox = quote({
+            res = EDI:::fast_gehan_wilcox_stats_cpp(w_bm, y_bm, as.integer(dead_bm))
+            stats::pchisq(res$score ^ 2 / res$var_score, df = 1, lower.tail = FALSE)
+        }),
         InferenceSurvivalKMDiff = quote({
             fit = survival::survfit(survival::Surv(y_bm, dead_bm) ~ w_bm, conf.int = 0.95)
             q = stats::quantile(fit, 0.5)
@@ -1167,14 +1301,24 @@ wald_specs = list(
 # sized down to the N_WALD scale for the full-inference (point + SE + pval)
 # benchmark below.
 no_r_support_wald_specs = list(
-    list(cls = "InferenceIncidKKCondLogitPlusGLMMOneLik", pkg = "None", func = "no canonical R implementation",
+    list(cls = "InferenceIncidKKCondLogitGLMMOneLik", pkg = "None", func = "no canonical R implementation",
          data_fn = function() generate_kk_incid_combined_data(n_disc = 30, n_conc = 30, n_res = 80)),
     list(cls = "InferenceCountKKCondPoissonOneLik", pkg = "None", func = "no canonical R implementation",
          data_fn = function() generate_kk_count_combined_data(n_pairs = 60, n_res = 80)),
     list(cls = "InferenceSurvivalKKWeibullFrailtyOneLik", pkg = "None", func = "no canonical R implementation",
          data_fn = function() generate_kk_weibull_frailty_data(n_pairs = 50)),
     list(cls = "InferencePropZeroOneInflatedBetaRegr", pkg = "None", func = "no canonical R implementation",
-         data_fn = function() generate_zoib_data(n = N_WALD))
+         data_fn = function() generate_zoib_data(n = N_WALD)),
+    list(cls = "InferenceContinGLMM (pairs)", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_kk_gaussian_pairs_data(n_pairs = 60)),
+    list(cls = "InferenceCountGLMM (pairs)", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_kk_poisson_pairs_data(n_pairs = 60)),
+    list(cls = "InferenceCountHurdlePoisson (pairs)", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_kk_hurdle_poisson_pairs_data(n_pairs = 60)),
+    list(cls = "InferenceOrdinalCLMM (pairs)", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_kk_ordinal_pairs_data(n_pairs = 60)),
+    list(cls = "InferenceOrdinalGLMM (pairs)", pkg = "None", func = "no canonical R implementation",
+         data_fn = function() generate_kk_ordinal_pairs_data(n_pairs = 60))
 )
 wald_specs = c(wald_specs, no_r_support_wald_specs)
 

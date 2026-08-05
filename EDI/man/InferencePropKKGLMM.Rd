@@ -9,7 +9,7 @@ proportion responses, combining matched-pair and reservoir information in
 one model.
 }
 \section{Super classes}{
-\code{\link[EDI:Inference]{Inference}} -> \code{\link[EDI:InferenceRand]{InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceRandBootstrap]{InferenceRandBootstrap}} -> \code{\link[EDI:InferenceRandBootstrapCI]{InferenceRandBootstrapCI}} -> \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{InferenceParamBootstrap}} -> \code{\link[EDI:InferenceAbstractKKCondLogitPlusGLMM]{InferenceAbstractKKCondLogitPlusGLMM}} -> \code{InferencePropKKGLMM}
+\code{\link[EDI:Inference]{Inference}} -> \code{\link[EDI:InferenceRand]{InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceRandBootstrap]{InferenceRandBootstrap}} -> \code{\link[EDI:InferenceRandBootstrapCI]{InferenceRandBootstrapCI}} -> \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{InferenceParamBootstrap}} -> \code{\link[EDI:InferenceAbstractKKCondLogitGLMM]{InferenceAbstractKKCondLogitGLMM}} -> \code{InferencePropKKGLMM}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -18,14 +18,14 @@ one model.
     \item \href{#method-InferencePropKKGLMM-clone}{\code{InferencePropKKGLMM$clone()}}
   }
 }
-\if{html}{\out{<details><summary>+ inherited public methods from InferenceAbstractKKCondLogitPlusGLMM</summary>
+\if{html}{\out{<details><summary>+ inherited public methods from InferenceAbstractKKCondLogitGLMM</summary>
 <ul>
-  <li><a href='../../EDI/html/InferenceAbstractKKCondLogitPlusGLMM.html#method-InferenceAbstractKKCondLogitPlusGLMM-approximate_bootstrap_distribution_beta_hat_T'><code>InferenceAbstractKKCondLogitPlusGLMM$approximate_bootstrap_distribution_beta_hat_T()</code></a></li>
-  <li><a href='../../EDI/html/InferenceAbstractKKCondLogitPlusGLMM.html#method-InferenceAbstractKKCondLogitPlusGLMM-compute_asymp_confidence_interval'><code>InferenceAbstractKKCondLogitPlusGLMM$compute_asymp_confidence_interval()</code></a></li>
-  <li><a href='../../EDI/html/InferenceAbstractKKCondLogitPlusGLMM.html#method-InferenceAbstractKKCondLogitPlusGLMM-compute_asymp_two_sided_pval'><code>InferenceAbstractKKCondLogitPlusGLMM$compute_asymp_two_sided_pval()</code></a></li>
-  <li><a href='../../EDI/html/InferenceAbstractKKCondLogitPlusGLMM.html#method-InferenceAbstractKKCondLogitPlusGLMM-compute_estimate'><code>InferenceAbstractKKCondLogitPlusGLMM$compute_estimate()</code></a></li>
-  <li><a href='../../EDI/html/InferenceAbstractKKCondLogitPlusGLMM.html#method-InferenceAbstractKKCondLogitPlusGLMM-compute_estimate_with_bootstrap_weights'><code>InferenceAbstractKKCondLogitPlusGLMM$compute_estimate_with_bootstrap_weights()</code></a></li>
-  <li><a href='../../EDI/html/InferenceAbstractKKCondLogitPlusGLMM.html#method-InferenceAbstractKKCondLogitPlusGLMM-get_standard_error'><code>InferenceAbstractKKCondLogitPlusGLMM$get_standard_error()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAbstractKKCondLogitGLMM.html#method-InferenceAbstractKKCondLogitGLMM-approximate_bootstrap_distribution_beta_hat_T'><code>InferenceAbstractKKCondLogitGLMM$approximate_bootstrap_distribution_beta_hat_T()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAbstractKKCondLogitGLMM.html#method-InferenceAbstractKKCondLogitGLMM-compute_asymp_confidence_interval'><code>InferenceAbstractKKCondLogitGLMM$compute_asymp_confidence_interval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAbstractKKCondLogitGLMM.html#method-InferenceAbstractKKCondLogitGLMM-compute_asymp_two_sided_pval'><code>InferenceAbstractKKCondLogitGLMM$compute_asymp_two_sided_pval()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAbstractKKCondLogitGLMM.html#method-InferenceAbstractKKCondLogitGLMM-compute_estimate'><code>InferenceAbstractKKCondLogitGLMM$compute_estimate()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAbstractKKCondLogitGLMM.html#method-InferenceAbstractKKCondLogitGLMM-compute_estimate_with_bootstrap_weights'><code>InferenceAbstractKKCondLogitGLMM$compute_estimate_with_bootstrap_weights()</code></a></li>
+  <li><a href='../../EDI/html/InferenceAbstractKKCondLogitGLMM.html#method-InferenceAbstractKKCondLogitGLMM-get_standard_error'><code>InferenceAbstractKKCondLogitGLMM$get_standard_error()</code></a></li>
 </ul>
 </details>
 <details><summary>+ inherited public methods from InferenceParamBootstrap</summary>

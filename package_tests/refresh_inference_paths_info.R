@@ -103,8 +103,8 @@ get_opt_metadata = function(res_type, base_name) {
     via = "ourself/Rcpp conditional-Poisson combined likelihood"
     alg = "Newton-Raphson"
     has_analytic_hess = "Y"
-  } else if (grepl("KKCondLogitPlusGLMM", base_name)) {
-    via = "ourself/Rcpp conditional-logistic plus GLMM"
+  } else if (grepl("KKCondLogitGLMM", base_name)) {
+    via = "ourself/Rcpp conditional-logistic GLMM"
     alg = "L-BFGS"
   } else if (grepl("KKCondLogit", base_name)) {
     via = "ourself/Rcpp conditional-logistic"

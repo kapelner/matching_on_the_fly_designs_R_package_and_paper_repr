@@ -150,9 +150,14 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 					stop("Testing non-zero delta is not yet implemented for InferenceSurvivalGehanWilcox.")
 				}
 			}
-			surv_obj  = survival::Surv(private$y, private$dead)
-			surv_diff = survival::survdiff(surv_obj ~ private$w, rho = 1)
-			surv_diff$pvalue
+			private$compute_shared()
+			if (!is.finite(private$cached_values$gw_var) || private$cached_values$gw_var <= 0){
+				surv_obj  = survival::Surv(private$y, private$dead)
+				surv_diff = survival::survdiff(surv_obj ~ private$w, rho = 1)
+				return(surv_diff$pvalue)
+			}
+			chisq_stat = private$cached_values$gw_score ^ 2 / private$cached_values$gw_var
+			stats::pchisq(chisq_stat, df = 1, lower.tail = FALSE)
 		},
 		#' @description Randomization confidence intervals are not supported for this class because
 		#' the Peto-Prentice weighted score scale is not commensurate with the time-ratio
@@ -204,63 +209,34 @@ InferenceSurvivalGehanWilcox = R6::R6Class("InferenceSurvivalGehanWilcox",
 			mean_c = sum(wt_c * M_w[idx_c]) / sum(wt_c)
 			as.numeric(mean_t - mean_c)
 		},
-		# Computes the Peto-Prentice weighted martingale residual estimate and SE.
+		# Computes the Peto-Prentice weighted martingale residual estimate, its SE, and
+		# the survdiff(rho=1) score/variance, via a single fused C++ sweep equivalent to
+		# coxph(~1) martingale residuals + survfit(~1) KM weights + survdiff(rho=1).
 		# Results are cached in private$cached_values.
 		compute_shared = function(estimate_only = FALSE){
 			if (estimate_only && !is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
 			if (!estimate_only && !is.null(private$cached_values$s_beta_hat_T)) return(invisible(NULL))
 			if (!is.null(private$cached_values$beta_hat_T)) return(invisible(NULL))
-			y    = private$y
-			dead = private$dead
-			w    = private$w
-			surv_obj = survival::Surv(y, dead)
-			# Martingale residuals M_i = delta_i - Lambda_hat_0(t_i) from null Cox model
-			cox_null = tryCatch(
-				survival::coxph(surv_obj ~ 1),
+			gw_stats = tryCatch(
+				fast_gehan_wilcox_stats_cpp(
+					w = as.integer(private$w),
+					y_r = as.numeric(private$y),
+					dead = as.integer(private$dead)
+				),
 				error = function(e) NULL
 			)
-			if (is.null(cox_null)){
-				private$cached_values$beta_hat_T   = NA_real_
+			if (is.null(gw_stats)){
+				private$cached_values$beta_hat_T = NA_real_
 			if (estimate_only) return(invisible(NULL))
 				private$cached_values$s_beta_hat_T = NA_real_
+				private$cached_values$gw_score = NA_real_
+				private$cached_values$gw_var = NA_real_
 				return(invisible(NULL))
 			}
-			M = tryCatch(
-				as.numeric(residuals(cox_null, type = "martingale")),
-				error = function(e) NULL
-			)
-			if (is.null(M) || length(M) != length(y) || !all(is.finite(M))){
-				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
-				return(invisible(NULL))
-			}
-			# Peto-Prentice weights: S_hat(t_i^-) from the overall KM estimate.
-			# KM is right-continuous, so S(t^-) = km$surv at the largest event time < t.
-			# findInterval with left.open=TRUE finds the largest km_time strictly < y[i].
-			km_all = tryCatch(
-				survival::survfit(surv_obj ~ 1),
-				error = function(e) NULL
-			)
-			if (is.null(km_all)){
-				private$cached_values$beta_hat_T   = NA_real_
-				private$cached_values$s_beta_hat_T = NA_real_
-				return(invisible(NULL))
-			}
-			idx          = findInterval(y, km_all$time, left.open = TRUE)
-			peto_weights = c(1.0, km_all$surv)[idx + 1L]
-			# Weighted martingale residuals
-			M_w  = peto_weights * M
-			M_wT = M_w[w == 1]
-			M_wC = M_w[w == 0]
-			n_T  = length(M_wT)
-			n_C  = length(M_wC)
-			beta_hat = mean(M_wT) - mean(M_wC)
-			# Welch-style SE treating Peto-Prentice weights as fixed
-			v_T = if (n_T > 1L) var(M_wT) / n_T else 0
-			v_C = if (n_C > 1L) var(M_wC) / n_C else 0
-			se  = sqrt(v_T + v_C)
-			private$cached_values$beta_hat_T   = beta_hat
-			private$cached_values$s_beta_hat_T = if (is.finite(se) && se > 0) se else NA_real_
+			private$cached_values$beta_hat_T   = as.numeric(gw_stats$beta_hat)
+			private$cached_values$s_beta_hat_T = as.numeric(gw_stats$se_beta_hat)
+			private$cached_values$gw_score = as.numeric(gw_stats$score)
+			private$cached_values$gw_var = as.numeric(gw_stats$var_score)
 		}
 	)
 )

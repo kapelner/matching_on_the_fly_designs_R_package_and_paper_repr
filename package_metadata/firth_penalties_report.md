@@ -508,7 +508,7 @@ mathematical existence for arbitrary symbolic differentiation.
 | `InferenceIncidBinomialIdentityRiskDiff` | `fast_identity_binomial_regression_cpp` | **Yes** | Smooth binomial likelihood with fixed dispersion; less pleasant algebra than logit, but still tractable. |
 | `InferenceIncidKKClogitOneLik` | stacked conditional-logistic + reservoir-logistic path via `fast_logistic_regression_with_var_cpp` | **Borderline** | Smooth logistic-based combined likelihood, but not the ordinary unconditional logit Firth case. |
 | `InferenceIncidKKGLMM` | `fast_logistic_glmm_cpp` | **No** | GH-quadrature integrated random-effects likelihood with variance parameter. |
-| `InferenceIncidKKClogitPlusGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | **No** | Hybrid of conditional logit and quadrature GLMM pieces with shared coefficients. |
+| `InferenceIncidKKCondLogitGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | **No** | Hybrid of conditional logit and quadrature GLMM pieces with shared coefficients. |
 
 ### Count
 

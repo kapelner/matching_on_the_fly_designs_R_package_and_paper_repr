@@ -220,7 +220,7 @@ correction alone does not automatically provide.
 | `InferenceIncidBinomialIdentityRiskDiff` | `fast_identity_binomial_regression_cpp` | **Borderline** | Same issue with an awkward parameterization. |
 | `InferenceIncidKKClogitOneLik` | stacked conditional-logistic + reservoir-logistic path via `fast_logistic_regression_with_var_cpp` | **Difficult** | Custom combined likelihood with no off-the-shelf median-bias-reduction recipe. |
 | `InferenceIncidKKGLMM` | `fast_logistic_glmm_cpp` | **Difficult** | GLMM plus quadrature plus variance components is too bespoke for an early rollout. |
-| `InferenceIncidKKClogitPlusGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | **Difficult** | Hybrid conditional-logit plus GLMM structure is too specialized. |
+| `InferenceIncidKKCondLogitGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | **Difficult** | Hybrid conditional-logit GLMM structure is too specialized. |
 
 ### Count
 

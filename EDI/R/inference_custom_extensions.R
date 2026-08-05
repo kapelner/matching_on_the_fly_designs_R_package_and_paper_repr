@@ -122,9 +122,10 @@ InferenceCustomAsymp = R6::R6Class("InferenceCustomAsymp",
 #' behavior.
 #'
 #' @keywords internal
-InferenceCustomRand = R6::R6Class("InferenceCustomRand",
-	lock_objects = FALSE,
-	inherit = InferenceRand,
+InferenceCustomRand = define_inference_class(
+	classname = "InferenceCustomRand",
+	inherit = Inference,
+	components = "RandomizationTest",
 	public = list(
 		#' @description Calls the user-defined fit callback for this custom inference path; see
 		#'   \code{\link[EDI:InferenceCustomAsymp]{InferenceCustomAsymp}}.
@@ -156,7 +157,8 @@ InferenceCustomRand = R6::R6Class("InferenceCustomRand",
 	),
 	private = list(
 		is_a_custom_rand = function() TRUE
-	)
+	),
+	metadata = list(likelihood_tier = "none")
 )
 #' Internal base for user-defined bootstrap inference extensions
 #'

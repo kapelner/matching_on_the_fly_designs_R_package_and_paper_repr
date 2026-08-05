@@ -205,13 +205,16 @@ LikelihoodFitResult fast_zinb_internal(const Eigen::Ref<const Eigen::MatrixXd>& 
     return optimize_fixed_likelihood(obj, par, fixed_spec, maxit, tol, optimization_alg, "lbfgs", 0, info_ptr);
 }
 
-// Portable (EDI_CORE_ONLY-safe) sibling of fast_zinb_cpp below: identical
-// logic (fit via fast_zinb_internal, then -- only when !estimate_only -- an
-// extra ZeroInflatedNegBin::hessian(params) call, inverted into vcov), just
-// returning edi::ResultMap directly instead of going through
+// Portable (EDI_CORE_ONLY-safe) sibling of fast_zinb_cpp below: fits via
+// fast_zinb_internal, then always takes the extra
+// ZeroInflatedNegBin::hessian(params) call, inverted into vcov, returning
+// edi::ResultMap directly instead of going through
 // make_uniform_likelihood_fit_result's Rcpp::List (that helper lives in the
 // Rcpp-only _helper_functions.h), so a separate Python binding translation
-// unit can call it.
+// unit can call it. No estimate_only flag: fast_zinb_internal/fast_zinb
+// already is the dedicated point-estimate-only backend, so this sibling's
+// only reason to exist is the variance -- an estimate_only branch here
+// would just be dead weight no caller needs.
 edi::ResultMap fast_zinb_with_var_internal(const Eigen::Ref<const Eigen::MatrixXd>& Xc,
                                            const Eigen::Ref<const Eigen::MatrixXd>& Xz,
                                            const Eigen::Ref<const Eigen::VectorXd>& y_vec,
@@ -221,19 +224,10 @@ edi::ResultMap fast_zinb_with_var_internal(const Eigen::Ref<const Eigen::MatrixX
                                            std::optional<Eigen::VectorXd> fixed_values = std::nullopt,
                                            std::string optimization_alg = "lbfgs",
                                            bool smart_cold_start = true,
-                                           std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt,
-                                           bool estimate_only = false) {
+                                           std::optional<Eigen::MatrixXd> warm_start_fisher_info = std::nullopt) {
     LikelihoodFitResult fit = fast_zinb_internal(
         Xc, Xz, y_vec, warm_start_params, maxit, tol, fixed_idx, fixed_values,
         optimization_alg, smart_cold_start, warm_start_fisher_info);
-
-    if (estimate_only) {
-        return edi::ResultMap()
-            .set("params", fit.params)
-            .set("converged", fit.converged)
-            .set("neg_ll", fit.value)
-            .set("iterations", fit.niter);
-    }
 
     ZeroInflatedNegBin obj(y_vec, Xc, Xz);
     const int n_par = (int)Xc.cols() + (int)Xz.cols() + 1;

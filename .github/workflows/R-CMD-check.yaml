@@ -1,0 +1,63 @@
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+name: R-CMD-check
+
+# Standard CRAN-style check matrix for the EDI R package (see
+# EDI/DESCRIPTION). This repo also holds an unrelated Python-bindings
+# subproject (python/, checked by build-wheels.yml) and paper-reproduction
+# code -- every step below is pointed at working-directory: EDI
+# accordingly, since EDI/DESCRIPTION isn't at the repo root.
+#
+# EDI links against RcppEigen/RcppNumerical (see LinkingTo in
+# EDI/DESCRIPTION) and compiles a large src/ tree of C++ kernels, so this
+# is a real compiled-package check, not just a lint pass -- worth running
+# across the full macOS/Windows/Linux x devel/release/oldrel-1 matrix to
+# catch platform-specific compiler differences (MSVC vs. clang vs. gcc)
+# that a single-OS check would miss.
+
+jobs:
+  R-CMD-check:
+    runs-on: ${{ matrix.config.os }}
+
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {os: macos-latest,   r: 'release'}
+          - {os: windows-latest, r: 'release'}
+          - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release'}
+          - {os: ubuntu-latest,  r: 'release'}
+          - {os: ubuntu-latest,  r: 'oldrel-1'}
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.config.r }}
+          http-user-agent: ${{ matrix.config.http-user-agent }}
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: EDI
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          working-directory: EDI
+          upload-snapshots: true
+          build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'

@@ -182,7 +182,7 @@ verify."
 | Incidence | `InferenceIncidBinomialIdentityRiskDiff` | Easy | Blocked |
 | Incidence | `InferenceIncidKKClogitOneLik` | Borderline | Blocked (compounds with bespoke combined-likelihood risk) |
 | Incidence | `InferenceIncidKKGLMM` | Difficult | Not a realistic target regardless of source access |
-| Incidence | `InferenceIncidKKClogitPlusGLMMOneLik` | Difficult | Not a realistic target |
+| Incidence | `InferenceIncidKKCondLogitGLMMOneLik` | Difficult | Not a realistic target |
 | Count | `InferenceCountPoisson` | Easy | Blocked |
 | Count | `InferenceCountRobustPoisson` | Easy | Blocked |
 | Count | `InferenceCountQuasiPoisson` | Easy | Blocked |
@@ -236,7 +236,7 @@ every other row in this table.
 | `InferenceIncidBinomialIdentityRiskDiff` | `fast_identity_binomial_regression_cpp` | **Easy** | Smooth fixed-effects binomial likelihood; less canonical, but still structurally regular. |
 | `InferenceIncidKKClogitOneLik` | stacked conditional-logistic + reservoir-logistic path via `fast_logistic_regression_with_var_cpp` | **Borderline** | The path is smooth, but it is already a bespoke combined-likelihood construction rather than a textbook LR model. |
 | `InferenceIncidKKGLMM` | `fast_logistic_glmm_cpp` | **Difficult** | Quadrature-integrated random-effects likelihood makes analytic higher-order LR correction highly bespoke. |
-| `InferenceIncidKKClogitPlusGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | **Difficult** | Hybrid conditional-logit plus GLMM structure is not a realistic package-wide Bartlett target. |
+| `InferenceIncidKKCondLogitGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | **Difficult** | Hybrid conditional-logit GLMM structure is not a realistic package-wide Bartlett target. |
 
 ### Count
 

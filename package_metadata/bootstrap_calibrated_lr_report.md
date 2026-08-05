@@ -198,7 +198,7 @@ family**, which is the gap that `InferenceParamBootstrap` needs to fill.
 | `InferenceIncidBinomialIdentityRiskDiff` | `fast_identity_binomial_regression_cpp` | **Easy** | Same comment: if the constrained fit returns valid probabilities, null simulation is direct. |
 | `InferenceIncidKKClogitOneLik` | stacked conditional-logistic + reservoir-logistic path via `fast_logistic_regression_with_var_cpp` | **Borderline** | The combined likelihood is still generative enough to simulate, but the data-generation interpretation is custom. |
 | `InferenceIncidKKGLMM` | `fast_logistic_glmm_cpp` | **Borderline** | Parametric simulation is possible, but requires drawing random effects and respecting the GH-approximated likelihood structure. |
-| `InferenceIncidKKClogitPlusGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | **Difficult** | Hybrid conditional-logit plus GLMM null simulation is too bespoke for a clean first rollout. Remains a direct `InferenceAsympLik` child. |
+| `InferenceIncidKKCondLogitGLMMOneLik` | `fast_clogit_plus_glmm_cpp` | **Difficult** | Hybrid conditional-logit GLMM null simulation is too bespoke for a clean first rollout. Remains a direct `InferenceAsympLik` child. |
 
 ### Count
 
@@ -356,7 +356,7 @@ All ten Easy families have `simulate_under_lik_null` and
 | `InferenceContinKKGLMM` | ✓ Done | all params in `$b = c(betas, log_sigma, log_tau)`; inherits from `InferenceParamBootstrap` |
 | `InferencePropZeroOneInflatedBetaRegr` | ✓ Done | three-part mixture (zero / beta / one) simulation |
 | `InferenceIncidKKClogitOneLik` | ✓ Done | generative Bernoulli simulation from combined-likelihood design matrix; fixed pre-existing `attempt$X_fit` → `attempt$X` bug |
-| `InferenceIncidKKGLMM` | ✗ Skipped | alias for `InferenceIncidKKClogitPlusGLMMOneLik` (Difficult) |
+| `InferenceIncidKKGLMM` | ✗ Skipped | alias for `InferenceIncidKKCondLogitGLMMOneLik` (Difficult) |
 | `InferencePropKKGLMM` | ✗ Skipped | `InferenceAbstractKKLogisticGLMMOneLik` — combined clogit+GLMM (Difficult) |
 | Ordinal fixed-effects models | ✓ Done | `InferenceOrdinalPropOddsRegr`, `InferenceOrdinalOrderedProbitRegr`, `InferenceOrdinalCauchitRegr`, and `InferenceOrdinalCloglogRegr` now simulate ordinal categories under the constrained null fit |
 | `InferenceSurvivalWeibullRegr` | ✓ Done | Weibull event times simulated under the constrained null fit with observed censoring thresholds carried forward |

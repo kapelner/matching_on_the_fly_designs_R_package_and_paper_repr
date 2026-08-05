@@ -731,28 +731,49 @@ populate_inference_component_registry = function(
 ) {
 	clear_inference_component_registry()
 	for (name in component_names) {
-		spec = EDI_COMPONENT_SPECS[[name]]
-		source_name = spec$source_name %||% name
-		declare_body_references_optional = isTRUE(spec$declare_body_references_optional)
-		spec$source_name = NULL
-		spec$declare_body_references_optional = NULL
-		source = get(source_name, envir = ns, inherits = TRUE)
-		parts = inference_component_source_parts(source)
-		component = do.call(InferenceComponent, c(
-			list(
-				name = name,
-				source_name = source_name,
-				public = parts$public,
-				private = parts$private,
-				provides_public_methods = names(parts$public) %||% character(),
-				provides_private_methods = names(parts$private) %||% character()
-			),
-			spec
-		))
-		if (declare_body_references_optional) {
-			component = complete_component_reference_contract(component)
-		}
-		register_inference_component(component)
+		register_inference_component_from_spec(name, ns = ns)
+	}
+	invisible(EDI_INFERENCE_COMPONENTS)
+}
+
+register_inference_component_from_spec = function(name, ns = environment(populate_inference_component_registry)) {
+	if (exists(name, envir = EDI_INFERENCE_COMPONENTS, inherits = FALSE)) {
+		return(invisible(get_inference_component(name)))
+	}
+	if (!(name %in% names(EDI_COMPONENT_SPECS))) {
+		stop(sprintf("No inference component spec registered for %s.", name), call. = FALSE)
+	}
+	spec = EDI_COMPONENT_SPECS[[name]]
+	for (dependency in spec$dependencies %||% character()) {
+		register_inference_component_from_spec(dependency, ns = ns)
+	}
+	source_name = spec$source_name %||% name
+	declare_body_references_optional = isTRUE(spec$declare_body_references_optional)
+	spec$source_name = NULL
+	spec$declare_body_references_optional = NULL
+	source = get(source_name, envir = ns, inherits = TRUE)
+	parts = inference_component_source_parts(source)
+	component = do.call(InferenceComponent, c(
+		list(
+			name = name,
+			source_name = source_name,
+			public = parts$public,
+			private = parts$private,
+			provides_public_methods = names(parts$public) %||% character(),
+			provides_private_methods = names(parts$private) %||% character()
+		),
+		spec
+	))
+	if (declare_body_references_optional) {
+		component = complete_component_reference_contract(component)
+	}
+	register_inference_component(component)
+	invisible(component)
+}
+
+ensure_inference_components_registered = function(component_names, ns = parent.frame()) {
+	for (name in unique(component_names)) {
+		register_inference_component_from_spec(name, ns = ns)
 	}
 	invisible(EDI_INFERENCE_COMPONENTS)
 }
@@ -1218,6 +1239,12 @@ define_inference_class = function(
 ) {
 	if (!identical(lock_objects, FALSE)) {
 		stop("define_inference_class() must keep `lock_objects = FALSE` until the R6 tree is stable.", call. = FALSE)
+	}
+	if (length(components) > 0L) {
+		ensure_inference_components_registered(
+			ns = parent.frame(),
+			component_names = unique(components)
+		)
 	}
 	component_names = resolve_component_dependencies(components)
 	assembled_public = assemble_public(classname, component_names, public, overrides, resolve = FALSE)

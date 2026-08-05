@@ -13,12 +13,16 @@ test in this suite does and doesn't cover.
 
 The expected values below were computed once via:
     EDI:::fast_log_binomial_regression_with_var_cpp(X, y, tol = 1e-8)
-in R (tol set explicitly to match the Python binding's default -- see
-test_fast_log_binomial_regression.py's docstring for the R/Python tol
-default mismatch this works around), on the exact same synthetic dataset
-generated below with numpy.random.default_rng(111). Do not regenerate this
-fixture casually -- if it needs updating, regenerate from R and update the
-comment with the date/EDI version.
+in R -- tol passed explicitly to match the Python call below. (NOTE,
+corrected 2026-08-05: this was originally described as working around an
+R/Python tol default mismatch; there is no such mismatch -- both sides
+default to tol=1e-6, see the correction in
+test_fast_log_binomial_regression.py's docstring. tol=1e-8 here is just a
+tighter-than-default convergence criterion for fixture stability, applied
+identically on both sides.) On the exact same synthetic dataset generated
+below with numpy.random.default_rng(111). Do not regenerate this fixture
+casually -- if it needs updating, regenerate from R and update the comment
+with the date/EDI version.
 """
 import numpy as np
 import pytest

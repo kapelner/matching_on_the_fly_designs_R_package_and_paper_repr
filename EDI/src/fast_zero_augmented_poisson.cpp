@@ -304,19 +304,21 @@ LikelihoodFitResult fast_zap_internal(const Eigen::Ref<const Eigen::MatrixXd>& X
 }
 
 // Portable (EDI_CORE_ONLY-safe) sibling of fast_zero_augmented_poisson_cpp
-// below: identical logic (fit via fast_zap_internal, then -- only when
-// !estimate_only -- an extra ZeroAugmentedPoisson::hessian(params) call,
-// inverted into vcov), just returning edi::ResultMap directly instead of
-// going through SEXP/Rcpp::List, so a separate Python binding translation
-// unit can call it. Covers both ZIP (is_hurdle=false) and hurdle-Poisson
-// (is_hurdle=true) since both share this one kernel.
+// below: fits via fast_zap_internal, then always takes the extra
+// ZeroAugmentedPoisson::hessian(params) call, inverted into vcov, returning
+// edi::ResultMap directly instead of going through SEXP/Rcpp::List, so a
+// separate Python binding translation unit can call it. Covers both ZIP
+// (is_hurdle=false) and hurdle-Poisson (is_hurdle=true) since both share
+// this one kernel. No estimate_only flag: fast_zap_internal/
+// fast_zero_augmented_poisson already is the dedicated point-estimate-only
+// backend, so this sibling's only reason to exist is the variance -- an
+// estimate_only branch here would just be dead weight no caller needs.
 edi::ResultMap fast_zap_with_var_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
                                           const Eigen::Ref<const Eigen::VectorXd>& y,
                                           const Eigen::Ref<const Eigen::MatrixXd>& Xzi,
                                           bool is_hurdle,
                                           std::optional<Eigen::VectorXd> warm_start_params = std::nullopt,
                                           bool smart_cold_start = true,
-                                          bool estimate_only = false,
                                           int maxit = 1000,
                                           double tol = 1e-8,
                                           std::optional<Eigen::VectorXi> fixed_idx = std::nullopt,
@@ -332,14 +334,6 @@ edi::ResultMap fast_zap_with_var_internal(const Eigen::Ref<const Eigen::MatrixXd
 
     Eigen::VectorXd params = fit.params;
     ZeroAugmentedPoisson fun(y, X, Xzi, is_hurdle);
-
-    if (estimate_only) {
-        return edi::ResultMap()
-            .set("params", params)
-            .set("converged", fit.converged)
-            .set("neg_ll", fit.value)
-            .set("gradient_norm", fit.gradient_norm);
-    }
 
     Eigen::MatrixXd observed_information = fun.hessian(params);
     Eigen::MatrixXd H_free = subset_matrix(observed_information, fixed_spec.free_idx, fixed_spec.free_idx);

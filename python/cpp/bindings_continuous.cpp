@@ -53,6 +53,27 @@ RobustModelResult fast_robust_regression_internal(
     int variance_j
 );
 
+double wilcox_hl_point_estimate_result(
+    const Eigen::Ref<const Eigen::VectorXd>& y,
+    const Eigen::Ref<const Eigen::VectorXi>& w
+);
+
+struct SummarizeWithVcovResult {
+    double beta_hat;
+    double ssq_hat;
+    double se;
+    Eigen::MatrixXd vcov;
+    Eigen::VectorXd std_err;
+    Eigen::VectorXd z_vals;
+};
+
+SummarizeWithVcovResult ols_hc2_post_fit_result(
+    const Eigen::Ref<const Eigen::MatrixXd>& X_fit,
+    const Eigen::Ref<const Eigen::VectorXd>& y,
+    const Eigen::Ref<const Eigen::VectorXd>& coef_hat,
+    int j_treat
+);
+
 void bind_continuous(py::module_& m) {
     m.def("fast_ols", [](const Eigen::Ref<const Eigen::MatrixXd>& X,
                           const Eigen::Ref<const Eigen::VectorXd>& y,
@@ -110,4 +131,32 @@ void bind_continuous(py::module_& m) {
     py::arg("warm_start_fisher_info") = py::none(),
     py::arg("estimate_only") = false,
     "Robust regression via IRLS (Huber/Tukey bisquare M/MM-estimation).");
+
+    m.def("wilcox_hl_point_estimate", &wilcox_hl_point_estimate_result,
+    py::arg("y"), py::arg("w"),
+    "Hodges-Lehmann point estimate (median of all pairwise treatment-minus-"
+    "control differences, exact for small n or via bisection selection for "
+    "large n) for the two-sample Wilcoxon rank-sum problem. w is a 0/1 "
+    "treatment indicator; non-finite y entries are dropped.");
+
+    m.def("ols_hc2_post_fit", [](const Eigen::Ref<const Eigen::MatrixXd>& X_fit,
+                                  const Eigen::Ref<const Eigen::VectorXd>& y,
+                                  const Eigen::Ref<const Eigen::VectorXd>& coef_hat,
+                                  int j_treat) {
+        SummarizeWithVcovResult res = ols_hc2_post_fit_result(X_fit, y, coef_hat, j_treat);
+        py::dict out;
+        out["beta_hat"] = res.beta_hat;
+        out["ssq_hat"] = res.ssq_hat;
+        out["se"] = res.se;
+        out["vcov"] = res.vcov;
+        out["std_err"] = res.std_err;
+        out["z_vals"] = res.z_vals;
+        return out;
+    },
+    py::arg("X_fit"), py::arg("y"), py::arg("coef_hat"), py::arg("j_treat") = 2,
+    "HC2 heteroskedasticity-robust (sandwich) standard errors for an "
+    "already-fitted OLS coefficient vector. X_fit is the fitting design "
+    "matrix (e.g. Lin's intercept+treatment+centered-covariates+treatment"
+    "×covariate design); j_treat is the 1-indexed column whose SE/z-value "
+    "is highlighted as beta_hat/se (std_err/z_vals cover every column).");
 }

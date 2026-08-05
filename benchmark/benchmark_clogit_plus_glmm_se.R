@@ -203,7 +203,7 @@ summary_one = function(d) {
 fixed = run_bench(
   make_fixed_binary,
   InferenceIncidMultiKKClogitCombinedLikelihood,
-  InferenceIncidMultiKKClogitPlusGLMMCombinedLikelihood,
+  InferenceIncidMultiKKCondLogitGLMMCombinedLikelihood,
   B_fixed,
   sprintf("fixed_binary_match_n%d_p%d", n, p),
   n,
@@ -214,7 +214,7 @@ fixed = run_bench(
 kk21 = run_bench(
   make_kk21,
   InferenceIncidMultiKKClogitCombinedLikelihood,
-  InferenceIncidMultiKKClogitPlusGLMMCombinedLikelihood,
+  InferenceIncidMultiKKCondLogitGLMMCombinedLikelihood,
   B_kk21,
   sprintf("kk21stepwise_combined_n%d_p%d", n, p),
   n,
