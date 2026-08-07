@@ -282,7 +282,7 @@ covariates. Default is \code{~ .}.}
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{w}}{A {-1,+1} vector of subject assignments (+1 = treated, -1 = control).}
+      \item{\code{w}}{A \{-1,+1\} vector of subject assignments (+1 = treated, -1 = control).}
     }
     \if{html}{\out{</div>}}
   }
@@ -482,7 +482,7 @@ covariates. Default is \code{~ .}.}
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    A {-1,+1} vector of subject assignments (+1 = treated, -1 = control).
+    A \{-1,+1\} vector of subject assignments (+1 = treated, -1 = control).
   }
 }
 
@@ -504,7 +504,7 @@ covariates. Default is \code{~ .}.}
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    A matrix of size n x r with {-1,+1} entries (+1 = treated, -1 = control).
+    A matrix of size n x r with \{-1,+1\} entries (+1 = treated, -1 = control).
   }
 }
 

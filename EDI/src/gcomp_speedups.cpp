@@ -55,8 +55,8 @@ Eigen::MatrixXd cluster_meat(const Eigen::MatrixXd& X_fit,
 
 //' @title Fast G-Computation Point Estimate for Fractional Logit (C++)
 //' @description Computes marginal mean difference under the fractional logit (quasi-binomial) model using G-computation.
-//' @param X_fit Numeric matrix of predictors including intercept.
-//' @param coef_hat Numeric vector of fitted coefficients.
+//' @param X_fit_sexp Numeric matrix of predictors including intercept.
+//' @param coef_hat_sexp Numeric vector of fitted coefficients.
 //' @param j_treat 1-based column index of the treatment indicator in X_fit.
 //' @return A list with elements \code{mean1}, \code{mean0}, and \code{md} (mean difference).
 //' @export
@@ -95,8 +95,8 @@ List gcomp_fractional_logit_point_estimate_cpp(SEXP X_fit_sexp,
 
 //' @title Fast G-Computation Point Estimate for Logistic Regression (C++)
 //' @description Computes marginal risk difference and risk ratio under the logistic model using G-computation.
-//' @param X_fit Numeric matrix of predictors including intercept.
-//' @param coef_hat Numeric vector of fitted coefficients.
+//' @param X_fit_sexp Numeric matrix of predictors including intercept.
+//' @param coef_hat_sexp Numeric vector of fitted coefficients.
 //' @param j_treat 1-based column index of the treatment indicator in X_fit.
 //' @return A list with elements \code{mean1}, \code{mean0}, and \code{md} (mean difference).
 //' @export

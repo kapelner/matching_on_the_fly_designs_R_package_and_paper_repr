@@ -11,7 +11,6 @@ export(DesignFixedDOptimal)
 export(DesignFixedFactorial)
 export(DesignFixedGreedy)
 export(DesignFixedMatchingGreedyPairSwitching)
-export(DesignFixedNaiveMatch)
 export(DesignFixedOptimalBlocks)
 export(DesignFixedRerandomization)
 export(DesignFixediBCRD)
@@ -63,10 +62,10 @@ export(InferenceIncidExactFisher)
 export(InferenceIncidExtendedRobins)
 export(InferenceIncidGCompRiskDiff)
 export(InferenceIncidGCompRiskRatio)
-export(InferenceIncidKKCondLogitIVWC)
-export(InferenceIncidKKCondLogitOneLik)
 export(InferenceIncidKKCondLogitGLMMIVWC)
 export(InferenceIncidKKCondLogitGLMMOneLik)
+export(InferenceIncidKKCondLogitIVWC)
+export(InferenceIncidKKCondLogitOneLik)
 export(InferenceIncidKKGCompRiskDiff)
 export(InferenceIncidKKGCompRiskRatio)
 export(InferenceIncidKKGEE)
@@ -151,7 +150,6 @@ export(fast_continuation_ratio_regression_with_var_cpp)
 export(fast_coxph_regression)
 export(fast_coxph_regression_cpp)
 export(fast_coxph_regression_prebuilt_cpp)
-export(fast_cpoisson_combined_with_var_cpp)
 export(fast_digamma_vec_cpp)
 export(fast_dnbinom_mu_vec_cpp)
 export(fast_hurdle_negbin_with_var_cpp)
@@ -203,7 +201,6 @@ export(fast_weibull_regression)
 export(fast_weibull_regression_cpp)
 export(fast_zero_augmented_poisson_cpp)
 export(fast_zero_one_inflated_beta_cpp)
-export(fast_zinb_cpp)
 export(gcomp_fractional_logit_point_estimate_cpp)
 export(gcomp_logistic_point_estimate_cpp)
 export(gcomp_logistic_post_fit_cpp)
@@ -213,7 +210,6 @@ export(get_beta_regression_hessian_cpp)
 export(get_bootstrap_dispatch_policy)
 export(get_cold_start_dispatch_policy)
 export(get_cpoisson_combined_hessian_cpp)
-export(get_cpoisson_combined_score_cpp)
 export(get_identity_binomial_regression_hessian_cpp)
 export(get_identity_binomial_regression_score_cpp)
 export(get_identity_binomial_regression_weighted_hessian_cpp)
@@ -261,6 +257,7 @@ import(methods)
 import(missForest)
 import(missRanger)
 importFrom(MASS,negative.binomial)
+importFrom(digest,digest)
 importFrom(graphics,hist)
 importFrom(randomizr,
   block_and_cluster_ra,
@@ -291,7 +288,9 @@ importFrom(stats,
   quantile,
   rbinom,
   rnorm,
+  runif,
   sd,
+  setNames,
   var,
   vcov
 )
@@ -301,5 +300,8 @@ importFrom(survival,
   survfit,
   survreg.control
 )
-importFrom(utils,packageVersion)
+importFrom(utils,
+  packageVersion,
+  tail
+)
 useDynLib(EDI, .registration=TRUE)

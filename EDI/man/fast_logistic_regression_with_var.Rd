@@ -22,6 +22,10 @@ fast_logistic_regression_with_var(
 \item{j}{The index of the coefficient to compute the variance for. Defaults to 2.}
 
 \item{optimization_alg}{Optimization algorithm: \code{"lbfgs"} (default), \code{"irls"}, or \code{"newton_raphson"}.}
+
+\item{warm_start_beta}{Optional starting values for the coefficients.}
+
+\item{warm_start_fisher_info}{Optional initial Fisher Information matrix.}
 }
 \value{
 A list containing the following components:

@@ -28,7 +28,7 @@ inline bool candidate_less(const CandidateColumn& a, const CandidateColumn& b) {
 //' support automatic stratified Cox models when the design object stores observed
 //' covariates but no explicit stratum variable.
 //'
-//' @param X Numeric covariate matrix.
+//' @param X_sexp Numeric covariate matrix.
 //' @param max_unique_per_col Maximum number of unique values allowed for a column
 //'   to be considered a stratification candidate.
 //' @param max_strata_cols Maximum number of candidate columns to combine.

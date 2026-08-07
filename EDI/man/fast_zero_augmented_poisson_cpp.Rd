@@ -21,6 +21,12 @@ fast_zero_augmented_poisson_cpp(
 )
 }
 \arguments{
+\item{X_sexp}{Matrix of predictors for the conditional component.}
+
+\item{y_sexp}{Vector of responses.}
+
+\item{Xzi_sexp}{Matrix of predictors for the zero-inflation/hurdle component.}
+
 \item{is_hurdle}{If TRUE, fit a hurdle model; if FALSE, fit a zero-inflated model.}
 
 \item{warm_start_params}{Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.}
@@ -40,12 +46,6 @@ fast_zero_augmented_poisson_cpp(
 \item{optimization_alg}{Optimization algorithm.}
 
 \item{warm_start_fisher_info}{Optional initial Fisher Information matrix for the first iteration.}
-
-\item{X}{Matrix of predictors for the conditional component.}
-
-\item{y}{Vector of responses.}
-
-\item{Xzi}{Matrix of predictors for the zero-inflation/hurdle component.}
 }
 \value{
 A list containing coefficients, vcov, and convergence status.

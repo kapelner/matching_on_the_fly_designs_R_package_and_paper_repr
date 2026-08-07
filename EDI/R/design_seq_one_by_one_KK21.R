@@ -169,6 +169,10 @@ DesignSeqOneByOneKK21 = R6::R6Class("DesignSeqOneByOneKK21",
 						#cat("    assign_wt_KK21 using sorted weights t", private$t, "weights", sort(weights), "\n")
 						#2) now iterate over all items in reservoir and calculate the weighted sqd distiance vs new guy
 						reservoir_indices = which(private$m == 0)
+						if (length(reservoir_indices) == 0){
+							private$m[private$t] = 0
+							return(private$assign_wt_Bernoulli())
+						}
 						weighted_features = colnames(all_subject_data$X_all_with_y_scaled)
 						available_features = colnames(all_subject_data$X_all_scaled)
 						common_weighted_features = intersect(weighted_features, available_features)

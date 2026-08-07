@@ -318,9 +318,9 @@ ModelResult fast_neg_bin_internal(const Eigen::Ref<const Eigen::MatrixXd>& X,
 
 //' @title Compute Negative Binomial Regression Score
 //' @description Calculates the score vector (gradient of the log-likelihood) for a negative binomial regression model.
-//' @param X A numeric matrix of predictors.
-//' @param y A numeric vector of responses (non-negative integers).
-//' @param params A numeric vector of parameters [beta, log_theta].
+//' @param X_sexp A numeric matrix of predictors.
+//' @param y_sexp A numeric vector of responses (non-negative integers).
+//' @param params_sexp A numeric vector of parameters [beta, log_theta].
 //' @return A numeric vector representing the score.
 //' @export
 //' @keywords internal
@@ -344,9 +344,9 @@ Eigen::VectorXd get_negbin_regression_score_cpp(SEXP X_sexp,
 
 //' @title Compute Negative Binomial Regression Hessian
 //' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a negative binomial regression model.
-//' @param X A numeric matrix of predictors.
-//' @param y A numeric vector of responses.
-//' @param params A numeric vector of parameters [beta, log_theta].
+//' @param X_sexp A numeric matrix of predictors.
+//' @param y_sexp A numeric vector of responses.
+//' @param params_sexp A numeric vector of parameters [beta, log_theta].
 //' @return A numeric matrix representing the Hessian.
 //' @export
 //' @keywords internal
@@ -382,8 +382,8 @@ Eigen::MatrixXd get_negbin_regression_expected_hessian_cpp(SEXP X_sexp,
 
 //' @title Fast Negative Binomial Regression with Variance (C++)
 //' @description Negative binomial regression fitting with full variance-covariance matrix.
-//' @param X A numeric matrix of predictors.
-//' @param y A numeric vector of responses (non-negative integers).
+//' @param X_sexp A numeric matrix of predictors.
+//' @param y_sexp A numeric vector of responses (non-negative integers).
 //' @param warm_start_params Optional starting values for coefficients and dispersion. If provided, \code{smart_cold_start} is ignored.
 //' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param maxit Maximum number of iterations.
@@ -446,8 +446,8 @@ List fast_neg_bin_with_var_cpp(SEXP X_sexp,
 
 //' @title Fast Negative Binomial Regression (C++)
 //' @description High-performance negative binomial regression fitting.
-//' @param X A numeric matrix of predictors.
-//' @param y A numeric vector of responses.
+//' @param X_sexp A numeric matrix of predictors.
+//' @param y_sexp A numeric vector of responses.
 //' @param warm_start_params Optional starting values for coefficients and dispersion. If provided, \code{smart_cold_start} is ignored.
 //' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param maxit Maximum number of iterations.
@@ -502,9 +502,9 @@ List fast_neg_bin_cpp(SEXP X_sexp,
 
 //' @title Fast Weighted Negative Binomial Regression (C++)
 //' @description High-performance negative binomial regression fitting with nonnegative row weights.
-//' @param X A numeric matrix of predictors.
-//' @param y A numeric vector of responses.
-//' @param weights A nonnegative numeric vector of row weights.
+//' @param X_sexp A numeric matrix of predictors.
+//' @param y_sexp A numeric vector of responses.
+//' @param weights_sexp A nonnegative numeric vector of row weights.
 //' @param warm_start_params Optional starting values for coefficients and dispersion. If provided, \code{smart_cold_start} is ignored.
 //' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param maxit Maximum number of iterations.

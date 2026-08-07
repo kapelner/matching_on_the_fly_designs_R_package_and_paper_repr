@@ -230,7 +230,7 @@ Design = R6::R6Class("Design",
 		},
 		#' @description For analysis on already-completed experimental data
 		#'
-		#' @param w A {-1,+1} vector of subject assignments (+1 = treated, -1 = control).
+		#' @param w A \{-1,+1\} vector of subject assignments (+1 = treated, -1 = control).
 		overwrite_all_subject_assignments = function(w) {
 			if (should_run_asserts()) {
 				assertIntegerish(w, lower = -1, upper = 1, any.missing = FALSE, len = private$t)
@@ -335,14 +335,14 @@ Design = R6::R6Class("Design",
 		},
 		#' @description Get w
 		#'
-		#' @return 			A {-1,+1} vector of subject assignments (+1 = treated, -1 = control).
+		#' @return 			A \{-1,+1\} vector of subject assignments (+1 = treated, -1 = control).
 		get_w = function(){
 			2L * private$w - 1L
 		},
 		#' @description Draw treatment assignment vectors according to the design.
 		#'
 		#' @param r Number of vectors to draw. Default is 1.
-		#' @return A matrix of size n x r with {-1,+1} entries (+1 = treated, -1 = control).
+		#' @return A matrix of size n x r with \{-1,+1\} entries (+1 = treated, -1 = control).
 		draw_ws_according_to_design = function(r = 1L){
 			result = private$draw_ws_raw(r)
 			2L * result - 1L

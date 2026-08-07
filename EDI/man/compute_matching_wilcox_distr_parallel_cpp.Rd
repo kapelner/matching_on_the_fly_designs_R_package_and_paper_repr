@@ -16,6 +16,12 @@ compute_matching_wilcox_distr_parallel_cpp(
 )
 }
 \arguments{
+\item{w_mat_sexp}{Integer matrix of permuted treatment assignments (n x r).}
+
+\item{m_mat_sexp}{Integer matrix of match indicators (n x r).}
+
+\item{y_sexp}{Numeric response vector.}
+
 \item{delta}{Null treatment effect shift.}
 
 \item{transform_code}{Integer code for response transformation.}
@@ -25,12 +31,6 @@ compute_matching_wilcox_distr_parallel_cpp(
 \item{is_fixed_matching}{Logical flag for fixed matching designs.}
 
 \item{num_cores}{Number of OpenMP threads.}
-
-\item{w_mat}{Integer matrix of permuted treatment assignments (n x r).}
-
-\item{m_mat}{Integer matrix of match indicators (n x r).}
-
-\item{y}{Numeric response vector.}
 }
 \value{
 Numeric vector of KK Wilcoxon statistics.

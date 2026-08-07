@@ -19,6 +19,10 @@ fast_adjacent_category_logit_with_var_cpp(
 )
 }
 \arguments{
+\item{X_sexp}{A numeric matrix of predictors.}
+
+\item{y_sexp}{A numeric vector of responses (categorical).}
+
 \item{maxit}{Maximum number of iterations.}
 
 \item{tol}{Convergence tolerance.}
@@ -36,10 +40,6 @@ fast_adjacent_category_logit_with_var_cpp(
 \item{warm_start_params}{Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.}
 
 \item{warm_start_beta}{Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.}
-
-\item{X}{A numeric matrix of predictors.}
-
-\item{y}{A numeric vector of responses (categorical).}
 }
 \value{
 A list containing coefficients, vcov, and convergence status.

@@ -392,9 +392,9 @@ Eigen::MatrixXd get_zero_augmented_poisson_hessian_cpp(SEXP X_sexp,
 
 //' @title Fast Zero-Augmented Poisson Regression (C++)
 //' @description High-performance ZIP or hurdle Poisson regression fitting using Newton-Raphson or L-BFGS.
-//' @param X Matrix of predictors for the conditional component.
-//' @param y Vector of responses.
-//' @param Xzi Matrix of predictors for the zero-inflation/hurdle component.
+//' @param X_sexp Matrix of predictors for the conditional component.
+//' @param y_sexp Vector of responses.
+//' @param Xzi_sexp Matrix of predictors for the zero-inflation/hurdle component.
 //' @param is_hurdle If TRUE, fit a hurdle model; if FALSE, fit a zero-inflated model.
 //' @param warm_start_params Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.
 //' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.

@@ -19,6 +19,10 @@ fast_logistic_regression(
 \item{y}{A numeric vector of the response variable, expected to be binary (0 or 1).}
 
 \item{optimization_alg}{Optimization algorithm: \code{"newton_raphson"} (default), \code{"lbfgs"}, or \code{"irls"}.}
+
+\item{warm_start_beta}{Optional starting values for the coefficients.}
+
+\item{warm_start_fisher_info}{Optional initial Fisher Information matrix.}
 }
 \value{
 A list containing the following component:

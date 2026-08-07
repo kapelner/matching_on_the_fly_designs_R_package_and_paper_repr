@@ -21,9 +21,11 @@
 #' @import      Rcpp
 #' @import      methods
 #' @importFrom     stats coef cor glm.control make.link nlminb pnorm pt rnorm qnorm qf rbinom
-#' @importFrom     stats var median sd model.matrix as.formula formula qt pchisq binom.test fisher.test quantile IQR lsfit
+#' @importFrom     stats var median sd model.matrix as.formula formula qt pchisq binom.test fisher.test quantile IQR lsfit runif setNames
+#' @importFrom	utils tail
 #' @importFrom	survival Surv survreg.control survfit survdiff
 #' @importFrom	utils packageVersion
 #' @importFrom	graphics hist
+#' @importFrom	digest digest
 #' @useDynLib   EDI, .registration=TRUE
 "_PACKAGE"

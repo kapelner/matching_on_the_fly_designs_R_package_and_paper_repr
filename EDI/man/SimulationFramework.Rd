@@ -50,18 +50,23 @@ Reported summary metrics include:
 }
 \examples{
 \donttest{
-# Simple simulation with two designs and two inference methods
+# Simple simulation with two designs and two inference methods.
+# n/Nrep_W/num_boot/B_boot/r_rand are kept small so this example runs in a
+# few seconds; a real simulation would use much larger values (this
+# class's defaults, or larger still) for adequately precise estimates.
 sim = SimulationFramework$new(
   response_type = "continuous",
   design_classes_and_params = list(
-    DesignSeqOneByOneKK21 = list(lambda = 0.5),
+    DesignSeqOneByOneKK21 = list(lambda = 0.5, num_boot = 50L),
     DesignSeqOneByOneBernoulli = list()
   ),
   inference_classes_and_params = list(
     InferenceContinOLS = list(),
     InferenceContinKKOLSIVWC = list()
   ),
-  n = 100, p = 5, Nrep_W = 10L, betaT = 1
+  n = 20, p = 3, Nrep_W = 2L, betaT = 1, B_boot = 50L, r_rand = 101L,
+  results_filename = tempfile(fileext = ".csv.bz2"),
+  continue_from_last_result_row = FALSE
 )
 sim$run()
 report = SimulationFrameworkReport$new(sim)

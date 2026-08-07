@@ -15,19 +15,19 @@ get_cpoisson_combined_hessian_cpp(
 )
 }
 \arguments{
-\item{yT_v}{Treated counts per pair.}
+\item{yT_v_r}{Treated counts per pair.}
 
-\item{n_k_v}{Total counts per pair.}
+\item{n_k_v_r}{Total counts per pair.}
 
-\item{X_diff_v}{Covariate differences between pairs.}
+\item{X_diff_v_r}{Covariate differences between pairs.}
 
-\item{y_r}{Reservoir outcomes.}
+\item{y_r_r}{Reservoir outcomes.}
 
-\item{w_r}{Reservoir treatment indicators.}
+\item{w_r_r}{Reservoir treatment indicators.}
 
-\item{X_r}{Reservoir covariates.}
+\item{X_r_r}{Reservoir covariates.}
 
-\item{params}{Current parameter estimates.}
+\item{params_r}{Current parameter estimates.}
 }
 \value{
 A numeric matrix representing the Hessian.

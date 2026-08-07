@@ -59,7 +59,7 @@ DesignFixedFactorial = R6::R6Class("DesignFixedFactorial",
 			}
 		},
 		#' @description Draw multiple treatment assignment vectors according to balanced factorial randomization.
-		#' NOTE: Factorial designs return factor combination indices (1..num_combinations), not {-1,+1}.
+		#' NOTE: Factorial designs return factor combination indices (1..num_combinations), not \{-1,+1\}.
 		#'
 		#' @param r 	The number of designs to draw.
 		#'
@@ -68,7 +68,7 @@ DesignFixedFactorial = R6::R6Class("DesignFixedFactorial",
 			private$draw_ws_raw(r)
 		},
 		#' @description Get the factor combination index assigned to each subject.
-		#' NOTE: For factorial designs this returns raw factor indices, not {-1,+1}.
+		#' NOTE: For factorial designs this returns raw factor indices, not \{-1,+1\}.
 		#'
 		#' @return 		An integer vector of factor combination indices.
 		get_w = function(){

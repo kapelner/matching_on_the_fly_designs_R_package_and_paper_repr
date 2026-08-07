@@ -22,8 +22,12 @@
   <li><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyIVWC.html#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_confidence_interval'><code>InferenceAbstractKKWeibullFrailtyIVWC$compute_asymp_confidence_interval()</code></a></li>
   <li><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyIVWC.html#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_asymp_two_sided_pval'><code>InferenceAbstractKKWeibullFrailtyIVWC$compute_asymp_two_sided_pval()</code></a></li>
   <li><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyIVWC.html#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_estimate'><code>InferenceAbstractKKWeibullFrailtyIVWC$compute_estimate()</code></a></li>
-  <li><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyIVWC.html#method-InferenceAbstractKKWeibullFrailtyIVWC-compute_estimate_with_bootstrap_weights'><code>InferenceAbstractKKWeibullFrailtyIVWC$compute_estimate_with_bootstrap_weights()</code></a></li>
   <li><a href='../../EDI/html/InferenceAbstractKKWeibullFrailtyIVWC.html#method-InferenceAbstractKKWeibullFrailtyIVWC-duplicate'><code>InferenceAbstractKKWeibullFrailtyIVWC$duplicate()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceKKPassThroughCompoundNoParamBootstrap</summary>
+<ul>
+  <li><code>InferenceKKPassThroughCompoundNoParamBootstrap$compute_estimate_with_bootstrap_weights()</code></li>
 </ul>
 </details>
 <details><summary>+ inherited public methods from InferenceAsympLik</summary>
@@ -115,6 +119,7 @@
 </details>
 <details><summary>+ inherited public methods from Inference</summary>
 <ul>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-capabilities'><code>Inference$capabilities()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>Inference$compute_exact_confidence_interval()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-get_analysis_data'><code>Inference$get_analysis_data()</code></a></li>
@@ -130,6 +135,7 @@
   <li><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>Inference$is_nonestimable()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>Inference$set_optimization_alg()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>Inference$set_seed()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-supports'><code>Inference$supports()</code></a></li>
 </ul>
 </details>}}
 \if{html}{\out{<hr>}}

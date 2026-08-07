@@ -90,7 +90,7 @@
 #'     matched designs below), and the greedy choice of \emph{which} pair member is
 #'     treated couples the pairs, which resampling does not replicate --- the residual
 #'     effect errs conservative.}
-#'   \item{\code{DesignFixedBinaryMatch}, \code{DesignFixedNaiveMatch}}{Matched pairs
+#'   \item{\code{DesignFixedBinaryMatch}}{Matched pairs
 #'     are resampled intact, preserving the within-pair anticorrelation of \eqn{w} and
 #'     the pair-level variance reduction. The pairing itself is a global function of
 #'     the covariate sample (an Abadie & Imbens 2008-type concern): pairs are

@@ -13,11 +13,11 @@ using namespace Rcpp;
 
 //' Fast Bai Adjusted T Statistic for Multiple Permutations
 //'
-//' @param w_mat Integer matrix of permuted treatment assignments (n x r).
-//' @param m_mat Integer matrix of match indicators (n x r).
-//' @param y Numeric response vector.
+//' @param w_mat_sexp Integer matrix of permuted treatment assignments (n x r).
+//' @param m_mat_sexp Integer matrix of match indicators (n x r).
+//' @param y_sexp Numeric response vector.
 //' @param delta Null treatment effect shift.
-//' @param halves_idx Integer matrix of half-sample indices.
+//' @param halves_idx_sexp Integer matrix of half-sample indices.
 //' @param convex_flag Logical flag for convex combination.
 //' @param num_cores Number of OpenMP threads.
 //' @return Numeric vector of Bai adjusted T statistics.

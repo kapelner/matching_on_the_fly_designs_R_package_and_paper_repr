@@ -275,9 +275,9 @@ ModelResult fast_beta_regression_internal(const Eigen::Ref<const Eigen::MatrixXd
 
 //' @title Compute Beta Regression Score
 //' @description Calculates the score vector (gradient of the log-likelihood) for a beta regression model.
-//' @param X A numeric matrix of predictors.
-//' @param y A numeric vector of responses (in (0, 1)).
-//' @param params A numeric vector of parameters [beta, log_phi].
+//' @param X_sexp A numeric matrix of predictors.
+//' @param y_sexp A numeric vector of responses (in (0, 1)).
+//' @param params_sexp A numeric vector of parameters [beta, log_phi].
 //' @return A numeric vector representing the score.
 //' @export
 //' @keywords internal
@@ -301,9 +301,9 @@ Eigen::VectorXd get_beta_regression_score_cpp(SEXP X_sexp,
 
 //' @title Compute Beta Regression Hessian
 //' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a beta regression model.
-//' @param X A numeric matrix of predictors.
-//' @param y A numeric vector of responses.
-//' @param params A numeric vector of parameters [beta, log_phi].
+//' @param X_sexp A numeric matrix of predictors.
+//' @param y_sexp A numeric vector of responses.
+//' @param params_sexp A numeric vector of parameters [beta, log_phi].
 //' @return A numeric matrix representing the Hessian.
 //' @export
 //' @keywords internal
@@ -324,8 +324,8 @@ Eigen::MatrixXd get_beta_regression_hessian_cpp(SEXP X_sexp,
 
 //' @title Fast Beta Regression (C++)
 //' @description High-performance beta regression fitting using Newton-Raphson or L-BFGS.
-//' @param X A numeric matrix of predictors.
-//' @param y A numeric vector of responses (in (0, 1)).
+//' @param X_sexp A numeric matrix of predictors.
+//' @param y_sexp A numeric vector of responses (in (0, 1)).
 //' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
 //' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param start_phi Optional starting value for precision parameter phi.
@@ -392,9 +392,9 @@ List fast_beta_regression_cpp(SEXP X_sexp,
 
 //' @title Fast Weighted Beta Regression (C++)
 //' @description High-performance beta regression fitting with nonnegative row weights.
-//' @param X A numeric matrix of predictors.
-//' @param y A numeric vector of responses (in (0, 1)).
-//' @param weights A nonnegative numeric vector of row weights.
+//' @param X_sexp A numeric matrix of predictors.
+//' @param y_sexp A numeric vector of responses (in (0, 1)).
+//' @param weights_sexp A nonnegative numeric vector of row weights.
 //' @param warm_start_beta Optional starting values for coefficients.
 //' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when no warm start is provided.
 //' @param start_phi Optional starting value for precision parameter phi.
@@ -468,8 +468,8 @@ List fast_beta_regression_weighted_cpp(SEXP X_sexp,
 
 //' @title Fast Beta Regression with Variance (C++)
 //' @description Beta regression with full variance-covariance matrix and standard error estimation.
-//' @param X A numeric matrix of predictors.
-//' @param y A numeric vector of responses (in (0, 1)).
+//' @param X_sexp A numeric matrix of predictors.
+//' @param y_sexp A numeric vector of responses (in (0, 1)).
 //' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
 //' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 //' @param start_phi Optional starting value for precision parameter phi.

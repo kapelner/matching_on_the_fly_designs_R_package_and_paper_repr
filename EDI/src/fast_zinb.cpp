@@ -261,7 +261,6 @@ edi::ResultMap fast_zinb_with_var_internal(const Eigen::Ref<const Eigen::MatrixX
 //' @param warm_start_fisher_info Optional initial Fisher Information matrix.
 //' @param estimate_only Logical. If TRUE, skip variance computation and return only coefficients.
 //' @return A list containing coefficients and convergence status.
-//' @export
 //' @keywords internal
 #ifndef EDI_CORE_ONLY
 // [[Rcpp::export]]

@@ -5,7 +5,8 @@
 #' This design randomizes clusters within specified blocks using the \pkg{randomizr} package.
 #'
 #' @examples
-#' des = DesignFixedBlockedCluster$new(n = 20, response_type = 'continuous', strata_cols = 'x2', cluster_col = 'cl')
+#' des = DesignFixedBlockedCluster$new(n = 20, response_type = 'continuous',
+#'   strata_cols = 'x2', cluster_col = 'cl')
 #' X = data.frame(x1 = rnorm(20), x2 = factor(rep(1:2, each = 10)), cl = factor(rep(1:10, each = 2)))
 #' des$add_all_subjects_to_experiment(X)
 #' des$assign_w_to_all_subjects()

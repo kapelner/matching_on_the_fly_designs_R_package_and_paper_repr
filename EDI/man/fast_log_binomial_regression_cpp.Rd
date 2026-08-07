@@ -8,7 +8,7 @@ fast_log_binomial_regression_cpp(
   X_r,
   y_r,
   maxit = 100L,
-  tol = 1e-08,
+  tol = 1e-06,
   fixed_idx = NULL,
   fixed_values = NULL,
   warm_start_beta = NULL,
@@ -19,6 +19,10 @@ fast_log_binomial_regression_cpp(
 )
 }
 \arguments{
+\item{X_r}{A numeric matrix of predictors.}
+
+\item{y_r}{A binary numeric vector of responses.}
+
 \item{maxit}{Maximum number of iterations.}
 
 \item{tol}{Convergence tolerance.}
@@ -32,10 +36,6 @@ fast_log_binomial_regression_cpp(
 \item{warm_start_weights}{Optional initial working weights for the first IRLS iteration.}
 
 \item{warm_start_fisher_info}{Optional initial Fisher Information matrix for the first IRLS iteration.}
-
-\item{X}{A numeric matrix of predictors.}
-
-\item{y}{A binary numeric vector of responses.}
 }
 \value{
 A list containing coefficients and fitted values.

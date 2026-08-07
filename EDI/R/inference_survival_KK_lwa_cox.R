@@ -4,6 +4,8 @@
 #' using a marginal Cox model with Lee-Wei-Amato style cluster-robust variance for
 #' matched pairs and standard Cox regression for reservoir subjects.
 #'
+#' \strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
+#'
 #' @examples
 #' \donttest{
 #' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'survival')
@@ -14,8 +16,6 @@
 #' inf = InferenceSurvivalKKLWACoxPHIVWC$new(seq_des)
 #' inf$compute_estimate()
 #' }
-#'
-#' \strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
 #' @export
 InferenceSurvivalKKLWACoxPHIVWC = R6::R6Class("InferenceSurvivalKKLWACoxPHIVWC",
 	lock_objects = FALSE,

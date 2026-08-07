@@ -61,10 +61,6 @@ NULL
 
 #' Fast Weibull Regression (C++ Backend)
 #'
-#' @param  y Survival times.
-#' @param  dead Event indicator (1 = event, 0 = censored).
-#' @param  X A numeric matrix of predictor variables. It is assumed that an intercept column
-#'   (e.g., a column of ones) is already included in \code{X} if desired.
 #' @param estimate_only Logical. If \code{TRUE}, skip variance-covariance
 #'   matrix calculation for speed.
 #' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
@@ -85,9 +81,6 @@ NULL
 
 #' Fast Beta Regression (C++ Backend)
 #'
-#' @param  X A numeric matrix of predictor variables. It is assumed that an intercept column
-#'   (e.g., a column of ones) is already included in \code{X} if desired.
-#' @param  y A numeric vector of the response variable, with values strictly between 0 and 1.
 #' @param  start_phi A numeric value, the starting value for the precision parameter phi.
 #' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
 #'
@@ -105,9 +98,6 @@ NULL
 
 #' Fast Beta Regression with Variance Calculation (C++ Backend)
 #'
-#' @param  X A numeric matrix of predictor variables. It is assumed that an intercept column
-#'   (e.g., a column of ones) is already included in \code{X} if desired.
-#' @param  y A numeric vector of the response variable, with values strictly between 0 and 1.
 #' @param  start_phi A numeric value, the starting value for the precision parameter phi.
 #' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
 #'
@@ -126,9 +116,6 @@ NULL
 
 #' Fast Negative Binomial Regression (C++ Backend)
 #'
-#' @param  X A numeric matrix of predictor variables. It is assumed that an intercept column
-#'   (e.g., a column of ones) is already included in \code{X} if desired.
-#' @param  y A numeric vector of the response variable, representing count data.
 #' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
 #'
 #' @return  A list containing the following components:
@@ -144,9 +131,6 @@ NULL
 
 #' Fast Negative Binomial Regression with Variance Calculation (C++ Backend)
 #'
-#' @param  X A numeric matrix of predictor variables. It is assumed that an intercept column
-#'   (e.g., a column of ones) is already included in \code{X} if desired.
-#' @param  y A numeric vector of the response variable, representing count data.
 #' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default) or \code{"lbfgs"}.
 #'
 #' @return  A list containing the following components:
@@ -331,6 +315,8 @@ NULL
 #'   (e.g., a column of ones) is already included in \code{X} if desired.
 #' @param  y A numeric vector of the response variable, expected to be binary (0 or 1).
 #' @param optimization_alg Optimization algorithm: \code{"newton_raphson"} (default), \code{"lbfgs"}, or \code{"irls"}.
+#' @param warm_start_beta Optional starting values for the coefficients.
+#' @param warm_start_fisher_info Optional initial Fisher Information matrix.
 #'
 #' @return  A list containing the following component:
 #' \describe{
@@ -345,7 +331,7 @@ NULL
 fast_logistic_regression = function(X, y, optimization_alg = "lbfgs", warm_start_beta = NULL, warm_start_fisher_info = NULL){
 	optimization_alg = .normalize_optimizer_algorithm(optimization_alg, allow_irls = TRUE, default = "lbfgs")
 	tryCatch({
-		res = fast_logistic_regression_cpp(X = X, y = as.numeric(y), optimization_alg = optimization_alg, warm_start_beta = warm_start_beta, warm_start_fisher_info = warm_start_fisher_info)
+		res = fast_logistic_regression_cpp(X, as.numeric(y), optimization_alg = optimization_alg, warm_start_beta = warm_start_beta, warm_start_fisher_info = warm_start_fisher_info)
 		list(b = as.vector(res$b))
 	}, error = function(e) list(b = rep(NA_real_, ncol(X))))
 }
@@ -361,6 +347,8 @@ fast_logistic_regression = function(X, y, optimization_alg = "lbfgs", warm_start
 #' @param  y A numeric vector of the response variable, expected to be binary (0 or 1).
 #' @param  j The index of the coefficient to compute the variance for. Defaults to 2.
 #' @param optimization_alg Optimization algorithm: \code{"lbfgs"} (default), \code{"irls"}, or \code{"newton_raphson"}.
+#' @param warm_start_beta Optional starting values for the coefficients.
+#' @param warm_start_fisher_info Optional initial Fisher Information matrix.
 #' @return  A list containing the following components:
 #' \describe{
 #' \item{b}{A numeric vector of the obtained logistic regression coefficients.}
@@ -448,7 +436,7 @@ fast_weibull_regression = function(y, dead, X, use_rcpp = TRUE, estimate_only = 
 		}
 		
 		res = tryCatch(
-			fast_weibull_regression_cpp(X = X, y = as.numeric(y), dead = as.numeric(dead), 
+			fast_weibull_regression_cpp(X_sexp = X, y_sexp = as.numeric(y), dead_sexp = as.numeric(dead),
 			                            warm_start_params = warm_start_params,
 			                            smart_cold_start = FALSE, 
 			                            estimate_only = estimate_only, 
@@ -802,7 +790,7 @@ fast_negbin_regression <- function(X, y, optimization_alg = "lbfgs", warm_start_
 	
 	# If warm start is provided, we use the full matrix and don't attempt QR dropping initially
 	if (!is.null(warm_start_params)) {
-		res = tryCatch(fast_neg_bin_cpp(X = X_fit, y = as.integer(y), warm_start_params = warm_start_params, smart_cold_start = FALSE, optimization_alg = optimization_alg, warm_start_fisher_info = warm_start_fisher_info), error = function(e) NULL)
+		res = tryCatch(fast_neg_bin_cpp(X_fit, as.integer(y), warm_start_params = warm_start_params, smart_cold_start = FALSE, optimization_alg = optimization_alg, warm_start_fisher_info = warm_start_fisher_info), error = function(e) NULL)
 		if (!is.null(res)) return(list(b = as.numeric(res$b), fisher_information = res$fisher_information))
 	}
 
@@ -821,7 +809,7 @@ fast_negbin_regression <- function(X, y, optimization_alg = "lbfgs", warm_start_
 			}
 		}
 	}
-	res = tryCatch(fast_neg_bin_cpp(X = X_fit, y = as.integer(y), smart_cold_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
+	res = tryCatch(fast_neg_bin_cpp(X_fit, as.integer(y), smart_cold_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
 	if (!is.null(res)) return(list(b = as.numeric(res$b), fisher_information = res$fisher_information))
 	# Progressive QR-ordered column dropping: intercept (col 1) and treatment (col 2) are fixed;
 	# drop covariates one at a time in reverse QR-pivot order (most redundant first)
@@ -835,7 +823,7 @@ fast_negbin_regression <- function(X, y, optimization_alg = "lbfgs", warm_start_
 			} else {
 				X_fit[, 1:2, drop = FALSE]
 			}
-			res = tryCatch(fast_neg_bin_cpp(X = X_try, y = as.integer(y), smart_cold_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
+			res = tryCatch(fast_neg_bin_cpp(X_try, as.integer(y), smart_cold_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
 			if (!is.null(res)) return(list(b = as.numeric(res$b), fisher_information = res$fisher_information))
 		}
 	}
@@ -889,7 +877,7 @@ fast_negbin_regression_with_var <- function(X, y, j = 2, optimization_alg = "lbf
 			}
 		}
 	}
-	res = tryCatch(fast_neg_bin_with_var_cpp(X = X_curr, y = as.integer(y), smart_cold_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
+	res = tryCatch(fast_neg_bin_with_var_cpp(X_curr, as.integer(y), smart_cold_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
 	if (is.null(res)) {
 		# Progressive QR-ordered column dropping: intercept (col 1) and treatment (col 2) are fixed;
 		# drop covariates one at a time in reverse QR-pivot order (most redundant first)
@@ -903,7 +891,7 @@ fast_negbin_regression_with_var <- function(X, y, j = 2, optimization_alg = "lbf
 				} else {
 					X_curr[, 1:2, drop = FALSE]
 				}
-				res = tryCatch(fast_neg_bin_with_var_cpp(X = X_curr, y = as.integer(y), smart_cold_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
+				res = tryCatch(fast_neg_bin_with_var_cpp(X_curr, as.integer(y), smart_cold_start = FALSE, optimization_alg = optimization_alg), error = function(e) NULL)
 			}
 		}
 		if (is.null(res))

@@ -167,8 +167,8 @@ double get_survival_stat_diff_result(const Eigen::Ref<const Eigen::VectorXd>& y,
 #ifndef EDI_CORE_ONLY
 //' Calculates the median or restricted mean survival time for a single group
 //'
-//' @param y Numeric vector of survival times.
-//' @param dead Integer vector of event indicators (1=event, 0=censored).
+//' @param y_sexp Numeric vector of survival times.
+//' @param dead_sexp Integer vector of event indicators (1=event, 0=censored).
 //' @param requested_stat A string, either "median" or "restricted_mean".
 //' @return The calculated statistic.
 //' @keywords internal

@@ -123,4 +123,70 @@ lockBinding("r6_extract_inherited_methods", asNamespace("roxygen2"))
 # silently freeze out that flag with a stale, hardcoded rendering.
 
 Rcpp::compileAttributes("EDI")
+
+# Workaround: this Rcpp version sometimes emits RcppExports.cpp without
+# #include <RcppEigen.h>, even though many exported functions return/take
+# Eigen types -- breaking the C++ compile ("'Eigen' does not name a type").
+# Re-add it if compileAttributes() dropped it.
+rcpp_exports_cpp = file.path("EDI", "src", "RcppExports.cpp")
+rcpp_exports_lines = readLines(rcpp_exports_cpp)
+if (!any(grepl("^#include <RcppEigen\\.h>$", rcpp_exports_lines))) {
+	rcpp_include_idx = which(grepl("^#include <Rcpp\\.h>$", rcpp_exports_lines))[1]
+	rcpp_exports_lines = append(rcpp_exports_lines, "#include <RcppEigen.h>", after = rcpp_include_idx - 1L)
+	writeLines(rcpp_exports_lines, rcpp_exports_cpp)
+}
+
 roxygen2::roxygenize("EDI", load_code = load_source_with_filenames)
+
+# KLUDGE, not a real fix: some "mixin" files document a plain public = list(...)
+# object (spliced into multiple R6 classes elsewhere via c(SomeMixin$public,
+# list(...))), not an R6::R6Class(...) call. roxygen2's R6 method-doc
+# extraction (patched above for real R6 classes) doesn't apply to plain
+# lists, so every per-method @param from every method in the list gets
+# accumulated onto the ONE topic documenting the bare list object -- whose
+# \usage{} is just that object's name, with no formals to match against.
+# R CMD check's "Rd \usage sections" check then flags every one of those
+# @param entries as "documented but not in usage" (correctly -- there IS no
+# usage for them to be in). The @param text must stay in the source: it's
+# what feeds the correctly-generated per-method \usage on the real R6
+# subclasses that splice this mixin in. So instead of touching the source,
+# strip the resulting (structurally unfixable) \arguments{} block from just
+# these bare-object Rd pages after generation -- \name/\alias/\usage/
+# \description/\value/\section/\link cross-references are untouched, so nothing
+# that links to these pages breaks.
+#
+# The real fix is teaching fast_roxygenize.R's R6-method-doc patches (see the
+# object_defaults.r6class / extract_r6_methods patches above) to also handle
+# plain-list mixins, generating a proper per-method \usage the same way it
+# already does for R6 classes. Until then, this keeps `R CMD check` clean.
+strip_arguments_block_from_bare_object_rd = function(path) {
+	lines = readLines(path)
+	usage_start = which(lines == "\\usage{")
+	if (length(usage_start) != 1L) return(invisible(FALSE))
+	usage_end = which(lines == "}")
+	usage_end = usage_end[usage_end > usage_start][1]
+	if (is.na(usage_end)) return(invisible(FALSE))
+	usage_body = trimws(lines[(usage_start + 1L):(usage_end - 1L)])
+	usage_body = usage_body[nzchar(usage_body)]
+	# A bare object (not a function call) has no usage text containing "(".
+	if (length(usage_body) != 1L || grepl("(", usage_body, fixed = TRUE)) return(invisible(FALSE))
+	if (!grepl("^[A-Za-z._][A-Za-z0-9._]*$", usage_body)) return(invisible(FALSE))
+
+	args_start = which(lines == "\\arguments{")
+	if (length(args_start) != 1L) return(invisible(FALSE))
+	depth = 0L
+	args_end = NA_integer_
+	for (i in args_start:length(lines)) {
+		depth = depth + lengths(regmatches(lines[i], gregexpr("\\{", lines[i]))) -
+		                lengths(regmatches(lines[i], gregexpr("\\}", lines[i])))
+		if (depth == 0L) { args_end = i; break }
+	}
+	if (is.na(args_end)) return(invisible(FALSE))
+	# Also drop the blank line that roxygen2 puts before \arguments{.
+	drop_start = if (args_start > 1L && !nzchar(lines[args_start - 1L])) args_start - 1L else args_start
+	writeLines(lines[-(drop_start:args_end)], path)
+	invisible(TRUE)
+}
+for (rd_file in list.files(file.path("EDI", "man"), pattern = "\\.Rd$", full.names = TRUE)) {
+	strip_arguments_block_from_bare_object_rd(rd_file)
+}

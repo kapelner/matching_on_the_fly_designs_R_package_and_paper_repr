@@ -12,6 +12,8 @@ compute_survival_strata_ids_cpp(
 )
 }
 \arguments{
+\item{X_sexp}{Numeric covariate matrix.}
+
 \item{max_unique_per_col}{Maximum number of unique values allowed for a column
 to be considered a stratification candidate.}
 
@@ -19,8 +21,6 @@ to be considered a stratification candidate.}
 
 \item{min_count_per_level}{Minimum frequency required for every level in a
 candidate column.}
-
-\item{X}{Numeric covariate matrix.}
 }
 \value{
 A list with `strata_id`, `selected_cols`, and `num_strata`.

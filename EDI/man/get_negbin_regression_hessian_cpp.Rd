@@ -7,11 +7,11 @@
 get_negbin_regression_hessian_cpp(X_sexp, y_sexp, params_sexp)
 }
 \arguments{
-\item{X}{A numeric matrix of predictors.}
+\item{X_sexp}{A numeric matrix of predictors.}
 
-\item{y}{A numeric vector of responses.}
+\item{y_sexp}{A numeric vector of responses.}
 
-\item{params}{A numeric vector of parameters [beta, log_theta].}
+\item{params_sexp}{A numeric vector of parameters [beta, log_theta].}
 }
 \value{
 A numeric matrix representing the Hessian.

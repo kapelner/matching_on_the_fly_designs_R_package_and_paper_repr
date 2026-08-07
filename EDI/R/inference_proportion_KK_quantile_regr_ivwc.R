@@ -34,6 +34,8 @@
 #' and is not installed automatically with \pkg{EDI}.
 #' Install \pkg{quantreg} before using this class.
 #'
+#' \strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
+#'
 #' @examples
 #' \donttest{
 #' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'proportion')
@@ -44,8 +46,6 @@
 #' inf = InferencePropKKQuantileRegrIVWC$new(seq_des)
 #' inf$compute_estimate()
 #' }
-#'
-#' \strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
 #' @export
 InferencePropKKQuantileRegrIVWC = R6::R6Class("InferencePropKKQuantileRegrIVWC",
 	lock_objects = FALSE,

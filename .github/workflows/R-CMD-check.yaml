@@ -1,8 +1,22 @@
 on:
   push:
     branches: [main, master]
+    paths: &r-cmd-check-paths
+      - 'EDI/**/*.R'
+      - 'EDI/**/*.Rd'
+      - 'EDI/**/*.cpp'
+      - 'EDI/**/*.h'
+      - 'EDI/**/*.hpp'
+      - 'EDI/DESCRIPTION'
+      - 'EDI/NAMESPACE'
+      - 'EDI/configure'
+      - 'EDI/configure.win'
+      - 'EDI/src/Makevars'
+      - 'EDI/src/Makevars.win'
+      - '.github/workflows/R-CMD-check.yaml'
   pull_request:
     branches: [main, master]
+    paths: *r-cmd-check-paths
 
 name: R-CMD-check
 
@@ -17,7 +31,16 @@ name: R-CMD-check
 # is a real compiled-package check, not just a lint pass -- worth running
 # across the full macOS/Windows/Linux x devel/release/oldrel-1 matrix to
 # catch platform-specific compiler differences (MSVC vs. clang vs. gcc)
-# that a single-OS check would miss.
+# that a single-OS check would miss. Runs with --as-cran (see the check step's
+# `args:`) so CRAN-style checks (portable Makevars, Rd correctness, etc.) are
+# enforced, not just a plain build+install.
+#
+# The `paths:` filter above only triggers this on pushes/PRs that touch R,
+# Rd, or C++ sources (or the build-critical DESCRIPTION/NAMESPACE/configure/
+# Makevars files, or this workflow itself) -- cosmetic changes (docs/*.md,
+# benchmark/ scripts, the python/ subproject, package_metadata/ python
+# integration scripts, etc.) don't spend CI minutes on a full compiled-package
+# matrix build.
 
 jobs:
   R-CMD-check:
@@ -38,6 +61,11 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
+      # Portable build: skips -march=native/-mtune=native/-fno-lto and the
+      # CXXFLAGS override (see EDI/configure). Those are opt-in for local
+      # performance-tuned builds (EDI_PORTABLE=0, the default) but would
+      # otherwise trip "checking compilation flags in Makevars" here.
+      EDI_PORTABLE: 1
 
     steps:
       - uses: actions/checkout@v4
@@ -60,4 +88,11 @@ jobs:
         with:
           working-directory: EDI
           upload-snapshots: true
+          args: 'c("--no-manual", "--as-cran")'
           build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
+          # Fail on NOTEs too, not just WARNINGs/ERRORs. This action already
+          # sets _R_CHECK_CRAN_INCOMING_=false by default (see its action.yaml),
+          # which suppresses the one NOTE that's genuinely unavoidable pre-CRAN
+          # ("New submission") -- so "note" here means "fail on anything we can
+          # actually still do something about."
+          error-on: '"note"'

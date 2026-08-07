@@ -36,6 +36,8 @@ tau-th quantile treatment effect to delta under the null.
 This class requires the \pkg{quantreg} package, which is listed in Suggests
 and is not installed automatically with \pkg{EDI}.
 Install \pkg{quantreg} before using this class.
+
+\strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
 }
 \examples{
 \donttest{
@@ -47,8 +49,6 @@ seq_des$add_all_subject_responses(rnorm(10))
 inf = InferenceContinKKQuantileRegrIVWC$new(seq_des)
 inf$compute_estimate()
 }
-
-\strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
 
 ## ------------------------------------------------
 ## Method `InferenceContinKKQuantileRegrIVWC$new()`
@@ -85,12 +85,16 @@ infer
   <li><a href='../../EDI/html/InferenceAbstractKKQuantileRegrIVWC.html#method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_confidence_interval'><code>InferenceAbstractKKQuantileRegrIVWC$compute_asymp_confidence_interval()</code></a></li>
   <li><a href='../../EDI/html/InferenceAbstractKKQuantileRegrIVWC.html#method-InferenceAbstractKKQuantileRegrIVWC-compute_asymp_two_sided_pval'><code>InferenceAbstractKKQuantileRegrIVWC$compute_asymp_two_sided_pval()</code></a></li>
   <li><a href='../../EDI/html/InferenceAbstractKKQuantileRegrIVWC.html#method-InferenceAbstractKKQuantileRegrIVWC-compute_estimate'><code>InferenceAbstractKKQuantileRegrIVWC$compute_estimate()</code></a></li>
-  <li><a href='../../EDI/html/InferenceAbstractKKQuantileRegrIVWC.html#method-InferenceAbstractKKQuantileRegrIVWC-compute_estimate_with_bootstrap_weights'><code>InferenceAbstractKKQuantileRegrIVWC$compute_estimate_with_bootstrap_weights()</code></a></li>
 </ul>
 </details>
 <details><summary>+ inherited public methods from InferenceAbstractQuantileRandCI</summary>
 <ul>
   <li><a href='../../EDI/html/InferenceAbstractQuantileRandCI.html#method-InferenceAbstractQuantileRandCI-compute_rand_confidence_interval'><code>InferenceAbstractQuantileRandCI$compute_rand_confidence_interval()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceKKPassThroughCompoundNoParamBootstrap</summary>
+<ul>
+  <li><code>InferenceKKPassThroughCompoundNoParamBootstrap$compute_estimate_with_bootstrap_weights()</code></li>
 </ul>
 </details>
 <details><summary>+ inherited public methods from InferenceAsympLik</summary>
@@ -181,6 +185,7 @@ infer
 </details>
 <details><summary>+ inherited public methods from Inference</summary>
 <ul>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-capabilities'><code>Inference$capabilities()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>Inference$compute_exact_confidence_interval()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>Inference$duplicate()</code></a></li>
@@ -197,6 +202,7 @@ infer
   <li><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>Inference$is_nonestimable()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>Inference$set_optimization_alg()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>Inference$set_seed()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-supports'><code>Inference$supports()</code></a></li>
 </ul>
 </details>}}
 \if{html}{\out{<hr>}}

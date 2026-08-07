@@ -26,7 +26,6 @@ Conditional-Poisson Inference for KK Designs with Combined Likelihood
     \item \href{#method-InferenceCountKKCondPoissonOneLik-compute_lik_ratio_two_sided_pval}{\code{InferenceCountKKCondPoissonOneLik$compute_lik_ratio_two_sided_pval()}}
     \item \href{#method-InferenceCountKKCondPoissonOneLik-compute_gradient_two_sided_pval}{\code{InferenceCountKKCondPoissonOneLik$compute_gradient_two_sided_pval()}}
     \item \href{#method-InferenceCountKKCondPoissonOneLik-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceCountKKCondPoissonOneLik$approximate_bootstrap_distribution_beta_hat_T()}}
-    \item \href{#method-InferenceCountKKCondPoissonOneLik-supports_lik_ratio_param_bootstrap}{\code{InferenceCountKKCondPoissonOneLik$supports_lik_ratio_param_bootstrap()}}
     \item \href{#method-InferenceCountKKCondPoissonOneLik-clone}{\code{InferenceCountKKCondPoissonOneLik$clone()}}
   }
 }
@@ -122,6 +121,7 @@ Conditional-Poisson Inference for KK Designs with Combined Likelihood
 </details>
 <details><summary>+ inherited public methods from Inference</summary>
 <ul>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-capabilities'><code>Inference$capabilities()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>Inference$compute_exact_confidence_interval()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>Inference$duplicate()</code></a></li>
@@ -138,6 +138,7 @@ Conditional-Poisson Inference for KK Designs with Combined Likelihood
   <li><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>Inference$is_nonestimable()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>Inference$set_optimization_alg()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>Inference$set_seed()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-supports'><code>Inference$supports()</code></a></li>
 </ul>
 </details>}}
 \if{html}{\out{<hr>}}
@@ -447,21 +448,6 @@ estimate.}
   }
   \subsection{Returns}{
     A numeric vector of bootstrap estimates.
-  }
-}
-
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceCountKKCondPoissonOneLik-supports_lik_ratio_param_bootstrap"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceCountKKCondPoissonOneLik-supports_lik_ratio_param_bootstrap}{}}}
-\subsection{\code{InferenceCountKKCondPoissonOneLik$supports_lik_ratio_param_bootstrap()}}{
-  Whether likelihood-ratio parametric bootstrap is supported.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceCountKKCondPoissonOneLik$supports_lik_ratio_param_bootstrap()}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    \code{TRUE}.
   }
 }
 

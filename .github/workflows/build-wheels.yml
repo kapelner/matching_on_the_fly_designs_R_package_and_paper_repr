@@ -28,16 +28,30 @@ on:
   push:
     tags:
       - "py-v*"
-    # Runs on main too, but only when a push actually touches the Python
-    # package or this workflow file -- without the `paths` filter, every
-    # commit to main (including R-only changes, which are most of them)
-    # would trigger the full 3-OS wheel matrix build. The `publish` job
-    # below still only fires on an actual tag push, so a plain main push
+    # Runs on main too, but only when a push actually touches something that
+    # can affect the wheel build or its C++ kernels -- without the `paths`
+    # filter, every commit to main (including R-only changes, which are most
+    # of them) would trigger the full 3-OS wheel matrix build. The `publish`
+    # job below still only fires on an actual tag push, so a plain main push
     # can never trigger a PyPI upload.
+    #
+    # EDI/src/**/*.{cpp,h,hpp} is included because CMakeLists.txt compiles
+    # those kernel sources directly into this extension (EDI/src is their
+    # single source of truth, per the comment there) -- a change there is a
+    # C++ change to this build even though the file lives under EDI/. Plain
+    # R sources/docs (EDI/R, EDI/man, *.md reports, benchmark/*.R) do not
+    # affect this build and are intentionally left out; **/*.py picks up
+    # both the python/ package and cross-language integration scripts like
+    # benchmark/benchmark_model_fits_python.py without also matching its
+    # sibling .R/.md/.html files in that same directory.
     branches:
       - main
     paths:
       - "python/**"
+      - "EDI/src/**/*.cpp"
+      - "EDI/src/**/*.h"
+      - "EDI/src/**/*.hpp"
+      - "**/*.py"
       - ".github/workflows/build-wheels.yml"
   workflow_dispatch: {}
 

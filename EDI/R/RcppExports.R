@@ -208,8 +208,8 @@ get_adjacent_category_logit_hessian_cpp <- function(X_sexp, y_sexp, params_sexp)
 
 #' @title Fast Adjacent-Category Logit (C++)
 #' @description High-performance adjacent-category logit model fitting.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses (categorical).
+#' @param X_sexp A numeric matrix of predictors.
+#' @param y_sexp A numeric vector of responses (categorical).
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
 #' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
@@ -228,8 +228,8 @@ fast_adjacent_category_logit_cpp <- function(X_sexp, y_sexp, maxit = 100L, tol =
 
 #' @title Fast Adjacent-Category Logit with Variance (C++)
 #' @description Adjacent-category logit model fitting with full variance-covariance matrix.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses (categorical).
+#' @param X_sexp A numeric matrix of predictors.
+#' @param y_sexp A numeric vector of responses (categorical).
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
 #' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
@@ -252,11 +252,11 @@ compute_adj_cat_logit_distr_parallel_cpp <- function(X_sexp, y_sexp, w_mat, delt
 
 #' Fast Bai Adjusted T Statistic for Multiple Permutations
 #'
-#' @param w_mat Integer matrix of permuted treatment assignments (n x r).
-#' @param m_mat Integer matrix of match indicators (n x r).
-#' @param y Numeric response vector.
+#' @param w_mat_sexp Integer matrix of permuted treatment assignments (n x r).
+#' @param m_mat_sexp Integer matrix of match indicators (n x r).
+#' @param y_sexp Numeric response vector.
 #' @param delta Null treatment effect shift.
-#' @param halves_idx Integer matrix of half-sample indices.
+#' @param halves_idx_sexp Integer matrix of half-sample indices.
 #' @param convex_flag Logical flag for convex combination.
 #' @param num_cores Number of OpenMP threads.
 #' @return Numeric vector of Bai adjusted T statistics.
@@ -266,9 +266,9 @@ compute_bai_distr_parallel_cpp <- function(w_mat_sexp, m_mat_sexp, y_sexp, delta
 
 #' @title Compute Beta Regression Score
 #' @description Calculates the score vector (gradient of the log-likelihood) for a beta regression model.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses (in (0, 1)).
-#' @param params A numeric vector of parameters [beta, log_phi].
+#' @param X_sexp A numeric matrix of predictors.
+#' @param y_sexp A numeric vector of responses (in (0, 1)).
+#' @param params_sexp A numeric vector of parameters [beta, log_phi].
 #' @return A numeric vector representing the score.
 #' @export
 #' @keywords internal
@@ -280,9 +280,9 @@ get_beta_regression_score_cpp <- function(X_sexp, y_sexp, params_sexp) {
 
 #' @title Compute Beta Regression Hessian
 #' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a beta regression model.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses.
-#' @param params A numeric vector of parameters [beta, log_phi].
+#' @param X_sexp A numeric matrix of predictors.
+#' @param y_sexp A numeric vector of responses.
+#' @param params_sexp A numeric vector of parameters [beta, log_phi].
 #' @return A numeric matrix representing the Hessian.
 #' @export
 #' @keywords internal
@@ -292,8 +292,8 @@ get_beta_regression_hessian_cpp <- function(X_sexp, y_sexp, params_sexp) {
 
 #' @title Fast Beta Regression (C++)
 #' @description High-performance beta regression fitting using Newton-Raphson or L-BFGS.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses (in (0, 1)).
+#' @param X_sexp A numeric matrix of predictors.
+#' @param y_sexp A numeric vector of responses (in (0, 1)).
 #' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
 #' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 #' @param start_phi Optional starting value for precision parameter phi.
@@ -315,9 +315,9 @@ fast_beta_regression_cpp <- function(X_sexp, y_sexp, warm_start_beta = NULL, sma
 
 #' @title Fast Weighted Beta Regression (C++)
 #' @description High-performance beta regression fitting with nonnegative row weights.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses (in (0, 1)).
-#' @param weights A nonnegative numeric vector of row weights.
+#' @param X_sexp A numeric matrix of predictors.
+#' @param y_sexp A numeric vector of responses (in (0, 1)).
+#' @param weights_sexp A nonnegative numeric vector of row weights.
 #' @param warm_start_beta Optional starting values for coefficients.
 #' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when no warm start is provided.
 #' @param start_phi Optional starting value for precision parameter phi.
@@ -336,8 +336,8 @@ fast_beta_regression_weighted_cpp <- function(X_sexp, y_sexp, weights_sexp, warm
 
 #' @title Fast Beta Regression with Variance (C++)
 #' @description Beta regression with full variance-covariance matrix and standard error estimation.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses (in (0, 1)).
+#' @param X_sexp A numeric matrix of predictors.
+#' @param y_sexp A numeric vector of responses (in (0, 1)).
 #' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
 #' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 #' @param start_phi Optional starting value for precision parameter phi.
@@ -378,8 +378,8 @@ get_continuation_ratio_regression_hessian_cpp <- function(X_sexp, y_sexp, params
 
 #' @title Fast Continuation-Ratio Regression (C++)
 #' @description High-performance continuation-ratio logit model fitting.
-#' @param X A numeric matrix of predictors (no intercept column; threshold intercepts are estimated internally).
-#' @param y A numeric vector of ordinal responses.
+#' @param X_sexp A numeric matrix of predictors (no intercept column; threshold intercepts are estimated internally).
+#' @param y_sexp A numeric vector of ordinal responses.
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
 #' @param warm_start_beta Optional starting values for coefficients.
@@ -459,13 +459,13 @@ compute_coxph_rand_bootstrap_parallel_cpp <- function(y0, dead, Xc, i_mat, w_mat
 
 #' @title Compute Combined Conditional-Poisson Score
 #' @description Calculates the score vector for the combined conditional-Poisson and Poisson log-likelihood.
-#' @param yT_v Treated counts per pair.
-#' @param n_k_v Total counts per pair.
-#' @param X_diff_v Covariate differences between pairs.
-#' @param y_r Reservoir outcomes.
-#' @param w_r Reservoir treatment indicators.
-#' @param X_r Reservoir covariates.
-#' @param params Current parameter estimates.
+#' @param yT_v_r Treated counts per pair.
+#' @param n_k_v_r Total counts per pair.
+#' @param X_diff_v_r Covariate differences between pairs.
+#' @param y_r_r Reservoir outcomes.
+#' @param w_r_r Reservoir treatment indicators.
+#' @param X_r_r Reservoir covariates.
+#' @param params_r Current parameter estimates.
 #' @return A numeric vector representing the score.
 #' @export
 #' @keywords internal
@@ -473,12 +473,12 @@ NULL
 
 #' @title Fast Combined Conditional-Poisson Regression (C++)
 #' @description High-performance fitting of a model combining conditional Poisson (for matched pairs) and marginal Poisson (for reservoir subjects).
-#' @param yT_v Treated counts per pair.
-#' @param n_k_v Total counts per pair.
-#' @param X_diff_v Covariate differences.
-#' @param y_r Reservoir outcomes.
-#' @param w_r Reservoir treatment indicators.
-#' @param X_r Reservoir covariates.
+#' @param yT_v_r Treated counts per pair.
+#' @param n_k_v_r Total counts per pair.
+#' @param X_diff_v_r Covariate differences.
+#' @param y_r_r Reservoir outcomes.
+#' @param w_r_r Reservoir treatment indicators.
+#' @param X_r_r Reservoir covariates.
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
 #' @param fixed_idx Optional indices of fixed parameters.
@@ -494,13 +494,13 @@ get_cpoisson_combined_score_cpp <- function(yT_v_r, n_k_v_r, X_diff_v_r, y_r_r, 
 
 #' @title Compute Combined Conditional-Poisson Hessian
 #' @description Calculates the Hessian matrix for the combined conditional-Poisson and Poisson model.
-#' @param yT_v Treated counts per pair.
-#' @param n_k_v Total counts per pair.
-#' @param X_diff_v Covariate differences between pairs.
-#' @param y_r Reservoir outcomes.
-#' @param w_r Reservoir treatment indicators.
-#' @param X_r Reservoir covariates.
-#' @param params Current parameter estimates.
+#' @param yT_v_r Treated counts per pair.
+#' @param n_k_v_r Total counts per pair.
+#' @param X_diff_v_r Covariate differences between pairs.
+#' @param y_r_r Reservoir outcomes.
+#' @param w_r_r Reservoir treatment indicators.
+#' @param X_r_r Reservoir covariates.
+#' @param params_r Current parameter estimates.
 #' @return A numeric matrix representing the Hessian.
 #' @export
 #' @keywords internal
@@ -554,9 +554,9 @@ fast_hurdle_negbin_cpp <- function(X_r, y_r, X_hurdle_r, warm_start_params = NUL
 
 #' @title Fast Hurdle Negative Binomial Regression with Variance (C++)
 #' @description Hurdle NB regression with full variance-covariance matrix.
-#' @param X Matrix of predictors for the count component.
-#' @param y Vector of responses.
-#' @param X_hurdle Matrix of predictors for the hurdle component.
+#' @param X_r Matrix of predictors for the count component.
+#' @param y_r Vector of responses.
+#' @param X_hurdle_r Matrix of predictors for the hurdle component.
 #' @param j 1-based index of the parameter for which to return specific variance.
 #' @param warm_start_params Optional starting values for count parameters. If provided, \code{smart_cold_start} is ignored.
 #' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
@@ -616,9 +616,9 @@ compute_jt_rand_bootstrap_parallel_cpp <- function(y0, i_mat, w_mat, num_cores) 
 
 #' Fast KK Wilcoxon Statistic for Multiple Permutations
 #'
-#' @param w_mat Integer matrix of permuted treatment assignments (n x r).
-#' @param m_mat Integer matrix of match indicators (n x r).
-#' @param y Numeric response vector.
+#' @param w_mat_sexp Integer matrix of permuted treatment assignments (n x r).
+#' @param m_mat_sexp Integer matrix of match indicators (n x r).
+#' @param y_sexp Numeric response vector.
 #' @param delta Null treatment effect shift.
 #' @param transform_code Integer code for response transformation.
 #' @param zero_one_logit_clamp Clamp value for logit transformation.
@@ -631,9 +631,9 @@ compute_matching_wilcox_distr_parallel_cpp <- function(w_mat_sexp, m_mat_sexp, y
 
 #' @title Compute Log-Binomial Regression Score
 #' @description Calculates the score vector (gradient of the log-likelihood) for a log-binomial regression model.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
-#' @param beta A numeric vector of coefficients.
+#' @param X_r A numeric matrix of predictors.
+#' @param y_r A binary numeric vector of responses.
+#' @param beta_sexp A numeric vector of coefficients.
 #' @return A numeric vector representing the score.
 #' @export
 #' @keywords internal
@@ -643,9 +643,9 @@ get_log_binomial_regression_score_cpp <- function(X_r, y_r, beta_sexp) {
 
 #' @title Compute Log-Binomial Regression Hessian
 #' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a log-binomial regression model.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
-#' @param beta A numeric vector of coefficients.
+#' @param X_r A numeric matrix of predictors.
+#' @param y_r A binary numeric vector of responses.
+#' @param beta_sexp A numeric vector of coefficients.
 #' @return A numeric matrix representing the Hessian.
 #' @export
 #' @keywords internal
@@ -655,10 +655,10 @@ get_log_binomial_regression_hessian_cpp <- function(X_r, y_r, beta_sexp) {
 
 #' @title Compute Weighted Log-Binomial Regression Score
 #' @description Calculates the weighted score vector for a log-binomial regression model.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
-#' @param weights A nonnegative numeric vector of observation weights.
-#' @param beta A numeric vector of coefficients.
+#' @param X_r A numeric matrix of predictors.
+#' @param y_r A binary numeric vector of responses.
+#' @param weights_r A nonnegative numeric vector of observation weights.
+#' @param beta_sexp A numeric vector of coefficients.
 #' @return A numeric vector representing the weighted score.
 #' @export
 #' @keywords internal
@@ -668,10 +668,10 @@ get_log_binomial_regression_weighted_score_cpp <- function(X_r, y_r, weights_r, 
 
 #' @title Compute Weighted Log-Binomial Regression Hessian
 #' @description Calculates the weighted Hessian matrix for a log-binomial regression model.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
-#' @param weights A nonnegative numeric vector of observation weights.
-#' @param beta A numeric vector of coefficients.
+#' @param X_r A numeric matrix of predictors.
+#' @param y_r A binary numeric vector of responses.
+#' @param weights_r A nonnegative numeric vector of observation weights.
+#' @param beta_sexp A numeric vector of coefficients.
 #' @return A numeric matrix representing the weighted Hessian.
 #' @export
 #' @keywords internal
@@ -681,9 +681,9 @@ get_log_binomial_regression_weighted_hessian_cpp <- function(X_r, y_r, weights_r
 
 #' @title Compute Identity-Binomial Regression Score
 #' @description Calculates the score vector for a binomial regression model with an identity link.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
-#' @param beta A numeric vector of coefficients.
+#' @param X_r A numeric matrix of predictors.
+#' @param y_r A binary numeric vector of responses.
+#' @param beta_sexp A numeric vector of coefficients.
 #' @return A numeric vector representing the score.
 #' @export
 #' @keywords internal
@@ -693,9 +693,9 @@ get_identity_binomial_regression_score_cpp <- function(X_r, y_r, beta_sexp) {
 
 #' @title Compute Identity-Binomial Regression Hessian
 #' @description Calculates the Hessian matrix for a binomial regression model with an identity link.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
-#' @param beta A numeric vector of coefficients.
+#' @param X_r A numeric matrix of predictors.
+#' @param y_r A binary numeric vector of responses.
+#' @param beta_sexp A numeric vector of coefficients.
 #' @return A numeric matrix representing the Hessian.
 #' @export
 #' @keywords internal
@@ -705,10 +705,10 @@ get_identity_binomial_regression_hessian_cpp <- function(X_r, y_r, beta_sexp) {
 
 #' @title Compute Weighted Identity-Binomial Regression Score
 #' @description Calculates the weighted score vector for a binomial regression model with an identity link.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
-#' @param weights A nonnegative numeric vector of observation weights.
-#' @param beta A numeric vector of coefficients.
+#' @param X_r A numeric matrix of predictors.
+#' @param y_r A binary numeric vector of responses.
+#' @param weights_r A nonnegative numeric vector of observation weights.
+#' @param beta_sexp A numeric vector of coefficients.
 #' @return A numeric vector representing the weighted score.
 #' @export
 #' @keywords internal
@@ -718,10 +718,10 @@ get_identity_binomial_regression_weighted_score_cpp <- function(X_r, y_r, weight
 
 #' @title Compute Weighted Identity-Binomial Regression Hessian
 #' @description Calculates the weighted Hessian matrix for a binomial regression model with an identity link.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
-#' @param weights A nonnegative numeric vector of observation weights.
-#' @param beta A numeric vector of coefficients.
+#' @param X_r A numeric matrix of predictors.
+#' @param y_r A binary numeric vector of responses.
+#' @param weights_r A nonnegative numeric vector of observation weights.
+#' @param beta_sexp A numeric vector of coefficients.
 #' @return A numeric matrix representing the weighted Hessian.
 #' @export
 #' @keywords internal
@@ -731,8 +731,8 @@ get_identity_binomial_regression_weighted_hessian_cpp <- function(X_r, y_r, weig
 
 #' @title Fast Log-Binomial Regression (C++)
 #' @description High-performance log-binomial regression fitting using Fisher scoring.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
+#' @param X_r A numeric matrix of predictors.
+#' @param y_r A binary numeric vector of responses.
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
 #' @param fixed_idx Optional indices of fixed parameters.
@@ -749,8 +749,8 @@ fast_log_binomial_regression_cpp <- function(X_r, y_r, maxit = 100L, tol = 1e-6,
 
 #' @title Fast Log-Binomial Regression with Variance (C++)
 #' @description Log-binomial regression with variance-covariance matrix and standard errors.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
+#' @param X_r A numeric matrix of predictors.
+#' @param y_r A binary numeric vector of responses.
 #' @param j 1-based index of the parameter for which to return specific variance.
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
@@ -768,9 +768,9 @@ fast_log_binomial_regression_with_var_cpp <- function(X_r, y_r, j = 2L, maxit = 
 
 #' @title Fast Weighted Log-Binomial Regression (C++)
 #' @description High-performance weighted log-binomial regression fitting using Fisher scoring.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
-#' @param weights A nonnegative numeric vector of observation weights.
+#' @param X_r A numeric matrix of predictors.
+#' @param y_r A binary numeric vector of responses.
+#' @param weights_r A nonnegative numeric vector of observation weights.
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
 #' @param fixed_idx Optional indices of fixed parameters.
@@ -787,8 +787,8 @@ fast_log_binomial_regression_weighted_cpp <- function(X_r, y_r, weights_r, maxit
 
 #' @title Fast Identity-Binomial Regression (C++)
 #' @description High-performance binomial regression with identity link using Fisher scoring.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
+#' @param X_r A numeric matrix of predictors.
+#' @param y_r A binary numeric vector of responses.
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
 #' @param fixed_idx Optional indices of fixed parameters.
@@ -805,8 +805,8 @@ fast_identity_binomial_regression_cpp <- function(X_r, y_r, maxit = 100L, tol = 
 
 #' @title Fast Identity-Binomial Regression with Variance (C++)
 #' @description Binomial regression with identity link, providing variance-covariance matrix and standard errors.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
+#' @param X_r A numeric matrix of predictors.
+#' @param y_r A binary numeric vector of responses.
 #' @param j 1-based index of the parameter for which to return specific variance.
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
@@ -824,9 +824,9 @@ fast_identity_binomial_regression_with_var_cpp <- function(X_r, y_r, j = 2L, max
 
 #' @title Fast Weighted Identity-Binomial Regression (C++)
 #' @description High-performance weighted binomial regression with identity link using Fisher scoring.
-#' @param X A numeric matrix of predictors.
-#' @param y A binary numeric vector of responses.
-#' @param weights A nonnegative numeric vector of observation weights.
+#' @param X_r A numeric matrix of predictors.
+#' @param y_r A binary numeric vector of responses.
+#' @param weights_r A nonnegative numeric vector of observation weights.
 #' @param maxit Maximum number of iterations.
 #' @param tol Convergence tolerance.
 #' @param fixed_idx Optional indices of fixed parameters.
@@ -983,9 +983,9 @@ matrix_rank_cpp <- function(A_r, tol = 1e-7) {
 
 #' @title Compute Negative Binomial Regression Score
 #' @description Calculates the score vector (gradient of the log-likelihood) for a negative binomial regression model.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses (non-negative integers).
-#' @param params A numeric vector of parameters [beta, log_theta].
+#' @param X_sexp A numeric matrix of predictors.
+#' @param y_sexp A numeric vector of responses (non-negative integers).
+#' @param params_sexp A numeric vector of parameters [beta, log_theta].
 #' @return A numeric vector representing the score.
 #' @export
 #' @keywords internal
@@ -997,9 +997,9 @@ get_negbin_regression_score_cpp <- function(X_sexp, y_sexp, params_sexp) {
 
 #' @title Compute Negative Binomial Regression Hessian
 #' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a negative binomial regression model.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses.
-#' @param params A numeric vector of parameters [beta, log_theta].
+#' @param X_sexp A numeric matrix of predictors.
+#' @param y_sexp A numeric vector of responses.
+#' @param params_sexp A numeric vector of parameters [beta, log_theta].
 #' @return A numeric matrix representing the Hessian.
 #' @export
 #' @keywords internal
@@ -1013,8 +1013,8 @@ get_negbin_regression_expected_hessian_cpp <- function(X_sexp, y_sexp, params_se
 
 #' @title Fast Negative Binomial Regression with Variance (C++)
 #' @description Negative binomial regression fitting with full variance-covariance matrix.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses (non-negative integers).
+#' @param X_sexp A numeric matrix of predictors.
+#' @param y_sexp A numeric vector of responses (non-negative integers).
 #' @param warm_start_params Optional starting values for coefficients and dispersion. If provided, \code{smart_cold_start} is ignored.
 #' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 #' @param maxit Maximum number of iterations.
@@ -1037,8 +1037,8 @@ fast_neg_bin_with_var_cpp <- function(X_sexp, y_sexp, warm_start_params = NULL, 
 
 #' @title Fast Negative Binomial Regression (C++)
 #' @description High-performance negative binomial regression fitting.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses.
+#' @param X_sexp A numeric matrix of predictors.
+#' @param y_sexp A numeric vector of responses.
 #' @param warm_start_params Optional starting values for coefficients and dispersion. If provided, \code{smart_cold_start} is ignored.
 #' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 #' @param maxit Maximum number of iterations.
@@ -1061,9 +1061,9 @@ fast_neg_bin_cpp <- function(X_sexp, y_sexp, warm_start_params = NULL, smart_col
 
 #' @title Fast Weighted Negative Binomial Regression (C++)
 #' @description High-performance negative binomial regression fitting with nonnegative row weights.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses.
-#' @param weights A nonnegative numeric vector of row weights.
+#' @param X_sexp A numeric matrix of predictors.
+#' @param y_sexp A numeric vector of responses.
+#' @param weights_sexp A nonnegative numeric vector of row weights.
 #' @param warm_start_params Optional starting values for coefficients and dispersion. If provided, \code{smart_cold_start} is ignored.
 #' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
 #' @param maxit Maximum number of iterations.
@@ -1476,8 +1476,8 @@ fast_ridit_analysis_cpp <- function(w_sexp, y_sexp, reference = "control") {
 
 #' @title Fast Robust Regression (C++)
 #' @description High-performance robust regression fitting using IRLS.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of responses.
+#' @param X_sexp A numeric matrix of predictors.
+#' @param y_sexp A numeric vector of responses.
 #' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
 #' @param method Robust estimation method ("M" or "MM").
 #' @param j 1-based index of the parameter for which to return specific variance.
@@ -1628,8 +1628,8 @@ fast_dep_cens_transform_optim_cpp <- function(X_sexp, y_sexp, dead_sexp, warm_st
 
 #' Calculates the median or restricted mean survival time for a single group
 #'
-#' @param y Numeric vector of survival times.
-#' @param dead Integer vector of event indicators (1=event, 0=censored).
+#' @param y_sexp Numeric vector of survival times.
+#' @param dead_sexp Integer vector of event indicators (1=event, 0=censored).
 #' @param requested_stat A string, either "median" or "restricted_mean".
 #' @return The calculated statistic.
 #' @keywords internal
@@ -1711,10 +1711,10 @@ fast_weibull_frailty_cpp <- function(X_sexp, y_sexp, dead_sexp, group_id_sexp, w
 
 #' @title Compute Weibull Regression Score
 #' @description Calculates the score vector (gradient of the log-likelihood) for a Weibull AFT regression model.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of survival times.
-#' @param dead A numeric vector of event indicators.
-#' @param params A numeric vector of parameters [beta, log_sigma].
+#' @param X_sexp A numeric matrix of predictors.
+#' @param y_sexp A numeric vector of survival times.
+#' @param dead_sexp A numeric vector of event indicators.
+#' @param params_sexp A numeric vector of parameters [beta, log_sigma].
 #' @return A numeric vector representing the score.
 #' @export
 #' @keywords internal
@@ -1724,10 +1724,10 @@ get_weibull_regression_score_cpp <- function(X_sexp, y_sexp, dead_sexp, params_s
 
 #' @title Compute Weibull Regression Hessian
 #' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a Weibull AFT regression model.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of survival times.
-#' @param dead A numeric vector of event indicators.
-#' @param params A numeric vector of parameters [beta, log_sigma].
+#' @param X_sexp A numeric matrix of predictors.
+#' @param y_sexp A numeric vector of survival times.
+#' @param dead_sexp A numeric vector of event indicators.
+#' @param params_sexp A numeric vector of parameters [beta, log_sigma].
 #' @return A numeric matrix representing the Hessian.
 #' @export
 #' @keywords internal
@@ -1741,10 +1741,10 @@ compute_weibull_rand_bootstrap_parallel_cpp <- function(y0, dead, Xc, i_mat, w_m
 
 #' @title Fast Weibull AFT Regression (C++)
 #' @description Weibull Accelerated Failure Time model fitting.
-#' @param X A numeric matrix of predictors.
-#' @param y A numeric vector of survival times.
-#' @param dead A numeric vector of event indicators (1=event, 0=censored).
-#' @param warm_start_beta Optional starting values for coefficients.
+#' @param X_sexp A numeric matrix of predictors.
+#' @param y_sexp A numeric vector of survival times.
+#' @param dead_sexp A numeric vector of event indicators (1=event, 0=censored).
+#' @param warm_start_params Optional starting values for coefficients.
 #' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess.
 #' @param estimate_only Logical. If TRUE, do not compute variance-covariance.
 #' @param maxit Maximum number of iterations.
@@ -1811,9 +1811,9 @@ get_zero_augmented_poisson_hessian_cpp <- function(X_sexp, y_sexp, Xzi_sexp, par
 
 #' @title Fast Zero-Augmented Poisson Regression (C++)
 #' @description High-performance ZIP or hurdle Poisson regression fitting using Newton-Raphson or L-BFGS.
-#' @param X Matrix of predictors for the conditional component.
-#' @param y Vector of responses.
-#' @param Xzi Matrix of predictors for the zero-inflation/hurdle component.
+#' @param X_sexp Matrix of predictors for the conditional component.
+#' @param y_sexp Vector of responses.
+#' @param Xzi_sexp Matrix of predictors for the zero-inflation/hurdle component.
 #' @param is_hurdle If TRUE, fit a hurdle model; if FALSE, fit a zero-inflated model.
 #' @param warm_start_params Optional starting values for all parameters. If provided, \code{smart_cold_start} is ignored.
 #' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
@@ -1873,7 +1873,6 @@ fast_zero_one_inflated_beta_cpp <- function(X_sexp, X_zero_one_sexp, y_sexp, war
 #' @param warm_start_fisher_info Optional initial Fisher Information matrix.
 #' @param estimate_only Logical. If TRUE, skip variance computation and return only coefficients.
 #' @return A list containing coefficients and convergence status.
-#' @export
 #' @keywords internal
 NULL
 
@@ -1883,8 +1882,8 @@ fast_zinb_cpp <- function(X, Xzi, y, warm_start_params = NULL, maxit = 1000L, to
 
 #' @title Fast G-Computation Point Estimate for Fractional Logit (C++)
 #' @description Computes marginal mean difference under the fractional logit (quasi-binomial) model using G-computation.
-#' @param X_fit Numeric matrix of predictors including intercept.
-#' @param coef_hat Numeric vector of fitted coefficients.
+#' @param X_fit_sexp Numeric matrix of predictors including intercept.
+#' @param coef_hat_sexp Numeric vector of fitted coefficients.
 #' @param j_treat 1-based column index of the treatment indicator in X_fit.
 #' @return A list with elements \code{mean1}, \code{mean0}, and \code{md} (mean difference).
 #' @export
@@ -1895,8 +1894,8 @@ gcomp_fractional_logit_point_estimate_cpp <- function(X_fit_sexp, coef_hat_sexp,
 
 #' @title Fast G-Computation Point Estimate for Logistic Regression (C++)
 #' @description Computes marginal risk difference and risk ratio under the logistic model using G-computation.
-#' @param X_fit Numeric matrix of predictors including intercept.
-#' @param coef_hat Numeric vector of fitted coefficients.
+#' @param X_fit_sexp Numeric matrix of predictors including intercept.
+#' @param coef_hat_sexp Numeric vector of fitted coefficients.
 #' @param j_treat 1-based column index of the treatment indicator in X_fit.
 #' @return A list with elements \code{mean1}, \code{mean0}, and \code{md} (mean difference).
 #' @export
@@ -2446,7 +2445,7 @@ stratified_bootstrap_indices_cpp <- function(strata_keys_sexp) {
 #' support automatic stratified Cox models when the design object stores observed
 #' covariates but no explicit stratum variable.
 #'
-#' @param X Numeric covariate matrix.
+#' @param X_sexp Numeric covariate matrix.
 #' @param max_unique_per_col Maximum number of unique values allowed for a column
 #'   to be considered a stratification candidate.
 #' @param max_strata_cols Maximum number of candidate columns to combine.

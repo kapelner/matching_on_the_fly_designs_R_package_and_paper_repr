@@ -12,13 +12,13 @@ get_identity_binomial_regression_weighted_score_cpp(
 )
 }
 \arguments{
-\item{X}{A numeric matrix of predictors.}
+\item{X_r}{A numeric matrix of predictors.}
 
-\item{y}{A binary numeric vector of responses.}
+\item{y_r}{A binary numeric vector of responses.}
 
-\item{weights}{A nonnegative numeric vector of observation weights.}
+\item{weights_r}{A nonnegative numeric vector of observation weights.}
 
-\item{beta}{A numeric vector of coefficients.}
+\item{beta_sexp}{A numeric vector of coefficients.}
 }
 \value{
 A numeric vector representing the weighted score.

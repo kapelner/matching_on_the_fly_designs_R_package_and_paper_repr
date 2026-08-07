@@ -7,13 +7,6 @@
 \usage{
 inference_asymp_lik_std_mod_cache_public
 }
-\arguments{
-\item{estimate_only}{If TRUE, skip variance component calculations.}
-
-\item{alpha}{Significance level 1 - \code{alpha}. Default 0.05.}
-
-\item{delta}{Null treatment effect to test against. Default 0.}
-}
 \value{
 A confidence interval.
 

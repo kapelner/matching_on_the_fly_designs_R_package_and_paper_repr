@@ -7,11 +7,11 @@
 get_survival_stat_for_group(y_sexp, dead_sexp, requested_stat)
 }
 \arguments{
+\item{y_sexp}{Numeric vector of survival times.}
+
+\item{dead_sexp}{Integer vector of event indicators (1=event, 0=censored).}
+
 \item{requested_stat}{A string, either "median" or "restricted_mean".}
-
-\item{y}{Numeric vector of survival times.}
-
-\item{dead}{Integer vector of event indicators (1=event, 0=censored).}
 }
 \value{
 The calculated statistic.

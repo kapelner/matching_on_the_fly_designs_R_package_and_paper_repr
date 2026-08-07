@@ -63,6 +63,7 @@ top of the existing nonparametric bootstrap infrastructure.
 </details>
 <details><summary>+ inherited public methods from Inference</summary>
 <ul>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-capabilities'><code>Inference$capabilities()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_asymp_confidence_interval'><code>Inference$compute_asymp_confidence_interval()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_asymp_two_sided_pval'><code>Inference$compute_asymp_two_sided_pval()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_estimate'><code>Inference$compute_estimate()</code></a></li>
@@ -83,6 +84,7 @@ top of the existing nonparametric bootstrap infrastructure.
   <li><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>Inference$is_nonestimable()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>Inference$set_optimization_alg()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>Inference$set_seed()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-supports'><code>Inference$supports()</code></a></li>
 </ul>
 </details>}}
 \if{html}{\out{<hr>}}
@@ -220,7 +222,7 @@ computing the p-value. Otherwise, any non-finite replicate returns
 replicates required after filtering. Default 5.}
       \item{\code{weighting_unit_type}}{Optional Bayesian-bootstrap weighting-unit
 scheme. See
-\code{\link{InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T}()}.}
+\code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T}()}.}
     }
     \if{html}{\out{</div>}}
   }
@@ -267,7 +269,7 @@ constructing the interval.}
 replicates required after filtering. Default 5.}
       \item{\code{weighting_unit_type}}{Optional Bayesian-bootstrap weighting-unit
 scheme. See
-\code{\link{InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T}()}.}
+\code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T}()}.}
     }
     \if{html}{\out{</div>}}
   }

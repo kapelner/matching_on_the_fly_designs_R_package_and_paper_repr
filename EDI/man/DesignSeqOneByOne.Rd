@@ -194,7 +194,7 @@ variable for it.}
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    The treatment assignment as {-1,+1} (+1 = treated, -1 = control).
+    The treatment assignment as \{-1,+1\} (+1 = treated, -1 = control).
   }
 }
 

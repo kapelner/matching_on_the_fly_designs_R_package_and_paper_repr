@@ -18,7 +18,7 @@
 #'   response_type = "continuous",
 #'   design_classes_and_params = list(DesignFixedBernoulli),
 #'   inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
-#'   n = 20L, Nrep = 5L, betaT = 1,
+#'   n = 20L, Nrep_W = 5L, betaT = 1,
 #'   results_filename = tempfile(fileext = ".csv"),
 #'   verbose = FALSE, continue_from_last_result_row = FALSE
 #' )

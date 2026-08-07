@@ -23,6 +23,8 @@ Defaults to the global budget unless overridden on the object.}
 \subsection{Public methods}{
   \itemize{
     \item \href{#method-Inference-initialize}{\code{Inference$new()}}
+    \item \href{#method-Inference-capabilities}{\code{Inference$capabilities()}}
+    \item \href{#method-Inference-supports}{\code{Inference$supports()}}
     \item \href{#method-Inference-compute_exact_two_sided_pval_for_treatment_effect}{\code{Inference$compute_exact_two_sided_pval_for_treatment_effect()}}
     \item \href{#method-Inference-compute_exact_confidence_interval}{\code{Inference$compute_exact_confidence_interval()}}
     \item \href{#method-Inference-compute_asymp_two_sided_pval}{\code{Inference$compute_asymp_two_sided_pval()}}
@@ -87,6 +89,43 @@ likelihood-based models. Explicit starts always override this object-level polic
       \item{\code{seed}}{Integer seed for reproducibility.}
     }
     \if{html}{\out{</div>}}
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Inference-capabilities"></a>}}
+\if{latex}{\out{\hypertarget{method-Inference-capabilities}{}}}
+\subsection{\code{Inference$capabilities()}}{
+  Returns the effective metadata-backed capabilities for this inference object.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Inference$capabilities()}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A character vector of capability names.
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Inference-supports"></a>}}
+\if{latex}{\out{\hypertarget{method-Inference-supports}{}}}
+\subsection{\code{Inference$supports()}}{
+  Returns whether this inference object supports a metadata-backed capability.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Inference$supports(capability)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{capability}}{Capability name or names.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A logical vector aligned with \code{capability}.
   }
 }
 

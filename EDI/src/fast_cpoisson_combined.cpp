@@ -166,13 +166,13 @@ static double cpoisson_combined_neg_loglik_cpp_impl(
 
 //' @title Compute Combined Conditional-Poisson Score
 //' @description Calculates the score vector for the combined conditional-Poisson and Poisson log-likelihood.
-//' @param yT_v Treated counts per pair.
-//' @param n_k_v Total counts per pair.
-//' @param X_diff_v Covariate differences between pairs.
-//' @param y_r Reservoir outcomes.
-//' @param w_r Reservoir treatment indicators.
-//' @param X_r Reservoir covariates.
-//' @param params Current parameter estimates.
+//' @param yT_v_r Treated counts per pair.
+//' @param n_k_v_r Total counts per pair.
+//' @param X_diff_v_r Covariate differences between pairs.
+//' @param y_r_r Reservoir outcomes.
+//' @param w_r_r Reservoir treatment indicators.
+//' @param X_r_r Reservoir covariates.
+//' @param params_r Current parameter estimates.
 //' @return A numeric vector representing the score.
 //' @export
 //' @keywords internal
@@ -201,13 +201,13 @@ SEXP get_cpoisson_combined_score_cpp(
 
 //' @title Compute Combined Conditional-Poisson Hessian
 //' @description Calculates the Hessian matrix for the combined conditional-Poisson and Poisson model.
-//' @param yT_v Treated counts per pair.
-//' @param n_k_v Total counts per pair.
-//' @param X_diff_v Covariate differences between pairs.
-//' @param y_r Reservoir outcomes.
-//' @param w_r Reservoir treatment indicators.
-//' @param X_r Reservoir covariates.
-//' @param params Current parameter estimates.
+//' @param yT_v_r Treated counts per pair.
+//' @param n_k_v_r Total counts per pair.
+//' @param X_diff_v_r Covariate differences between pairs.
+//' @param y_r_r Reservoir outcomes.
+//' @param w_r_r Reservoir treatment indicators.
+//' @param X_r_r Reservoir covariates.
+//' @param params_r Current parameter estimates.
 //' @return A numeric matrix representing the Hessian.
 //' @export
 //' @keywords internal
@@ -236,12 +236,12 @@ SEXP get_cpoisson_combined_hessian_cpp(
 
 //' @title Fast Combined Conditional-Poisson Regression (C++)
 //' @description High-performance fitting of a model combining conditional Poisson (for matched pairs) and marginal Poisson (for reservoir subjects).
-//' @param yT_v Treated counts per pair.
-//' @param n_k_v Total counts per pair.
-//' @param X_diff_v Covariate differences.
-//' @param y_r Reservoir outcomes.
-//' @param w_r Reservoir treatment indicators.
-//' @param X_r Reservoir covariates.
+//' @param yT_v_r Treated counts per pair.
+//' @param n_k_v_r Total counts per pair.
+//' @param X_diff_v_r Covariate differences.
+//' @param y_r_r Reservoir outcomes.
+//' @param w_r_r Reservoir treatment indicators.
+//' @param X_r_r Reservoir covariates.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.

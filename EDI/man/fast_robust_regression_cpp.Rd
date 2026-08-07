@@ -22,6 +22,10 @@ fast_robust_regression_cpp(
 )
 }
 \arguments{
+\item{X_sexp}{A numeric matrix of predictors.}
+
+\item{y_sexp}{A numeric vector of responses.}
+
 \item{warm_start_beta}{Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.}
 
 \item{method}{Robust estimation method ("M" or "MM").}
@@ -41,10 +45,6 @@ fast_robust_regression_cpp(
 \item{warm_start_weights}{Optional initial working weights for the first IRLS iteration.}
 
 \item{warm_start_fisher_info}{Optional initial Fisher Information matrix for the first IRLS iteration.}
-
-\item{X}{A numeric matrix of predictors.}
-
-\item{y}{A numeric vector of responses.}
 }
 \value{
 A list containing coefficients, weights, and scale estimate.

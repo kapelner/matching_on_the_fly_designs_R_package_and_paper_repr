@@ -245,11 +245,6 @@ Each numbered item below is an API entry whose generated description is thin or 
 - [ ] TODO #049: Method `DesignFixedMatchingGreedyPairSwitching$supports_batch_w_pregeneration()` (current description `70` chars).
 - [ ] TODO #050: Topic `DesignFixedMatchingGreedyPairSwitching` (current description `254` chars).
 
-### `DesignFixedNaiveMatch.Rd`
-
-- [ ] TODO #051: Method `DesignFixedNaiveMatch$clone()` (current description `57` chars).
-- [ ] TODO #052: Topic `DesignFixedNaiveMatch` (current description `623` chars).
-
 ### `DesignFixedOptimalBlocks.Rd`
 
 - [ ] TODO #053: Method `DesignFixedOptimalBlocks$clone()` (current description `57` chars).

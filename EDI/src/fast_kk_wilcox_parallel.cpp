@@ -51,9 +51,9 @@ inline double apply_shift(double y_val, double delta, int transform_code, double
 
 //' Fast KK Wilcoxon Statistic for Multiple Permutations
 //'
-//' @param w_mat Integer matrix of permuted treatment assignments (n x r).
-//' @param m_mat Integer matrix of match indicators (n x r).
-//' @param y Numeric response vector.
+//' @param w_mat_sexp Integer matrix of permuted treatment assignments (n x r).
+//' @param m_mat_sexp Integer matrix of match indicators (n x r).
+//' @param y_sexp Numeric response vector.
 //' @param delta Null treatment effect shift.
 //' @param transform_code Integer code for response transformation.
 //' @param zero_one_logit_clamp Clamp value for logit transformation.

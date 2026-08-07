@@ -1,6 +1,11 @@
 # Internal environment for the EDI package to store global state
 edi_env = new.env(parent = emptyenv())
 
+# .wgt__ is a data.table/formula column name used via non-standard evaluation
+# (e.g. `weights = .wgt__` inside a formula-fitting call), not a real object;
+# R CMD check's static analysis can't see that, so it must be declared here.
+utils::globalVariables(".wgt__")
+
 `%||%` <- function(a, b) if (!is.null(a)) a else b
 
 # Coefficient/statistic magnitude beyond which a fit is treated as
@@ -325,8 +330,7 @@ make_configured_fork_cluster = function(n_cores) {
   if (!is.null(cl)) {
     return(cl)
   }
-  default_port = tryCatch(parallel:::getClusterOption("port"), error = function(e) NA_integer_)
-  candidate_ports = unique(as.integer(c(default_port, sample.int(20000L, 20L) + 10000L)))
+  candidate_ports = unique(as.integer(sample.int(20000L, 20L) + 10000L))
   candidate_ports = candidate_ports[is.finite(candidate_ports) & candidate_ports > 0L & candidate_ports <= 65535L]
   last_error = NULL
   cl = NULL

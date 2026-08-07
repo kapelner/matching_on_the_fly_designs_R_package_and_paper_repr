@@ -21,6 +21,12 @@ fast_hurdle_negbin_with_var_cpp(
 )
 }
 \arguments{
+\item{X_r}{Matrix of predictors for the count component.}
+
+\item{y_r}{Vector of responses.}
+
+\item{X_hurdle_r}{Matrix of predictors for the hurdle component.}
+
 \item{j}{1-based index of the parameter for which to return specific variance.}
 
 \item{warm_start_params}{Optional starting values for count parameters. If provided, \code{smart_cold_start} is ignored.}
@@ -40,12 +46,6 @@ fast_hurdle_negbin_with_var_cpp(
 \item{warm_start_fisher_info}{Optional initial Fisher Information matrix for the first iteration.}
 
 \item{warm_start_hurdle_fisher_info}{Optional initial Fisher Information matrix for the hurdle iteration.}
-
-\item{X}{Matrix of predictors for the count component.}
-
-\item{y}{Vector of responses.}
-
-\item{X_hurdle}{Matrix of predictors for the hurdle component.}
 }
 \value{
 A list containing coefficients, vcov, and convergence status.

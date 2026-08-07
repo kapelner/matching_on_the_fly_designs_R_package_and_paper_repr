@@ -20,6 +20,14 @@ fast_weibull_regression_cpp(
 )
 }
 \arguments{
+\item{X_sexp}{A numeric matrix of predictors.}
+
+\item{y_sexp}{A numeric vector of survival times.}
+
+\item{dead_sexp}{A numeric vector of event indicators (1=event, 0=censored).}
+
+\item{warm_start_params}{Optional starting values for coefficients.}
+
 \item{smart_cold_start}{Logical. If TRUE, use an initial OLS-based guess.}
 
 \item{estimate_only}{Logical. If TRUE, do not compute variance-covariance.}
@@ -35,14 +43,6 @@ fast_weibull_regression_cpp(
 \item{optimization_alg}{Optimization algorithm.}
 
 \item{warm_start_fisher_info}{Optional initial Fisher Information matrix.}
-
-\item{X}{A numeric matrix of predictors.}
-
-\item{y}{A numeric vector of survival times.}
-
-\item{dead}{A numeric vector of event indicators (1=event, 0=censored).}
-
-\item{warm_start_beta}{Optional starting values for coefficients.}
 }
 \value{
 A list containing the following components:

@@ -254,7 +254,7 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 		#'   replicates required after filtering. Default 5.
 		#' @param weighting_unit_type Optional Bayesian-bootstrap weighting-unit
 		#'   scheme. See
-		#'   \code{\link{InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T}()}.
+		#'   \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T}()}.
 		#'
 		#' @return A numeric two-sided p-value, or \code{NA_real_} if too few usable
 		#'   replicates remain or the estimate is non-finite.
@@ -383,7 +383,7 @@ InferenceBayesianBootstrap = R6::R6Class("InferenceBayesianBootstrap",
 		#'   replicates required after filtering. Default 5.
 		#' @param weighting_unit_type Optional Bayesian-bootstrap weighting-unit
 		#'   scheme. See
-		#'   \code{\link{InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T}()}.
+		#'   \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap$approximate_bayesian_bootstrap_distribution_beta_hat_T}()}.
 		#'
 		#' @return A length-2 numeric confidence interval. Returns
 		#'   \code{c(NA_real_, NA_real_)} when the estimate is non-finite or too few

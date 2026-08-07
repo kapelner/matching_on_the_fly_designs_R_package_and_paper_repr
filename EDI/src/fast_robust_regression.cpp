@@ -208,8 +208,8 @@ RobustModelResult fast_robust_regression_internal(
 #ifndef EDI_CORE_ONLY
 //' @title Fast Robust Regression (C++)
 //' @description High-performance robust regression fitting using IRLS.
-//' @param X A numeric matrix of predictors.
-//' @param y A numeric vector of responses.
+//' @param X_sexp A numeric matrix of predictors.
+//' @param y_sexp A numeric vector of responses.
 //' @param warm_start_beta Optional starting values for coefficients. If provided, \code{smart_cold_start} is ignored.
 //' @param method Robust estimation method ("M" or "MM").
 //' @param j 1-based index of the parameter for which to return specific variance.

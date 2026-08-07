@@ -9,8 +9,8 @@ This class uses the same \code{fit()} result contract as
 behavior.
 }
 \keyword{internal}
-\section{Super classes}{
-\code{\link[EDI:Inference]{Inference}} -> \code{\link[EDI:InferenceRand]{InferenceRand}} -> \code{InferenceCustomRand}
+\section{Super class}{
+\code{\link[EDI:Inference]{Inference}} -> \code{InferenceCustomRand}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -20,16 +20,9 @@ behavior.
     \item \href{#method-InferenceCustomRand-clone}{\code{InferenceCustomRand$clone()}}
   }
 }
-\if{html}{\out{<details><summary>+ inherited public methods from InferenceRand</summary>
+\if{html}{\out{<details><summary>+ inherited public methods from Inference</summary>
 <ul>
-  <li><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-approximate_randomization_distribution_beta_hat_T'><code>InferenceRand$approximate_randomization_distribution_beta_hat_T()</code></a></li>
-  <li><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-compute_rand_two_sided_pval'><code>InferenceRand$compute_rand_two_sided_pval()</code></a></li>
-  <li><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_cpp'><code>InferenceRand$set_custom_randomization_statistic_cpp()</code></a></li>
-  <li><a href='../../EDI/html/InferenceRand.html#method-InferenceRand-set_custom_randomization_statistic_function'><code>InferenceRand$set_custom_randomization_statistic_function()</code></a></li>
-</ul>
-</details>
-<details><summary>+ inherited public methods from Inference</summary>
-<ul>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-capabilities'><code>Inference$capabilities()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_asymp_confidence_interval'><code>Inference$compute_asymp_confidence_interval()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_asymp_two_sided_pval'><code>Inference$compute_asymp_two_sided_pval()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>Inference$compute_exact_confidence_interval()</code></a></li>
@@ -49,6 +42,7 @@ behavior.
   <li><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>Inference$is_nonestimable()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>Inference$set_optimization_alg()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>Inference$set_seed()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-supports'><code>Inference$supports()</code></a></li>
 </ul>
 </details>}}
 \if{html}{\out{<hr>}}

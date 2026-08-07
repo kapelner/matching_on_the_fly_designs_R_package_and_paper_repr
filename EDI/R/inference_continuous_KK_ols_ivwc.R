@@ -7,6 +7,8 @@
 #' Note that warm starts are disabled for this class as OLS is a closed-form
 #' estimator and does not benefit from initialization.
 #'
+#' \strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
+#'
 #' @examples
 #' \donttest{
 #' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'continuous')
@@ -17,8 +19,6 @@
 #' inf = InferenceContinKKOLSIVWC$new(seq_des)
 #' inf$compute_estimate()
 #' }
-#'
-#' \strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
 #' @export
 InferenceContinKKOLSIVWC = R6::R6Class("InferenceContinKKOLSIVWC",
 	lock_objects = FALSE,

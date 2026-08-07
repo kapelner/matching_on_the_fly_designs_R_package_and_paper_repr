@@ -39,10 +39,6 @@ seq_des_inf$compute_asymp_two_sided_pval()
   \itemize{
     \item \href{#method-InferenceAllKKMeanDiffIVWC-approximate_bootstrap_distribution_beta_hat_T}{\code{InferenceAllKKMeanDiffIVWC$approximate_bootstrap_distribution_beta_hat_T()}}
     \item \href{#method-InferenceAllKKMeanDiffIVWC-compute_estimate}{\code{InferenceAllKKMeanDiffIVWC$compute_estimate()}}
-    \item \href{#method-InferenceAllKKMeanDiffIVWC-supports_lik_ratio_param_bootstrap}{\code{InferenceAllKKMeanDiffIVWC$supports_lik_ratio_param_bootstrap()}}
-    \item \href{#method-InferenceAllKKMeanDiffIVWC-supports_likelihood_tests}{\code{InferenceAllKKMeanDiffIVWC$supports_likelihood_tests()}}
-    \item \href{#method-InferenceAllKKMeanDiffIVWC-simulate_under_lik_null}{\code{InferenceAllKKMeanDiffIVWC$simulate_under_lik_null()}}
-    \item \href{#method-InferenceAllKKMeanDiffIVWC-get_likelihood_test_spec}{\code{InferenceAllKKMeanDiffIVWC$get_likelihood_test_spec()}}
     \item \href{#method-InferenceAllKKMeanDiffIVWC-compute_asymp_confidence_interval}{\code{InferenceAllKKMeanDiffIVWC$compute_asymp_confidence_interval()}}
     \item \href{#method-InferenceAllKKMeanDiffIVWC-compute_asymp_two_sided_pval}{\code{InferenceAllKKMeanDiffIVWC$compute_asymp_two_sided_pval()}}
     \item \href{#method-InferenceAllKKMeanDiffIVWC-compute_rand_confidence_interval}{\code{InferenceAllKKMeanDiffIVWC$compute_rand_confidence_interval()}}
@@ -143,6 +139,7 @@ seq_des_inf$compute_asymp_two_sided_pval()
 </details>
 <details><summary>+ inherited public methods from Inference</summary>
 <ul>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-capabilities'><code>Inference$capabilities()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>Inference$compute_exact_confidence_interval()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>Inference$duplicate()</code></a></li>
@@ -159,6 +156,7 @@ seq_des_inf$compute_asymp_two_sided_pval()
   <li><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>Inference$is_nonestimable()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>Inference$set_optimization_alg()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>Inference$set_seed()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-supports'><code>Inference$supports()</code></a></li>
 </ul>
 </details>}}
 \if{html}{\out{<hr>}}
@@ -211,78 +209,6 @@ seq_des_inf$compute_asymp_two_sided_pval()
   }
   \subsection{Returns}{
     The setting-appropriate (see description) numeric estimate of the treatment effect
-  }
-}
-
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAllKKMeanDiffIVWC-supports_lik_ratio_param_bootstrap"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKMeanDiffIVWC-supports_lik_ratio_param_bootstrap}{}}}
-\subsection{\code{InferenceAllKKMeanDiffIVWC$supports_lik_ratio_param_bootstrap()}}{
-  Whether likelihood-ratio parametric bootstrap is supported.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceAllKKMeanDiffIVWC$supports_lik_ratio_param_bootstrap()}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    \code{TRUE}.
-  }
-}
-
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAllKKMeanDiffIVWC-supports_likelihood_tests"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKMeanDiffIVWC-supports_likelihood_tests}{}}}
-\subsection{\code{InferenceAllKKMeanDiffIVWC$supports_likelihood_tests()}}{
-  Whether likelihood-based tests are supported.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceAllKKMeanDiffIVWC$supports_likelihood_tests()}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    \code{TRUE}.
-  }
-}
-
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAllKKMeanDiffIVWC-simulate_under_lik_null"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKMeanDiffIVWC-simulate_under_lik_null}{}}}
-\subsection{\code{InferenceAllKKMeanDiffIVWC$simulate_under_lik_null()}}{
-  Simulate responses under a likelihood null model.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceAllKKMeanDiffIVWC$simulate_under_lik_null(spec, delta, null_fit)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{spec}}{A likelihood-test specification list.}
-      \item{\code{delta}}{The null treatment effect.}
-      \item{\code{null_fit}}{The fitted null model object.}
-    }
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    A list containing simulated full and null likelihood components.
-  }
-}
-
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-InferenceAllKKMeanDiffIVWC-get_likelihood_test_spec"></a>}}
-\if{latex}{\out{\hypertarget{method-InferenceAllKKMeanDiffIVWC-get_likelihood_test_spec}{}}}
-\subsection{\code{InferenceAllKKMeanDiffIVWC$get_likelihood_test_spec()}}{
-  Return the likelihood-test specification for the KK mean
-  difference model, including the null-restricted fit and statistic
-  evaluation hooks used by related
-  \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}} methods.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{InferenceAllKKMeanDiffIVWC$get_likelihood_test_spec()}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    A likelihood-test specification list, or \code{NULL}.
   }
 }
 

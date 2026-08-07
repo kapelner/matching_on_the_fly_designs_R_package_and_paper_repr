@@ -147,6 +147,8 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 #' This method is robust to outliers and does not assume a specific parametric
 #' distribution for the response.
 #'
+#' \strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
+#'
 #' @examples
 #' \donttest{
 #' seq_des = DesignSeqOneByOneKK14$new(n = 10, response_type = 'continuous')
@@ -157,8 +159,6 @@ InferenceAbstractKKWilcoxBaseIVWC = R6::R6Class("InferenceAbstractKKWilcoxBaseIV
 #' inf = InferenceAllKKWilcoxIVWC$new(seq_des)
 #' inf$compute_estimate()
 #' }
-#'
-#' \strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
 #' @export
 InferenceAllKKWilcoxIVWC = R6::R6Class("InferenceAllKKWilcoxIVWC",
 	lock_objects = FALSE,

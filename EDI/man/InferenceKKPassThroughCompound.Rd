@@ -3,33 +3,10 @@
 %   R/inference_all_abstract_KK_passthrough_compound.R
 \name{InferenceKKPassThroughCompound}
 \alias{InferenceKKPassThroughCompound}
-\alias{inference_kk_passthrough_compound_public}
+\alias{inference_kk_passthrough_compound_components}
 \title{Internal Base Class for KK Matching-on-the-Fly Designs}
 \usage{
-inference_kk_passthrough_compound_public
-}
-\arguments{
-\item{des_obj}{A DesignSeqOneByOne object.}
-
-\item{model_formula}{Optional formula for covariate adjustment.}
-
-\item{verbose}{Whether to print messages.}
-
-\item{harden}{Whether to apply robustness measures.}
-
-\item{smart_cold_start_default}{Whether to use smart cold start values.}
-
-\item{B}{Number of bootstrap samples.}
-
-\item{show_progress}{Whether to show a progress bar.}
-
-\item{debug}{Whether to return diagnostics.}
-
-\item{bootstrap_type}{Optional resampling scheme.}
-
-\item{subject_or_block_weights}{Bootstrap weights at the subject or block level.}
-
-\item{estimate_only}{If TRUE, skip variance calculations.}
+inference_kk_passthrough_compound_components
 }
 \value{
 A numeric vector of bootstrap estimates.

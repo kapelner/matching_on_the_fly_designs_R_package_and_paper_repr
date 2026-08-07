@@ -15,19 +15,19 @@ compute_bai_distr_parallel_cpp(
 )
 }
 \arguments{
+\item{w_mat_sexp}{Integer matrix of permuted treatment assignments (n x r).}
+
+\item{m_mat_sexp}{Integer matrix of match indicators (n x r).}
+
+\item{y_sexp}{Numeric response vector.}
+
 \item{delta}{Null treatment effect shift.}
+
+\item{halves_idx_sexp}{Integer matrix of half-sample indices.}
 
 \item{convex_flag}{Logical flag for convex combination.}
 
 \item{num_cores}{Number of OpenMP threads.}
-
-\item{w_mat}{Integer matrix of permuted treatment assignments (n x r).}
-
-\item{m_mat}{Integer matrix of match indicators (n x r).}
-
-\item{y}{Numeric response vector.}
-
-\item{halves_idx}{Integer matrix of half-sample indices.}
 }
 \value{
 Numeric vector of Bai adjusted T statistics.

@@ -150,7 +150,7 @@ true sampling variance, so tests and intervals err \emph{conservative}
     matched designs below), and the greedy choice of \emph{which} pair member is
     treated couples the pairs, which resampling does not replicate --- the residual
     effect errs conservative.}
-  \item{\code{DesignFixedBinaryMatch}, \code{DesignFixedNaiveMatch}}{Matched pairs
+  \item{\code{DesignFixedBinaryMatch}}{Matched pairs
     are resampled intact, preserving the within-pair anticorrelation of \eqn{w} and
     the pair-level variance reduction. The pairing itself is a global function of
     the covariate sample (an Abadie & Imbens 2008-type concern): pairs are
@@ -229,6 +229,7 @@ Politis, D. N., Romano, J. P., and Wolf, M. (1999).
 </details>
 <details><summary>+ inherited public methods from Inference</summary>
 <ul>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-capabilities'><code>Inference$capabilities()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_asymp_confidence_interval'><code>Inference$compute_asymp_confidence_interval()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_asymp_two_sided_pval'><code>Inference$compute_asymp_two_sided_pval()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_estimate'><code>Inference$compute_estimate()</code></a></li>
@@ -249,6 +250,7 @@ Politis, D. N., Romano, J. P., and Wolf, M. (1999).
   <li><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>Inference$is_nonestimable()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>Inference$set_optimization_alg()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>Inference$set_seed()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-supports'><code>Inference$supports()</code></a></li>
 </ul>
 </details>}}
 \if{html}{\out{<hr>}}

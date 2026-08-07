@@ -157,7 +157,7 @@ For factorial designs the w vector stores factor combination indices.
 \if{latex}{\out{\hypertarget{method-DesignFixedFactorial-draw_ws_according_to_design}{}}}
 \subsection{\code{DesignFixedFactorial$draw_ws_according_to_design()}}{
   Draw multiple treatment assignment vectors according to balanced factorial randomization.
-NOTE: Factorial designs return factor combination indices (1..num_combinations), not {-1,+1}.
+NOTE: Factorial designs return factor combination indices (1..num_combinations), not \{-1,+1\}.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{DesignFixedFactorial$draw_ws_according_to_design(r = 100)}
@@ -180,7 +180,7 @@ NOTE: Factorial designs return factor combination indices (1..num_combinations),
 \if{latex}{\out{\hypertarget{method-DesignFixedFactorial-get_w}{}}}
 \subsection{\code{DesignFixedFactorial$get_w()}}{
   Get the factor combination index assigned to each subject.
-NOTE: For factorial designs this returns raw factor indices, not {-1,+1}.
+NOTE: For factorial designs this returns raw factor indices, not \{-1,+1\}.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{DesignFixedFactorial$get_w()}

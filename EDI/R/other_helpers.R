@@ -836,7 +836,7 @@ NULL
 	for (start_par in starts) {
 		fit = tryCatch(
 			fast_dep_cens_transform_optim_cpp(
-				y = y, dead = dead, X = X, warm_start_params = start_par,
+				y_sexp = y, dead_sexp = dead, X_sexp = X, warm_start_params = start_par,
 				maxit = 2000, reltol = if (isTRUE(estimate_only)) 1e-7 else 1e-9,
 				optimization_alg = optimization_alg
 			),
@@ -923,8 +923,8 @@ NULL
 
 	glm_start = tryCatch(
 		fast_logistic_regression_cpp(
-			X = cbind(1, X),
-			y = y_clip
+			cbind(1, X),
+			y_clip
 		),
 		error = function(e) NULL
 	)
@@ -1168,10 +1168,10 @@ NULL
 	for (start_par in starts) {
 		fit = tryCatch(
 			fast_clayton_weibull_aft_optim_cpp(
-				y = y, dead = dead, X = X, 
-				pair_idx = if (has_pairs) pair_idx - 1L else matrix(0L, 0, 2), 
-				singleton_rows = if (has_singletons) singleton_rows - 1L else integer(0),
-				warm_start_params = start_par,
+				y_sexp = y, dead_sexp = dead, X_sexp = X,
+				pair_idx_sexp = if (has_pairs) pair_idx - 1L else matrix(0L, 0, 2),
+				singleton_rows_sexp = if (has_singletons) singleton_rows - 1L else integer(0),
+				warm_start_params_sexp = start_par,
 				maxit = 2000, reltol = 1e-9,
 				optimization_alg = optimization_alg,
 				warm_start_fisher_info = warm_start_fisher_info
@@ -1329,10 +1329,10 @@ NULL
 
 	mod = tryCatch(
 		fast_weibull_frailty_cpp(
-			y = as.numeric(y),
-			dead = as.numeric(dead),
-			X = X,
-			group_id = group_id,
+			y_sexp = as.numeric(y),
+			dead_sexp = as.numeric(dead),
+			X_sexp = X,
+			group_id_sexp = group_id,
 			warm_start_params = warm_start_params,
 			warm_start_fisher_info = warm_start_fisher_info,
 			estimate_only = estimate_only,

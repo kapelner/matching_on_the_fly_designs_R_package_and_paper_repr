@@ -271,8 +271,8 @@ Eigen::MatrixXd get_adjacent_category_logit_hessian_cpp(SEXP X_sexp,
 
 //' @title Fast Adjacent-Category Logit (C++)
 //' @description High-performance adjacent-category logit model fitting.
-//' @param X A numeric matrix of predictors.
-//' @param y A numeric vector of responses (categorical).
+//' @param X_sexp A numeric matrix of predictors.
+//' @param y_sexp A numeric vector of responses (categorical).
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.
@@ -325,8 +325,8 @@ List fast_adjacent_category_logit_cpp(SEXP X_sexp, SEXP y_sexp, int maxit = 100,
 
 //' @title Fast Adjacent-Category Logit with Variance (C++)
 //' @description Adjacent-category logit model fitting with full variance-covariance matrix.
-//' @param X A numeric matrix of predictors.
-//' @param y A numeric vector of responses (categorical).
+//' @param X_sexp A numeric matrix of predictors.
+//' @param y_sexp A numeric vector of responses (categorical).
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.

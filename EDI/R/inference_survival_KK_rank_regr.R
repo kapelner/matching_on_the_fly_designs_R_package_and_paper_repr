@@ -4,6 +4,8 @@
 #' a KK matching-on-the-fly design. The model adjusts for the treatment indicator
 #' and, optionally, all recorded covariates.
 #'
+#' \strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
+#'
 #' @examples
 #' \dontrun{
 #' \donttest{
@@ -16,8 +18,6 @@
 #' inf$compute_estimate()
 #' }
 #' }
-#'
-#' \strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
 #' @export
 InferenceSurvivalKKRankRegrIVWC = R6::R6Class("InferenceSurvivalKKRankRegrIVWC",
 	lock_objects = FALSE,

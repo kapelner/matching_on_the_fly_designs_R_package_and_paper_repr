@@ -10,6 +10,8 @@ For reservoir subjects, it uses the Wilcoxon Rank-Sum (Mann-Whitney U) Hodges-Le
 estimate. The two estimates are combined via a variance-weighted linear combination.
 This method is robust to outliers and does not assume a specific parametric
 distribution for the response.
+
+\strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
 }
 \examples{
 \donttest{
@@ -21,8 +23,6 @@ seq_des$add_all_subject_responses(rnorm(10))
 inf = InferenceAllKKWilcoxIVWC$new(seq_des)
 inf$compute_estimate()
 }
-
-\strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
 }
 \section{Super classes}{
 \code{\link[EDI:Inference]{Inference}} -> \code{\link[EDI:InferenceRand]{InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceRandBootstrap]{InferenceRandBootstrap}} -> \code{\link[EDI:InferenceRandBootstrapCI]{InferenceRandBootstrapCI}} -> \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}} -> \code{InferenceKKPassThroughCompoundNoParamBootstrap} -> \code{\link[EDI:InferenceAbstractKKWilcoxBaseIVWC]{InferenceAbstractKKWilcoxBaseIVWC}} -> \code{InferenceAllKKWilcoxIVWC}
@@ -46,7 +46,11 @@ inf$compute_estimate()
 <ul>
   <li><a href='../../EDI/html/InferenceAbstractKKWilcoxBaseIVWC.html#method-InferenceAbstractKKWilcoxBaseIVWC-approximate_bootstrap_distribution_beta_hat_T'><code>InferenceAbstractKKWilcoxBaseIVWC$approximate_bootstrap_distribution_beta_hat_T()</code></a></li>
   <li><a href='../../EDI/html/InferenceAbstractKKWilcoxBaseIVWC.html#method-InferenceAbstractKKWilcoxBaseIVWC-compute_bootstrap_confidence_interval'><code>InferenceAbstractKKWilcoxBaseIVWC$compute_bootstrap_confidence_interval()</code></a></li>
-  <li><a href='../../EDI/html/InferenceAbstractKKWilcoxBaseIVWC.html#method-InferenceAbstractKKWilcoxBaseIVWC-compute_estimate_with_bootstrap_weights'><code>InferenceAbstractKKWilcoxBaseIVWC$compute_estimate_with_bootstrap_weights()</code></a></li>
+</ul>
+</details>
+<details><summary>+ inherited public methods from InferenceKKPassThroughCompoundNoParamBootstrap</summary>
+<ul>
+  <li><code>InferenceKKPassThroughCompoundNoParamBootstrap$compute_estimate_with_bootstrap_weights()</code></li>
 </ul>
 </details>
 <details><summary>+ inherited public methods from InferenceAsympLik</summary>
@@ -132,6 +136,7 @@ inf$compute_estimate()
 </details>
 <details><summary>+ inherited public methods from Inference</summary>
 <ul>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-capabilities'><code>Inference$capabilities()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_confidence_interval'><code>Inference$compute_exact_confidence_interval()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-compute_exact_two_sided_pval_for_treatment_effect'><code>Inference$compute_exact_two_sided_pval_for_treatment_effect()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-duplicate'><code>Inference$duplicate()</code></a></li>
@@ -148,6 +153,7 @@ inf$compute_estimate()
   <li><a href='../../EDI/html/Inference.html#method-Inference-is_nonestimable'><code>Inference$is_nonestimable()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-set_optimization_alg'><code>Inference$set_optimization_alg()</code></a></li>
   <li><a href='../../EDI/html/Inference.html#method-Inference-set_seed'><code>Inference$set_seed()</code></a></li>
+  <li><a href='../../EDI/html/Inference.html#method-Inference-supports'><code>Inference$supports()</code></a></li>
 </ul>
 </details>}}
 \if{html}{\out{<hr>}}

@@ -211,18 +211,23 @@ get_r6_init_fn = function(r6gen) {
 #'
 #' @examples
 #' \donttest{
-#' # Simple simulation with two designs and two inference methods
+#' # Simple simulation with two designs and two inference methods.
+#' # n/Nrep_W/num_boot/B_boot/r_rand are kept small so this example runs in a
+#' # few seconds; a real simulation would use much larger values (this
+#' # class's defaults, or larger still) for adequately precise estimates.
 #' sim = SimulationFramework$new(
 #'   response_type = "continuous",
 #'   design_classes_and_params = list(
-#'     DesignSeqOneByOneKK21 = list(lambda = 0.5),
+#'     DesignSeqOneByOneKK21 = list(lambda = 0.5, num_boot = 50L),
 #'     DesignSeqOneByOneBernoulli = list()
 #'   ),
 #'   inference_classes_and_params = list(
 #'     InferenceContinOLS = list(),
 #'     InferenceContinKKOLSIVWC = list()
 #'   ),
-#'   n = 100, p = 5, Nrep_W = 10L, betaT = 1
+#'   n = 20, p = 3, Nrep_W = 2L, betaT = 1, B_boot = 50L, r_rand = 101L,
+#'   results_filename = tempfile(fileext = ".csv.bz2"),
+#'   continue_from_last_result_row = FALSE
 #' )
 #' sim$run()
 #' report = SimulationFrameworkReport$new(sim)
@@ -1406,14 +1411,19 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         }
         RUN_REP_DETACHED_G = private$.run_single_replication_in_worker
         environment(RUN_REP_DETACHED_G) = asNamespace("EDI")
-        assign(".edi_sim_cell_states",  all_cell_states,    envir = .GlobalEnv)
-        assign(".edi_sim_run_fn",       RUN_REP_DETACHED_G, envir = .GlobalEnv)
-        assign(".edi_sim_run_required", all_run_required_v, envir = .GlobalEnv)
+        # Use the package's own internal state environment, not .GlobalEnv, so this
+        # doesn't pollute the user's workspace; forked workers still inherit it via
+        # copy-on-write at fork time (fork() copies the whole process, not just
+        # .GlobalEnv), so there's no serialization cost either way.
+        edi_env_sim = asNamespace("EDI")$edi_env
+        assign(".edi_sim_cell_states",  all_cell_states,    envir = edi_env_sim)
+        assign(".edi_sim_run_fn",       RUN_REP_DETACHED_G, envir = edi_env_sim)
+        assign(".edi_sim_run_required", all_run_required_v, envir = edi_env_sim)
         on.exit(suppressWarnings(
           rm(list = intersect(
                c(".edi_sim_cell_states", ".edi_sim_run_fn", ".edi_sim_run_required"),
-               ls(envir = .GlobalEnv, all.names = TRUE)
-             ), envir = .GlobalEnv, inherits = FALSE)
+               ls(envir = edi_env_sim, all.names = TRUE)
+             ), envir = edi_env_sim, inherits = FALSE)
         ), add = TRUE)
         cl_rep = parallel::makeForkCluster(num_cores)
       }
@@ -1428,8 +1438,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         environment(RUN_REP_DETACHED_G) = asNamespace("EDI")
         push_tasks = tryCatch(
           mirai::everywhere({
-            assign(".edi_sim_cell_states", CELL_STATES__, envir = globalenv())
-            assign(".edi_sim_run_fn",      RUN_FN__,      envir = globalenv())
+            assign(".edi_sim_cell_states", CELL_STATES__, envir = EDI:::edi_env)
+            assign(".edi_sim_run_fn",      RUN_FN__,      envir = EDI:::edi_env)
             invisible(NULL)
           }, CELL_STATES__ = all_cell_states, RUN_FN__ = RUN_REP_DETACHED_G),
           error = function(e) NULL
@@ -1441,7 +1451,11 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           cleanup_tasks = tryCatch(
             mirai::everywhere({
               suppressWarnings(rm(list = intersect(
-                c(".edi_sim_cell_states", ".edi_sim_run_fn", "CELL_STATES__", "RUN_FN__"),
+                c(".edi_sim_cell_states", ".edi_sim_run_fn"),
+                ls(envir = EDI:::edi_env, all.names = TRUE)
+              ), envir = EDI:::edi_env))
+              suppressWarnings(rm(list = intersect(
+                c("CELL_STATES__", "RUN_FN__"),
                 ls(envir = globalenv(), all.names = TRUE)
               ), envir = globalenv()))
               invisible(NULL)
@@ -1499,17 +1513,19 @@ SimulationFramework = R6::R6Class("SimulationFramework",
 
       # Helper closures for the parallel paths — declared once outside the loops.
       # Fork cluster worker wrapper: baseenv() closure stops serialization chain.
-      # Workers look up cell state + run function from globals inherited at fork time
-      # (assigned to .GlobalEnv before makeForkCluster — copy-on-write, no serialization).
+      # Workers look up cell state + run function from the package's internal state
+      # environment (edi_env), inherited at fork time — copy-on-write, no
+      # serialization (fork() copies the whole process, not just .GlobalEnv).
       # Fork workers run all DGP cells for one replication serially, returning a
       # named list {ci → worker_out}.  Each cell is wrapped in its own tryCatch so
       # a single failing cell does not kill the other cells in the same rep.
       fork_rep_worker_fn = function(item) {
         tryCatch({
           if (!is.null(item$rep_seed)) set.seed(item$rep_seed)
-          states  = get(".edi_sim_cell_states",  envir = globalenv())
-          run_req = get(".edi_sim_run_required", envir = globalenv())
-          run_fn  = get(".edi_sim_run_fn",       envir = globalenv())
+          edi_env_sim = asNamespace("EDI")$edi_env
+          states  = get(".edi_sim_cell_states",  envir = edi_env_sim)
+          run_req = get(".edi_sim_run_required", envir = edi_env_sim)
+          run_fn  = get(".edi_sim_run_fn",       envir = edi_env_sim)
           active_ci = which(vapply(run_req, `[[`, FALSE, item$rep_i))
           if (length(active_ci) == 0L) return(list())
           out = vector("list", length(active_ci))
@@ -1672,8 +1688,8 @@ SimulationFramework = R6::R6Class("SimulationFramework",
           rep_seed = if (!is.null(seed_val)) seed_val + rep_u else NULL
           mirai::mirai({
             if (!is.null(rep_seed)) set.seed(rep_seed)
-            RUN_FN = get(".edi_sim_run_fn",      envir = globalenv())
-            STATES = get(".edi_sim_cell_states", envir = globalenv())
+            RUN_FN = get(".edi_sim_run_fn",      envir = EDI:::edi_env)
+            STATES = get(".edi_sim_cell_states", envir = EDI:::edi_env)
             RUN_FN(rep_i, STATES[[ci]], progress_cb = NULL, is_forked = FALSE)
           }, rep_i = rep_u, ci = ci_u, rep_seed = rep_seed)
         }

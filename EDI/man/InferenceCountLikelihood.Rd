@@ -7,25 +7,6 @@
 \usage{
 inference_count_likelihood_public
 }
-\arguments{
-\item{estimate_only}{If TRUE, skip variance component calculations.}
-
-\item{delta}{Null treatment effect.}
-
-\item{alpha}{Significance level. Default 0.05.}
-
-\item{B}{Number of bootstrap replicates.}
-
-\item{show_progress}{Whether to show progress.}
-
-\item{min_number_usable_samples}{Minimum usable bootstrap samples.}
-
-\item{max_attempts_per_replicate}{Maximum attempts per replicate.}
-
-\item{root_tolerance}{Root tolerance.}
-
-\item{max_root_iterations}{Maximum root iterations.}
-}
 \value{
 A confidence interval.
 

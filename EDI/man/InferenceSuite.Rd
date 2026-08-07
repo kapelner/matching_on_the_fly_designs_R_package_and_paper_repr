@@ -10,12 +10,11 @@ introspects the package namespace to discover every concrete
 \code{Inference} subclass that is compatible with the supplied design
 object, so the applicable list never goes stale as new classes are added.
 
-Compatibility is determined by attempting to construct each candidate class
-with \code{des_obj}.  A class is deemed \emph{not} applicable only when its
-initializer explicitly rejects the combination via a response-type or
-design-type mismatch error; any other outcome (successful construction
-\emph{or} an unrelated error such as a missing optional package) is treated
-as applicable.
+Discovery uses package metadata rather than constructor probing: only
+exported, non-abstract \code{Inference} generators are considered, and
+compatibility is evaluated from the completed design's response and design
+metadata. Optional-package failures and constructor side effects therefore
+cannot affect the discovered class list.
 }
 \examples{
 \donttest{

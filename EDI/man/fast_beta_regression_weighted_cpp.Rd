@@ -20,6 +20,12 @@ fast_beta_regression_weighted_cpp(
 )
 }
 \arguments{
+\item{X_sexp}{A numeric matrix of predictors.}
+
+\item{y_sexp}{A numeric vector of responses (in (0, 1)).}
+
+\item{weights_sexp}{A nonnegative numeric vector of row weights.}
+
 \item{warm_start_beta}{Optional starting values for coefficients.}
 
 \item{smart_cold_start}{Logical. If TRUE, use an initial OLS-based guess when no warm start is provided.}
@@ -37,12 +43,6 @@ fast_beta_regression_weighted_cpp(
 \item{warm_start_fisher_info}{Optional initial Fisher Information matrix.}
 
 \item{estimate_only}{If TRUE, skip Fisher information calculation.}
-
-\item{X}{A numeric matrix of predictors.}
-
-\item{y}{A numeric vector of responses (in (0, 1)).}
-
-\item{weights}{A nonnegative numeric vector of row weights.}
 }
 \value{
 A list containing coefficients, phi, negative log-likelihood, convergence status, and Fisher information.

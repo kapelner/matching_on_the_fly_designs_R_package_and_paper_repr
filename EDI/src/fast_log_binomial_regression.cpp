@@ -652,9 +652,9 @@ Eigen::MatrixXd constrained_binomial_weighted_hessian_cpp_impl(const Eigen::Ref<
 #ifndef EDI_CORE_ONLY
 //' @title Compute Log-Binomial Regression Score
 //' @description Calculates the score vector (gradient of the log-likelihood) for a log-binomial regression model.
-//' @param X A numeric matrix of predictors.
-//' @param y A binary numeric vector of responses.
-//' @param beta A numeric vector of coefficients.
+//' @param X_r A numeric matrix of predictors.
+//' @param y_r A binary numeric vector of responses.
+//' @param beta_sexp A numeric vector of coefficients.
 //' @return A numeric vector representing the score.
 //' @export
 //' @keywords internal
@@ -673,9 +673,9 @@ Eigen::VectorXd get_log_binomial_regression_score_cpp(SEXP X_r,
 
 //' @title Compute Log-Binomial Regression Hessian
 //' @description Calculates the Hessian matrix (second derivatives of the log-likelihood) for a log-binomial regression model.
-//' @param X A numeric matrix of predictors.
-//' @param y A binary numeric vector of responses.
-//' @param beta A numeric vector of coefficients.
+//' @param X_r A numeric matrix of predictors.
+//' @param y_r A binary numeric vector of responses.
+//' @param beta_sexp A numeric vector of coefficients.
 //' @return A numeric matrix representing the Hessian.
 //' @export
 //' @keywords internal
@@ -694,10 +694,10 @@ Eigen::MatrixXd get_log_binomial_regression_hessian_cpp(SEXP X_r,
 
 //' @title Compute Weighted Log-Binomial Regression Score
 //' @description Calculates the weighted score vector for a log-binomial regression model.
-//' @param X A numeric matrix of predictors.
-//' @param y A binary numeric vector of responses.
-//' @param weights A nonnegative numeric vector of observation weights.
-//' @param beta A numeric vector of coefficients.
+//' @param X_r A numeric matrix of predictors.
+//' @param y_r A binary numeric vector of responses.
+//' @param weights_r A nonnegative numeric vector of observation weights.
+//' @param beta_sexp A numeric vector of coefficients.
 //' @return A numeric vector representing the weighted score.
 //' @export
 //' @keywords internal
@@ -719,10 +719,10 @@ Eigen::VectorXd get_log_binomial_regression_weighted_score_cpp(SEXP X_r,
 
 //' @title Compute Weighted Log-Binomial Regression Hessian
 //' @description Calculates the weighted Hessian matrix for a log-binomial regression model.
-//' @param X A numeric matrix of predictors.
-//' @param y A binary numeric vector of responses.
-//' @param weights A nonnegative numeric vector of observation weights.
-//' @param beta A numeric vector of coefficients.
+//' @param X_r A numeric matrix of predictors.
+//' @param y_r A binary numeric vector of responses.
+//' @param weights_r A nonnegative numeric vector of observation weights.
+//' @param beta_sexp A numeric vector of coefficients.
 //' @return A numeric matrix representing the weighted Hessian.
 //' @export
 //' @keywords internal
@@ -744,9 +744,9 @@ Eigen::MatrixXd get_log_binomial_regression_weighted_hessian_cpp(SEXP X_r,
 
 //' @title Compute Identity-Binomial Regression Score
 //' @description Calculates the score vector for a binomial regression model with an identity link.
-//' @param X A numeric matrix of predictors.
-//' @param y A binary numeric vector of responses.
-//' @param beta A numeric vector of coefficients.
+//' @param X_r A numeric matrix of predictors.
+//' @param y_r A binary numeric vector of responses.
+//' @param beta_sexp A numeric vector of coefficients.
 //' @return A numeric vector representing the score.
 //' @export
 //' @keywords internal
@@ -765,9 +765,9 @@ Eigen::VectorXd get_identity_binomial_regression_score_cpp(SEXP X_r,
 
 //' @title Compute Identity-Binomial Regression Hessian
 //' @description Calculates the Hessian matrix for a binomial regression model with an identity link.
-//' @param X A numeric matrix of predictors.
-//' @param y A binary numeric vector of responses.
-//' @param beta A numeric vector of coefficients.
+//' @param X_r A numeric matrix of predictors.
+//' @param y_r A binary numeric vector of responses.
+//' @param beta_sexp A numeric vector of coefficients.
 //' @return A numeric matrix representing the Hessian.
 //' @export
 //' @keywords internal
@@ -786,10 +786,10 @@ Eigen::MatrixXd get_identity_binomial_regression_hessian_cpp(SEXP X_r,
 
 //' @title Compute Weighted Identity-Binomial Regression Score
 //' @description Calculates the weighted score vector for a binomial regression model with an identity link.
-//' @param X A numeric matrix of predictors.
-//' @param y A binary numeric vector of responses.
-//' @param weights A nonnegative numeric vector of observation weights.
-//' @param beta A numeric vector of coefficients.
+//' @param X_r A numeric matrix of predictors.
+//' @param y_r A binary numeric vector of responses.
+//' @param weights_r A nonnegative numeric vector of observation weights.
+//' @param beta_sexp A numeric vector of coefficients.
 //' @return A numeric vector representing the weighted score.
 //' @export
 //' @keywords internal
@@ -811,10 +811,10 @@ Eigen::VectorXd get_identity_binomial_regression_weighted_score_cpp(SEXP X_r,
 
 //' @title Compute Weighted Identity-Binomial Regression Hessian
 //' @description Calculates the weighted Hessian matrix for a binomial regression model with an identity link.
-//' @param X A numeric matrix of predictors.
-//' @param y A binary numeric vector of responses.
-//' @param weights A nonnegative numeric vector of observation weights.
-//' @param beta A numeric vector of coefficients.
+//' @param X_r A numeric matrix of predictors.
+//' @param y_r A binary numeric vector of responses.
+//' @param weights_r A nonnegative numeric vector of observation weights.
+//' @param beta_sexp A numeric vector of coefficients.
 //' @return A numeric matrix representing the weighted Hessian.
 //' @export
 //' @keywords internal
@@ -836,8 +836,8 @@ Eigen::MatrixXd get_identity_binomial_regression_weighted_hessian_cpp(SEXP X_r,
 
 //' @title Fast Log-Binomial Regression (C++)
 //' @description High-performance log-binomial regression fitting using Fisher scoring.
-//' @param X A numeric matrix of predictors.
-//' @param y A binary numeric vector of responses.
+//' @param X_r A numeric matrix of predictors.
+//' @param y_r A binary numeric vector of responses.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -869,8 +869,8 @@ List fast_log_binomial_regression_cpp(SEXP X_r,
 
 //' @title Fast Log-Binomial Regression with Variance (C++)
 //' @description Log-binomial regression with variance-covariance matrix and standard errors.
-//' @param X A numeric matrix of predictors.
-//' @param y A binary numeric vector of responses.
+//' @param X_r A numeric matrix of predictors.
+//' @param y_r A binary numeric vector of responses.
 //' @param j 1-based index of the parameter for which to return specific variance.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
@@ -903,9 +903,9 @@ List fast_log_binomial_regression_with_var_cpp(SEXP X_r,
 
 //' @title Fast Weighted Log-Binomial Regression (C++)
 //' @description High-performance weighted log-binomial regression fitting using Fisher scoring.
-//' @param X A numeric matrix of predictors.
-//' @param y A binary numeric vector of responses.
-//' @param weights A nonnegative numeric vector of observation weights.
+//' @param X_r A numeric matrix of predictors.
+//' @param y_r A binary numeric vector of responses.
+//' @param weights_r A nonnegative numeric vector of observation weights.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -940,8 +940,8 @@ List fast_log_binomial_regression_weighted_cpp(SEXP X_r,
 
 //' @title Fast Identity-Binomial Regression (C++)
 //' @description High-performance binomial regression with identity link using Fisher scoring.
-//' @param X A numeric matrix of predictors.
-//' @param y A binary numeric vector of responses.
+//' @param X_r A numeric matrix of predictors.
+//' @param y_r A binary numeric vector of responses.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.
@@ -972,8 +972,8 @@ List fast_identity_binomial_regression_cpp(SEXP X_r,
 
 //' @title Fast Identity-Binomial Regression with Variance (C++)
 //' @description Binomial regression with identity link, providing variance-covariance matrix and standard errors.
-//' @param X A numeric matrix of predictors.
-//' @param y A binary numeric vector of responses.
+//' @param X_r A numeric matrix of predictors.
+//' @param y_r A binary numeric vector of responses.
 //' @param j 1-based index of the parameter for which to return specific variance.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
@@ -1006,9 +1006,9 @@ List fast_identity_binomial_regression_with_var_cpp(SEXP X_r,
 
 //' @title Fast Weighted Identity-Binomial Regression (C++)
 //' @description High-performance weighted binomial regression with identity link using Fisher scoring.
-//' @param X A numeric matrix of predictors.
-//' @param y A binary numeric vector of responses.
-//' @param weights A nonnegative numeric vector of observation weights.
+//' @param X_r A numeric matrix of predictors.
+//' @param y_r A binary numeric vector of responses.
+//' @param weights_r A nonnegative numeric vector of observation weights.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param fixed_idx Optional indices of fixed parameters.

@@ -18,6 +18,10 @@ fast_continuation_ratio_regression_cpp(
 )
 }
 \arguments{
+\item{X_sexp}{A numeric matrix of predictors (no intercept column; threshold intercepts are estimated internally).}
+
+\item{y_sexp}{A numeric vector of ordinal responses.}
+
 \item{maxit}{Maximum number of iterations.}
 
 \item{tol}{Convergence tolerance.}
@@ -33,10 +37,6 @@ fast_continuation_ratio_regression_cpp(
 \item{optimization_alg}{Optimization algorithm.}
 
 \item{warm_start_fisher_info}{Optional initial Fisher Information matrix.}
-
-\item{X}{A numeric matrix of predictors (no intercept column; threshold intercepts are estimated internally).}
-
-\item{y}{A numeric vector of ordinal responses.}
 }
 \value{
 A list containing coefficients, alpha, and convergence status.

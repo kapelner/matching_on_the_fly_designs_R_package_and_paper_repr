@@ -922,9 +922,9 @@ List fast_hurdle_negbin_cpp(SEXP X_r,
 
 //' @title Fast Hurdle Negative Binomial Regression with Variance (C++)
 //' @description Hurdle NB regression with full variance-covariance matrix.
-//' @param X Matrix of predictors for the count component.
-//' @param y Vector of responses.
-//' @param X_hurdle Matrix of predictors for the hurdle component.
+//' @param X_r Matrix of predictors for the count component.
+//' @param y_r Vector of responses.
+//' @param X_hurdle_r Matrix of predictors for the hurdle component.
 //' @param j 1-based index of the parameter for which to return specific variance.
 //' @param warm_start_params Optional starting values for count parameters. If provided, \code{smart_cold_start} is ignored.
 //' @param smart_cold_start Logical. If TRUE, use an initial OLS-based guess when starting from scratch (a "cold start") with no prior knowledge. This is ignored if a warm start is provided.

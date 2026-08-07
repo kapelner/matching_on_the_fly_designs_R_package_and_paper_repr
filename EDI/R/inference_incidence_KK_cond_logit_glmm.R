@@ -5,6 +5,8 @@
 #' matched pairs. The treatment effect is estimated by the conditional-logistic
 #' component; the GLMM component includes only the intercept and covariates.
 #'
+#' \strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
+#'
 #' @examples
 #' \dontrun{
 #' \donttest{
@@ -17,8 +19,6 @@
 #' inf$compute_estimate()
 #' }
 #' }
-#'
-#' \strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
 #' @export
 InferenceIncidKKCondLogitGLMMIVWC = R6::R6Class("InferenceIncidKKCondLogitGLMMIVWC",
 	lock_objects = FALSE,

@@ -206,8 +206,8 @@ Eigen::MatrixXd get_continuation_ratio_regression_hessian_cpp(SEXP X_sexp,
 
 //' @title Fast Continuation-Ratio Regression (C++)
 //' @description High-performance continuation-ratio logit model fitting.
-//' @param X A numeric matrix of predictors (no intercept column; threshold intercepts are estimated internally).
-//' @param y A numeric vector of ordinal responses.
+//' @param X_sexp A numeric matrix of predictors (no intercept column; threshold intercepts are estimated internally).
+//' @param y_sexp A numeric vector of ordinal responses.
 //' @param maxit Maximum number of iterations.
 //' @param tol Convergence tolerance.
 //' @param warm_start_beta Optional starting values for coefficients.
