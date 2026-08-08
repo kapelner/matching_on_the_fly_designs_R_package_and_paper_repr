@@ -9,6 +9,12 @@ test_that("DesignFixedOptimalBlocks is gated behind required libraries", {
 		return(invisible(NULL))
 	}
 
+	# The actual GLPK mixed-integer solve below (via ompr/ROI.plugin.glpk) has
+	# been observed to hang for hours on the Windows CI runner -- skip just
+	# this solver-invoking part there rather than the whole file, since the
+	# guard-check above (which never invokes the solver) already ran.
+	skip_on_os("windows")
+
 	n = 8
 	X = data.frame(x1 = c(-3, -2.9, -2.8, -2.7, 2.7, 2.8, 2.9, 3), x2 = c(0, 0.1, -0.1, 0.05, 5, 5.1, 4.9, 5.05))
 	for (dist_name in c("euclidean", "sum_abs_diff", "mahal")) {

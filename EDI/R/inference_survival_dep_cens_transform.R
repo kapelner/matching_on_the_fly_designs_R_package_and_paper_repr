@@ -505,9 +505,9 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 
 			ws           = private$get_fit_warm_start_for_length("beta", n_params) %||% params_null
 			full         = tryCatch(
-				fast_survival_dep_cens_transform_cpp(
-					X = X_fit, y = y_sim, event = event_sim,
-					j_T = 0L, estimate_only = FALSE,
+				fast_dep_cens_transform_optim_cpp(
+					X_sexp = X_fit, y_sexp = y_sim, dead_sexp = event_sim,
+					estimate_only = FALSE,
 					warm_start_params = ws,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params)
 				),
@@ -519,9 +519,9 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 				fit_null = function(d, start = NULL){
 					ws2 = start %||% private$get_fit_warm_start_for_length("beta", n_params) %||% params_null
 					f2  = tryCatch(
-						fast_survival_dep_cens_transform_cpp(
-							X = X_fit, y = y_sim, event = event_sim,
-							j_T = 0L, estimate_only = FALSE,
+						fast_dep_cens_transform_optim_cpp(
+							X_sexp = X_fit, y_sexp = y_sim, dead_sexp = event_sim,
+							estimate_only = FALSE,
 							warm_start_params = ws2,
 							warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
 							fixed_idx = j, fixed_values = d

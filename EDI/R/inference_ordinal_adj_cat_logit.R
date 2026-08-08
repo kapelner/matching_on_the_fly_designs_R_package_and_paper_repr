@@ -237,8 +237,7 @@ InferenceOrdinalAdjCatLogitRegr = R6::R6Class("InferenceOrdinalAdjCatLogitRegr",
 			ws   = private$get_fit_warm_start_for_length("params", n_params) %||% params_null
 			full = tryCatch(
 				fast_adjacent_category_logit_cpp(
-					X = X_fit, y = y_sim, K = K,
-					j_T = 0L, estimate_only = FALSE,
+					X = X_fit, y = y_sim,
 					warm_start_params = ws,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params)
 				),
@@ -253,8 +252,7 @@ InferenceOrdinalAdjCatLogitRegr = R6::R6Class("InferenceOrdinalAdjCatLogitRegr",
 					ws2 = start %||% private$get_fit_warm_start_for_length("params", n_params) %||% params_null
 					f2  = tryCatch(
 						fast_adjacent_category_logit_cpp(
-							X = X_fit, y = y_sim, K = K,
-							j_T = 0L, estimate_only = FALSE,
+							X = X_fit, y = y_sim,
 							warm_start_params = ws2,
 							warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
 							fixed_idx = j, fixed_values = d

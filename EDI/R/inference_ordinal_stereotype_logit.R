@@ -244,8 +244,8 @@ InferenceOrdinalStereotypeLogitRegr = R6::R6Class("InferenceOrdinalStereotypeLog
 			ws   = private$get_fit_warm_start_for_length("params", n_params) %||% params_null
 			full = tryCatch(
 				fast_stereotype_logit_cpp(
-					X = X_fit, y = y_sim, K = K,
-					j_T = 0L, estimate_only = FALSE,
+					X = X_fit, y = y_sim,
+					estimate_only = FALSE,
 					warm_start_params = ws,
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params)
 				),
@@ -258,8 +258,8 @@ InferenceOrdinalStereotypeLogitRegr = R6::R6Class("InferenceOrdinalStereotypeLog
 					ws2 = start %||% private$get_fit_warm_start_for_length("params", n_params) %||% params_null
 					f2  = tryCatch(
 						fast_stereotype_logit_cpp(
-							X = X_fit, y = y_sim, K = K,
-							j_T = 0L, estimate_only = FALSE,
+							X = X_fit, y = y_sim,
+							estimate_only = FALSE,
 							warm_start_params = ws2,
 							warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params),
 							fixed_idx = j, fixed_values = d

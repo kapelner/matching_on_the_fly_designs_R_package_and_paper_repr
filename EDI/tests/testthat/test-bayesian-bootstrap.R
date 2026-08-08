@@ -142,7 +142,11 @@ test_that("additional near-term weighted hooks return finite estimates and recov
 	inf_beta$.__enclos_env__$private$current_bayesian_bootstrap_context = ctx_prop
 	expect_true(is.finite(as.numeric(inf_beta$compute_estimate_with_bootstrap_weights(rep(1, n_prop)))))
 
-	des_cont = make_seq_design_for_bayes_boot("continuous", c(0, 1, 2, 3, 4, 5, 6, 7))
+	# Deliberately not a perfectly linear trend (e.g. 0:7): MASS::rlm's IRLS
+	# scale estimate is the MAD of residuals, which collapses to (near) zero
+	# for a perfect fit -- an edge case whose convergence behavior differs
+	# across R/MASS versions and has been observed to fail non-portably.
+	des_cont = make_seq_design_for_bayes_boot("continuous", c(0, 1.2, 1.9, 3.1, 3.8, 5.2, 5.9, 7.1))
 	n_cont = des_cont$get_n()
 	ctx_cont = list(row_to_unit = seq_len(n_cont), unit_group_id = rep(1L, n_cont), n_units = n_cont)
 
