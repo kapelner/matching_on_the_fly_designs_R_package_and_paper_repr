@@ -14,6 +14,31 @@ The two treatment-effect estimates are combined by inverse-variance weighting.
 This compound estimator accounts for the dependence within matched pairs by
 modeling it as a shared frailty.
 
+\strong{Frailty distribution.} The matched-pair likelihood is an AFT
+(accelerated failure time) parameterization, \code{log(T) = X beta + u +
+sigma_eps * epsilon}, where \code{epsilon} is standard extreme-value (giving
+Weibull margins) and the pair-shared random intercept \code{u} is Gaussian,
+\code{u ~ N(0, sigma_u^2)}. On the natural time scale this is a multiplicative
+\strong{log-normal} frailty, \code{exp(u)}. A Gaussian random effect has no
+closed-form marginal likelihood under a Weibull baseline, so the pair
+likelihood is evaluated by Gauss-Hermite quadrature (\code{fast_weibull_frailty_cpp})
+rather than in closed form.
+
+This is a different (and equally standard) frailty assumption from the classic
+\strong{gamma}-frailty Weibull model (Clayton 1978; Vaupel, Manton & Stallard
+1979; Hougaard 2000), which multiplies the hazard (not the AFT error) by a
+shared \code{Gamma(1/theta, 1/theta)} term and has a closed-form marginal
+survival function via the frailty's Laplace transform. That model is implemented
+in this package as the \strong{Clayton copula} of
+\code{\link[EDI:InferenceSurvivalKKClaytonCopulaIVWC]{InferenceSurvivalKKClaytonCopulaIVWC}} /
+\code{\link[EDI:InferenceSurvivalKKClaytonCopulaOneLik]{InferenceSurvivalKKClaytonCopulaOneLik}}
+(the Clayton copula with Weibull margins is exactly the closed-form bivariate
+survival function obtained by integrating a shared gamma frailty out of two
+conditionally-independent Weibull hazards). Prefer this log-normal-frailty class
+for a Gaussian-random-intercept / GLMM-style dependence structure; prefer the
+Clayton-copula class for the classic gamma-frailty / proportional-hazards
+dependence structure.
+
 \strong{Univariate} (\code{ncol(as.matrix(private$X)) == 0}): uses the native
 Rcpp Weibull frailty likelihood with \code{formula = survival::Surv(y, dead) ~ w}
 and a pair-level random intercept.
@@ -21,6 +46,10 @@ and a pair-level random intercept.
 \strong{Multivariate} (\code{ncol(as.matrix(private$X)) > 0}): fits the same
 native Rcpp likelihood with covariate adjustment, dropping rank-deficient
 columns when needed.
+}
+\seealso{
+\code{\link[EDI:InferenceSurvivalKKClaytonCopulaIVWC]{InferenceSurvivalKKClaytonCopulaIVWC}}
+  for the corresponding gamma-frailty (Clayton copula) IVWC estimator.
 }
 \keyword{internal}
 \section{Super classes}{

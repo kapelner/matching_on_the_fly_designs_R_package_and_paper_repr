@@ -4,7 +4,11 @@
 \alias{InferenceSurvivalKKWeibullFrailtyOneLik}
 \title{Weibull Frailty Combined-Likelihood Inference for KK Designs}
 \description{
-Weibull Frailty Combined-Likelihood Inference for KK Designs
+Log-normal (Gaussian random-intercept) frailty Weibull AFT estimator; see
+\code{\link[EDI:InferenceAbstractKKWeibullFrailtyOneLik]{InferenceAbstractKKWeibullFrailtyOneLik}}
+for the frailty-distribution details and contrast with the gamma-frailty
+\code{\link[EDI:InferenceSurvivalKKClaytonCopulaOneLik]{InferenceSurvivalKKClaytonCopulaOneLik}}
+(Clayton copula) alternative.
 }
 \section{Super classes}{
 \code{\link[EDI:Inference]{Inference}} -> \code{\link[EDI:InferenceRand]{InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceRandBootstrap]{InferenceRandBootstrap}} -> \code{\link[EDI:InferenceRandBootstrapCI]{InferenceRandBootstrapCI}} -> \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}} -> \code{\link[EDI:InferenceParamBootstrap]{InferenceParamBootstrap}} -> \code{\link[EDI:InferenceAbstractKKWeibullFrailtyOneLik]{InferenceAbstractKKWeibullFrailtyOneLik}} -> \code{InferenceSurvivalKKWeibullFrailtyOneLik}

@@ -10,7 +10,34 @@ pairs and a standard Weibull AFT model for the reservoir. The two treatment-effe
 estimates (on the log-time ratio scale) are combined by inverse-variance weighting.
 
 
+\strong{Frailty distribution.} The Clayton copula for a matched pair,
+\code{S(t1,t2) = (S1(t1)^-theta + S2(t2)^-theta - 1)^(-1/theta)} with Weibull
+margins \code{S_i}, is exactly the closed-form bivariate survival function
+obtained by multiplying two conditionally-independent Weibull hazards by a
+shared \strong{gamma} frailty term \code{Z ~ Gamma(1/theta, 1/theta)} and
+integrating \code{Z} out analytically (Clayton 1978; Oakes 1989); \code{theta}
+is the frailty variance / dependence parameter (see \code{ClaytonWeibullLikelihood}
+in \code{fast_survival_models_optim.cpp}, which builds the likelihood from the
+per-subject Weibull cumulative hazards \code{H1, H2}). This is the classic
+textbook Weibull-gamma shared-frailty model, fit here in its closed form (no
+numerical integration required) rather than as an AFT Gaussian-random-intercept
+model.
+
+This is a different (and equally standard) frailty assumption from the
+\strong{log-normal}-frailty Weibull AFT GLMM implemented by
+\code{\link[EDI:InferenceSurvivalKKWeibullFrailtyIVWC]{InferenceSurvivalKKWeibullFrailtyIVWC}} /
+\code{\link[EDI:InferenceSurvivalKKWeibullFrailtyOneLik]{InferenceSurvivalKKWeibullFrailtyOneLik}},
+which instead places a Gaussian random intercept on the log-time (AFT) scale and
+integrates it out by Gauss-Hermite quadrature. Prefer this Clayton-copula class
+for the classic gamma-frailty / proportional-hazards dependence structure;
+prefer the Weibull-frailty class for a Gaussian-random-intercept / GLMM-style
+dependence structure.
+
 \strong{Legacy class.} Not fully tested in \code{comprehensive_tests.R}.
+}
+\seealso{
+\code{\link[EDI:InferenceSurvivalKKWeibullFrailtyIVWC]{InferenceSurvivalKKWeibullFrailtyIVWC}}
+  for the corresponding log-normal-frailty IVWC estimator.
 }
 \section{Super classes}{
 \code{\link[EDI:Inference]{Inference}} -> \code{\link[EDI:InferenceRand]{InferenceRand}} -> \code{\link[EDI:InferenceRandCI]{InferenceRandCI}} -> \code{\link[EDI:InferenceNonParamBootstrap]{InferenceNonParamBootstrap}} -> \code{\link[EDI:InferenceRandBootstrap]{InferenceRandBootstrap}} -> \code{\link[EDI:InferenceRandBootstrapCI]{InferenceRandBootstrapCI}} -> \code{\link[EDI:InferenceBayesianBootstrap]{InferenceBayesianBootstrap}} -> \code{\link[EDI:InferenceJackknife]{InferenceJackknife}} -> \code{\link[EDI:InferenceAsymp]{InferenceAsymp}} -> \code{\link[EDI:InferenceMLEorKMSummaryTable]{InferenceMLEorKMSummaryTable}} -> \code{\link[EDI:InferenceAsympLik]{InferenceAsympLik}} -> \code{InferenceKKPassThroughCompoundNoParamBootstrap} -> \code{InferenceSurvivalKKClaytonCopulaIVWC}
