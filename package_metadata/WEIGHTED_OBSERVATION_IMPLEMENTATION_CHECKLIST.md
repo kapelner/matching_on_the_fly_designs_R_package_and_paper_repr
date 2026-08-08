@@ -14,11 +14,18 @@ Per prior preference, the main tables below leave out `IVWC` paths. A short
 
 ## Current Audit Summary
 
-- In-scope concrete bootstrap-capable classes with real weighted support: `87`
-- In-scope concrete bootstrap-capable classes still unimplemented: `13`
+- In-scope concrete bootstrap-capable classes with real weighted support: `102`
+  (`87` shown in the main table below, plus `13` IVWC classes and `2`
+  Bai-adjusted classes that have a real *inherited surrogate* implementation
+  but are kept out of the main table per prior preference — see "IVWC And
+  Bai-Adjusted Classes Omitted From The Main Tables" below. This corrects a
+  stale claim in the previous version of this file that these `15` classes
+  were still unimplemented; see the re-audit note in that section.)
+- In-scope concrete bootstrap-capable classes still unimplemented: `0`
 - Exact/custom out-of-scope classes: `6`
 - Non-IVWC unimplemented classes shown in the main tables below: `0`
-- IVWC classes omitted from the main tables: `13`
+- IVWC + Bai-adjusted classes omitted from the main tables (implemented via
+  shared inherited surrogate, not because they lack an implementation): `15`
 
 ## Crosscheck Against The Previous Checklist
 
@@ -152,9 +159,16 @@ are `IVWC`:
 ## Still Unimplemented
 
 There are no remaining non-IVWC concrete rollout targets that still fall
-through to the Bayesian-bootstrap stub. The only remaining omitted concrete
-classes are the IVWC block below, plus the Bai-adjusted KK compound family
-which is now explicitly gated off from Bayesian bootstrap.
+through to the Bayesian-bootstrap stub, and — per the re-audit below — there
+are no remaining unimplemented concrete rollout targets at all. The IVWC
+block and the Bai-adjusted KK compound family (`InferenceBaiAdjustedTKK14`,
+`InferenceBaiAdjustedTKK21`) are omitted from the main tables per prior
+preference, but both actually inherit a real (if surrogate/approximate)
+`compute_estimate_with_bootstrap_weights` implementation — see the corrected
+section below. The previous version of this checklist claimed the
+Bai-adjusted family was "explicitly gated off from Bayesian bootstrap"; that
+is no longer accurate (and may never have been enforced in code — see
+TODO-1).
 
 ### Near-Term / Moderate Difficulty
 
@@ -185,11 +199,31 @@ The previous deferred survival block is now cleared for the current rollout.
 These implementations use weighted survival-model surrogates rather than native
 weighted versions of the original estimating procedures.
 
-## IVWC Omitted From The Main Tables
+## IVWC And Bai-Adjusted Classes Omitted From The Main Tables
 
-These bootstrap-capable classes are still unimplemented, but are omitted from
-the main tables above per prior preference to leave IVWC paths out of the main
-inventory.
+**Re-audit correction (this pass):** the previous version of this file
+described these classes as "still unimplemented." That is stale. All of them
+inherit `InferenceKKPassThroughCompoundNoParamBootstrap`
+(`EDI/R/inference_all_abstract_KK_passthrough_compound.R:108`), whose public
+component (`inference_kk_passthrough_compound_components`, composed at
+`EDI/R/inference_all_abstract_KK_passthrough_compound.R:8-89`) supplies a real
+`compute_estimate_with_bootstrap_weights` (line 36): it computes a
+matched-pair-difference / reservoir-mean-difference surrogate combined via the
+observed-fit `w_star` weight (lines 48-86). This is the same "surrogate"
+pattern already credited as `Implemented` for ~30 other rows in the main
+table above (e.g. `InferenceIncidCMH`, `InferenceIncidWald`, all via
+`InferenceAllSimpleMeanDiff`'s "Weighted empirical contrast path"). By this
+document's own stated rule ("Inherited implementations from concrete or
+abstract family classes count as implemented"), these classes are
+implemented. They remain **excluded from the main table above purely for
+organizational/display preference** (to keep IVWC paths out of the main
+inventory), not because they lack an implementation.
+
+The class-specific override hook this fallback checks for,
+`private$compute_weighted_estimate_ivwc` (line 44), is currently defined by
+**zero** concrete classes (`grep -rln "compute_weighted_estimate_ivwc\s*=\s*function" EDI/R/*.R`
+returns nothing) — every class below runs the generic surrogate fallback, not
+a class-specific weighted re-fit. See TODO-2.
 
 - `InferenceAllKKMeanDiffIVWC`
 - `InferenceAllKKWilcoxIVWC`
@@ -204,6 +238,12 @@ inventory.
 - `InferenceSurvivalKKRankRegrIVWC`
 - `InferenceSurvivalKKStratCoxPHIVWC`
 - `InferenceSurvivalKKWeibullFrailtyIVWC`
+- `InferenceBaiAdjustedTKK14` (`EDI/R/inference_continuous_KK14_bai.R:19`,
+  via `InferenceBaiAdjustedT` → `InferenceKKPassThroughCompoundNoParamBootstrap`)
+- `InferenceBaiAdjustedTKK21` (`EDI/R/inference_continuous_KK21_bai.R:19`,
+  same inheritance path) — neither Bai class was listed in any table
+  (`Implemented`, `Still Unimplemented`, `IVWC Omitted`, or `Out Of Scope`) in
+  the previous version of this file; this was a bookkeeping gap, now closed.
 
 ## Out Of Scope
 
@@ -224,10 +264,10 @@ under Bayesian-bootstrap weights, and numerical risk.
 
 The previous near-term, ordinal-gap, KK one-likelihood / GLMM compound, and
 survival-regression blocks have been cleared. The remaining in-scope work is
-limited to any future refinement of native weighted backends and the IVWC paths
-intentionally omitted from the main rollout. The Bai-adjusted KK compound
-family is explicitly gated off from Bayesian bootstrap rather than remaining as
-an implementation target.
+limited to any future refinement of native weighted backends for the IVWC and
+Bai-adjusted paths (see "IVWC And Bai-Adjusted Classes Omitted From The Main
+Tables" above) — those paths already have a real surrogate implementation, so
+this is a refinement, not a rollout gap.
 
 ## Suggested Milestones
 
@@ -243,3 +283,60 @@ The old near-term and ordinal milestones are complete.
 - Keep `estimate_only = TRUE` as the first target for every class, and defer
   weighted replicate-SE logic unless a Bayesian-bootstrap summary actually
   needs it.
+
+## Implementation TODOs
+
+### Dead Gate Functions (Correctness / Cleanup)
+
+- [ ] TODO-1: `stop_bayesian_bootstrap_for_bai()` and
+  `stop_bayesian_bootstrap_for_ivwc()` (`EDI/R/globals.R:89-105`) are defined
+  but never called anywhere in `EDI/R/*.R` (confirmed via
+  `grep -rn "stop_bayesian_bootstrap_for_bai\|stop_bayesian_bootstrap_for_ivwc" EDI/R/*.R`
+  — zero call sites). They read as leftover guards from a version of the code
+  where Bai/IVWC paths genuinely raised on Bayesian-bootstrap weighted
+  re-estimation; today those paths silently run the generic surrogate
+  fallback instead (`EDI/R/inference_all_abstract_KK_passthrough_compound.R:36-87`).
+  Decide and act: either (a) delete both now-dead functions, or (b) if the
+  surrogate fallback was never meant to be a real substitute for Bai/IVWC
+  paths, wire them back in and treat those `15` classes as genuinely
+  unimplemented again. Current code behavior (silent surrogate, no warning)
+  suggests (a), but this is a product decision, not just a doc fix.
+
+### Class-Specific Weighted Refits (Backend Refinement)
+
+- [ ] TODO-2: Zero concrete classes currently define
+  `private$compute_weighted_estimate_ivwc` (confirmed via
+  `grep -rln "compute_weighted_estimate_ivwc\s*=\s*function" EDI/R/*.R` —
+  empty result), so every one of the 15 classes listed in "IVWC And
+  Bai-Adjusted Classes Omitted From The Main Tables" runs the same generic
+  matched-difference/reservoir-mean surrogate
+  (`EDI/R/inference_all_abstract_KK_passthrough_compound.R:48-86`) regardless
+  of its actual estimator (OLS, robust regression, quantile regression, Cox
+  PH, Clayton copula, Weibull frailty, Bai-adjusted T, ...). Per the
+  "Backend Selection Rule" above, add class-specific
+  `compute_weighted_estimate_ivwc` overrides for the highest-traffic families
+  first — `InferenceContinKKOLSIVWC` and `InferenceContinKKRobustRegrIVWC`
+  are the most natural first targets since their non-IVWC one-likelihood
+  siblings (`InferenceContinKKOLSOneLik`, `InferenceContinKKRobustRegrOneLik`)
+  already have dedicated weighted implementations per the main table above —
+  use those as the reference implementation to adapt.
+- [ ] TODO-3: The Bai-adjusted classes (`InferenceBaiAdjustedTKK14`,
+  `InferenceBaiAdjustedTKK21`) use the same generic surrogate despite Bai
+  adjustment being a distinct statistical correction from the plain
+  matched-pair/reservoir estimate it falls back to. Verify whether the
+  surrogate is a statistically valid stand-in for the Bai-adjusted estimator
+  under Bayesian-bootstrap weights, or whether a Bai-specific weighted
+  estimate is needed — this is a correctness question, not just a coverage
+  gap, since TODO-1 already establishes nothing currently prevents this path
+  from running and returning a result that looks like a real Bai estimate.
+
+### Documentation Maintenance
+
+- [ ] TODO-4: Keep this file's "Current Audit Summary" counts and the
+  `Implemented` / `IVWC And Bai-Adjusted Classes Omitted` sections in sync
+  going forward — re-run the two greps in TODO-1/TODO-2 whenever a class in
+  the KK-passthrough-compound family changes, since this pass found the
+  previous version of this file had silently drifted (claiming 15
+  implemented classes were "still unimplemented"/"gated off") without any
+  corresponding code change being the cause — the doc simply hadn't been
+  re-verified against the code it was auditing.

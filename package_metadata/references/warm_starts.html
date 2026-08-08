@@ -3470,3 +3470,66 @@ algebraically rather than iteratively, there is no numerical solver to
 initialize. Negative warm-start cells for these paths reflect R6
 environment checks and copying rather than optimization behavior.</li>
 </ul>
+<h2 id="implementation-todos">Implementation TODOs</h2>
+<h3 id="skip-warm-start-bookkeeping-for-closed-form-paths">1. Skip
+warm-start bookkeeping for closed-form paths</h3>
+<ul>
+<li>☐ <strong>TODO-1</strong>: The “Notes on Negative Warm-Start
+Cells” section above already diagnoses that
+<code>InferenceContinOLS</code>, <code>InferenceContinKKOLSIVWC</code>,
+and <code>InferenceContinKKOLSOneLik</code> have no iterative solver
+state to warm-start (closed-form <span
+class="math inline">(<em>X</em><sup><em>T</em></sup><em>X</em>)<sup>−1</sup><em>X</em><sup><em>T</em></sup><em>y</em></span>),
+so every negative cell for these paths is pure
+<code>fit_warm_start</code>/<code>set_fit_warm_start()</code> bookkeeping
+overhead rather than a real regression. Add an
+<code>edi_warm_start_dispatch_policy()</code> override (or an
+estimator-level capability flag consumed at the same call site,
+<code>EDI/R/inference_all_abstract.R:200</code>) that skips the
+warm-start read/write path entirely for these classes instead of paying
+the overhead and then reporting a negative number.</li>
+<li>☐ <strong>TODO-2</strong>: Do the same for
+<code>InferenceBaiAdjustedTKK14</code> and
+<code>InferenceBaiAdjustedTKK21</code>, per the “Bai-Adjusted T-Tests”
+note directly above — both are closed-form and pay only R6
+environment-copy overhead for no benefit.</li>
+</ul>
+<h3 id="root-cause-the-blanket-dispatch-disables">2. Root-cause the
+blanket dispatch disables instead of leaving them permanently off</h3>
+<ul>
+<li>☐ <strong>TODO-3</strong>: <code>get_warm_start_dispatch_policy()</code>
+and <code>edi_warm_start_dispatch_policy()</code>
+(<code>EDI/R/globals.R:700-899</code>) unconditionally disable Bayesian
+bootstrap warm-starting for 11 classes (e.g.
+<code>InferenceContinKKGLMM</code>,
+<code>InferenceSurvivalDepCensTransformRegr</code>,
+<code>InferenceOrdinalCloglogRegr</code>,
+<code>InferenceCountPoisson</code>,
+<code>InferenceOrdinalPropOddsRegr</code>,
+<code>InferenceSurvivalWeibullRegr</code>, and five more) purely because
+the benchmark suite measured a regression, with no explanation recorded
+in code of *why* warm-starting hurts these specific
+likelihood/link combinations. Investigate the root cause for at least
+the highest-traffic families (Poisson, proportional-odds, Weibull) and
+either fix the underlying anchoring so it can be re-enabled, or record
+the diagnosed mechanism as a comment next to the override so future
+maintainers don’t have to re-derive it.</li>
+<li>☐ <strong>TODO-4</strong>: Several disables are conditioned only on
+<code>n &lt; 200</code> or <code>n &lt; 500</code> thresholds (e.g.
+non-parametric-bootstrap disables for
+<code>InferenceCountHurdlePoisson</code>,
+<code>InferenceCountZeroInflatedPoisson</code>,
+<code>InferencePropBetaRegr</code> at <code>EDI/R/globals.R:801-833</code>,
+and the <code>n &lt; 500</code> tier at
+<code>EDI/R/globals.R:835-875</code>). These read as “warm-start
+overhead exceeds its benefit at small <span
+class="math inline"><em>n</em></span>” rather than “warm-start is
+unsafe”, which mirrors the Poisson-IRLS finding already called out as a
+follow-up item in
+<code>package_metadata/references/cold_starts.md</code>’s Key Findings
+section (“for very fast models, the overhead of smart-start logic can
+occasionally exceed its benefit”). Add a size/complexity-based
+heuristic (parallel to a cold-start threshold switch) instead of a hard
+per-class n-cutoff table, so newly added classes don’t need their own
+manually benchmarked entry in this policy.</li>
+</ul>

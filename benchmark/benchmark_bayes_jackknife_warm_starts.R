@@ -12,7 +12,7 @@ J_VAL = as.integer(Sys.getenv("WARM_START_BENCH_J", unset = "5"))
 NREP = as.integer(Sys.getenv("WARM_START_BENCH_REPS", unset = "100"))
 FIXED_N = as.integer(Sys.getenv("WARM_START_BENCH_FIXED_N", unset = "1"))
 
-md = readLines("package_metadata/warm_starts.html", warn = FALSE)
+md = readLines("package_metadata/references/warm_starts.html", warn = FALSE)
 path_lines = md[grepl("font-family:monospace", md, fixed = TRUE)]
 inf_names = unique(sub("^.*>([A-Za-z][A-Za-z0-9]+)<.*$", "\\1", path_lines))
 inf_names = inf_names[grepl("^Inference", inf_names)]

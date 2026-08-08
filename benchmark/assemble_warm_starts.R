@@ -94,7 +94,7 @@ for (n_val in N_VALS) {
     cat(sprintf("Built table for n=%d (%d paths).\n", n_val, nrow(merged)))
 }
 
-md_file = "package_metadata/warm_starts.html"
+md_file = "package_metadata/references/warm_starts.html"
 md = readLines(md_file, warn = FALSE)
 
 for (n_val in N_VALS) {

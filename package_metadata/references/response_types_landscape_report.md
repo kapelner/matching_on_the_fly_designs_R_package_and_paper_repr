@@ -810,3 +810,106 @@ So for practical package planning:
   https://journals.sagepub.com/doi/10.3233/JNR-190145
   and
   https://www.sciencedirect.com/science/article/pii/016890029290209M
+
+## Implementation TODOs
+
+Verified against the current codebase: EDI/R's `response_type` dispatch
+currently recognizes exactly six values — `continuous`, `incidence`, `count`,
+`proportion`, `survival`, `ordinal` (confirmed via
+`grep -rho "response_type\s*=\s*[\"'][a-z_]*[\"']" EDI/R/*.R | sort -u`, and
+spot-checked at call sites such as EDI/R/inference_count_poisson.R:36
+`assertResponseType(des_obj$get_response_type(), "count")` and
+EDI/R/inference_ordinal_adj_cat_logit.R:32
+`assertResponseType(des_obj$get_response_type(), "ordinal")`). No `nominal`
+value, or any of the eleven "Additional Response Families" below, appears
+anywhere in `EDI/R/*.R`.
+
+### Response-Type Gap: Nominal
+
+- [ ] TODO-1: Implement `response_type = "nominal"` per the design in
+  `package_metadata/nominal_response_type_report.md`, which already contains
+  the detailed feasibility assessment this landscape survey only motivates
+  qualitatively (see "Bottom Line" and "Implications For The Package" above).
+- [ ] TODO-2: Add a one-line cross-reference near this document's "Bottom
+  Line" section pointing to `package_metadata/nominal_response_type_report.md`
+  so the two documents are discoverable together.
+
+### Feasibility Reports To Commission (architectural extensions)
+
+The families below are flagged in "Additional Response Families Worth
+Noting" as real gaps, but — per that section's own difficulty ratings — are
+architectural projects, not additive response types. Each TODO below has now
+been fulfilled: a dedicated feasibility report exists for each family,
+mirroring `package_metadata/nominal_response_type_report.md`'s format. The
+verdicts below are what those reports actually found, not what this
+landscape survey guessed:
+
+- [x] TODO-3: `longitudinal / repeated-measures` outcomes — see
+  `package_metadata/longitudinal_repeated_measures_response_type_report.md`.
+  Verdict: **hard** (every response type, including `Design`'s core `y`
+  container, hard-assumes one observation per subject), but with a real
+  mitigant: EDI's KK-GEE (`inference_mixin_kk_gee_shared.R`) and KK-GLMM
+  (`inference_continuous_KK_glmm.R`) clustering machinery generalizes to a
+  subject-over-time panel index rather than needing new numerics from
+  scratch.
+- [x] TODO-4: `multivariate / vector-valued` outcomes — see
+  `package_metadata/multivariate_response_type_report.md`. Verdict: **split**
+  — true joint/vector modeling is **very hard** (breaks `Design`'s
+  one-scalar-response-per-subject contract, needs new C++ cores), but the
+  dominant applied version, composite analysis of K co-primary endpoints with
+  multiplicity-adjusted decisions, is **moderate**: zero changes to `Design`
+  or any concrete `Inference*` class, just a new orchestration wrapper plus a
+  multiplicity-correction utility (confirmed via grep: no
+  holm/bonferroni/multiplicity utility exists anywhere in the package today).
+- [x] TODO-5: `compositional / multinomial-share` outcomes — see
+  `package_metadata/compositional_response_type_report.md`. Verdict:
+  **hard** as a fully general feature (true Dirichlet regression, vector
+  `beta_T`), but **moderate** for a recommended first wave built on an ILR
+  (isometric log-ratio) transform, which converts the simplex response into
+  `K-1` ordinary continuous coordinates reusable by EDI's existing continuous
+  machinery almost unchanged. Confirmed distinct from the existing scalar
+  `proportion` family (`inference_proportion_beta.R`,
+  `inference_proportion_fractional_logit.R` are single-bounded-scalar, not
+  vector/compositional).
+- [x] TODO-6: `rank / preference / choice-set` outcomes — see
+  `package_metadata/rank_choice_response_type_report.md`. Verdict: **split**
+  by sub-case — single discrete choice is **moderate** (rides on the
+  `nominal` multinomial-logit machinery from TODO-1 almost unchanged), while
+  full/partial rankings (Plackett-Luce, Mallows) are **hard** (new `Design`
+  response-storage shape, new C++ kernel, no existing analog in `EDI/src`).
+- [x] TODO-7: `semi-continuous / zero-inflated continuous` outcomes — see
+  `package_metadata/semi_continuous_response_type_report.md`. Verdict:
+  **split** — the standard point-mass-at-zero case is **easy to moderate**,
+  the easiest of these six architectural extensions, because
+  `InferenceCountZeroAugmentedPoissonAbstract`
+  (`EDI/R/inference_count_zero_augmented_poisson_abstract.R`) already proves
+  the exact two-part likelihood/sandwich-SE architecture needed for the
+  structurally identical `count` case — real new work is 1-2 C++ kernels for
+  a positive-tail continuous distribution. The detection-limit-censored
+  (true Tobit) case is **moderate to hard** instead, since
+  `assertNoCensoring()` in that same file explicitly refuses censored data
+  today — it's a survival-style censoring problem, not a mixture-model
+  variant.
+- [x] TODO-8: `interval-censored` survival outcomes — see
+  `package_metadata/interval_censored_survival_response_type_report.md`.
+  Verdict: **split by engine** — parametric Weibull interval-censored
+  regression is **moderate** (`fast_weibull_regression_cpp` just needs a new
+  `log(S(L)-S(R))` likelihood branch), the semiparametric Cox-analogue is
+  **hard** (Cox partial likelihood has no interval-data extension; needs a
+  new NPMLE/EM engine), and the `Design`-layer response storage
+  (`design_abstract.R`, currently one scalar `y` + one `dead` flag) needs a
+  real schema change to represent an `(L,R)` interval at all — distinct from
+  the existing `InferenceSurvivalDepCensTransformRegr`
+  (EDI/R/inference_survival_dep_cens_transform.R), which handles *dependent*
+  right-censoring, not interval censoring.
+
+### Lower-Priority / Documentation-Only
+
+- [ ] TODO-9: For "bounded discrete scores / scale totals" (flagged `easy to
+  moderate` above, since users already model these via existing `continuous`
+  or `ordinal` paths), add user-facing guidance on when to choose which —
+  this document's own "Practical conclusion" for that family already states
+  it is "more of a documentation and user-guidance issue than a priority for
+  a new package-level response type," so no new response type is warranted,
+  only a guidance note (e.g. in the package vignette or a new
+  `package_metadata/references/` doc).

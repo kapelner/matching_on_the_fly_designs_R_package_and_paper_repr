@@ -88,3 +88,44 @@ For fixed designs, implement `draw_assignments(r)` and return an `n x r` 0/1
 assignment matrix. For sequential designs, implement `assignment_rule()` and
 return a scalar 0/1 assignment for the current subject. EDI handles subject
 storage, response recording, and validation.
+
+## Implementation TODOs
+
+### Doc Accuracy
+
+- [ ] TODO-1: Fix the wrong class name in the "Custom Designs" section. The doc
+  says `DesignCustomFixed <- getFromNamespace("DesignCustomFixed", "EDI")`, but
+  the actual internal base class is named `DesignFixedCustom` (defined at
+  `EDI/R/design_custom_extensions.R:9`, `R6::R6Class("DesignFixedCustom", ...)`).
+  `getFromNamespace("DesignCustomFixed", "EDI")` throws today because no object
+  by that name exists. `EDI/tests/testthat/test-custom-extension-contract.R:7,77`
+  already uses the correct `DesignFixedCustom` name, confirming the doc — not
+  the code — has the name swapped.
+
+### Missing Coverage
+
+- [ ] TODO-2: Document `InferenceCustomRand` and `InferenceCustomBoot`
+  (`EDI/R/inference_custom_extensions.R:125` and `:169`), the two other
+  user-facing custom-inference base classes. The doc's "Inference Contract"
+  section only covers `InferenceCustomAsymp`, but the opening paragraph
+  promises "randomization, bootstrap, and summary methods" reuse, and the
+  source's own roxygen comments for all three classes explicitly cross-link
+  the other two (e.g. `EDI/R/inference_custom_extensions.R:41-44`). Add a
+  subsection per class covering: `InferenceCustomRand` (inherits `Inference`,
+  `components = "RandomizationTest"`, `likelihood_tier = "none"`, only a
+  `fit()`/`compute_estimate()` contract — no `se`/`df` needed) and
+  `InferenceCustomBoot` (inherits `InferenceJackknife`, same minimal
+  `fit()`/`compute_estimate()` contract, gains jackknife/bootstrap machinery
+  from the parent).
+
+### Test Coverage
+
+- [ ] TODO-3: Add a behavioral subclass test for `InferenceCustomRand` and one
+  for `InferenceCustomBoot`, mirroring the working end-to-end example already
+  present for `InferenceCustomAsymp` in
+  `EDI/tests/testthat/test-custom-extension-contract.R:17-75`. Currently those
+  two classes are only checked for existence/retrievability
+  (`test-custom-extension-contract.R:12-13`) — there is no test that actually
+  subclasses either one, implements `fit()`, and calls `compute_estimate()`
+  end-to-end, so a future refactor of `InferenceRand`/`InferenceJackknife`
+  could silently break either extension contract without any test failing.
