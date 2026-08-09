@@ -98,7 +98,7 @@ jobs:
       _R_CHECK_DONTTEST_EXAMPLES_: ${{ matrix.config.os == 'windows-latest' && 'false' || 'true' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: r-lib/actions/setup-pandoc@v2
 
@@ -145,7 +145,7 @@ jobs:
       _R_CHECK_SUGGESTS_ONLY_: true
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: r-lib/actions/setup-pandoc@v2
 
@@ -190,7 +190,7 @@ jobs:
       NOT_CRAN: true
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: "Install libuv (system dependency of the 'fs' package, itself a transitive dependency of testthat via pkgload -- rocker/r-devel-san is a bare-bones image that doesn't include it, unlike e.g. rocker/r-devel, causing \"ERROR: configuration failed for package 'fs'\" -> cascading pkgload/testthat install failures)"
         run: apt-get update && apt-get install -y libuv1-dev
@@ -237,7 +237,7 @@ jobs:
       NOT_CRAN: true
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install valgrind and libuv (libuv is a system dependency of the 'fs' package, itself a transitive dependency of testthat via pkgload -- rocker/r-devel is a bare-bones image that doesn't include it, see the sanitizers job's Install libuv step for the failure this causes if skipped)
         run: apt-get update && apt-get install -y valgrind libuv1-dev

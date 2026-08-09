@@ -662,19 +662,19 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 	# Per-operation slow skips. These are class+method only; no design,
 	# dataset, formula, or response-specific slow gates.
 	skip_rand_slow            = is_exact_inference_class(c("InferenceContinKKGLMM"))
-	skip_rand_ci_slow         = is_exact_inference_class(c("InferenceSurvivalWeibullRegr", "InferenceSurvivalKKClaytonCopulaOneLik", "InferenceSurvivalKKWeibullFrailtyOneLik", "InferenceSurvivalKKWeibullMarginal", "InferencePropQuantileRegr", "InferencePropKKGEE", "InferencePropBetaRegr"))  # PropBetaRegr rand CI avg 32.3s / p80 43.7s / max 2035.9s at n=334; SurvivalKKWeibullMarginal rand CI avg 32.2s
+	skip_rand_ci_slow         = is_exact_inference_class(c("InferenceSurvivalWeibullRegr", "InferenceSurvivalKKClaytonCopulaOneLik", "InferenceSurvivalKKWeibullFrailtyOneLik", "InferenceSurvivalKKWeibullMarginal", "InferencePropQuantileRegr", "InferencePropKKGEE", "InferencePropBetaRegr"))  # PropBetaRegr rand CI avg 32.3s / p80 43.6s / max 2035.9s at n=334; SurvivalKKWeibullMarginal rand CI avg 32.2s
 	skip_score_ci_slow        = is_exact_inference_class(c("InferenceSurvivalKKWeibullFrailtyOneLik"))  # score CI avg 50.1s / max 324.8s at n=13
 	skip_lik_ratio_ci_slow    = is_exact_inference_class(c("InferenceSurvivalKKClaytonCopulaOneLik", "InferenceSurvivalDepCensTransformRegr"))  # lik-ratio CI avg 39s / max 234s at n=6; DepCensTransformRegr max 9546.6s
-	skip_bbt_pval_slow        = is_exact_inference_class(c("InferenceIncidKKCondLogitGLMMOneLik"))  # Bayesian bootstrap pval avg 32.4s / p80 42.2s / max 68.4s at n=32
+	skip_bbt_pval_slow        = is_exact_inference_class(c("InferenceIncidKKCondLogitGLMMOneLik"))  # Bayesian bootstrap pval avg 32.4s / p80 40.6s / max 68.4s at n=32
 	skip_bbt_pval_symmetric_slow = is_exact_inference_class(c("InferenceIncidKKCondLogitGLMMOneLik"))  # Bayesian bootstrap symmetric pval avg 30.6s / max 54.9s at n=18
 	skip_bbt_pval_wald_slow   = is_exact_inference_class(c("InferenceIncidKKCondLogitGLMMOneLik"))  # Bayesian bootstrap Wald pval avg 39.0s / p80 58.4s / max 58.6s
 	skip_bbt_pval_studentized_slow = is_exact_inference_class(c("InferenceIncidKKCondLogitGLMMOneLik"))  # Bayesian bootstrap studentized pval avg 36.9s / p80 60.3s / max 66.2s
 	skip_bbt_ci_slow          = is_exact_inference_class(c("InferenceIncidKKCondLogitGLMMOneLik"))
 	skip_bbt_ci_default_slow  = is_exact_inference_class(c("InferenceIncidExactFisher"))  # Bayesian bootstrap CI avg 26.0s / max 60.9s on SPBR pima
-	skip_boot_ci_default_slow = is_exact_inference_class(c("InferenceIncidRiskDiff", "InferenceIncidExactFisher", "InferenceContinKKQuantileRegrOneLik", "InferenceSurvivalDepCensTransformRegr"))  # RiskDiff bootstrap CI avg 261.1s / max 2014.1s at n=8; IncidExactFisher bootstrap CI avg 31.8s / max 66.3s; ContinKKQuantileRegrOneLik bootstrap CI mean 109.0s / max 9434.3s at n=98; DepCensTransformRegr bootstrap CI max 44948.6s
+	skip_boot_ci_default_slow = is_exact_inference_class(c("InferenceIncidRiskDiff", "InferenceIncidExactFisher", "InferenceContinKKQuantileRegrOneLik", "InferenceSurvivalDepCensTransformRegr"))  # RiskDiff bootstrap CI avg 261.1s / max 2014.1s at n=8; IncidExactFisher bootstrap CI avg 31.8s / max 66.3s; ContinKKQuantileRegrOneLik bootstrap CI mean 109.0s / max 9434.3s at n=98; DepCensTransformRegr bootstrap CI avg 38.0s / p80 38.0s at n=1
 	skip_boot_ci_basic_slow   = is_exact_inference_class(c("InferenceIncidExactFisher"))  # ExactFisher bootstrap basic CI avg 34.4s / p80 34.7s / max 35.3s
 	skip_boot_ci_bca_slow     = is_exact_inference_class(c("InferenceIncidKKGCompRiskDiff"))  # KKGCompRiskDiff bootstrap BCA CI avg 45.0s / p80 16.9s / max 10817.7s at n=356
-	skip_boot_stud_slow       = is_exact_inference_class(c("InferenceIncidRiskDiff", "InferenceIncidExactFisher", "InferenceSurvivalGehanWilcox", "InferenceSurvivalDepCensTransformRegr", "InferenceOrdinalKKGEE", "InferenceIncidModifiedPoisson"))  # RiskDiff bootstrap studentized CI avg 261.1s / max 2014.1s at n=8; IncidExactFisher bootstrap studentized CI avg 31.2s / max 75.4s; GehanWilcox studentized CI max 10443.4s; DepCensTransformRegr avg 50.7s; OrdinalKKGEE avg 51.3s / p80 30.1s / max 12084.2s; ModifiedPoisson avg 31.6s
+	skip_boot_stud_slow       = is_exact_inference_class(c("InferenceIncidRiskDiff", "InferenceIncidExactFisher", "InferenceSurvivalGehanWilcox", "InferenceSurvivalDepCensTransformRegr", "InferenceOrdinalKKGEE", "InferenceIncidModifiedPoisson"))  # RiskDiff bootstrap studentized CI avg 261.1s / max 2014.1s at n=8; IncidExactFisher bootstrap studentized CI avg 31.2s / max 75.4s; GehanWilcox studentized CI max 10443.4s; DepCensTransformRegr avg 44.7s / p80 44.7s at n=1; OrdinalKKGEE avg 51.1s / p80 30.1s / max 12084.2s; ModifiedPoisson avg 31.6s
 	skip_boot_pval_stud_slow  = is_exact_inference_class(c("InferenceAllSimpleMeanDiff", "InferenceIncidExactFisher", "InferenceSurvivalGehanWilcox", "InferenceOrdinalKKGEE"))  # SimpleMeanDiff bootstrap studentized pval avg 178.8s / max 2001.5s at n=12; IncidExactFisher avg 30.9s / max 50.8s; GehanWilcox avg 73.6s; OrdinalKKGEE avg 34.6s
 	skip_boot_pval_symmetric_slow = is_exact_inference_class(c("InferenceIncidKKGCompRiskRatio"))  # bootstrap symmetric pval max 10456.5s
 	skip_boot_ci_slow         = FALSE
@@ -692,7 +692,7 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 	skip_brt_ci_smoothed_slow   = is_exact_inference_class(c("InferenceAllSimpleWilcox", "InferencePropKKQuantileRegrOneLik"))  # smoothed CI avg 94s / 32s
 	skip_brt_ci_typed_slow      = is_exact_inference_class(c("InferencePropKKQuantileRegrOneLik"))  # studentized CI avg 34s
 	skip_m_out_of_n_slow = is_exact_inference_class(c(
-		"InferenceSurvivalKKClaytonCopulaOneLik",
+		"InferenceSurvivalKKClaytonCopulaOneLik",  # m-out-of-n CI avg 196.1s / p80 408.5s / max 634.0s at n=137
 		"InferencePropZeroOneInflatedBetaRegr",
 		"InferenceSurvivalWeibullRegr",
 		"InferenceSurvivalStratCoxPHRegr",
@@ -709,7 +709,7 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 		"InferencePropKKGEE"
 	))
 	skip_subsampling_slow = is_exact_inference_class(c(
-		"InferenceSurvivalKKClaytonCopulaOneLik",
+		"InferenceSurvivalKKClaytonCopulaOneLik",  # subsampling CI avg 183.7s / p80 366.7s / max 718.8s at n=137
 		"InferenceCountHurdleNegBin",
 		"InferenceCountPoissonKKGEE"
 	))
