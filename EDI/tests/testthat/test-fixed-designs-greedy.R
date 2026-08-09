@@ -193,32 +193,72 @@ test_that("DesignFixedCluster works", {
 	}
 })
 
-test_that("DesignFixedFactorial works", {
+test_that("DesignFixedFactorial works (two-arm)", {
 	n = 12
-	# 2x2 factorial: 4 combinations
-	des = DesignFixedFactorial$new(response_type = "continuous", factors = list(A=2, B=2), n = n, verbose = FALSE)
+	# Single two-level factor: 2 combinations (this design is currently two-arm only)
+	des = DesignFixedFactorial$new(response_type = "continuous", factors = list(A=2), n = n, verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x1 = 1:n))
-	
+
 	des$assign_w_to_all_subjects()
 	w = des$get_w()
 	expect_length(w, n)
-	
-	# Check balance: each combination (1, 2, 3, 4) should appear 3 times
-	expect_equal(as.numeric(table(w)), rep(3, 4))
 
-	# Check data frame output
+	# Follows the standard {-1,+1} public convention: balanced allocation sums to zero
+	expect_true(all(w %in% c(-1, 1)))
+	expect_equal(sum(w), 0)
+	expect_equal(as.numeric(table(w)), rep(n / 2, 2))
+
+	# Check data frame output (1-indexed factor levels, independent of the {0,1} w recoding)
 	wf = des$get_w_factorial()
 	expect_equal(nrow(wf), n)
-	expect_equal(ncol(wf), 2)
-	expect_true(all(wf$Var1 %in% 1:2))
-	expect_true(all(wf$Var2 %in% 1:2))
+	expect_equal(ncol(wf), 1)
+	expect_true(all(wf$A %in% 1:2))
+	# get_w_factorial()'s levels agree with get_w()'s sign: +1 <-> level 2, -1 <-> level 1
+	expect_equal(wf$A, ifelse(w == 1, 2, 1))
 
-	# Test draw_ws
+	# Test draw_ws: also follows the {-1,+1} convention
 	W = des$draw_ws_according_to_design(r = 5)
 	expect_equal(dim(W), c(n, 5))
 	for (j in 1:5){
-		expect_equal(as.numeric(table(W[, j])), rep(3, 4))
+		expect_true(all(W[, j] %in% c(-1, 1)))
+		expect_equal(sum(W[, j]), 0)
 	}
+})
+
+test_that("DesignFixedFactorial rejects more than two total combinations", {
+	n = 12
+	expect_error(
+		DesignFixedFactorial$new(response_type = "continuous", factors = list(A=2, B=2), n = n, verbose = FALSE),
+		"exactly two total factor-level"
+	)
+	expect_error(
+		DesignFixedFactorial$new(response_type = "continuous", factors = list(A=3), n = n, verbose = FALSE),
+		"exactly two total factor-level"
+	)
+})
+
+test_that("DesignFixedFactorial works correctly with Inference objects", {
+	n = 40
+	set.seed(1)
+	X = data.frame(x1 = rnorm(n))
+	des = DesignFixedFactorial$new(response_type = "continuous", factors = list(treatment=2), n = n, verbose = FALSE)
+	des$add_all_subjects_to_experiment(X)
+	des$assign_w_to_all_subjects()
+
+	true_effect = 3
+	y = rnorm(n) + true_effect * (des$get_w() == 1)
+	des$add_all_subject_responses(y)
+
+	inf = InferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
+	est = inf$compute_estimate()
+	expect_true(is.finite(est))
+	expect_equal(est, mean(y[des$get_w() == 1]) - mean(y[des$get_w() == -1]))
+	expect_equal(est, true_effect, tolerance = 1.5)
+
+	inf_ols = InferenceContinOLS$new(des, verbose = FALSE)
+	est_ols = inf_ols$compute_estimate()
+	expect_true(is.finite(est_ols))
+	expect_equal(est_ols, est, tolerance = 1e-6)
 })
 
 test_that("DesignFixedDOptimal works", {

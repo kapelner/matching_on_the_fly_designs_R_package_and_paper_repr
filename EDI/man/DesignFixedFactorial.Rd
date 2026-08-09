@@ -5,11 +5,17 @@
 \title{A Factorial Fixed Design}
 \description{
 An R6 Class encapsulating the data and functionality for a fixed factorial experimental design.
-This design handles multiple treatment factors and balances assignments across
+This design handles one or more treatment factors and balances assignments across
 all factor combinations.
+
+Currently restricted to exactly two total factor-level combinations (i.e. two arms),
+e.g. a single two-level factor. \code{w} follows the same \{0,1\} internal /
+\{-1,+1\} public convention as every other \code{Design} subclass, so this design
+works unmodified with every \code{Inference} class. Support for more than two
+combinations is tracked separately (see \code{package_metadata/new_feature_plans/multi_arm_designs.md}).
 }
 \examples{
-des = DesignFixedFactorial$new(n = 12, response_type = 'continuous', factors = list(f1 = 2, f2 = 2))
+des = DesignFixedFactorial$new(n = 12, response_type = 'continuous', factors = list(treatment = 2))
 des$add_all_subjects_to_experiment(data.frame(x=1:12))
 des$assign_w_to_all_subjects()
 }
@@ -20,9 +26,6 @@ des$assign_w_to_all_subjects()
 \subsection{Public methods}{
   \itemize{
     \item \href{#method-DesignFixedFactorial-initialize}{\code{DesignFixedFactorial$new()}}
-    \item \href{#method-DesignFixedFactorial-assign_w_to_all_subjects}{\code{DesignFixedFactorial$assign_w_to_all_subjects()}}
-    \item \href{#method-DesignFixedFactorial-draw_ws_according_to_design}{\code{DesignFixedFactorial$draw_ws_according_to_design()}}
-    \item \href{#method-DesignFixedFactorial-get_w}{\code{DesignFixedFactorial$get_w()}}
     \item \href{#method-DesignFixedFactorial-get_w_factorial}{\code{DesignFixedFactorial$get_w_factorial()}}
     \item \href{#method-DesignFixedFactorial-clone}{\code{DesignFixedFactorial$clone()}}
   }
@@ -31,6 +34,7 @@ des$assign_w_to_all_subjects()
 <ul>
   <li><a href='../../EDI/html/DesignFixed.html#method-DesignFixed-add_all_subject_responses'><code>DesignFixed$add_all_subject_responses()</code></a></li>
   <li><a href='../../EDI/html/DesignFixed.html#method-DesignFixed-add_all_subjects_to_experiment'><code>DesignFixed$add_all_subjects_to_experiment()</code></a></li>
+  <li><a href='../../EDI/html/DesignFixed.html#method-DesignFixed-assign_w_to_all_subjects'><code>DesignFixed$assign_w_to_all_subjects()</code></a></li>
   <li><a href='../../EDI/html/DesignFixed.html#method-DesignFixed-is_a_fixed'><code>DesignFixed$is_a_fixed()</code></a></li>
   <li><a href='../../EDI/html/DesignFixed.html#method-DesignFixed-overwrite_all_subject_assignments'><code>DesignFixed$overwrite_all_subject_assignments()</code></a></li>
   <li><a href='../../EDI/html/DesignFixed.html#method-DesignFixed-supports_resampling'><code>DesignFixed$supports_resampling()</code></a></li>
@@ -66,6 +70,7 @@ des$assign_w_to_all_subjects()
   <li><a href='../../EDI/html/Design.html#method-Design-assert_even_allocation'><code>Design$assert_even_allocation()</code></a></li>
   <li><a href='../../EDI/html/Design.html#method-Design-assert_fixed_sample'><code>Design$assert_fixed_sample()</code></a></li>
   <li><a href='../../EDI/html/Design.html#method-Design-check_experiment_completed'><code>Design$check_experiment_completed()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-draw_ws_according_to_design'><code>Design$draw_ws_according_to_design()</code></a></li>
   <li><a href='../../EDI/html/Design.html#method-Design-duplicate'><code>Design$duplicate()</code></a></li>
   <li><a href='../../EDI/html/Design.html#method-Design-get_X'><code>Design$get_X()</code></a></li>
   <li><a href='../../EDI/html/Design.html#method-Design-get_X_imp'><code>Design$get_X_imp()</code></a></li>
@@ -80,6 +85,7 @@ des$assign_w_to_all_subjects()
   <li><a href='../../EDI/html/Design.html#method-Design-get_response_type'><code>Design$get_response_type()</code></a></li>
   <li><a href='../../EDI/html/Design.html#method-Design-get_response_type_original'><code>Design$get_response_type_original()</code></a></li>
   <li><a href='../../EDI/html/Design.html#method-Design-get_t'><code>Design$get_t()</code></a></li>
+  <li><a href='../../EDI/html/Design.html#method-Design-get_w'><code>Design$get_w()</code></a></li>
   <li><a href='../../EDI/html/Design.html#method-Design-get_y'><code>Design$get_y()</code></a></li>
   <li><a href='../../EDI/html/Design.html#method-Design-get_y_original'><code>Design$get_y_original()</code></a></li>
   <li><a href='../../EDI/html/Design.html#method-Design-has_covariates'><code>Design$has_covariates()</code></a></li>
@@ -116,7 +122,8 @@ des$assign_w_to_all_subjects()
     \if{html}{\out{<div class="arguments">}}
     \describe{
       \item{\code{factors}}{A list where names are factor names and values are number of
-levels (e.g. list(A=2, B=2)).}
+levels (e.g. list(treatment = 2)). The product of levels across all factors must
+currently equal exactly 2 (two-arm only).}
       \item{\code{response_type}}{The data type of response values.}
       \item{\code{include_is_missing_as_a_new_feature}}{Flag for missingness indicators.}
       \item{\code{n}}{The sample size.}
@@ -129,65 +136,6 @@ levels (e.g. list(A=2, B=2)).}
   }
   \subsection{Returns}{
     A new `DesignFixedFactorial` object
-  }
-}
-
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignFixedFactorial-assign_w_to_all_subjects"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignFixedFactorial-assign_w_to_all_subjects}{}}}
-\subsection{\code{DesignFixedFactorial$assign_w_to_all_subjects()}}{
-  Assign treatment (factor combination) to all subjects.
-For factorial designs the w vector stores factor combination indices.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{DesignFixedFactorial$assign_w_to_all_subjects(w_precomputed = NULL)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{w_precomputed}}{Optional pre-computed factor combination index vector.}
-    }
-    \if{html}{\out{</div>}}
-  }
-}
-
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignFixedFactorial-draw_ws_according_to_design"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignFixedFactorial-draw_ws_according_to_design}{}}}
-\subsection{\code{DesignFixedFactorial$draw_ws_according_to_design()}}{
-  Draw multiple treatment assignment vectors according to balanced factorial randomization.
-NOTE: Factorial designs return factor combination indices (1..num_combinations), not \{-1,+1\}.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{DesignFixedFactorial$draw_ws_according_to_design(r = 100)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{r}}{The number of designs to draw.}
-    }
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    A matrix of size n x r with factor combination indices.
-  }
-}
-
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DesignFixedFactorial-get_w"></a>}}
-\if{latex}{\out{\hypertarget{method-DesignFixedFactorial-get_w}{}}}
-\subsection{\code{DesignFixedFactorial$get_w()}}{
-  Get the factor combination index assigned to each subject.
-NOTE: For factorial designs this returns raw factor indices, not \{-1,+1\}.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{DesignFixedFactorial$get_w()}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Returns}{
-    An integer vector of factor combination indices.
   }
 }
 

@@ -3091,15 +3091,18 @@ SimulationFramework = R6::R6Class("SimulationFramework",
         } else if (!is.null(obs_out) && !is.null(obs_out$true_estimand)) {
           true_mean_diff_ate = as.numeric(obs_out$true_estimand)[1L]
         }
-        # Extract signed w once; used to regenerate y for y-reps 2..Nrep_Y_w.
-        w_signed_for_yrep = 2L * as.integer(des_obj$get_w()) - 1L
+        # Extract w once; used to regenerate y for y-reps 2..Nrep_Y_w. Must match
+        # the untransformed des_obj$get_w() encoding used for y-rep 1 (below) --
+        # get_w() already returns the design's public encoding (e.g. {-1,+1} for
+        # binary designs), so re-applying 2*w-1 here double-transforms it.
+        w_for_yrep = des_obj$get_w()
         # Y-rep loop: for each w-rep draw Nrep_Y_w independent outcome vectors.
         for (y_rep in seq_len(state$Nrep_Y_w)) {
           current_rep_i = (w_rep_i - 1L) * state$Nrep_Y_w + y_rep
           # For y-rep 2+: regenerate responses on the existing design object.
           # (X and w are unchanged; only y is redrawn.)
           if (y_rep > 1L) {
-            out_y = apply_treatment_and_noise(y_linear_model, w_signed_for_yrep, rep_data)
+            out_y = apply_treatment_and_noise(y_linear_model, w_for_yrep, rep_data)
             des_obj$add_all_subject_responses(out_y$y, out_y$dead)
           }
         for (ii in seq_along(state$inference_classes)) {

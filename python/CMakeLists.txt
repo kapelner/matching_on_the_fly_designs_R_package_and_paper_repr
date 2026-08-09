@@ -201,6 +201,17 @@ endif()
 target_link_libraries(_core PRIVATE ${BLAS_LIBRARIES})
 
 target_compile_definitions(_core PRIVATE NDEBUG EIGEN_NO_DEBUG)
+if(MSVC)
+    # M_PI (and the other <cmath> M_* constants) is a POSIX/GNU extension --
+    # glibc/Apple libc++ expose it unconditionally, but MSVC's CRT only
+    # defines it when _USE_MATH_DEFINES is set before <cmath>/<math.h> is
+    # first included. EDI/src uses M_PI directly in several files (shared
+    # via _helper_functions_core.h/_glmm_engine.h, hence a target-wide
+    # define here rather than patching each file's include order) -- the R
+    # package build never hit this because RcppEigen/R itself always
+    # defines M_PI regardless of platform.
+    target_compile_definitions(_core PRIVATE _USE_MATH_DEFINES)
+endif()
 if(EDI_USING_SCIPY_OPENBLAS)
     target_include_directories(_core PRIVATE ${SCIPY_OPENBLAS_INCLUDE_DIR})
     # scipy_openblas32 renames its exported BLAS/CBLAS symbols with a

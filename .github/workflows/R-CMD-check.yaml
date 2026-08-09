@@ -226,6 +226,16 @@ jobs:
         working-directory: EDI
         run: RD CMD check --no-manual --no-build-vignettes --as-cran EDI_*.tar.gz
 
+      # RD CMD check's own console output doesn't include the actual
+      # compiler/linker error when "checking whether package can be
+      # installed" fails -- only a pointer to this file, which this job
+      # (unlike R-CMD-check's r-lib/actions/check-r-package@v2 jobs, which
+      # upload it as an artifact automatically) has no other way to surface.
+      - name: Show 00install.out on failure
+        if: failure()
+        working-directory: EDI
+        run: cat EDI.Rcheck/00install.out || true
+
   # Valgrind memcheck build. Catches memory bugs (uninitialized reads,
   # out-of-bounds access, use-after-free, invalid frees) in the src/ kernels
   # that ASAN/UBSAN above can miss and a normal build can't see at all.
@@ -277,4 +287,12 @@ jobs:
       - name: Check under valgrind
         working-directory: EDI
         run: RD CMD check --no-manual --no-build-vignettes --as-cran --use-valgrind EDI_*.tar.gz
+
+      # See the sanitizers job's identical step -- RD CMD check's console
+      # output doesn't include the actual install-time error, only a
+      # pointer to this file.
+      - name: Show 00install.out on failure
+        if: failure()
+        working-directory: EDI
+        run: cat EDI.Rcheck/00install.out || true
 
