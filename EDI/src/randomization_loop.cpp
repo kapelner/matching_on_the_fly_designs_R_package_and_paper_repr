@@ -38,11 +38,11 @@ NumericVector randomization_loop_cpp(
 	);
 
 // #pragma omp for schedule(dynamic) // Temporarily disable OpenMP for debugging
-	for (int r = 0; r < r; ++r) {
+	for (int i = 0; i < r; ++i) {
 		// Call R function to run one randomization iteration
 		// Each thread uses its own design and inference objects
 		NumericVector result = run_randomization_iteration_fn(thread_objects);
-		estimates[r] = result[0];
+		estimates[i] = result[0];
 	}
 	}
 

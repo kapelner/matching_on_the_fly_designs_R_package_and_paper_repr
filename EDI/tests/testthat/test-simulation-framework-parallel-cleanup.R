@@ -60,6 +60,12 @@ test_that("SimulationFramework restores num_cores_override", {
 
 test_that("mirai use blocks later fork clusters in the same R session", {
 	skip_if_not_installed("mirai")
+	# set_num_cores() takes the mirai path whenever .Platform$OS.type != "unix"
+	# (see globals.R), so on Windows it never reaches the fork branch this
+	# test is exercising -- there's no "switch to fork" to block in the first
+	# place, so set_num_cores(2L) below just re-initializes mirai daemons
+	# instead of erroring.
+	skip_on_os("windows")
 	ns = asNamespace("EDI")
 	old_mirai_used = ns$edi_env$mirai_has_been_used
 	on.exit({

@@ -41,6 +41,18 @@ name: R-CMD-check
 # benchmark/ scripts, the python/ subproject, package_metadata/ python
 # integration scripts, etc.) don't spend CI minutes on a full compiled-package
 # matrix build.
+#
+# Three jobs, covering what CRAN's own incoming checks do beyond a single
+# --as-cran run on one machine:
+#   - R-CMD-check:              the 5-platform/R-version --as-cran matrix.
+#   - R-CMD-check-no-suggests:  same check with none of EDI's Suggests
+#     packages installed (dependencies: NA), to catch an unconditional use of
+#     an optional package that isn't properly guarded by requireNamespace()/
+#     skip_if_not_installed() -- the main matrix always has every Suggests
+#     package present, so it can't see this class of bug.
+#   - R-CMD-check-sanitizers:   R-devel built with -fsanitize=address,undefined
+#     (rocker/r-devel-san), to catch C++ undefined behavior in src/ that a
+#     normal optimized build silently tolerates.
 
 jobs:
   R-CMD-check:
@@ -96,3 +108,82 @@ jobs:
           # ("New submission") -- so "note" here means "fail on anything we can
           # actually still do something about."
           error-on: '"note"'
+
+  # CRAN also verifies a package works with only its hard dependencies
+  # (Depends/Imports/LinkingTo) present -- catching an unconditional use of a
+  # Suggested package that isn't properly guarded by requireNamespace()/
+  # skip_if_not_installed(). The main matrix job above always has every
+  # Suggests package installed, so it can't catch this class of bug; this
+  # job deliberately installs none of them (dependencies: NA is pak's "hard
+  # dependencies only" spec) and sets _R_CHECK_SUGGESTS_ONLY_ to match.
+  R-CMD-check-no-suggests:
+    runs-on: ubuntu-latest
+    name: ubuntu-latest (release, no Suggests)
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+      EDI_PORTABLE: 1
+      _R_CHECK_SUGGESTS_ONLY_: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: EDI
+          extra-packages: any::rcmdcheck
+          dependencies: 'NA'
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          working-directory: EDI
+          args: 'c("--no-manual", "--as-cran")'
+          build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
+          error-on: '"note"'
+
+  # ASAN/UBSAN sanitizer build. Catches C++ undefined behavior (out-of-bounds
+  # access, sign/integer overflow, misaligned access, use-after-free, etc.)
+  # in the src/ kernels that a normal optimized build silently tolerates --
+  # exactly the class of bug the main matrix job's --as-cran run cannot see,
+  # since neither gcc/clang nor R CMD check instrument for it by default.
+  # rocker/r-devel-san ships R-devel pre-built with -fsanitize=address,undefined
+  # as its normal R/Rscript, so this otherwise mirrors a plain R CMD check.
+  # Given the whole test suite runs under sanitizer instrumentation (slower
+  # than a normal build, though not as extreme as valgrind), this has its own
+  # generous-but-bounded timeout so a genuine hang can't repeat the >6-hour
+  # stuck-job incident the Windows job hit before (see git history).
+  R-CMD-check-sanitizers:
+    runs-on: ubuntu-latest
+    name: R-devel (ASAN/UBSAN)
+    timeout-minutes: 180
+    container:
+      image: rocker/r-devel-san
+
+    env:
+      EDI_PORTABLE: 1
+      R_KEEP_PKG_SOURCE: yes
+      NOT_CRAN: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install EDI's Depends/Imports/LinkingTo (Suggests skipped -- not needed to catch memory bugs in the core kernels, and roughly doubles this already-slow job otherwise)
+        working-directory: EDI
+        run: |
+          RDscript -e 'install.packages(c("R6","checkmate","Rcpp","RcppEigen","RcppNumerical","data.table","survival","missRanger","missForest","numDeriv","digest","methods","MASS","RhpcBLASctl","randomizr","testthat"), repos = "https://cloud.r-project.org")'
+
+      - name: Build
+        working-directory: EDI
+        run: RD CMD build --no-build-vignettes --no-manual .
+
+      - name: Check under ASAN/UBSAN
+        working-directory: EDI
+        run: RD CMD check --no-manual --no-build-vignettes --as-cran EDI_*.tar.gz
+

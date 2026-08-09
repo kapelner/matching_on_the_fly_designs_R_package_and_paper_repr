@@ -174,6 +174,7 @@ GEEResult gee_pairs_singletons_cpp_impl(const Eigen::Ref<const MatrixXd>& X,
 
     double alpha = 0.0; bool converged = false; int iter = 0;
     for (; iter < maxit; ++iter) {
+        edi_check_R_user_interrupt_every(iter);
         VectorXd mu(n), resid(n);
         for (int i = 0; i < n; ++i) { mu[i] = gee_link_inv(X.row(i).dot(beta), family); resid[i] = y[i] - mu[i]; }
         alpha = gee_estimate_exchangeable_alpha(resid, mu, grp_start, grp_size, family, weights);
