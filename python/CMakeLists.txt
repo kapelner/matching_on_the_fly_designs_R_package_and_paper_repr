@@ -30,18 +30,35 @@ find_package(OpenMP)
 # cibuildwheel configs) -- installed via [tool.cibuildwheel]'s
 # `before-build`, never a hard `EDI/src` dependency.
 find_package(BLAS QUIET)
+set(EDI_USING_SCIPY_OPENBLAS FALSE)
 if(NOT BLAS_FOUND)
+    # scipy_openblas32's actual Python API (see its __init__.py) is
+    # get_lib_dir()/get_include_dir()/get_library()/get_pkg_config() --
+    # there is no get_cmake_dir() and no CMake package config file at all,
+    # so this queries those directly and builds BLAS_LIBRARIES by hand
+    # rather than routing through find_package(BLAS).
     execute_process(
-        COMMAND ${Python_EXECUTABLE} -c "import scipy_openblas32 as s; print(s.get_cmake_dir())"
-        OUTPUT_VARIABLE SCIPY_OPENBLAS_CMAKE_DIR
+        COMMAND ${Python_EXECUTABLE} -c "import scipy_openblas32 as s; print(s.get_lib_dir())"
+        OUTPUT_VARIABLE SCIPY_OPENBLAS_LIB_DIR
         OUTPUT_STRIP_TRAILING_WHITESPACE
         RESULT_VARIABLE SCIPY_OPENBLAS_RESULT
         ERROR_QUIET
     )
-    if(SCIPY_OPENBLAS_RESULT EQUAL 0 AND SCIPY_OPENBLAS_CMAKE_DIR)
-        message(STATUS "System BLAS not found; using scipy-openblas32's bundled OpenBLAS (${SCIPY_OPENBLAS_CMAKE_DIR}).")
-        list(APPEND CMAKE_PREFIX_PATH ${SCIPY_OPENBLAS_CMAKE_DIR})
-        find_package(BLAS REQUIRED)
+    if(SCIPY_OPENBLAS_RESULT EQUAL 0 AND SCIPY_OPENBLAS_LIB_DIR)
+        execute_process(
+            COMMAND ${Python_EXECUTABLE} -c "import scipy_openblas32 as s; print(s.get_include_dir())"
+            OUTPUT_VARIABLE SCIPY_OPENBLAS_INCLUDE_DIR
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        execute_process(
+            COMMAND ${Python_EXECUTABLE} -c "import scipy_openblas32 as s; print(s.get_library(fullname=True))"
+            OUTPUT_VARIABLE SCIPY_OPENBLAS_LIB_FILE
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        message(STATUS "System BLAS not found; using scipy-openblas32's bundled OpenBLAS (${SCIPY_OPENBLAS_LIB_DIR}/${SCIPY_OPENBLAS_LIB_FILE}).")
+        set(BLAS_LIBRARIES "${SCIPY_OPENBLAS_LIB_DIR}/${SCIPY_OPENBLAS_LIB_FILE}")
+        set(BLAS_FOUND TRUE)
+        set(EDI_USING_SCIPY_OPENBLAS TRUE)
     else()
         message(FATAL_ERROR
             "No BLAS found via find_package(BLAS), and scipy-openblas32 isn't "
@@ -184,10 +201,31 @@ endif()
 target_link_libraries(_core PRIVATE ${BLAS_LIBRARIES})
 
 target_compile_definitions(_core PRIVATE NDEBUG EIGEN_NO_DEBUG)
-target_compile_options(_core PRIVATE -Wno-ignored-attributes -fno-lto)
-if(NOT EDI_PY_PORTABLE)
-    target_compile_options(_core PRIVATE -march=native -mtune=native)
+if(EDI_USING_SCIPY_OPENBLAS)
+    target_include_directories(_core PRIVATE ${SCIPY_OPENBLAS_INCLUDE_DIR})
+    # scipy_openblas32 renames its exported BLAS/CBLAS symbols with a
+    # "scipy_" prefix (BLAS_SYMBOL_PREFIX=scipy_, see its get_pkg_config())
+    # to avoid clashing with any other OpenBLAS build loaded in the same
+    # process -- _helper_functions_core.h's `extern "C" void cblas_dsyrk(...)`
+    # declares and calls the un-prefixed name, so without this the linker
+    # can't resolve it against scipy_openblas32's library. This #define
+    # (via -D) transparently renames every `cblas_dsyrk` token, in both the
+    # extern "C" declaration and the call site, to the actual exported
+    # symbol -- unnecessary (and unset) when a system/manylinux/Accelerate
+    # BLAS provides the un-prefixed name directly.
+    target_compile_definitions(_core PRIVATE cblas_dsyrk=scipy_cblas_dsyrk)
 endif()
-target_compile_options(_core PRIVATE $<$<CONFIG:Release>:-O3>)
+# These are GCC/Clang flags; MSVC (Windows wheel builds, see
+# [tool.cibuildwheel.windows]) doesn't understand '-' prefixed options like
+# this at all -- cl.exe merely warns (D9002) and ignores them rather than
+# failing, but there's no reason to pass nonsense flags to it. CMake's own
+# default Release flags already include MSVC's /O2 without any help here.
+if(NOT MSVC)
+    target_compile_options(_core PRIVATE -Wno-ignored-attributes -fno-lto)
+    if(NOT EDI_PY_PORTABLE)
+        target_compile_options(_core PRIVATE -march=native -mtune=native)
+    endif()
+    target_compile_options(_core PRIVATE $<$<CONFIG:Release>:-O3>)
+endif()
 
 install(TARGETS _core LIBRARY DESTINATION edi_kernels)

@@ -134,6 +134,18 @@ jobs:
   # Suggests package installed, so it can't catch this class of bug; this
   # job deliberately installs none of them (dependencies: NA is pak's "hard
   # dependencies only" spec) and sets _R_CHECK_SUGGESTS_ONLY_ to match.
+  #
+  # _R_CHECK_FORCE_SUGGESTS_ is a separate, easy-to-confuse-with-the-above
+  # setting: per tools:::.check_packages (R's own check.R), it's what
+  # controls whether a *missing* Suggested package is a hard "checking
+  # package dependencies ... ERROR" ("Packages suggested but not available")
+  # -- default TRUE, and --as-cran never overrides it. _R_CHECK_SUGGESTS_ONLY_
+  # controls something unrelated (restricting the check's library search
+  # path), so it alone doesn't stop that ERROR; without this, a job that
+  # deliberately doesn't install Suggests (as this one does, on purpose)
+  # fails immediately in "checking package dependencies" before it can
+  # actually exercise the missing-Suggests-guard code this job exists to
+  # test.
   R-CMD-check-no-suggests:
     runs-on: ubuntu-latest
     name: ubuntu-latest (release, no Suggests)
@@ -143,6 +155,7 @@ jobs:
       R_KEEP_PKG_SOURCE: yes
       EDI_PORTABLE: 1
       _R_CHECK_SUGGESTS_ONLY_: true
+      _R_CHECK_FORCE_SUGGESTS_: false
 
     steps:
       - uses: actions/checkout@v7
@@ -188,6 +201,11 @@ jobs:
       EDI_PORTABLE: 1
       R_KEEP_PKG_SOURCE: yes
       NOT_CRAN: true
+      # See R-CMD-check-no-suggests's comment above -- this job also
+      # deliberately skips installing most Suggests, so without this,
+      # "checking package dependencies" ERRORs out before the actual
+      # ASAN/UBSAN check ever runs.
+      _R_CHECK_FORCE_SUGGESTS_: false
 
     steps:
       - uses: actions/checkout@v7
@@ -235,6 +253,11 @@ jobs:
       EDI_PORTABLE: 1
       R_KEEP_PKG_SOURCE: yes
       NOT_CRAN: true
+      # See R-CMD-check-no-suggests's comment above -- this job also
+      # deliberately skips installing most Suggests, so without this,
+      # "checking package dependencies" ERRORs out before the actual
+      # valgrind check ever runs.
+      _R_CHECK_FORCE_SUGGESTS_: false
 
     steps:
       - uses: actions/checkout@v7

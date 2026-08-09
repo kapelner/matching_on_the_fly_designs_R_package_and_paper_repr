@@ -143,6 +143,12 @@ prob_censoring = 0.15
 r = 151
 pval_epsilon = 0.007
 FUNCTION_TIMEOUT_SEC = 120
+HEARTBEAT_LOG_FILE = Sys.getenv(
+	"COMPREHENSIVE_HEARTBEAT_LOG",
+	file.path(tempdir(), paste0("comprehensive_tests_heartbeat_", Sys.getpid(), ".log"))
+)
+HEARTBEAT_INTERVAL_SEC = as.numeric(Sys.getenv("COMPREHENSIVE_HEARTBEAT_INTERVAL_SEC", "1"))
+HEARTBEAT_GAP_THRESHOLD_SEC = as.numeric(Sys.getenv("COMPREHENSIVE_HEARTBEAT_GAP_THRESHOLD_SEC", "5"))
 test_compute_confidence_interval_rand = TRUE
 run_debug_resampling = Sys.getenv("COMPREHENSIVE_DEBUG_RESAMPLING", "0") %in% c("1", "true", "TRUE", "yes", "YES")
 run_parametric_bootstrap_ci = Sys.getenv("COMPREHENSIVE_PARAM_BOOT_CI", "0") %in% c("1", "true", "TRUE", "yes", "YES")
@@ -212,6 +218,74 @@ round_duration_field = function(value){
 	if (!is.finite(num)) return(num)
 	round(num, 3)
 }
+
+heartbeat_cache = new.env(parent = emptyenv())
+heartbeat_cache$path = NA_character_
+heartbeat_cache$size = NA_real_
+heartbeat_cache$mtime = as.POSIXct(NA)
+heartbeat_cache$epochs = numeric()
+
+start_heartbeat_process = function(){
+	if (!is.finite(HEARTBEAT_INTERVAL_SEC) || HEARTBEAT_INTERVAL_SEC <= 0) return(invisible(FALSE))
+	dir.create(dirname(HEARTBEAT_LOG_FILE), recursive = TRUE, showWarnings = FALSE)
+	parent_pid = Sys.getpid()
+	cmd = sprintf(
+		"while kill -0 %d 2>/dev/null; do date +%%s >> %s; sleep %s; done",
+		parent_pid,
+		shQuote(HEARTBEAT_LOG_FILE),
+		shQuote(as.character(HEARTBEAT_INTERVAL_SEC))
+	)
+	tryCatch({
+		system2("sh", c("-c", cmd), wait = FALSE, stdout = FALSE, stderr = FALSE)
+		invisible(TRUE)
+	}, error = function(e) invisible(FALSE))
+}
+
+read_heartbeat_epochs = function(){
+	if (!file.exists(HEARTBEAT_LOG_FILE)) return(numeric())
+	info = file.info(HEARTBEAT_LOG_FILE)
+	same_file =
+		identical(heartbeat_cache$path, HEARTBEAT_LOG_FILE) &&
+		isTRUE(heartbeat_cache$size == info$size) &&
+		isTRUE(heartbeat_cache$mtime == info$mtime)
+	if (same_file) return(heartbeat_cache$epochs)
+	epochs = tryCatch(
+		scan(HEARTBEAT_LOG_FILE, what = numeric(), quiet = TRUE),
+		error = function(e) numeric()
+	)
+	epochs = sort(unique(epochs[is.finite(epochs)]))
+	heartbeat_cache$path = HEARTBEAT_LOG_FILE
+	heartbeat_cache$size = info$size
+	heartbeat_cache$mtime = info$mtime
+	heartbeat_cache$epochs = epochs
+	epochs
+}
+
+sleep_overlap_sec = function(start_epoch, end_epoch){
+	if (!is.finite(start_epoch) || !is.finite(end_epoch) || end_epoch <= start_epoch) return(0)
+	epochs = read_heartbeat_epochs()
+	if (length(epochs) < 2L) return(0)
+	gap = diff(epochs)
+	gap_idx = which(is.finite(gap) & gap > HEARTBEAT_GAP_THRESHOLD_SEC)
+	if (!length(gap_idx)) return(0)
+	sum(vapply(gap_idx, function(i){
+		sleep_start = epochs[i] + HEARTBEAT_INTERVAL_SEC
+		sleep_end = epochs[i + 1L]
+		max(0, min(end_epoch, sleep_end) - max(start_epoch, sleep_start))
+	}, numeric(1)))
+}
+
+sleep_adjust_duration = function(duration_time_sec, start_epoch = NA_real_, end_epoch = NA_real_){
+	raw_duration = suppressWarnings(as.numeric(duration_time_sec))
+	if (!is.finite(raw_duration)) {
+		return(list(adjusted = raw_duration, sleep_adjustment = NA_real_))
+	}
+	sleep_adjustment = sleep_overlap_sec(start_epoch, end_epoch)
+	adjusted = max(0, raw_duration - sleep_adjustment)
+	list(adjusted = adjusted, sleep_adjustment = sleep_adjustment)
+}
+
+start_heartbeat_process()
 
 add_assignment_only_cluster_id = function(X_design, strata_cols = character(0), cluster_size = 2L){
 	X_out = as.data.frame(X_design)
@@ -341,6 +415,12 @@ results_dt = data.table(
 	id = character(),
 	timestamp = character(),
 	duration_time_sec = numeric(),
+	duration_time_sec_raw = numeric(),
+	duration_time_sec_sleep_adjusted = numeric(),
+	duration_sleep_adjustment_sec = numeric(),
+	start_epoch = numeric(),
+	end_epoch = numeric(),
+	heartbeat_log = character(),
 	result_1 = character(),
 	result_2 = character(),
 	coverage_truth = numeric(),
@@ -357,6 +437,30 @@ results_dt = data.table(
 	result = character(),
 	status = character()
 )
+ensure_existing_results_schema = function(){
+	if (!file.exists(results_file) || file.info(results_file)$size == 0 || nrow(existing_results_dt) == 0L) {
+		return(invisible(FALSE))
+	}
+	expected_cols = names(results_dt)
+	missing_cols = setdiff(expected_cols, names(existing_results_dt))
+	if (!length(missing_cols)) return(invisible(FALSE))
+	for (col in missing_cols) {
+		if (col %in% c("heartbeat_log", "result", "status", "error_message", "result_1", "result_2", "timestamp", "id", "dataset", "response_type", "design", "inference_class", "function_run")) {
+			existing_results_dt[, (col) := NA_character_]
+		} else if (col == "beta_T" || grepl("duration|epoch|pval|prob|sd|coverage", col)) {
+			existing_results_dt[, (col) := NA_real_]
+		} else if (col == "beta_T_in_confidence_interval") {
+			existing_results_dt[, (col) := NA]
+		} else {
+			existing_results_dt[, (col) := NA_integer_]
+		}
+	}
+	extra_cols = setdiff(names(existing_results_dt), expected_cols)
+	data.table::setcolorder(existing_results_dt, c(expected_cols, extra_cols))
+	data.table::fwrite(existing_results_dt, results_file, na = "NA")
+	invisible(TRUE)
+}
+ensure_existing_results_schema()
 RESULTS_WRITE_BATCH_SIZE = 50L
 write_results_if_needed = function(force = FALSE){
 	if (nrow(results_dt) > 0L && (force || nrow(results_dt) >= RESULTS_WRITE_BATCH_SIZE)){
@@ -415,7 +519,15 @@ current_inference_result_label = function(inf_name){
 	paste0(inf_name, current_design_formula_suffix())
 }
 
-record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, inference_class, function_run, result, status, duration_time_sec, error_message = NA_character_){
+record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_type, design_type, inference_class, function_run, result, status, duration_time_sec, error_message = NA_character_, start_epoch = NA_real_, end_epoch = NA_real_){
+	if (!is.finite(start_epoch) &&
+		exists(".comprehensive_current_call_start_epoch", envir = .GlobalEnv, inherits = FALSE)) {
+		start_epoch = get(".comprehensive_current_call_start_epoch", envir = .GlobalEnv)
+	}
+	if (!is.finite(end_epoch)) {
+		end_epoch = as.numeric(Sys.time())
+	}
+	duration_adjustment = sleep_adjust_duration(duration_time_sec, start_epoch, end_epoch)
 	if (identical(as.numeric(beta_T), 0) &&
 		grepl("InferenceSurvivalDepCensTransformRegr", inference_class, fixed = TRUE) &&
 		is.atomic(result)) {
@@ -505,6 +617,12 @@ record_result = function(dataset_name, dataset_n_rows, dataset_n_cols, response_
 			id = build_result_key(rep_curr, beta_T, dataset_name, response_type, design_type, inference_class, function_run),
 			timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"),
 			duration_time_sec = round_duration_field(duration_time_sec),
+			duration_time_sec_raw = round_duration_field(duration_time_sec),
+			duration_time_sec_sleep_adjusted = round_duration_field(duration_adjustment$adjusted),
+			duration_sleep_adjustment_sec = round_duration_field(duration_adjustment$sleep_adjustment),
+			start_epoch = round_duration_field(start_epoch),
+			end_epoch = round_duration_field(end_epoch),
+			heartbeat_log = HEARTBEAT_LOG_FILE,
 			result_1 = result_1,
 			result_2 = result_2,
 			coverage_truth = coverage_truth,
@@ -960,6 +1078,13 @@ safe_call = function(label, expr){
 
 	message("          Calling ", label, "()")
 		start_elapsed = unname(proc.time()[["elapsed"]])
+		start_epoch = as.numeric(Sys.time())
+		assign(".comprehensive_current_call_start_epoch", start_epoch, envir = .GlobalEnv)
+		on.exit({
+			if (exists(".comprehensive_current_call_start_epoch", envir = .GlobalEnv, inherits = FALSE)) {
+				rm(".comprehensive_current_call_start_epoch", envir = .GlobalEnv)
+			}
+		}, add = TRUE)
 		tryCatch({
 			old_ci_timeout_deadline = getOption("EDI.ci_timeout_deadline", default = NULL)
 			options(EDI.ci_timeout_deadline = start_elapsed + FUNCTION_TIMEOUT_SEC)
@@ -1265,6 +1390,13 @@ call_direct_asymp = function(method_name, testing_type, ...){
 		if (!is.null(pending_banner)) { message(pending_banner); pending_banner <<- NULL }
 		message("          Calling ", label, "()")
 		start_elapsed = unname(proc.time()[["elapsed"]])
+		start_epoch = as.numeric(Sys.time())
+		assign(".comprehensive_current_call_start_epoch", start_epoch, envir = .GlobalEnv)
+		on.exit({
+			if (exists(".comprehensive_current_call_start_epoch", envir = .GlobalEnv, inherits = FALSE)) {
+				rm(".comprehensive_current_call_start_epoch", envir = .GlobalEnv)
+			}
+		}, add = TRUE)
 		debug_result = tryCatch(expr, error = function(e) {
 			dur = unname(proc.time()[["elapsed"]]) - start_elapsed
 			cat(sprintf("              (Duration: %.3gs)\n", dur))
