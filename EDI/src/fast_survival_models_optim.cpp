@@ -676,7 +676,7 @@ edi::ResultMap fast_dep_cens_transform_optim_internal(
     int p = (int)X.cols();
     int total = 2 * p + 3;
     Eigen::VectorXd params(total);
-    if (warm_start_params.has_value()) {
+    if (warm_start_params.has_value() && warm_start_params->size() == total) {
         params = *warm_start_params;
     } else if (smart_cold_start) {
         params.setZero();

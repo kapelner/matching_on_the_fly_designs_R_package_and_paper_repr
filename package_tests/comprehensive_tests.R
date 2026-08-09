@@ -700,10 +700,13 @@ run_inference_checks_impl = function(seq_des_inf, response_type, design_type, da
 		"InferencePropQuantileRegr",
 		"InferencePropBetaRegr",
 		"InferencePropFractionalLogit",
-		"InferenceCountHurdleNegBin"
+		"InferenceCountHurdleNegBin",
+		"InferenceCountPoissonKKGEE",
+		"InferencePropKKGEE"
 	))
 	skip_m_out_of_n_ci_slow = skip_m_out_of_n_slow || is_exact_inference_class(c(
-		"InferenceCountPoissonKKGEE"
+		"InferenceCountPoissonKKGEE",
+		"InferencePropKKGEE"
 	))
 	skip_subsampling_slow = is_exact_inference_class(c(
 		"InferenceSurvivalKKClaytonCopulaOneLik",
