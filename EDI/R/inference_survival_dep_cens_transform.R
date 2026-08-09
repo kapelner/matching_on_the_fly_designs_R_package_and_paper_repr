@@ -391,7 +391,7 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 			j_treat = 2L  # treatment is second param = beta_event[treatment]
 			n_params = 2L * ncol(X_fit) + 3L
 			list(
-				X = X_fit, y = y, j = j_treat,
+				X = X_fit, y = y, dead = dead, j = j_treat,
 				full_fit = private$cached_mod,
 				fit_null = function(delta, start = NULL){
 					warm_start_params = start %||% private$get_fit_warm_start_for_length("params", n_params)
@@ -498,18 +498,57 @@ InferenceSurvivalDepCensTransformRegr = R6::R6Class("InferenceSurvivalDepCensTra
 
 			y_obs        = spec$y_obs  %||% spec$y
 			dead_obs     = spec$dead   %||% spec$event
+			if (length(y_obs) != n || length(dead_obs) != n) return(NULL)
 			C_use        = ifelse(dead_obs == 0L, y_obs, C_sim)
 
 			y_sim        = pmin(T_sim, C_use)
 			event_sim    = as.integer(T_sim <= C_use)
 
 			ws           = private$get_fit_warm_start_for_length("beta", n_params) %||% params_null
+			warm_fisher  = private$get_fit_warm_start_fisher(n_params)
+			capture_dir  = Sys.getenv("EDI_CAPTURE_DEP_CENS_PARAM_BOOT_DRAW", unset = "")
+			if (nzchar(capture_dir)) {
+				dir.create(capture_dir, recursive = TRUE, showWarnings = FALSE)
+				suspicious_reasons = c(
+					if (length(unique(event_sim[is.finite(event_sim)])) < 2L) "single_event_class",
+					if (any(!is.finite(y_sim))) "nonfinite_y_sim",
+					if (any(y_sim <= 0, na.rm = TRUE)) "nonpositive_y_sim",
+					if (any(!is.finite(event_sim))) "nonfinite_event_sim",
+					if (any(!event_sim %in% c(0L, 1L), na.rm = TRUE)) "nonbinary_event_sim",
+					if (any(!is.finite(params_null))) "nonfinite_params_null",
+					if (any(!is.finite(ws))) "nonfinite_warm_start",
+					if (!is.null(warm_fisher) && any(!is.finite(warm_fisher))) "nonfinite_warm_fisher"
+				)
+				capture_file = file.path(
+					capture_dir,
+					sprintf(
+						"dep_cens_param_boot_draw_pid%s_%s_%06d.rds",
+						Sys.getpid(),
+						format(Sys.time(), "%Y%m%d_%H%M%OS3"),
+						sample.int(1e6, 1L)
+					)
+				)
+				saveRDS(list(
+					X_fit = X_fit,
+					y_sim = y_sim,
+					event_sim = event_sim,
+					params_null = params_null,
+					ws = ws,
+					warm_start_fisher_info = warm_fisher,
+					delta = delta,
+					j = j,
+					n = n,
+					p = p,
+					suspicious = length(suspicious_reasons) > 0L,
+					suspicious_reasons = suspicious_reasons
+				), capture_file)
+			}
 			full         = tryCatch(
 				fast_dep_cens_transform_optim_cpp(
 					X_sexp = X_fit, y_sexp = y_sim, dead_sexp = event_sim,
 					estimate_only = FALSE,
 					warm_start_params = ws,
-					warm_start_fisher_info = private$get_fit_warm_start_fisher(n_params)
+					warm_start_fisher_info = warm_fisher
 				),
 				error = function(e) NULL
 			)
