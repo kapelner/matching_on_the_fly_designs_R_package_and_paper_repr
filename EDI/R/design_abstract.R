@@ -7,10 +7,13 @@
 #'
 #' @details
 #' Throughout the package, treatment assignment vectors \eqn{w} use the
-#' \eqn{\{-1, +1\}} encoding: \eqn{+1} indicates a treated subject and \eqn{-1}
+#' \eqn{\{0, 1\}} encoding: \eqn{1} indicates a treated subject and \eqn{0}
 #' a control subject.  All public methods that return or accept \eqn{w}
 #' (e.g. \code{get_w()}, \code{draw_ws_according_to_design()}) use this
-#' convention.
+#' convention. A handful of variance estimators (e.g. \code{InferenceIncidCMH},
+#' \code{InferenceIncidExtendedRobins}) recode to a signed \eqn{\{-1,+1\}}
+#' contrast internally where their formulas require it; that recoding is
+#' local to those classes and does not affect this public convention.
 #'
 #' @keywords internal
 #' @examples
@@ -230,15 +233,15 @@ Design = R6::R6Class("Design",
 		},
 		#' @description For analysis on already-completed experimental data
 		#'
-		#' @param w A \{-1,+1\} vector of subject assignments (+1 = treated, -1 = control).
+		#' @param w A \{0,1\} vector of subject assignments (1 = treated, 0 = control).
 		overwrite_all_subject_assignments = function(w) {
 			if (should_run_asserts()) {
-				assertIntegerish(w, lower = -1, upper = 1, any.missing = FALSE, len = private$t)
-				if (any(!(w %in% c(-1L, 1L)))) {
-					stop("overwrite_all_subject_assignments: w must contain only -1 (control) or +1 (treated).")
+				assertIntegerish(w, lower = 0, upper = 1, any.missing = FALSE, len = private$t)
+				if (any(!(w %in% c(0L, 1L)))) {
+					stop("overwrite_all_subject_assignments: w must contain only 0 (control) or 1 (treated).")
 				}
 			}
-			private$w = (as.numeric(w) + 1L) / 2L
+			private$w = as.numeric(w)
 		},
 		#' @description Check if this design was initialized with a fixed sample size n
 		#'
@@ -335,17 +338,16 @@ Design = R6::R6Class("Design",
 		},
 		#' @description Get w
 		#'
-		#' @return 			A \{-1,+1\} vector of subject assignments (+1 = treated, -1 = control).
+		#' @return 			A \{0,1\} vector of subject assignments (1 = treated, 0 = control).
 		get_w = function(){
-			2L * private$w - 1L
+			private$w
 		},
 		#' @description Draw treatment assignment vectors according to the design.
 		#'
 		#' @param r Number of vectors to draw. Default is 1.
-		#' @return A matrix of size n x r with \{-1,+1\} entries (+1 = treated, -1 = control).
+		#' @return A matrix of size n x r with \{0,1\} entries (1 = treated, 0 = control).
 		draw_ws_according_to_design = function(r = 1L){
-			result = private$draw_ws_raw(r)
-			2L * result - 1L
+			private$draw_ws_raw(r)
 		},
 		#' @description Get n, the sample size
 		#'

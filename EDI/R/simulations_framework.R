@@ -3008,7 +3008,7 @@ SimulationFramework = R6::R6Class("SimulationFramework",
             if (nrow(obs_out$X) != state$n)
               stop("custom_dgp returned X with ", nrow(obs_out$X), " rows; expected ", state$n)
             d$add_all_subjects_to_experiment(obs_out$X)
-            d$assign_w_to_all_subjects(2L * as.integer(obs_out$w) - 1L)
+            d$assign_w_to_all_subjects(as.integer(obs_out$w))
             dead_obs = obs_out$dead %||% rep(1L, state$n)
             d$add_all_subject_responses(obs_out$y, dead_obs)
           } else if (inherits(d, "DesignSeqOneByOne")) {

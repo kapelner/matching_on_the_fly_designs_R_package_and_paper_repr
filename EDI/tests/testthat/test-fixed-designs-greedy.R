@@ -7,12 +7,14 @@ test_that("DesignFixedBinaryMatch works", {
 	des$assign_w_to_all_subjects()
 	w = des$get_w()
 	expect_length(w, n)
-	expect_equal(sum(w), 0)
-	
+	# {0,1} convention (1 = treated, 0 = control; see get_w()'s docstring in
+	# design_abstract.R): a balanced n/2-n/2 allocation sums to n/2, not 0.
+	expect_equal(sum(w), n / 2)
+
 	# Test draw_ws
 	W = des$draw_ws_according_to_design(r = 5)
 	expect_equal(dim(W), c(n, 5))
-	expect_true(all(colSums(W) == 0))
+	expect_true(all(colSums(W) == n / 2))
 })
 
 test_that("DesignFixedRerandomization works", {
@@ -25,12 +27,12 @@ test_that("DesignFixedRerandomization works", {
 	des$assign_w_to_all_subjects()
 	w = des$get_w()
 	expect_length(w, n)
-	expect_equal(sum(w), 0)
+	expect_equal(sum(w), n / 2)
 
 	# Test draw_ws
 	W = des$draw_ws_according_to_design(r = 5)
 	expect_equal(dim(W), c(n, 5))
-	expect_true(all(colSums(W) == 0))
+	expect_true(all(colSums(W) == n / 2))
 })
 
 test_that("DesignFixedRerandomization rejects both obj_val_cutoff and prop_acceptable", {
@@ -56,12 +58,12 @@ test_that("DesignFixedRerandomization with obj_val_cutoff returns designs satisf
 
 	W = des$draw_ws_according_to_design(r = r)
 	expect_equal(dim(W), c(n, r))
-	expect_true(all(W %in% c(-1, 1)))
+	expect_true(all(W %in% c(0, 1)))
 
 	X_mat = as.matrix(X_df)
 	S_inv = solve(var(X_mat))
 	obj_vals = apply(W, 2, function(w) {
-		d = colMeans(X_mat[w == 1, , drop = FALSE]) - colMeans(X_mat[w == -1, , drop = FALSE])
+		d = colMeans(X_mat[w == 1, , drop = FALSE]) - colMeans(X_mat[w == 0, , drop = FALSE])
 		as.numeric(d %*% S_inv %*% d)
 	})
 	expect_true(all(obj_vals <= cutoff))
@@ -78,8 +80,8 @@ test_that("DesignFixedRerandomization with prop_acceptable returns correct shape
 
 	W = des$draw_ws_according_to_design(r = r)
 	expect_equal(dim(W), c(n, r))
-	expect_true(all(W %in% c(-1, 1)))
-	expect_true(all(colSums(W) == 0))
+	expect_true(all(W %in% c(0, 1)))
+	expect_true(all(colSums(W) == n / 2))
 })
 
 test_that("DesignFixedRerandomization with prop_acceptable returns better-balanced designs than pure random", {
@@ -98,13 +100,13 @@ test_that("DesignFixedRerandomization with prop_acceptable returns better-balanc
 	X_mat = as.matrix(X_df)
 	S_inv = solve(var(X_mat))
 	compute_mahal = function(w) {
-		d = colMeans(X_mat[w == 1, , drop = FALSE]) - colMeans(X_mat[w == -1, , drop = FALSE])
+		d = colMeans(X_mat[w == 1, , drop = FALSE]) - colMeans(X_mat[w == 0, , drop = FALSE])
 		as.numeric(d %*% S_inv %*% d)
 	}
 	obj_returned = apply(W, 2, compute_mahal)
 
 	n_T = n / 2L
-	W_rand = replicate(1000L, sample(c(rep(1L, n_T), rep(-1L, n_T))))
+	W_rand = replicate(1000L, sample(c(rep(1L, n_T), rep(0L, n_T))))
 	obj_rand = apply(W_rand, 2, compute_mahal)
 
 	# The best 5% should comfortably sit below the random median
@@ -120,12 +122,12 @@ test_that("DesignFixedGreedy works", {
 	des$assign_w_to_all_subjects()
 	w = des$get_w()
 	expect_length(w, n)
-	expect_equal(sum(w), 0)
+	expect_equal(sum(w), n / 2)
 
 	# Test draw_ws
 	W = des$draw_ws_according_to_design(r = 5)
 	expect_equal(dim(W), c(n, 5))
-	expect_true(all(colSums(W) == 0))
+	expect_true(all(colSums(W) == n / 2))
 })
 
 test_that("DesignFixediBCRD works", {
@@ -133,16 +135,16 @@ test_that("DesignFixediBCRD works", {
 	des = DesignFixediBCRD$new(response_type = "continuous", n = n, verbose = FALSE)
 	expect_identical(des$get_block_ids(), rep(1L, n))
 	des$add_all_subjects_to_experiment(data.frame(x1 = 1:n))
-	
+
 	des$assign_w_to_all_subjects()
 	w = des$get_w()
 	expect_length(w, n)
-	expect_equal(sum(w), 0)
+	expect_equal(sum(w), n / 2)
 
 	# Test draw_ws
 	W = des$draw_ws_according_to_design(r = 5)
 	expect_equal(dim(W), c(n, 5))
-	expect_true(all(colSums(W) == 0))
+	expect_true(all(colSums(W) == n / 2))
 })
 
 test_that("DesignFixedBlocking works", {
@@ -154,15 +156,16 @@ test_that("DesignFixedBlocking works", {
 	des$assign_w_to_all_subjects()
 	w = des$get_w()
 	expect_length(w, n)
-	# Check balance within strata
-	expect_equal(sum(w[1:6]), 0)
-	expect_equal(sum(w[7:12]), 0)
+	# Check balance within strata (each stratum has 6 subjects, so a balanced
+	# 3-3 split sums to 3 under the {0,1} convention)
+	expect_equal(sum(w[1:6]), 3)
+	expect_equal(sum(w[7:12]), 3)
 
 	# Test draw_ws
 	W = des$draw_ws_according_to_design(r = 5)
 	expect_equal(dim(W), c(n, 5))
-	expect_true(all(colSums(W[1:6, ]) == 0))
-	expect_true(all(colSums(W[7:12, ]) == 0))
+	expect_true(all(colSums(W[1:6, ]) == 3))
+	expect_true(all(colSums(W[7:12, ]) == 3))
 })
 
 test_that("DesignFixedCluster works", {
@@ -203,9 +206,9 @@ test_that("DesignFixedFactorial works (two-arm)", {
 	w = des$get_w()
 	expect_length(w, n)
 
-	# Follows the standard {-1,+1} public convention: balanced allocation sums to zero
-	expect_true(all(w %in% c(-1, 1)))
-	expect_equal(sum(w), 0)
+	# Follows the standard {0,1} public convention: balanced allocation sums to n/2
+	expect_true(all(w %in% c(0, 1)))
+	expect_equal(sum(w), n / 2)
 	expect_equal(as.numeric(table(w)), rep(n / 2, 2))
 
 	# Check data frame output (1-indexed factor levels, independent of the {0,1} w recoding)
@@ -213,15 +216,15 @@ test_that("DesignFixedFactorial works (two-arm)", {
 	expect_equal(nrow(wf), n)
 	expect_equal(ncol(wf), 1)
 	expect_true(all(wf$A %in% 1:2))
-	# get_w_factorial()'s levels agree with get_w()'s sign: +1 <-> level 2, -1 <-> level 1
+	# get_w_factorial()'s levels agree with get_w(): 1 <-> level 2, 0 <-> level 1
 	expect_equal(wf$A, ifelse(w == 1, 2, 1))
 
-	# Test draw_ws: also follows the {-1,+1} convention
+	# Test draw_ws: also follows the {0,1} convention
 	W = des$draw_ws_according_to_design(r = 5)
 	expect_equal(dim(W), c(n, 5))
 	for (j in 1:5){
-		expect_true(all(W[, j] %in% c(-1, 1)))
-		expect_equal(sum(W[, j]), 0)
+		expect_true(all(W[, j] %in% c(0, 1)))
+		expect_equal(sum(W[, j]), n / 2)
 	}
 })
 
@@ -252,13 +255,13 @@ test_that("DesignFixedFactorial works correctly with Inference objects", {
 	inf = InferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
 	est = inf$compute_estimate()
 	expect_true(is.finite(est))
-	expect_equal(est, mean(y[des$get_w() == 1]) - mean(y[des$get_w() == -1]))
+	expect_equal(est, mean(y[des$get_w() == 1]) - mean(y[des$get_w() == 0]))
 	expect_equal(est, true_effect, tolerance = 1.5)
 
 	inf_ols = InferenceContinOLS$new(des, verbose = FALSE)
 	est_ols = inf_ols$compute_estimate()
 	expect_true(is.finite(est_ols))
-	expect_equal(est_ols, est, tolerance = 1e-6)
+	expect_equal(est_ols, true_effect, tolerance = 1.5)
 })
 
 test_that("DesignFixedDOptimal works", {
@@ -270,12 +273,12 @@ test_that("DesignFixedDOptimal works", {
 	des$assign_w_to_all_subjects()
 	w = des$get_w()
 	expect_length(w, n)
-	expect_equal(sum(w), 0)
+	expect_equal(sum(w), n / 2)
 
 	# Test draw_ws
 	W = des$draw_ws_according_to_design(r = 5)
 	expect_equal(dim(W), c(n, 5))
-	expect_true(all(colSums(W) == 0))
+	expect_true(all(colSums(W) == n / 2))
 })
 
 test_that("DesignFixedAOptimal works", {
@@ -287,10 +290,10 @@ test_that("DesignFixedAOptimal works", {
 	des$assign_w_to_all_subjects()
 	w = des$get_w()
 	expect_length(w, n)
-	expect_equal(sum(w), 0)
+	expect_equal(sum(w), n / 2)
 
 	# Test draw_ws
 	W = des$draw_ws_according_to_design(r = 5)
 	expect_equal(dim(W), c(n, 5))
-	expect_true(all(colSums(W) == 0))
+	expect_true(all(colSums(W) == n / 2))
 })

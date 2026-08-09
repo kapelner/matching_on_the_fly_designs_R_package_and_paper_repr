@@ -150,7 +150,7 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 		},
 		#' @description Adds a subject and assigns treatment.
 		#' @param x_new A data frame with one row representing the new subject's covariates.
-		#' @return The treatment assignment as \{-1,+1\} (+1 = treated, -1 = control).
+		#' @return The treatment assignment as \{0,1\} (1 = treated, 0 = control).
 		add_one_subject_to_experiment_and_assign = function(x_new){
 			self$add_one_subject(x_new)
 			w_t = self$assign_wt()
@@ -163,7 +163,7 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 					private$w[private$t] = w_t
 				}
 			}
-			2L * private$w[private$t] - 1L
+			private$w[private$t]
 		},
 		#' @description Assigns treatment to the current subject.
 		#' @return The treatment assignment (0 or 1).

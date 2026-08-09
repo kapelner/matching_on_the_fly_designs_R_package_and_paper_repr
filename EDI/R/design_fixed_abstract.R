@@ -44,13 +44,13 @@ DesignFixed = R6::R6Class("DesignFixed",
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, design_formula, seed = seed, ...)
 		},
 		#' @description Assign treatment to all subjects in the fixed experiment.
-		#' @param w_precomputed Optional \{-1,+1\} numeric vector of length n. If supplied the
-		#'   allocation is used directly (converted to internal \{0,1\} storage) and
+		#' @param w_precomputed Optional \{0,1\} numeric vector of length n. If supplied the
+		#'   allocation is used directly and
 		#'   \code{draw_ws_according_to_design} is not called (avoids e.g. the Java
 		#'   round-trip for \code{DesignFixedGreedy}).
 		assign_w_to_all_subjects = function(w_precomputed = NULL){
 			if (!is.null(w_precomputed)) {
-				private$w[1:self$get_n()] = (as.numeric(w_precomputed) + 1L) / 2L
+				private$w[1:self$get_n()] = as.numeric(w_precomputed)
 			} else {
 				private$w[1:self$get_n()] = private$draw_ws_raw(1)[, 1]
 			}
@@ -116,15 +116,15 @@ DesignFixed = R6::R6Class("DesignFixed",
 		},
 		#' @description Overwrite all subject assignments for a fixed design.
 		#'
-		#' @param w A \{-1,+1\} vector of subject assignments (+1 = treated, -1 = control).
+		#' @param w A \{0,1\} vector of subject assignments (1 = treated, 0 = control).
 		overwrite_all_subject_assignments = function(w){
 			if (should_run_asserts()) {
-				assertIntegerish(w, lower = -1, upper = 1, any.missing = FALSE, len = private$t)
-				if (any(!(w %in% c(-1L, 1L)))) {
-					stop("overwrite_all_subject_assignments: w must contain only -1 (control) or +1 (treated).")
+				assertIntegerish(w, lower = 0, upper = 1, any.missing = FALSE, len = private$t)
+				if (any(!(w %in% c(0L, 1L)))) {
+					stop("overwrite_all_subject_assignments: w must contain only 0 (control) or 1 (treated).")
 				}
 			}
-			private$w = (as.numeric(w) + 1L) / 2L
+			private$w = as.numeric(w)
 		},
 		#' @description Check if the design supports resampling.
 		#'
