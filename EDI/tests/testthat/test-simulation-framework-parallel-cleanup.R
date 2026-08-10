@@ -46,15 +46,25 @@ test_that("SimulationFramework restores num_cores_override", {
 		response_type = "continuous",
 		design_classes_and_params = list(DesignFixedBernoulli),
 		inference_classes_and_params = list(InferenceAllSimpleMeanDiff),
+		# Restricted to asymp_pval: the default (NULL) runs every inf type
+		# InferenceAllSimpleMeanDiff supports, including boot_pval, which reads
+		# num_cores via get_num_cores() -- and since num_cores_override is
+		# forced to 5L above (bypassing set_num_cores()'s validation), that
+		# would spawn a real 5-worker fork cluster just to check that the
+		# override value round-trips through sim$run(), unnecessarily risking
+		# port-contention flakiness (fork clusters bind to a port) under
+		# already-slow sanitizer/valgrind CI. This test only cares about the
+		# override's persistence, not about exercising parallel bootstrap.
+		inference_types_and_params = list(asymp_pval = list()),
 		n = 10,
 		Nrep_W = 1, Nrep_Y_w = 1L,
 		num_cores = 1,
 		verbose = FALSE,
 		continue_from_last_result_row = FALSE
 	)
-	
+
 	sim$run()
-	
+
 	expect_equal(ns$edi_env$num_cores_override, 5L)
 })
 
