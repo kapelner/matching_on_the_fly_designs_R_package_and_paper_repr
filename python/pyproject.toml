@@ -75,10 +75,18 @@ before-all = "brew install libomp"
 # fall back to the pip-installable scipy-openblas32 package (see
 # CMakeLists.txt's find_package(BLAS) fallback, same package numpy/scipy/
 # scikit-learn's own cibuildwheel configs use for this exact problem).
-# scipy-openblas32 itself is declared in [build-system] requires above, not
-# installed here -- see that comment for why a before-build-only install
-# doesn't reach the isolated build env CMake actually runs in. delvewheel
-# only needs to be visible to the repair-wheel-command step below (run in
-# cibuildwheel's own venv, not the isolated build env), so it stays here.
-before-build = "pip install delvewheel"
-repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel}"
+# scipy-openblas32 is ALSO declared in [build-system] requires above -- that
+# copy is what CMake's configure step sees (a separate, isolated PEP 517
+# build env; see that comment for why a before-build-only install doesn't
+# reach it). This before-build install is a second, deliberately redundant
+# copy for a third, different venv: the one that runs repair-wheel-command
+# below, which needs to `import scipy_openblas32` to find its DLL directory
+# for delvewheel's --add-path (a plain `delvewheel repair` scans the wheel's
+# DLL imports via the normal OS search path, which doesn't know about
+# scipy_openblas32's install location -- that only gets added at runtime via
+# its own __init__.py's os.add_dll_directory() call when the module is
+# imported by user code, never by delvewheel's standalone scan -- confirmed
+# by "FileNotFoundError: Unable to find library: libscipy_openblas.dll" on
+# windows-latest CI on 2026-08-10).
+before-build = "pip install delvewheel scipy-openblas32"
+repair-wheel-command = "python -c \"import scipy_openblas32, subprocess, sys; subprocess.run(['delvewheel', 'repair', '--add-path', scipy_openblas32.get_lib_dir(), '-w', sys.argv[1], sys.argv[2]], check=True)\" {dest_dir} {wheel}"

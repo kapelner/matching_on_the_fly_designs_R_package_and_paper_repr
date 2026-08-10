@@ -220,7 +220,7 @@ jobs:
       - name: Install EDI's Depends/Imports/LinkingTo (Suggests skipped -- not needed to catch memory bugs in the core kernels, and roughly doubles this already-slow job otherwise)
         working-directory: EDI
         run: |
-          RDscript -e 'install.packages(c("R6","checkmate","Rcpp","RcppEigen","RcppNumerical","data.table","survival","Matrix","missRanger","missForest","numDeriv","digest","methods","MASS","RhpcBLASctl","randomizr","testthat"), repos = "https://cloud.r-project.org")'
+          RDscript -e 'install.packages(c("R6","checkmate","Rcpp","RcppEigen","RcppNumerical","data.table","survival","Matrix","lattice","boot","class","cluster","codetools","foreign","KernSmooth","mgcv","nlme","nnet","rpart","spatial","missRanger","missForest","numDeriv","digest","methods","MASS","RhpcBLASctl","randomizr","testthat"), repos = "https://cloud.r-project.org")'
 
       - name: Build
         working-directory: EDI
@@ -287,7 +287,7 @@ jobs:
       - name: Install EDI's Depends/Imports/LinkingTo (Suggests skipped -- not needed to catch memory bugs in the core kernels, and would multiply the runtime of an already-very-slow job)
         working-directory: EDI
         run: |
-          RDscript -e 'install.packages(c("R6","checkmate","Rcpp","RcppEigen","RcppNumerical","data.table","survival","Matrix","missRanger","missForest","numDeriv","digest","methods","MASS","RhpcBLASctl","randomizr","testthat"), repos = "https://cloud.r-project.org")'
+          RDscript -e 'install.packages(c("R6","checkmate","Rcpp","RcppEigen","RcppNumerical","data.table","survival","Matrix","lattice","boot","class","cluster","codetools","foreign","KernSmooth","mgcv","nlme","nnet","rpart","spatial","missRanger","missForest","numDeriv","digest","methods","MASS","RhpcBLASctl","randomizr","testthat"), repos = "https://cloud.r-project.org")'
 
       - name: Build
         working-directory: EDI

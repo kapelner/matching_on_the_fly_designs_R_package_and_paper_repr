@@ -89,15 +89,15 @@ Goal: block comprehensive-suite implementation until `comprehensive_argument_che
 
 TODO:
 
-- [ ] Run the smoke tier from `run_public_argument_combinations.R`.
-- [ ] Run the CI tier from `run_public_argument_combinations.R`.
-- [ ] Run `analyze_public_argument_combinations.R`.
-- [ ] Verify `public_api_inventory.csv` exists and includes exported R6 classes/functions.
-- [ ] Verify `checkmate_argument_contracts.csv` exists and is deterministic across two runs.
-- [ ] Verify `public_argument_combination_cases.csv` includes default, one-non-default, and pairwise cases.
-- [ ] Verify `public_argument_combination_coverage.csv` reports APIs that still only have unidimensional checks.
-- [ ] Verify CI-tier unexpected errors are either fixed or explicitly exempted.
-- [ ] Record accepted dependency commit/hash/date in this spec's implementation notes when implementation starts.
+- [x] Run the smoke tier from `run_public_argument_combinations.R`.
+- [x] Run the CI tier from `run_public_argument_combinations.R`.
+- [x] Run `analyze_public_argument_combinations.R`.
+- [x] Verify `public_api_inventory.csv` exists and includes exported R6 classes/functions.
+- [x] Verify `checkmate_argument_contracts.csv` exists and is deterministic across two runs.
+- [x] Verify `public_argument_combination_cases.csv` includes default, one-non-default, and pairwise cases.
+- [x] Verify `public_argument_combination_coverage.csv` reports APIs that still only have unidimensional checks.
+- [x] Verify CI-tier unexpected errors are either fixed or explicitly exempted.
+- [x] Record accepted dependency commit/hash/date in this spec's implementation notes when implementation starts.
 
 Acceptance criteria:
 
@@ -106,21 +106,34 @@ Acceptance criteria:
 - The analyzer can identify unidimensional-only public APIs.
 - No comprehensive-suite phase below starts before this phase is complete.
 
+Implementation notes:
+
+- Accepted dependency verification date: 2026-08-10.
+- Accepted dependency commit: `c2fbd8158f4c12f1ef5a8b1073edc6bffb20cb82` (commit date `2026-08-10T11:26:28+03:00`).
+- `run_public_argument_combinations.R smoke` passed with 10 aggregate result rows and 0 unexpected errors.
+- `run_public_argument_combinations.R ci` passed with 29 aggregate result rows and 0 unexpected errors.
+- `analyze_public_argument_combinations.R` generated 9,216 coverage rows, 0 failure rows, 2,809 drift rows, and 1,875 uncovered API rows.
+- `public_api_inventory.csv` contains 9,216 rows: 121 exported functions, 128 exported R6 classes, and 8,967 public R6 method rows.
+- `checkmate_argument_contracts.csv` was deterministic across two consecutive extractor runs; SHA-256 `df52b166be68a090c4799c9346cb051ecd4ef3622c6bf66fbc07bba0b47145b0`.
+- `public_argument_combination_cases.csv` contains smoke and CI rows with default, one-non-default, pairwise, and targeted 3-way case kinds; SHA-256 `ea13e0c79f90c584fa8c474592d27e82c6e1aefd898007096454a409923b7016`.
+- `public_argument_combination_ci_failure_summary.csv` reports 0 unexpected errors, 0 invariant failures, and `ci_should_fail = FALSE`.
+- `check_public_argument_combination_quality_gates.R ci` passed with 23,391 quality-gate rows and 0 active hard gates.
+
 ## Phase 0: Baseline Integration Audit
 
 Goal: map existing comprehensive tests and result files onto the completed public argument-combination inventory.
 
 TODO:
 
-- [ ] Load `public_api_inventory.csv`.
-- [ ] Load `public_argument_combination_coverage.csv`.
-- [ ] Load current comprehensive result CSVs.
-- [ ] Identify public APIs covered by `package_tests/comprehensive_tests.R`.
-- [ ] Identify public APIs covered only by argument-combination tests.
-- [ ] Identify public APIs not covered by either.
-- [ ] Identify existing testthat files that directly test internals.
-- [ ] Classify internal tests as `keep`, `rewrite_public`, `internal_safety_net`, or `remove`.
-- [ ] Create initial `comprehensive_suite_exemptions.csv`.
+- [x] Load `public_api_inventory.csv`.
+- [x] Load `public_argument_combination_coverage.csv`.
+- [x] Load current comprehensive result CSVs.
+- [x] Identify public APIs covered by `package_tests/comprehensive_tests.R`.
+- [x] Identify public APIs covered only by argument-combination tests.
+- [x] Identify public APIs not covered by either.
+- [x] Identify existing testthat files that directly test internals.
+- [x] Classify internal tests as `keep`, `rewrite_public`, `internal_safety_net`, or `remove`.
+- [x] Create initial `comprehensive_suite_exemptions.csv`.
 
 Outputs:
 
@@ -131,6 +144,14 @@ Acceptance criteria:
 
 - Every exported public API has one of: argument-combination coverage, comprehensive workflow coverage, focused testthat coverage, or exemption.
 - Internal tests have an explicit classification.
+
+Implementation notes:
+
+- Added `package_tests/audit_comprehensive_suite_baseline.R` to reproduce the Phase 0 audit artifacts from the public API inventory, argument-combination coverage, current comprehensive result CSVs, and testthat sources.
+- Generated `package_tests/comprehensive_suite_baseline_audit.csv` with 9,338 rows: 9,216 public API rows and 122 direct-internal testthat file rows.
+- Public API coverage status counts: 7,274 `comprehensive_workflow`, 643 `focused_testthat`, 1,189 `multiple_sources`, and 110 `uncovered`.
+- Generated `package_tests/comprehensive_suite_exemptions.csv` with 110 initial `phase0_uncovered_public_api` rows, so every currently uncovered public API has an explicit baseline exemption.
+- Classified all 122 direct-internal testthat file rows as `internal_safety_net`; no internal testthat rows are unclassified.
 
 ## Phase 1: Suite Registry
 
@@ -152,10 +173,10 @@ Registry dimensions:
 
 TODO:
 
-- [ ] Define registry schema.
-- [ ] Import public API surfaces from the argument-checking inventory.
-- [ ] Import argument-combination coverage status.
-- [ ] Add method-family taxonomy:
+- [x] Define registry schema.
+- [x] Import public API surfaces from the argument-checking inventory.
+- [x] Import argument-combination coverage status.
+- [x] Add method-family taxonomy:
   - estimate.
   - asymptotic.
   - exact.
@@ -167,7 +188,7 @@ TODO:
   - randomization.
   - randomization-bootstrap.
   - simulation framework.
-- [ ] Add design-family taxonomy:
+- [x] Add design-family taxonomy:
   - sequential.
   - fixed.
   - stratified.
@@ -175,9 +196,9 @@ TODO:
   - blocked.
   - matched.
   - optimal/search.
-- [ ] Add response-family taxonomy.
-- [ ] Add tier metadata.
-- [ ] Add exemption hooks with reasons and expiry dates.
+- [x] Add response-family taxonomy.
+- [x] Add tier metadata.
+- [x] Add exemption hooks with reasons and expiry dates.
 
 Outputs:
 
@@ -188,6 +209,16 @@ Acceptance criteria:
 - Registry can answer "what must be tested for this exported public API?"
 - Registry can answer "which runner is responsible for this coverage?"
 - Registry distinguishes public contract coverage from internal safety-net coverage.
+
+Implementation notes:
+
+- Added `package_tests/comprehensive_suite_registry.R` to build the unified suite registry from `public_api_inventory.csv`, `public_argument_combination_coverage.csv`, `comprehensive_suite_baseline_audit.csv`, and `comprehensive_suite_exemptions.csv`.
+- Generated `package_tests/comprehensive_suite_registry.csv` with 9,338 rows: 9,216 `public_contract` rows and 122 `internal_safety_net` rows.
+- Registry schema includes public API surface, coverage scope, response/design/inference/dataset fixture/method families, runtime tier, required coverage, expected invariants, source runner, argument-combination coverage metrics, and exemption metadata.
+- Source-runner counts: 7,274 `comprehensive_tests`, 643 `testthat`, 1,188 `comprehensive_tests;testthat`, 1 `argument_combinations;comprehensive_tests;testthat`, 110 `exemption`, and 122 `internal_safety_net`.
+- Required-coverage counts: 3,332 `argument_combinations_or_workflow`, 255 `constructor_workflow`, 5,516 `public_workflow`, 3 `focused_public_test_or_workflow`, 110 `exemption`, and 122 `internal_safety_net`.
+- Validation checks passed: 0 public rows with blank `required_coverage`, 0 public rows with blank `source_runner`, 0 uncovered public rows without exemption hooks, and 0 internal rows with a non-`internal_safety_net` runner.
+- `comprehensive_suite_registry.csv` SHA-256: `ae2b6af181cd7762cba8977b6ffbf9c87607520b1c0eed475f5ee3d9814cd7e4`.
 
 ## Phase 2: Fixture Consolidation
 
@@ -222,6 +253,7 @@ TODO:
 - [ ] Add stable case IDs to comprehensive result rows if missing.
 - [ ] Add explicit `coverage_scope`.
 - [ ] Add explicit `runner = "comprehensive_tests"`.
+- [ ] Add explicit `github_commit_id` to comprehensive result rows for unambiguous test-run versioning.
 - [ ] Add explicit `method_family`.
 - [ ] Add explicit `argument_coverage_kind` where a call came from argument-combination inputs.
 - [ ] Ensure `record_result()` emits enough fields for unified analysis.
@@ -485,4 +517,3 @@ Acceptance criteria:
 - [ ] Smoke and CI tiers run deterministically.
 - [ ] Nightly and release tiers produce comprehensive reports.
 - [ ] Existing comprehensive harness behavior remains available during rollout.
-

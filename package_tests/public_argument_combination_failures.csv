@@ -1,1 +1,1 @@
-"case_id","api_kind","class_name","function_name","method_name","fixture_id","argument_signature","tier","status","duration_time_sec","warning_message","message_text","output_type","output_shape","invariant_status","error_message"
+"case_id","api_kind","class_name","function_name","method_name","fixture_id","argument_signature","tier","status","duration_time_sec","warning_message","message_text","output_type","output_shape","invariant_status","error_message","target","argument_coverage_kind","constraint_status","constraint_reason","constraint_sources"
