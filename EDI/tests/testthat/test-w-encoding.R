@@ -127,6 +127,7 @@ test_that("DesignFixedBlocking get_w and draw_ws return {0,1}", {
 })
 
 test_that("DesignFixedBinaryMatch get_w and draw_ws return {0,1}", {
+  skip_if_not_installed("nbpMatching")
   set.seed(1)
   des = run_fixed_design(DesignFixedBinaryMatch$new(n = n, response_type = "continuous"), X)
   expect_w_encoding(des$get_w(), n)

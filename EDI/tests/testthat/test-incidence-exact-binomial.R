@@ -4,6 +4,7 @@ library(EDI)
 library(data.table)
 
 test_that("InferenceIncidExactBinomial matches binom.test for DesignFixedBinaryMatch", {
+	skip_if_not_installed("nbpMatching")
 	x_dat <- data.table(
 		x1 = c(-2.00, -2.01, -1.00, -1.01, 1.00, 1.01, 2.00, 2.01),
 		x2 = c(0, 0, 1, 1, 0, 0, 1, 1)

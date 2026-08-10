@@ -220,7 +220,7 @@ jobs:
       - name: Install EDI's Depends/Imports/LinkingTo (Suggests skipped -- not needed to catch memory bugs in the core kernels, and roughly doubles this already-slow job otherwise)
         working-directory: EDI
         run: |
-          RDscript -e 'install.packages(c("R6","checkmate","Rcpp","RcppEigen","RcppNumerical","data.table","survival","Matrix","lattice","boot","class","cluster","codetools","foreign","KernSmooth","mgcv","nlme","nnet","rpart","spatial","missRanger","missForest","numDeriv","digest","methods","MASS","RhpcBLASctl","randomizr","testthat"), repos = "https://cloud.r-project.org")'
+          RDscript -e 'install.packages(c("R6","checkmate","Rcpp","RcppEigen","RcppNumerical","data.table","survival","Matrix","lattice","boot","class","cluster","codetools","foreign","KernSmooth","mgcv","nlme","nnet","rpart","spatial","nbpMatching","anticlust","missRanger","missForest","numDeriv","digest","methods","MASS","RhpcBLASctl","randomizr","testthat"), repos = "https://cloud.r-project.org")'
 
       - name: Build
         working-directory: EDI
@@ -228,7 +228,16 @@ jobs:
 
       - name: Check under ASAN/UBSAN
         working-directory: EDI
-        run: RD CMD check --no-manual --no-build-vignettes --as-cran EDI_*.tar.gz
+        # --no-examples: examples aren't guarded against missing Suggests
+        # the way tests are (skip_if_not_installed()), and this job
+        # deliberately doesn't install every Suggests package (see the
+        # install step above) -- the main R-CMD-check matrix job already
+        # runs every example (including --run-donttest) with the full
+        # Suggests set installed, so this isn't a coverage loss, just
+        # avoiding a redundant check under a different, unrelated set of
+        # constraints than what this job exists to test (memory bugs in
+        # src/, primarily exercised via the test suite below).
+        run: RD CMD check --no-manual --no-build-vignettes --no-examples --as-cran EDI_*.tar.gz
 
       # RD CMD check's own console output doesn't include the actual
       # compiler/linker error when "checking whether package can be
@@ -287,7 +296,7 @@ jobs:
       - name: Install EDI's Depends/Imports/LinkingTo (Suggests skipped -- not needed to catch memory bugs in the core kernels, and would multiply the runtime of an already-very-slow job)
         working-directory: EDI
         run: |
-          RDscript -e 'install.packages(c("R6","checkmate","Rcpp","RcppEigen","RcppNumerical","data.table","survival","Matrix","lattice","boot","class","cluster","codetools","foreign","KernSmooth","mgcv","nlme","nnet","rpart","spatial","missRanger","missForest","numDeriv","digest","methods","MASS","RhpcBLASctl","randomizr","testthat"), repos = "https://cloud.r-project.org")'
+          RDscript -e 'install.packages(c("R6","checkmate","Rcpp","RcppEigen","RcppNumerical","data.table","survival","Matrix","lattice","boot","class","cluster","codetools","foreign","KernSmooth","mgcv","nlme","nnet","rpart","spatial","nbpMatching","anticlust","missRanger","missForest","numDeriv","digest","methods","MASS","RhpcBLASctl","randomizr","testthat"), repos = "https://cloud.r-project.org")'
 
       - name: Build
         working-directory: EDI
@@ -295,7 +304,8 @@ jobs:
 
       - name: Check under valgrind
         working-directory: EDI
-        run: RD CMD check --no-manual --no-build-vignettes --as-cran --use-valgrind EDI_*.tar.gz
+        # --no-examples: see the sanitizers job's identical flag/comment above.
+        run: RD CMD check --no-manual --no-build-vignettes --no-examples --as-cran --use-valgrind EDI_*.tar.gz
 
       # See the sanitizers job's identical step -- RD CMD check's console
       # output doesn't include the actual install-time error, only a

@@ -357,6 +357,7 @@ test_that("SimulationFramework can write and reload csv.bz2 results", {
 })
 
 test_that("SimulationFramework persists and reuses pregenerated design cache objects", {
+	skip_if_not_installed("nbpMatching")
 	results_file <- tempfile(fileext = ".csv")
 	make_sim <- function(reuse_cache) {
 		SimulationFramework$new(

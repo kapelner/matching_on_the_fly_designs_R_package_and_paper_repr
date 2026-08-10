@@ -1,4 +1,5 @@
 test_that("DesignFixedBinaryMatch works", {
+	skip_if_not_installed("nbpMatching")
 	n = 10
 	X = data.frame(x1 = rnorm(n), x2 = rnorm(n))
 	des = DesignFixedBinaryMatch$new(n = n, response_type = "continuous", verbose = FALSE)
