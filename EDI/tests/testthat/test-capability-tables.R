@@ -82,7 +82,7 @@ test_that("root supports and capabilities are metadata queries", {
 	))
 	gen = EDI:::define_inference_class(
 		classname = "InferenceTemporaryCapabilityQueryHost",
-		inherit = Inference,
+		inherit = EDI:::Inference,
 		components = "InferenceTemporaryQueryComponent",
 		public = list(initialize = function() invisible(self)),
 		metadata = list(likelihood_tier = "none")

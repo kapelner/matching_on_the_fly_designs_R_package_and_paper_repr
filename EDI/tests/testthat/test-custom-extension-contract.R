@@ -46,7 +46,7 @@ test_that("custom asymptotic inference works from an external-package-like envir
 
 	des = DesignFixedBernoulli$new(n = 20, response_type = "continuous", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = seq_len(20)))
-	des$overwrite_all_subject_assignments(rep(c(-1, 1), each = 10))
+	des$overwrite_all_subject_assignments(rep(c(0, 1), each = 10))
 	des$add_all_subject_responses(c(1:10, 12:21))
 
 	inf = ext_env$ExternalMeanDiff$new(des, verbose = FALSE)
@@ -89,7 +89,7 @@ test_that("custom design extension bases delegate user assignment rules", {
 	fixed = AlternatingFixed$new(n = 6, response_type = "continuous", verbose = FALSE)
 	fixed$add_all_subjects_to_experiment(data.frame(x = 1:6))
 	fixed$assign_w_to_all_subjects()
-	expect_equal(fixed$get_w(), c(-1, 1, -1, 1, -1, 1))
+	expect_equal(fixed$get_w(), c(0, 1, 0, 1, 0, 1))
 	expect_equal(dim(fixed$draw_ws_according_to_design(3)), c(6, 3))
 
 	ExternalSequential = R6::R6Class(
@@ -105,5 +105,5 @@ test_that("custom design extension bases delegate user assignment rules", {
 	for (i in 1:4) {
 		seq_des$add_one_subject_to_experiment_and_assign(data.frame(x = i))
 	}
-	expect_equal(seq_des$get_w(), c(-1, 1, -1, 1))
+	expect_equal(seq_des$get_w(), c(0, 1, 0, 1))
 })

@@ -238,7 +238,7 @@ actual speedup this spec is chasing.
 ## Implementation Phases
 
 ### Phase 1: Core kernel
-Implement `ordinal_gee_pairs_singletons_cpp` (unweighted) in
+- [ ] TODO-1: Implement `ordinal_gee_pairs_singletons_cpp` (unweighted) in
 `fast_ordinal_gee.cpp`, reusing `edi_ordinal::FixedOrdinalRegression` for the
 mean model. Validate against `multgee::ordLORgee` directly (no R wrapper
 class yet), matching the style of
@@ -246,20 +246,20 @@ class yet), matching the style of
 ("fast KK GEE direct solver matches geepack for binomial and Poisson").
 
 ### Phase 2: Weighted variant
-Implement `ordinal_gee_pairs_singletons_weighted_cpp`, validated against a
+- [ ] TODO-2: Implement `ordinal_gee_pairs_singletons_weighted_cpp`, validated against a
 weighted `multgee::ordLORgee` call.
 
 ### Phase 3: R integration
-Wire `use_rcpp` through `InferenceOrdinalKKGEE` as described above. Update
+- [ ] TODO-3: Wire `use_rcpp` through `InferenceOrdinalKKGEE` as described above. Update
 `compute_estimate`, CI/p-value paths, `compute_treatment_estimate_during_randomization_inference`,
 and `compute_estimate_with_bootstrap_weights`.
 
 ### Phase 4: Test & benchmark suite
-Extend `test-kk-gee-parity.R` per the Testing section; add the
+- [ ] TODO-4: Extend `test-kk-gee-parity.R` per the Testing section; add the
 correctness/profile benchmark pair.
 
 ### Phase 5: Documentation & audit update
-Update `path_audits_source.R:102`'s `InferenceOrdinalKKGEE` notes to record
+- [ ] TODO-5: Update `path_audits_source.R:102`'s `InferenceOrdinalKKGEE` notes to record
 `use_rcpp` support and drop the now-obsolete "InferenceAsymp" framing if it
 no longer reflects the class's fast/slow duality. Regenerate
 `path_audits.html`.

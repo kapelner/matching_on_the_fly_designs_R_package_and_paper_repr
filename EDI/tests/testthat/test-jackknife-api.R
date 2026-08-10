@@ -34,7 +34,7 @@ test_that("clustered designs support cluster jackknife deletion", {
 			cl = factor(rep(1:4, each = 2), levels = 1:4)
 		)
 	)
-	des$overwrite_all_subject_assignments(rep(c(1, 1, -1, -1), each = 2))
+	des$overwrite_all_subject_assignments(rep(c(1, 1, 0, 0), each = 2))
 	des$add_all_subject_responses(c(8, 10, 1, 3, 9, 11, 2, 4))
 
 	inf <- InferenceAllSimpleMeanDiff$new(des, verbose = FALSE)
@@ -47,7 +47,7 @@ test_that("clustered designs support cluster jackknife deletion", {
 		keep <- cluster_ids != cluster_id
 		y <- des$get_y()[keep]
 		w <- des$get_w()[keep]
-		mean(y[w == 1]) - mean(y[w == -1])
+		mean(y[w == 1]) - mean(y[w == 0])
 	}, numeric(1))
 	jack_bar <- mean(manual_jack)
 	manual_bias <- (length(manual_jack) - 1) * (jack_bar - full_est)

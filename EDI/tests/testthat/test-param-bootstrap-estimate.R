@@ -5,9 +5,8 @@ make_param_boot_logit_design <- function(seed = 20260723L, n = 150L){
 	set.seed(seed)
 	x1 <- rnorm(n)
 	x2 <- rnorm(n)
-	w <- rep(c(1, -1), length.out = n)
-	w01 <- (w + 1) / 2
-	p <- plogis(-0.4 + 0.8 * w01 + 0.35 * x1 - 0.25 * x2)
+	w <- rep(c(1, 0), length.out = n)
+	p <- plogis(-0.4 + 0.8 * w + 0.35 * x1 - 0.25 * x2)
 	y <- rbinom(n, 1, p)
 
 	des <- EDI:::DesignFixed$new(n = n, response_type = "incidence", verbose = FALSE)
@@ -21,7 +20,7 @@ make_param_boot_cont_ratio_design <- function(seed = 20260724L, n = 96L){
 	set.seed(seed)
 	x1 <- rnorm(n)
 	x2 <- rnorm(n)
-	w <- rep(c(1, -1), length.out = n)
+	w <- rep(c(1, 0), length.out = n)
 	eta <- 0.45 * w + 0.25 * x1 - 0.15 * x2
 	cut_1 <- plogis(-1.1 - eta)
 	cut_2 <- plogis(-0.1 - eta)

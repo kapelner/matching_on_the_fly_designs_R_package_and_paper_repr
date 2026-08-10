@@ -9,7 +9,7 @@ make_kk_ols_binary_match_fixture = function(){
 		verbose = FALSE
 	)
 	des$add_all_subjects_to_experiment(data.frame(x = c(-2, -1, 0, 1, 2, 3)))
-	des$assign_w_to_all_subjects(c(1, -1, -1, 1, 1, -1))
+	des$assign_w_to_all_subjects(c(1, 0, 0, 1, 1, 0))
 	des$add_all_subject_responses(c(-1, 0, 1, 1, 4, 9))
 	des
 }

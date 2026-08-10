@@ -35,7 +35,7 @@ test_that("Inference works for incidence", {
 test_that("Simple incidence proportion difference uses pooled-variance t inference", {
 	des <- EDI:::DesignFixed$new(n = 10, response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = 1:10))
-	des$overwrite_all_subject_assignments(c(1, 1, 1, 1, 1, -1, -1, -1, -1, -1))
+	des$overwrite_all_subject_assignments(c(1, 1, 1, 1, 1, 0, 0, 0, 0, 0))
 	des$add_all_subject_responses(c(1, 1, 0, 1, 0, 0, 1, 0, 0, 0))
 
 	inf <- InferenceAllSimpleMeanDiffPooledVar$new(des, verbose = FALSE)
@@ -79,13 +79,13 @@ test_that("Simple incidence proportion difference uses pooled-variance t inferen
 test_that("Simple mean difference pooled-variance inference matches pooled t.test", {
 	des <- EDI:::DesignFixed$new(n = 9, response_type = "continuous", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = 1:9))
-	w <- c(1, 1, 1, 1, -1, -1, -1, -1, -1)
+	w <- c(1, 1, 1, 1, 0, 0, 0, 0, 0)
 	y <- c(2.2, 2.6, 1.8, 3.1, 0.9, 1.0, 1.4, 0.8, 1.2)
 	des$overwrite_all_subject_assignments(w)
 	des$add_all_subject_responses(y)
 
 	inf <- InferenceAllSimpleMeanDiffPooledVar$new(des, verbose = FALSE)
-	tt <- stats::t.test(y[w == 1], y[w == -1], var.equal = TRUE)
+	tt <- stats::t.test(y[w == 1], y[w == 0], var.equal = TRUE)
 
 	expect_equal(inf$compute_asymp_two_sided_pval(), tt$p.value, tolerance = 1e-12)
 	expect_equal(as.numeric(inf$compute_asymp_confidence_interval()), as.numeric(tt$conf.int), tolerance = 1e-12)
@@ -99,7 +99,7 @@ test_that("CMH inference is gated to blocked incidence designs", {
 		verbose = FALSE
 	)
 	des$add_all_subjects_to_experiment(data.frame(stratum = c("A", "A", "A", "A", "B", "B", "B", "B")))
-	des$overwrite_all_subject_assignments(c(1, -1, 1, -1, 1, -1, 1, -1))
+	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
 	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
 
 	inf <- InferenceIncidCMH$new(des, verbose = FALSE)
@@ -145,7 +145,7 @@ test_that("CMH inference requires even treatment allocation", {
 		verbose = FALSE
 	)
 	des$add_all_subjects_to_experiment(data.frame(stratum = c("A", "A", "A", "A", "B", "B", "B", "B")))
-	des$overwrite_all_subject_assignments(c(1, -1, 1, -1, 1, -1, 1, -1))
+	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
 	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
 
 	expect_error(
@@ -162,7 +162,7 @@ test_that("CMH inference requires equal block sizes", {
 		verbose = FALSE
 	)
 	des$add_all_subjects_to_experiment(data.frame(stratum = c(rep("A", 3), rep("B", 5))))
-	des$overwrite_all_subject_assignments(c(1, -1, 1, -1, 1, -1, 1, -1))
+	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
 	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
 
 	expect_error(
@@ -197,7 +197,7 @@ test_that("CMH and Extended Robins standard errors match a fixed blocked simulat
 			verbose = FALSE
 		)
 		des$add_all_subjects_to_experiment(data.frame(stratum = c(rep("A", 4), rep("B", 4))))
-		des$overwrite_all_subject_assignments(c(1, -1, 1, -1, 1, -1, 1, -1))
+		des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
 		des$add_all_subject_responses(y)
 
 		inf_cmh <- InferenceIncidCMH$new(des, verbose = FALSE)
@@ -231,7 +231,7 @@ test_that("CMH get_standard_error block and non-block paths agree when D = 3 and
 	des_block$add_all_subjects_to_experiment(
 		data.frame(s = rep(as.character(seq_len(n_pairs)), each = 2L))
 	)
-	des_block$overwrite_all_subject_assignments(rep(c(1L, -1L), n_pairs))
+	des_block$overwrite_all_subject_assignments(rep(c(1L, 0L), n_pairs))
 	des_block$add_all_subject_responses(y)
 	inf_block <- InferenceIncidCMH$new(des_block, verbose = FALSE)
 	se_block <- inf_block$.__enclos_env__$private$get_standard_error()
@@ -278,7 +278,7 @@ test_that("CMH get_standard_error block and non-block paths agree for many D wit
 		des_block$add_all_subjects_to_experiment(
 			data.frame(s = rep(as.character(seq_len(n_pairs)), each = 2L))
 		)
-		des_block$overwrite_all_subject_assignments(rep(c(1L, -1L), n_pairs))
+		des_block$overwrite_all_subject_assignments(rep(c(1L, 0L), n_pairs))
 		des_block$add_all_subject_responses(y)
 		inf_block <- InferenceIncidCMH$new(des_block, verbose = FALSE)
 		se_block <- inf_block$.__enclos_env__$private$get_standard_error()
@@ -307,7 +307,7 @@ test_that("CMH and Extended Robins confidence intervals use normal critical valu
 		verbose = FALSE
 	)
 	des$add_all_subjects_to_experiment(data.frame(stratum = c(rep("A", 4), rep("B", 4))))
-	des$overwrite_all_subject_assignments(c(1, -1, 1, -1, 1, -1, 1, -1))
+	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
 	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
 
 	for (inf in list(
@@ -329,7 +329,7 @@ test_that("Extended Robins standard error matches the blockwise formula", {
 		verbose = FALSE
 	)
 	des$add_all_subjects_to_experiment(data.frame(stratum = c(rep("A", 4), rep("B", 4))))
-	des$overwrite_all_subject_assignments(c(1, -1, 1, -1, 1, -1, 1, -1))
+	des$overwrite_all_subject_assignments(c(1, 0, 1, 0, 1, 0, 1, 0))
 	des$add_all_subject_responses(c(1, 0, 1, 0, 1, 1, 0, 0))
 
 	inf <- InferenceIncidExtendedRobins$new(des, verbose = FALSE)
@@ -344,7 +344,7 @@ test_that("Extended Robins standard error matches the blockwise formula", {
 		y_b <- des$get_y()[m == b]
 		w_b <- des$get_w()[m == b]
 		p_hat_T_b <- sum(y_b[w_b == 1]) / n_B_over_two
-		p_hat_C_b <- sum(y_b[w_b == -1]) / n_B_over_two
+		p_hat_C_b <- sum(y_b[w_b == 0]) / n_B_over_two
 		m_1_b <- max(p_hat_T_b, p_hat_C_b)
 		m_0_b <- min(p_hat_T_b, p_hat_C_b)
 		variance_tot <- variance_tot +
@@ -353,7 +353,7 @@ test_that("Extended Robins standard error matches the blockwise formula", {
 			((2 * m_0_b - m_1_b) * (1 - m_1_b) - m_0_b * (1 - m_0_b)) / n_B
 	}
 	p_hat_T <- mean(des$get_y()[des$get_w() == 1])
-	p_hat_C <- mean(des$get_y()[des$get_w() == -1])
+	p_hat_C <- mean(des$get_y()[des$get_w() == 0])
 	var_robbins_ext <- 1 / des$get_n() * (
 		p_hat_T * (1 - p_hat_T) + p_hat_C * (1 - p_hat_C)
 	)
@@ -365,7 +365,7 @@ test_that("Extended Robins standard error matches the blockwise formula", {
 test_that("G-computation risk-ratio intervals error when log-scale bounds overflow", {
 	des <- DesignFixediBCRD$new(n = 4, response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = 1:4))
-	des$overwrite_all_subject_assignments(c(1, -1, 1, -1))
+	des$overwrite_all_subject_assignments(c(1, 0, 1, 0))
 	des$add_all_subject_responses(c(1, 0, 1, 0))
 
 	inf <- InferenceIncidGCompRiskRatio$new(des, verbose = FALSE)

@@ -156,8 +156,8 @@ des$assign_w_to_all_subjects()
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{w_precomputed}}{Optional \{-1,+1\} numeric vector of length n. If supplied the
-allocation is used directly (converted to internal \{0,1\} storage) and
+      \item{\code{w_precomputed}}{Optional \{0,1\} numeric vector of length n. If supplied the
+allocation is used directly and
 \code{draw_ws_according_to_design} is not called (avoids e.g. the Java
 round-trip for \code{DesignFixedGreedy}).}
     }
@@ -220,7 +220,7 @@ round-trip for \code{DesignFixedGreedy}).}
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{w}}{A \{-1,+1\} vector of subject assignments (+1 = treated, -1 = control).}
+      \item{\code{w}}{A \{0,1\} vector of subject assignments (1 = treated, 0 = control).}
     }
     \if{html}{\out{</div>}}
   }

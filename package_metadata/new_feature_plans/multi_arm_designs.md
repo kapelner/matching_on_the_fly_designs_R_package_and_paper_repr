@@ -38,31 +38,47 @@ directly relevant to §6); [sequential_inference.md](sequential_inference.md)
 (a structurally similar feasibility document — its §5 "thin orchestration
 layer above Design/Inference" pattern is reused in §6a of this document).
 
+**Implementation status (2026-08-10):** one specific, self-contained piece of
+§3c/§3c-i's proposal has since been **implemented and verified** (all 184
+`tests/testthat` files pass under `library(EDI)`): `Design`'s public API
+(`get_w()`, `draw_ws_according_to_design()`, `overwrite_all_subject_assignments()`,
+`assign_w_to_all_subjects()`, `DesignSeqOneByOne$add_one_subject_to_experiment_and_assign()`)
+now speaks `{0,1}` instead of `{-1,+1}` — reverting to the pre-2026-06-22
+convention, exactly as §3c-i concludes — and `Inference$get_w_signed()`
+now exists as the shared, narrowly-used helper for `InferenceIncidCMH`/
+`InferenceIncidExtendedRobins`. Sections §1 and §3c/§3c-i below are kept in
+their original present tense where they describe the reasoning that led
+here, but that reasoning is no longer hypothetical for the encoding
+question specifically — see the "**Implemented**" callouts inline. Every
+other proposal in this document — `K`-arm generalization of concrete
+`Design*` subclasses (§3a/§3b), the `arm_treated`/`arm_control` selection
+mechanism (§4), `private$w`'s `numeric`→`integer` storage change (§3d), and
+all of Phase 2/3 (§5/§6) — remains exactly that, a proposal. Nothing in this
+implementation pass added `K`-arm *capability* to the package; it only
+resolved the encoding-convention prerequisite §3c-i identifies, and did so
+narrowly (the encoding, not the storage type).
+
 ## 1. Where "two arms" is load-bearing today
 
 The two-arm assumption is not one check, it's an encoding convention
 repeated at every layer:
 
 - **`overwrite_all_subject_assignments(w)`** (`EDI/R/design_abstract.R:234-242`)
-  hard-asserts `w` contains only `{-1, +1}`, and `DesignFixed`'s
-  `assign_w_to_all_subjects()` applies the same `(w+1)/2` storage transform
-  when a precomputed `{-1,+1}` vector is supplied directly
-  (`EDI/R/design_fixed_abstract.R:51-53`):
-  ```r
-  assertIntegerish(w, lower = -1, upper = 1, any.missing = FALSE, len = private$t)
-  if (any(!(w %in% c(-1L, 1L)))) {
-    stop("overwrite_all_subject_assignments: w must contain only -1 (control) or +1 (treated).")
-  }
-  private$w = (as.numeric(w) + 1L) / 2L
-  ```
-  Internally `private$w` is always stored as `{0, 1}`; the public API only
-  ever speaks `{-1, +1}`.
+  used to hard-assert `w` contains only `{-1, +1}`, with `DesignFixed`'s
+  `assign_w_to_all_subjects()` applying the same `(w+1)/2` storage transform
+  when a precomputed `{-1,+1}` vector was supplied directly
+  (`EDI/R/design_fixed_abstract.R:51-53`). **Implemented (2026-08-10):** both
+  now assert/accept `{0,1}` directly with no transform — `private$w = as.numeric(w)` —
+  matching what was always the internal storage. See the Implementation
+  status note above.
 - **`Design$get_w()`** (`design_abstract.R:339-341`) and
-  **`draw_ws_according_to_design()`** (`design_abstract.R:346-349`) both
-  apply `2L * x - 1L` to go from the internal `{0,1}` storage to the public
-  `{-1,+1}` convention. This transform is correct only when `private$w` is
-  binary; §3 shows a live example of it silently producing garbage when it
-  isn't.
+  **`draw_ws_according_to_design()`** (`design_abstract.R:346-349`) used to
+  apply `2L * x - 1L` to go from the internal `{0,1}` storage to a public
+  `{-1,+1}` convention — a transform that was correct only when `private$w`
+  was binary; §3 (below) documents a live example of it silently producing
+  garbage when it wasn't. **Implemented (2026-08-10):** both now return
+  `private$draw_ws_raw(r)`/`private$w` unmodified — the transform is gone,
+  not just guarded.
 - **`assert_even_allocation()`** (`design_abstract.R:279-285`) and several
   concrete designs' constructors hard-stop unless `prob_T == 0.5` exactly —
   `DesignFixedGreedy` (`design_fixed_greedy.R:45-47`), `DesignFixedAOptimal`
@@ -272,14 +288,23 @@ handful of changes, made once and inherited everywhere (mirroring how
 `sequential_inference.md` §7 found one shared-base-class change serving 13
 subclasses rather than a 13-file change):
 
-- A `K`-arm-aware replacement for `overwrite_all_subject_assignments()`'s
-  `{-1,+1}`-only assert (`design_abstract.R:236-241`).
+- ~~A `K`-arm-aware replacement for `overwrite_all_subject_assignments()`'s
+  `{-1,+1}`-only assert~~ **Implemented (2026-08-10):** the assert now
+  requires `{0,1}` directly (`design_abstract.R:234-245`); no `K`-conditional
+  branching was needed because `K == 2`'s encoding is no longer special-cased
+  at all (next bullet).
 - **`get_w()`/`draw_ws_according_to_design()`/`overwrite_all_subject_assignments()`
   should drop the `{-1,+1}` transform entirely and always speak raw
-  `{0,...,K-1}` labels** — for every `K`, including `K == 2`
-  (`design_abstract.R:236-241,339-341,346-349`). Concretely this **reverts
-  `Design`'s public API to its pre-2026-06-22 form** (see §3c-i below) and
-  generalizes it to `K` arms, rather than introducing a new convention.
+  `{0,...,K-1}` labels** — for every `K`, including `K == 2`. **The `K == 2`
+  half of this is implemented** (`design_abstract.R:234-245,338-349`,
+  `design_fixed_abstract.R:46-57,117-128`,
+  `design_seq_one_by_one_abstract.R:151-167`) — every design shipped today
+  now speaks raw `{0,1}` with no transform at all, confirmed by the full
+  `tests/testthat` suite passing (184 files, 0 failures). **The `K > 2` half
+  is not** — raw `{0,...,K-1}` labels for `K > 2` still need §3a/§3b/§3c's
+  `K`/`prob_T_vec` machinery, none of which exists yet. Concretely the
+  implemented piece **reverts `Design`'s public API to its pre-2026-06-22
+  form** (see §3c-i below) rather than introducing a new convention.
 
   This revises an earlier draft of this section twice over. The first draft
   recommended keeping `get_w()`'s `{-1,+1}` behavior for `K == 2` only,
@@ -391,39 +416,58 @@ would let `InferenceIncidExtendedRobins` drop `get_w_signed()` entirely and
 pass `private$w` straight through, leaving `InferenceIncidCMH` as the only
 class with a genuine mathematical dependency on the sign.
 
-**The replacement mechanism** is a small private helper on the shared
-`Inference` base class, inherited by all ~100 concrete classes but called
-by only these two:
+**Implemented (2026-08-10).** The replacement mechanism is a small private
+helper on the shared `Inference` base class (`inference_all_abstract.R`,
+next to `finalize`), inherited by all ~100 concrete classes but called by
+only these two. It ended up generic over vector *or matrix* input, rather
+than reading `private$w` implicitly, since `InferenceIncidCMH`'s non-blocking
+SE path needs to recode a whole `w_mat` of reference draws, not just the
+single observed assignment:
 
 ```r
-# Inference (private):
-get_w_signed = function(){
-  ifelse(private$w == 1, 1, -1)   # private$w is already {0,1}; identical
-                                    # to today's 2*w-1 for w in {0,1}
+# Inference (private), as actually shipped:
+get_w_signed = function(w){
+  2 * w - 1
 }
 ```
 
-This is a pure identity-preserving refactor for `K == 2`: for every subject,
-`ifelse(w_raw == 1, 1, -1)` computes exactly the same value today's
-`2L * private$des_obj_priv_int$w - 1L` (inside `Design$get_w()`) does — the
-sign computation moves, the numbers it produces don't.
+`InferenceIncidCMH$get_standard_error()` (`inference_incidence_cmh.R`) calls
+`w_mat = private$get_w_signed(w_mat)` right after drawing `w_mat` (from
+either `get_cmh_se_w_mat()`'s cache or a fresh
+`draw_ws_according_to_design()` call — both now `{0,1}`), before computing
+`ytw`. `InferenceIncidExtendedRobins$get_standard_error()`
+(`inference_incidence_extended_robins.R`) calls
+`private$get_w_signed(private$w)` — and was simplified in the same change to
+stop calling `des_obj$get_w()` for this at all, since `private$w` and
+`des_obj$get_w()` are now identical values (both raw `{0,1}`) for a `K == 2`
+design, making the extra round-trip through `des_obj` pointless.
 
-One follow-on wrinkle worth naming for whenever `K > 2` designs actually
-exist: both classes currently call `private$des_obj$get_w()`/
+This is a pure identity-preserving refactor for `K == 2`, verified two ways:
+algebraically (`2*w-1` for `w ∈ {0,1}` reproduces exactly what
+`2L * private$des_obj_priv_int$w - 1L` inside the old `Design$get_w()` did)
+and empirically (the full test suite, including
+`test-design-inference.R`'s independent from-scratch reimplementation of the
+Extended Robins variance formula compared against the C++ kernel's output,
+passes with the same `tolerance = 1e-12` it always used).
+
+One follow-on wrinkle, still open, worth naming for whenever `K > 2` designs
+actually exist: both classes still call `private$des_obj$get_w()`/
 `draw_ws_according_to_design()` **directly**, bypassing `Inference`'s own
-already-arm-selected `private$w` (§4) entirely — CMH needs *fresh*
-reference draws from the design's randomization mechanism for its empirical
-SE, not just the one observed assignment, which is why it reaches past
-`Inference`'s snapshot into `des_obj` directly today. Once `des_obj` can
-carry more than two arms, both call sites need to route through `Inference`'s
-own (already `arm_treated`/`arm_control`-filtered) copies — or a
-`K`-arm-aware sibling that filters `draw_ws_according_to_design()`'s raw
-`{0,...,K-1}` draws down to the two selected arms before recoding — rather
-than continuing to read the full, unfiltered `K`-arm design directly. This
-is a small, mechanical follow-on to §4's arm-selection work, not a new
-open question, but it's a change these two specific classes need that most
-others don't, since most others only ever consume `Inference`'s own
-snapshot.
+snapshot entirely — CMH needs *fresh* reference draws from the design's
+randomization mechanism for its empirical SE, not just the one observed
+assignment, which is why it reaches past `Inference`'s snapshot into
+`des_obj` directly today (this wasn't changed; only `InferenceIncidExtendedRobins`'s
+single-vector case was simplified away from it). Once `des_obj` can carry
+more than two arms, both call sites need to route through `Inference`'s own
+(already `arm_treated`/`arm_control`-filtered) copies — or a `K`-arm-aware
+sibling that filters `draw_ws_according_to_design()`'s raw `{0,...,K-1}`
+draws down to the two selected arms before recoding — rather than
+continuing to read the full, unfiltered `K`-arm design directly. This is a
+small, mechanical follow-on to §4's arm-selection work (itself still
+unimplemented, see the Implementation status note at the top of this
+document), not a new open question, but it's a change these two specific
+classes need that most others don't, since most others only ever consume
+`Inference`'s own snapshot.
 
 - `prob_T` (scalar) needs a `K`-vector sibling, e.g. `prob_T_vec`, that
   defaults to `rep(1/K, K)` and collapses to today's `prob_T`/`1-prob_T`
@@ -806,31 +850,37 @@ plumbing once §3/§4 land.
 
 ## 8. Phased plan
 
-- **Phase 1a (Design, non-KK):** switch `private$w`'s storage type from
-  `numeric` to `integer` (§3d) — an independent, lower-risk change worth
-  landing first, since it benefits every design shipped today, not just
-  future `K`-arm ones. Then drop `get_w()`/`draw_ws_according_to_design()`/
-  `overwrite_all_subject_assignments()`'s `{-1,+1}` transform in favor of
-  always speaking raw `{0,...,K-1}` labels (§3c) — a named, documented
-  breaking change to `Design`'s public API, landed in a major version, with
-  a migration note for any external caller of `get_w()` — together with the
-  shared `Inference$get_w_signed()` helper (§3c-i) and the follow-on update
-  to `InferenceIncidCMH`/`InferenceIncidExtendedRobins` so they stop reading
-  `des_obj$get_w()`/`draw_ws_according_to_design()` directly, since those
-  are the only two classes in the package with a genuine (verified, §3c-i)
-  dependency on the sign. Then add `K`/`prob_T_vec` to the shared `Design`/
-  `DesignFixed`/`DesignSeqOneByOne` base classes (§3c) with `K = 2` as the
-  default so every design's *internal* assignment mechanics are unaffected;
-  wire `K`-arm support into the four `randomizr`-backed designs first (§3a,
-  near-zero new C++); then the remaining non-KK designs one at a time (§3b,
-  each needs a new C++ kernel); add `is_a_multi_arm_capable()` mirroring the
-  existing `is_a_*_capable()` characterization pattern. (The
-  `DesignFixedFactorial` signed-encoding seam identified in §2 has already
-  been fixed as an immediate hotfix, ahead of this phased plan, on the old
-  per-`K`-conditional `{-1,+1}` convention — it now needs its
-  `prod(unlist(factors)) == 2` stopgap assertion lifted once this bullet's
-  `get_w()` change and §3's `K`-arm mechanics land.)
-- **Phase 1b (Inference, arm selection):** add `arm_treated`/`arm_control`
+- **Phase 1a (Design, non-KK):**
+  - [x] TODO-1a: drop `get_w()`/`draw_ws_according_to_design()`/
+    `overwrite_all_subject_assignments()`/`assign_w_to_all_subjects()`/
+    `add_one_subject_to_experiment_and_assign()`'s `{-1,+1}` transform for
+    `K == 2` in favor of the raw `{0,1}` labels already used internally (§3c)
+    — **done 2026-08-10**, landed as a direct point-in-time fix rather than a
+    deferred major-version change (this package has no external users yet to
+    protect with a migration window) — together with the shared
+    `Inference$get_w_signed()` helper (§3c-i) and the follow-on update to
+    `InferenceIncidCMH`/`InferenceIncidExtendedRobins` so they stop needlessly
+    reading `des_obj$get_w()` when `private$w` already has the same value.
+    Verified against the full `tests/testthat` suite (184 files, 0
+    failures) run under plain `library(EDI)` after a clean rebuild. The
+    `DesignFixedFactorial` signed-encoding seam identified in §2 — already
+    fixed as its own earlier hotfix — automatically inherits this change too
+    (it never had its own `get_w()` override).
+  - [ ] TODO-1b: switch `private$w`'s storage type from `numeric` to
+    `integer` (§3d) — still not done; independent of TODO-1a and can land
+    separately.
+  - [ ] TODO-1c: extend the `{0,1}` convention to raw `{0,...,K-1}` labels
+    for `K > 2` — still not done. Add `K`/`prob_T_vec` to the shared
+    `Design`/`DesignFixed`/`DesignSeqOneByOne` base classes (§3c) with
+    `K = 2` as the default so every design's *internal* assignment mechanics
+    stay unaffected; wire `K`-arm support into the four `randomizr`-backed
+    designs first (§3a, near-zero new C++); then the remaining non-KK
+    designs one at a time (§3b, each needs a new C++ kernel); add
+    `is_a_multi_arm_capable()` mirroring the existing `is_a_*_capable()`
+    characterization pattern. `DesignFixedFactorial`'s
+    `prod(unlist(factors)) == 2` stopgap assertion (§2) should be lifted
+    once this lands.
+- [ ] TODO-2: **Phase 1b (Inference, arm selection):** add `arm_treated`/`arm_control`
   parameters to `Inference$initialize()` (§4), defaulting to `NULL` and
   auto-resolving when exactly two arms are present so every existing call
   site is unaffected; ship with documentation and an example showing
@@ -838,17 +888,17 @@ plumbing once §3/§4 land.
   → identical behavior to a design that was always two-arm" as the
   supported Phase-1 workflow; document (don't yet solve) the multiplicity
   caveat from §4 and the randomization-test validity gap from §7.
-- **Phase 2 (KK matching, K arms):** simulation-only prototype comparing
+- [ ] TODO-3: **Phase 2 (KK matching, K arms):** simulation-only prototype comparing
   `K`-tuple vs. recursive-pairwise matching (§5) before writing package
   code; then `DesignSeqOneByOneKK14`; then `DesignFixedBinaryMatch`/
   `DesignFixedMatchingGreedyPairSwitching`; then `KK21`/`KK21stepwise`'s
   response-adaptive weight generalization, strictly after KK14 lands.
-- **Phase 3a (Inference, orchestration):** `MultiArmInference`-style
+- [ ] TODO-4: **Phase 3a (Inference, orchestration):** `MultiArmInference`-style
   pairwise/Dunnett orchestration layer over Phase 1b's `arm_treated`/
   `arm_control` selection (§6a), plus a real multiplicity-correction
   implementation — the first place in this plan that needs genuinely new
   statistical code rather than generalizing an existing mechanism.
-- **Phase 3b (Inference, native — demand-gated):** purpose-written
+- [ ] TODO-5: **Phase 3b (Inference, native — demand-gated):** purpose-written
   native `K`-arm `Inference` classes for continuous and incidence responses
   only (§6b), gated on demonstrated need beyond what Phase 3a's pairwise
   output provides.
@@ -863,12 +913,17 @@ plumbing once §3/§4 land.
   the exact estimator/SE algebra for the two classes that touch the sign.
   The one deliberate, explicitly-named exception is `Design`'s public
   `get_w()`/`draw_ws_according_to_design()`/`overwrite_all_subject_assignments()`
-  convention itself (§3c), which this document *does* propose changing from
+  convention itself (§3c), which this document proposes changing from
   `{-1,+1}` to raw `{0,...,K-1}` labels for every `K`, with the displaced
   `{-1,+1}` need met by a small, narrowly-used `Inference`-level helper
-  (§3c-i) rather than by `Design` carrying two conventions. This is a real
-  breaking change to `Design`'s public contract, scoped to a major version
-  with a migration note, not something to sneak in silently.
+  (§3c-i) rather than by `Design` carrying two conventions. The `K == 2`
+  slice of this landed 2026-08-10 (Implementation status note above); the
+  `K > 2` slice remains proposed. This is a real breaking change to
+  `Design`'s public contract — the `K == 2` part shipped as a direct fix
+  rather than a deferred major-version change, a call made because the
+  package has no external users yet to protect with a migration window;
+  that calculus should be revisited before the `K > 2` slice ships if that's
+  no longer true by then.
 - Not selecting between `K`-tuple matching and recursive-pairwise matching
   for Phase 2 (§5) — that is the primary open research question in this
   document and needs simulation evidence, not a document-level decision.

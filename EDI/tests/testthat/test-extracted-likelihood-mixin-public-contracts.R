@@ -4,22 +4,22 @@ library(EDI)
 make_public_contract_logit_design <- function(seed = 1L, n = 100L){
 	set.seed(seed)
 	x = rnorm(n)
-	w = rep(c(1, -1), length.out = n)
+	w = rep(c(1, 0), length.out = n)
 	des = EDI:::DesignFixed$new(n = n, response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = x))
 	des$overwrite_all_subject_assignments(w)
-	des$add_all_subject_responses(rbinom(n, 1L, plogis(-0.2 + 0.5 * ((w + 1) / 2) + 0.3 * x)))
+	des$add_all_subject_responses(rbinom(n, 1L, plogis(-0.2 + 0.5 * w + 0.3 * x)))
 	des
 }
 
 make_public_contract_poisson_inference <- function(seed = 1L, n = 100L){
 	set.seed(seed)
 	x = rnorm(n)
-	w = rep(c(1, -1), length.out = n)
+	w = rep(c(1, 0), length.out = n)
 	des = EDI:::DesignFixed$new(n = n, response_type = "count", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = x))
 	des$overwrite_all_subject_assignments(w)
-	des$add_all_subject_responses(rpois(n, exp(0.2 + 0.4 * ((w + 1) / 2) + 0.2 * x)))
+	des$add_all_subject_responses(rpois(n, exp(0.2 + 0.4 * w + 0.2 * x)))
 	InferenceCountPoisson$new(des, verbose = FALSE)
 }
 

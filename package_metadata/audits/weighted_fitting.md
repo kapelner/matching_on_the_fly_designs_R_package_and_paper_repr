@@ -1,4 +1,4 @@
-# Weighted-Observation Implementation Checklist
+# Weighted-Observation Fitting Checklist
 
 This file tracks which concrete bootstrap-capable inference paths currently have a
 real implementation of

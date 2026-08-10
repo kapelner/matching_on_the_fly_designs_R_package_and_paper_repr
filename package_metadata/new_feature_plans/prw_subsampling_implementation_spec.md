@@ -782,40 +782,40 @@ Required documentation caveats:
 
 ### Phase 1: Core Generic Subsampling
 
-- Add operation contract and private cache.
-- Add ordinary observation-level without-replacement draw generator.
-- Add public distribution, p-value, and CI methods.
-- Support only `scaling = "sqrt_n"`.
-- Support explicit integer `b` and deterministic `b = NULL`.
-- Add simple mean-difference tests.
+- [ ] TODO-1: Add operation contract and private cache.
+- [ ] TODO-2: Add ordinary observation-level without-replacement draw generator.
+- [ ] TODO-3: Add public distribution, p-value, and CI methods.
+- [ ] TODO-4: Support only `scaling = "sqrt_n"`.
+- [ ] TODO-5: Support explicit integer `b` and deterministic `b = NULL`.
+- [ ] TODO-6: Add simple mean-difference tests.
 
 ### Phase 2: Minimum-Volatility `b` Selection
 
-- Add `select_optimal_b_subsampling()`.
-- Adapt the minimum-volatility grid logic from
+- [ ] TODO-7: Add `select_optimal_b_subsampling()`.
+- [ ] TODO-8: Adapt the minimum-volatility grid logic from
   `../PTE/PTE/R/select_optimal_m_prop.R`.
-- Add `compute_subsampling_sensitivity()`.
-- Add selector tests before using selection inside inference methods.
+- [ ] TODO-9: Add `compute_subsampling_sensitivity()`.
+- [ ] TODO-10: Add selector tests before using selection inside inference methods.
 
 ### Phase 3: Design-Aware Units
 
-- Add unit resolver.
-- Add blocking, cluster, matching, and KK matched/reservoir draw support.
-- Add draw-contract tests for each design family.
+- [ ] TODO-11: Add unit resolver.
+- [ ] TODO-12: Add blocking, cluster, matching, and KK matched/reservoir draw support.
+- [ ] TODO-13: Add draw-contract tests for each design family.
 
 ### Phase 4: Diagnostics And Debug API
 
-- Wire subsampling diagnostics into `compute_pval_debug()` and
+- [ ] TODO-14: Wire subsampling diagnostics into `compute_pval_debug()` and
   `compute_ci_debug()`.
-- Preserve optimizer diagnostics for failed refits in debug mode when available.
-- Add finite-fraction and failure-reason summaries.
-- Add `b_selection` diagnostics when minimum-volatility selection is used.
+- [ ] TODO-15: Preserve optimizer diagnostics for failed refits in debug mode when available.
+- [ ] TODO-16: Add finite-fraction and failure-reason summaries.
+- [ ] TODO-17: Add `b_selection` diagnostics when minimum-volatility selection is used.
 
 ### Phase 5: Path Audit Integration
 
-- Add path-audit columns for subsampling p-values and CIs.
-- Keep cells light green until class-specific empirical stability is measured.
-- Add low-estimability summaries for subsampling separately from bootstrap.
+- [ ] TODO-18: Add path-audit columns for subsampling p-values and CIs.
+- [ ] TODO-19: Keep cells light green until class-specific empirical stability is measured.
+- [ ] TODO-20: Add low-estimability summaries for subsampling separately from bootstrap.
 
 ## Acceptance Criteria
 

@@ -79,9 +79,12 @@ InferenceIncidExtendedRobins = R6::R6Class("InferenceIncidExtendedRobins",
 				private$cache_nonestimable_se("extended_robins_standard_error_unavailable")
 				return(NA_real_)
 			}
+			# private$w is already {0,1} (identical to des_obj$get_w() -- both read the
+			# same observed assignment); recode to signed {-1,+1} locally since the C++
+			# kernel's input contract requires it (see cmh_speedups.cpp).
 			private$cached_values$robins_s_beta_hat_T = compute_extended_robins_block_se_cpp(
 				private$des_obj_priv_int$y,
-				private$des_obj$get_w(),
+				private$get_w_signed(private$w),
 				private$des_obj$get_block_ids(),
 				private$des_obj_priv_int$n
 			)

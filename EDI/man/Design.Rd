@@ -10,10 +10,13 @@ This class takes care of data storage and response handling.
 }
 \details{
 Throughout the package, treatment assignment vectors \eqn{w} use the
-\eqn{\{-1, +1\}} encoding: \eqn{+1} indicates a treated subject and \eqn{-1}
+\eqn{\{0, 1\}} encoding: \eqn{1} indicates a treated subject and \eqn{0}
 a control subject.  All public methods that return or accept \eqn{w}
 (e.g. \code{get_w()}, \code{draw_ws_according_to_design()}) use this
-convention.
+convention. A handful of variance estimators (e.g. \code{InferenceIncidCMH},
+\code{InferenceIncidExtendedRobins}) recode to a signed \eqn{\{-1,+1\}}
+contrast internally where their formulas require it; that recoding is
+local to those classes and does not affect this public convention.
 }
 \examples{
 \dontrun{
@@ -282,7 +285,7 @@ covariates. Default is \code{~ .}.}
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{w}}{A \{-1,+1\} vector of subject assignments (+1 = treated, -1 = control).}
+      \item{\code{w}}{A \{0,1\} vector of subject assignments (1 = treated, 0 = control).}
     }
     \if{html}{\out{</div>}}
   }
@@ -482,7 +485,7 @@ covariates. Default is \code{~ .}.}
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    A \{-1,+1\} vector of subject assignments (+1 = treated, -1 = control).
+    A \{0,1\} vector of subject assignments (1 = treated, 0 = control).
   }
 }
 
@@ -504,7 +507,7 @@ covariates. Default is \code{~ .}.}
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    A matrix of size n x r with \{-1,+1\} entries (+1 = treated, -1 = control).
+    A matrix of size n x r with \{0,1\} entries (1 = treated, 0 = control).
   }
 }
 

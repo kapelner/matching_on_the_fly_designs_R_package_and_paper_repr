@@ -1297,13 +1297,13 @@ deliberately kept identical rather than split like `scikit-learn`/
   `test-command`/`test-extras` (see "Building portable wheels" above) run
   that same suite against every built wheel in CI, not just a raw
   `cmake --build`.
-- Upload to [TestPyPI](https://test.pypi.org/) first, `pip install
+- [ ] TODO-11: Upload to [TestPyPI](https://test.pypi.org/) first, `pip install
   --index-url https://test.pypi.org/simple/ edi_kernels` into a fresh venv
   on at least one machine that isn't the one that built the wheel, and
   re-run the smoke tests from this session (or the parity suite) against
   that install before promoting to the real index.
-  **Status (2026-08-05): NOT YET DONE — needs a human with PyPI/TestPyPI
-  credentials.** An actual TestPyPI upload requires an account and API
+  **Status (2026-08-05): needs a human with PyPI/TestPyPI credentials.**
+  An actual TestPyPI upload requires an account and API
   token this environment doesn't have and shouldn't create unattended —
   that's a genuine "upload to a shared external index" action, not a local
   build step. What *was* done as the closest available proxy: built a real

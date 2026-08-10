@@ -23,7 +23,7 @@ test_that("DesignFixedOptimalBlocks is gated behind required libraries", {
 		des$assign_w_to_all_subjects()
 		w = des$get_w()
 		expect_length(w, n)
-		expect_equal(sum(w), 0)
+		expect_equal(sum(w), n / 2)
 		W = des$draw_ws_according_to_design(r = 3)
 		expect_equal(dim(W), c(n, 3))
 	}

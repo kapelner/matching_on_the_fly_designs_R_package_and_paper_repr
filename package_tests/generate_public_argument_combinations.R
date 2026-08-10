@@ -18,6 +18,17 @@ cases_path = file.path(repo_root, "package_tests", "public_argument_combination_
 rejected_path = file.path(repo_root, "package_tests", "public_argument_combination_rejected_candidates.csv")
 coverage_path = file.path(repo_root, "package_tests", "public_argument_combination_coverage.csv")
 
+default_smoke_target_filter = paste(
+	"^InferenceAllSimpleMeanDiff::compute_bootstrap_confidence_interval$",
+	"^DesignFixedBernoulli::add_all_subject_responses$",
+	sep = "|"
+)
+
+default_smoke_fixture_ids = c(
+	"fixed_bernoulli_continuous_smoke",
+	"fixed_bernoulli_survival_censored_smoke"
+)
+
 read_registry = function(path = registry_path) {
 	if (!file.exists(path)) {
 		stop("Missing package_tests/public_argument_contract_registry.rds. Run Phase 2 first.", call. = FALSE)
@@ -109,6 +120,15 @@ non_default_domain_rows = function(domain, tier, max_values = 3L) {
 	rows[seq_len(min(max_values, nrow(rows))), , drop = FALSE]
 }
 
+fixture_arg_expr = function(arg, value_expr) {
+	if (arg %in% c("X_all", "X", "data", "newdata")) return("<fixture:data.frame>")
+	if (arg %in% c("ys", "y")) return("<fixture:response>")
+	if (arg %in% c("deads", "dead")) return("<fixture:dead>")
+	if (arg %in% c("w", "w_precomputed")) return("<fixture:w>")
+	if (arg %in% c("m", "m_vec")) return("<fixture:m>")
+	value_expr
+}
+
 eval_value_expr = function(value_expr, fixture) {
 	value_expr = trimws(as.character(value_expr))
 	if (!nzchar(value_expr)) return(NULL)
@@ -119,6 +139,10 @@ eval_value_expr = function(value_expr, fixture) {
 		if (kind == "matrix") return(as.matrix(fixture$data))
 		if (kind == "list") return(as.list(fixture$data))
 		if (kind == "string") return(fixture$fixture_id)
+		if (kind == "response") return(fixture$response)
+		if (kind == "dead") return(fixture$dead)
+		if (kind == "w") return(fixture$w)
+		if (kind == "m") return(rep(seq_len(ceiling(fixture$metadata$n / 2L)), each = 2L)[seq_len(fixture$metadata$n)])
 		if (kind == "no_censoring") return(!fixture$metadata$has_censoring)
 		return(fixture)
 	}
@@ -150,6 +174,7 @@ case_id_for = function(entry, fixture_id, coverage_kind, signature) {
 
 case_candidate = function(entry, fixture, tier, coverage_kind, value_rows_by_arg) {
 	exprs = vapply(value_rows_by_arg, function(row) row$value_expr[1L], character(1))
+	exprs = mapply(fixture_arg_expr, names(exprs), exprs, USE.NAMES = TRUE)
 	labels = vapply(value_rows_by_arg, function(row) row$label[1L], character(1))
 	args = lapply(exprs, eval_value_expr, fixture = fixture)
 	names(args) = names(exprs)
@@ -323,15 +348,21 @@ write_generation_outputs = function(cases, cases_file = cases_path, rejected_fil
 
 main = function() {
 	args = commandArgs(trailingOnly = TRUE)
-	tier = args[1L] %||% "smoke"
-	target_filter = args[2L] %||% NULL
-	cases = generate_public_argument_combinations(tier = tier, target_filter = target_filter)
+	tier = if (length(args) >= 1L && !is.na(args[1L]) && nzchar(args[1L])) args[1L] else "smoke"
+	target_filter = if (length(args) >= 2L && !is.na(args[2L]) && nzchar(args[2L])) args[2L] else default_smoke_target_filter
+	fixture_ids = if (length(args) >= 3L) strsplit(args[3L], ",", fixed = TRUE)[[1L]] else default_smoke_fixture_ids
+	cases = generate_public_argument_combinations(tier = tier, target_filter = target_filter, fixture_ids = fixture_ids)
 	write_generation_outputs(cases)
 	message("Wrote ", nrow(cases), " public argument combination candidates.")
 	message("Valid candidates: ", sum(cases$constraint_status == "valid"))
 	message("Rejected candidates: ", sum(cases$constraint_status != "valid"))
 }
 
-if (sys.nframe() == 0L) {
+called_as_generate_script = function() {
+	file_arg = grep("^--file=", commandArgs(FALSE), value = TRUE)[1] %||% ""
+	identical(basename(sub("^--file=", "", file_arg)), "generate_public_argument_combinations.R")
+}
+
+if (called_as_generate_script()) {
 	main()
 }

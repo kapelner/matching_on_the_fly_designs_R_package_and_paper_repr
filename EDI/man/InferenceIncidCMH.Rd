@@ -11,7 +11,8 @@ Legacy inference class. This class is retained for backwards compatibility
 and is not comprehensively tested by the package comprehensive-test harness.
 
 
-Treatment assignments are encoded as \eqn{w_i \in \{-1, +1\}}.  For a balanced
+Internally, this class recodes treatment assignments to \eqn{w_i \in \{-1, +1\}}
+(the package-wide convention is \eqn{\{0,1\}}; see \code{Design}). For a balanced
 design the treatment-effect estimator is \eqn{\hat\tau = (2/n)\,\mathbf{y}'\mathbf{w}},
 and since \eqn{E_w[\mathbf{y}'\mathbf{w}] = 0} for any balanced randomization the
 standard error is

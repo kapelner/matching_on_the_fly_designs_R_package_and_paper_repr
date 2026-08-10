@@ -10,7 +10,7 @@ make_gcomp_cache_fixed_design = function(){
 	)
 	des = DesignFixediBCRD$new(n = n, response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(X)
-	des$overwrite_all_subject_assignments(rep(c(1, -1), length.out = n))
+	des$overwrite_all_subject_assignments(rep(c(1, 0), length.out = n))
 	w = des$get_w()
 	p = stats::plogis(-0.35 + 0.45 * w + 0.3 * X$x1 - 0.2 * X$x2)
 	des$add_all_subject_responses(stats::rbinom(n, 1, p))

@@ -55,6 +55,11 @@ DesignFixedBlockedCluster = R6::R6Class("DesignFixedBlockedCluster",
 				assertCharacter(strata_cols, min.len = 1)
 				assertCharacter(cluster_col, len = 1)
 				assertCount(preferred_num_bins_for_continuous_covariate, positive = TRUE)
+				assertStrataClusterArgs(
+					strata_cols = strata_cols,
+					cluster_col = cluster_col,
+					context = "DesignFixedBlockedCluster$new"
+				)
 			}
 			super$initialize(response_type, prob_T, include_is_missing_as_a_new_feature, n, verbose, missingness_method, design_formula, seed = seed)
 			private$blocking_capable = TRUE

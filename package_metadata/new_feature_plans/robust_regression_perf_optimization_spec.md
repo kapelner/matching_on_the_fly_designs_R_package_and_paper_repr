@@ -163,20 +163,20 @@ profile after. Report:
 ## Implementation Phases
 
 ### Phase 1: Profiling
-Build with `EDI_DEBUG_SYMBOLS=1`, profile `compute_fast_rand_bootstrap_distr`
+- [ ] TODO-1: Build with `EDI_DEBUG_SYMBOLS=1`, profile `compute_fast_rand_bootstrap_distr`
 at realistic B/n/p, produce the per-bucket breakdown described above.
 
 ### Phase 2: Targeted optimization
-Implement only the candidate direction(s) the profile justifies. Expect this
+- [ ] TODO-2: Implement only the candidate direction(s) the profile justifies. Expect this
 to be scratch-buffer reuse (Candidate 1) based on the reasoning in
 Motivation, but the profile is authoritative, not this expectation.
 
 ### Phase 3: Correctness verification
-Fixed-seed parity test against pre-optimization output; full existing
+- [ ] TODO-3: Fixed-seed parity test against pre-optimization output; full existing
 robust-regression test suite.
 
 ### Phase 4: Re-benchmark and audit update
-Re-run the Benchmark section's measurements; if `skip_brt="ci"` can be
+- [ ] TODO-4: Re-run the Benchmark section's measurements; if `skip_brt="ci"` can be
 lifted, update `path_audits_source.R:34` and regenerate `path_audits.html`.
 
 ## Acceptance Criteria

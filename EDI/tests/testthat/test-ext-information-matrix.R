@@ -4,11 +4,11 @@ library(EDI)
 make_information_matrix_logit_inference <- function(seed = 1L, n = 80L){
 	set.seed(seed)
 	x = rnorm(n)
-	w = rep(c(1, -1), length.out = n)
+	w = rep(c(1, 0), length.out = n)
 	des = EDI:::DesignFixed$new(n = n, response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = x))
 	des$overwrite_all_subject_assignments(w)
-	des$add_all_subject_responses(rbinom(n, 1L, plogis(-0.2 + 0.5 * ((w + 1) / 2) + 0.3 * x)))
+	des$add_all_subject_responses(rbinom(n, 1L, plogis(-0.2 + 0.5 * w + 0.3 * x)))
 	InferenceIncidLogRegr$new(des, verbose = FALSE)
 }
 

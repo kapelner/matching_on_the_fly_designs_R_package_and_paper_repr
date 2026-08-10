@@ -7,7 +7,8 @@
 #' and is not comprehensively tested by the package comprehensive-test harness.
 #'
 #' @details
-#' Treatment assignments are encoded as \eqn{w_i \in \{-1, +1\}}.  For a balanced
+#' Internally, this class recodes treatment assignments to \eqn{w_i \in \{-1, +1\}}
+#' (the package-wide convention is \eqn{\{0,1\}}; see \code{Design}). For a balanced
 #' design the treatment-effect estimator is \eqn{\hat\tau = (2/n)\,\mathbf{y}'\mathbf{w}},
 #' and since \eqn{E_w[\mathbf{y}'\mathbf{w}] = 0} for any balanced randomization the
 #' standard error is
@@ -113,6 +114,10 @@ InferenceIncidCMH = R6::R6Class("InferenceIncidCMH",
 			} else {
 				precomp = private$des_obj$get_cmh_se_w_mat()
 				w_mat = if (!is.null(precomp)) precomp else private$des_obj$draw_ws_according_to_design(private$se_est_num_vectors)
+				# Both sources return {0,1}; recode to signed {-1,+1} locally -- this
+				# formula requires E_w[y'w] = 0 under any randomization, which only
+				# holds for signed coding (see @details above).
+				w_mat = private$get_w_signed(w_mat)
 				ytw      = drop(private$y %*% w_mat)
 				# With {-1,+1} encoding: τ̂ = (2/n)*y'w, so SE[τ̂] = (2/n)*SD[ytw].
 				# E[y·w] = 0 exactly for all balanced designs, so the unbiased variance

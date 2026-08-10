@@ -65,6 +65,12 @@ DesignFixed = R6::R6Class("DesignFixed",
 			if (should_run_asserts()) {
 				assertClass(X_all, "data.frame")
 				self$assert_fixed_sample()
+				assertStrataClusterArgs(
+					strata_cols = private$strata_cols,
+					cluster_col = private$cluster_col,
+					data = X_all,
+					context = paste0(class(self)[1L], "$add_all_subjects_to_experiment")
+				)
 				if (n_all != n_expected){
 					stop("X_all must have exactly ", n_expected, " rows for this fixed design.")
 				}

@@ -53,6 +53,13 @@ DesignSeqOneByOne = R6::R6Class("DesignSeqOneByOne",
 		add_one_subject = function(x_new, allow_new_cols = TRUE){
 			if (should_run_asserts()) {
 				assertClass(x_new, "data.frame")
+				assertStrataClusterArgs(
+					strata_cols = private$strata_cols,
+					cluster_col = private$cluster_col,
+					data = x_new,
+					strata_cols_must_be_factor = !is.null(private$strata_cols),
+					context = paste0(class(self)[1L], "$add_one_subject")
+				)
 			}
 			x_new = as.data.table(x_new)
 			if (should_run_asserts()) {

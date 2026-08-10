@@ -410,13 +410,13 @@ field to `NULL` or `NA`, not by doing expensive substitute computation.
 
 ### Phase 1: Public wrapper and result object
 
-1. Add an `EDIInferenceDebugResult` constructor/helper.
-2. Add print and summary methods:
+- [ ] TODO-1: Add an `EDIInferenceDebugResult` constructor/helper.
+- [ ] TODO-2: Add print and summary methods:
    - `print.EDIInferenceDebugResult`
    - `as.data.frame.EDIInferenceDebugResult`
-3. Add base public methods in the highest shared inference class that can
+- [ ] TODO-3: Add base public methods in the highest shared inference class that can
    safely expose them.
-4. The default implementations should call existing public methods and wrap
+- [ ] TODO-4: The default implementations should call existing public methods and wrap
    their results with minimal diagnostics. This makes the API available
    package-wide without changing class internals.
 
@@ -438,29 +438,29 @@ classes.
 
 Priority targets:
 
-1. Likelihood-backed `InferenceAsympLik` classes.
-2. `InferenceParamBootstrap` and bootstrap-calibrated LR paths.
-3. Nonparametric bootstrap and Bayesian bootstrap methods.
-4. Randomization and jackknife paths.
+- [ ] TODO-5: Move likelihood-backed `InferenceAsympLik` classes to shared core-path diagnostics.
+- [ ] TODO-6: Move `InferenceParamBootstrap` and bootstrap-calibrated LR paths to shared core-path diagnostics.
+- [ ] TODO-7: Move nonparametric bootstrap and Bayesian bootstrap methods to shared core-path diagnostics.
+- [ ] TODO-8: Move randomization and jackknife paths to shared core-path diagnostics.
 
 ### Phase 3: Optimizer diagnostics integration
 
 After the optimizer diagnostics layer is implemented:
 
-1. Thread native diagnostics into R fit objects.
-2. Store last-fit diagnostics in a consistent private cache.
-3. Expose `get_last_fit_diagnostics()` as planned by
+- [ ] TODO-9: Thread native diagnostics into R fit objects.
+- [ ] TODO-10: Store last-fit diagnostics in a consistent private cache.
+- [ ] TODO-11: Expose `get_last_fit_diagnostics()` as planned by
    [optimizer_diagnostics_report.md](optimizer_diagnostics_report.md).
-4. Have `compute_*_details()` pull from those caches without recomputing.
+- [ ] TODO-12: Have `compute_*_details()` pull from those caches without recomputing.
 
 ### Phase 4: Audit/report integration
 
 Use debug results to improve `path_audits.html` and comprehensive tests:
 
-- distinguish numeric success, typed non-estimable, and unexpected error
-- aggregate `reason` by class/method
-- identify dominant failure mechanisms for 0%, <1%, <5%, and <25% cells
-- produce a low-estimability hardening report directly from debug output
+- [ ] TODO-13: Distinguish numeric success, typed non-estimable, and unexpected error.
+- [ ] TODO-14: Aggregate `reason` by class/method.
+- [ ] TODO-15: Identify dominant failure mechanisms for 0%, <1%, <5%, and <25% cells.
+- [ ] TODO-16: Produce a low-estimability hardening report directly from debug output.
 
 This should complement [path_audit_hardening_report.md](../package_tests/path_audit_hardening_report.md).
 

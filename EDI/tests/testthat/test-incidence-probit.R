@@ -6,9 +6,8 @@ test_that("InferenceIncidProbitRegr matches stats::glm on the treatment slope", 
 	n <- 160
 	x <- rnorm(n)
 	z <- rnorm(n)
-	w <- rep(c(1, -1), length.out = n)
-	w01 <- (w + 1) / 2
-	p <- pnorm(-0.25 + 0.9 * w01 + 0.45 * x - 0.35 * z)
+	w <- rep(c(1, 0), length.out = n)
+	p <- pnorm(-0.25 + 0.9 * w + 0.45 * x - 0.35 * z)
 	y <- rbinom(n, 1, p)
 
 	des <- EDI:::DesignFixed$new(n = n, response_type = "incidence", verbose = FALSE)
@@ -17,11 +16,11 @@ test_that("InferenceIncidProbitRegr matches stats::glm on the treatment slope", 
 	des$add_all_subject_responses(y)
 
 	inf <- InferenceIncidProbitRegr$new(des, verbose = FALSE, smart_cold_start_default = TRUE)
-	fit_ref <- stats::glm(y ~ w01 + x + z, family = stats::binomial(link = "probit"))
+	fit_ref <- stats::glm(y ~ w + x + z, family = stats::binomial(link = "probit"))
 
 	expect_equal(
 		inf$compute_estimate(),
-		as.numeric(stats::coef(fit_ref)[["w01"]]),
+		as.numeric(stats::coef(fit_ref)[["w"]]),
 		tolerance = 1e-4
 	)
 })
@@ -30,9 +29,8 @@ test_that("InferenceIncidProbitRegr supports asymptotic and likelihood-based inf
 	set.seed(20260511)
 	n <- 120
 	x <- rnorm(n)
-	w <- rep(c(1, -1), length.out = n)
-	w01 <- (w + 1) / 2
-	p <- pnorm(-0.1 + 0.75 * w01 + 0.3 * x)
+	w <- rep(c(1, 0), length.out = n)
+	p <- pnorm(-0.1 + 0.75 * w + 0.3 * x)
 	y <- rbinom(n, 1, p)
 
 	des <- EDI:::DesignFixed$new(n = n, response_type = "incidence", verbose = FALSE)

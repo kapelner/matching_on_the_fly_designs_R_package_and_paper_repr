@@ -373,7 +373,7 @@ this section implied.
 
 ## 8. Phased plan
 
-- **Phase 0 (no core changes, proof of concept):** demonstrate
+- [ ] TODO-1: **Phase 0 (no core changes, proof of concept):** demonstrate
   group-sequential O'Brien-Fleming monitoring on top of
   `InferenceAllSimpleMeanDiff` for a continuous response, using an
   `n = NULL` (open-accrual) `DesignSeqOneByOneBernoulli` design and manual
@@ -381,11 +381,11 @@ this section implied.
   `SimulationFramework`. This exercises §2's existing loophole directly and
   requires zero package changes — good for validating the statistical
   approach before investing in plumbing.
-- **Phase 1:** add `record_analysis_event()` / `get_analysis_events()` to
+- [ ] TODO-2: **Phase 1:** add `record_analysis_event()` / `get_analysis_events()` to
   `DesignSeqOneByOne` (§7), then build the thin, statelessly-reconstructible
   `SequentialMonitor` class (§5) on top: spending-function plug-in point,
   `look()` API, reading/writing its ledger through `des_obj`.
-- **Phase 2:** add an explicit, narrowly-scoped bypass for
+- [ ] TODO-3: **Phase 2:** add an explicit, narrowly-scoped bypass for
   `assert_all_subjects_arrived()` (e.g. an `interim = TRUE` argument
   threaded through `Inference$initialize()` and
   `assert_all_responses_recorded()`) so fixed-`n` designs support interim
@@ -394,14 +394,14 @@ this section implied.
   also removes the need for the `n = NULL` KK-matching-threshold caveat in
   §2, since fixed-`n` designs would no longer need to fake open-ended
   accrual to unlock interim looks.
-- **Phase 3:** audit each concrete `DesignSeqOneByOne*` assignment rule
+- [ ] TODO-4: **Phase 3:** audit each concrete `DesignSeqOneByOne*` assignment rule
   (KK14, KK21, KK21stepwise, Atkinson, SPBR, PocockSimon, RandomBlockSize)
   for whether its `draw_ws_raw()`/`assign_wt()` genuinely conditions only
   on history through `t` with no forward-looking dependence on final `n`
   beyond the matching-threshold caveat already identified — a prerequisite
   for approach 4 (sequential randomization tests) to be valid at arbitrary
   interim `t`.
-- **Phase 4:** extend beyond group-sequential/randomization approaches to
+- [ ] TODO-5: **Phase 4:** extend beyond group-sequential/randomization approaches to
   anytime-valid confidence sequences (approach 3) for the highest-value
   `Inference*` families (mean difference, risk difference), since these
   remove the requirement to pre-commit to a look schedule at all.

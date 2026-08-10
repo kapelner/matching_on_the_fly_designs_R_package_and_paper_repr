@@ -5,9 +5,8 @@ make_param_boot_weibull_censored_design <- function(seed = 20260521L, n = 100L){
 	set.seed(seed)
 	x1 <- rnorm(n)
 	x2 <- rnorm(n)
-	w <- rep(c(1, -1), length.out = n)
-	w01 <- (w + 1) / 2
-	linpred <- 0.25 + 0.35 * w01 + 0.25 * x1 - 0.15 * x2
+	w <- rep(c(1, 0), length.out = n)
+	linpred <- 0.25 + 0.35 * w + 0.25 * x1 - 0.15 * x2
 	event_time <- rweibull(n, shape = 1.4, scale = exp(linpred))
 	censor_time <- rexp(n, rate = 0.35)
 	y <- pmin(event_time, censor_time)
@@ -24,10 +23,9 @@ make_param_boot_zinb_design <- function(seed = 20260522L, n = 120L){
 	set.seed(seed)
 	x1 <- rnorm(n)
 	x2 <- rnorm(n)
-	w <- rep(c(1, -1), length.out = n)
-	w01 <- (w + 1) / 2
-	p_zero <- plogis(-1.0 + 0.55 * w01 - 0.35 * x1 + 0.15 * x2)
-	mu <- exp(0.35 + 0.25 * w01 + 0.25 * x1 - 0.10 * x2)
+	w <- rep(c(1, 0), length.out = n)
+	p_zero <- plogis(-1.0 + 0.55 * w - 0.35 * x1 + 0.15 * x2)
+	mu <- exp(0.35 + 0.25 * w + 0.25 * x1 - 0.10 * x2)
 	is_zero <- rbinom(n, 1L, p_zero)
 	y_count <- rnbinom(n, mu = mu, size = 2.5)
 	y <- ifelse(is_zero == 1L, 0L, y_count)
@@ -43,10 +41,9 @@ make_param_boot_zero_augmented_poisson_design <- function(seed = 20260525L, n = 
 	set.seed(seed)
 	x1 <- rnorm(n)
 	x2 <- rnorm(n)
-	w <- rep(c(1, -1), length.out = n)
-	w01 <- (w + 1) / 2
-	p_zero <- plogis(-0.85 + 0.35 * w01 - 0.25 * x1)
-	mu <- exp(0.25 + 0.15 * w01 + 0.20 * x1 - 0.10 * x2)
+	w <- rep(c(1, 0), length.out = n)
+	p_zero <- plogis(-0.85 + 0.35 * w - 0.25 * x1)
+	mu <- exp(0.25 + 0.15 * w + 0.20 * x1 - 0.10 * x2)
 	is_zero <- rbinom(n, 1L, p_zero)
 	y_count <- rpois(n, mu)
 	y <- ifelse(is_zero == 1L, 0L, y_count)
@@ -62,9 +59,8 @@ make_param_boot_ordinal_design <- function(seed = 20260523L, n = 120L){
 	set.seed(seed)
 	x1 <- rnorm(n)
 	x2 <- rnorm(n)
-	w <- rep(c(1, -1), length.out = n)
-	w01 <- (w + 1) / 2
-	eta <- 0.45 * w01 + 0.30 * x1 - 0.20 * x2
+	w <- rep(c(1, 0), length.out = n)
+	eta <- 0.45 * w + 0.30 * x1 - 0.20 * x2
 	cut_1 <- plogis(-1.10 - eta)
 	cut_2 <- plogis(-0.10 - eta)
 	cut_3 <- plogis(0.90 - eta)

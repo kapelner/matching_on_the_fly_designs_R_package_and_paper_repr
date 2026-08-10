@@ -222,7 +222,16 @@ inline Eigen::MatrixXd weighted_crossprod(const Eigen::MatrixBase<Derived>& X,
             for (int j = 0; j < p; ++j) {
                 double xij = X(i, j);
                 double w_xij = wi * xij;
+                // MSVC's default -openmp (OpenMP 2.0) doesn't support the
+                // simd construct at all (error C7660: requires
+                // -openmp:experimental) -- unlike every other target this
+                // header builds for (g++/clang via R and the manylinux/
+                // macOS portable-wheel builds), which all support it fine.
+                // This is a vectorization hint only, safe to omit on MSVC
+                // rather than pass an extra compiler flag just for this.
+#ifndef _MSC_VER
 #pragma omp simd
+#endif
                 for (int k = j; k < p; ++k) {
                     res(j, k) += w_xij * X(i, k);
                 }
@@ -263,7 +272,9 @@ inline Eigen::MatrixXd weighted_crossprod(const Eigen::Map<const Eigen::Matrix<d
         for (int j = 0; j < p; ++j) {
             double xij = X(i, j);
             double w_xij = wi * xij;
+#ifndef _MSC_VER
 #pragma omp simd
+#endif
             for (int k = j; k < p; ++k) {
                 res(j, k) += w_xij * X(i, k);
             }
@@ -288,7 +299,9 @@ inline Eigen::VectorXd weighted_crossprod_rhs(const Eigen::MatrixBase<Derived>& 
         for (int i = 0; i < n; ++i) {
             double wi_yi = w(i) * y(i);
             if (wi_yi == 0.0) continue;
+#ifndef _MSC_VER
 #pragma omp simd
+#endif
             for (int j = 0; j < p; ++j) {
                 res(j) += X(i, j) * wi_yi;
             }
@@ -314,7 +327,9 @@ inline Eigen::VectorXd weighted_crossprod_rhs(const Eigen::Map<const Eigen::Matr
     for (int i = 0; i < n; ++i) {
         double wi_yi = w(i) * y(i);
         if (wi_yi == 0.0) continue;
+#ifndef _MSC_VER
 #pragma omp simd
+#endif
         for (int j = 0; j < p; ++j) {
             res(j) += X(i, j) * wi_yi;
         }

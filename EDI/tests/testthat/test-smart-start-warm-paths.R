@@ -2,12 +2,11 @@ test_that("likelihood inversion paths populate and reuse null-fit warm-start cac
 	set.seed(202)
 	n <- 60
 	x <- rnorm(n)
-	w <- rep(c(1, -1), length.out = n)
-	w01 <- (w + 1) / 2
+	w <- rep(c(1, 0), length.out = n)
 	des <- EDI:::DesignFixed$new(n = n, response_type = "incidence", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = x))
 	des$overwrite_all_subject_assignments(w)
-	linpred <- -0.2 + 0.7 * w01 + 0.3 * x
+	linpred <- -0.2 + 0.7 * w + 0.3 * x
 	des$add_all_subject_responses(rbinom(n, 1, plogis(linpred)))
 
 	inf <- InferenceIncidLogRegr$new(des, verbose = FALSE, smart_cold_start_default = TRUE)
@@ -44,13 +43,12 @@ test_that("gradient testing type is available on representative likelihood famil
 	set.seed(505)
 	n <- 80
 	x <- rnorm(n)
-	w <- rep(c(1, -1), length.out = n)
-	w01 <- (w + 1) / 2
+	w <- rep(c(1, 0), length.out = n)
 
 	des_logit <- EDI:::DesignFixed$new(n = n, response_type = "incidence", verbose = FALSE)
 	des_logit$add_all_subjects_to_experiment(data.frame(x = x))
 	des_logit$overwrite_all_subject_assignments(w)
-	des_logit$add_all_subject_responses(rbinom(n, 1, plogis(-0.1 + 0.5 * w01 + 0.2 * x)))
+	des_logit$add_all_subject_responses(rbinom(n, 1, plogis(-0.1 + 0.5 * w + 0.2 * x)))
 	inf_logit <- InferenceIncidLogRegr$new(des_logit, verbose = FALSE, smart_cold_start_default = TRUE)
 	expect_true("gradient" %in% inf_logit$get_supported_testing_types())
 	inf_logit$set_testing_type("gradient")
@@ -62,7 +60,7 @@ test_that("gradient testing type is available on representative likelihood famil
 	des_pois <- EDI:::DesignFixed$new(n = n, response_type = "count", verbose = FALSE)
 	des_pois$add_all_subjects_to_experiment(data.frame(x = x))
 	des_pois$overwrite_all_subject_assignments(w)
-	des_pois$add_all_subject_responses(rpois(n, lambda = exp(0.2 + 0.35 * w01 + 0.15 * x)))
+	des_pois$add_all_subject_responses(rpois(n, lambda = exp(0.2 + 0.35 * w + 0.15 * x)))
 	inf_pois <- InferenceCountPoisson$new(des_pois, verbose = FALSE, smart_cold_start_default = TRUE)
 	expect_true("gradient" %in% inf_pois$get_supported_testing_types())
 	inf_pois$set_testing_type("gradient")
@@ -74,7 +72,7 @@ test_that("gradient testing type is available on representative likelihood famil
 	des_nb <- EDI:::DesignFixed$new(n = n, response_type = "count", verbose = FALSE)
 	des_nb$add_all_subjects_to_experiment(data.frame(x = x))
 	des_nb$overwrite_all_subject_assignments(w)
-	mu_nb <- exp(0.15 + 0.3 * w01 + 0.1 * x)
+	mu_nb <- exp(0.15 + 0.3 * w + 0.1 * x)
 	des_nb$add_all_subject_responses(rnbinom(n, mu = mu_nb, size = 1.5))
 	inf_nb <- InferenceCountNegBin$new(des_nb, verbose = FALSE)
 	expect_true("gradient" %in% inf_nb$get_supported_testing_types())
@@ -87,7 +85,7 @@ test_that("gradient testing type is available on representative likelihood famil
 	des_weib <- EDI:::DesignFixed$new(n = n, response_type = "survival", verbose = FALSE)
 	des_weib$add_all_subjects_to_experiment(data.frame(x = x))
 	des_weib$overwrite_all_subject_assignments(w)
-	y_surv <- exp(0.4 + 0.3 * w01 + 0.15 * x + rnorm(n, sd = 0.2))
+	y_surv <- exp(0.4 + 0.3 * w + 0.15 * x + rnorm(n, sd = 0.2))
 	dead <- rbinom(n, 1, 0.85)
 	des_weib$add_all_subject_responses(y_surv, dead)
 	inf_weib <- InferenceSurvivalWeibullRegr$new(des_weib, verbose = FALSE, smart_cold_start_default = TRUE)
@@ -119,12 +117,11 @@ test_that("bootstrap reusable workers retain warm-start state across refits", {
 	set.seed(303)
 	n <- 50
 	x <- rnorm(n)
-	w <- rep(c(1, -1), length.out = n)
-	w01 <- (w + 1) / 2
+	w <- rep(c(1, 0), length.out = n)
 	des <- EDI:::DesignFixed$new(n = n, response_type = "count", verbose = FALSE)
 	des$add_all_subjects_to_experiment(data.frame(x = x))
 	des$overwrite_all_subject_assignments(w)
-	mu <- exp(0.25 + 0.4 * w01 + 0.2 * x)
+	mu <- exp(0.25 + 0.4 * w + 0.2 * x)
 	des$add_all_subject_responses(rpois(n, mu))
 
 	inf <- InferenceCountPoisson$new(des, verbose = FALSE, smart_cold_start_default = TRUE)

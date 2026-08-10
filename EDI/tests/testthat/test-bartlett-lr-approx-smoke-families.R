@@ -40,9 +40,8 @@ assert_bartlett_approx_smoke <- function(inf, B = 15L, alpha = 0.25, seed = 3100
 make_bartlett_smoke_poisson_design <- function(seed = 41001L, n = 90L){
 	set.seed(seed)
 	x1 <- rnorm(n)
-	w <- rep(c(1, -1), length.out = n)
-	w01 <- (w + 1) / 2
-	mu <- exp(0.3 + 0.4 * w01 + 0.2 * x1)
+	w <- rep(c(1, 0), length.out = n)
+	mu <- exp(0.3 + 0.4 * w + 0.2 * x1)
 	y <- rpois(n, mu)
 
 	des <- DesignFixedBernoulli$new(n = n, response_type = "count", verbose = FALSE)
@@ -55,9 +54,8 @@ make_bartlett_smoke_poisson_design <- function(seed = 41001L, n = 90L){
 make_bartlett_smoke_negbin_design <- function(seed = 41002L, n = 100L){
 	set.seed(seed)
 	x1 <- rnorm(n)
-	w <- rep(c(1, -1), length.out = n)
-	w01 <- (w + 1) / 2
-	mu <- exp(0.35 + 0.35 * w01 + 0.2 * x1)
+	w <- rep(c(1, 0), length.out = n)
+	mu <- exp(0.35 + 0.35 * w + 0.2 * x1)
 	y <- rnbinom(n, mu = mu, size = 2.5)
 
 	des <- DesignFixedBernoulli$new(n = n, response_type = "count", verbose = FALSE)
@@ -82,9 +80,8 @@ make_bartlett_smoke_ols_kk_design <- function(seed = 41003L, n = 60L){
 make_bartlett_smoke_weibull_design <- function(seed = 41004L, n = 90L){
 	set.seed(seed)
 	x1 <- rnorm(n)
-	w <- rep(c(1, -1), length.out = n)
-	w01 <- (w + 1) / 2
-	linpred <- 0.3 + 0.35 * w01 + 0.2 * x1
+	w <- rep(c(1, 0), length.out = n)
+	linpred <- 0.3 + 0.35 * w + 0.2 * x1
 	event_time <- rweibull(n, shape = 1.3, scale = exp(linpred))
 	censor_time <- rexp(n, rate = 0.3)
 	y <- pmin(event_time, censor_time)
@@ -100,10 +97,9 @@ make_bartlett_smoke_weibull_design <- function(seed = 41004L, n = 90L){
 make_bartlett_smoke_zinb_design <- function(seed = 41005L, n = 110L){
 	set.seed(seed)
 	x1 <- rnorm(n)
-	w <- rep(c(1, -1), length.out = n)
-	w01 <- (w + 1) / 2
-	p_zero <- plogis(-1.0 + 0.5 * w01 - 0.3 * x1)
-	mu <- exp(0.35 + 0.25 * w01 + 0.2 * x1)
+	w <- rep(c(1, 0), length.out = n)
+	p_zero <- plogis(-1.0 + 0.5 * w - 0.3 * x1)
+	mu <- exp(0.35 + 0.25 * w + 0.2 * x1)
 	is_zero <- rbinom(n, 1L, p_zero)
 	y_count <- rnbinom(n, mu = mu, size = 2.5)
 	y <- ifelse(is_zero == 1L, 0L, y_count)
@@ -118,10 +114,9 @@ make_bartlett_smoke_zinb_design <- function(seed = 41005L, n = 110L){
 make_bartlett_smoke_zero_augmented_poisson_design <- function(seed = 41006L, n = 80L){
 	set.seed(seed)
 	x1 <- rnorm(n)
-	w <- rep(c(1, -1), length.out = n)
-	w01 <- (w + 1) / 2
-	p_zero <- plogis(-0.85 + 0.35 * w01 - 0.25 * x1)
-	mu <- exp(0.25 + 0.15 * w01 + 0.2 * x1)
+	w <- rep(c(1, 0), length.out = n)
+	p_zero <- plogis(-0.85 + 0.35 * w - 0.25 * x1)
+	mu <- exp(0.25 + 0.15 * w + 0.2 * x1)
 	is_zero <- rbinom(n, 1L, p_zero)
 	y_count <- rpois(n, mu)
 	y <- ifelse(is_zero == 1L, 0L, y_count)
@@ -136,9 +131,8 @@ make_bartlett_smoke_zero_augmented_poisson_design <- function(seed = 41006L, n =
 make_bartlett_smoke_ordinal_design <- function(seed = 41007L, n = 110L){
 	set.seed(seed)
 	x1 <- rnorm(n)
-	w <- rep(c(1, -1), length.out = n)
-	w01 <- (w + 1) / 2
-	eta <- 0.4 * w01 + 0.3 * x1
+	w <- rep(c(1, 0), length.out = n)
+	eta <- 0.4 * w + 0.3 * x1
 	cut_1 <- plogis(-1.0 - eta)
 	cut_2 <- plogis(-0.05 - eta)
 	cut_3 <- plogis(0.9 - eta)

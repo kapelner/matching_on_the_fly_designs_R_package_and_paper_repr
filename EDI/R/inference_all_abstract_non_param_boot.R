@@ -638,7 +638,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 		#' @param delta  				Null hypothesis value. Default 0.
 		#' @param B  					Number of bootstrap samples. Default 501.
 		#' @param min_number_usable_samples Minimum number of finite bootstrap samples
-		#'   required after filtering. Default 50. Must be smaller than \code{B}.
+		#'   required after filtering. Default 5. Must be less than or equal to \code{B}.
 		#' @param type  				Bootstrap p-value type. Supported values are
 		#'   \code{"percentile"} (default), \code{"symmetric"}, \code{"studentized"},
 		#'   \code{"bootstrap-t"}, and \code{"bca"}.
@@ -673,13 +673,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 		compute_bootstrap_two_sided_pval = function(delta = 0, B = 501, type = NULL, na.rm = FALSE, show_progress = TRUE, min_number_usable_samples = 5L){
 			if (should_run_asserts()) {
 				assertNumeric(delta, len = 1)
-				assertCount(B, positive = TRUE)
-				assertCount(min_number_usable_samples, positive = TRUE)
-			}
-			if (should_run_asserts()) {
-				if (as.integer(B) <= as.integer(min_number_usable_samples)) {
-					stop("B must be greater than min_number_usable_samples.", call. = FALSE)
-				}
+				assertBootstrapArgs(B = B, min_number_usable_samples = min_number_usable_samples, context = "compute_bootstrap_two_sided_pval")
 			}
 			if (should_run_asserts()) {
 				assertFlag(na.rm)
@@ -818,7 +812,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 		#' @param alpha  				The confidence level 1 - \code{alpha}. Default 0.05.
 		#' @param B  					Number of bootstrap samples. Default 501.
 		#' @param min_number_usable_samples Minimum number of finite bootstrap samples
-		#'   required after filtering. Default 50. Must be smaller than \code{B}.
+		#'   required after filtering. Default 5. Must be less than or equal to \code{B}.
 		#' @param type  				Bootstrap CI type. Supported values are
 		#'   \code{"percentile"}, \code{"basic"}, \code{"studentized"},
 		#'   \code{"bootstrap-t"}, \code{"symmetric-percentile-t"},
@@ -843,13 +837,7 @@ InferenceNonParamBootstrap = R6::R6Class("InferenceNonParamBootstrap",
 			if (should_run_asserts()) {
 				private$assert_design_supports_resampling("Bootstrap inference")
 				assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
-				assertCount(B, positive = TRUE)
-				assertCount(min_number_usable_samples, positive = TRUE)
-			}
-			if (should_run_asserts()) {
-				if (as.integer(B) <= as.integer(min_number_usable_samples)) {
-					stop("B must be greater than min_number_usable_samples.", call. = FALSE)
-				}
+				assertBootstrapArgs(B = B, min_number_usable_samples = min_number_usable_samples, context = "compute_bootstrap_confidence_interval")
 			}
 			type = tolower(private$get_bootstrap_type(type))
 			if (should_run_asserts()) {

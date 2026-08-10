@@ -346,6 +346,10 @@ InferenceMixinKKGEEShared = list(
 			m_vec[is.na(m_vec)] = 0L
 			any(m_vec == 0L)
 		},
+		kk_gee_error_to_null = function(e){
+			if (is_edi_control_condition(e)) stop(e)
+			NULL
+		},
 		fit_gee_rcpp = function(fit_data, estimate_only = FALSE){
 			family_str = private$gee_family_str()
 			X_rcpp = cbind(`(Intercept)` = 1, as.matrix(fit_data$dat))
@@ -358,7 +362,7 @@ InferenceMixinKKGEEShared = list(
 					warm_start_beta = private$get_fit_warm_start_for_length("beta", ncol(X_rcpp)),
 					warm_start_fisher_info = private$get_fit_warm_start_fisher(ncol(X_rcpp))
 				)
-			}, error = function(e) NULL)
+			}, error = private$kk_gee_error_to_null)
 		},
 		build_gee_fit_data = function(include_reservoir = TRUE, predictors_df = NULL, row_weights = NULL){
 			m_vec = private$m
@@ -407,7 +411,7 @@ InferenceMixinKKGEEShared = list(
 						warm_start_beta = ws_args$warm_start_beta,
 						warm_start_fisher_info = ws_args$warm_start_fisher_info
 					)
-				}, error = function(e) NULL)
+				}, error = private$kk_gee_error_to_null)
 				if (!is.null(res) && isTRUE(res$converged)) return(res)
 			}
 			# Fallback to geepack
@@ -429,7 +433,7 @@ InferenceMixinKKGEEShared = list(
 					)
 				)))
 				mod
-			}, error = function(e) NULL)
+			}, error = private$kk_gee_error_to_null)
 		},
 		fit_gee = function(std_err = TRUE, include_reservoir = TRUE, predictors_df = NULL, estimate_only = FALSE){
 			fit_data = private$build_gee_fit_data(include_reservoir = include_reservoir, predictors_df = predictors_df)
@@ -459,7 +463,7 @@ InferenceMixinKKGEEShared = list(
 						warm_start_beta = ws_args$warm_start_beta,
 						warm_start_fisher_info = ws_args$warm_start_fisher_info
 					)
-				}, error = function(e) NULL))
+				}, error = private$kk_gee_error_to_null))
 			}
 			if (!requireNamespace("geepack", quietly = TRUE)) return(NULL)
 			dat_geepack = data.frame(y = y_kept, dat_kept, check.names = FALSE)
@@ -479,7 +483,7 @@ InferenceMixinKKGEEShared = list(
 					)
 				)))
 				mod
-			}, error = function(e) NULL)
+			}, error = private$kk_gee_error_to_null)
 		},
 		fit_weighted_gee_with_fallback = function(row_weights){
 			gee_fit_ok = function(mod){
@@ -492,7 +496,7 @@ InferenceMixinKKGEEShared = list(
 					} else {
 						stats::coef(mod)
 					},
-					error = function(e) NULL
+					error = private$kk_gee_error_to_null
 				)
 				if (is.null(beta) || !private$gee_coefficients_are_usable(beta)) return(FALSE)
 				beta_hat = private$extract_gee_treatment_estimate(mod)
@@ -539,7 +543,7 @@ InferenceMixinKKGEEShared = list(
 					} else {
 						stats::coef(mod)
 					},
-					error = function(e) NULL
+					error = private$kk_gee_error_to_null
 				)
 				if (is.null(beta) || !private$gee_coefficients_are_usable(beta)) return(FALSE)
 				beta_hat = private$extract_gee_treatment_estimate(mod)

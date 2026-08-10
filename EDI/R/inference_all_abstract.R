@@ -37,11 +37,11 @@ Inference = R6::R6Class("Inference",
 			}
 			if (should_run_asserts()) {
 				assertClass(des_obj, "Design")
-				assertFormula(model_formula, null.ok = TRUE)
 				assertFlag(verbose)
 				assertFlag(harden)
 				assertFlag(smart_cold_start_default)
 				des_obj$assert_all_responses_recorded()
+				assertFormulaContext(model_formula, data = NULL, context = "model_formula")
 			}
 			private$harden = harden
 			private$smart_cold_start_default = smart_cold_start_default
@@ -76,14 +76,7 @@ Inference = R6::R6Class("Inference",
 				}
 				
 				if (should_run_asserts()) {
-					all_features = names(X_imp_analysis)
-					required_vars = all.vars(model_formula)
-					# '.' is a special symbol in formulas representing all variables
-					required_vars = setdiff(required_vars, ".")
-					if (length(required_vars) > 0 && !all(required_vars %in% all_features)) {
-						stop("model_formula contains variables not present in the design's covariates: ", 
-							 paste(setdiff(required_vars, all_features), collapse = ", "))
-					}
+					assertFormulaContext(model_formula, X_imp_analysis, context = "model_formula")
 				}
 				private$model_formula = model_formula
 				# Path #3: final numeric design matrix
@@ -348,6 +341,13 @@ Inference = R6::R6Class("Inference",
 	private = list(
 		finalize = function(){
 			# We no longer own the cluster, it is global.
+		},
+		# Recodes a {0,1}-valued vector or matrix to a signed {-1,+1} contrast.
+		# Needed only by InferenceIncidCMH/InferenceIncidExtendedRobins, whose
+		# variance formulas require E_w[y'w] = 0 under any randomization scheme
+		# (only true for signed coding); every other class consumes {0,1} directly.
+		get_w_signed = function(w){
+			2 * w - 1
 		},
 		seed = NULL,
 		harden = TRUE,

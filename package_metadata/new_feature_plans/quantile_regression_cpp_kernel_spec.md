@@ -287,28 +287,28 @@ multiplier committed upfront.
 ## Implementation Phases
 
 ### Phase 1: Core LP solver
-Port `rqbr.f` to `fast_rq_fit_br_cpp`. Validate against
+- [ ] TODO-1: Port `rqbr.f` to `fast_rq_fit_br_cpp`. Validate against
 `quantreg::rq.fit(method="br")` directly, including degenerate cases.
 
 ### Phase 2: Weighted variant
-Implement `fast_rq_fit_br_weighted_cpp`, validated against weighted
+- [ ] TODO-2: Implement `fast_rq_fit_br_weighted_cpp`, validated against weighted
 `quantreg::rq`.
 
 ### Phase 3: Standard errors
-Implement `fast_rq_with_se_cpp` (`nid` and `iid`), validated against
+- [ ] TODO-3: Implement `fast_rq_with_se_cpp` (`nid` and `iid`), validated against
 `quantreg:::summary.rq`.
 
 ### Phase 4: R integration
-Wire `use_rcpp` through all four affected classes (`InferenceContinQuantileRegr`,
+- [ ] TODO-4: Wire `use_rcpp` through all four affected classes (`InferenceContinQuantileRegr`,
 `InferencePropQuantileRegr`, `InferenceAbstractKKQuantileRegrOneLik`,
 `InferenceAbstractKKQuantileRegrIVWC`).
 
 ### Phase 5: Test suite, profiling, and perf pass
-Full parity test suite per "Testing". Profile per "Perf / SIMD" before
+- [ ] TODO-5: Full parity test suite per "Testing". Profile per "Perf / SIMD" before
 implementing any perf-specific changes.
 
 ### Phase 6: Documentation and audit update
-Update `path_audits_source.R:29` (and the other three affected rows) to
+- [ ] TODO-6: Update `path_audits_source.R:29` (and the other three affected rows) to
 record `use_rcpp` support and the measured speedup; regenerate
 `path_audits.html`.
 

@@ -81,7 +81,7 @@ test_that("InferenceContinRobustRegr (non-KK): bootstrap-weighted estimate match
 	set.seed(20260729)
 	n <- 80L
 	x1 <- rnorm(n)
-	w <- rep(c(-1, 1), length.out = n)
+	w <- rep(c(0, 1), length.out = n)
 	eta <- 0.3 - 0.4 * w + 0.2 * x1
 	y <- eta + rt(n, df = 4) * 0.5
 

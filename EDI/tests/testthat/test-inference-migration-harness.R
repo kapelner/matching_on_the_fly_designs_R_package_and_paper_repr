@@ -120,7 +120,7 @@ test_that("custom randomization migration golden tests compare distribution and 
 			w = private$w
 			y = private$y
 			list(
-				estimate = mean(y[w == 1L]) - mean(y[w == -1L]),
+				estimate = mean(y[w == 1L]) - mean(y[w == 0L]),
 				model = NULL
 			)
 		}

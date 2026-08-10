@@ -93,6 +93,7 @@ Collate:
     'EDI.R'
     'glm_fit_helpers.R'
     'globals.R'
+    'additional_asserts.R'
     'mixin_contracts.R'
     'inference_all_abstract_mle_or_KM_summary_table.R'
     'inference_ext_ci_inversion.R'

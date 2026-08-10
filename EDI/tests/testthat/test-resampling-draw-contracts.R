@@ -7,7 +7,7 @@ test_that("resampling draw contracts define comparable hooks", {
 		"rand_bootstrap",
 		"bayesian_boot"
 	)
-	expect_setequal(names(EDI_RESAMPLING_DRAW_CONTRACTS), ops)
+	expect_setequal(names(EDI:::EDI_RESAMPLING_DRAW_CONTRACTS), ops)
 
 	required_fields = c(
 		"operation",
@@ -17,7 +17,7 @@ test_that("resampling draw contracts define comparable hooks", {
 		"cache_name",
 		"cache_key_method"
 	)
-	contracts = lapply(ops, resampling_draw_contract)
+	contracts = lapply(ops, EDI:::resampling_draw_contract)
 	for (i in seq_along(contracts)) {
 		expect_named(contracts[[i]], required_fields)
 		expect_identical(contracts[[i]]$operation, ops[[i]])
@@ -41,12 +41,12 @@ test_that("resampling draw contracts define comparable hooks", {
 
 test_that("unknown resampling operations fail clearly", {
 	expect_error(
-		resampling_draw_contract("not_an_operation"),
+		EDI:::resampling_draw_contract("not_an_operation"),
 		"Unknown resampling operation: not_an_operation",
 		fixed = TRUE
 	)
 	expect_error(
-		resampling_draw_contract(c("rand", "non_param_boot")),
+		EDI:::resampling_draw_contract(c("rand", "non_param_boot")),
 		"operation must be one resampling operation name",
 		fixed = TRUE
 	)
@@ -58,30 +58,30 @@ test_that("distribution cache helpers route through the contract cache slot", {
 		unrelated = TRUE
 	)
 
-	cached_values = resampling_distribution_cache_set(
+	cached_values = EDI:::resampling_distribution_cache_set(
 		cached_values,
 		"rand_bootstrap",
 		"k",
 		c(1, 2, 3)
 	)
 	expect_equal(
-		resampling_distribution_cache_get(cached_values, "rand_bootstrap", "k"),
+		EDI:::resampling_distribution_cache_get(cached_values, "rand_bootstrap", "k"),
 		c(1, 2, 3)
 	)
 	expect_equal(cached_values$rand_distr_cache$existing, 1)
 	expect_true(cached_values$unrelated)
 
-	cached_values = resampling_distribution_cache_set(
+	cached_values = EDI:::resampling_distribution_cache_set(
 		cached_values,
 		"rand_bootstrap",
 		"k",
 		NULL
 	)
-	expect_null(resampling_distribution_cache_get(cached_values, "rand_bootstrap", "k"))
+	expect_null(EDI:::resampling_distribution_cache_get(cached_values, "rand_bootstrap", "k"))
 })
 
 test_that("distribution cache ensure initializes only the requested cache", {
-	cached_values = resampling_distribution_cache_ensure(list(), "bayesian_boot")
+	cached_values = EDI:::resampling_distribution_cache_ensure(list(), "bayesian_boot")
 	expect_named(cached_values, "bayes_boot_distr_cache")
 	expect_equal(cached_values$bayes_boot_distr_cache, list())
 })

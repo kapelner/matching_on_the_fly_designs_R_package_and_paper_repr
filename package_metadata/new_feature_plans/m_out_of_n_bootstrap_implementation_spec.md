@@ -438,35 +438,35 @@ Required caveats:
 
 ### Phase 1: Core m-out-of-n Bootstrap
 
-- Add operation contract and private cache.
-- Add ordinary unit-level with-replacement size-`m` draw generator.
-- Add public distribution, p-value, and CI methods.
-- Support explicit integer `m` and deterministic `m = NULL`.
-- Support only `scaling = "sqrt_n"`.
+- [ ] TODO-1: Add operation contract and private cache.
+- [ ] TODO-2: Add ordinary unit-level with-replacement size-`m` draw generator.
+- [ ] TODO-3: Add public distribution, p-value, and CI methods.
+- [ ] TODO-4: Support explicit integer `m` and deterministic `m = NULL`.
+- [ ] TODO-5: Support only `scaling = "sqrt_n"`.
 
 ### Phase 2: Shared Minimum-Volatility Selector
 
-- Add generic `select_optimal_resample_size()`.
-- Add `select_optimal_m_out_of_n_bootstrap()`.
-- Reuse the same selector engine later from
+- [ ] TODO-6: Add generic `select_optimal_resample_size()`.
+- [ ] TODO-7: Add `select_optimal_m_out_of_n_bootstrap()`.
+- [ ] TODO-8: Reuse the same selector engine later from
   `select_optimal_b_subsampling()`.
-- Add selector tests.
+- [ ] TODO-9: Add selector tests.
 
 ### Phase 3: Design-Aware Units
 
-- Add cluster, blocking, matching, and KK matched/reservoir draw support.
-- Keep replacement semantics explicit in tests.
+- [ ] TODO-10: Add cluster, blocking, matching, and KK matched/reservoir draw support.
+- [ ] TODO-11: Keep replacement semantics explicit in tests.
 
 ### Phase 4: Diagnostics And Debug API
 
-- Wire m-out-of-n diagnostics into the public debug API.
-- Preserve optimizer diagnostics for failed refits in debug mode when
+- [ ] TODO-12: Wire m-out-of-n diagnostics into the public debug API.
+- [ ] TODO-13: Preserve optimizer diagnostics for failed refits in debug mode when
   available.
 
 ### Phase 5: Path Audit Integration
 
-- Add separate path-audit columns for m-out-of-n p-values and CIs.
-- Do not fold m-out-of-n into ordinary bootstrap columns.
+- [ ] TODO-14: Add separate path-audit columns for m-out-of-n p-values and CIs.
+- [ ] TODO-15: Do not fold m-out-of-n into ordinary bootstrap columns.
 
 ## Acceptance Criteria
 
