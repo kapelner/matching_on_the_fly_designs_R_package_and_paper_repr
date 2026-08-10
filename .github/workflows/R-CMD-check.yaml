@@ -213,10 +213,14 @@ jobs:
       - name: "Install libuv (system dependency of the 'fs' package, itself a transitive dependency of testthat via pkgload -- rocker/r-devel-san is a bare-bones image that doesn't include it, unlike e.g. rocker/r-devel, causing \"ERROR: configuration failed for package 'fs'\" -> cascading pkgload/testthat install failures)"
         run: apt-get update && apt-get install -y libuv1-dev
 
+      # Matrix is listed explicitly (even though it's not a direct EDI
+      # dependency) because survival Imports it, and rocker/r-devel-san
+      # doesn't ship it pre-built -- see the valgrind job's identical step
+      # for the "there is no package called 'Matrix'" failure this avoids.
       - name: Install EDI's Depends/Imports/LinkingTo (Suggests skipped -- not needed to catch memory bugs in the core kernels, and roughly doubles this already-slow job otherwise)
         working-directory: EDI
         run: |
-          RDscript -e 'install.packages(c("R6","checkmate","Rcpp","RcppEigen","RcppNumerical","data.table","survival","missRanger","missForest","numDeriv","digest","methods","MASS","RhpcBLASctl","randomizr","testthat"), repos = "https://cloud.r-project.org")'
+          RDscript -e 'install.packages(c("R6","checkmate","Rcpp","RcppEigen","RcppNumerical","data.table","survival","Matrix","missRanger","missForest","numDeriv","digest","methods","MASS","RhpcBLASctl","randomizr","testthat"), repos = "https://cloud.r-project.org")'
 
       - name: Build
         working-directory: EDI
@@ -275,10 +279,15 @@ jobs:
       - name: Install valgrind and libuv (libuv is a system dependency of the 'fs' package, itself a transitive dependency of testthat via pkgload -- rocker/r-devel is a bare-bones image that doesn't include it, see the sanitizers job's Install libuv step for the failure this causes if skipped)
         run: apt-get update && apt-get install -y valgrind libuv1-dev
 
+      # Matrix is listed explicitly (even though it's not a direct EDI
+      # dependency) because survival Imports it, and rocker/r-devel doesn't
+      # ship it pre-built -- without this, "byte-compile and prepare package
+      # for lazy loading" for EDI itself fails with "there is no package
+      # called 'Matrix'" while transitively loading survival's namespace.
       - name: Install EDI's Depends/Imports/LinkingTo (Suggests skipped -- not needed to catch memory bugs in the core kernels, and would multiply the runtime of an already-very-slow job)
         working-directory: EDI
         run: |
-          RDscript -e 'install.packages(c("R6","checkmate","Rcpp","RcppEigen","RcppNumerical","data.table","survival","missRanger","missForest","numDeriv","digest","methods","MASS","RhpcBLASctl","randomizr","testthat"), repos = "https://cloud.r-project.org")'
+          RDscript -e 'install.packages(c("R6","checkmate","Rcpp","RcppEigen","RcppNumerical","data.table","survival","Matrix","missRanger","missForest","numDeriv","digest","methods","MASS","RhpcBLASctl","randomizr","testthat"), repos = "https://cloud.r-project.org")'
 
       - name: Build
         working-directory: EDI

@@ -98,14 +98,28 @@ endif()
 # on RcppNumerical's copy (which is what an earlier version of this file
 # did, and which only worked on machines that happened to have R + that
 # package installed). Pin to a tagged release for reproducibility.
-FetchContent_Declare(
+#
+# LBFGSpp's own CMakeLists.txt unconditionally does add_subdirectory(examples)
+# -- confirmed upstream, no BUILD_EXAMPLES-style cache variable exists to
+# disable it, so FetchContent_MakeAvailable (which calls add_subdirectory()
+# on the fetched content) would build every example-*.exe too, even though
+# we only need this header-only library's headers. On Windows this actually
+# broke the build: the example projects' deeply nested object/tlog paths
+# under scikit-build-core's own already-long build-dir tree exceed Windows'
+# MAX_PATH, failing with "FileTracker: could not create the new file
+# tracking log file". Calling FetchContent_Populate() directly with the full
+# population details (rather than FetchContent_Declare + FetchContent_Populate
+# (name), which CMP0169 deprecates) downloads the source without ever calling
+# add_subdirectory() on it, so LBFGSpp's own CMakeLists.txt (and its
+# examples) never runs -- lbfgspp_SOURCE_DIR is still set exactly as it
+# would be by FetchContent_MakeAvailable, and this form remains fully
+# supported (not deprecated) per CMP0169's own docs.
+FetchContent_Populate(
     lbfgspp
     GIT_REPOSITORY https://github.com/yixuan/LBFGSpp.git
     GIT_TAG v0.4.0
     GIT_SHALLOW TRUE
 )
-set(LBFGSPP_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(lbfgspp)
 
 # EDI/src/_helper_functions_core.h does #include <optimization/LBFGS.h> --
 # that "optimization/" prefix is RcppNumerical's own vendoring convention
