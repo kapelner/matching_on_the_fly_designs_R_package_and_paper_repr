@@ -1,9 +1,10 @@
 Package: SeqExpMatch
 Type: Package
 Title: Sequential Experimental Design via Matching on-the-Fly with Estimation and Testing
-Version: 0.1.0
-Author: Adam Kapelner and Abba Krieger
-Maintainer: Adam Kapelner <kapelner@qc.cuny.edu>
+Version: 0.1.1
+Authors@R: c(
+    person("Adam", "Kapelner", email = "kapelner@qc.cuny.edu", role = c("aut", "cre")),
+    person("Abba", "Krieger", role = "aut"))
 Description: Generates the following sequential two-arm experimental designs:
     (1) completely randomized (Bernoulli)
     (2) balanced completely randomized
@@ -13,9 +14,10 @@ Description: Generates the following sequential two-arm experimental designs:
     (6) Kapelner and Krieger's (2021) CARA Matching on the Fly with Differential Covariate Weights
     (7) Kapelner and Krieger's (2021) CARA Matching on the Fly with Differential Covariate Weights (Stepwise)
     and also provides the following types of inference:
-    (1) estimation (with both Z-style estimators and OLS estimators), 
+    (1) estimation (with both Z-style estimators and OLS estimators),
     (2) frequentist testing (via asymptotic distribution results and via employing the nonparameteric randomization test) and
     (3) frequentist confidence intervals (only under the superpopulation sampling assumption currently).
+    Details can be found in Kapelner and Krieger (2021) <doi:10.1111/biom.13561>.
 License: GPL-3
 Encoding: UTF-8
 Depends:
@@ -25,4 +27,4 @@ Depends:
     R (>= 3.6.3)
 Imports:
     stats
-RoxygenNote: 7.1.1
+RoxygenNote: 7.3.2

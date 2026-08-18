@@ -183,8 +183,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' 
 		#' 1. classic frequentist confidence interval (CI) of the additive treatment effect
 		#' employing the normal theory approximation for both the
-		#' (a) difference in means estimator i.e. [ybar_T - ybar_C +/- t_{alpha/2, n_T + n_C - 2} s_{ybar_T - ybar_C}] or
-		#' (b) the OLS estimator i.e. [beta_hat_T +/- t_{alpha/2, n + p - 2} s_{beta_hat_T}]
+		#' (a) difference in means estimator i.e. [ybar_T - ybar_C +/- t_\{alpha/2, n_T + n_C - 2\} s_\{ybar_T - ybar_C\}] or
+		#' (b) the OLS estimator i.e. [beta_hat_T +/- t_\{alpha/2, n + p - 2\} s_\{beta_hat_T\}]
 		#' where the z approximation is employed in lieu of the t is the design is a KK design or
 		#' 
 		#' 2. a randomization-based CI of an additive shift effect of the potential outcomes under treatment and control

@@ -2,6 +2,7 @@
 % Please edit documentation in R/SeqExpMatch.R
 \docType{package}
 \name{SeqExpMatch}
+\alias{SeqExpMatch-package}
 \alias{SeqExpMatch}
 \title{Sequential Experimental Designs via Matching On-the-Fly}
 \description{
@@ -18,7 +19,7 @@ Generates the following sequential two-arm experimental designs
 (7) Kapelner and Krieger's (2021) CARA Matching on the Fly with Weighted Covariates Stepwise
 }
 \references{
-Adam Kapelner and Abba Krieger A Matching Procedure for Sequential Experiments that Iteratively Learns which Covariates Improve Power, Arxiv 2010.05980
+Adam Kapelner and Abba Krieger, A Matching Procedure for Sequential Experiments that Iteratively Learns which Covariates Improve Power, Biometrics (2021), \doi{10.1111/biom.13561}
 }
 \author{
 Adam Kapelner \email{kapelner@qc.cuny.edu}

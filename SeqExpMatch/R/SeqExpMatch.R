@@ -13,7 +13,7 @@
 #' @docType 	package
 #' @title 		Sequential Experimental Designs via Matching On-the-Fly
 #' @author 		Adam Kapelner \email{kapelner@@qc.cuny.edu}
-#' @references 	Adam Kapelner and Abba Krieger A Matching Procedure for Sequential Experiments that Iteratively Learns which Covariates Improve Power, Arxiv 2010.05980 
+#' @references 	Adam Kapelner and Abba Krieger, A Matching Procedure for Sequential Experiments that Iteratively Learns which Covariates Improve Power, Biometrics (2021), \doi{10.1111/biom.13561}
 #' @keywords 	design htest
 #' @import      stats checkmate doParallel R6
 ##### Run "library(roxygen2); roxygenise("SeqExpMatch", clean = TRUE)" to regenerate all Rd files and NAMESPACE and DESCRIPTION file

@@ -1,0 +1,14 @@
+bibentry(
+  bibtype  = "Article",
+  title    = "A Matching Procedure for Sequential Experiments that Iteratively Learns which Covariates Improve Power",
+  author   = c(person("Adam", "Kapelner"), person("Abba", "Krieger")),
+  journal  = "Biometrics",
+  year     = "2021",
+  doi      = "10.1111/biom.13561",
+  url      = "https://onlinelibrary.wiley.com/doi/abs/10.1111/biom.13561",
+  textVersion = paste(
+    "Kapelner, A. and Krieger, A. (2021).",
+    "A Matching Procedure for Sequential Experiments that Iteratively Learns which Covariates Improve Power.",
+    "Biometrics. https://onlinelibrary.wiley.com/doi/abs/10.1111/biom.13561"
+  )
+)

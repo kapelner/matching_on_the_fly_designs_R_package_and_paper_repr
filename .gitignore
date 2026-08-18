@@ -37,3 +37,35 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+graft/
+
+# Leftover dotfiles/dirs from a home-directory migration
+.aider.chat.history.md
+.aider.input.history
+.aider.tags.cache.v4/
+.antigravitycli/
+.bash_profile
+.bashrc
+.claude/
+.codex
+.gemini/
+.gitconfig
+.gitmodules
+.idea
+.ignore
+.mcp.json
+.profile
+.ripgreprc
+.vscode
+.zprofile
+.zshrc
+
+# Untracked project directories/files not yet added to the repo
+AGENTS.md
+EDI/
+GEMINI.md
+package_metadata/
+package_tests/
+python/
