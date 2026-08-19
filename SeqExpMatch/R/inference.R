@@ -9,10 +9,18 @@
 #' of sampling assumption (i.e. the superpopulation assumption leading to normal-based inference or 
 #' the finite population assumption implying randomization-exact-based inference) and then can query the
 #' estimate and pval for the test. If the test is normal-theory based it is 
-#' testing the population H_0: beta_T = 0 and if the test is a randomization test, 
+#' testing the population H_0: beta_T = 0 and if the test is a randomization test,
 #' it is testing the sharp null that H_0: Y_T_i = Y_C_i for all subjects. Confidence
 #' interval construction is available for normal-theory based test type as well.
-#' 
+#'
+#' @section Deprecated:
+#' \strong{This class is deprecated.} Its estimation, testing, and confidence interval
+#' functionality is provided by the actively maintained \code{EDI} package's inference
+#' classes (e.g. \code{InferenceAllSimpleMeanDiff}, \code{InferenceContinOLS},
+#' \code{InferenceContinKKOLSIVWC}, and many others registered per response type and
+#' design). See each method below for the specific \code{EDI} code that reproduces its
+#' behavior.
+#'
 #' @export
 SeqDesignInference = R6::R6Class("SeqDesignInference",
 	public = list(
@@ -54,7 +62,23 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' seq_des_inf = SeqDesignInference$new(seq_des)
 		#'  
 		#' @return A new `SeqDesignTest` object.
+		#'
+		#' @section Deprecated:
+		#' \preformatted{
+		#' # library(SeqExpMatch):
+		#' seq_des_inf = SeqDesignInference$new(seq_des, estimate_type = "OLS", test_type = "randomization-exact")
+		#'
+		#' # library(EDI) equivalent (choose the class matching your design/response and estimator;
+		#' # e.g. for a completed continuous-response design with OLS estimation):
+		#' inf = EDI::InferenceContinOLS$new(seq_des, verbose = FALSE)
+		#' # or, for a difference-in-means estimator:
+		#' inf = EDI::InferenceAllSimpleMeanDiff$new(seq_des, verbose = FALSE)
+		#' # for KK designs (KK14/KK21/KK21stepwise), use the corresponding KK-specific class, e.g.:
+		#' inf = EDI::InferenceContinKKOLSIVWC$new(seq_des, verbose = FALSE)
+		#' }
+		#'
 		initialize = function(seq_des_obj, estimate_type = "OLS", test_type = "randomization-exact", num_cores = 1, verbose = TRUE){
+			warning("SeqDesignInference is deprecated; please use the 'EDI' package's inference classes instead (e.g. EDI::InferenceContinOLS). See ?SeqDesignInference for migration code.", call. = FALSE)
 			assertClass(seq_des_obj, "SeqDesign")
 			seq_des_obj$assert_experiment_completed()
 			assertChoice(estimate_type, c("difference-in-means", "OLS"))
@@ -94,7 +118,14 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' seq_des_inf = SeqDesignInference$new(seq_des)
 		#' seq_des_inf$compute_treatment_estimate()
 		#' 		
+		#' @section Deprecated:
+		#' \preformatted{
+		#' # library(EDI) equivalent (method name is compute_estimate() in EDI inference classes):
+		#' inf$compute_estimate()
+		#' }
+		#'
 		compute_treatment_estimate = function(){
+			warning("SeqDesignInference$compute_treatment_estimate() is deprecated; use EDI's inf$compute_estimate() instead. See ?SeqDesignInference for migration code.", call. = FALSE)
 			if (self$estimate_type == "difference-in-means" & private$isKK){
 				private$compute_normal_based_inference_difference_in_means_KK()$beta_hat_T
 			} else if (self$estimate_type == "difference-in-means" & !private$isKK){
@@ -128,7 +159,15 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' seq_des_inf = SeqDesignInference$new(seq_des)
 		#' seq_des_inf$compute_pval_for_no_treatment_effect()
 		#' 		
+			#' @section Deprecated:
+			#' \preformatted{
+			#' # library(EDI) equivalent:
+			#' inf$compute_asymp_two_sided_pval()   # for test_type = "normal-based"
+			#' inf$compute_rand_two_sided_pval(r = 501)   # for test_type = "randomization-exact"
+			#' }
+			#'
 		compute_pval_for_no_treatment_effect = function(nsim_exact_test = 501){
+			warning("SeqDesignInference$compute_pval_for_no_treatment_effect() is deprecated; use EDI's inf$compute_asymp_two_sided_pval() or inf$compute_rand_two_sided_pval() instead. See ?SeqDesignInference for migration code.", call. = FALSE)
 			if (self$estimate_type == "difference-in-means" & self$test_type == "normal-based" & private$isKK){
 				private$compute_normal_based_inference_difference_in_means_KK()$p_val
 			} else if (self$estimate_type == "difference-in-means" & self$test_type == "normal-based" & !private$isKK){
@@ -172,7 +211,14 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' samps = seq_des_inf$randomization_inference_samples_for_no_treatment_effect()
 		#' summary(samps)	
 		#' 
+			#' @section Deprecated:
+			#' \preformatted{
+			#' # library(EDI) equivalent (draw the randomization distribution directly):
+			#' samps = inf$approximate_randomization_distribution_beta_hat_T(r = 501)
+			#' }
+			#'
 		randomization_inference_samples_for_no_treatment_effect = function(nsim_exact_test = 501){
+			warning("SeqDesignInference$randomization_inference_samples_for_no_treatment_effect() is deprecated; use EDI's inf$approximate_randomization_distribution_beta_hat_T() instead. See ?SeqDesignInference for migration code.", call. = FALSE)
 			assertTRUE(self$test_type == "randomization-exact")
 			assertCount(nsim_exact_test, positive = TRUE)
 			private$conduct_randomization_inference(nsim_exact_test)$b_T_sims
@@ -209,7 +255,15 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 		#' seq_des_inf = SeqDesignInference$new(seq_des, test_type = "normal-based")
 		#' seq_des_inf$compute_confidence_interval()
 		#' 		
+			#' @section Deprecated:
+			#' \preformatted{
+			#' # library(EDI) equivalent:
+			#' inf$compute_asymp_confidence_interval(alpha = 0.05)   # for test_type = "normal-based"
+			#' inf$compute_rand_confidence_interval(alpha = 0.05, r = 501)   # for test_type = "randomization-exact"
+			#' }
+			#'
 		compute_confidence_interval = function(alpha = 0.05, nsim_exact_test = 501){
+			warning("SeqDesignInference$compute_confidence_interval() is deprecated; use EDI's inf$compute_asymp_confidence_interval() or inf$compute_rand_confidence_interval() instead. See ?SeqDesignInference for migration code.", call. = FALSE)
 			assertNumeric(alpha, lower = .Machine$double.xmin, upper = 1 - .Machine$double.xmin)
 			assertCount(nsim_exact_test, positive = TRUE)
 			

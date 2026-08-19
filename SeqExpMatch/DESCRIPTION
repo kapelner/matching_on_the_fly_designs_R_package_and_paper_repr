@@ -1,11 +1,15 @@
 Package: SeqExpMatch
 Type: Package
 Title: Sequential Experimental Design via Matching on-the-Fly with Estimation and Testing
-Version: 0.1.1
+Version: 0.1.1.1
 Authors@R: c(
     person("Adam", "Kapelner", email = "kapelner@qc.cuny.edu", role = c("aut", "cre")),
     person("Abba", "Krieger", role = "aut"))
-Description: Generates the following sequential two-arm experimental designs:
+Description: DEPRECATED. This package is deprecated and no longer maintained; all of
+    its functionality has been superseded by the 'EDI' package, which provides faster,
+    more general, and actively maintained implementations of the same sequential designs
+    and inference procedures. Please migrate to 'EDI'. This package previously generated
+    the following sequential two-arm experimental designs:
     (1) completely randomized (Bernoulli)
     (2) balanced completely randomized
     (3) Efron's (1971) Biased Coin
@@ -18,6 +22,8 @@ Description: Generates the following sequential two-arm experimental designs:
     (2) frequentist testing (via asymptotic distribution results and via employing the nonparameteric randomization test) and
     (3) frequentist confidence intervals (only under the superpopulation sampling assumption currently).
     Details can be found in Kapelner and Krieger (2021) <doi:10.1111/biom.13561>.
+    See <https://github.com/kapelner/EDI> for the 'EDI' package.
+URL: https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr
 License: GPL-3
 Encoding: UTF-8
 Depends:
@@ -27,4 +33,4 @@ Depends:
     R (>= 3.6.3)
 Imports:
     stats
-RoxygenNote: 7.3.2
+Config/roxygen2/version: 8.0.0.9000

@@ -12,10 +12,60 @@ specifies the type of estimation (difference-in-means or OLS) and the type
 of sampling assumption (i.e. the superpopulation assumption leading to normal-based inference or 
 the finite population assumption implying randomization-exact-based inference) and then can query the
 estimate and pval for the test. If the test is normal-theory based it is 
-testing the population H_0: beta_T = 0 and if the test is a randomization test, 
+testing the population H_0: beta_T = 0 and if the test is a randomization test,
 it is testing the sharp null that H_0: Y_T_i = Y_C_i for all subjects. Confidence
 interval construction is available for normal-theory based test type as well.
 }
+\section{Deprecated}{
+
+\strong{This class is deprecated.} Its estimation, testing, and confidence interval
+functionality is provided by the actively maintained \code{EDI} package's inference
+classes (e.g. \code{InferenceAllSimpleMeanDiff}, \code{InferenceContinOLS},
+\code{InferenceContinKKOLSIVWC}, and many others registered per response type and
+design). See each method below for the specific \code{EDI} code that reproduces its
+behavior.
+
+
+\preformatted{
+# library(SeqExpMatch):
+seq_des_inf = SeqDesignInference$new(seq_des, estimate_type = "OLS", test_type = "randomization-exact")
+
+# library(EDI) equivalent (choose the class matching your design/response and estimator;
+# e.g. for a completed continuous-response design with OLS estimation):
+inf = EDI::InferenceContinOLS$new(seq_des, verbose = FALSE)
+# or, for a difference-in-means estimator:
+inf = EDI::InferenceAllSimpleMeanDiff$new(seq_des, verbose = FALSE)
+# for KK designs (KK14/KK21/KK21stepwise), use the corresponding KK-specific class, e.g.:
+inf = EDI::InferenceContinKKOLSIVWC$new(seq_des, verbose = FALSE)
+}
+
+
+\preformatted{
+# library(EDI) equivalent (method name is compute_estimate() in EDI inference classes):
+inf$compute_estimate()
+}
+
+
+\preformatted{
+# library(EDI) equivalent:
+inf$compute_asymp_two_sided_pval()   # for test_type = "normal-based"
+inf$compute_rand_two_sided_pval(r = 501)   # for test_type = "randomization-exact"
+}
+
+
+\preformatted{
+# library(EDI) equivalent (draw the randomization distribution directly):
+samps = inf$approximate_randomization_distribution_beta_hat_T(r = 501)
+}
+
+
+\preformatted{
+# library(EDI) equivalent:
+inf$compute_asymp_confidence_interval(alpha = 0.05)   # for test_type = "normal-based"
+inf$compute_rand_confidence_interval(alpha = 0.05, r = 501)   # for test_type = "randomization-exact"
+}
+}
+
 \examples{
 
 ## ------------------------------------------------

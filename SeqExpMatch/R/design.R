@@ -1,10 +1,19 @@
 #' A Sequential Design
-#' 
+#'
 #' @description
 #' An R6 Class encapsulating the data and functionality for a sequential experimental design.
 #' This class takes care of data intialization and sequential assignments. The class object
 #' should be saved securely after each assignment e.g. on an encrypted cloud server.
-#' 
+#'
+#' @section Deprecated:
+#' \strong{This class is deprecated.} All of its functionality (the "CRD", "BCRD", "Efron",
+#' "Atkinson", "KK14", "KK21", and "KK21stepwise" designs) is provided by the actively
+#' maintained \code{EDI} package's sequential one-by-one design classes:
+#' \code{DesignSeqOneByOneBernoulli}, \code{DesignSeqOneByOneEfron}, \code{DesignSeqOneByOneAtkinson},
+#' \code{DesignSeqOneByOneKK14}, \code{DesignSeqOneByOneKK21}, and \code{DesignSeqOneByOneKK21stepwise}
+#' (balanced completely randomized designs are available via \code{EDI}'s fixed designs). See each
+#' method below for the specific \code{EDI} code that reproduces its behavior.
+#'
 #' @export
 SeqDesign = R6::R6Class("SeqDesign",
 		public = list(
@@ -53,16 +62,31 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' 					All "KK21" designs further require "num_boot" which is the number of bootstrap samples taken to approximate the subject-distance distribution. If unspecified, default is 500.
 				#' 
 				#' @return A new `SeqDesign` object.
-				#' 
+				#'
+				#' @section Deprecated:
+				#' Use the \code{EDI} package instead. The \code{design} argument maps to an \code{EDI}
+				#' class as follows: \code{"CRD"} to \code{DesignSeqOneByOneBernoulli}, \code{"Efron"} to
+				#' \code{DesignSeqOneByOneEfron}, \code{"Atkinson"} to \code{DesignSeqOneByOneAtkinson},
+				#' \code{"KK14"} to \code{DesignSeqOneByOneKK14}, \code{"KK21"} to \code{DesignSeqOneByOneKK21},
+				#' and \code{"KK21stepwise"} to \code{DesignSeqOneByOneKK21stepwise}. For example:
+				#' \preformatted{
+				#' # library(SeqExpMatch):
+				#' seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21stepwise")
+				#'
+				#' # library(EDI) equivalent:
+				#' seq_des = EDI::DesignSeqOneByOneKK21stepwise$new(n = 100, response_type = "continuous")
+				#' }
+				#'
 				#' @examples
 				#' seq_des = SeqDesign$new(n = 100, p = 10, design = "KK21stepwise")
-				#'  
+				#'
 				initialize = function(n, p, design, verbose = TRUE, ...) {
+					warning("SeqDesign is deprecated; please use the 'EDI' package instead (e.g. EDI::DesignSeqOneByOneKK21stepwise). See ?SeqDesign for migration code.", call. = FALSE)
 					assertCount(n, positive = TRUE)
 					assertCount(p, positive = TRUE)
 					assertChoice(design, c("CRD", "BCRD", "Efron", "Atkinson", "KK14", "KK21", "KK21stepwise"))
 					assertFlag(verbose)
-					
+
 					if (n %% 2 != 0 & design == "BCRD"){
 						stop("Design BCRD requires an even number of subjects.")
 					}
@@ -121,12 +145,24 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' Add subject-specific measurements for the next subject entrant
 				#' 
 				#' @param x_vec A p-length numeric vector
-				#' 
+				#'
+				#' @section Deprecated:
+				#' \preformatted{
+				#' # library(SeqExpMatch):
+				#' seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
+				#'
+				#' # library(EDI) equivalent (covariates passed as a one-row data.frame):
+				#' seq_des$add_one_subject_to_experiment_and_assign(
+				#'   data.frame(x1 = 1, x2 = 38, x3 = 142, x4 = 71, x5 = 5.3, x6 = 0, x7 = 0, x8 = 0, x9 = 1, x10 = 0)
+				#' )
+				#' }
+				#'
 				#' @examples
 				#' seq_des = SeqDesign$new(n = 100, p = 10, design = "CRD")
 				#' seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
-				#' 
-				add_subject_to_experiment = function(x_vec) {					
+				#'
+				add_subject_to_experiment = function(x_vec) {
+					warning("SeqDesign$add_subject_to_experiment() is deprecated; use EDI::DesignSeqOneByOne*$add_one_subject_to_experiment_and_assign() instead. See ?SeqDesign for migration code.", call. = FALSE)
 					assertNumeric(x_vec, len = private$p, any.missing = FALSE)
 					
 					if (private$isKK21){
@@ -157,8 +193,15 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' 
 				#' seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 				#' seq_des$print_current_subject_assignment()
-				#' 
+				#'
+				#' @section Deprecated:
+				#' \preformatted{
+				#' # library(EDI) equivalent:
+				#' seq_des$print_current_subject_assignment()   # same method name in EDI::DesignSeqOneByOne*
+				#' }
+				#'
 				print_current_subject_assignment = function(){
+					warning("SeqDesign$print_current_subject_assignment() is deprecated; use EDI::DesignSeqOneByOne*$print_current_subject_assignment() instead. See ?SeqDesign for migration code.", call. = FALSE)
 					cat("Subject number", self$t, "is assigned to", ifelse(self$w[self$t] == 1, "TREATMENT", "CONTROL"), "via design", self$design, "\n")
 				},
 				
@@ -172,8 +215,15 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' seq_des$add_subject_to_experiment(c(1, 38, 142, 71, 5.3, 0, 0, 0, 1, 0))
 				#' 
 				#' seq_des$add_current_subject_response(4.71)
-				#' 
+				#'
+				#' @section Deprecated:
+				#' \preformatted{
+				#' # library(EDI) equivalent (t is the subject's index, dead defaults to 1 for non-survival):
+				#' seq_des$add_one_subject_response(t = seq_des$t, y = 4.71)
+				#' }
+				#'
 				add_current_subject_response = function(y) {
+					warning("SeqDesign$add_current_subject_response() is deprecated; use EDI::DesignSeqOneByOne*$add_one_subject_response() instead. See ?SeqDesign for migration code.", call. = FALSE)
 					assertNumeric(y, len = 1, any.missing = FALSE)
 					self$y[self$t] = y
 				},
@@ -193,8 +243,15 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' seq_des$add_subject_to_experiment(c(1, 37, 178, 75, 6.5, 0, 0, 0, 0, 1))
 				#' 
 				#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
-				#' 				
+				#'
+				#' @section Deprecated:
+				#' \preformatted{
+				#' # library(EDI) equivalent, using the convenience wrapper for already-assigned designs:
+				#' add_all_subject_responses_seq(seq_des, c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
+				#' }
+				#'
 				add_all_subject_responses = function(y) {
+					warning("SeqDesign$add_all_subject_responses() is deprecated; use EDI::add_all_subject_responses_seq() instead. See ?SeqDesign for migration code.", call. = FALSE)
 					assertNumeric(y, len = private$n, any.missing = FALSE)
 					self$y = y
 				},
@@ -219,7 +276,18 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' 
 				#' seq_des$matching_statistics()
 				#'
+				#' @section Deprecated:
+				#' \preformatted{
+				#' # library(EDI) equivalent (KK14/KK21/KK21stepwise designs expose matching structure
+				#' # as cluster IDs, one per subject: 0/NA values are unmatched reservoir subjects and
+				#' # equal positive values denote a matched pair):
+				#' cluster_ids = seq_des$get_matching_cluster_ids()
+				#' num_matches = length(unique(cluster_ids[cluster_ids > 0])) / 1  # groups of size 2
+				#' prop_subjects_matched = mean(cluster_ids > 0)
+				#' }
+				#'
 				matching_statistics = function(){
+					warning("SeqDesign$matching_statistics() is deprecated; use EDI::DesignSeqOneByOneKK*$get_matching_cluster_ids() instead. See ?SeqDesign for migration code.", call. = FALSE)
 					if (!private$isKK){
 						stop("Matching statistics are only available for KK designs")
 					}
@@ -260,7 +328,15 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 				#' 
 				#' seq_des$assert_experiment_completed() #no response means the assert is true
+				#'
+				#' @section Deprecated:
+				#' \preformatted{
+				#' # library(EDI) equivalent:
+				#' seq_des$assert_experiment_completed()   # same method name in EDI::DesignSeqOneByOne*
+				#' }
+				#'
 				assert_experiment_completed = function(){
+					warning("SeqDesign$assert_experiment_completed() is deprecated; use EDI::DesignSeqOneByOne*$assert_experiment_completed() instead. See ?SeqDesign for migration code.", call. = FALSE)
 					if (private$all_assignments_not_yet_allocated()){
 						stop("This experiment is incomplete as the assignments aren't all allocated yet.")
 					}
@@ -294,8 +370,15 @@ SeqDesign = R6::R6Class("SeqDesign",
 				#' seq_des$add_all_subject_responses(c(4.71, 1.23, 4.78, 6.11, 5.95, 8.43))
 				#' 
 				#' seq_des$check_experiment_completed() #returns TRUE
-				#' 
+				#'
+				#' @section Deprecated:
+				#' \preformatted{
+				#' # library(EDI) equivalent:
+				#' seq_des$check_experiment_completed()   # same method name in EDI::DesignSeqOneByOne*
+				#' }
+				#'
 				check_experiment_completed = function(){
+					warning("SeqDesign$check_experiment_completed() is deprecated; use EDI::DesignSeqOneByOne*$check_experiment_completed() instead. See ?SeqDesign for migration code.", call. = FALSE)
 					if (private$all_assignments_not_yet_allocated()){
 						FALSE
 					} else if (private$all_responses_not_yet_recorded()){
