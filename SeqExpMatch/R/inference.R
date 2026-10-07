@@ -275,18 +275,8 @@ SeqDesignInference = R6::R6Class("SeqDesignInference",
 				private$common_normal_based_ci(private$compute_normal_based_inference_ols_KK(), alpha, use_Z = TRUE)	
 			} else if (self$estimate_type == "OLS" & self$test_type == "normal-based" & !private$isKK){
 				private$common_normal_based_ci(private$compute_normal_based_inference_ols(), alpha, use_Z = FALSE)
-			} else if (self$estimate_type == "difference-in-means" & self$test_type == "randomization-exact"){
-				stop("This computation is not implemented yet.")
-				if (is.null(private$rand_inf_cache)){
-					private$rand_inf_cache = private$conduct_randomization_inference(nsim_exact_test)
-				} 
-				#TODO
-			} else if (self$estimate_type == "OLS" & self$test_type == "randomization-exact"){
-				stop("This computation is not implemented yet.")
-				if (is.null(private$rand_inf_cache)){
-					private$rand_inf_cache = private$conduct_randomization_inference(nsim_exact_test)
-				} 
-				#TODO
+			} else if (self$test_type == "randomization-exact"){
+				stop("Randomization-exact confidence intervals were never implemented in SeqExpMatch and will not be; use EDI's inf$compute_rand_confidence_interval() instead.", call. = FALSE)
 			}
 		}
 

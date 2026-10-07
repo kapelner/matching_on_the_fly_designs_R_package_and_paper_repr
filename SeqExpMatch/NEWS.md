@@ -1,7 +1,8 @@
 # SeqExpMatch 0.1.1.1
 
 **This package is now deprecated.** All of its functionality has been superseded by the
-`EDI` package (<https://github.com/kapelner/EDI>), which provides faster (C++-accelerated), more general, and actively
+`EDI` package (CRAN: <https://CRAN.R-project.org/package=EDI>; GitHub: <https://github.com/kapelner/EDI>),
+which provides faster (C++-accelerated), more general, and actively
 maintained implementations of every design and inference procedure in `SeqExpMatch`.
 No further development will occur here beyond critical bug fixes.
 

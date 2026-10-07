@@ -18,8 +18,24 @@ Generates the following sequential two-arm experimental designs
 (6) Kapelner and Krieger's (2021) CARA Matching on the Fly with Weighted Covariates
 (7) Kapelner and Krieger's (2021) CARA Matching on the Fly with Weighted Covariates Stepwise
 }
+\section{Deprecated}{
+
+\strong{This package is deprecated and no longer maintained.} All of its designs and
+inference procedures have been superseded by the \code{EDI} package, available on CRAN at
+\url{https://CRAN.R-project.org/package=EDI} and on GitHub at
+\url{https://github.com/kapelner/EDI}. Please migrate to \code{EDI}; see
+\code{?SeqDesign} and \code{?SeqDesignInference} for the specific migration code.
+}
+
 \references{
 Adam Kapelner and Abba Krieger, A Matching Procedure for Sequential Experiments that Iteratively Learns which Covariates Improve Power, Biometrics (2021), \doi{10.1111/biom.13561}
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/kapelner/matching_on_the_fly_designs_R_package_and_paper_repr}
+}
+
 }
 \author{
 Adam Kapelner \email{kapelner@qc.cuny.edu}

@@ -9,6 +9,13 @@
 #' (6) Kapelner and Krieger's (2021) CARA Matching on the Fly with Weighted Covariates
 #' (7) Kapelner and Krieger's (2021) CARA Matching on the Fly with Weighted Covariates Stepwise
 #'
+#' @section Deprecated:
+#' \strong{This package is deprecated and no longer maintained.} All of its designs and
+#' inference procedures have been superseded by the \code{EDI} package, available on CRAN at
+#' \url{https://CRAN.R-project.org/package=EDI} and on GitHub at
+#' \url{https://github.com/kapelner/EDI}. Please migrate to \code{EDI}; see
+#' \code{?SeqDesign} and \code{?SeqDesignInference} for the specific migration code.
+#'
 #' @name 		SeqExpMatch
 #' @docType 	package
 #' @title 		Sequential Experimental Designs via Matching On-the-Fly
